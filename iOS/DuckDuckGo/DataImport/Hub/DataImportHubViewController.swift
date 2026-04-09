@@ -19,9 +19,16 @@
 
 import UIKit
 import SwiftUI
+import UniformTypeIdentifiers
+import BrowserKit
+import BrowserServicesKit
+import Core
+import Common
 import DDGSync
 import Persistence
 import Bookmarks
+import PrivacyConfig
+import os.log
 
 final class DataImportHubViewController: UIViewController {
 

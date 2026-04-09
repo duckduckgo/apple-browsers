@@ -63,7 +63,10 @@ extension AutoplayPolicyTabExtension: NavigationResponder {
 
     @MainActor
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
-        videoPlaybackDetected = false
+        if navigationAction.isForMainFrame {
+            videoPlaybackDetected = false
+        }
+
         let mustApplyAutoplayPolicy = mustApplyAutoplayPolicy(url: navigationAction.url)
         preferences.mustApplyAutoplayPolicy = mustApplyAutoplayPolicy
 

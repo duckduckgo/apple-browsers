@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Common
 import Foundation
 import Navigation
 import PrivacyConfig
@@ -58,6 +59,8 @@ final class TabSuspensionExtension {
     enum SuspensionState: String {
         case never
         case sameURL
+        case samePath
+        case sameHostname
         case sameDomain
         case differentDomain
     }
@@ -72,10 +75,11 @@ final class TabSuspensionExtension {
     private let aiChatSessionStore: AIChatSessionStoring
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let tld: TLD
 
     var hasVideoInPictureInPicture: Bool = false
     var isDisplayingPDF: Bool = false
-    var lastSuspendedURL: URL? = nil
+    var lastSuspendedURL: URL?
     private(set) var pageReportsUnableToSuspend: Bool = false
 
     private var hasActiveAIChatSession: Bool {
@@ -86,9 +90,13 @@ final class TabSuspensionExtension {
         switch (lastSuspendedURL, tabContent.urlForWebView) {
         case (nil, _):
             return .never
-        case let (a, b) where a == b:
+        case (.some(let a), .some(let b)) where a == b:
             return .sameURL
-        case let (a, b) where a?.host == b?.host:
+        case (.some(let a), .some(let b)) where a.trimmingQueryItemsAndFragment() == b.trimmingQueryItemsAndFragment():
+            return .samePath
+        case (.some(let a), .some(let b)) where a.host == b.host:
+            return .sameHostname
+        case (.some(let a), .some(let b)) where tld.eTLDplus1(a.host) == tld.eTLDplus1(b.host):
             return .sameDomain
         default:
             return .differentDomain
@@ -155,6 +163,7 @@ final class TabSuspensionExtension {
         featureFlagger: FeatureFlagger,
         aiChatSessionStore: AIChatSessionStoring,
         privacyConfigurationManager: PrivacyConfigurationManaging,
+        tld: TLD,
         isTabPinned: @escaping () -> Bool
     ) {
         self.tabID = tabID
@@ -162,6 +171,7 @@ final class TabSuspensionExtension {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.isTabPinned = isTabPinned
         self.aiChatSessionStore = aiChatSessionStore
+        self.tld = tld
 
         contentPublisher.sink { [weak self] content in
             self?.tabContent = content

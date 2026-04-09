@@ -212,7 +212,10 @@ final class LocalSuggestionsReaderTests: XCTestCase {
                 ["role": "user", "content": "Hello"]
             ]
         ]
-        let data = try! JSONSerialization.data(withJSONObject: chatJSON)
+        guard let data = try? JSONSerialization.data(withJSONObject: chatJSON) else {
+            XCTFail("Failed to serialize chat JSON for chatId: \(chatId)")
+            return DuckAiChatRecord(chatId: chatId, data: Data())
+        }
         return DuckAiChatRecord(chatId: chatId, data: data)
     }
 }

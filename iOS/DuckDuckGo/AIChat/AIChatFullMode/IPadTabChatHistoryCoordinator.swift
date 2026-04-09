@@ -45,8 +45,10 @@ final class IPadTabChatHistoryCoordinator {
     // MARK: - Properties
 
     weak var delegate: AIChatHistoryManagerDelegate?
+    var onSuggestionsVisibilityChanged: ((Bool) -> Void)?
 
     var isInstalled: Bool { historyManager != nil }
+    var hasSuggestions: Bool { historyManager?.hasSuggestions ?? false }
 
     private var historyManager: AIChatHistoryManager?
     private var viewModel: AIChatSuggestionsViewModel?
@@ -59,6 +61,7 @@ final class IPadTabChatHistoryCoordinator {
     private let aiChatSettings: AIChatSettingsProvider
     private let iPadTabFeature: AIChatIPadTabFeatureProviding
     private let textSubject = PassthroughSubject<String, Never>()
+    private var currentQuery = ""
 
     // MARK: - Initialization
 
@@ -83,13 +86,14 @@ final class IPadTabChatHistoryCoordinator {
     func install(in parentView: UIView,
                  parentViewController: UIViewController,
                  searchContainer: UIView,
+                 isFireTab: Bool,
                  keyboardLayoutGuide: UILayoutGuide) {
         guard historyManager == nil else { return }
         guard iPadTabFeature.isAvailable else { return }
         guard featureFlagger.isFeatureOn(.aiChatSuggestions),
               aiChatSettings.isChatSuggestionsEnabled else { return }
 
-        let (manager, viewModel) = makeHistoryManager()
+        let (manager, viewModel) = makeHistoryManager(isFireTab: isFireTab)
         manager.delegate = delegate
 
         let (wrapper, clipView) = makeFloatingWrapper()
@@ -109,6 +113,12 @@ final class IPadTabChatHistoryCoordinator {
 
         manager.installInContainerView(clipView, parentViewController: parentViewController)
         manager.subscribeToTextChanges(textSubject.eraseToAnyPublisher())
+        manager.onFetchCompleted = { [weak self] query, hasSuggestions in
+            guard let self else { return }
+            guard query == self.currentQuery else { return }
+            self.onSuggestionsVisibilityChanged?(hasSuggestions)
+        }
+        textSubject.send(currentQuery)
 
         viewModel.$filteredSuggestions
             .receive(on: DispatchQueue.main)
@@ -129,6 +139,7 @@ final class IPadTabChatHistoryCoordinator {
     /// Tears down the chat history list and removes the floating panel.
     func tearDown() {
         cancellables.removeAll()
+        currentQuery = ""
 
         historyManager?.tearDown()
         historyManager = nil
@@ -137,21 +148,31 @@ final class IPadTabChatHistoryCoordinator {
 
         floatingWrapper?.removeFromSuperview()
         floatingWrapper = nil
+        onSuggestionsVisibilityChanged = nil
     }
 
     /// Forwards a text change from the AI Chat text view to filter suggestions.
     func updateQuery(_ query: String) {
+        currentQuery = query
         textSubject.send(query)
     }
 
     // MARK: - Private Methods
 
-    private func makeHistoryManager() -> (AIChatHistoryManager, AIChatSuggestionsViewModel) {
-        let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
-        let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-        let suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-        let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
+    /// Creates an `AIChatHistoryManager` configured for the current tab.
+    /// Fire tabs use a no-op reader that always returns empty results,
+    /// preventing chat history from being fetched or displayed.
+    private func makeHistoryManager(isFireTab: Bool) -> (AIChatHistoryManager, AIChatSuggestionsViewModel) {
+        let suggestionsReader: AIChatSuggestionsReading
+        if isFireTab {
+            suggestionsReader = NilSuggestionsReader()
+        } else {
+            let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
+            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
+            suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
+        }
 
+        let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
         let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
                                            aiChatSettings: aiChatSettings,
                                            viewModel: viewModel,

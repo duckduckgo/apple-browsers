@@ -142,7 +142,7 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
         XCTAssertEqual(uiEventsHappened, [.didPresentProgressViewController,
                                           .didDismissProgressViewController])
 
-        XCTAssertTrue(pixelsFired.isEmpty)
+        XCTAssertTrue(assertNoOtherSubscriptionPixelsExcept(Set()), "Unexpected Subscription pixels fired")
     }
 
     func testRestoreAppStoreSubscriptionSuccessWhenSyncAppleIDFailsButUserProceedsRegardeless() async throws {

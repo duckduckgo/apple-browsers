@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Combine
 import PrivacyConfig
 import PrivacyConfigTestsUtils
@@ -124,6 +125,8 @@ class MainMenuTests: XCTestCase {
             dockCustomizer: dockCustomizer,
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
+            aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
+            aiChatHistoryCleaner: DummyAIChatHistoryCleaner(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -156,6 +159,8 @@ class MainMenuTests: XCTestCase {
             dockCustomizer: dockCustomizer,
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
+            aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
+            aiChatHistoryCleaner: DummyAIChatHistoryCleaner(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -176,6 +181,42 @@ class MainMenuTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenAddingToDockIsNotSupportedThenMenuItemIsHidden() throws {
+        let dockCustomizer = DockCustomizerMock()
+        dockCustomizer.supportsAddingToDock = false
+        dockCustomizer.dockStatus = false
+
+        let sut = MainMenu(
+            featureFlagger: MockFeatureFlagger(),
+            bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
+            faviconManager: FaviconManagerMock(),
+            dockCustomizer: dockCustomizer,
+            defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
+            aiChatMenuConfig: DummyAIChatConfig(),
+            aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
+            aiChatHistoryCleaner: DummyAIChatHistoryCleaner(),
+            internalUserDecider: MockInternalUserDecider(),
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider(),
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+            quitSurveyPersistor: MockQuitSurveyPersistor(),
+            pinningManager: MockPinningManager(),
+            subscriptionManager: SubscriptionManagerMock()
+        )
+
+        sut.update()
+
+        let duckDuckGoMenu = try XCTUnwrap(sut.items.first?.submenu)
+
+        XCTAssertEqual(duckDuckGoMenu.items[3].title, UserText.addDuckDuckGoToDock)
+        XCTAssertTrue(duckDuckGoMenu.items[3].isHidden)
+    }
+
+    @MainActor
     func testWhenBrowserIsInTheDockThenMenuItemIsNotVisible() throws {
         let dockCustomizer = DockCustomizerMock()
         dockCustomizer.dockStatus = true
@@ -189,6 +230,8 @@ class MainMenuTests: XCTestCase {
             dockCustomizer: dockCustomizer,
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
+            aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
+            aiChatHistoryCleaner: DummyAIChatHistoryCleaner(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -221,8 +264,11 @@ class MainMenuTests: XCTestCase {
             historyCoordinator: HistoryCoordinatingMock(),
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
+            dockCustomizer: DockCustomizerMock(),
             defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
             aiChatMenuConfig: DummyAIChatConfig(),
+            aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
+            aiChatHistoryCleaner: DummyAIChatHistoryCleaner(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -253,8 +299,11 @@ class MainMenuTests: XCTestCase {
             historyCoordinator: HistoryCoordinatingMock(),
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
+            dockCustomizer: DockCustomizerMock(),
             defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
             aiChatMenuConfig: DummyAIChatConfig(),
+            aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
+            aiChatHistoryCleaner: DummyAIChatHistoryCleaner(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -285,8 +334,11 @@ class MainMenuTests: XCTestCase {
             historyCoordinator: HistoryCoordinatingMock(),
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
+            dockCustomizer: DockCustomizerMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
+            aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
+            aiChatHistoryCleaner: DummyAIChatHistoryCleaner(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -310,17 +362,31 @@ class MainMenuTests: XCTestCase {
     // MARK: - AI Chat
 
     @MainActor
-    func testMainMenuInitializedWithFalseAiChatFlag_ThenAiChatIsNotVisible() throws {
+    func testDuckAIMenuIsHidden_whenShouldDisplayApplicationMenuShortcutIsFalse() throws {
         // GIVEN
         let aiChatConfig = DummyAIChatConfig()
-        let sut = MainMenu(
+        let sut = makeMainMenu(aiChatConfig: aiChatConfig)
+
+        // WHEN
+        let aiChatMenu = sut.item(withTitle: "Duck.ai")
+
+        // THEN
+        XCTAssertNotNil(aiChatMenu, "Duck.ai menu item should exist in the menu bar.")
+        XCTAssertTrue(aiChatMenu?.isHidden == true, "Duck.ai menu item should be hidden when the AI chat flag is false.")
+    }
+
+    @MainActor private func makeMainMenu(aiChatConfig: AIChatMenuVisibilityConfigurable) -> MainMenu {
+        MainMenu(
             featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
+            dockCustomizer: DockCustomizerMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: aiChatConfig,
+            aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
+            aiChatHistoryCleaner: DummyAIChatHistoryCleaner(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -331,51 +397,122 @@ class MainMenuTests: XCTestCase {
             pinningManager: MockPinningManager(),
             subscriptionManager: SubscriptionManagerMock()
         )
-
-        let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
-
-        // WHEN
-        let aiChatMenu = fileMenu.submenu?.item(withTitle: UserText.newAIChatMenuItem)
-
-        // THEN
-        XCTAssertNotNil(aiChatMenu, "AI Chat menu item should exist in the file menu.")
-        XCTAssertTrue(aiChatMenu?.isHidden == true, "AI Chat menu item should be hidden when the AI chat flag is false.")
     }
 
     @MainActor
-    func testMainMenuInitializedWithTrueAiChatFlag_ThenAiChatIsVisible() throws {
+    func testDuckAIMenuIsVisible_whenShouldDisplayApplicationMenuShortcutIsTrue() throws {
         // GIVEN
         let aiChatConfig = DummyAIChatConfig()
         aiChatConfig.shouldDisplayApplicationMenuShortcut = true
-        aiChatConfig.shouldDisplayAddressBarShortcut = true
-
-        let sut = MainMenu(
-            featureFlagger: MockFeatureFlagger(),
-            bookmarkManager: MockBookmarkManager(),
-            historyCoordinator: HistoryCoordinatingMock(),
-            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
-            faviconManager: FaviconManagerMock(),
-            defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
-            aiChatMenuConfig: aiChatConfig,
-            internalUserDecider: MockInternalUserDecider(),
-            appearancePreferences: appearancePreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            isFireWindowDefault: false,
-            configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
-            quitSurveyPersistor: MockQuitSurveyPersistor(),
-            pinningManager: MockPinningManager(),
-            subscriptionManager: SubscriptionManagerMock()
-        )
-
-        let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
+        let sut = makeMainMenu(aiChatConfig: aiChatConfig)
 
         // WHEN
-        let aiChatMenu = fileMenu.submenu?.item(withTitle: UserText.newAIChatMenuItem)
+        let aiChatMenu = sut.item(withTitle: "Duck.ai")
 
         // THEN
-        XCTAssertNotNil(aiChatMenu, "AI Chat menu item should exist in the file menu.")
-        XCTAssertFalse(aiChatMenu?.isHidden ?? true, "AI Chat menu item should be visible when the AI chat flag is true.")
+        XCTAssertNotNil(aiChatMenu, "Duck.ai menu item should exist in the menu bar.")
+        XCTAssertFalse(aiChatMenu?.isHidden ?? true, "Duck.ai menu item should be visible when the AI chat flag is true.")
+    }
+
+    @MainActor
+    func testDuckAIMenuBecomesHidden_whenValuesChangedAndShouldDisplayApplicationMenuShortcutIsFalse() throws {
+        // GIVEN
+        let aiChatConfig = DummyAIChatConfig()
+        aiChatConfig.shouldDisplayApplicationMenuShortcut = true
+        let sut = makeMainMenu(aiChatConfig: aiChatConfig)
+        let aiChatMenu = try XCTUnwrap(sut.item(withTitle: "Duck.ai"))
+        XCTAssertFalse(aiChatMenu.isHidden)
+
+        // Subscribe on main queue so our assertion runs after MainMenu's setupAIChatMenu()
+        let expectation = expectation(description: "Duck.ai menu updated after config change")
+        let cancellable = aiChatConfig.valuesChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { expectation.fulfill() }
+
+        // WHEN
+        aiChatConfig.shouldDisplayApplicationMenuShortcut = false
+        aiChatConfig.valuesChangedPublisher.send()
+        waitForExpectations(timeout: 1)
+        cancellable.cancel()
+
+        // THEN
+        XCTAssertTrue(aiChatMenu.isHidden)
+    }
+
+    @MainActor
+    func testDuckAIMenuBecomesVisible_whenValuesChangedAndShouldDisplayApplicationMenuShortcutIsTrue() throws {
+        // GIVEN
+        let aiChatConfig = DummyAIChatConfig()
+        aiChatConfig.shouldDisplayApplicationMenuShortcut = false
+        let sut = makeMainMenu(aiChatConfig: aiChatConfig)
+        let aiChatMenu = try XCTUnwrap(sut.item(withTitle: "Duck.ai"))
+        XCTAssertTrue(aiChatMenu.isHidden)
+
+        // Subscribe on main queue so our assertion runs after MainMenu's setupAIChatMenu()
+        let expectation = expectation(description: "Duck.ai menu updated after config change")
+        let cancellable = aiChatConfig.valuesChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { expectation.fulfill() }
+
+        // WHEN
+        aiChatConfig.shouldDisplayApplicationMenuShortcut = true
+        aiChatConfig.valuesChangedPublisher.send()
+        waitForExpectations(timeout: 1)
+        cancellable.cancel()
+
+        // THEN
+        XCTAssertFalse(aiChatMenu.isHidden)
+    }
+
+    @MainActor
+    func testNewAIChatFileMenuItemIsHidden_whenDuckAIMenuIsVisible() throws {
+        // GIVEN
+        let aiChatConfig = DummyAIChatConfig()
+        aiChatConfig.shouldDisplayAnyAIChatFeature = true
+        aiChatConfig.shouldDisplayApplicationMenuShortcut = true
+        let sut = makeMainMenu(aiChatConfig: aiChatConfig)
+
+        // WHEN
+        let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile)?.submenu)
+        let item = fileMenu.item(withTitle: UserText.newAIChatMenuItem)
+
+        // THEN
+        XCTAssertNotNil(item)
+        XCTAssertTrue(item?.isHidden == true)
+    }
+
+    @MainActor
+    func testNewAIChatFileMenuItemIsVisible_whenDuckAIMenuIsHiddenAndAIChatIsEnabled() throws {
+        // GIVEN
+        let aiChatConfig = DummyAIChatConfig()
+        aiChatConfig.shouldDisplayAnyAIChatFeature = true
+        aiChatConfig.shouldDisplayApplicationMenuShortcut = false
+        let sut = makeMainMenu(aiChatConfig: aiChatConfig)
+
+        // WHEN
+        let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile)?.submenu)
+        let item = fileMenu.item(withTitle: UserText.newAIChatMenuItem)
+
+        // THEN
+        XCTAssertNotNil(item)
+        XCTAssertFalse(item?.isHidden ?? true)
+    }
+
+    @MainActor
+    func testNewAIChatFileMenuItemIsHidden_whenAIChatIsDisabled() throws {
+        // GIVEN
+        let aiChatConfig = DummyAIChatConfig()
+        aiChatConfig.shouldDisplayAnyAIChatFeature = false
+        aiChatConfig.shouldDisplayApplicationMenuShortcut = false
+        let sut = makeMainMenu(aiChatConfig: aiChatConfig)
+
+        // WHEN
+        let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile)?.submenu)
+        let item = fileMenu.item(withTitle: UserText.newAIChatMenuItem)
+
+        // THEN
+        XCTAssertNotNil(item)
+        XCTAssertTrue(item?.isHidden == true)
     }
 
     @MainActor
@@ -388,8 +525,11 @@ class MainMenuTests: XCTestCase {
             historyCoordinator: HistoryCoordinatingMock(),
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
+            dockCustomizer: DockCustomizerMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
+            aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
+            aiChatHistoryCleaner: DummyAIChatHistoryCleaner(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -415,8 +555,11 @@ class MainMenuTests: XCTestCase {
             historyCoordinator: HistoryCoordinatingMock(),
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
+            dockCustomizer: DockCustomizerMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
+            aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
+            aiChatHistoryCleaner: DummyAIChatHistoryCleaner(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -445,8 +588,11 @@ class MainMenuTests: XCTestCase {
             historyCoordinator: HistoryCoordinatingMock(),
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
+            dockCustomizer: DockCustomizerMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
+            aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
+            aiChatHistoryCleaner: DummyAIChatHistoryCleaner(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -472,8 +618,11 @@ class MainMenuTests: XCTestCase {
             historyCoordinator: HistoryCoordinatingMock(),
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
+            dockCustomizer: DockCustomizerMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
+            aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
+            aiChatHistoryCleaner: DummyAIChatHistoryCleaner(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -497,9 +646,117 @@ class MainMenuTests: XCTestCase {
     }
 }
 
+// MARK: - LazyBookmarkFolderMenuDelegateTests
+
+@MainActor
+class LazyBookmarkFolderMenuDelegateTests: XCTestCase {
+
+    func testMenuIsEmptyBeforeFirstOpen() {
+        // GIVEN
+        let bookmark = Bookmark(id: "1", url: "https://example.com", title: "Example", isFavorite: false)
+        let viewModel = BookmarkViewModel(entity: bookmark)
+        let delegate = LazyBookmarkFolderMenuDelegate(children: [viewModel])
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem()) // placeholder
+        menu.delegate = delegate
+
+        // THEN
+        XCTAssertEqual(menu.items.count, 1)
+    }
+
+    func testMenuIsPopulatedAfterFirstOpen() {
+        // GIVEN
+        let bookmark = Bookmark(id: "1", url: "https://example.com", title: "Example Bookmark", isFavorite: false)
+        let viewModel = BookmarkViewModel(entity: bookmark)
+        let delegate = LazyBookmarkFolderMenuDelegate(children: [viewModel])
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem()) // placeholder
+        menu.delegate = delegate
+
+        // WHEN
+        delegate.menuNeedsUpdate(menu)
+
+        // THEN
+        XCTAssertFalse(menu.items.isEmpty)
+        XCTAssertEqual(menu.items.first?.title, "Example Bookmark")
+    }
+
+    func testMenuIsNotRebuiltOnSecondOpen() {
+        // GIVEN
+        let bookmark = Bookmark(id: "1", url: "https://example.com", title: "Example", isFavorite: false)
+        let viewModel = BookmarkViewModel(entity: bookmark)
+        let delegate = LazyBookmarkFolderMenuDelegate(children: [viewModel])
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem()) // placeholder
+        menu.delegate = delegate
+
+        // WHEN
+        delegate.menuNeedsUpdate(menu) // first open
+        let countAfterFirstOpen = menu.items.count
+        menu.addItem(NSMenuItem(title: "sentinel", action: nil, keyEquivalent: ""))
+        delegate.menuNeedsUpdate(menu) // second open — should not rebuild
+
+        // THEN
+        XCTAssertEqual(menu.items.count, countAfterFirstOpen + 1, "Sentinel should still be present — menu was not rebuilt")
+    }
+
+    func testEmptyFolderHasNoSubmenu() {
+        // GIVEN
+        let folder = BookmarkFolder(id: "1", title: "Empty Folder")
+        // no children added
+        let folderViewModel = BookmarkViewModel(entity: folder)
+
+        let delegate = LazyBookmarkFolderMenuDelegate(children: [folderViewModel])
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem()) // placeholder
+        menu.delegate = delegate
+
+        // WHEN
+        delegate.menuNeedsUpdate(menu)
+
+        // THEN
+        let folderItem = menu.items.first
+        XCTAssertNil(folderItem?.submenu, "Empty folder should not have a submenu")
+    }
+
+    func testFolderChildrenGetLazySubmenus() {
+        // GIVEN
+        let childBookmark = Bookmark(id: "2", url: "https://child.com", title: "Child", isFavorite: false)
+        let folder = BookmarkFolder(id: "f1", title: "My Folder", children: [childBookmark])
+        let folderViewModel = BookmarkViewModel(entity: folder)
+        let delegate = LazyBookmarkFolderMenuDelegate(children: [folderViewModel])
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem()) // placeholder
+        menu.delegate = delegate
+
+        // WHEN
+        delegate.menuNeedsUpdate(menu)
+
+        // THEN
+        let folderItem = menu.items.first
+        let subMenu = folderItem?.submenu
+        XCTAssertNotNil(subMenu, "Folder menu item should have a submenu")
+        XCTAssertEqual(subMenu?.items.count, 1, "Submenu should contain exactly one placeholder item")
+        XCTAssertNotNil(subMenu?.delegate, "Submenu should have a delegate for lazy population")
+    }
+}
+
+private final class DummyAIChatSuggestionsReader: AIChatSuggestionsReading {
+    var maxHistoryCount: Int = 0
+    func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) { ([], []) }
+    func tearDown() {}
+}
+
+private final class DummyAIChatHistoryCleaner: AIChatHistoryCleaning {
+    var shouldDisplayCleanAIChatHistoryOption: Bool = false
+    var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    @MainActor func cleanAIChatHistory() async -> Result<Void, Error> { .success(()) }
+}
+
 class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplayNewTabPageShortcut = false
     var shouldDisplayApplicationMenuShortcut = false
+    var shouldDisplayMoreOptionsMenuShortcut = false
     var shouldDisplayAddressBarShortcut = false
     var shouldDisplayAddressBarShortcutWhenTyping = false
     var shouldDisplayAnyAIChatFeature = false
@@ -509,9 +766,7 @@ class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldAutomaticallySendPageContext = false
     var shouldAutomaticallySendPageContextTelemetryValue: Bool?
 
-    var valuesChangedPublisher: PassthroughSubject<Void, Never> {
-        return PassthroughSubject<Void, Never>()
-    }
+    var valuesChangedPublisher = PassthroughSubject<Void, Never>()
 
     func markToolbarOnboardingPopoverAsShown() { }
 }

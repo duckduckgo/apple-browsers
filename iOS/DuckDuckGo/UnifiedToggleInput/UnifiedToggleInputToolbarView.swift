@@ -44,9 +44,14 @@ final class UnifiedToggleInputToolbarView: UIView {
     var onAttachTapped: (() -> Void)?
     var onModelPickerTapped: (() -> Void)?
     var onSubmitTapped: (() -> Void)?
+    var onVoiceTapped: (() -> Void)?
     var onStopGeneratingTapped: (() -> Void)?
 
     // MARK: - State
+
+    var isAIVoiceChatActive: Bool = false {
+        didSet { updateSubmitButtonAppearance() }
+    }
 
     var isSubmitEnabled: Bool = false {
         didSet { updateSubmitButtonState() }
@@ -82,6 +87,11 @@ final class UnifiedToggleInputToolbarView: UIView {
         set { imageButton.isHidden = newValue }
     }
 
+    var isImageButtonEnabled: Bool {
+        get { imageButton.isEnabled }
+        set { imageButton.isEnabled = newValue }
+    }
+
     var isCustomizeResponsesButtonHidden: Bool {
         get { customizeResponsesButton.isHidden }
         set { customizeResponsesButton.isHidden = newValue }
@@ -95,7 +105,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         action: #selector(customizeResponsesTapped)
     )
 
-    private lazy var imageButton: UIButton = makeToolButton(
+    private(set) lazy var imageButton: UIButton = makeToolButton(
         image: DesignSystemImages.Glyphs.Size24.attach,
         accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
         action: #selector(attachTapped)
@@ -109,6 +119,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         )
         config.imagePlacement = .trailing
         config.imagePadding = Constants.chipSpacing
+        config.titleLineBreakMode = .byTruncatingTail
         config.contentInsets = NSDirectionalEdgeInsets(
             top: 0,
             leading: Constants.chipHorizontalPadding,
@@ -127,6 +138,9 @@ final class UnifiedToggleInputToolbarView: UIView {
 
         let button = UIButton(configuration: config)
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        button.titleLabel?.lineBreakMode = .byTruncatingTail
         button.heightAnchor.constraint(equalToConstant: Constants.chipHeight).isActive = true
 
         return button
@@ -140,6 +154,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.layer.cornerRadius = Constants.toolButtonSize / 2
         button.clipsToBounds = true
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
         button.accessibilityLabel = UserText.aiChatToolbarSubmitButtonAccessibilityLabel
         button.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
         NSLayoutConstraint.activate([
@@ -157,6 +173,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.layer.cornerRadius = 14
         button.clipsToBounds = true
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
         button.accessibilityLabel = "Stop generating"
         button.accessibilityIdentifier = "AIChat.Toolbar.Button.StopGenerating"
         button.addTarget(self, action: #selector(stopGeneratingTapped), for: .touchUpInside)
@@ -191,12 +209,15 @@ final class UnifiedToggleInputToolbarView: UIView {
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         let rightGroup = UIStackView(arrangedSubviews: [modelChipButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
         rightGroup.alignment = .center
         rightGroup.translatesAutoresizingMaskIntoConstraints = false
+        rightGroup.setContentHuggingPriority(.required, for: .horizontal)
+        rightGroup.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         let outerStack = UIStackView(arrangedSubviews: [leftGroup, spacer, rightGroup])
         outerStack.axis = .horizontal
@@ -207,7 +228,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         NSLayoutConstraint.activate([
             outerStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             outerStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
-            outerStack.centerYAnchor.constraint(equalTo: centerYAnchor)
+            outerStack.centerYAnchor.constraint(equalTo: centerYAnchor),
+            modelChipButton.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.45)
         ])
 
         updateSubmitButtonState()
@@ -232,11 +254,18 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     private func updateSubmitButtonState() {
-        submitButton.isEnabled = isSubmitEnabled
-        submitButton.backgroundColor = isSubmitEnabled
+        updateSubmitButtonAppearance()
+    }
+
+    private func updateSubmitButtonAppearance() {
+        let showVoice = isAIVoiceChatActive && !isSubmitEnabled
+        let icon = showVoice ? DesignSystemImages.Glyphs.Size24.voice : DesignSystemImages.Glyphs.Size24.arrowUp
+        submitButton.setImage(icon, for: .normal)
+        submitButton.isEnabled = isSubmitEnabled || showVoice
+        submitButton.backgroundColor = (isSubmitEnabled || showVoice)
             ? UIColor(designSystemColor: .accent)
             : UIColor(designSystemColor: .controlsFillPrimary)
-        submitButton.tintColor = isSubmitEnabled
+        submitButton.tintColor = (isSubmitEnabled || showVoice)
             ? .white
             : UIColor(designSystemColor: .iconsSecondary)
     }
@@ -256,6 +285,12 @@ final class UnifiedToggleInputToolbarView: UIView {
     @objc private func customizeResponsesTapped() { onCustomizeResponsesTapped?() }
     @objc private func attachTapped() { onAttachTapped?() }
     @objc private func modelPickerTapped() { onModelPickerTapped?() }
-    @objc private func submitTapped() { onSubmitTapped?() }
+    @objc private func submitTapped() {
+        if isAIVoiceChatActive && !isSubmitEnabled {
+            onVoiceTapped?()
+        } else {
+            onSubmitTapped?()
+        }
+    }
     @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
 }

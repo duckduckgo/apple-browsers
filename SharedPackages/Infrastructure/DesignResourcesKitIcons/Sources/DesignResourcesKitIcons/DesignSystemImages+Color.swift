@@ -18,6 +18,11 @@
 
 public extension DesignSystemImages {
     enum Color {
+        public enum Size12 {
+            public static var chat: DesignSystemImage { .init(resource: .chatColor12) }
+            public static var chatPinned: DesignSystemImage { .init(resource: .chatPinned12) }
+        }
+
         public enum Size16 {
             public static var accessibility: DesignSystemImage { .init(resource: .accessibilityColor16) }
             public static var addToDock: DesignSystemImage { .init(resource: .addToDockColor16) }
@@ -41,7 +46,8 @@ public extension DesignSystemImages {
             public static var calendarToday: DesignSystemImage { .init(resource: .calendarTodayColor16) }
             public static var calendarWeek: DesignSystemImage { .init(resource: .calendarWeekColor16) }
             public static var calendarYesterday: DesignSystemImage { .init(resource: .calendarYesterdayColor16) }
-            public static var check: DesignSystemImage { .init(resource: .checkColor16) }
+            public static var chat: DesignSystemImage { .init(resource: .chatColor16) }
+            public static var chatPinned: DesignSystemImage { .init(resource: .chatPinned16) }
             public static var cookie: DesignSystemImage { .init(resource: .cookieColor16) }
             public static var cookieBlocked: DesignSystemImage { .init(resource: .cookieBlockedColor16) }
             public static var dashboard: DesignSystemImage { .init(resource: .dashboardColor16) }
@@ -105,6 +111,7 @@ public extension DesignSystemImages {
             public static var thumbsUp: DesignSystemImage { .init(resource: .thumbsUpColor16) }
             public static var thumbsUpNeutral: DesignSystemImage { .init(resource: .thumbsUpNeutralColor16) }
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayerColor16) }
+            public static var videoPlayerBlocked: DesignSystemImage { .init(resource: .videoPlayerBlockedColor16) }
             public static var vpn: DesignSystemImage { .init(resource: .vpnColor16) }
             public static var vpnGray: DesignSystemImage { .init(resource: .vpnGrayColor16) }
             public static var searchFindToggle: DesignSystemImage { .init(resource: .searchFindToggleColor16) }
@@ -204,8 +211,13 @@ public extension DesignSystemImages {
             public static var subscription: DesignSystemImage { .init(resource: .privacyProColor24) }
             public static var sync: DesignSystemImage { .init(resource: .syncColor24) }
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayerColor24) }
+            public static var videoPlayerBlocked: DesignSystemImage { .init(resource: .videoPlayerBlockedColor24) }
             public static var vpn: DesignSystemImage { .init(resource: .vpnColor24) }
             public static var vpnGrayscale: DesignSystemImage { .init(resource: .vpnGrayscaleColor24) }
+        }
+
+        public enum Size42 {
+            public static var shieldUtility: DesignSystemImage { .init(resource: .shieldUtilityColor42) }
         }
 
         public enum Size32 {

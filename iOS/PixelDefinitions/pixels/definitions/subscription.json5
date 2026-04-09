@@ -140,8 +140,16 @@
                 "description": "Error code: 12201, 12202, 12203, 12204, 12205, 12206",
                 "type": "string"
             },
-            "underlyingErrorDomain",
-            "underlyingErrorCode"
+            {
+                "keyPattern": "^ud[0-9]?$",
+                "type": "string",
+                "description": "Underlying error domain at any depth"
+            },
+            {
+                "keyPattern": "^ue[0-9]?$",
+                "type": "integer",
+                "description": "Underlying error code at any depth"
+            }
         ]
     },
     "m_subscription_tier-options_unexpected-pro-tier": {
@@ -249,6 +257,52 @@
         "triggers": ["user_submitted"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+
+    // Onboarding Subscription Promotion Pixels
+    "m_privacy-pro_onboarding_promotion_impression": {
+        "description": "Fired when the subscription promotion is shown during onboarding",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
+    },
+    "m_privacy-pro_onboarding_promotion_tap": {
+        "description": "Fired when the user taps the subscription promotion CTA during onboarding",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
+    },
+    "m_privacy-pro_onboarding_promotion_dismiss": {
+        "description": "Fired when the user dismisses the subscription promotion during onboarding",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
+    },
+
+    // Skipped Onboarding Subscription Promotion Pixels
+    "m_privacy-pro_skipped_onboarding_promotion_impression": {
+        "description": "Fired when the subscription promotion modal is shown to a returning user who skipped onboarding",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
+    },
+    "m_privacy-pro_skipped_onboarding_promotion_tap": {
+        "description": "Fired when the user taps the subscription promotion CTA on the skipped-onboarding modal",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
+    },
+    "m_privacy-pro_skipped_onboarding_promotion_dismiss": {
+        "description": "Fired when the user dismisses the skipped-onboarding subscription promotion modal",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
     },
 
     // Free Trial Journey Pixels

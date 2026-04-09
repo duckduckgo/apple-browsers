@@ -253,6 +253,7 @@ final class AddressBarButtonsViewController: NSViewController {
         didSet {
             if isMouseOverNavigationBar != oldValue {
                 updateBookmarkButtonVisibility()
+                updatePermissionCenterButton()
             }
         }
     }
@@ -307,10 +308,6 @@ final class AddressBarButtonsViewController: NSViewController {
     private var isChromeSidebarFeatureEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatChromeSidebar)
     }
-
-    private(set) lazy var aiChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating? = {
-        AIChatTogglePopoverCoordinator(windowControllersManager: NSApp.delegateTyped.windowControllersManager)
-    }()
 
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
@@ -560,7 +557,8 @@ final class AddressBarButtonsViewController: NSViewController {
         if hasPrivacyInfoPulseQueuedAnimation {
             hasPrivacyInfoPulseQueuedAnimation = false
             // Give a bit of delay to have a better animation effect
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                guard let self, !self.privacyDashboardButton.isHidden else { return }
                 ViewHighlighter.highlight(view: self.privacyDashboardButton, inParent: self.view)
             }
         }
@@ -841,9 +839,13 @@ final class AddressBarButtonsViewController: NSViewController {
         let domain = tabViewModel.tab.content.urlForWebView?.host ?? ""
         let hasAnyPersistedPermissions = permissionManager.hasAnyPermissionPersisted(forDomain: domain)
 
+        let isPermissionCenterPopoverShown = permissionCenterPopover?.isShown == true
+
         permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
+            isPermissionCenterPopoverShown: isPermissionCenterPopoverShown,
             isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
-            hasAnyPersistedPermissions: hasAnyPersistedPermissions
+            hasAnyPersistedPermissions: hasAnyPersistedPermissions,
+            isMouseOverNavigationBar: isMouseOverNavigationBar
         )
 
         showOrHidePermissionCenterPopoverIfNeeded()
@@ -1868,8 +1870,6 @@ final class AddressBarButtonsViewController: NSViewController {
                 searchModeToggleWidthConstraint?.constant = toggleControl.expandedWidth
             }
 
-            // Show the introduction popover when the toggle becomes visible for the first time
-            showTogglePopoverIfNeeded(toggleControl: toggleControl)
         } else if shouldShowToggle && hasUserTypedText && toggleControl.isExpanded {
             toggleControl.setExpanded(false, animated: true)
         } else if !shouldShowToggle && toggleControl.isExpanded {
@@ -1878,21 +1878,6 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         wasToggleVisible = shouldShowToggle
-    }
-
-    private func showTogglePopoverIfNeeded(toggleControl: NSView) {
-        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return }
-
-        /// Delay slightly to ensure the toggle is visible and positioned correctly
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            guard let self else { return }
-            self.aiChatTogglePopoverCoordinator?.showPopoverIfNeeded(
-                relativeTo: toggleControl,
-                isNewUser: AppDelegate.isNewUser,
-                userDidInteractWithToggle: self.aiChatToggleConditions.hasUserInteractedWithToggle,
-                userDidSeeToggleOnboarding: self.aiChatSettings.userDidSeeToggleOnboarding
-            )
-        }
     }
 
     @IBAction func zoomButtonAction(_ sender: Any) {
@@ -1935,6 +1920,7 @@ final class AddressBarButtonsViewController: NSViewController {
             usedPermissionsPublisher: tabViewModel.$usedPermissions.eraseToAnyPublisher(),
             popupQueries: popupQueries,
             permissionManager: permissionManager,
+            autoplayPreferences: NSApp.delegateTyped.autoplayPreferences,
             featureFlagger: featureFlagger,
             removePermission: { [weak tabViewModel] permissionType in
                 tabViewModel?.tab.permissions.remove(permissionType)
@@ -1969,6 +1955,7 @@ final class AddressBarButtonsViewController: NSViewController {
             },
             hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
             pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false,
+            displaysAutoplayPolicy: tabViewModel.tab.mustDisplayAutoplayPolicy,
             permissionsNeedReload: tabViewModel.permissionsNeedReload
         )
 
@@ -2855,8 +2842,10 @@ extension TabViewModel {
 
     @MainActor
     func shouldShowPermissionCenterButton(
+        isPermissionCenterPopoverShown: Bool,
         isTextFieldEditorFirstResponder: Bool,
-        hasAnyPersistedPermissions: Bool
+        hasAnyPersistedPermissions: Bool,
+        isMouseOverNavigationBar: Bool = false
     ) -> Bool {
         // Show permission buttons when there's a requested permission on NTP even if address bar is focused,
         // since NTP has the address bar focused by default
@@ -2864,10 +2853,14 @@ extension TabViewModel {
         let shouldShowWhileFocused = (tab.content == .newtab) && hasRequestedPermission
         let isAnyPermissionPresent = !usedPermissions.values.isEmpty
         let pageInitiatedPopupOpened = tab.popupHandling?.pageInitiatedPopupOpened ?? false
+        let mustDisplayAutoplayPolicy = tab.mustDisplayAutoplayPolicy
 
         // Also show when a page-initiated popup was auto-allowed (due to "Always Allow" setting)
         // so user can access permission center to change the decision
-        return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions)))
+        return (shouldShowWhileFocused
+            || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions))
+            || (!isTextFieldEditorFirstResponder && isMouseOverNavigationBar && mustDisplayAutoplayPolicy)
+            || (!isTextFieldEditorFirstResponder && isPermissionCenterPopoverShown))
         && !isShowingErrorPage
     }
 

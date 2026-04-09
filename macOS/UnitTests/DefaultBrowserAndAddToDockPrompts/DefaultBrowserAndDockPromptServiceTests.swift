@@ -37,7 +37,8 @@ final class DefaultBrowserAndDockPromptServiceTests: XCTestCase {
                                                  keyValueStore: storeMock,
                                                  notificationPresenter: notificationPresenterMock,
                                                  uiHosting: { nil },
-                                                 isOnboardingCompletedProvider: { true })
+                                                 isOnboardingCompletedProvider: { true },
+                                                 dockCustomization: DockCustomizerMock())
     }
 
     override func tearDownWithError() throws {

@@ -23,6 +23,7 @@ import Bookmarks
 import BrowserServicesKit
 import Core
 import RemoteMessaging
+import Subscription
 
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
@@ -66,8 +67,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
+         fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
          appSettings: AppSettings,
          faviconsCache: FavoritesFaviconCaching,
+         subscriptionManager: any SubscriptionManager,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
          appWidthObserver: AppWidthObserver = .shared) {
@@ -88,7 +91,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 subscriptionDataReporter: subscriptionDataReporting,
                                                 messageActionHandler: remoteMessagingActionHandler,
                                                 imageLoader: remoteMessagingImageLoader,
-                                                pixelReporter: remoteMessagingPixelReporter)
+                                                pixelReporter: remoteMessagingPixelReporter,
+                                                fireModePromotionEligibility: fireModePromotionEligibility)
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
@@ -98,6 +102,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             favoritesViewModel: self.favoritesModel))
 
         assignFavoriteModelActions()
+        messagesModel.onFireModeRequested = { [weak self] in
+            guard let self else { return }
+            self.delegate?.newTabPageDidRequestFireMode(self)
+        }
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
@@ -142,6 +150,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
             borderView.insertSelf(into: view)
             updateBorderView()
         }
+    }
+
+    func setSectionTitle(_ title: String?) {
+        newTabPageViewModel.sectionTitle = title
     }
 
     func setFavoritesEditable(_ editable: Bool) {

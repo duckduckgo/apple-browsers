@@ -52,6 +52,12 @@ enum WebExtensionPixel: PixelKitEvent {
     case darkReaderEnabled
     case darkReaderDisabled
 
+    // MARK: - Ad Blocking Extension
+
+    case adBlockingExtensionInstalled
+    case adBlockingExtensionUpgraded(fromVersion: String?, toVersion: String?)
+    case adBlockingExtensionInstallError(error: Error)
+
     // MARK: - PixelKitEvent
 
     var name: String {
@@ -88,13 +94,20 @@ enum WebExtensionPixel: PixelKitEvent {
             return "m_mac_web_extension_dark_reader_enabled"
         case .darkReaderDisabled:
             return "m_mac_web_extension_dark_reader_disabled"
+        case .adBlockingExtensionInstalled:
+            return "m_mac_web_extension_ad_blocking_installed"
+        case .adBlockingExtensionUpgraded:
+            return "m_mac_web_extension_ad_blocking_upgraded"
+        case .adBlockingExtensionInstallError:
+            return "m_mac_web_extension_ad_blocking_install_error"
         }
     }
 
     var parameters: [String: String]? {
         switch self {
         case .embeddedUpgraded(let fromVersion, let toVersion),
-             .darkReaderUpgraded(let fromVersion, let toVersion):
+             .darkReaderUpgraded(let fromVersion, let toVersion),
+             .adBlockingExtensionUpgraded(let fromVersion, let toVersion):
             var params: [String: String] = [:]
             if let fromVersion {
                 params["from_version"] = fromVersion
@@ -120,6 +133,7 @@ private extension DuckDuckGoWebExtensionType {
         switch self {
         case .embedded: return .embeddedInstalled
         case .darkReader: return .darkReaderInstalled
+        case .adBlockingExtension: return .adBlockingExtensionInstalled
         }
     }
 
@@ -127,6 +141,7 @@ private extension DuckDuckGoWebExtensionType {
         switch self {
         case .embedded: return .embeddedUpgraded(fromVersion: fromVersion, toVersion: toVersion)
         case .darkReader: return .darkReaderUpgraded(fromVersion: fromVersion, toVersion: toVersion)
+        case .adBlockingExtension: return .adBlockingExtensionUpgraded(fromVersion: fromVersion, toVersion: toVersion)
         }
     }
 
@@ -134,6 +149,7 @@ private extension DuckDuckGoWebExtensionType {
         switch self {
         case .embedded: return .embeddedInstallError(error: error)
         case .darkReader: return .darkReaderInstallError(error: error)
+        case .adBlockingExtension: return .adBlockingExtensionInstallError(error: error)
         }
     }
 }

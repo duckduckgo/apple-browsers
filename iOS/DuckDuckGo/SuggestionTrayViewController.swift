@@ -28,17 +28,20 @@ import PrivacyConfig
 import UIComponents
 import RemoteMessaging
 import AIChat
+import Subscription
 
 class SuggestionTrayViewController: UIViewController {
     
-    @IBOutlet weak var backgroundView: CompositeShadowView!
-    @IBOutlet weak var containerView: UIView!
-    @IBOutlet var variableWidthConstraint: NSLayoutConstraint!
-    @IBOutlet var fullWidthConstraint: NSLayoutConstraint!
-    @IBOutlet var topConstraint: NSLayoutConstraint!
-    @IBOutlet var variableHeightConstraint: NSLayoutConstraint!
-    @IBOutlet var fullHeightSafeAreaConstraint: NSLayoutConstraint!
-    @IBOutlet var fullHeightConstraint: NSLayoutConstraint!
+    weak var backgroundView: CompositeShadowView!
+    weak var containerView: UIView!
+    var variableWidthConstraint: NSLayoutConstraint!
+    var fullWidthConstraint: NSLayoutConstraint!
+    var topConstraint: NSLayoutConstraint!
+    var variableHeightConstraint: NSLayoutConstraint!
+    var fullHeightSafeAreaConstraint: NSLayoutConstraint!
+    var fullHeightConstraint: NSLayoutConstraint!
+    var fullHeightSafeAreaInequalityConstraint: NSLayoutConstraint!
+
 
     weak var autocompleteDelegate: AutocompleteViewControllerDelegate?
     weak var newTabPageControllerDelegate: NewTabPageControllerDelegate?
@@ -57,10 +60,24 @@ class SuggestionTrayViewController: UIViewController {
         isShowingAutocompleteSuggestions || isShowingFavorites
     }
 
+    /// Called when URL-only fallback visibility changes, so the host can update Dax visibility.
+    var onURLFallbackVisibilityChanged: (() -> Void)?
+
+    var suggestionFilter: AutocompleteSuggestionFilter = .all {
+        didSet { autocompleteController?.suggestionFilter = suggestionFilter }
+    }
+    var additionalTopInset: CGFloat = 0 {
+        didSet {
+            applyTopConstraintForLayoutMode()
+        }
+    }
+
     private var autocompleteController: AutocompleteViewController?
     private var newTabPage: NewTabPageViewController?
     private var willRemoveAutocomplete = false
     private var pendingEscapeHatchModel: EscapeHatchModel?
+    private var pendingSuggestionsSectionTitle: String?
+    private var pendingFavoritesSectionTitle: String?
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesModel: FavoritesListInteracting
     private let historyManager: HistoryManaging
@@ -114,13 +131,15 @@ class SuggestionTrayViewController: UIViewController {
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
         let remoteMessagingImageLoader: RemoteMessagingImageLoading
         let remoteMessagingPixelReporter: RemoteMessagingPixelReporting?
+        let fireModePromotionEligibility: FireModePromotionCoordinating?
         let appSettings: AppSettings
+        let subscriptionManager: any SubscriptionManager
         let internalUserCommands: URLBasedDebugCommands
     }
 
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
-    required init?(coder: NSCoder,
+    required init(
                    favoritesViewModel: FavoritesListInteracting,
                    bookmarksDatabase: CoreDataDatabase,
                    historyManager: HistoryManaging,
@@ -143,16 +162,62 @@ class SuggestionTrayViewController: UIViewController {
         self.featureDiscovery = featureDiscovery
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.hideBorder = hideBorder
-        super.init(coder: coder)
+
+       super.init(nibName: nil, bundle: nil)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("Not implemented")
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        view.backgroundColor = .clear
+        backgroundView = install(CompositeShadowView())
+        containerView = install(UIView())
+
+        self.fullHeightSafeAreaConstraint = containerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        self.fullHeightSafeAreaInequalityConstraint = containerView.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor)
+        self.fullHeightConstraint = containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+
+        if isPad {
+            self.variableHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: Constant.suggestionTrayInitialHeight)
+        } else {
+            self.variableHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: max(view.frame.height, view.frame.width))
+        }
+
+        self.variableHeightConstraint.priority = UILayoutPriority(999)
+
+        self.variableWidthConstraint = containerView.widthAnchor.constraint(equalToConstant: 100)
+        self.variableWidthConstraint.priority = UILayoutPriority(999)
+
+        self.fullWidthConstraint = containerView.widthAnchor.constraint(equalTo: view.widthAnchor)
+
+        self.topConstraint = containerView.topAnchor.constraint(equalTo: view.topAnchor)
+
+        // Full height constraints are activated later depending on how the suggestions are shown.
+        NSLayoutConstraint.activate([
+            backgroundView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            backgroundView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+
+            containerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+
+            self.variableWidthConstraint,
+            self.variableHeightConstraint,
+            self.topConstraint,
+            self.fullWidthConstraint,
+        ])
+
         installDismissHandler()
+    }
+
+    private func install<T: UIView>(_ view: T) -> T {
+        view.translatesAutoresizingMaskIntoConstraints = false
+        self.view.addSubview(view)
+        return view
     }
 
     @IBAction func onDismiss() {
@@ -210,7 +275,6 @@ class SuggestionTrayViewController: UIViewController {
     }
     
     func float(withWidth width: CGFloat) {
-
         containerView.layer.cornerRadius = 24
         containerView.layer.masksToBounds = true
 
@@ -218,8 +282,6 @@ class SuggestionTrayViewController: UIViewController {
         backgroundView.backgroundColor = UIColor(designSystemColor: .background)
         backgroundView.clipsToBounds = false
         backgroundView.applyActiveShadow()
-
-        topConstraint.constant = 4
 
         let isFirstPresentation = fullHeightConstraint.isActive
         if isFirstPresentation {
@@ -230,8 +292,10 @@ class SuggestionTrayViewController: UIViewController {
         fullWidthConstraint.isActive = false
         fullHeightConstraint.isActive = false
         fullHeightSafeAreaConstraint.isActive = false
+        fullHeightSafeAreaInequalityConstraint.isActive = true
+        applyTopConstraintForLayoutMode()
     }
-    
+
     func fill(bottomOffset: CGFloat = 0.0) {
         additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: bottomOffset, right: 0)
 
@@ -244,10 +308,11 @@ class SuggestionTrayViewController: UIViewController {
         backgroundView.layer.cornerRadius = 0
         backgroundView.backgroundColor = UIColor.clear
 
-        topConstraint.constant = 0
         fullWidthConstraint.isActive = true
         fullHeightConstraint.isActive = coversFullScreen
         fullHeightSafeAreaConstraint.isActive = !coversFullScreen
+        fullHeightSafeAreaInequalityConstraint.isActive = !coversFullScreen
+        applyTopConstraintForLayoutMode()
     }
     
     private func installDismissHandler() {
@@ -280,6 +345,16 @@ class SuggestionTrayViewController: UIViewController {
         newTabPage?.setEscapeHatch(model)
     }
 
+    func setSuggestionsSectionTitle(_ title: String?) {
+        pendingSuggestionsSectionTitle = title
+        autocompleteController?.setSectionTitle(title)
+    }
+
+    func setFavoritesSectionTitle(_ title: String?) {
+        pendingFavoritesSectionTitle = title
+        newTabPage?.setSectionTitle(title)
+    }
+
     private func displayFavoritesIfNeeded(animated: Bool, onInstall: @escaping () -> Void = {}) {
         if newTabPage == nil {
             installNewTabPage(animated: animated, onInstall: onInstall)
@@ -303,8 +378,10 @@ class SuggestionTrayViewController: UIViewController {
             remoteMessagingActionHandler: dependencies.remoteMessagingActionHandler,
             remoteMessagingImageLoader: dependencies.remoteMessagingImageLoader,
             remoteMessagingPixelReporter: dependencies.remoteMessagingPixelReporter,
+            fireModePromotionEligibility: dependencies.fireModePromotionEligibility,
             appSettings: dependencies.appSettings,
             faviconsCache: dependencies.faviconsCache,
+            subscriptionManager: dependencies.subscriptionManager,
             internalUserCommands: dependencies.internalUserCommands
         )
 
@@ -313,6 +390,9 @@ class SuggestionTrayViewController: UIViewController {
             controller.hideBorderView()
         }
         controller.setEscapeHatch(pendingEscapeHatchModel)
+        if let pendingFavoritesSectionTitle {
+            controller.setSectionTitle(pendingFavoritesSectionTitle)
+        }
 
         install(controller: controller,
                 animated: animated,
@@ -344,10 +424,14 @@ class SuggestionTrayViewController: UIViewController {
                                                     aiChatSettings: aiChatSettings,
                                                     featureDiscovery: featureDiscovery,
                                                     productSurfaceTelemetry: productSurfaceTelemetry)
+        controller.suggestionFilter = suggestionFilter
         install(controller: controller, animated: animated)
         controller.delegate = autocompleteDelegate
         controller.presentationDelegate = self
         autocompleteController = controller
+        if let pendingSuggestionsSectionTitle {
+            controller.setSectionTitle(pendingSuggestionsSectionTitle)
+        }
     }
 
     private func removeAutocomplete(animated: Bool) {
@@ -418,12 +502,15 @@ extension SuggestionTrayViewController: AutocompleteViewControllerPresentationDe
     
     func autocompleteDidChangeContentHeight(height: CGFloat) {
         guard !fullHeightConstraint.isActive else { return }
-
-        if height > Constant.suggestionTrayInitialHeight {
-            variableHeightConstraint.constant = height
-        }
+        variableHeightConstraint.constant = max(height, Constant.suggestionTrayInitialHeight)
     }
-    
+
+    func autocompleteDidReloadResults(_ controller: AutocompleteViewController) {
+        guard controller.suggestionFilter == .urlsOnly else { return }
+        view.isHidden = controller.isEmpty
+        onURLFallbackVisibilityChanged?()
+    }
+
 }
 
 extension SuggestionTrayViewController {
@@ -442,5 +529,12 @@ extension SuggestionTrayViewController {
 private extension SuggestionTrayViewController {
     enum Constant {
         static let suggestionTrayInitialHeight = 380.0
+        static let fillTopInset: CGFloat = 0
+        static let floatingTopInset: CGFloat = 4
+    }
+
+    func applyTopConstraintForLayoutMode() {
+        let baseInset = fullWidthConstraint.isActive ? Constant.fillTopInset : Constant.floatingTopInset
+        topConstraint.constant = baseInset + additionalTopInset
     }
 }

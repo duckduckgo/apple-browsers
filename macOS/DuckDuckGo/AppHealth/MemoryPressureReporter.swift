@@ -24,6 +24,10 @@ extension Notification.Name {
     static let memoryPressureCritical = Notification.Name("com.duckduckgo.macos.memoryPressure.critical")
 }
 
+enum MemoryPressureNotification {
+    static let contextKey = "memoryReportingContext"
+}
+
 enum MemoryPressurePixel: PixelKitEvent {
     /// Fired when the system reports critical level memory pressure, with context about browser state.
     case memoryPressureCritical(context: MemoryReportingContext)
@@ -117,7 +121,6 @@ final class MemoryPressureReporter {
     private func handleMemoryPressureEvent(_ event: DispatchSource.MemoryPressureEvent) {
         if event.contains(.critical) {
             logger?.warning("Memory pressure: critical")
-            notificationCenter.post(name: .memoryPressureCritical, object: self)
 
             let context = MemoryReportingContext.collect(
                 memoryUsageMonitor: memoryUsageMonitor,
@@ -126,6 +129,13 @@ final class MemoryPressureReporter {
                 usedAllocationBytes: allocationStatsProvider.currentTotalUsedBytes(),
                 launchDate: launchDate
             )
+
+            notificationCenter.post(
+                name: .memoryPressureCritical,
+                object: self,
+                userInfo: [MemoryPressureNotification.contextKey: context]
+            )
+
             pixelFiring?.fire(MemoryPressurePixel.memoryPressureCritical(context: context), frequency: .dailyAndStandard)
         }
     }

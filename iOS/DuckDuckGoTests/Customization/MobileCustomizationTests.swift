@@ -170,6 +170,7 @@ final class MobileCustomizationTests {
         #expect(customization.largeIconForButton(.share) != nil)
         #expect(customization.largeIconForButton(.vpn) != nil)
         #expect(customization.largeIconForButton(.zoom) != nil)
+        #expect(customization.largeIconForButton(.duckAIVoice) != nil)
 
     }
 
@@ -195,10 +196,73 @@ final class MobileCustomizationTests {
         #expect(loadedState.currentAddressBarButton == .share)
     }
 
+    // MARK: - Duck.ai Voice toolbar button FF gating
+
+    @available(iOS 16, *)
+    @Test("duckAIVoice not in toolbar options when voice shortcut FF is off", .timeLimit(.minutes(1)))
+    func duckAIVoiceNotInToolbarOptionsWhenFFOff() {
+        let keyValueStore = MockThrowingKeyValueStore()
+        let customization = MobileCustomization(keyValueStore: keyValueStore,
+                                                isPad: false,
+                                                postChangeNotification: { _ in },
+                                                voiceShortcutFeature: MockVoiceShortcutFeature(available: false))
+
+        #expect(!customization.toolbarButtonOptions.contains(.duckAIVoice))
+    }
+
+    @available(iOS 16, *)
+    @Test("duckAIVoice in toolbar options when voice shortcut FF is on", .timeLimit(.minutes(1)))
+    func duckAIVoiceInToolbarOptionsWhenFFOn() {
+        let keyValueStore = MockThrowingKeyValueStore()
+        let customization = MobileCustomization(keyValueStore: keyValueStore,
+                                                isPad: false,
+                                                postChangeNotification: { _ in },
+                                                voiceShortcutFeature: MockVoiceShortcutFeature(available: true))
+
+        #expect(customization.toolbarButtonOptions.contains(.duckAIVoice))
+    }
+
+    @available(iOS 16, *)
+    @Test("Saved duckAIVoice falls back to default when FF is off", .timeLimit(.minutes(1)))
+    func savedDuckAIVoiceFallsBackWhenFFOff() {
+        let keyValueStore = MockThrowingKeyValueStore()
+
+        // Save duckAIVoice while FF is on
+        let customizationOn = MobileCustomization(keyValueStore: keyValueStore,
+                                                  isPad: false,
+                                                  postChangeNotification: { _ in },
+                                                  voiceShortcutFeature: MockVoiceShortcutFeature(available: true))
+        var state = customizationOn.state
+        state.currentToolbarButton = .duckAIVoice
+        customizationOn.persist(state)
+        #expect(customizationOn.state.currentToolbarButton == .duckAIVoice)
+
+        // Load with FF off — should fall back to default
+        let customizationOff = MobileCustomization(keyValueStore: keyValueStore,
+                                                   isPad: false,
+                                                   postChangeNotification: { _ in },
+                                                   voiceShortcutFeature: MockVoiceShortcutFeature(available: false))
+        #expect(customizationOff.state.currentToolbarButton == MobileCustomization.toolbarDefault)
+    }
+
+    @available(iOS 16, *)
+    @Test("duckAIVoice has non-nil icons", .timeLimit(.minutes(1)))
+    func duckAIVoiceHasIcons() {
+        #expect(MobileCustomization.Button.duckAIVoice.largeIcon != nil)
+        #expect(MobileCustomization.Button.duckAIVoice.smallIcon != nil)
+    }
+
     deinit {
         PixelFiringMock.tearDown()
     }
 
+}
+
+// MARK: - Mocks
+
+private struct MockVoiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding {
+    let available: Bool
+    var isAvailable: Bool { available }
 }
 
 extension MobileCustomizationTests: MobileCustomization.Delegate {

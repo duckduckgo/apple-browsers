@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "アプリを再インストールすると、このデバイスのデータが自動的に復元されます。";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "DuckDuckGoアプリを再インストールすると、このデバイスでデータを復元するかどうかを尋ねられます。";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Sync & Backupセッションを再開してブックマークやパスワードなどを復元するか、新しいセットアップを続行します。";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "有効";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "アプリを再インストールするとデータが自動的に復元されます。Sync & Backupのデータは18か月間アクティビティがないと復元できません。";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "アプリの再インストール時に復元";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "回復PDFを保存";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "デバイスを紛失した場合、同期されたデータを復元するためにこのリカバリーコードが必要になります。";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "このデバイスへのアクセスを失った場合は、このコードを使用してデータを復元してください。Sync & Backupのデータは18か月間アクティビティがないと復元できません。[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "テキストコードを手動で入力する";

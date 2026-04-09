@@ -24,6 +24,9 @@ enum SubscriptionFunnelOrigin: String {
     /// User entered the funnel via the onboarding dialog screen.
     case onboarding = "funnel_onboarding_ios"
 
+    /// User entered the funnel via the skipped-onboarding promo modal.
+    case skippedOnboarding = "funnel_skippedonboarding_ios"
+
     /// User entered the funnel via the App Settings screen.
     case appSettings = "funnel_appsettings_ios"
 
@@ -37,6 +40,9 @@ enum SubscriptionFunnelOrigin: String {
     
     /// User entered via win-back offer in App Settings
     case winBackSettings = "funnel_appsettings_ios_winback"
+
+    /// User triggered a plan change by cancelling a pending downgrade
+    case cancelDowngrade = "funnel_canceldowngrade_ios"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the iOS app.

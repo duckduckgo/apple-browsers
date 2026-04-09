@@ -174,9 +174,21 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
     }
 
     func waitForWebViewLoad() async throws {
-        try await withCheckedThrowingContinuation { continuation in
-            self.activeContinuation = continuation
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                self.activeContinuation = continuation
+            }
+        } onCancel: {
+            Task { @MainActor in
+                self.resumeActiveContinuation(with: .failure(DataBrokerProtectionError.cancelled))
+            }
         }
+    }
+
+    private func resumeActiveContinuation(with result: Result<Void, Error>) {
+        let continuation = activeContinuation
+        activeContinuation = nil
+        continuation?.resume(with: result)
     }
 
     func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) {
@@ -398,20 +410,17 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
         updateAddressBar(with: webView.url)
 #endif
 
-        self.activeContinuation?.resume()
-        self.activeContinuation = nil
+        resumeActiveContinuation(with: .success(()))
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         Logger.action.error("WebViewHandler didFail: \(error.localizedDescription, privacy: .public)")
-        self.activeContinuation?.resume(throwing: error)
-        self.activeContinuation = nil
+        resumeActiveContinuation(with: .failure(error))
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         Logger.action.error("WebViewHandler didFailProvisionalNavigation: \(error.localizedDescription, privacy: .public)")
-        self.activeContinuation?.resume(throwing: error)
-        self.activeContinuation = nil
+        resumeActiveContinuation(with: .failure(error))
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
@@ -431,11 +440,15 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
             Logger.action.log("WebViewHandler continuing despite error")
         } else if statusCode >= 400 {
             Logger.action.log("WebViewHandler failed with status code: \(String(describing: statusCode), privacy: .public)")
-            self.activeContinuation?.resume(throwing: DataBrokerProtectionError.httpError(code: statusCode))
-            self.activeContinuation = nil
+            resumeActiveContinuation(with: .failure(DataBrokerProtectionError.httpError(code: statusCode)))
         }
 
         return .allow
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        Logger.action.error("WebViewHandler web content process terminated")
+        resumeActiveContinuation(with: .failure(DataBrokerProtectionError.webContentProcessTerminated))
     }
 
     func webView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge,

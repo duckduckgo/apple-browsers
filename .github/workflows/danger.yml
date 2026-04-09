@@ -13,7 +13,7 @@ jobs:
     if: needs.should-run-checks.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Danger
         uses: danger/danger-js@13.0.4
         env:

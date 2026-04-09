@@ -57,6 +57,10 @@ class TabViewController: UIViewController {
         static let navigationExpectationInterval = 3.0
     }
 
+    /// Set by `loadVoiceMode()` so that `refreshUnifiedToggleInput` can suppress
+    /// auto-expand even before the `?mode=voice` URL is committed to the web view.
+    var isVoiceModeRequested = false
+
     lazy var borderView = StyledTopBottomBorderView()
 
     @IBOutlet private(set) weak var error: UIView!
@@ -112,6 +116,7 @@ class TabViewController: UIViewController {
     }
     
     weak var delegate: TabDelegate?
+    var fireModePromotionCoordinator: FireModePromotionCoordinating?
     var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
         get {
             aiChatContentHandler.delegate
@@ -427,7 +432,8 @@ class TabViewController: UIViewController {
                                    sharedSecureVault: (any AutofillSecureVault)? = nil,
                                    privacyStats: PrivacyStatsProviding,
                                    voiceSearchHelper: VoiceSearchHelperProtocol,
-                                   darkReaderFeatureSettings: DarkReaderFeatureSettings) -> TabViewController {
+                                   darkReaderFeatureSettings: DarkReaderFeatureSettings,
+                                   autoplaySettings: AutoplaySettings) -> TabViewController {
 
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
@@ -461,7 +467,8 @@ class TabViewController: UIViewController {
                               sharedSecureVault: sharedSecureVault,
                               privacyStats: privacyStats,
                               voiceSearchHelper: voiceSearchHelper,
-                              darkReaderFeatureSettings: darkReaderFeatureSettings
+                              darkReaderFeatureSettings: darkReaderFeatureSettings,
+                              autoplaySettings: autoplaySettings
             )
         })
         return controller
@@ -516,6 +523,7 @@ class TabViewController: UIViewController {
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
     let darkReaderFeatureSettings: DarkReaderFeatureSettings
+    let autoplaySettings: AutoplaySettings
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
         let pageContextHandler = AIChatPageContextHandler(
             webViewProvider: { [weak self] in self?.webView },
@@ -571,7 +579,8 @@ class TabViewController: UIViewController {
                    sharedSecureVault: (any AutofillSecureVault)? = nil,
                    privacyStats: PrivacyStatsProviding,
                    voiceSearchHelper: VoiceSearchHelperProtocol,
-                   darkReaderFeatureSettings: DarkReaderFeatureSettings) {
+                   darkReaderFeatureSettings: DarkReaderFeatureSettings,
+                   autoplaySettings: AutoplaySettings) {
 
         self.tabModel = tabModel
         self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
@@ -614,6 +623,7 @@ class TabViewController: UIViewController {
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
+        self.autoplaySettings = autoplaySettings
 
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
@@ -726,25 +736,17 @@ class TabViewController: UIViewController {
     }
 
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
-        let isLargeWidth = AppWidthObserver.shared.isLargeWidth
-
-        if appSettings.currentAddressBarPosition == .bottom && !isLargeWidth && !(isAITab && unifiedToggleInputFeature.isAvailable) {
+        if appSettings.currentAddressBarPosition == .bottom && !(isAITab && unifiedToggleInputFeature.isAvailable) {
             /// When address bar is at bottom on iPhone, offset webview to make room for the bars.
             /// AI tabs skip this inset only when unifiedToggleInput is active — that feature
             /// manages its own native bottom layout via the UnifiedToggleInput container.
+
             let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
             webViewBottomAnchorConstraint?.constant = -targetHeight * barsVisibilityPercent
         } else {
             webViewBottomAnchorConstraint?.constant = 0
         }
-        borderView.bottomAlpha = isLargeWidth ? 0 : barsVisibilityPercent
-        updateContentInsetAdjustment()
-    }
-
-    /// https://app.asana.com/1/137249556945/task/1213037676998807
-    private func updateContentInsetAdjustment() {
-        guard let webView = webView else { return }
-        webView.scrollView.contentInsetAdjustmentBehavior = AppWidthObserver.shared.isLargeWidth ? .never : .automatic
+        borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
     }
 
     private func observeNetPConnectionStatusChanges() {
@@ -863,13 +865,17 @@ class TabViewController: UIViewController {
             webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
         ])
 
-        updateContentInsetAdjustment()
-
         pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
                                                             pullableView: webViewContainer,
                                                             onRefresh: { [weak self] in
             self?.handlePullToRefresh()
         })
+
+        if isAITab {
+            pullToRefreshViewAdapter?.setRefreshControlEnabled(false)
+            webView.scrollView.alwaysBounceVertical = false
+            (webView as? WebView)?.setInputAccessoryViewHidden(true)
+        }
 
         updateContentMode()
 
@@ -1071,6 +1077,9 @@ class TabViewController: UIViewController {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
                 guard let self else { return }
                 self.webViewUrlHasChanged(previousURL: previousURL, newURL: self.webView.url)
+                self.pullToRefreshViewAdapter?.setRefreshControlEnabled(!self.isAITab)
+                self.webView.scrollView.alwaysBounceVertical = !self.isAITab
+                (self.webView as? WebView)?.setInputAccessoryViewHidden(self.isAITab)
                 if #available(iOS 18.4, *) {
                     self.notifyWebExtensionOfPropertyChange([.URL])
                 }
@@ -1111,7 +1120,8 @@ class TabViewController: UIViewController {
     }
 
     func enableFireproofingForDomain(_ domain: String) {
-        FireproofingAlert.showConfirmFireproofWebsite(usingController: self, forDomain: domain) { [weak self] in
+        let displayDomain = fireproofing.displayDomain(for: domain)
+        FireproofingAlert.showConfirmFireproofWebsite(usingController: self, forDomain: displayDomain) { [weak self] in
             Pixel.fire(pixel: .browsingMenuFireproof)
             self?.fireproofingWorker?.handleUserEnablingFireproofing(forDomain: domain)
         }
@@ -1494,6 +1504,7 @@ class TabViewController: UIViewController {
                                                                      userRefreshCount: refreshCountSinceLoad,
                                                                      breakageReportingSubfeature: breakageReportingSubfeature,
                                                                      isForceDarkModeEnabled: darkReaderFeatureSettings.isForceDarkModeEnabled,
+                                                                     autoplayBlockingMode: featureFlagger.isFeatureOn(.autoplayBlocking) ? autoplaySettings.currentAutoplayBlockingMode.rawValue : nil,
                                                                      isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL))
     }
 
@@ -2394,9 +2405,8 @@ extension TabViewController: WKNavigationDelegate {
         case .duck:
             if navigationAction.isTargetingMainFrame() {
                 duckPlayerNavigationHandler.handleDuckNavigation(navigationAction, webView: webView)
-                completion(.cancel)
-                return
             }
+            completion(.cancel)
 
         case .unknown:
             if navigationAction.navigationType == .linkActivated {
@@ -4200,7 +4210,7 @@ extension TabViewController {
                 
                 switch update {
                 case .showPill(let height):
-                    if self.appSettings.currentAddressBarPosition == .bottom && !AppWidthObserver.shared.isLargeWidth {
+                    if self.appSettings.currentAddressBarPosition == .bottom {
                         let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
                         self.webViewBottomAnchorConstraint?.constant = -targetHeight - height
                     } else {
@@ -4209,7 +4219,7 @@ extension TabViewController {
 
                 case .reset:
                     let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
-                    self.webViewBottomAnchorConstraint?.constant = (self.appSettings.currentAddressBarPosition == .bottom && !AppWidthObserver.shared.isLargeWidth) ? -targetHeight : 0
+                    self.webViewBottomAnchorConstraint?.constant = self.appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
                 }
                 
                 self.view.layoutIfNeeded()

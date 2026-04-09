@@ -35,6 +35,7 @@ enum AppAction {
 
     case openURL(URL)
     case handleShortcutItem(UIApplicationShortcutItem)
+    case handleUserActivity(NSUserActivity)
 
 }
 

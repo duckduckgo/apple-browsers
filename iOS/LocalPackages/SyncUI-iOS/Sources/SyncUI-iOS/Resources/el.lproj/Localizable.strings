@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Αυτόματη επαναφορά των δεδομένων σας σε αυτήν τη συσκευή εάν εγκαταστήσετε ξανά την εφαρμογή.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Εάν εγκαταστήσετε ξανά την εφαρμογή DuckDuckGo, θα σας ρωτήσουμε εάν θέλετε να επαναφέρετε τα δεδομένα σας σε αυτήν τη συσκευή.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Συνεχίστε τη συνεδρία του Sync & Backup για να επαναφέρετε τους σελιδοδείκτες, τους κωδικούς πρόσβασης και άλλα στοιχεία ή συνεχίστε με μια νέα ρύθμιση.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Ενεργό";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Κάντε επαναφορά των δεδομένων σας αυτόματα εάν εγκαταστήσετε εκ νέου την εφαρμογή. Δεν είναι δυνατή η ανάκτηση δεδομένων Sync & Backup έπειτα από 18 μήνες αδράνειας.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Επαναφορά στην Εκ νέου εγκατάσταση εφαρμογής";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Αποθήκευση ανάκτησης PDF";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Εάν χάσετε τη συσκευή σας, θα χρειαστείτε αυτόν τον κωδικό ανάκτησης για να κάνετε επαναφορά των συγχρονισμένων δεδομένων σας.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Χρησιμοποιήστε αυτόν τον κωδικό ώστε να επαναφέρετε τα δεδομένα σας σε περίπτωση που χάσετε την πρόσβαση σε αυτήν τη συσκευή. Δεν είναι δυνατή η ανάκτηση δεδομένων Sync & Backup έπειτα από 18 μήνες αδράνειας. [Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Εισαγάγετε τον Κωδικό κειμένου μη αυτόματα";

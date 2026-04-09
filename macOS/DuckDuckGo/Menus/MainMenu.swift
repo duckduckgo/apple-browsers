@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Cocoa
 import Common
@@ -32,6 +33,47 @@ import Subscription
 import SubscriptionUI
 import Utilities
 import PixelKit
+
+// MARK: - LazyBookmarkFolderMenuDelegate
+
+@MainActor
+final class LazyBookmarkFolderMenuDelegate: NSObject, NSMenuDelegate {
+    private let children: [BookmarkViewModel]
+    private var isPopulated = false
+    private var childDelegates: [LazyBookmarkFolderMenuDelegate] = []
+
+    init(children: [BookmarkViewModel]) {
+        self.children = children
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard !isPopulated else { return }
+        isPopulated = true
+        menu.removeAllItems() // removes the placeholder
+        buildItems(in: menu)
+    }
+
+    private func buildItems(in menu: NSMenu) {
+        let bookmarks = children.compactMap { $0.entity as? Bookmark }
+        if bookmarks.count > 1 {
+            menu.addItem(NSMenuItem(bookmarkViewModels: children))
+            menu.addItem(.separator())
+        }
+        for viewModel in children {
+            let item = NSMenuItem(bookmarkViewModel: viewModel)
+            if let folder = viewModel.entity as? BookmarkFolder, !folder.children.isEmpty {
+                let subMenu = NSMenu(title: folder.title)
+                subMenu.addItem(NSMenuItem()) // placeholder
+                let childViewModels = folder.children.map(BookmarkViewModel.init)
+                let delegate = LazyBookmarkFolderMenuDelegate(children: childViewModels)
+                childDelegates.append(delegate) // retain delegate (NSMenu.delegate is weak)
+                subMenu.delegate = delegate
+                item.submenu = subMenu
+            }
+            menu.addItem(item)
+        }
+    }
+}
 
 final class MainMenu: NSMenu {
 
@@ -53,6 +95,7 @@ final class MainMenu: NSMenu {
     let closeAllWindowsMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseAllWindows, action: #selector(AppDelegate.closeAllWindows), keyEquivalent: [.option, .command, "W"])
     let closeTabMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(MainViewController.closeTab), keyEquivalent: "w")
     let importBrowserDataMenuItem = NSMenuItem(title: UserText.mainMenuFileImportBookmarksandPasswords, action: #selector(AppDelegate.openImportBrowserDataWindow))
+    let newAIChatFileMenuItem = NSMenuItem(title: UserText.newAIChatMenuItem, action: #selector(AppDelegate.newAIChat), keyEquivalent: "")
 
     @MainActor
     lazy var sharingMenu = SharingMenu(title: UserText.shareMenuItem, location: .mainMenu, delegate: self)
@@ -103,7 +146,11 @@ final class MainMenu: NSMenu {
     let toggleDownloadsShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowDownloadsShortcut, action: #selector(MainViewController.toggleDownloadsShortcut), keyEquivalent: "J")
     let toggleAutofillShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowAutofillShortcut, action: #selector(MainViewController.toggleAutofillShortcut), keyEquivalent: "A")
     let toggleBookmarksShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowBookmarksShortcut, action: #selector(MainViewController.toggleBookmarksShortcut), keyEquivalent: "K")
-    var aiChatMenu = NSMenuItem(title: UserText.newAIChatMenuItem, action: #selector(AppDelegate.newAIChat), keyEquivalent: [.option, .command, "n"])
+    private(set) lazy var aiChatMenu: NSMenuItem = MainActor.assumeMainThread {
+        let container = NSMenuItem(title: "Duck.ai")
+        container.submenu = makeAIChatMenu()
+        return container
+    }
     let toggleNetworkProtectionShortcutMenuItem = NSMenuItem(title: UserText.showNetworkProtectionShortcut, action: #selector(MainViewController.toggleNetworkProtectionShortcut), keyEquivalent: "")
 
     // MARK: Window
@@ -135,9 +182,12 @@ final class MainMenu: NSMenu {
     let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
 
     private let featureFlagger: FeatureFlagger
-    private let dockCustomizer: DockCustomization?
+    private let isLazyMenuRebuild: Bool
+    private let dockCustomizer: DockCustomization
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
+    private let aiChatSuggestionsReader: AIChatSuggestionsReading
+    private let aiChatHistoryCleaner: AIChatHistoryCleaning
     private let internalUserDecider: InternalUserDecider
     private let appearancePreferences: AppearancePreferences
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -158,9 +208,11 @@ final class MainMenu: NSMenu {
          historyCoordinator: HistoryCoordinating & HistoryGroupingDataSource,
          recentlyClosedCoordinator: RecentlyClosedCoordinating,
          faviconManager: FaviconManagement,
-         dockCustomizer: DockCustomization? = nil,
+         dockCustomizer: DockCustomization,
          defaultBrowserPreferences: DefaultBrowserPreferences,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+         aiChatSuggestionsReader: AIChatSuggestionsReading,
+         aiChatHistoryCleaner: AIChatHistoryCleaning,
          internalUserDecider: InternalUserDecider,
          appearancePreferences: AppearancePreferences,
          privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -174,6 +226,7 @@ final class MainMenu: NSMenu {
          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager()) {
 
         self.featureFlagger = featureFlagger
+        self.isLazyMenuRebuild = featureFlagger.isFeatureOn(.lazyMenuRebuild)
         self.internalUserDecider = internalUserDecider
         self.appearancePreferences = appearancePreferences
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -181,6 +234,8 @@ final class MainMenu: NSMenu {
         self.dockCustomizer = dockCustomizer
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiChatMenuConfig = aiChatMenuConfig
+        self.aiChatSuggestionsReader = aiChatSuggestionsReader
+        self.aiChatHistoryCleaner = aiChatHistoryCleaner
         self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, recentlyClosedCoordinator: recentlyClosedCoordinator, featureFlagger: featureFlagger)
         self.configurationURLProvider = configurationURLProvider
         self.contentScopePreferences = contentScopePreferences
@@ -196,6 +251,7 @@ final class MainMenu: NSMenu {
             buildEditMenu()
             buildViewMenu()
             buildHistoryMenu()
+            aiChatMenu
             buildBookmarksMenu()
             buildWindowMenu()
             buildDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator)
@@ -204,6 +260,11 @@ final class MainMenu: NSMenu {
 
         subscribeToBookmarkList(bookmarkManager: bookmarkManager)
         subscribeToFavicons(faviconManager: faviconManager)
+
+        if isLazyMenuRebuild {
+            bookmarksMenu.delegate = self
+            favoritesMenu.delegate = self
+        }
 
         setupAIChatMenu()
         subscribeToAIChatPreferences(aiChatMenuConfig: aiChatMenuConfig)
@@ -252,7 +313,8 @@ final class MainMenu: NSMenu {
                 newBurnerWindowMenuItem
             }
 
-            aiChatMenu
+            newAIChatFileMenuItem
+            NSMenuItem.separator()
 
             openFileMenuItem
             openLocationMenuItem
@@ -432,6 +494,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: UserText.zoom, action: #selector(NSWindow.performZoom))
                 NSMenuItem.separator()
 
+                NSMenuItem(title: UserText.newTabToTheRight, action: #selector(MainViewController.newTabNextToActive))
                 NSMenuItem(title: UserText.duplicateTab, action: #selector(MainViewController.duplicateTab))
                 NSMenuItem(title: UserText.pinTab, action: #selector(MainViewController.pinOrUnpinTab))
                 NSMenuItem(title: UserText.moveTabToNewWindow, action: #selector(MainViewController.moveTabToNewWindow))
@@ -510,7 +573,7 @@ final class MainMenu: NSMenu {
     override func update() {
         super.update()
 
-        addToDockMenuItem.isHidden = dockCustomizer?.isAddedToDock ?? true // always hidden in sandboxed build
+        addToDockMenuItem.isHidden = !dockCustomizer.supportsAddingToDock || dockCustomizer.isAddedToDock
         setAsDefaultMenuItem.isHidden = defaultBrowserPreferences.isDefault
 
         // To be safe, hide the NetP shortcut menu item by default.
@@ -570,6 +633,12 @@ final class MainMenu: NSMenu {
 
     // MARK: - Bookmarks
 
+    private(set) var pendingFavoriteViewModels: [BookmarkViewModel] = []
+    private(set) var pendingTopLevelViewModels: [BookmarkViewModel] = []
+    private(set) var bookmarksMenuNeedsRebuild = false
+    private(set) var bookmarkFaviconsNeedUpdate = false
+    private var folderDelegates: [LazyBookmarkFolderMenuDelegate] = []
+
     var faviconsCancellable: AnyCancellable?
     @MainActor
     private func subscribeToFavicons(faviconManager: FaviconManagement) {
@@ -577,9 +646,12 @@ final class MainMenu: NSMenu {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] loaded in
                 guard let self, loaded else { return }
-
-                self.updateFavicons(in: bookmarksMenu)
-                self.updateFavicons(in: favoritesMenu)
+                if self.isLazyMenuRebuild {
+                    self.bookmarkFaviconsNeedUpdate = true
+                } else {
+                    self.updateFavicons(in: bookmarksMenu)
+                    self.updateFavicons(in: favoritesMenu)
+                }
             }
     }
 
@@ -605,8 +677,19 @@ final class MainMenu: NSMenu {
                 return (favorites, topLevelEntities)
             }
             .sink { [weak self] favorites, topLevel in
-                Task { @MainActor in
-                    self?.updateBookmarksMenu(favoriteViewModels: favorites, topLevelBookmarkViewModels: topLevel)
+                guard let self else { return }
+                if self.isLazyMenuRebuild {
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        self.pendingFavoriteViewModels = favorites
+                        self.pendingTopLevelViewModels = topLevel
+                        self.bookmarksMenuNeedsRebuild = true
+                    }
+                } else {
+                    Task { @MainActor [weak self] in
+                        self?.updateBookmarksMenu(favoriteViewModels: favorites,
+                                                  topLevelBookmarkViewModels: topLevel)
+                    }
                 }
             }
     }
@@ -623,8 +706,12 @@ final class MainMenu: NSMenu {
     // Nested recursing functions cause body length
     @MainActor
     func updateBookmarksMenu(favoriteViewModels: [BookmarkViewModel], topLevelBookmarkViewModels: [BookmarkViewModel]) {
+        let isLazy = isLazyMenuRebuild
+        if isLazy {
+            folderDelegates.removeAll()
+        }
 
-        func bookmarkMenuItems(from bookmarkViewModels: [BookmarkViewModel], topLevel: Bool = true) -> [NSMenuItem] {
+        func bookmarkMenuItems(from bookmarkViewModels: [BookmarkViewModel], topLevel: Bool = true, isLazy: Bool, folderDelegates: inout [LazyBookmarkFolderMenuDelegate]) -> [NSMenuItem] {
             var menuItems = [NSMenuItem]()
 
             if !topLevel {
@@ -639,13 +726,24 @@ final class MainMenu: NSMenu {
                 let menuItem = NSMenuItem(bookmarkViewModel: viewModel)
 
                 if let folder = viewModel.entity as? BookmarkFolder {
-                    let subMenu = NSMenu(title: folder.title)
                     let childViewModels = folder.children.map(BookmarkViewModel.init)
-                    let childMenuItems = bookmarkMenuItems(from: childViewModels, topLevel: false)
-                    subMenu.items = childMenuItems
+                    if isLazy {
+                        if !childViewModels.isEmpty {
+                            let subMenu = NSMenu(title: folder.title)
+                            subMenu.addItem(NSMenuItem()) // placeholder
+                            let delegate = LazyBookmarkFolderMenuDelegate(children: childViewModels)
+                            subMenu.delegate = delegate
+                            folderDelegates.append(delegate)
+                            menuItem.submenu = subMenu
+                        }
+                    } else {
+                        let subMenu = NSMenu(title: folder.title)
+                        let childMenuItems = bookmarkMenuItems(from: childViewModels, topLevel: false, isLazy: false, folderDelegates: &folderDelegates)
+                        subMenu.items = childMenuItems
 
-                    if !subMenu.items.isEmpty {
-                        menuItem.submenu = subMenu
+                        if !subMenu.items.isEmpty {
+                            menuItem.submenu = subMenu
+                        }
                     }
                 }
 
@@ -676,7 +774,7 @@ final class MainMenu: NSMenu {
         }
 
         let cleanedBookmarkItems = bookmarksMenu.items.dropLast(bookmarksMenu.items.count - (favoritesSeparatorIndex + 1))
-        let bookmarkItems = bookmarkMenuItems(from: topLevelBookmarkViewModels)
+        let bookmarkItems = bookmarkMenuItems(from: topLevelBookmarkViewModels, isLazy: isLazy, folderDelegates: &folderDelegates)
         bookmarksMenu.items = Array(cleanedBookmarkItems) + bookmarkItems
 
         let cleanedFavoriteItems = favoritesMenu.items.dropLast(favoritesMenu.items.count - (favoriteThisPageSeparatorIndex + 1))
@@ -818,6 +916,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Reset Add To Dock more options menu notification", action: #selector(AppDelegate.resetAddToDockFeatureNotification))
                 NSMenuItem(title: "Reset Launch Date To Today", action: #selector(AppDelegate.resetLaunchDateToToday))
                 NSMenuItem(title: "Set Launch Date A Week In the Past", action: #selector(AppDelegate.setLaunchDayAWeekInThePast))
+                NSMenuItem(title: "Set Launch Date 10 Days In the Past", action: #selector(AppDelegate.setLaunchDay10DaysInThePast))
                 NSMenuItem(title: "Set Launch Date A Month In the Past", action: #selector(AppDelegate.setLaunchDayAMonthInThePast))
                 NSMenuItem(title: "Reset Quit Survey Was Shown", action: #selector(AppDelegate.resetQuitSurveyWasShown))
 
@@ -879,6 +978,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Simulate crash") {
                 NSMenuItem(title: "fatalError", action: #selector(AppDelegate.triggerFatalError))
                 NSMenuItem(title: "NSException", action: #selector(MainViewController.crashOnException))
+                NSMenuItem(title: "_NSCoreDataException", action: #selector(AppDelegate.crashOnCoreDataException))
                 NSMenuItem(title: "C++ exception", action: #selector(AppDelegate.crashOnCxxException))
                 if featureFlagger.isFeatureOn(.tabCrashDebugging) {
                     NSMenuItem(title: "Crash All Tabs", action: #selector(MainViewController.crashAllTabs))
@@ -991,7 +1091,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
             NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
             if StandardApplicationBuildType().isSparkleBuild {
-                NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard))
+                NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard, internalUserDecider: internalUserDecider))
             }
             if AppVersion.runType.requiresEnvironment {
                 NSMenuItem(title: "Promo Queue")
@@ -1104,8 +1204,20 @@ final class MainMenu: NSMenu {
         return menu
     }
 
+    @MainActor private func makeAIChatMenu() -> AIChatMenu {
+        let actions = AIChatMenu.Actions.makeDefault(
+            remoteSettings: AIChatRemoteSettings(),
+            tabOpener: NSApp.delegateTyped.aiChatTabOpener,
+            historyCleaner: aiChatHistoryCleaner,
+            windowControllersManager: Application.appDelegate.windowControllersManager
+        )
+        return AIChatMenu(suggestionsReader: aiChatSuggestionsReader, actions: actions, maxChatItems: 8)
+    }
+
     private func setupAIChatMenu() {
-        aiChatMenu.isHidden = !aiChatMenuConfig.shouldDisplayApplicationMenuShortcut
+        let showTopLevelMenu = aiChatMenuConfig.shouldDisplayApplicationMenuShortcut
+        aiChatMenu.isHidden = !showTopLevelMenu
+        newAIChatFileMenuItem.isHidden = !aiChatMenuConfig.shouldDisplayAnyAIChatFeature || showTopLevelMenu
     }
 
     private func updateInternalUserItem() {
@@ -1327,6 +1439,26 @@ extension NSMenu {
             } else if !item.isHidden {
                 break
             }
+        }
+    }
+}
+
+// MARK: - NSMenuDelegate
+extension MainMenu: NSMenuDelegate {
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard menu === bookmarksMenu || menu === favoritesMenu else { return }
+        guard isLazyMenuRebuild else { return }
+
+        if bookmarksMenuNeedsRebuild {
+            updateBookmarksMenu(
+                favoriteViewModels: pendingFavoriteViewModels,
+                topLevelBookmarkViewModels: pendingTopLevelViewModels
+            )
+            bookmarksMenuNeedsRebuild = false
+            bookmarkFaviconsNeedUpdate = false
+        } else if bookmarkFaviconsNeedUpdate {
+            updateFavicons(in: menu)
+            bookmarkFaviconsNeedUpdate = false
         }
     }
 }

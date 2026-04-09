@@ -163,6 +163,11 @@ enum MemoryReportingBuckets {
         }
     }
 
+    /// Reclaimed memory buckets in megabytes. Reuses the same buckets as WebContent memory.
+    static func bucketReclaimedMemoryMB(_ value: Double) -> Int {
+        bucketWebContentMemoryMB(value)
+    }
+
     /// Returns the architecture of the current build.
     static var currentArchitecture: String {
         #if arch(arm64)

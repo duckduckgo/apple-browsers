@@ -23,18 +23,21 @@ import Common
 import CryptoKit
 import os.log
 import Persistence
+import PrivacyConfig
 import PixelKit
 
 final class UpdatesDebugMenu: NSMenu {
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
+    private let internalUserDecider: InternalUserDecider
 
-    init(keyValueStore: ThrowingKeyValueStoring) {
+    init(keyValueStore: ThrowingKeyValueStoring, internalUserDecider: InternalUserDecider) {
         self.settings = keyValueStore.throwingKeyedStoring()
+        self.internalUserDecider = internalUserDecider
         super.init(title: "")
 
         buildItems {
             let buildType = StandardApplicationBuildType()
-            if buildType.isSparkleBuild && (buildType.isDebugBuild || buildType.isReviewBuild) {
+            if buildType.isSparkleBuild && (buildType.isDebugBuild || buildType.isReviewBuild || internalUserDecider.isInternalUser) {
                 NSMenuItem(title: "Set custom feed URL…", action: #selector(setCustomFeedURL))
                     .targetting(self)
                 NSMenuItem(title: "Reset feed URL to default", action: #selector(resetFeedURLToDefault))
@@ -99,8 +102,7 @@ final class UpdatesDebugMenu: NSMenu {
     }
 
     @objc func showBrowserUpdatedPopover() {
-        let presenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
-        presenter.showUpdateNotification(for: .updated)
+        Application.appDelegate.updateController?.notificationPresenter.showUpdateNotification(for: .updated)
     }
 
     // MARK: - Custom Feed URL

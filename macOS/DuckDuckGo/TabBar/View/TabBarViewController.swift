@@ -1653,6 +1653,16 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         appendToCollectionView(selected: selected)
     }
 
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didReplaceTabAt index: TabIndex) {
+        let collectionView = index.isPinnedTab ? pinnedTabsCollectionView : self.collectionView
+        guard let collectionView else {
+            Logger.general.error("collection view is nil")
+            return
+        }
+        let indexPathSet = Set(arrayLiteral: IndexPath(item: index.item))
+        collectionView.reloadItems(at: indexPathSet)
+    }
+
     func tabCollectionViewModelDidInsert(_ tabCollectionViewModel: TabCollectionViewModel, at index: TabIndex, selected: Bool) {
         let collectionView = index.isPinnedTab ? pinnedTabsCollectionView : self.collectionView
         guard let collectionView else {
@@ -1879,7 +1889,7 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
         if theme.tabStyleProvider.shouldShowSShapedTab {
             let isRightScrollButtonVisible = !isPinnedTabs && !rightScrollButton.isHidden
             let isLeftScrollButonVisible = !isPinnedTabs && !leftScrollButton.isHidden
-            return NSEdgeInsets(top: 0, left: isLeftScrollButonVisible ? 6 : 12, bottom: 0, right: isRightScrollButtonVisible ? 6 : -12)
+            return NSEdgeInsets(top: 0, left: isLeftScrollButonVisible ? 10 : 12, bottom: 0, right: isRightScrollButtonVisible ? 10 : -12)
         } else if let flowLayout = collectionViewLayout as? NSCollectionViewFlowLayout {
             return flowLayout.sectionInset
         } else {
@@ -2222,6 +2232,15 @@ extension TabBarViewController: TabBarViewItemDelegate {
         return tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.content.canBeDuplicated ?? false
     }
 
+    func tabBarViewItemNewToTheRightAction(_ tabBarViewItem: TabBarViewItem) {
+        guard let tabIndex = tabIndex(forTabBarViewItem: tabBarViewItem) else {
+            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
+            return
+        }
+
+        insertNewTab(nextTo: tabIndex)
+    }
+
     func tabBarViewItemDuplicateAction(_ tabBarViewItem: TabBarViewItem) {
         let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
@@ -2543,6 +2562,25 @@ extension TabBarViewController: TabBarViewItemDelegate {
         removeFireproofing(from: tab)
     }
 
+    func tabBarViewItemSuspendAction(_ tabBarViewItem: TabBarViewItem) {
+        guard featureFlagger.isFeatureOn(.tabSuspension), featureFlagger.isFeatureOn(.tabSuspensionDebugging) else { return }
+
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
+
+        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
+            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
+            return
+        }
+
+        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+        if tabBarViewItem.tabViewModel?.isSuspended == true {
+            tabCollectionViewModel.resumeTab(at: tabIndex)
+        } else {
+            tabCollectionViewModel.suspendTab(at: tabIndex)
+        }
+    }
+
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, replaceContentWithDroppedStringValue stringValue: String) {
         let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
@@ -2569,6 +2607,29 @@ extension TabBarViewController: TabBarViewItemDelegate {
                      hasItemsToTheRight: indexPath.item + 1 < (tabCollection?.tabs.count ?? 0))
     }
 
+}
+
+private extension TabBarViewController {
+
+    func insertNewTab(nextTo tabIndex: TabIndex) {
+        /// `New Tab Next to Pinned`:  We'll create a new Tab at the location `0`
+        let targetIndex: TabIndex = tabIndex.isPinnedTab
+            ? .unpinned(.zero)
+            : tabIndex.makeNext()
+
+        let tab = Tab(content: .newtab, burnerMode: tabCollectionViewModel.burnerMode)
+        tabCollectionViewModel.insert(tab, at: targetIndex, selected: true)
+    }
+
+    func tabIndex(forTabBarViewItem item: TabBarViewItem) -> TabIndex? {
+        let isPinned = item.tabViewModel?.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : collectionView
+        guard let indexPath = collectionView?.indexPath(for: item) else {
+            return nil
+        }
+
+        return isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+    }
 }
 
 extension TabBarViewController {

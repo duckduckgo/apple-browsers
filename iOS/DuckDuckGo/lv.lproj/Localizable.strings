@@ -94,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Duck.ai Balss";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Rediģēt grāmatzīmi";
 
@@ -106,8 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Cilnes un dati ir notīrīti";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Notīrīt cilnes, datus un Duck.ai tērzēšanas sarunas";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Atvērt fonā";
@@ -201,6 +202,12 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Mākslīgā intelekta funkcijas";
+
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Izvēlēties fotoattēlu";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Uzņemt fotoattēlu";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Esošās grāmatzīmes netiks dublētas.";
@@ -1081,6 +1088,12 @@
 /* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
 
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Dzēst tērzēšanas sarunu";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Dzēst šo tērzēšanas sarunu?";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Izlaist";
 
@@ -1162,6 +1175,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Pārsteidz mani!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Sarakstā atrodi **DuckDuckGo** un pēc tam pieskaries **Duck.ai Voice**, lai to pievienotu.";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Atrodi sarakstā **DuckDuckGo** un pieskaries **VPN vadība**, lai to pievienotu";
 
@@ -1211,7 +1227,6 @@
 "Custom URL: %@" = "Pielāgots URL: %@";
 
 /* No comment provided by engineer. */
-"Dark Reader Excluded Domains (%@)" = "Dark Reader izslēgtie domēni (%@)";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importēt grāmatzīmes failu...";
@@ -1447,11 +1462,20 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Nesen ieviestās YouTube izmaiņas ir ietekmējušas Duck Player funkcionalitāti. Mēs strādājam, lai novērstu šīs problēmas, un novērtējam tavu sapratni.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Pieskaries logrīkam, lai to rediģētu, pēc tam iestati **Duck.ai** un **Duck.ai Voice** kā īsceļus.";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Atrodi un atlasi **DuckDuckGo**, pēc tam pārvelc uz **Pielāgotas saīsnes** un atlasi **Pievienot logrīku**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Pievienot lapas saturu";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Nosūtīts kopā ar tavu ziņojumu uz Duck.ai";
+
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Pievieno Duck.ai balss saīsni savam vadības centram";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo MI funkcijas ir privātas un nav obligātas. Tavi dati netiek izmantoti mākslīgā intelekta apmācībai.";
@@ -1471,8 +1495,17 @@
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Uzdot papildjautājumus";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Pievieno Duck.ai Vadības centram";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Pievieno Duck.ai logrīku sākuma ekrānam";
+
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Pārlūkprogrammas īsinājumtaustiņi";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Sazinies ar Duck.ai, izmantojot Siri";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adreses josla";
@@ -1494,6 +1527,24 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo operētājsistēmai iOS";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Saīsnes";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Siri saīsnes ļauj sākt Duck.ai balss tērzēšanu ar ātru balss komandu, piemēram, \"Siri, sāc DuckDuckGo balss tērzēšanu\". Tas ir ātrs brīvroku veids, kā tērzēt ar Duck.ai.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, palaid DuckDuckGo Voice Chat.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, runā ar DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, tērzē balsī ar DuckDuckGo.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Sazinies ar Duck.ai, izmantojot Siri!";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Pievieno savu DuckDuckGo abonementu šai ierīcei";
@@ -1564,14 +1615,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Turpināt atskaņošanu ar Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Vienmēr atvērt YouTube video ar Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Video, kas atvērti Duck Player, automātiski sāks atskaņošanu. Ja vēlies manuāli sākt Duck Player atvērto videoklipu atskaņošanu, izslēdz šo iestatījumu.";
 
 /* Label for the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automātiski atskaņot video";
 
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Atver videoklipus privātā kinoteātra režīmā, kas neļauj skatītajam ietekmēt tavu YouTube plūsmu.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Iespējot Duck Player";
+
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Eksperimentāls";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player ļauj skatīties YouTube bez mērķētām reklāmām un neļauj skatīšanās aktivitātēm ietekmēt tavus ieteikumus.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo nodrošina visus privātuma aizsardzības līdzekļus, kas nepieciešami, lai aizsargātu sevi, pārlūkojot tīmekli.";
@@ -1641,12 +1704,6 @@
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
 "duckplayer.welcome.message.text" = "Tu skaties Duck Player!\nŠeit nav mērķtiecīgu reklāmu.";
-
-/* No comment provided by engineer. */
-"Effective threshold: %@ s (override)" = "Efektīvais slieksnis: %@ s (pārrakstīšana)";
-
-/* No comment provided by engineer. */
-"Effective threshold: config default (no override)" = "Efektīvais slieksnis: konfigurācijas noklusējuma iestatījums (bez pārrakstīšanas)";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-pasta aizsardzība";
@@ -2077,6 +2134,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Gaisa plūsma";
 
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Liesmas klasika";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Liesmas";
 
@@ -2136,6 +2196,9 @@
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Pajautāt privāti";
+
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Uzdod papildjautājumu...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Instalē paplašinājumu";
@@ -2594,7 +2657,6 @@
 "No active subscriptions" = "Nav aktīvu abonementu";
 
 /* No comment provided by engineer. */
-"No excluded domains" = "Nav izslēgtu domēnu";
 
 /* No comment provided by engineer. */
 "No existing subscription found" = "Nav atrasts neviens esošs abonements";
@@ -2607,6 +2669,9 @@
 
 /* No comment provided by engineer. */
 "No Logs" = "Nav žurnālu";
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Nav atbilstību vaicājumam \"%@\"";
 
 /* No comment provided by engineer. */
 "No messages" = "Nav ziņojumu";
@@ -2634,6 +2699,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* No comment provided by engineer. */
+"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "App Store versijās šis ekrāns tiks parādīts tikai tad, ja esi pierakstījies kā iekšējais lietotājs, izmantojot **use-login.duckduckgo.com**.";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Sapratu";
@@ -2725,6 +2793,9 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Un, starp citu...";
 
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Vai zināji?";
+
 /* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
 "onboarding.rebranding.first-search-done.message" = "Privāti. Ātri. Mazāk reklāmu.";
 
@@ -2760,6 +2831,9 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Sapratu! Es izlaidīšu pārējos padomus.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Izmēģini to bez maksas!";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Izmēģini bez maksas!";
@@ -3041,9 +3115,6 @@
 "prompt.x-safari-https.try-open.title" = "Šī vietne vēlas atvērties Safari pārlūkprogrammā.";
 
 /* No comment provided by engineer. */
-"REBRANDED" = "PĀRDĒVĒTS";
-
-/* No comment provided by engineer. */
 "Recent Processing Logs" = "Jaunākie apstrādes žurnāli";
 
 /* No comment provided by engineer. */
@@ -3157,6 +3228,9 @@
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Pievienot logrīku sākuma ekrānam";
 
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Pievieno Duck.ai saīsnes savam sākuma ekrānam";
+
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Pievieno DuckDuckGo VPN logrīku savam sākuma ekrānam";
 
@@ -3268,11 +3342,7 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Notīrīt";
 
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Notīrīt cilnes un datus";
 
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Notīrīt cilnes, datus un Duck.ai tērzēšanas sarunas";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Aizvērt visas atvērtās cilnes";
@@ -3340,14 +3410,10 @@
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button izdzēsīs arī Duck.ai vēsturi, ieskaitot piespraustās tērzēšanas.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Notīrīt Duck.ai tērzēšanas sarunas";
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Izdzēst pārlūkošanas datus";
 
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Automātiski notīrīt datus";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Pabeidz iestatīšanu";
@@ -3367,11 +3433,7 @@
 /* Settings title for the customize section */
 "settings.customize" = "Pielāgošana";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Notīra visas cilnes, Duck.ai tērzēšanas sarunas un datus par visām vietnēm, kurās neesi iestatījis Fireproof.";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Notīra visas cilnes un datus par visām vietnēm, kuras neesi iestatījis Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datu notīrīšana";
@@ -3382,6 +3444,10 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Noklusējuma pārlūks";
 
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Noklusējuma pārslēgšanas pozīcija jaunā cilnē.";
+/* Header text for the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.header" = "Pārslēgšanas pozīcija";
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Dzēst Duck.ai tērzēšanas sarunas";
 
@@ -3427,8 +3493,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Uguns pogas animācija";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Ugunsdrošas vietnes";
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Ugunsdrošas vietnes";
@@ -4111,6 +4175,12 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Diemžēl sinhronizācija un dublēšana šajā lietotnes versijā vairs nav pieejama. Lai turpinātu, lūdzu, atjaunini DuckDuckGo uz jaunāko versiju.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Aizvērt cilni";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Nelasīta cilne";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Aizvērt sākuma cilni";
 
@@ -4534,6 +4604,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Iegūsti DuckDuckGo operētājsistēmai Windows!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo noņem videoreklāmas pakalpojumā YouTube, lai tu varētu skatīties videoklipus bez pārtraukumiem.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "YouTube reklāmu bloķēšana";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Bloķēt reklāmas pakalpojumā YouTube";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Grāmatzīmes";
 
@@ -4549,3 +4628,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
+
+/* Autoplay settings translations */
+"autoplay.mode.allowAll" = "Atļaut audio un video";
+"autoplay.mode.blockAll" = "Bloķēt audio un video";
+"autoplay.mode.blockAudio" = "Bloķēt audio";
+"settings.autoplay" = "Automātiski atskaņot";
+"settings.autoplay.duck.player.link" = "Duck Player iestatījumi";
+"settings.autoplay.footer" = "Automātiskās atskaņošanas iestatījumi attieksies tikai uz jaunatvērtām cilnēm. Izmaiņas nevar tikt piemērotas esošajām cilnēm, ja vien lietojumprogramma netiek restartēta. Lai pārvaldītu automātisko atskaņošanu Duck Player atskaņotājā, dodieties uz ";
+"settings.media.section" = "Multivide";

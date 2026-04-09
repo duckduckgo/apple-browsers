@@ -21,7 +21,6 @@ import Foundation
 import SwiftUI
 import Core
 import AIChat
-import PrivacyConfig
 
 @MainActor
 protocol DataClearingSettingsViewModelDelegate: AnyObject {
@@ -39,7 +38,6 @@ final class DataClearingSettingsViewModel: ObservableObject {
     
     // MARK: - Dependencies
 
-    private let dataClearingCapability: DataClearingCapable
     private let appSettings: AppSettings
     private let aiChatSettings: AIChatSettingsProvider
     private let animator: FireButtonAnimator
@@ -57,10 +55,6 @@ final class DataClearingSettingsViewModel: ObservableObject {
     
     // MARK: - Elements Visibility
     
-    var newUIEnabled: Bool {
-        dataClearingCapability.isEnhancedDataClearingEnabled
-    }
-    
     var showAIChatsToggle: Bool {
         return aiChatSettings.isAIChatEnabled
     }
@@ -68,36 +62,23 @@ final class DataClearingSettingsViewModel: ObservableObject {
     // MARK: - Elements Content
 
     var clearDataButtonTitle: String {
-        if newUIEnabled {
-            return UserText.settingsDeleteTabsAndData
-        }
-        let shouldIncludeAIChat = appSettings.autoClearAIChatHistory
-        return shouldIncludeAIChat ? UserText.actionForgetAllWithAIChat : UserText.actionForgetAll
+        UserText.settingsDeleteTabsAndData
     }
     
     var aiChatsToggleTitle: String {
-        newUIEnabled ? UserText.settingsDeleteDuckAIChats : UserText.settingsClearAIChatHistory
+        UserText.settingsDeleteDuckAIChats
     }
     
     var fireproofedSitesTitle: String {
-        newUIEnabled ? UserText.settingsFireproofedSites : UserText.settingsFireproofSites
+        UserText.settingsFireproofedSites
     }
     
     var fireproofedSitesSubtitle: String? {
-        guard newUIEnabled else {
-            return nil
-        }
-        return UserText.settingsFireproofedSitesSubtitle(withCount: fireproofedSitesCount)
+        UserText.settingsFireproofedSitesSubtitle(withCount: fireproofedSitesCount)
     }
     
     var autoClearTitle: String {
-        newUIEnabled ? UserText.settingsAutomaticallyDeleteData : UserText.settingsClearData
-    }
-    
-    var footnoteText: String {
-        let shouldIncludeAIChat = appSettings.autoClearAIChatHistory
-
-        return shouldIncludeAIChat ? UserText.settingsDataClearingForgetAllWithAiChatFootnote : UserText.settingsDataClearingForgetAllFootnote
+        UserText.settingsAutomaticallyDeleteData
     }
     
     var autoClearAccessibilityLabel: String {
@@ -112,7 +93,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
         Binding<FireButtonAnimationType>(
             get: { self.fireButtonAnimation },
             set: {
-                Pixel.fire(pixel: .settingsFireButtonSelectorPressed)
+                Pixel.fire(pixel: .settingsFireButtonSelectorPressed, withAdditionalParameters: [PixelParameters.fireAnimation: $0.rawValue])
                 self.appSettings.currentFireButtonAnimation = $0
                 self.fireButtonAnimation = $0
                 NotificationCenter.default.post(name: AppUserDefaults.Notifications.currentFireButtonAnimationChange, object: self)
@@ -130,12 +111,10 @@ final class DataClearingSettingsViewModel: ObservableObject {
     // MARK: - Initialization
     
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-         dataClearingCapability: DataClearingCapable = DataClearingCapability.create(using: AppDependencyProvider.shared.featureFlagger),
          aiChatSettings: AIChatSettingsProvider,
          fireproofing: Fireproofing,
          delegate: DataClearingSettingsViewModelDelegate) {
         self.appSettings = appSettings
-        self.dataClearingCapability = dataClearingCapability
         self.aiChatSettings = aiChatSettings
         self.animator = FireButtonAnimator(appSettings: appSettings)
         self.fireButtonAnimation = appSettings.currentFireButtonAnimation

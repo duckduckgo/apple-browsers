@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Herstel automatisch je gegevens op dit apparaat als je de app opnieuw installeert.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Als je de DuckDuckGo-app opnieuw installeert, vragen we of je je gegevens op dit apparaat wilt herstellen.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Hervat je Sync & Backup-sessie om je bladwijzers, wachtwoorden en meer te herstellen, of ga verder met een nieuwe configuratie.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Aan";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Je gegevens worden automatisch hersteld als je de app opnieuw installeert. Sync & Backup-gegevens kunnen niet worden hersteld na 18 maanden inactiviteit.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Herstellen bij app-herinstallatie";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "PDF voor herstel opslaan";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Als je je apparaat verliest, heb je deze code nodig om je gesynchroniseerde gegevens te herstellen.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Gebruik deze code om je gegevens te herstellen als je de toegang tot dit apparaat verliest. Sync & Backup-gegevens kunnen niet worden hersteld na 18 maanden inactiviteit. [Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Voer de tekstcode handmatig in";

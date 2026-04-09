@@ -121,6 +121,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
 }
 
 final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
+    var shouldDisplayMoreOptionsMenuShortcut = false
     var shouldDisplayNewTabPageShortcut = false
     var shouldDisplayApplicationMenuShortcut = false
     var shouldDisplayAddressBarShortcut = false
@@ -187,6 +188,9 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                     featureFlagger: MockFeatureFlagger()
                 ),
                 aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
+                dockPreferences: DockPreferencesModel(featureFlagger: featureFlagger,
+                                                      dockCustomizer: DockCustomizerMock(),
+                                                      pixelFiring: nil),
                 accessibilityPreferences: AccessibilityPreferences(),
                 duckPlayer: DuckPlayer(
                     preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
@@ -650,3 +654,21 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
         dismissedDialog = dialogType
     }
 }
+ private class DockCustomizerMock: DockCustomization {
+
+     var supportsAddingToDock: Bool { false }
+     var isAddedToDock: Bool { false }
+     var shouldShowNotification: Bool { false }
+     var shouldShowNotificationPublisher: AnyPublisher<Bool, Never> {
+         Just(false).eraseToAnyPublisher()
+     }
+
+     @discardableResult
+     func addToDock() -> Bool { false }
+
+     func didCloseMoreOptionsMenu() { }
+
+     func synchronizeNotificationVisibilityWithFirstLaunchDate() { }
+
+     func resetData() { }
+ }

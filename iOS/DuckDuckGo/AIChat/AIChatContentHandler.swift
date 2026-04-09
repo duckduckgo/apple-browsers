@@ -127,6 +127,12 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let statisticsLoader: StatisticsLoader
 
     private var userScript: AIChatUserScriptProviding?
+    private var isFrontendReady = false {
+        didSet {
+            if isFrontendReady { flushPendingActions() }
+        }
+    }
+    private var pendingSidebarToggle = false
 
     /// Closure to get page context for contextual mode. Nil in full mode.
     /// Parameter is the request reason (e.g., `.userAction` for manual attach).
@@ -197,14 +203,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     }
     
     func buildVoiceModeURL() -> URL {
-        guard var components = URLComponents(url: aiChatSettings.aiChatURL, resolvingAgainstBaseURL: false) else {
-            return aiChatSettings.aiChatURL
-        }
-        var queryItems = components.queryItems ?? []
-        queryItems.removeAll { $0.name == AIChatURLParameters.modeName }
-        queryItems.append(URLQueryItem(name: AIChatURLParameters.modeName, value: AIChatURLParameters.voiceModeValue))
-        components.queryItems = queryItems
-        return components.url ?? aiChatSettings.aiChatURL
+        AIChatURLParameters.voiceModeURL(from: aiChatSettings.aiChatURL)
     }
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
@@ -231,12 +230,24 @@ final class AIChatContentHandler: AIChatContentHandling {
     }
 
     /// Submits a toggle sidebar action to open/close the sidebar.
+    /// If the frontend isn't ready yet, queues the action until it initializes.
     func submitToggleSidebarAction() {
-        userScript?.submitToggleSidebarAction()
+        if isFrontendReady {
+            userScript?.submitToggleSidebarAction()
+        } else {
+            pendingSidebarToggle = true
+        }
     }
 
     func submitPageContext(_ context: AIChatPageContextData?) {
         userScript?.submitPageContext(context)
+    }
+
+    private func flushPendingActions() {
+        if pendingSidebarToggle {
+            pendingSidebarToggle = false
+            userScript?.submitToggleSidebarAction()
+        }
     }
 
     /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
@@ -253,6 +264,10 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
     func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScriptMessages) {
         if message == .getAIChatPageContext {
             delegate?.aiChatContentHandlerDidReceivePageContextRequest(self)
+        }
+
+        if message == .setAIChatHistoryEnabled {
+            isFrontendReady = true
         }
 
         switch message {

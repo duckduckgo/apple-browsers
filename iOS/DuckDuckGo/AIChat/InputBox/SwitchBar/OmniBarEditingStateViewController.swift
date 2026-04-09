@@ -41,7 +41,8 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onChatHistorySelected(url: URL)
     func onDismissRequested()
     func onSwitchToTab(_ tab: Tab)
-    func onToggleModeSwitched()
+    func onFireModeRequested()
+    func onToggleModeSwitched(to mode: TextEntryMode)
     func onVoiceModeRequested()
 }
 
@@ -99,6 +100,15 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var navigationActionBarManager: NavigationActionBarManager?
     private var suggestionTrayManager: SuggestionTrayManager?
     private var aiChatHistoryManager: AIChatHistoryManager?
+    private var isShowingURLFallback = false
+
+    private var chatHasResults: Bool {
+        aiChatHistoryManager?.hasSuggestions ?? false
+    }
+
+    private var shouldShowURLFallback: Bool {
+        !chatHasResults && !switchBarHandler.currentText.isBlank
+    }
     private let daxLogoManager: DaxLogoManager
     private var notificationCancellable: AnyCancellable?
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
@@ -330,21 +340,16 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installChatHistoryList() {
         guard let swipeContainerManager else { return }
-
-        let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
-        let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-        let suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-
-        let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
-                                           aiChatSettings: aiChatSettings,
-                                           viewModel: AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount))
+        let manager = makeAIChatHistoryManager()
+        
         manager.delegate = self
         swipeContainerManager.installChatHistory(using: manager)
         manager.subscribeToTextChanges(switchBarHandler.currentTextPublisher)
         manager.hasSuggestionsPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] hasSuggestions in
                 guard let self else { return }
+                self.updateURLFallbackSuggestions(chatHasSuggestions: hasSuggestions)
                 self.scheduleAnimation {
                     self.updateDaxVisibility()
                     self.view.layoutIfNeeded()
@@ -358,6 +363,24 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                 self?.delegate?.onSwitchToTab(escapeHatchModel.targetTab)
             })
         }
+    }
+    
+    /// Creates ad configured for the current tab.
+    /// Fire tabs use a no-op reader that always returns empty results,
+    /// preventing chat history from being fetched or displayed.
+    private func makeAIChatHistoryManager() -> AIChatHistoryManager {
+        let suggestionsReader: AIChatSuggestionsReading
+        if switchBarHandler.isFireTab {
+            suggestionsReader = NilSuggestionsReader()
+        } else {
+            let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
+            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
+            suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
+        }
+
+        return AIChatHistoryManager(suggestionsReader: suggestionsReader,
+                                    aiChatSettings: aiChatSettings,
+                                    viewModel: AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount))
     }
 
     private func installDaxLogoView() {
@@ -405,7 +428,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             .sink { [weak self] newState in
                 guard let self, newState != self.lastKnownToggleState else { return }
                 self.lastKnownToggleState = newState
-                self.delegate?.onToggleModeSwitched()
+                self.delegate?.onToggleModeSwitched(to: newState)
+                self.prepareURLFallbackForModeTransition(to: newState)
             }
             .store(in: &cancellables)
 
@@ -429,13 +453,15 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
                 self.delegate?.onQueryUpdated(currentText)
 
+                self.updateURLFallbackForCurrentText()
+                self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
+
                 scheduleAnimation {
                     self.updateDaxVisibility()
                     self.updateSwipeContainerSafeArea()
                     self.view.layoutIfNeeded()
                 }
 
-                self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
             }
             .store(in: &cancellables)
 
@@ -574,6 +600,59 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         present(alertController, animated: true)
     }
 
+    // MARK: - URL Fallback Suggestions
+
+    /// Applies the URL filter immediately when switching to duck.ai so the suggestion
+    /// list transitions naturally from full results to URL-only during the fade animation.
+    private func prepareURLFallbackForModeTransition(to mode: TextEntryMode) {
+        guard mode == .aiChat, shouldShowURLFallback else { return }
+        daxLogoManager.updateVisibility(isHomeDaxVisible: false, isAIDaxVisible: false)
+        suggestionTrayManager?.showURLOnlySuggestions(for: switchBarHandler.currentText, animated: false)
+    }
+
+    /// Called after the fade animation completes to finalize URL fallback state.
+    private func finalizeURLFallbackAfterModeTransition() {
+        updateURLFallbackSuggestions(chatHasSuggestions: chatHasResults)
+        updateDaxVisibility()
+    }
+
+    /// Updates URL fallback on every keystroke in duck.ai mode — the chat history
+    /// publisher only fires on state changes, not per-character.
+    private func updateURLFallbackForCurrentText() {
+        guard switchBarHandler.currentToggleState == .aiChat else { return }
+        updateURLFallbackSuggestions(chatHasSuggestions: chatHasResults)
+    }
+
+    /// When in duck.ai mode and chat history has no matches, show URL-only
+    /// autocomplete as a fallback so users can still navigate to websites.
+    private func updateURLFallbackSuggestions(chatHasSuggestions: Bool) {
+        guard switchBarHandler.currentToggleState == .aiChat else {
+            if isShowingURLFallback {
+                // Just reset the filter — don't hide the tray. The normal search flow
+                // (handleQueryUpdate) will immediately show full results, avoiding a flash.
+                suggestionTrayManager?.resetSuggestionFilter()
+                isShowingURLFallback = false
+            }
+            return
+        }
+        let query = switchBarHandler.currentText
+        let shouldShow = !chatHasSuggestions && !query.isBlank
+        if shouldShow {
+            // Apply filter first, then reveal the container — prevents flash of old unfiltered content.
+            suggestionTrayManager?.showURLOnlySuggestions(for: query, animated: false)
+            if !isShowingURLFallback {
+                swipeContainerManager?.setSearchPageVisible(true, animated: false)
+            }
+            isShowingURLFallback = true
+        } else if isShowingURLFallback {
+            suggestionTrayManager?.hideURLOnlySuggestions(animated: true)
+            swipeContainerManager?.setSearchPageVisible(false, animated: true)
+            // Restore the chat container — keepSearchVisible prevented it from fading in.
+            swipeContainerManager?.restoreChatPageVisibility()
+            isShowingURLFallback = false
+        }
+    }
+
     private func updateDaxVisibility() {
 
         let shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
@@ -585,11 +664,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let hasEscapeHatchWithoutFavoritesOrMessages = escapeHatchModel != nil && !(suggestionTrayManager?.hasFavorites ?? false) && !hasRemoteMessages
         let isHomeDaxVisible = !shouldDisplaySuggestionTray && (!shouldDisplayFavoritesOverlay || hasEscapeHatchWithoutFavoritesOrMessages) && !isHorizontallyCompactLayoutEnabled
 
+        let isURLFallbackShowingContent = isShowingURLFallback && (suggestionTrayManager?.isShowingSuggestionTray ?? false)
+
         let isAIDaxVisible: Bool
         if switchBarHandler.isUsingFadeOutAnimation {
-            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory
+            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isURLFallbackShowingContent && !shouldDisplaySuggestionTray
         } else {
-            isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory
+            isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isURLFallbackShowingContent
         }
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
@@ -634,6 +715,7 @@ extension OmniBarEditingStateViewController: FadeOutContainerViewControllerDeleg
 
     func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode) {
         switchBarHandler.setToggleState(mode)
+        finalizeURLFallbackAfterModeTransition()
     }
 
     func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didUpdateTransitionProgress progress: CGFloat) {
@@ -645,6 +727,13 @@ extension OmniBarEditingStateViewController: FadeOutContainerViewControllerDeleg
 
     func fadeOutContainerViewControllerIsShowingSuggestions(_ controller: FadeOutContainerViewController) -> Bool {
         return suggestionTrayManager?.shouldDisplaySuggestionTray ?? false
+    }
+
+    func fadeOutContainerViewControllerShouldKeepSearchVisible(_ controller: FadeOutContainerViewController) -> Bool {
+        // When switching to duck.ai with text and no chat results, URL fallback will
+        // show in the search container — skip the crossfade so the filtered list
+        // stays visible without a blank gap or snap.
+        switchBarHandler.currentToggleState == .aiChat && shouldShowURLFallback
     }
 }
 
@@ -670,6 +759,14 @@ extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
 
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab) {
         delegate?.onSwitchToTab(tab)
+    }
+
+    func suggestionTrayManagerDidRequestFireMode(_ manager: SuggestionTrayManager) {
+        delegate?.onFireModeRequested()
+    }
+
+    func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager) {
+        updateDaxVisibility()
     }
 
 }

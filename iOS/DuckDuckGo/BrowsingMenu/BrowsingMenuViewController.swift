@@ -24,13 +24,13 @@ enum BrowsingMenuEntry {
 
     var tag: BrowsingMenuModel.Entry.Tag? {
         switch self {
-        case .regular(_, _, _, _, _, _, let tag, _):
+        case .regular(_, _, _, _, _, _, _, let tag, _):
             return tag
         default: return nil
         }
     }
 
-    case regular(name: String, accessibilityLabel: String? = nil, image: UIImage, showNotificationDot: Bool = false, customDotColor: UIColor? = nil, detailText: String? = nil, tag: BrowsingMenuModel.Entry.Tag? = nil, action: () -> Void)
+    case regular(name: String, accessibilityLabel: String? = nil, image: UIImage, showNotificationDot: Bool = false, customDotColor: UIColor? = nil, detailText: String? = nil, detailBadge: String? = nil, tag: BrowsingMenuModel.Entry.Tag? = nil, action: () -> Void)
 
     case separator
 }
@@ -74,6 +74,8 @@ final class BrowsingMenuViewController: UIViewController {
     private var wasActionSelected: Bool = false
 
     var onDismiss: ((_ wasActionSelected: Bool) -> Void)?
+
+    var isUsingSingleBar: Bool = false
 
     class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings = AppDependencyProvider.shared.appSettings, productSurfaceTelemetry: ProductSurfaceTelemetry) -> BrowsingMenuViewController {
         UIStoryboard(name: "BrowsingMenuViewController", bundle: nil).instantiateInitialViewController { coder in
@@ -137,7 +139,7 @@ final class BrowsingMenuViewController: UIViewController {
     }
 
     private func configureArrow(with color: UIColor) {
-        guard AppWidthObserver.shared.isLargeWidth else {
+        guard isUsingSingleBar else {
             arrowView.isHidden = true
             return
         }
@@ -245,27 +247,26 @@ final class BrowsingMenuViewController: UIViewController {
               let windowBounds = guideView.window?.bounds
         else { return }
 
-        let isIPad = AppWidthObserver.shared.isLargeWidth
         let isIPhoneLandscape = traitCollection.containsTraits(in: UITraitCollection(verticalSizeClass: .compact))
 
-        topConstraint.isActive = !isIPad
-        topConstraintIPad.isActive = isIPad
-        bottomConstraint.isActive = !isIPad
-        bottomConstraintIPad.isActive = isIPad
+        topConstraint.isActive = !isUsingSingleBar
+        topConstraintIPad.isActive = isUsingSingleBar
+        bottomConstraint.isActive = !isUsingSingleBar
+        bottomConstraintIPad.isActive = isUsingSingleBar
 
         // Make it go above WebView in Landscape
         topConstraint.constant = (isIPhoneLandscape ? 10 : 0)
         // Move menu up in Landscape, as bottom toolbar shrinks
 
         bottomConstraint.constant = windowBounds.maxY - frame.maxY - (isIPhoneLandscape ? 2 : 10)
-        rightConstraint.constant = isIPad ? 67 : 10
+        rightConstraint.constant = isUsingSingleBar ? 67 : 10
 
         recalculatePreferredWidthConstraint()
     }
 
     private func recalculatePreferredWidthConstraint() {
         let longestEntry = menuEntries.reduce("") { (result, entry) -> String in
-            guard case BrowsingMenuEntry.regular(let name, _, _, _, _, _, _, _) = entry else { return result }
+            guard case BrowsingMenuEntry.regular(let name, _, _, _, _, _, _, _, _) = entry else { return result }
             if result.length() < name.length() {
                 return name
             }
@@ -293,7 +294,7 @@ extension BrowsingMenuViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         switch menuEntries[indexPath.row] {
-        case .regular(_, _, _, _, _, _, _, let action):
+        case .regular(_, _, _, _, _, _, _, _, let action):
             wasActionSelected = true
             dismiss(animated: true) {
                 action()
@@ -316,7 +317,7 @@ extension BrowsingMenuViewController: UITableViewDataSource {
         let theme = ThemeManager.shared.currentTheme
         
         switch menuEntries[indexPath.row] {
-        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, _, _, _):
+        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, _, _, _, _):
             guard let cell = tableView.dequeueReusableCell(withIdentifier: "BrowsingMenuEntryViewCell",
                                                            for: indexPath) as? BrowsingMenuEntryViewCell else {
                 fatalError("Cell should be dequeued")

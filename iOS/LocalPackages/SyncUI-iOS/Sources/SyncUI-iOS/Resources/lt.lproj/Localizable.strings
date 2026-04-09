@@ -1,9 +1,6 @@
 /* Auto-Restore - Description */
 "auto.restore.description" = "Automatiškai atkuriami duomenys šiame įrenginyje iš naujo įdiegus programą.";
 
-/* Auto-Restore - Description */
-"auto.restore.learn.more.full" = "Jei iš naujo įdiegsi programą „DuckDuckGo“, paklausime, ar nori atkurti duomenis šiame įrenginyje.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Tęsk „Sync & Backup“ seansą, kad atkurtum savo žymes, slaptažodžius ir kt., arba tęsk ir atlik naują sąranką.";
 
@@ -30,6 +27,9 @@
 
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Įjungti";
+
+/* Auto-restore section - Footer */
+"auto.restore.toggle.footer" = "Automatiškai atkurk savo duomenis, jei iš naujo įdiegsi programą. Po 18 mėnesių neaktyvumo „Sync & Backup“ duomenų atkurti negalima.";
 
 /* Auto-Restore - Toggle Label */
 "auto.restore.toggle.label" = "Atkurti iš naujo įdiegus programą";
@@ -238,8 +238,8 @@
 /* Save RecoveryPDF - Button */
 "save.recovery.pdf.button" = "Išsaugoti atkūrimo PDF";
 
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Jei prarasite įrenginį, šio atkūrimo kodo reikės sinchronizuotiems duomenims atkurti.";
+/* Save RecoveryPDF - Footer + Learn More, with markdown link */
+"save.recovery.pdf.footer" = "Naudok šį kodą duomenims atkurti, jei prarasi prieigą prie šio įrenginio. Po 18 mėnesių neaktyvumo negalėsi atkurti „Sync & Backup“ duomenų. [Sužinok daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
 
 /* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
 "scan.code.to.recover.synced.data.enter.code.link" = "Įveskite teksto kodą rankiniu būdu";

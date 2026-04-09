@@ -90,7 +90,8 @@ final class AppContentBlocking {
         autoconsentManagement: AutoconsentManagement,
         contentScopePreferences: ContentScopePreferences,
         syncErrorHandler: SyncErrorHandling,
-        webExtensionAvailability: WebExtensionAvailabilityProviding?
+        webExtensionAvailability: WebExtensionAvailabilityProviding?,
+        dockCustomization: DockCustomization
     ) {
         let buildType = StandardApplicationBuildType()
         // When TEST_PRIVACY_CONFIG_PATH is set, skip cached config to use embedded (test) config
@@ -131,7 +132,8 @@ final class AppContentBlocking {
             autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences,
             syncErrorHandler: syncErrorHandler,
-            webExtensionAvailability: webExtensionAvailability
+            webExtensionAvailability: webExtensionAvailability,
+            dockCustomization: dockCustomization
         )
     }
 
@@ -159,7 +161,8 @@ final class AppContentBlocking {
         autoconsentManagement: AutoconsentManagement,
         contentScopePreferences: ContentScopePreferences,
         syncErrorHandler: SyncErrorHandling,
-        webExtensionAvailability: WebExtensionAvailabilityProviding?
+        webExtensionAvailability: WebExtensionAvailabilityProviding?,
+        dockCustomization: DockCustomization
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.tld = tld
@@ -207,7 +210,8 @@ final class AppContentBlocking {
                                                   autoconsentManagement: autoconsentManagement,
                                                   contentScopePreferences: contentScopePreferences,
                                                   syncErrorHandler: syncErrorHandler,
-                                                  webExtensionAvailability: webExtensionAvailability)
+                                                  webExtensionAvailability: webExtensionAvailability,
+                                                  dockCustomization: dockCustomization)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,

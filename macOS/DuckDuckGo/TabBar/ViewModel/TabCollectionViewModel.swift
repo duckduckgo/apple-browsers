@@ -851,9 +851,12 @@ final class TabCollectionViewModel: NSObject {
         return true
     }
 
+    /// This method is only called from the "Resume Tab" debug option in tab context menu
     func resumeTab(at tabIndex: TabIndex) {
         guard changesEnabled else { return }
-        _ = materialize(at: tabIndex)
+        if let tab = materialize(at: tabIndex) {
+            tab.reload()
+        }
     }
 
     func title(forTabWithURL url: URL) -> String? {
@@ -1052,7 +1055,7 @@ extension TabCollectionViewModel {
         case .unloaded(let unloaded):
             Logger.tabLazyLoading.debug("Materializing unloaded tab \(unloaded.uuid) at \(String(reflecting: index))")
             let tab = unloaded.materialize()
-            tabCollection(for: index)?.replaceTab(at: index.item, with: .loaded(tab))
+            _ = replaceTab(at: index, with: tab)
             return tab
         }
     }

@@ -366,18 +366,24 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         // Active pill styling for image gen
         imageGenActiveButton.activeBackgroundColor = isImageGenMode
-            ? NSColor(designSystemColor: .accentAltPrimary)
+            ? NSColor(designSystemColor: .controlsFillPrimary)
+            : nil
+        imageGenActiveButton.activeHoverBackgroundColor = isImageGenMode
+            ? NSColor(designSystemColor: .controlsFillSecondary)
             : nil
         imageGenActiveButton.activePressedBackgroundColor = isImageGenMode
-            ? NSColor(designSystemColor: .accentAltSecondary)
+            ? NSColor(designSystemColor: .controlsFillTertiary)
             : nil
 
         // Active pill styling for web search
         webSearchActiveButton.activeBackgroundColor = isWebSearchMode
-            ? NSColor(designSystemColor: .accentAltPrimary)
+            ? NSColor(designSystemColor: .controlsFillPrimary)
+            : nil
+        webSearchActiveButton.activeHoverBackgroundColor = isWebSearchMode
+            ? NSColor(designSystemColor: .controlsFillSecondary)
             : nil
         webSearchActiveButton.activePressedBackgroundColor = isWebSearchMode
-            ? NSColor(designSystemColor: .accentAltSecondary)
+            ? NSColor(designSystemColor: .controlsFillTertiary)
             : nil
 
         // Hide suggestions in image gen mode or when attachments are present

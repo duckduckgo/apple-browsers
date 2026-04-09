@@ -128,6 +128,9 @@ final class AIChatOmnibarToolButton: NSView {
         }
     }
 
+    /// Background color on hover while `activeBackgroundColor` is set.
+    var activeHoverBackgroundColor: NSColor?
+
     /// Background color when pressed while `activeBackgroundColor` is set.
     var activePressedBackgroundColor: NSColor?
 
@@ -293,7 +296,11 @@ final class AIChatOmnibarToolButton: NSView {
                 backgroundLayer.opacity = 1
                 effectiveTint = toggledTintColor
             } else if let activeBackgroundColor {
-                backgroundLayer.backgroundColor = activeBackgroundColor.cgColor
+                if isHovered, let activeHoverBackgroundColor {
+                    backgroundLayer.backgroundColor = activeHoverBackgroundColor.cgColor
+                } else {
+                    backgroundLayer.backgroundColor = activeBackgroundColor.cgColor
+                }
                 backgroundLayer.opacity = 1
                 effectiveTint = tintColor
             } else if isHovered {

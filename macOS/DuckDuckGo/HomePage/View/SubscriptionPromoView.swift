@@ -51,7 +51,7 @@ struct SubscriptionPromoView: View {
         .frame(width: promoCardWidth)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.32))
+                .fill(Color(designSystemColor: .toneTintPrimary))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)

@@ -451,7 +451,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 let knownUserContentControllers = processPool.knownUserContentControllers
                 processPool.onDeinit {
                     for controller in knownUserContentControllers {
-                        assert(controller.userContentController == nil, "\(controller.userContentController!) has not been deallocated")
+                        controller.userContentController?.ensureObjectDeallocated(after: 1, do: .assert)
                     }
                 }
             }

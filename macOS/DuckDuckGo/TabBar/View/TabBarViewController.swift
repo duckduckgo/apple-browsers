@@ -1775,10 +1775,6 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         }
     }
 
-    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMaterializeTabAt index: Int) {
-        collectionView.reloadItems(at: [IndexPath(item: index)])
-    }
-
     func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel) {
         collectionView.reloadData()
         reloadSelection()

@@ -40,8 +40,6 @@ protocol TabCollectionViewModelDelegate: AnyObject {
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: TabIndex, to newIndex: TabIndex)
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?)
     func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel)
-    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMaterializeTabAt index: Int)
-
 }
 
 @MainActor
@@ -940,16 +938,6 @@ final class TabCollectionViewModel: NSObject {
                     self.tabViewModels[tab.uuid] = TabViewModel(tab: tab)
                 case .unloaded(let unloaded):
                     self.tabViewModels[unloaded.uuid] = UnloadedTabViewModel(unloadedTab: unloaded)
-                }
-            }
-
-            // Detect materialization: existing UUID but inner object changed from unloaded to loaded
-            for (index, tab) in newTabs.enumerated() where !addedUUIDs.contains(tab.uuid) {
-                if case .loaded(let tab) = tab, self.tabViewModels[tab.uuid] is UnloadedTabViewModel {
-                    self.tabViewModels[tab.uuid] = TabViewModel(tab: tab)
-                    self.updateSelectedTabViewModel()
-                    self.delegate?.tabCollectionViewModel(self, didMaterializeTabAt: index)
-                    break
                 }
             }
 

@@ -1325,7 +1325,6 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         if case .loaded = vm.tabs[1] {} else { XCTFail("Unloaded tab should be materialized after selection") }
         XCTAssertNotNil(vm.tabViewModel(at: 1), "TabViewModel should exist for materialized tab")
-        XCTAssertTrue(delegate.didMaterializeCalled)
     }
 
     @MainActor

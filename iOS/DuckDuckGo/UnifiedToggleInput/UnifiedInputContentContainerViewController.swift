@@ -657,8 +657,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 extension UnifiedInputContentContainerViewController: SwipeContainerViewControllerDelegate {
 
     func swipeContainerViewController(_ controller: SwipeContainerViewController, didSwipeToMode mode: TextEntryMode) {
-        syncURLFallbackState(resetFilter: true)
         switchBarHandler.setToggleState(mode)
+        syncURLFallbackState(resetFilter: true)
         delegate?.unifiedInputEditingStateDidChangeMode(mode)
         scheduleAnimation {
             self.updateDaxVisibility()
@@ -675,8 +675,8 @@ extension UnifiedInputContentContainerViewController: SwipeContainerViewControll
 extension UnifiedInputContentContainerViewController: FadeOutContainerViewControllerDelegate {
 
     func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode) {
-        syncURLFallbackState(resetFilter: true)
         switchBarHandler.setToggleState(mode)
+        syncURLFallbackState(resetFilter: true)
         delegate?.unifiedInputEditingStateDidChangeMode(mode)
     }
 

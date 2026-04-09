@@ -648,10 +648,6 @@ private extension MainViewController {
         }
     }
 
-    func commitUnifiedToggleStateToCurrentTab() {
-        guard let mode = unifiedToggleInputCoordinator?.inputMode else { return }
-        commitToggleMode(mode)
-    }
 }
 
 // MARK: - UnifiedToggleInputOmnibarActivating

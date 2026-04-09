@@ -26755,6 +26755,18 @@
         }
       }
     },
+    "duckai.menu.view-all-chats" : {
+      "comment" : "Duck.ai menu item shown when there are more chats than displayed, opens Duck.ai to view all chats",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "View All Chats..."
+          }
+        }
+      }
+    },
     "duckai.open-in-full-page.option" : {
       "comment" : "Option to open Duck.ai chats in full page",
       "extractionState" : "extracted_with_value",

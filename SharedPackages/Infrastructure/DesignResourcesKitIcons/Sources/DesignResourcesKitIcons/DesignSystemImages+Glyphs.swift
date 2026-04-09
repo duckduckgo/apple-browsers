@@ -20,6 +20,7 @@ public extension DesignSystemImages {
     enum Glyphs {
         public enum Size12 {
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat12) }
+            public static var aiChatHistory: DesignSystemImage { .init(resource: .aiChatHistory12) }
             public static var aiChatSolid: DesignSystemImage { .init(resource: .aiChatSolid12) }
             public static var app: DesignSystemImage { .init(resource: .app12) }
             public static var arrowCircleLeft: DesignSystemImage { .init(resource: .arrowCircleLeft12) }

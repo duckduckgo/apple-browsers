@@ -31,6 +31,12 @@
             "dbpBackgroundAgent"
         ]
     },
+    "channel": {
+        "key": "channel",
+        "type": "string",
+        "description": "The release channel of the build. Omitted for production and debug builds.",
+        "enum": ["canary", "preview"]
+    },
     "errorDomain": {
         "key": "d",
         "type": "string",

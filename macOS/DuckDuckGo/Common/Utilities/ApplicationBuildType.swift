@@ -27,6 +27,17 @@ protocol ApplicationBuildType {
     var isAlphaBuild: Bool { get }
 }
 
+extension ApplicationBuildType {
+    /// Returns the channel name for non-production builds, or nil for production/debug.
+    /// Alpha builds are internal-only (canary); review builds are public beta / TestFlight (preview).
+    /// Debug builds return nil because they use `test=1` instead.
+    var channelName: String? {
+        if isAlphaBuild { return "canary" }
+        if isReviewBuild { return "preview" }
+        return nil
+    }
+}
+
 struct StandardApplicationBuildType: ApplicationBuildType {
 
     let isAppStoreBuild: Bool = AppVersion.isAppStoreBuild

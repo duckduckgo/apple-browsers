@@ -2995,7 +2995,7 @@ class MainViewController: UIViewController {
                 query,
                 payload: payload,
                 autoSend: autoSend,
-                onboardingFlowType: onboardingFlowType,
+                flowType: flowType,
                 tools: tools,
                 on: self
             )

@@ -5517,14 +5517,14 @@ extension MainViewController {
             return
         }
 
-        configureFireButton(toolbarFireButton, state: state)
+        customizeFireButton(toolbarFireButton, state: state)
 
         if let omniBarFireButton = viewCoordinator.omniBar.barView.fireButton as? BrowserChromeButton {
-            configureFireButton(omniBarFireButton, state: state)
+            customizeFireButton(omniBarFireButton, state: state)
         }
     }
 
-    private func configureFireButton(_ button: BrowserChromeButton, state: MobileCustomization.State) {
+    private func customizeFireButton(_ button: BrowserChromeButton, state: MobileCustomization.State) {
         if !isNewTabPageVisible && state.isEnabled {
             button.setImage(state.currentToolbarButton.largeIcon)
             button.menu = UIMenu(children: [

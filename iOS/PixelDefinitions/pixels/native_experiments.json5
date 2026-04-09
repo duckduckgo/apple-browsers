@@ -46,6 +46,19 @@
                     "enum": ["0", "1", "2-3", "4-5", "6-7", "8+"]
                 }
             }
+        },
+        "aichat-onboarding": {
+            "cohorts": ["control", "treatmentA", "treatmentB"],
+            "metrics": {
+                "aichat_type": {
+                    "description": "Fires when the user taps on of the ai chat suggestions or types in the AI chat prompt",
+                    "enum": ["custom", "option1", "option2", "option3"]
+                },
+                "search_type": {
+                    "description": "Fires when the user taps on of the search suggestions or types in the search prompt",
+                    "enum": ["custom", "option1", "option2", "option3"]
+                }
+            }
         }
     }
 }

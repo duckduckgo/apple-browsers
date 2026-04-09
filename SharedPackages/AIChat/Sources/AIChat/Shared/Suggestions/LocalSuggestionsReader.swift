@@ -43,10 +43,7 @@ public final class LocalSuggestionsReader: SuggestionsReading {
     public func fetchSuggestions(query: String?, maxChats: Int) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
         do {
             let records = try storageHandler.getAllChats()
-            Logger.aiChat.debug("LocalSuggestionsReader: Got \(records.count) records from DB")
-
             let decoded = records.compactMap { DuckAiChat.decode(from: $0.data) }
-            Logger.aiChat.debug("LocalSuggestionsReader: Decoded \(decoded.count) chats (query=\(query ?? "nil"), maxChats=\(maxChats))")
 
             let trimmedQuery = query?.trimmingCharacters(in: .whitespaces)
             let filtered: [(chat: DuckAiChat, firstUserMessageContent: String?)]
@@ -56,15 +53,10 @@ public final class LocalSuggestionsReader: SuggestionsReading {
             } else {
                 let oneWeekAgo = Date().addingTimeInterval(-Self.oneWeekInterval)
                 filtered = decoded.filter { item in
-                    guard let date = AIChatSuggestion.parseISO8601Date(item.chat.lastEdit) else {
-                        Logger.aiChat.debug("LocalSuggestionsReader: Skipping chat '\(item.chat.chatId)' — failed to parse lastEdit '\(item.chat.lastEdit)'")
-                        return false
-                    }
+                    guard let date = AIChatSuggestion.parseISO8601Date(item.chat.lastEdit) else { return false }
                     return date >= oneWeekAgo
                 }
             }
-
-            Logger.aiChat.debug("LocalSuggestionsReader: \(filtered.count) chats after filtering")
 
             let suggestions = filtered.map { item in
                 AIChatSuggestion(
@@ -83,7 +75,6 @@ public final class LocalSuggestionsReader: SuggestionsReading {
             recent.sort { ($0.timestamp ?? .distantPast) > ($1.timestamp ?? .distantPast) }
             recent = Array(recent.prefix(maxChats))
 
-            Logger.aiChat.debug("LocalSuggestionsReader: Returning \(pinned.count) pinned, \(recent.count) recent")
             return .success((pinned: pinned, recent: recent))
         } catch {
             Logger.aiChat.error("LocalSuggestionsReader: Failed to fetch chats: \(error.localizedDescription)")

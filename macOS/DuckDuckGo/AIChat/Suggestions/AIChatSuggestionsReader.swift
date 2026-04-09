@@ -75,23 +75,16 @@ final class AIChatSuggestionsReader: AIChatSuggestionsReading {
     }
 
     func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
-        let flagEnabled = featureFlagProvider.isLocalStorageManipulationEnabled()
-        let hasLocalReader = localSuggestionsReader != nil
-        Logger.aiChat.debug("AIChatSuggestionsReader: flagEnabled=\(flagEnabled), hasLocalReader=\(hasLocalReader)")
-
         let reader: SuggestionsReading
-        if flagEnabled, let localReader = localSuggestionsReader {
-            Logger.aiChat.debug("AIChatSuggestionsReader: Using local storage reader")
+        if featureFlagProvider.isLocalStorageManipulationEnabled(), let localReader = localSuggestionsReader {
             reader = localReader
         } else {
-            Logger.aiChat.debug("AIChatSuggestionsReader: Using webview reader")
             reader = suggestionsReader
         }
 
         let result = await reader.fetchSuggestions(query: query, maxChats: maxChats)
         switch result {
         case .success(let suggestions):
-            Logger.aiChat.debug("AIChatSuggestionsReader: Got \(suggestions.pinned.count) pinned, \(suggestions.recent.count) recent")
             return suggestions
         case .failure(let error):
             Logger.aiChat.error("Failed to fetch AI chat suggestions: \(error.localizedDescription)")

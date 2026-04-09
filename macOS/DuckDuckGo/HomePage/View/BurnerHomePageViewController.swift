@@ -73,5 +73,4 @@ final class BurnerHomePageViewController: NSViewController {
         subscriptionPromoViewModel.updateForTab(tabPromo?.promoState ?? .notEvaluated)
     }
 
-
 }

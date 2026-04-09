@@ -130,6 +130,9 @@ final class SubscriptionPromoViewModel: ObservableObject {
             shouldShowPromo = false
         case .evaluated(let shouldShow):
             shouldShowPromo = shouldShow
+            if shouldShow {
+                pixelFiring?.fire(SubscriptionPromoPixel.promoViewed(isEligibleForFreeTrial: isEligibleForFreeTrial))
+            }
         case .notEvaluated:
             evaluatePromoVisibility()
         }
@@ -174,6 +177,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
         shouldShowPromo = true
 
         pixelFiring?.fire(SubscriptionPromoPixel.promoDisplayed(isEligibleForFreeTrial: isEligibleForFreeTrial))
+        pixelFiring?.fire(SubscriptionPromoPixel.promoViewed(isEligibleForFreeTrial: isEligibleForFreeTrial))
     }
 
     private var isUSLocale: Bool {

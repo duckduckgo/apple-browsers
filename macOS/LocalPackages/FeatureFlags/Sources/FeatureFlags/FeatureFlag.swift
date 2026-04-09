@@ -350,6 +350,7 @@ public enum FeatureFlag: String, CaseIterable {
     case aiChatNativeStorage
 
     /// Enables the VPN subscription promo card on the Fire Window home page
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213996219850960?focus=true
     case subscriptionPromoFireWindow
 }
 
@@ -588,7 +589,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)), category: .duckAI)
         case .subscriptionPromoFireWindow:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPromoFireWindow)), category: .subscription)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPromoFireWindow)), supportsLocalOverriding: true, category: .subscription)
         case .autoplayPolicy:
             Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.autoplayPolicy)), supportsLocalOverriding: true)
         }

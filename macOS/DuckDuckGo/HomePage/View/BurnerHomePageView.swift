@@ -41,7 +41,6 @@ struct BurnerHomePageView: View {
         Color(designSystemColor: .surfaceCanvas, palette: themeManager.designColorPalette)
     }
 
-
     var body: some View {
         GeometryReader { geometry in
             ZStack {

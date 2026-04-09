@@ -21,12 +21,14 @@ import PixelKit
 
 enum SubscriptionPromoPixel: PixelKitEvent {
     case promoDisplayed(isEligibleForFreeTrial: Bool)
+    case promoViewed(isEligibleForFreeTrial: Bool)
     case promoCtaActioned(isEligibleForFreeTrial: Bool)
     case promoDismissed(isEligibleForFreeTrial: Bool)
 
     var name: String {
         switch self {
         case .promoDisplayed: return "m_mac_fire_window_subscription_promo_displayed"
+        case .promoViewed: return "m_mac_fire_window_subscription_promo_viewed"
         case .promoCtaActioned: return "m_mac_fire_window_subscription_promo_cta_actioned"
         case .promoDismissed: return "m_mac_fire_window_subscription_promo_dismissed"
         }
@@ -39,6 +41,7 @@ enum SubscriptionPromoPixel: PixelKitEvent {
     var parameters: [String: String]? {
         switch self {
         case .promoDisplayed(let isEligibleForFreeTrial),
+             .promoViewed(let isEligibleForFreeTrial),
              .promoCtaActioned(let isEligibleForFreeTrial),
              .promoDismissed(let isEligibleForFreeTrial):
             return ["is_eligible_for_free_trial": isEligibleForFreeTrial ? "true" : "false"]

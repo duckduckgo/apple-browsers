@@ -21,7 +21,7 @@ import Common
 import Foundation
 
 protocol AddressBarURLFiltering {
-    func shouldUpdate(for newURL: URL, currentURL: URL?) -> Bool
+    func shouldUpdate(for newURL: URL) -> Bool
     mutating func commitNavigation(for url: URL?)
     mutating func beginUserNavigation()
     mutating func beginUserReload()
@@ -40,7 +40,7 @@ struct AddressBarURLFilter: AddressBarURLFiltering {
     /// in the address bar.
     ///
     /// Matches macOS behavior: strict SecurityOrigin equality, no host-only fallback.
-    func shouldUpdate(for newURL: URL, currentURL: URL?) -> Bool {
+    func shouldUpdate(for newURL: URL) -> Bool {
         if isUserInitiatedNavigation {
             return true
         }

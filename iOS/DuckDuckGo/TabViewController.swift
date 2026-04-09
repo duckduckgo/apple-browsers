@@ -1129,7 +1129,7 @@ class TabViewController: UIViewController {
             }
             return true
         }
-        return addressBarURLFilter.shouldUpdate(for: newURL, currentURL: url)
+        return addressBarURLFilter.shouldUpdate(for: newURL)
     }
 
     @available(iOS 18.4, *)

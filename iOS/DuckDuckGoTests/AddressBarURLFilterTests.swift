@@ -37,7 +37,7 @@ struct AddressBarURLFilterTests {
 
         // WHEN
         let differentOrigin = URL(string: "https://other.com/page")!
-        let result = filter.shouldUpdate(for: differentOrigin, currentURL: URL(string: "https://example.com")!)
+        let result = filter.shouldUpdate(for: differentOrigin)
 
         // THEN
         #expect(result == true)
@@ -52,7 +52,7 @@ struct AddressBarURLFilterTests {
 
         // WHEN
         let sameOrigin = URL(string: "https://example.com/reloaded")!
-        let result = filter.shouldUpdate(for: sameOrigin, currentURL: URL(string: "https://example.com")!)
+        let result = filter.shouldUpdate(for: sameOrigin)
 
         // THEN
         #expect(result == true)
@@ -69,7 +69,7 @@ struct AddressBarURLFilterTests {
 
         // WHEN
         let redirect = URL(string: "https://bing.com/redirect?target=shop.com")!
-        let result = filter.shouldUpdate(for: redirect, currentURL: URL(string: "https://duckduckgo.com")!)
+        let result = filter.shouldUpdate(for: redirect)
 
         // THEN
         #expect(result == false)
@@ -83,7 +83,7 @@ struct AddressBarURLFilterTests {
 
         // WHEN
         let sameOrigin = URL(string: "https://example.com/new-page")!
-        let result = filter.shouldUpdate(for: sameOrigin, currentURL: URL(string: "https://example.com")!)
+        let result = filter.shouldUpdate(for: sameOrigin)
 
         // THEN
         #expect(result == true)
@@ -97,7 +97,7 @@ struct AddressBarURLFilterTests {
 
         // WHEN
         let fragment = URL(string: "https://example.com/page#section")!
-        let result = filter.shouldUpdate(for: fragment, currentURL: URL(string: "https://example.com/page")!)
+        let result = filter.shouldUpdate(for: fragment)
 
         // THEN
         #expect(result == true)
@@ -111,7 +111,7 @@ struct AddressBarURLFilterTests {
 
         // WHEN
         let differentPort = URL(string: "https://example.com:8443/page")!
-        let result = filter.shouldUpdate(for: differentPort, currentURL: URL(string: "https://example.com")!)
+        let result = filter.shouldUpdate(for: differentPort)
 
         // THEN
         #expect(result == false)
@@ -125,7 +125,7 @@ struct AddressBarURLFilterTests {
 
         // WHEN
         let httpURL = URL(string: "http://example.com/page")!
-        let result = filter.shouldUpdate(for: httpURL, currentURL: URL(string: "https://example.com")!)
+        let result = filter.shouldUpdate(for: httpURL)
 
         // THEN
         #expect(result == false)
@@ -140,9 +140,9 @@ struct AddressBarURLFilterTests {
         filter.commitNavigation(for: URL(string: "https://example.com")!)
 
         // WHEN/THEN
-        #expect(filter.shouldUpdate(for: URL(string: "about:blank")!, currentURL: URL(string: "https://example.com")!) == true)
-        #expect(filter.shouldUpdate(for: URL(string: "duck://settings")!, currentURL: URL(string: "https://example.com")!) == true)
-        #expect(filter.shouldUpdate(for: URL(string: "file:///path/to/file")!, currentURL: URL(string: "https://example.com")!) == true)
+        #expect(filter.shouldUpdate(for: URL(string: "about:blank")!) == true)
+        #expect(filter.shouldUpdate(for: URL(string: "duck://settings")!) == true)
+        #expect(filter.shouldUpdate(for: URL(string: "file:///path/to/file")!) == true)
     }
 
     // MARK: - No committed origin
@@ -154,8 +154,8 @@ struct AddressBarURLFilterTests {
 
         // WHEN/THEN
         let anyURL = URL(string: "https://example.com/page")!
-        #expect(filter.shouldUpdate(for: anyURL, currentURL: nil) == false)
-        #expect(filter.shouldUpdate(for: anyURL, currentURL: URL(string: "https://other.com")!) == false)
+        #expect(filter.shouldUpdate(for: anyURL) == false)
+        #expect(filter.shouldUpdate(for: anyURL) == false)
     }
 
     // MARK: - Lifecycle
@@ -195,22 +195,21 @@ struct AddressBarURLFilterTests {
         // GIVEN
         var filter = AddressBarURLFilter()
         filter.commitNavigation(for: URL(string: "https://duckduckgo.com")!)
-        let currentURL = URL(string: "https://duckduckgo.com")!
 
         // WHEN/THEN
         let hop1 = URL(string: "https://search-company.site/y.js?u=something")!
-        #expect(filter.shouldUpdate(for: hop1, currentURL: currentURL) == false)
+        #expect(filter.shouldUpdate(for: hop1) == false)
 
         let hop2 = URL(string: "https://ad-company.site/aclick?ID=1")!
-        #expect(filter.shouldUpdate(for: hop2, currentURL: currentURL) == false)
+        #expect(filter.shouldUpdate(for: hop2) == false)
 
         let hop3 = URL(string: "https://bing.com/redirect?target=shop.com")!
-        #expect(filter.shouldUpdate(for: hop3, currentURL: currentURL) == false)
+        #expect(filter.shouldUpdate(for: hop3) == false)
 
         // Final destination commits
         filter.commitNavigation(for: URL(string: "https://shop.com/product")!)
         let finalURL = URL(string: "https://shop.com/product")!
-        #expect(filter.shouldUpdate(for: finalURL, currentURL: currentURL) == true)
+        #expect(filter.shouldUpdate(for: finalURL) == true)
     }
 
     // MARK: - Local network domains
@@ -223,10 +222,10 @@ struct AddressBarURLFilterTests {
 
         // WHEN/THEN
         let sameDomain = URL(string: "http://somehost.local/page")!
-        #expect(filter.shouldUpdate(for: sameDomain, currentURL: URL(string: "http://somehost.local")!) == true)
+        #expect(filter.shouldUpdate(for: sameDomain) == true)
 
         let differentDomain = URL(string: "http://otherhost.local/page")!
-        #expect(filter.shouldUpdate(for: differentDomain, currentURL: URL(string: "http://somehost.local")!) == false)
+        #expect(filter.shouldUpdate(for: differentDomain) == false)
     }
 
     @Test("Local network domain with non-standard port")
@@ -237,9 +236,9 @@ struct AddressBarURLFilterTests {
 
         // WHEN/THEN
         let samePort = URL(string: "http://somehost.local:8080/api")!
-        #expect(filter.shouldUpdate(for: samePort, currentURL: URL(string: "http://somehost.local:8080")!) == true)
+        #expect(filter.shouldUpdate(for: samePort) == true)
 
         let differentPort = URL(string: "http://somehost.local:9090/api")!
-        #expect(filter.shouldUpdate(for: differentPort, currentURL: URL(string: "http://somehost.local:8080")!) == false)
+        #expect(filter.shouldUpdate(for: differentPort) == false)
     }
 }

@@ -420,6 +420,60 @@ final class TabSuspensionExtensionTests: XCTestCase {
 
         XCTAssertFalse(sut.pageReportsUnableToSuspend)
     }
+
+    // MARK: - Suspension State
+
+    @MainActor
+    func testWhenLastSuspendedURLIsNil_ThenSuspensionStateIsNever() {
+        sut = makeSUT()
+        contentPublisher.send(.url(.duckDuckGo, credential: nil, source: .link))
+
+        sut.lastSuspendedURL = nil
+
+        XCTAssertEqual(sut.suspensionState, .never)
+    }
+
+    @MainActor
+    func testWhenLastSuspendedURLMatchesCurrentURL_ThenSuspensionStateIsSameURL() {
+        sut = makeSUT()
+        contentPublisher.send(.url(.duckDuckGo, credential: nil, source: .link))
+
+        sut.lastSuspendedURL = .duckDuckGo
+
+        XCTAssertEqual(sut.suspensionState, .sameURL)
+    }
+
+    @MainActor
+    func testWhenLastSuspendedURLHasSameHostButDifferentPath_ThenSuspensionStateIsSameDomain() throws {
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/about"))
+        sut = makeSUT()
+        contentPublisher.send(.url(url, credential: nil, source: .link))
+
+        sut.lastSuspendedURL = .duckDuckGo
+
+        XCTAssertEqual(sut.suspensionState, .sameDomain)
+    }
+
+    @MainActor
+    func testWhenLastSuspendedURLHasDifferentHost_ThenSuspensionStateIsDifferentDomain() throws {
+        let url = try XCTUnwrap(URL(string: "https://example.com"))
+        sut = makeSUT()
+        contentPublisher.send(.url(url, credential: nil, source: .link))
+
+        sut.lastSuspendedURL = .duckDuckGo
+
+        XCTAssertEqual(sut.suspensionState, .differentDomain)
+    }
+
+    @MainActor
+    func testWhenLastSuspendedURLIsNotNilAndContentHasNoURL_ThenSuspensionStateIsDifferentDomain() {
+        sut = makeSUT()
+        contentPublisher.send(.none)
+
+        sut.lastSuspendedURL = .duckDuckGo
+
+        XCTAssertEqual(sut.suspensionState, .differentDomain)
+    }
 }
 
 // MARK: - MockTabSuspensionWebView

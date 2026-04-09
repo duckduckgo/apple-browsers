@@ -55,6 +55,13 @@ extension WKWebView: TabSuspensionWebViewChecking {
 
 final class TabSuspensionExtension {
 
+    enum SuspensionState: String {
+        case never
+        case sameURL
+        case sameDomain
+        case differentDomain
+    }
+
     private var cancellables = Set<AnyCancellable>()
 
     private weak var webView: TabSuspensionWebViewChecking?
@@ -68,10 +75,24 @@ final class TabSuspensionExtension {
 
     var hasVideoInPictureInPicture: Bool = false
     var isDisplayingPDF: Bool = false
+    var lastSuspendedURL: URL? = nil
     private(set) var pageReportsUnableToSuspend: Bool = false
 
     private var hasActiveAIChatSession: Bool {
         aiChatSessionStore.sessions[tabID] != nil
+    }
+
+    var suspensionState: SuspensionState {
+        switch (lastSuspendedURL, tabContent.urlForWebView) {
+        case (nil, _):
+            return .never
+        case let (a, b) where a == b:
+            return .sameURL
+        case let (a, b) where a?.host == b?.host:
+            return .sameDomain
+        default:
+            return .differentDomain
+        }
     }
 
     var canBeSuspended: Bool {
@@ -162,6 +183,8 @@ final class TabSuspensionExtension {
 protocol TabSuspensionExtensionProtocol: AnyObject, NavigationResponder {
     var canBeSuspended: Bool { get }
     var hasVideoInPictureInPicture: Bool { get set }
+    var suspensionState: TabSuspensionExtension.SuspensionState { get }
+    var lastSuspendedURL: URL? { get set }
 }
 
 extension TabSuspensionExtension: TabSuspensionExtensionProtocol, TabExtension {

@@ -386,6 +386,7 @@ enum GeneralPixel: PixelKitEvent {
     case keyValueFileStoreInitError
     case dbContainerInitializationError(error: Error)
     case dbInitializationError(error: Error)
+    case dbValueTransformerRegistrationError
     case dbSaveExcludedHTTPSDomainsError(error: Error?)
     case dbSaveBloomFilterError(error: Error?)
 
@@ -575,6 +576,11 @@ enum GeneralPixel: PixelKitEvent {
     case userScriptLoadJSFailed(jsFile: String, error: Error, source: UserScriptError.Source)
 
     case attributionXattrCanary(variantMatch: String, originMatch: String)
+
+    // Website Autoplay
+    case autoplaySettingAllowAll
+    case autoplaySettingBlockAudio
+    case autoplaySettingBlockAll
 
     var name: String {
         switch self {
@@ -1053,6 +1059,8 @@ enum GeneralPixel: PixelKitEvent {
             return "database_container_error"
         case .dbInitializationError:
             return "dbie"
+        case .dbValueTransformerRegistrationError:
+            return "db_value_transformer_registration_error"
         case .dbSaveExcludedHTTPSDomainsError:
             return "database_save_excluded_https_domains_error"
         case .dbSaveBloomFilterError:
@@ -1318,6 +1326,14 @@ enum GeneralPixel: PixelKitEvent {
         case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
 
         case .attributionXattrCanary: return "m_mac_attribution-xattr-canary_u"
+
+            // Website Autoplay
+        case .autoplaySettingAllowAll:
+            return "m_mac_autoplay_setting_allow-all"
+        case .autoplaySettingBlockAudio:
+            return "m_mac_autoplay_setting_block-audio"
+        case .autoplaySettingBlockAll:
+            return "m_mac_autoplay_setting_block-all"
         }
     }
 
@@ -1438,6 +1454,9 @@ enum GeneralPixel: PixelKitEvent {
                 .duckPlayerWatchOnYoutube,
                 .duckPlayerAutoplaySettingsOn,
                 .duckPlayerAutoplaySettingsOff,
+                .autoplaySettingAllowAll,
+                .autoplaySettingBlockAudio,
+                .autoplaySettingBlockAll,
                 .duckPlayerNewTabSettingsOn,
                 .duckPlayerNewTabSettingsOff,
                 .duckPlayerContingencySettingsDisplayed,
@@ -1595,6 +1614,9 @@ enum GeneralPixel: PixelKitEvent {
                 .duckPlayerWatchOnYoutube,
                 .duckPlayerAutoplaySettingsOn,
                 .duckPlayerAutoplaySettingsOff,
+                .autoplaySettingAllowAll,
+                .autoplaySettingBlockAudio,
+                .autoplaySettingBlockAll,
                 .duckPlayerNewTabSettingsOn,
                 .duckPlayerNewTabSettingsOff,
                 .duckPlayerContingencySettingsDisplayed,
@@ -1728,6 +1750,7 @@ enum GeneralPixel: PixelKitEvent {
                 .keyValueFileStoreInitError,
                 .dbContainerInitializationError,
                 .dbInitializationError,
+                .dbValueTransformerRegistrationError,
                 .dbSaveExcludedHTTPSDomainsError,
                 .dbSaveBloomFilterError,
                 .remoteMessagingSaveConfigError,

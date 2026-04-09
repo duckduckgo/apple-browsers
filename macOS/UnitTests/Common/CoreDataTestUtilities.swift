@@ -64,7 +64,7 @@ final class CoreData {
             fatalError("Error initializing object model from: \(modelURL)")
         }
 
-        let transformers = objectModel.registerValueTransformers(keyStore: keyStore)
+        let transformers = (try? objectModel.registerValueTransformers(keyStore: keyStore))!
         let container = TestPersistentContainer(name: modelName,
                                                 managedObjectModel: objectModel,
                                                 registeredTransformers: transformers)

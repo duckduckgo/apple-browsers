@@ -98,8 +98,8 @@ class FireExecutor: FireExecuting {
     private let favicons: FaviconManaging
     private let historyManager: HistoryManaging
     private let featureFlagger: FeatureFlagger
-    private let dataClearingCapability: DataClearingCapable
     private let fireModeCapability: FireModeCapable
+    private let dataClearingCapability: DataClearingCapable
     private let appSettings: AppSettings
     private let aiChatSyncCleaner: AIChatSyncCleaning
     let pixelsReporter: DataClearingPixelsReporter
@@ -127,7 +127,6 @@ class FireExecutor: FireExecuting {
          autoconsentManagementProvider: AutoconsentManagementProviding,
          historyManager: HistoryManaging,
          featureFlagger: FeatureFlagger,
-         dataClearingCapability: DataClearingCapable? = nil,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          dataStore: (any DDGWebsiteDataStore)? = nil,
          historyCleanerProvider: HistoryCleanerProvider? = nil,
@@ -143,8 +142,8 @@ class FireExecutor: FireExecuting {
         self.historyManager = historyManager
         self.featureFlagger = featureFlagger
         self.idManager = idManager
-        self.dataClearingCapability = dataClearingCapability ?? DataClearingCapability.create(using: featureFlagger)
-        self.fireModeCapability = FireModeCapability.create(using: featureFlagger)
+        self.fireModeCapability = FireModeCapability.create()
+        self.dataClearingCapability = DataClearingCapability.create(using: featureFlagger)
         self.historyCleanerProvider = historyCleanerProvider ??
         { dataStore in return HistoryCleaner(featureFlagger: featureFlagger,
                                              privacyConfig: privacyConfigurationManager,
@@ -352,8 +351,11 @@ class FireExecutor: FireExecuting {
             // Pass false to clearTabHistory to preserve tab history while burning
             // As tab history is needed by other processes running in parallel
             // didFinishBurning(fireRequest:) manually clears data after burn is complete
-            // Close the tab and append a new empty tab, reusing existing one if exists
-            tabManager.closeTabAndNavigateToHomepage(viewModel.tab, clearTabHistory: false)
+            if dataClearingCapability.isFireButtonRefinementsEnabled && viewModel.tab.isAITab {
+                tabManager.closeTabAndOpenNewChat(viewModel.tab, clearTabHistory: false)
+            } else {
+                tabManager.closeTabAndNavigateToHomepage(viewModel.tab, clearTabHistory: false)
+            }
 
             dataClearingWideEventService?.start(.clearFaviconCache)
             let faviconResult = favicons.removeTabFavicons(forDomains: domains)
@@ -426,22 +428,17 @@ class FireExecutor: FireExecuting {
     
     // MARK: - Clear AI History
     
-    /// For auto-clear with enhancedDataClearingSettings FF ON:
-    /// - User configures what to clear via the enhanced settings UI
-    /// For manual fire OR auto-clear with FF OFF (legacy):
-    /// - AI chats clear only if autoClearAIChatHistory setting is enabled
-    /// For single chat burning:
-    /// - The user setting autoClearAIChatHistory should be ignored
-    /// - Returns: A boolean indicating if we should run the ai chats burn flow
+    /// For auto-clear: User configures what to clear via the settings UI
+    /// For manual fire: AI chats clear only if autoClearAIChatHistory setting is enabled
+    /// For single chat burning: The user setting autoClearAIChatHistory should be ignored
     private func shouldBurnAIHistory(_ request: FireRequest) -> Bool {
-        let chosenThroughNewAutoClearUI = dataClearingCapability.isEnhancedDataClearingEnabled
-            && request.trigger != .manualFire
+        let chosenThroughAutoClearUI = request.trigger != .manualFire
             && request.trigger != .fireModeAutoClear
 
         var singleChatBurn: Bool = false
         if case .tab = request.scope { singleChatBurn = true }
 
-        let shouldAllowAIChatsBurn = chosenThroughNewAutoClearUI
+        let shouldAllowAIChatsBurn = chosenThroughAutoClearUI
         || appSettings.autoClearAIChatHistory
         || singleChatBurn
 

@@ -42,9 +42,6 @@ extension TabViewController {
         return settings.isAIChatBrowsingMenuUserSettingsEnabled
     }
 
-    private var dataClearingCapability: DataClearingCapable {
-        DataClearingCapability.create(using: featureFlagger)
-    }
 
     func buildBrowsingMenuHeaderContent() -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
@@ -193,14 +190,27 @@ extension TabViewController {
     }
     
     private func buildNewTabEntry() -> BrowsingMenuEntry {
-        .regular(name: UserText.actionNewTab,
-                 accessibilityLabel: UserText.keyCommandNewTab,
-                 image: DesignSystemImages.Glyphs.Size24.add,
-                 action: { [weak self] in
+        return tabModel.fireTab ? buildNewFireTabEntry() : buildNewNormalTabEntry()
+    }
+    
+    private func buildNewNormalTabEntry() -> BrowsingMenuEntry {
+        return .regular(name: UserText.actionNewTab,
+                        accessibilityLabel: UserText.keyCommandNewTab,
+                        image: DesignSystemImages.Glyphs.Size24.add,
+                        action: { [weak self] in
             self?.onNewTabAction()
         })
     }
     
+    private func buildNewFireTabEntry() -> BrowsingMenuEntry {
+        return .regular(name: UserText.actionNewFireTab,
+                        accessibilityLabel: UserText.actionNewFireTab,
+                        image: DesignSystemImages.Glyphs.Size24.add,
+                        action: { [weak self] in
+            self?.onNewFireTabAction()
+        })
+    }
+
     private func buildDownloadsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionDownloads,
                  image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
@@ -329,6 +339,7 @@ extension TabViewController {
 
     private func buildKeepSignInEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
         guard let domain = link.url.host, !link.url.isDuckDuckGo else { return nil }
+        guard !tabModel.fireTab else { return nil }
         let isFireproofed = fireproofing.isAllowed(cookieDomain: domain)
         
         if isFireproofed {
@@ -380,6 +391,7 @@ extension TabViewController {
     }
     
     private func onNewFireTabAction() {
+        // TODO: - Add pixel
         delegate?.tabDidRequestNewTab(self)
     }
 
@@ -427,7 +439,7 @@ extension TabViewController {
     }
     
     private func buildClearDataEntry(clearTabsAndData: @escaping () -> Void, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
-        let title = dataClearingCapability.isEnhancedDataClearingEnabled ? UserText.settingsDeleteTabsAndData : UserText.actionForgetAll
+        let title = UserText.settingsDeleteTabsAndData
         return BrowsingMenuEntry.regular(name: title,
                                          accessibilityLabel: title,
                                          image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireSolid : DesignSystemImages.Glyphs.Size24.fireSolid,
@@ -960,5 +972,19 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeKeepSignInEntry() -> BrowsingMenuEntry? {
         guard let link = validLink else { return nil }
         return buildKeepSignInEntry(forLink: link, useSmallIcon: false)
+    }
+
+    func makeFireModePromotionEntry() -> BrowsingMenuEntry? {
+        guard !tabModel.fireTab,
+              fireModePromotionCoordinator?.isMenuPromotionEligible == true else { return nil }
+        fireModePromotionCoordinator?.markMenuPromotionShown()
+        return .regular(name: UserText.fireModePromotionTitle,
+                        image: DesignSystemImages.Glyphs.Size24.fireTabs,
+                        detailBadge: UserText.fireModeMenuPromotionBadge) { [weak self] in
+            self?.fireModePromotionCoordinator?.markMenuPromotionEngaged()
+            guard let self else { return }
+            // TODO: fire menu promotion engaged pixel
+            self.delegate?.tabDidRequestFireMode(tab: self)
+        }
     }
 }

@@ -66,6 +66,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         var aiChatSessionStore: AIChatSessionStoring
         var tabCrashAggregator: TabCrashAggregator
         var tabsPreferences: TabsPreferences
+        var autoplayPreferences: AutoplayPreferences
+        var permissionManager: PermissionManagerProtocol
         var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     }
 
@@ -145,6 +147,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      tunnelController: NetworkProtectionIPCTunnelController? = TunnelControllerProvider.shared.tunnelController,
                      maliciousSiteDetector: MaliciousSiteDetecting = MaliciousSiteProtectionManager.shared,
                      tabsPreferences: TabsPreferences? = nil,
+                     autoplayPreferences: AutoplayPreferences? = nil,
                      webTrackingProtectionPreferences: WebTrackingProtectionPreferences? = nil,
                      onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
                      pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
@@ -211,6 +214,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   tunnelController: tunnelController,
                   maliciousSiteDetector: maliciousSiteDetector,
                   tabsPreferences: tabsPreferences ?? NSApp.delegateTyped.tabsPreferences,
+                  autoplayPreferences: autoplayPreferences ?? NSApp.delegateTyped.autoplayPreferences,
                   webTrackingProtectionPreferences: webTrackingProtectionPreferences ?? NSApp.delegateTyped.webTrackingProtectionPreferences,
                   onboardingPixelReporter: onboardingPixelReporter,
                   pageRefreshMonitor: pageRefreshMonitor,
@@ -262,6 +266,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          tunnelController: NetworkProtectionIPCTunnelController?,
          maliciousSiteDetector: MaliciousSiteDetecting,
          tabsPreferences: TabsPreferences,
+         autoplayPreferences: AutoplayPreferences,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          onboardingPixelReporter: OnboardingAddressBarReporting,
          pageRefreshMonitor: PageRefreshMonitoring,
@@ -353,6 +358,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                           aiChatSessionStore: aiChatSessionStore,
                                                           tabCrashAggregator: tabCrashAggregator,
                                                           tabsPreferences: tabsPreferences,
+                                                          autoplayPreferences: autoplayPreferences,
+                                                          permissionManager: permissionManager,
                                                           webTrackingProtectionPreferences: webTrackingProtectionPreferences)
         let tabExtensionsBuilderArguments: TabExtensionsBuilderArguments = (tabIdentifier: instrumentation.currentTabIdentifier,
                                                                             tabID: self.uuid,
@@ -1276,6 +1283,19 @@ extension Tab {
                 }
             }
         }
+    }
+}
+
+// MARK: - Autoplay
+
+extension Tab {
+
+    var mustDisplayAutoplayPolicy: Bool {
+        guard featureFlagger.isFeatureOn(.autoplayPolicy), let targetURL = content.urlForWebView else {
+            return false
+        }
+
+        return targetURL.isHttp || targetURL.isHttps
     }
 }
 

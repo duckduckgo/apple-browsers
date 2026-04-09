@@ -36,11 +36,16 @@ let package = Package(
             name: "AIChatTestingUtilities",
             targets: ["AIChatTestingUtilities"]
         ),
+        .library(
+            name: "AIChatDebugServer",
+            targets: ["AIChatDebugServer"]
+        ),
     ],
     dependencies: [
         .package(path: "../Infrastructure/DesignResourcesKit"),
         .package(path: "../Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../BrowserServicesKit"),
+        .package(path: "../DebugServer"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0")
     ],
     targets: [
@@ -55,6 +60,7 @@ let package = Package(
                 .product(name: "DDGSync", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
+                .product(name: "DuckAiDataStore", package: "BrowserServicesKit"),
                 .product(name: "DDGSyncCrypto", package: "sync_crypto")
             ],
             resources: [
@@ -65,6 +71,14 @@ let package = Package(
             name: "AIChatTestingUtilities",
             dependencies: [
                 "AIChat"
+            ]
+        ),
+        .target(
+            name: "AIChatDebugServer",
+            dependencies: [
+                "AIChat",
+                "DebugServer",
+                .product(name: "DuckAiDataStore", package: "BrowserServicesKit"),
             ]
         ),
         .testTarget(

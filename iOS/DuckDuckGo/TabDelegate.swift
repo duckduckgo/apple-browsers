@@ -26,6 +26,7 @@ enum TabClosingBehavior {
     case createEmptyTabAtSamePosition
     case createOrReuseEmptyTab
     case onlyClose
+    case createNewChat
 }
 
 protocol TabDelegate: AnyObject {
@@ -54,6 +55,10 @@ protocol TabDelegate: AnyObject {
 
     func tab(_ tab: TabViewController,
              didRequestNewBackgroundTabForUrl url: URL,
+             inheritingAttribution: AdClickAttributionLogic.State?)
+
+    func tab(_ tab: TabViewController,
+             didRequestNewFireTabForUrl url: URL,
              inheritingAttribution: AdClickAttributionLogic.State?)
 
     func tabLoadingStateDidChange(tab: TabViewController)
@@ -119,6 +124,8 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String)
 
+    func tabDidRequestToggleSidebarOnCurrentTab(_ tab: TabViewController)
+
     func tabDidRequestPrivacyDashboardButtonPulse(tab: TabViewController, animated: Bool)
 
     func tabDidRequestSearchBarRect(tab: TabViewController) -> CGRect
@@ -145,6 +152,8 @@ protocol TabDelegate: AnyObject {
 
     var isEmailProtectionSignedIn: Bool { get }
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController)
+
+    func tabDidRequestFireMode(tab: TabViewController)
 }
 
 extension TabDelegate {

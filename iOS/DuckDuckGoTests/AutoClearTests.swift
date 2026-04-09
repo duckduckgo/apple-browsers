@@ -45,21 +45,16 @@ class AutoClearTests: XCTestCase {
     
     private var mockFireExecutor: MockFireExecutor!
     private var appSettings: AppSettingsMock!
-    private var mockDataClearingCapability: MockDataClearingCapability!
 
     override func setUp() {
         super.setUp()
         mockFireExecutor = MockFireExecutor()
         appSettings = AppSettingsMock()
-        mockDataClearingCapability = MockDataClearingCapability()
-        // Enable enhanced UI by default to prevent auto-injection of AI chats
-        mockDataClearingCapability.isEnhancedDataClearingEnabled = true
     }
 
     override func tearDown() {
         mockFireExecutor = nil
         appSettings = nil
-        mockDataClearingCapability = nil
         super.tearDown()
     }
 
@@ -67,7 +62,7 @@ class AutoClearTests: XCTestCase {
     //  MainViewController to ensure that tabs are removed before the data is cleared.
 
     func testWhenTimingIsSetToTerminationThenOnlyRestartClearsData() async {
-        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, dataClearingCapability: mockDataClearingCapability)
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings)
 
         appSettings.autoClearAction = .data
         appSettings.autoClearTiming = .termination
@@ -79,7 +74,7 @@ class AutoClearTests: XCTestCase {
     }
     
     func testWhenDesiredTimingIsSetThenDataIsClearedOnceTimeHasElapsed() async {
-        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, dataClearingCapability: mockDataClearingCapability)
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings)
 
         appSettings.autoClearAction = .data
         
@@ -102,7 +97,7 @@ class AutoClearTests: XCTestCase {
     
     func testClearDataIfEnabledCallsWorkerBurn() async {
         // Given
-        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, dataClearingCapability: mockDataClearingCapability)
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings)
         appSettings.autoClearAction = .data
         appSettings.autoClearTiming = .delay15min
         
@@ -117,7 +112,7 @@ class AutoClearTests: XCTestCase {
     
     func testClearDataIfEnabledWithLaunchingUsesAutoClearOnLaunchContext() async {
         // Given
-        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, dataClearingCapability: mockDataClearingCapability)
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings)
         appSettings.autoClearAction = .data
         appSettings.autoClearTiming = .delay15min
         
@@ -130,7 +125,7 @@ class AutoClearTests: XCTestCase {
     
     func testClearDataIfEnabledDoesNothingWhenAutoClearDisabled() async {
         // Given
-        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, dataClearingCapability: mockDataClearingCapability)
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings)
         appSettings.autoClearAction = [] // Disabled
         
         // When
@@ -144,7 +139,7 @@ class AutoClearTests: XCTestCase {
     
     func testClearDataDueToTimeExpiredCallsWorkerBurn() async {
         // Given
-        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, dataClearingCapability: mockDataClearingCapability)
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings)
         appSettings.autoClearAction = .data
         appSettings.autoClearTiming = .delay15min
         

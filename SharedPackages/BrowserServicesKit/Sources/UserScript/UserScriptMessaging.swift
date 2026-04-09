@@ -178,19 +178,35 @@ public final class UserScriptMessageBroker: NSObject {
             return .error(.invalidParams)
         }
 
+        let isNativeStorage = featureName == "duckAiNativeStorage"
+
         /// Now try to match the message to a registered delegate
         guard let delegate = callbacks[featureName] else {
+            if isNativeStorage {
+                Logger.nativeStorageDebug.error("[NativeStorage] Broker: feature '\(featureName)' NOT FOUND in callbacks. Registered features: \(self.callbacks.keys.sorted().joined(separator: ", "))")
+            }
             return .error(.notFoundFeature(featureName))
         }
 
         /// Check if the selected delegate accepts messages from this origin
-        guard delegate.messageOriginPolicy.isAllowed(hostProvider.hostForMessage(message)) else {
+        let messageHost = hostProvider.hostForMessage(message)
+        guard delegate.messageOriginPolicy.isAllowed(messageHost) else {
+            if isNativeStorage {
+                Logger.nativeStorageDebug.error("[NativeStorage] Broker: origin '\(messageHost)' REJECTED by policy for method '\(method)'")
+            }
             return .error(.policyRestriction)
         }
 
         /// Now ask the delegate to provide the handler
         guard let handler = delegate.handler(forMethodNamed: method) else {
+            if isNativeStorage {
+                Logger.nativeStorageDebug.error("[NativeStorage] Broker: no handler for method '\(method)' in feature '\(featureName)'")
+            }
             return .error(.notFoundHandler(feature: featureName, method: method))
+        }
+
+        if isNativeStorage {
+            Logger.nativeStorageDebug.debug("[NativeStorage] Broker: matched handler for '\(method)' from host '\(messageHost)'")
         }
 
         /// just send empty params if absent
@@ -293,6 +309,8 @@ extension BrokerError: LocalizedError {
 public enum HostnameMatchingRule {
     case etldPlus1(hostname: String)
     case exact(hostname: String)
+    /// Matches the hostname exactly OR any subdomain of it (e.g. "duck.ai" matches "duck.ai" and "foo.duck.ai")
+    case exactOrSubdomain(hostname: String)
 
     public static func makeExactRule(for url: URL) -> HostnameMatchingRule? {
         guard let host = url.host else { return nil }
@@ -323,6 +341,8 @@ public enum MessageOriginPolicy {
                     /// etldPlus1, like duckduckgo.com to match dev.duckduckgo.com + duckduckgo.com
                 case .etldPlus1:
                     return false // todo - this isn't used yet!
+                case .exactOrSubdomain(hostname: let hostname):
+                    return origin == hostname || origin.hasSuffix(".\(hostname)")
                 }
             }
         }

@@ -23,13 +23,15 @@ import SwiftUI
 final class BurnerHomePageViewController: NSViewController {
 
     let appearancePreferences: AppearancePreferences
+    let themeManager: ThemeManager
 
     required init?(coder: NSCoder) {
         fatalError("BurnerHomePageViewController: Bad initializer")
     }
 
-    init(appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences) {
-        self.appearancePreferences = appearancePreferences
+    init(appearancePreferences: AppearancePreferences? = nil, themeManager: ThemeManager? = nil) {
+        self.appearancePreferences = appearancePreferences ?? NSApp.delegateTyped.appearancePreferences
+        self.themeManager = themeManager ?? NSApp.delegateTyped.themeManager
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -37,6 +39,7 @@ final class BurnerHomePageViewController: NSViewController {
     override func loadView() {
         let rootView = BurnerHomePageView()
             .environmentObject(appearancePreferences)
+            .environmentObject(themeManager)
 
         self.view = NSHostingView(rootView: rootView)
     }

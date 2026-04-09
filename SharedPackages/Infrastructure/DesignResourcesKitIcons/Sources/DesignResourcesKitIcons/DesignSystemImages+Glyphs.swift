@@ -38,19 +38,24 @@ public extension DesignSystemImages {
             public static var battery: DesignSystemImage { .init(resource: .battery12) }
             public static var calendar: DesignSystemImage { .init(resource: .calendar12) }
             public static var car: DesignSystemImage { .init(resource: .car12) }
+            public static var chat: DesignSystemImage { .init(resource: .chat12) }
             public static var check: DesignSystemImage { .init(resource: .check12) }
             public static var chip: DesignSystemImage { .init(resource: .chip12) }
+            public static var compose: DesignSystemImage { .init(resource: .compose12) }
             public static var cookie: DesignSystemImage { .init(resource: .cookie12) }
             public static var currency: DesignSystemImage { .init(resource: .currency12) }
             public static var deviceMobile: DesignSystemImage { .init(resource: .deviceMobile12) }
             public static var download: DesignSystemImage { .init(resource: .download12) }
+            public static var duckAi: DesignSystemImage { .init(resource: .duckAi12) }
             public static var email: DesignSystemImage { .init(resource: .email12) }
             public static var exclamationSolid: DesignSystemImage { .init(resource: .exclamationSolid12) }
             public static var findSearch: DesignSystemImage { .init(resource: .findSearch12) }
             public static var fingerprint: DesignSystemImage { .init(resource: .fingerprint12) }
+            public static var fire: DesignSystemImage { .init(resource: .fire12) }
             public static var flag: DesignSystemImage { .init(resource: .flag12) }
             public static var globe: DesignSystemImage { .init(resource: .globe12) }
             public static var history: DesignSystemImage { .init(resource: .history12) }
+            public static var images: DesignSystemImage { .init(resource: .images12) }
             public static var info: DesignSystemImage { .init(resource: .info12) }
             public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid12) }
             public static var location: DesignSystemImage { .init(resource: .location12) }
@@ -60,6 +65,7 @@ public extension DesignSystemImages {
             public static var night: DesignSystemImage { .init(resource: .night12) }
             public static var open: DesignSystemImage { .init(resource: .open12) }
             public static var options: DesignSystemImage { .init(resource: .options12) }
+            public static var pin: DesignSystemImage { .init(resource: .pin12) }
             public static var platform: DesignSystemImage { .init(resource: .platform12) }
             public static var policeBadge: DesignSystemImage { .init(resource: .policeBadge12) }
             public static var profile: DesignSystemImage { .init(resource: .profile12) }
@@ -76,6 +82,7 @@ public extension DesignSystemImages {
             public static var thumbsDown: DesignSystemImage { .init(resource: .thumbsDown12) }
             public static var thumbsUp: DesignSystemImage { .init(resource: .thumbsUp12) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize12) }
+            public static var voice: DesignSystemImage { .init(resource: .voice12) }
             public static var wand: DesignSystemImage { .init(resource: .wand12) }
             public static var wifi: DesignSystemImage { .init(resource: .wifi12) }
         }
@@ -133,6 +140,7 @@ public extension DesignSystemImages {
             public static var closeSolidAlt: DesignSystemImage { .init(resource: .closeSolidAlt16) }
             public static var cookie: DesignSystemImage { .init(resource: .cookie16) }
             public static var cookieWhole: DesignSystemImage { .init(resource: .cookieWhole16) }
+            public static var compose: DesignSystemImage { .init(resource: .compose16) }
             public static var copy: DesignSystemImage { .init(resource: .copy16) }
             public static var creditCard: DesignSystemImage { .init(resource: .creditCard16) }
             public static var currency: DesignSystemImage { .init(resource: .currency16) }
@@ -145,6 +153,7 @@ public extension DesignSystemImages {
             public static var deviceMobileLock: DesignSystemImage { .init(resource: .deviceMobileLock16) }
             public static var dictionary: DesignSystemImage { .init(resource: .dictionary16) }
             public static var downloads: DesignSystemImage { .init(resource: .downloads16) }
+            public static var duckAi: DesignSystemImage { .init(resource: .duckAi16) }
             public static var edit: DesignSystemImage { .init(resource: .edit16) }
             public static var email: DesignSystemImage { .init(resource: .email16) }
             public static var emailBlocked: DesignSystemImage { .init(resource: .emailBlocked16) }
@@ -188,7 +197,7 @@ public extension DesignSystemImages {
             public static var hourglass: DesignSystemImage { .init(resource: .hourglass16) }
             public static var identityTheftRestoration: DesignSystemImage { .init(resource: .identityTheftRestoration16) }
             public static var image: DesignSystemImage { .init(resource: .image16) }
-            public static var imageCopy: DesignSystemImage { .init(resource: .imageCopy16) }
+            public static var images: DesignSystemImage { .init(resource: .images16) }
             public static var imageLink: DesignSystemImage { .init(resource: .imageLink16) }
             public static var `import`: DesignSystemImage { .init(resource: .import16) }
             public static var importLeft: DesignSystemImage { .init(resource: .importLeft16) }
@@ -266,6 +275,7 @@ public extension DesignSystemImages {
             public static var permissionCameraSolid: DesignSystemImage { .init(resource: .videoSolid16) }
             public static var undo: DesignSystemImage { .init(resource: .undo16)}
             public static var update: DesignSystemImage { .init(resource: .update16) }
+            public static var videoPlayer: DesignSystemImage { .init(resource: .playerVideo16) }
             public static var viewGrid: DesignSystemImage { .init(resource: .viewGrid16) }
             public static var viewGridSolid: DesignSystemImage { .init(resource: .viewGridSolid16) }
             public static var viewList: DesignSystemImage { .init(resource: .viewList16) }

@@ -31,20 +31,29 @@ protocol FireModeCapable {
 }
 
 enum FireModeCapability {
-    static func create(using featureFlagger: FeatureFlagger) -> FireModeCapable {
-        FireModeDefaultCapability(featureFlagger: featureFlagger)
+
+    static let isFireModeEnabledKey = "com.duckduckgo.fireMode.session.enabled"
+
+    /// Evaluate the feature flag once and persist the result for the session.
+    /// Must be called early in the app launch sequence, before any consumer
+    /// reads `isFireModeEnabled`, so that every component sees the same value.
+    static func resolve(using featureFlagger: FeatureFlagger) {
+        let enabled: Bool
+        if #available(iOS 17, *) {
+            enabled = featureFlagger.isFeatureOn(for: FeatureFlag.fireMode)
+        } else {
+            enabled = false
+        }
+        UserDefaults.app.set(enabled, forKey: isFireModeEnabledKey)
+    }
+
+    static func create() -> FireModeCapable {
+        FireModeDefaultCapability()
     }
 }
 
 struct FireModeDefaultCapability: FireModeCapable {
-    private let featureFlagger: FeatureFlagger
-
-    init(featureFlagger: FeatureFlagger) {
-        self.featureFlagger = featureFlagger
-    }
-
     var isFireModeEnabled: Bool {
-        guard #available(iOS 17, *) else { return false }
-        return featureFlagger.isFeatureOn(for: FeatureFlag.fireMode)
+        UserDefaults.app.bool(forKey: FireModeCapability.isFireModeEnabledKey)
     }
 }

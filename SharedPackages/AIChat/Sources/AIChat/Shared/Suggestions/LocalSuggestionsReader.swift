@@ -53,6 +53,7 @@ public final class LocalSuggestionsReader: SuggestionsReading {
             } else {
                 let oneWeekAgo = Date().addingTimeInterval(-Self.oneWeekInterval)
                 filtered = decoded.filter { item in
+                    if item.chat.pinned { return true }
                     guard let date = AIChatSuggestion.parseISO8601Date(item.chat.lastEdit) else { return false }
                     return date >= oneWeekAgo
                 }

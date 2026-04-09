@@ -23,7 +23,6 @@ import Persistence
 protocol LastActiveTabStoring {
     var lastActiveNonEmptyTabUID: String? { get }
     func recordActiveTab(uid: String)
-    func clear()
 }
 
 final class LastActiveTabStore: LastActiveTabStoring {
@@ -41,9 +40,5 @@ final class LastActiveTabStore: LastActiveTabStoring {
 
     func recordActiveTab(uid: String) {
         store.set(uid, forKey: key)
-    }
-
-    func clear() {
-        store.removeObject(forKey: key)
     }
 }

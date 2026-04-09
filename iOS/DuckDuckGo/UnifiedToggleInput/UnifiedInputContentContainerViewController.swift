@@ -110,6 +110,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var isContentActive = false
     private var needsVisibleRefresh = true
     private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
+    private var escapeHatchModel: EscapeHatchModel?
+    private var escapeHatchTapHandler: (() -> Void)?
 
     private var chatHasSuggestions: Bool {
         aiChatHistoryManager?.hasSuggestions ?? false
@@ -153,6 +155,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         installComponents()
         setupSubscriptions()
         observeRemoteMessagesChanges()
+        observeAddressBarPositionChanges()
 
         suggestionTrayManager?.showInitialSuggestions()
         updateDaxVisibility()
@@ -235,6 +238,37 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         applyRequestedContentInset()
         swipeContainerManager?.syncVisibleMode(animated: false)
         view.layoutIfNeeded()
+    }
+
+    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
+        escapeHatchModel = model
+        escapeHatchTapHandler = onTapped
+        suggestionTrayManager?.setEscapeHatch(model)
+        aiChatHistoryManager?.setEscapeHatch(model, onTapped: onTapped)
+        updateEscapeHatchTopInset()
+    }
+
+    /// Updates top insets for escape hatch positioning on both suggestion tray and chat history.
+    /// The two tabs use different view technologies (SwiftUI NTP vs UITableView) that handle
+    /// safe area differently, so chat history needs per-position compensation to align visually.
+    private func updateEscapeHatchTopInset() {
+        let hasEscapeHatch = escapeHatchModel != nil
+        let isBottomBar = !isUsingTopBarPosition
+
+        // Suggestion tray: only needs inset in bottom bar to clear the dismiss button.
+        let suggestionInset: CGFloat = (hasEscapeHatch && isBottomBar) ? Metrics.escapeHatchDismissButtonInset : 0
+        suggestionTrayManager?.setAdditionalTopInset(suggestionInset)
+
+        // Chat history: compensate for built-in table header padding that the NTP doesn't have.
+        guard hasEscapeHatch else {
+            aiChatHistoryManager?.setAdditionalTopInset(0)
+            return
+        }
+
+        let compensation = isBottomBar ? Metrics.chatHistoryBottomBarCompensation : Metrics.chatHistoryEscapeHatchInsetCompensation
+        let emptyListBoost: CGFloat = (!chatHasSuggestions && !isBottomBar) ? Metrics.escapeHatchEmptyListBoost : 0
+        let chatInset = suggestionInset - compensation + emptyListBoost
+        aiChatHistoryManager?.setAdditionalTopInset(chatInset)
     }
 
     func setText(_ text: String) {
@@ -404,7 +438,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
         manager.delegate = self
-        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: nil)
+        let trayEscapeHatch = switchBarHandler.isFireTab ? nil : escapeHatchModel
+        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: trayEscapeHatch)
         suggestionTrayManager = manager
     }
 
@@ -417,6 +452,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         swipeContainerManager.installChatHistory(using: manager)
         manager.subscribeToTextChanges(switchBarHandler.currentTextPublisher)
         aiChatHistoryManager = manager
+        if let escapeHatchModel, !switchBarHandler.isFireTab {
+            manager.setEscapeHatch(escapeHatchModel, onTapped: escapeHatchTapHandler)
+        }
+
         manager.hasSuggestionsPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] hasSuggestions in
@@ -427,6 +466,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                 }
                 self.updateURLFallbackSuggestions(hasSuggestions: hasSuggestions, mode: self.switchBarHandler.currentToggleState)
                 self.updateSectionTitle()
+                self.updateEscapeHatchTopInset()
                 self.scheduleAnimation {
                     self.updateDaxVisibility()
                     self.view.layoutIfNeeded()
@@ -489,6 +529,19 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         guard isUsingTopBarPosition != isAdjustedForTopBar else { return }
         isAdjustedForTopBar = isUsingTopBarPosition
         updateSectionTitle()
+        updateEscapeHatchTopInset()
+    }
+
+    private func observeAddressBarPositionChanges() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onAddressBarPositionChanged),
+                                               name: AppUserDefaults.Notifications.addressBarPositionChanged,
+                                               object: nil)
+    }
+
+    @objc private func onAddressBarPositionChanged() {
+        isUsingTopBarPosition = !forceBottomBarLayout && (appSettings.currentAddressBarPosition == .top || isLandscapeOrientation)
+        updateLayoutForCurrentOrientation()
     }
 
     private func observeRemoteMessagesChanges() {
@@ -597,7 +650,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             && switchBarHandler.currentToggleState == .aiChat
         let isURLFallbackShowingContent = isShowingURLFallback && (suggestionTrayManager?.isShowingSuggestionTray ?? false)
 
-        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
+        let hasRemoteMessages = suggestionTrayManager?.hasRemoteMessages ?? false
+        let hasEscapeHatchWithoutFavoritesOrMessages = escapeHatchModel != nil && !(suggestionTrayManager?.hasFavorites ?? false) && !hasRemoteMessages
+        let isHomeDaxVisible = !shouldDisplaySuggestionTray && (!shouldDisplayFavoritesOverlay || hasEscapeHatchWithoutFavoritesOrMessages) && !isHorizontallyCompactLayoutEnabled
         let isAIDaxVisible: Bool
         if switchBarHandler.isUsingFadeOutAnimation {
             isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isChatHistoryPending && !isURLFallbackShowingContent && !shouldDisplaySuggestionTray
@@ -606,6 +661,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
+        let escapeHatchOffset: CGFloat = (escapeHatchModel != nil && !switchBarHandler.isFireTab) ? Metrics.escapeHatchLogoOffset : 0
+        daxLogoManager.setEscapeHatchBaseOffset(escapeHatchOffset)
         updateSectionTitle()
     }
 
@@ -660,6 +717,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .panel)
         static let contentTopInset: CGFloat = 10
+        static let escapeHatchDismissButtonInset: CGFloat = 44
+        static let chatHistoryEscapeHatchInsetCompensation: CGFloat = 0
+        static let chatHistoryBottomBarCompensation: CGFloat = 8
+        static let escapeHatchLogoOffset: CGFloat = 120
+        static let escapeHatchEmptyListBoost: CGFloat = 150
     }
 }
 

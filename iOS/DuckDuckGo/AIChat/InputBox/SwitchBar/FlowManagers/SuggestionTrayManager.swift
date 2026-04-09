@@ -123,6 +123,14 @@ final class SuggestionTrayManager: NSObject {
         suggestionTrayViewController?.setFavoritesSectionTitle(title)
     }
 
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
+        suggestionTrayViewController?.setEscapeHatch(model)
+    }
+
+    func setAdditionalTopInset(_ inset: CGFloat) {
+        suggestionTrayViewController?.additionalTopInset = inset
+    }
+
     /// Installs the suggestion tray in the provided container view
     func installInContainerView(_ containerView: UIView, parentViewController: UIViewController, escapeHatch: EscapeHatchModel? = nil) {
         guard suggestionTrayViewController == nil else { return }

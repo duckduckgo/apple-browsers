@@ -104,6 +104,13 @@ final class AIChatHistoryListViewController: UIViewController {
     private var currentEscapeHatchModel: EscapeHatchModel?
     private var escapeHatchHostingController: UIHostingController<ReturnToTabCard>?
 
+    var additionalTopInset: CGFloat = 0 {
+        didSet {
+            guard additionalTopInset != oldValue else { return }
+            updateTableHeader()
+        }
+    }
+
     private(set) var sectionTitle: String? {
         didSet {
             guard sectionTitle != oldValue else { return }
@@ -189,20 +196,7 @@ final class AIChatHistoryListViewController: UIViewController {
 
         let container = UIView()
         container.backgroundColor = UIColor(designSystemColor: .background)
-        var totalHeight: CGFloat = 0
-
-        if hasTitleContent {
-            let config = titleLayoutConfiguration
-            titleLabel.text = sectionTitle
-            container.addSubview(titleLabel)
-            NSLayoutConstraint.activate([
-                titleLabel.topAnchor.constraint(equalTo: container.topAnchor, constant: config.topPadding),
-                titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: config.leadingInset),
-                titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: config.trailingInset),
-            ])
-            let titleHeight = titleLabel.font.lineHeight
-            totalHeight += config.topPadding + ceil(titleHeight) + config.bottomPadding
-        }
+        var totalHeight: CGFloat = additionalTopInset
 
         if hasEscapeHatch, let hosting = escapeHatchHostingController {
             hosting.view.translatesAutoresizingMaskIntoConstraints = false
@@ -230,6 +224,19 @@ final class AIChatHistoryListViewController: UIViewController {
             ])
 
             totalHeight += Constants.escapeHatchTopPadding + Constants.escapeHatchHeaderHeight + Constants.escapeHatchBottomPadding
+        }
+
+        if hasTitleContent {
+            let config = titleLayoutConfiguration
+            titleLabel.text = sectionTitle
+            container.addSubview(titleLabel)
+            NSLayoutConstraint.activate([
+                titleLabel.topAnchor.constraint(equalTo: container.topAnchor, constant: totalHeight + config.topPadding),
+                titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: config.leadingInset),
+                titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: config.trailingInset),
+            ])
+            let titleHeight = titleLabel.font.lineHeight
+            totalHeight += config.topPadding + ceil(titleHeight) + config.bottomPadding
         }
 
         let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width

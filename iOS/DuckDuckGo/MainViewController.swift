@@ -1494,6 +1494,15 @@ class MainViewController: UIViewController {
         controller.setEscapeHatch(hatch)
         currentNTPEscapeHatch = hatch
 
+        if let hatch {
+            let targetTab = hatch.targetTab
+            unifiedToggleInputCoordinator?.setEscapeHatch(hatch, onTapped: { [weak self] in
+                self?.onSwitchToTab(targetTab)
+            })
+        } else {
+            unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
+        }
+
         addToContentContainer(controller: controller)
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
@@ -1533,6 +1542,7 @@ class MainViewController: UIViewController {
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
         currentNTPEscapeHatch = nil
+        unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
     }
 
     @IBAction func onFirePressed() {
@@ -4128,6 +4138,7 @@ extension MainViewController: NewTabPageControllerDelegate {
         guard tabManager.currentTabsModel.tabExists(tab: tab) else {
             controller.setEscapeHatch(nil)
             currentNTPEscapeHatch = nil
+            unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
             return
         }
         let currentTab = tabManager.currentTabsModel.currentTab
@@ -4139,6 +4150,7 @@ extension MainViewController: NewTabPageControllerDelegate {
             closeTab(currentTab)
         }
         currentNTPEscapeHatch = nil
+        unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
     }
 
     func newTabPageDidRequestFireMode(_ controller: NewTabPageViewController) {

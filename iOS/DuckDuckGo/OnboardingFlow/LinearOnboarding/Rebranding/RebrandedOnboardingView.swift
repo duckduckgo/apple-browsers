@@ -228,8 +228,6 @@ extension OnboardingRebranding {
                         }
 #endif
                 }
-
-                experimentExitOverlay
             }
             .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)
         }
@@ -559,13 +557,6 @@ extension OnboardingRebranding {
                     }
                 }
             }
-        }
-
-        private var experimentExitOverlay: some View {
-            onboardingTheme.colorPalette.background
-                .opacity(isExperimentExitTransitionActive ? 1 : 0)
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
         }
 
         private func beginExperimentExitTransition() {

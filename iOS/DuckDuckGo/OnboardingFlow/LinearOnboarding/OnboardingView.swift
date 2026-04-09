@@ -65,8 +65,6 @@ struct OnboardingView: View {
                     }
 #endif
             }
-
-            experimentExitOverlay
         }
     }
 
@@ -266,13 +264,6 @@ struct OnboardingView: View {
             }
         )
         .onboardingDaxDialogStyle()
-    }
-
-    private var experimentExitOverlay: some View {
-        OnboardingBackground()
-            .opacity(isExperimentExitTransitionActive ? 1 : 0)
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
     }
 
     private func beginExperimentExitTransition() {

@@ -553,7 +553,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNtpRecentChats:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpRecentChats)), category: .duckAI)
         case .aiChatNtpViewAllChats:
-            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpViewAllChats)), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpViewAllChats)), category: .duckAI)
         case .aiChatNtpChatTools:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpChatTools)), category: .duckAI)
         case .aiChatSidebarFloating:
@@ -585,13 +585,13 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabSuspensionDebugging:
             Config(source: .disabled)
         case .aiChatMoreOptionsMenuShortcut:
-            Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.moreOptionsMenuShortcut)), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.moreOptionsMenuShortcut)), category: .duckAI)
         case .aiChatMainMenuShortcut:
-            Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.mainMenuShortcut)), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.mainMenuShortcut)), category: .duckAI)
         case .aiChatSidebarAboutSchemeNavigationFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarAboutSchemeNavigationFix)), category: .duckAI)
         case .aiChatViewAllChatsNativeOmnibar:
-            Config(defaultValue: .internalOnly,
+            Config(defaultValue: .enabled,
                    source: .remoteReleasable(.subfeature(AIChatSubfeature.viewAllChatsNativeOmnibar)),
                    category: .duckAI)
         case .aiChatNativeStorage:

@@ -262,6 +262,93 @@ final class TabSuspensionServiceTests: XCTestCase {
         XCTAssertTrue(mockPixelFiring.fireCalls.isEmpty)
     }
 
+    // MARK: - View Model Swap on Suspension
+
+    func testWhenTabIsSuspended_ThenViewModelChangesToUnloadedTabViewModel() {
+        featureFlagger.enabledFeatureFlags = [.tabSuspension]
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger)
+        let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now)
+        let vm = makeTabCollectionViewModel(tabs: [.loaded(tab), .loaded(selectedTab)], selectionIndex: .unpinned(1))
+        sut = makeSUT(tabCollectionViewModels: [vm])
+        tab.lastSelectedAt = now.addingTimeInterval(-20 * 60)
+
+        // Before suspension, view model should be TabViewModel
+        XCTAssertTrue(vm.tabBarViewModel(at: .unpinned(0)) is TabViewModel)
+
+        postMemoryPressure()
+
+        // After suspension, view model should be UnloadedTabViewModel
+        XCTAssertTrue(vm.tabBarViewModel(at: .unpinned(0)) is UnloadedTabViewModel)
+    }
+
+    // MARK: - Suspend + Materialize Roundtrip
+
+    func testWhenSuspendedTabIsSelected_ThenItIsMaterializedAndViewModelIsRestored() {
+        featureFlagger.enabledFeatureFlags = [.tabSuspension]
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger)
+        let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now)
+        let vm = makeTabCollectionViewModel(tabs: [.loaded(tab), .loaded(selectedTab)], selectionIndex: .unpinned(1))
+        sut = makeSUT(tabCollectionViewModels: [vm])
+        tab.lastSelectedAt = now.addingTimeInterval(-20 * 60)
+
+        // Suspend the tab
+        postMemoryPressure()
+        XCTAssertEqual(vm.tabs.map(\.isSuspended), [true, false])
+        XCTAssertTrue(vm.tabBarViewModel(at: .unpinned(0)) is UnloadedTabViewModel)
+
+        // Select the suspended tab to materialize it
+        let materializedTab = vm.selectTab(at: .unpinned(0))
+
+        XCTAssertNotNil(materializedTab)
+        XCTAssertEqual(vm.tabs.map(\.isSuspended), [false, false])
+        XCTAssertTrue(vm.tabBarViewModel(at: .unpinned(0)) is TabViewModel)
+
+        // Content should be preserved through the roundtrip
+        XCTAssertEqual(materializedTab?.content, .url(.duckDuckGo, credential: nil, source: .link))
+    }
+
+    func testWhenSuspendedTabIsSelected_ThenUUIDIsPreserved() {
+        featureFlagger.enabledFeatureFlags = [.tabSuspension]
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger)
+        let originalUUID = tab.uuid
+        let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now)
+        let vm = makeTabCollectionViewModel(tabs: [.loaded(tab), .loaded(selectedTab)], selectionIndex: .unpinned(1))
+        sut = makeSUT(tabCollectionViewModels: [vm])
+        tab.lastSelectedAt = now.addingTimeInterval(-20 * 60)
+
+        postMemoryPressure()
+
+        // UUID should be preserved in the unloaded tab
+        XCTAssertEqual(vm.tabs[0].uuid, originalUUID)
+
+        // Materialize by selecting
+        let materializedTab = vm.selectTab(at: .unpinned(0))
+
+        // UUID should still be preserved after materialization
+        XCTAssertEqual(materializedTab?.uuid, originalUUID)
+    }
+
+    // MARK: - makeSuspendedTab Snapshot Preservation
+
+    func testWhenTabIsSuspended_ThenShouldClearSnapshotOnDeinitIsSetToFalse() {
+        featureFlagger.enabledFeatureFlags = [.tabSuspension]
+        let extensionsBuilder = TestTabExtensionsBuilder(load: [TabSuspensionExtension.self, TabSnapshotExtension.self])
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: extensionsBuilder, featureFlagger: featureFlagger)
+        let selectedTab = Tab(content: .newtab, extensionsBuilder: self.tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now)
+        let vm = makeTabCollectionViewModel(tabs: [.loaded(tab), .loaded(selectedTab)], selectionIndex: .unpinned(1))
+        tab.lastSelectedAt = now.addingTimeInterval(-20 * 60)
+
+        // Before suspension, shouldClearSnapshotOnDeinit defaults to true
+        XCTAssertEqual(tab.tabSnapshots?.shouldClearSnapshotOnDeinit, true)
+
+        _ = vm.suspendTab(at: .unpinned(0))
+
+        // After suspension, the original tab's snapshot extension should be told not to clear
+        XCTAssertEqual(tab.tabSnapshots?.shouldClearSnapshotOnDeinit, false)
+    }
+
+    // MARK: - Memory Reclaimed
+
     func testWhenPostMemoryIsHigher_ThenMemoryReclaimedIsZero() {
         featureFlagger.enabledFeatureFlags = [.tabSuspension]
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger)

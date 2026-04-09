@@ -150,7 +150,7 @@ extension TabCollectionViewModelTests {
     func test_WithPinnedTabs_WhenInsertChildOfPinnedTabAndNoOtherChildTabIsNearParent_ThenTabIsInsertedAsFirstUnpinnedTab() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
 
-        let parentPinnedTab = tabCollectionViewModel.pinnedTabsManager!.tabCollection.tabs[0]
+        guard case .loaded(let parentPinnedTab) = tabCollectionViewModel.pinnedTabsManager!.tabCollection.tabs[0] else { return XCTFail("Expected loaded tab") }
 
         let tab = Tab(parentTab: parentPinnedTab)
         tabCollectionViewModel.insert(tab, selected: false)
@@ -164,7 +164,7 @@ extension TabCollectionViewModelTests {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         tabCollectionViewModel.appendNewTab()
 
-        let parentPinnedTab = tabCollectionViewModel.pinnedTabsManager!.tabCollection.tabs[0]
+        guard case .loaded(let parentPinnedTab) = tabCollectionViewModel.pinnedTabsManager!.tabCollection.tabs[0] else { return XCTFail("Expected loaded tab") }
 
         tabCollectionViewModel.insert(Tab(parentTab: parentPinnedTab), selected: false)
         tabCollectionViewModel.insert(Tab(parentTab: parentPinnedTab), selected: false)
@@ -236,7 +236,7 @@ extension TabCollectionViewModelTests {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         tabCollectionViewModel.appendPinnedTab()
         tabCollectionViewModel.appendPinnedTab()
-        let lastPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.tabs[2]
+        guard case .loaded(let lastPinnedTab) = tabCollectionViewModel.pinnedTabsCollection?.tabs[2] else { return XCTFail("Expected loaded tab") }
 
         tabCollectionViewModel.select(at: .pinned(2))
         tabCollectionViewModel.select(at: .pinned(1))
@@ -250,7 +250,7 @@ extension TabCollectionViewModelTests {
     func test_WithPinnedTabs_WhenSelectedLastPinnedTabIsRemovedThenFirstUnpinnedTabIsSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         tabCollectionViewModel.appendPinnedTab()
-        let firstUnpinnedTab = tabCollectionViewModel.tabCollection.tabs[0]
+        guard case .loaded(let firstUnpinnedTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
 
         tabCollectionViewModel.select(at: .pinned(1))
         tabCollectionViewModel.remove(at: .pinned(1))
@@ -263,7 +263,7 @@ extension TabCollectionViewModelTests {
     func test_WithPinnedTabs_WhenLastTabIsRemoved_ThenLastPinnedTabIsSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         tabCollectionViewModel.appendPinnedTab()
-        let lastPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.tabs[1]
+        guard case .loaded(let lastPinnedTab) = tabCollectionViewModel.pinnedTabsCollection?.tabs[1] else { return XCTFail("Expected loaded tab") }
 
         tabCollectionViewModel.select(at: .pinned(1))
         tabCollectionViewModel.remove(at: .unpinned(0))
@@ -290,7 +290,7 @@ extension TabCollectionViewModelTests {
     func test_WithPinnedTabs_WhenChildTabIsInsertedAndRemoved_ThenChildTabIsSelectedBackIfPresent() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         tabCollectionViewModel.appendPinnedTab()
-        let parentTab = tabCollectionViewModel.pinnedTabsCollection!.tabs[0]
+        guard case .loaded(let parentTab) = tabCollectionViewModel.pinnedTabsCollection!.tabs[0] else { return XCTFail("Expected loaded tab") }
 
         let childTab1 = Tab(parentTab: parentTab)
         tabCollectionViewModel.append(tab: childTab1, selected: false)
@@ -306,7 +306,7 @@ extension TabCollectionViewModelTests {
     @MainActor
     func test_WithPinnedTabs_WhenChildTabIsInsertedAndRemovedAndNoChildIsNear_ThenParentIsSelectedBack() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
-        let parentTab = tabCollectionViewModel.pinnedTabsCollection!.tabs[0]
+        guard case .loaded(let parentTab) = tabCollectionViewModel.pinnedTabsCollection!.tabs[0] else { return XCTFail("Expected loaded tab") }
 
         // Append two tabs that are not parent related
         tabCollectionViewModel.append(tab: Tab(), selected: true)
@@ -332,7 +332,7 @@ extension TabCollectionViewModelTests {
 
         _ = tabCollectionViewModel.removeSelected()
 
-        XCTAssertFalse(tabCollectionViewModel.pinnedTabsCollection!.tabs.contains(selectedTab!))
+        XCTAssertFalse(tabCollectionViewModel.pinnedTabsCollection!.contains(tab: selectedTab!))
     }
 
     // MARK: - Duplicate
@@ -383,12 +383,12 @@ extension TabCollectionViewModelTests {
         tabCollectionViewModel.appendPinnedTab(content: tabContent)
 
         XCTAssertEqual(tabCollectionViewModel.pinnedTabs.count, 1)
-        XCTAssertEqual(tabCollectionViewModel.tabs.count, 1)
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1)
 
         tabCollectionViewModel.unpinTab(at: 0)
 
         XCTAssertEqual(tabCollectionViewModel.pinnedTabs.count, 0)
-        XCTAssertEqual(tabCollectionViewModel.tabs.count, 2)
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 2)
         XCTAssertEqual(tabCollectionViewModel.tabs.first?.content, tabContent)
     }
 

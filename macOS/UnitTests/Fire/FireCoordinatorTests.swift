@@ -176,7 +176,7 @@ struct FireCoordinatorTests {
 }
 
 private final class MockTabCleanupPreparer: TabCleanupPreparing {
-    func prepareTabsForCleanup(_ tabs: [TabViewModel]) async {}
+    func prepareTabsForCleanup(_ tabs: [any TabDataClearing]) async {}
 }
 
 private final class TestPresenter: FireDialogViewPresenting {

@@ -46,7 +46,7 @@ public struct UserText {
     public static let actionNewTab = NSLocalizedString("action.title.newTabAction", value: "New Tab", comment: "Create New Tab action")
     public static let actionNewFireTab = NotLocalizedString("action.title.newFireTabAction", value: "New Fire Tab", comment: "Create New Fire Tab action")
     public static let actionNewTabForUrl = NSLocalizedString("action.title.newTabForUrl", value: "Open in New Tab", comment: "Open in New Tab action")
-    public static let actionNewFireTabForUrl = NotLocalizedString("action.title.newFireTabForUrl", value: "Open in New Fire Tab", comment: "Open in New Fire Tab action")
+    public static let actionNewFireTabForUrl = NotLocalizedString("action.title.newFireTabForUrl", value: "Open in a Fire Tab", comment: "Open in New Fire Tab action")
     public static let actionNewBackgroundTabForUrl = NSLocalizedString("action.title.newBackgroundTabForUrl", value: "Open in Background", comment: "Open in New Background Tab action")
     public static let actionForgetAll = NSLocalizedString("action.title.forgetAll", value: "Clear Tabs and Data", comment: "")
     public static let actionForgetAllDone = NSLocalizedString("action.title.forgetAllDone", value: "Tabs and data cleared", comment: "Confirmation message")

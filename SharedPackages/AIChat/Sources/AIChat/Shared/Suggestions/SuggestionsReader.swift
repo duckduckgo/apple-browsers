@@ -80,6 +80,7 @@ public final class SuggestionsReader: SuggestionsReading {
 
     private let featureFlagger: FeatureFlagger
     private let privacyConfig: PrivacyConfigurationManaging
+    private let nativeStorageHandler: DuckAiNativeStorageHandling?
     private let localReader: LocalSuggestionsReader?
     private let featureFlagProvider: AIChatFeatureFlagProviding?
 
@@ -96,6 +97,7 @@ public final class SuggestionsReader: SuggestionsReading {
     ) {
         self.featureFlagger = featureFlagger
         self.privacyConfig = privacyConfig
+        self.nativeStorageHandler = nativeStorageHandler
         self.localReader = nativeStorageHandler.map { LocalSuggestionsReader(storageHandler: $0) }
         self.featureFlagProvider = featureFlagProvider
     }
@@ -104,8 +106,10 @@ public final class SuggestionsReader: SuggestionsReading {
 
     @MainActor
     public func fetchSuggestions(query: String?, maxChats: Int) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
-        // Use local storage when the flag is enabled and the handler is available
-        if let featureFlagProvider, featureFlagProvider.isLocalStorageManipulationEnabled(), let localReader {
+        // Use local storage when the flag is enabled, the handler is available, and migration is done
+        if let featureFlagProvider, featureFlagProvider.isLocalStorageManipulationEnabled(),
+           let nativeStorageHandler, (try? nativeStorageHandler.isMigrationDone()) == true,
+           let localReader {
             return await localReader.fetchSuggestions(query: query, maxChats: maxChats)
         }
 

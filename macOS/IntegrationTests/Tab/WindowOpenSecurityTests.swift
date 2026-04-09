@@ -79,7 +79,7 @@ final class WindowOpenSecurityTests: XCTestCase {
 
         permissionManager = PermissionManagerMock()
         permissionManager.savedPermissions = [
-            mainURL.host!: [.popups: true]
+            mainURL.host!: [.popups: .allow]
         ]
 
         schemeHandler = TestSchemeHandler()

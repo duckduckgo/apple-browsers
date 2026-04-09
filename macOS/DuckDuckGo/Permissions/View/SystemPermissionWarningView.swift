@@ -26,17 +26,20 @@ struct SystemPermissionWarningView: View {
     let prefixText: String
     let linkText: String
     let linkColor: Color
+    let linkOnNewLine: Bool
     let action: () -> Void
 
     init(
         prefixText: String,
         linkText: String,
         linkColor: Color = Color(designSystemColor: .textLink),
+        linkOnNewLine: Bool = false,
         action: @escaping () -> Void
     ) {
         self.prefixText = prefixText
         self.linkText = linkText
         self.linkColor = linkColor
+        self.linkOnNewLine = linkOnNewLine
         self.action = action
     }
 
@@ -44,7 +47,7 @@ struct SystemPermissionWarningView: View {
         (Text(prefixText)
             .font(.system(size: 12))
             .foregroundColor(Color(designSystemColor: .textSecondary))
-        + Text(" ")
+        + Text(verbatim: linkOnNewLine ? "\n" : " ")
         + Text(linkText)
             .font(.system(size: 12))
             .foregroundColor(linkColor))

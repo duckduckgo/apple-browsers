@@ -221,6 +221,10 @@ extension URL {
         return NavigationalScheme.validSchemes.contains(scheme)
     }
 
+    var isHttpOrHttps: Bool {
+        isHttps || isHttp
+    }
+
     // MARK: ATB
 
     static var devMode: String {

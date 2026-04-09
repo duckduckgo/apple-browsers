@@ -50,7 +50,6 @@ final class SettingsViewModel: ObservableObject {
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
     private(set) var privacyStore = PrivacyUserDefaults()
     lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
-    private lazy var dataClearingCapability: DataClearingCapable = DataClearingCapability.create(using: featureFlagger)
     private lazy var animator: FireButtonAnimator = FireButtonAnimator(appSettings: AppUserDefaults())
     private var legacyViewProvider: SettingsLegacyViewProvider
     private lazy var versionProvider: AppVersion = AppVersion.shared
@@ -1333,8 +1332,6 @@ extension SettingsViewModel {
         }))
         case .unprotectedSites: pushViewController(legacyViewProvider.unprotectedSites)
         case .fireproofSites: pushViewController(legacyViewProvider.fireproofSites)
-        case .autoclearData:
-            pushViewController(legacyViewProvider.autoclearData)
         case .keyboard: pushViewController(legacyViewProvider.keyboard)
         case .debug: pushViewController(legacyViewProvider.debug)
             
@@ -1777,18 +1774,14 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
     }
 
     func navigateToAutoClearData() {
-        if dataClearingCapability.isEnhancedDataClearingEnabled {
-            let viewModel = AutoClearSettingsViewModel(
-                appSettings: appSettings,
-                aiChatSettings: aiChatSettings
-            )
-            let view = AutoClearSettingsView(viewModel: viewModel)
-                .environmentObject(self)
-            let hostingController = UIHostingController(rootView: view)
-            pushViewController(hostingController)
-        } else {
-            presentLegacyView(.autoclearData)
-        }
+        let viewModel = AutoClearSettingsViewModel(
+            appSettings: appSettings,
+            aiChatSettings: aiChatSettings
+        )
+        let view = AutoClearSettingsView(viewModel: viewModel)
+            .environmentObject(self)
+        let hostingController = UIHostingController(rootView: view)
+        pushViewController(hostingController)
     }
 
     func presentFireConfirmation(from sourceRect: CGRect) {

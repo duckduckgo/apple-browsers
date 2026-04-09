@@ -30,7 +30,7 @@ public protocol DailyPixelFiring {
                                   withAdditionalParameters params: [String: String],
                                   includedParameters: [Pixel.QueryParameters],
                                   pixelFiring: PixelFiring.Type,
-                                  dailyPixelStore: KeyValueStoring,
+                                  dailyPixelStore: ThrowingKeyValueStoring,
                                   onDailyComplete: @escaping (Swift.Error?) -> Void,
                                   onCountComplete: @escaping (Swift.Error?) -> Void)
 

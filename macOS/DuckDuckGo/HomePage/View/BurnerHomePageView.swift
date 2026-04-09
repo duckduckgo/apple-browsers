@@ -32,8 +32,12 @@ struct BurnerHomePageView: View {
 
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var model: AppearancePreferences
+    @EnvironmentObject var themeManager: ThemeManager
 
-    let backgroundColor = Color(.newTabPageBackground)
+    private var backgroundColor: Color {
+        Color(designSystemColor: .surfaceCanvas, palette: themeManager.designColorPalette)
+    }
+
     private var infoBackgroundColor: Color {
         return colorScheme == .dark ? Color.white.opacity(0.03) : backgroundColor
     }

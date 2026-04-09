@@ -55,6 +55,7 @@ let package = Package(
                 .product(name: "DDGSync", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
+                .product(name: "DuckAiDataStore", package: "BrowserServicesKit"),
                 .product(name: "DDGSyncCrypto", package: "sync_crypto")
             ],
             resources: [

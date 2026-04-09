@@ -31,9 +31,11 @@ final class TabsModelProviderTests: XCTestCase {
         super.setUp()
         featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.fireMode]
+        FireModeCapability.resolve(using: featureFlagger)
     }
 
     override func tearDown() {
+        UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
         featureFlagger = nil
         super.tearDown()
     }
@@ -170,6 +172,7 @@ final class TabsModelProviderTests: XCTestCase {
 
     func testWhenFireModeDisabledThenAggregateCountEqualsNormalModelOnly() {
         featureFlagger.enabledFeatureFlags = []
+        FireModeCapability.resolve(using: featureFlagger)
 
         let normalModel = TabsModel(tabs: [
             Tab(link: exampleLink),
@@ -189,7 +192,7 @@ final class TabsModelProviderTests: XCTestCase {
     private func makeSUT(normalModel: TabsModel = TabsModel(desktop: false),
                          fireModel: TabsModel = TabsModel(tabs: [], desktop: false, mode: .fire),
                          persistence: TabsModelPersisting = MockTabsModelPersistence()) -> TabsModelProvider {
-        TabsModelProvider(normalTabsModel: normalModel, fireModeTabsModel: fireModel, persistence: persistence, featureFlagger: featureFlagger)
+        TabsModelProvider(normalTabsModel: normalModel, fireModeTabsModel: fireModel, persistence: persistence)
     }
 }
 

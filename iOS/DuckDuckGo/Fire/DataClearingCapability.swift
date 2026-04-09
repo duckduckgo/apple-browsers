@@ -21,18 +21,8 @@ import Core
 import Foundation
 import PrivacyConfig
 
-/// Protocol for resolving enhanced data clearing feature state.
-///
-/// Enhanced data clearing is only enabled when both `burnSingleTab` and `enhancedDataClearingSettings`
-/// feature flags are enabled. This supports dependent gradual rollout where `enhancedDataClearingSettings`
-/// is rolled out at 100% while `burnSingleTab` is rolled out to x%.
 protocol DataClearingCapable {
-    /// Whether the enhanced data clearing settings UI should be shown.
-    /// This requires both `burnSingleTab` and `enhancedDataClearingSettings` feature flags to be enabled.
-    var isEnhancedDataClearingEnabled: Bool { get }
-
-    /// Whether the burn single tab feature is enabled.
-    var isBurnSingleTabEnabled: Bool { get }
+    // TODO: - To be used for new single tab burn changes
 }
 
 enum DataClearingCapability {
@@ -46,16 +36,5 @@ struct DataClearingDefaultCapability: DataClearingCapable {
 
     init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
-    }
-
-    var isEnhancedDataClearingEnabled: Bool {
-        // Enhanced data clearing is only enabled with burnSingleTab. But can be disabled on its own.
-        // This supports dependent gradual rollout (Rolling out two features to the same cohort of users.
-        // enhancedDataClearingSettings rolled out at 100%, while burnSingleTab rolled out to x%.
-        featureFlagger.isFeatureOn(for: FeatureFlag.enhancedDataClearingSettings) && isBurnSingleTabEnabled
-    }
-
-    var isBurnSingleTabEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.burnSingleTab)
     }
 }

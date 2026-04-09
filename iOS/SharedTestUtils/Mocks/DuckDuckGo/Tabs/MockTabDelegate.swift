@@ -114,6 +114,8 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestDeleteContextualChat(tab: DuckDuckGo.TabViewController, chatID: String) {}
 
+    func tabDidRequestToggleSidebarOnCurrentTab(_ tab: DuckDuckGo.TabViewController) {}
+
     func tabDidRequestPrivacyDashboardButtonPulse(tab: DuckDuckGo.TabViewController, animated: Bool) {
         tabDidRequestPrivacyDashboardButtonPulseCalled = true
         privacyDashboardAnimated = animated
@@ -146,6 +148,8 @@ final class MockTabDelegate: TabDelegate {
     func tabDidRequestNavigationToDifferentSite(tab: DuckDuckGo.TabViewController) {}
     
     func tab(_ tab: DuckDuckGo.TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {}
+
+    func tabDidRequestFireMode(tab: DuckDuckGo.TabViewController) {}
 }
 
 extension TabViewController {

@@ -98,7 +98,7 @@
         "description": "Fired when single tab burn is executed",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "burnSource", "tabType"]
     },
     "m_single-tab-data_cleared": {

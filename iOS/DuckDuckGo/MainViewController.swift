@@ -303,6 +303,7 @@ class MainViewController: UIViewController {
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
     let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
+    lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
@@ -329,6 +330,7 @@ class MainViewController: UIViewController {
     }
 
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings
+    private let fireModePromotionEligibility: FireModePromotionCoordinating?
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -388,7 +390,8 @@ class MainViewController: UIViewController {
         whatsNewRepository: WhatsNewMessageRepository,
         darkReaderFeatureSettings: DarkReaderFeatureSettings,
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
-        toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
+        toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
+        fireModePromotionEligibility: FireModePromotionCoordinating? = nil
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -451,6 +454,7 @@ class MainViewController: UIViewController {
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.voiceShortcutFeature = voiceShortcutFeature
         self.toggleModeStorage = toggleModeStorage
+        self.fireModePromotionEligibility = fireModePromotionEligibility
 
         super.init(nibName: nil, bundle: nil)
         
@@ -511,6 +515,7 @@ class MainViewController: UIViewController {
             remoteMessagingActionHandler: remoteMessagingActionHandler,
             remoteMessagingImageLoader: remoteMessagingImageLoader,
             remoteMessagingPixelReporter: remoteMessagingPixelReporter,
+            fireModePromotionEligibility: fireModePromotionEligibility,
             appSettings: appSettings,
             subscriptionManager: subscriptionManager,
             internalUserCommands: internalUserCommands)
@@ -820,7 +825,7 @@ class MainViewController: UIViewController {
         controller.keyValueStore = keyValueStore
         controller.tabManager = tabManager
         controller.daxDialogsManager = daxDialogsManager
-        controller.fireModeCapability = FireModeCapability.create(using: featureFlagger)
+        controller.fireModeCapability = FireModeCapability.create()
         viewCoordinator.tabBarContainer.addSubview(controller.view)
         tabsBarController = controller
         controller.didMove(toParent: self)
@@ -1085,8 +1090,8 @@ class MainViewController: UIViewController {
             viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
             refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         }
-        if isInPhoneLandscapeLayout {
-            applyPhoneLandscapeWidth()
+        if isInMinimalChromeLayout {
+            applyMinimalChromeWidth()
         }
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
@@ -1184,6 +1189,9 @@ class MainViewController: UIViewController {
 
         let coordinator = unifiedToggleInputCoordinator
         let isAITabCollapsed = coordinator?.displayState == .aiTab(.collapsed)
+        let isBottomOmnibarKeyboardAnchored = coordinator?.isOmnibarSession == true
+            && coordinator?.cardPosition == .bottom
+            && viewCoordinator.isNavigationBarContainerBottomKeyboardBased
 
         let baseInputHeight: CGFloat
         if let coordinator, coordinator.isAITabExpanded || coordinator.isOmnibarSession {
@@ -1201,7 +1209,7 @@ class MainViewController: UIViewController {
 
         let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + baseInputHeight : 0
         if !isAITabCollapsed {
-            let newHeight = max(baseInputHeight, containerHeight)
+            let newHeight = isBottomOmnibarKeyboardAnchored ? baseInputHeight : max(baseInputHeight, containerHeight)
             self.viewCoordinator.constraints.navigationBarContainerHeight.constant = newHeight
         }
 
@@ -1268,7 +1276,7 @@ class MainViewController: UIViewController {
 
         // Omnibar fire button (for iPhone landscape combined bar)
         viewCoordinator.omniBar.barView.onFirePressed = { [weak self] in
-            self?.onFirePressed()
+            self?.performCustomizationActionForToolbar()
         }
     }
     
@@ -1479,6 +1487,7 @@ class MainViewController: UIViewController {
                                                   remoteMessagingActionHandler: remoteMessagingActionHandler,
                                                   remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                   remoteMessagingPixelReporter: remoteMessagingPixelReporter,
+                                                  fireModePromotionEligibility: fireModePromotionEligibility,
                                                   appSettings: appSettings,
                                                   faviconsCache: favicons,
                                                   subscriptionManager: subscriptionManager,
@@ -1542,12 +1551,7 @@ class MainViewController: UIViewController {
     @IBAction func onFirePressed() {
 
         func showFireConfirmation() {
-            let presenter = FireConfirmationPresenter(tabsModel: tabManager.allTabsModel,
-                                                      featureFlagger: featureFlagger,
-                                                      historyManager: historyManager,
-                                                      fireproofing: fireproofing,
-                                                      aiChatSettings: aiChatSettings,
-                                                      keyValueFilesStore: keyValueStore)
+            let presenter = FireConfirmationPresenter()
             let source: UIView = findFireButton() ?? viewCoordinator.toolbar
             presenter.presentFireConfirmation(
                 on: self,
@@ -1971,7 +1975,7 @@ class MainViewController: UIViewController {
                 coordinator.hide()
                 coordinator.unbind()
                 viewCoordinator.hideAITabChrome()
-                refreshStatusBarBackgroundAfterAIChrome()
+                applyUnifiedInputChromeBackground(.standardChrome)
             }
             return
         }
@@ -2001,6 +2005,11 @@ class MainViewController: UIViewController {
         restorePostFireAddressBarPickerIfNeeded()
 
         refreshUnifiedToggleInput(for: tab)
+
+        if minimalChromeSettings.isFeatureEnabled && !AppWidthObserver.shared.isPad {
+            applyWidth()
+        }
+
         updateBrowsingMenuHeaderDataSource()
     }
 
@@ -2063,23 +2072,46 @@ class MainViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
 
         let isKeyboardShowing = omniBar.isTextFieldEditing
-        if isKeyboardShowing && !AppWidthObserver.shared.isPad && featureFlagger.isFeatureOn(.minimalChromeInLandscape) {
+        if isKeyboardShowing && !AppWidthObserver.shared.isPad && minimalChromeSettings.isFeatureEnabled {
             omniBar.barView.textField.suppressResignFirstResponder = true
         }
 
+        let wasMinimalChrome = isInMinimalChromeLayout
+        // Capture a snapshot of the toolbar before applyWidth hides it, so we can animate it out.
+        // We can't keep toolbar.isHidden = false because the async showBars() call in applyWidth
+        // would reset toolbarBottom.constant via updateToolbarConstant.
+        let toolbarSnapshot: UIView? = {
+            guard !wasMinimalChrome, isMinimalChromeMode(for: size) else { return nil }
+            guard let snapshot = viewCoordinator.toolbar.snapshotView(afterScreenUpdates: false) else { return nil }
+            snapshot.frame = viewCoordinator.toolbar.frame
+            view.addSubview(snapshot)
+            return snapshot
+        }()
+
         let needsWidthUpdate = AppWidthObserver.shared.willResize(toWidth: size.width)
-            && (AppWidthObserver.shared.isPad || isInPhoneLandscapeLayout || featureFlagger.isFeatureOn(.minimalChromeInLandscape))
+            && (AppWidthObserver.shared.isPad || isInMinimalChromeLayout || minimalChromeSettings.isFeatureEnabled)
         if needsWidthUpdate {
             applyWidth(for: size)
+        }
+
+        let isShowingToolbar = wasMinimalChrome && !isInMinimalChromeLayout
+        if isShowingToolbar {
+            viewCoordinator.toolbar.alpha = 0
         }
 
         self.showMenuHighlighterIfNeeded()
         updateChromeForDuckPlayer()
 
         coordinator.animate { _ in
+            toolbarSnapshot?.alpha = 0
+            if isShowingToolbar {
+                self.viewCoordinator.toolbar.alpha = 1
+            }
             self.swipeTabsCoordinator?.invalidateLayout()
             self.deferredFireOrientationPixel()
         } completion: { _ in
+            toolbarSnapshot?.removeFromSuperview()
+
             self.omniBar.barView.textField.suppressResignFirstResponder = false
             if isKeyboardShowing {
                 self.omniBar.beginEditing(animated: false)
@@ -2105,8 +2137,8 @@ class MainViewController: UIViewController {
         orientationPixelWorker = worker
     }
 
-    private func isPhoneLandscapeMode(for size: CGSize? = nil) -> Bool {
-        guard featureFlagger.isFeatureOn(.minimalChromeInLandscape) else { return false }
+    private func isMinimalChromeMode(for size: CGSize? = nil) -> Bool {
+        guard minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: currentTab?.isAITab ?? false) else { return false }
         let size = size ?? view.bounds.size
         return !AppWidthObserver.shared.isPad
             && (size.width > size.height)
@@ -2114,25 +2146,19 @@ class MainViewController: UIViewController {
 
     private func applyWidth(for size: CGSize? = nil) {
 
-        if isInPhoneLandscapeLayout {
-            setPhoneLandscapeMode(false)
-            viewCoordinator.setNavBarContainerExpandableHeight(false)
-        }
-
         if AppWidthObserver.shared.isLargeWidth {
             applyLargeWidth()
-        } else if isPhoneLandscapeMode(for: size) {
-            applyPhoneLandscapeWidth()
+        } else if isMinimalChromeMode(for: size) {
+            applyMinimalChromeWidth()
         } else {
             applySmallWidth()
         }
 
         DispatchQueue.main.async {
             // Do this async otherwise the toolbar buttons skew to the right
-            if self.viewCoordinator.constraints.navigationBarContainerTop.constant >= 0 {
-                if !self.isStartupOnboardingPending {
-                    self.showBars()
-                }
+            if self.viewCoordinator.constraints.navigationBarContainerTop.constant >= 0,
+               !self.isInMinimalChromeLayout {
+                self.showBars()
             }
             // If tabs have been udpated, do this async to make sure size calcs are current
             self.tabsBarController?.refresh(tabsModel: self.tabManager.currentTabsModel)
@@ -2160,24 +2186,25 @@ class MainViewController: UIViewController {
         if AppWidthObserver.shared.isLargeWidth {
             self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 32)
         } else {
-            self.suggestionTrayController?.coversFullScreen = isInPhoneLandscapeLayout
+            self.suggestionTrayController?.coversFullScreen = isInMinimalChromeLayout
             let bottomOmniBarHeight = appSettings.currentAddressBarPosition.isBottom ? omniBar.barView.expectedHeight : 0
             self.suggestionTrayController?.fill(bottomOffset: bottomOmniBarHeight)
         }
     }
     
-    private var isInPhoneLandscapeLayout: Bool = false
+    private var isInMinimalChromeLayout: Bool = false
 
     var isUsingSingleBar: Bool {
-        AppWidthObserver.shared.isLargeWidth || isInPhoneLandscapeLayout
+        AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
     }
 
-    private func setPhoneLandscapeMode(_ enabled: Bool) {
-        isInPhoneLandscapeLayout = enabled
-        viewCoordinator.omniBar.isPhoneLandscape = enabled
+    private func setMinimalChromeMode(_ enabled: Bool) {
+        isInMinimalChromeLayout = enabled
+        viewCoordinator.omniBar.isExpandedPhone = enabled
     }
 
     private func applyLargeWidth() {
+        if isInMinimalChromeLayout { tearDownMinimalChrome() }
         viewCoordinator.tabBarContainer.isHidden = false
         viewCoordinator.toolbar.isHidden = true
         viewCoordinator.omniBar.enterPadState()
@@ -2186,28 +2213,35 @@ class MainViewController: UIViewController {
     }
 
     private func applySmallWidth() {
+        if isInMinimalChromeLayout { tearDownMinimalChrome() }
         viewCoordinator.tabBarContainer.isHidden = true
         viewCoordinator.toolbar.isHidden = false
+        viewCoordinator.constraints.toolbarBottom.constant = 0
         viewCoordinator.omniBar.enterPhoneState()
 
         swipeTabsCoordinator?.isEnabled = true
     }
 
-    private func applyPhoneLandscapeWidth() {
-        setPhoneLandscapeMode(true)
+    private func tearDownMinimalChrome() {
+        setMinimalChromeMode(false)
+        viewCoordinator.navigationBarContainer.transform = .identity
+        viewCoordinator.omniBar.barView.setLayoutMode(.compact, animated: false)
+        viewCoordinator.resetMinimalChromeLayout()
+    }
+
+    private func applyMinimalChromeWidth() {
         viewCoordinator.tabBarContainer.isHidden = true
         viewCoordinator.toolbar.isHidden = true
-        // Push the hidden toolbar off-screen so content container extends to the bottom
         let bottomHeight = toolbarHeight + view.safeAreaInsets.bottom
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight
-        viewCoordinator.omniBar.enterPadState()
+        setMinimalChromeMode(true)
+        viewCoordinator.omniBar.enterPhoneState()
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
         if appSettings.currentAddressBarPosition.isBottom {
-            viewCoordinator.setNavBarContainerBottomToKeyboard()
-            viewCoordinator.setNavBarContainerExpandableHeight(true)
+            viewCoordinator.applyMinimalChromeBottomLayout()
         } else {
-            viewCoordinator.setNavBarContainerExpandableHeight(false)
+            viewCoordinator.resetMinimalChromeLayout()
         }
 
         swipeTabsCoordinator?.isEnabled = true
@@ -3004,6 +3038,11 @@ class MainViewController: UIViewController {
         if fromDeepLink, currentTab.tabModel.link != nil {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
             loadUrlInNewTab(voiceURL, inheritedAttribution: nil)
+            // Collapse the input that was auto-expanded for the restored tab.
+            // This cancels any pending async activateInput because showCollapsed
+            // sets displayState to .collapsed, failing the guard in showExpanded's
+            // async block.
+            unifiedToggleInputCoordinator?.showCollapsed()
             return
         }
 
@@ -3048,6 +3087,11 @@ class MainViewController: UIViewController {
     private func performActionIfAITab(_ action: () -> Void) {
         guard currentTab?.isAITab == true else { return }
         action()
+    }
+    
+    func navigateToFireMode() {
+        tabManager.setBrowsingMode(.fire)
+        showTabSwitcher()
     }
 }
 
@@ -3172,14 +3216,20 @@ extension MainViewController: BrowserChromeDelegate {
     // 1.0 - full size, 0.0 - hidden
     private func updateToolbarConstant(_ ratio: CGFloat) {
         var bottomHeight = toolbarHeight
-        if viewCoordinator.addressBarPosition.isBottom {
+        if viewCoordinator.addressBarPosition.isBottom && !isInMinimalChromeLayout {
             // When position is set to bottom, contentContainer is pinned to top
             // of navigationBarContainer, hence the adjustment.
+            // Skip in minimal chrome — nav bar is positioned independently via keyboard constraint.
             bottomHeight += viewCoordinator.navigationBarContainer.frame.height
         }
         bottomHeight += view.safeAreaInsets.bottom
         let multiplier = viewCoordinator.toolbar.isHidden ? 1.0 : 1.0 - ratio
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight * multiplier
+
+        if isInMinimalChromeLayout, viewCoordinator.addressBarPosition.isBottom {
+            let navBarHeight = viewCoordinator.navigationBarContainer.frame.height
+            viewCoordinator.navigationBarContainer.transform = CGAffineTransform(translationX: 0, y: navBarHeight * (1.0 - ratio))
+        }
     }
 
     // 1.0 - full size, 0.0 - hidden
@@ -3387,6 +3437,8 @@ extension MainViewController: OmniBarDelegate {
         guard let tab = currentTab ?? tabManager.current(createIfNeeded: true) else {
             return
         }
+
+        tab.fireModePromotionCoordinator = fireModePromotionEligibility
 
         // Determine context for menu building
         let context: BrowsingMenuContext
@@ -3835,6 +3887,7 @@ extension MainViewController: OmniBarDelegate {
                 in: view,
                 parentViewController: self,
                 searchContainer: viewCoordinator.omniBar.barView.searchContainer,
+                isFireTab: isCurrentTabFireTab(),
                 keyboardLayoutGuide: view.keyboardLayoutGuide
             )
             iPadTabChatHistoryCoordinator.onSuggestionsVisibilityChanged = { [weak self] _ in
@@ -4045,6 +4098,10 @@ extension MainViewController: OmniBarDelegate {
         toggleModeStorage.save(mode)
     }
     
+    func onFireModeRequested() {
+        navigateToFireMode()
+    }
+
     func isCurrentTabFireTab() -> Bool {
         tabManager.currentTabsModel.currentTab?.fireTab ?? false
     }
@@ -4161,6 +4218,10 @@ extension MainViewController: NewTabPageControllerDelegate {
         }
         currentNTPEscapeHatch = nil
     }
+
+    func newTabPageDidRequestFireMode(_ controller: NewTabPageViewController) {
+        navigateToFireMode()
+    }
 }
 
 extension MainViewController: TabDelegate {
@@ -4171,6 +4232,10 @@ extension MainViewController: TabDelegate {
     
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {
         newEmailAddress()
+    }
+
+    func tabDidRequestFireMode(tab: TabViewController) {
+        navigateToFireMode()
     }
 
     var isAIChatEnabled: Bool {
@@ -4419,6 +4484,10 @@ extension MainViewController: TabDelegate {
         showFireButtonPulse()
     }
 
+    func tabDidRequestToggleSidebarOnCurrentTab(_ tab: TabViewController) {
+        currentTab?.submitToggleSidebarAction()
+    }
+
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String) {
         let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
                                      privacyConfig: privacyConfigurationManager)
@@ -4515,7 +4584,10 @@ extension MainViewController: TabDelegate {
 extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?) {
-        defer { showMenuHighlighterIfNeeded() }
+        defer {
+            showMenuHighlighterIfNeeded()
+            applyWidth()
+        }
         let previousTab = currentTab
         
         guard tab !== previousTab?.tabModel else {
@@ -4851,10 +4923,16 @@ extension MainViewController {
         let state = mobileCustomization.state
 
         if state.currentToolbarButton == .fire {
+            if isInMinimalChromeLayout {
+                return viewCoordinator.omniBar.barView.fireButton
+            }
             return viewCoordinator.toolbarFireBarButtonItem.customView
         } else if state.currentAddressBarButton == .fire {
             return viewCoordinator.omniBar.barView.customizableButton
         } else {
+            if isInMinimalChromeLayout {
+                return viewCoordinator.omniBar.barView.menuButton
+            }
             return viewCoordinator.menuToolbarButton.customView
         }
 
@@ -5038,6 +5116,10 @@ extension MainViewController: FireExecutorDelegate {
     }
     
     func didFinishBurning(fireRequest: FireRequest) {
+        if fireRequest.trigger == .manualFire {
+            fireModePromotionEligibility?.markBurnPerformed()
+        }
+
         // Trigger sync if needed after data and aichats finish
         // because data could potentially delete a contextual chat that needs syncing
         if syncService.authState != .inactive {
@@ -5076,9 +5158,6 @@ extension MainViewController {
         if !themeColorManager.updateThemeColor() {
             updateStatusBarBackgroundColor()
         }
-        if experimentDuckAIFireOnboardingFlow.isRunning {
-            applyExperimentDuckAIStatusBackgroundStyle()
-        }
 
         updateFindInPage()
     }
@@ -5090,24 +5169,20 @@ extension MainViewController {
     }
 
     private func updateStatusBarBackgroundColor() {
-        if experimentDuckAIFireOnboardingFlow.isRunning {
-            applyExperimentDuckAIStatusBackgroundStyle()
-            return
-        }
-
-        guard !viewCoordinator.isNavigationChromeHidden else { return }
-
         let theme = ThemeManager.shared.currentTheme
+        let color: UIColor
 
         if appSettings.currentAddressBarPosition == .bottom {
-            viewCoordinator.statusBackground.backgroundColor = theme.backgroundColor
+            color = theme.backgroundColor
         } else {
             if AppWidthObserver.shared.isPad && traitCollection.horizontalSizeClass == .regular {
-                viewCoordinator.statusBackground.backgroundColor = theme.tabsBarBackgroundColor
+                color = theme.tabsBarBackgroundColor
             } else {
-                viewCoordinator.statusBackground.backgroundColor = theme.omniBarBackgroundColor
+                color = theme.omniBarBackgroundColor
             }
         }
+
+        viewCoordinator.setStandardStatusBackgroundColor(color)
     }
 
     private func decorate() {
@@ -5344,6 +5419,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
         // No action needed for full mode - notification handles metrics
     }
+
 }
 
 private extension UIBarButtonItem {
@@ -5580,21 +5656,29 @@ extension MainViewController {
 
     /// Applies customization if enabled, ensures default otherwise.
     private func applyCustomizationForToolbar(_ state: MobileCustomization.State) {
-        guard let browserChrome = viewCoordinator.toolbarFireBarButtonItem.customView as? BrowserChromeButton else {
+        guard let toolbarFireButton = viewCoordinator.toolbarFireBarButtonItem.customView as? BrowserChromeButton else {
             assertionFailure("Expected BrowserChromeButton")
             return
         }
 
+        customizeFireButton(toolbarFireButton, state: state)
+
+        if let omniBarFireButton = viewCoordinator.omniBar.barView.fireButton as? BrowserChromeButton {
+            customizeFireButton(omniBarFireButton, state: state)
+        }
+    }
+
+    private func customizeFireButton(_ button: BrowserChromeButton, state: MobileCustomization.State) {
         if !isNewTabPageVisible && state.isEnabled {
-            browserChrome.setImage(state.currentToolbarButton.largeIcon)
-            browserChrome.menu = UIMenu(children: [
+            button.setImage(state.currentToolbarButton.largeIcon)
+            button.menu = UIMenu(children: [
                 UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
                     self?.segueToCustomizeToolbarSettings()
                 }
             ])
         } else {
-            browserChrome.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
-            browserChrome.menu = nil
+            button.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
+            button.menu = nil
         }
     }
 

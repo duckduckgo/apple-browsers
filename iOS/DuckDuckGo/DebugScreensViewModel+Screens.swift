@@ -83,6 +83,10 @@ extension DebugScreensViewModel {
             }),
             .action(title: "Show New AddressBar Modal", showNewAddressBarModal),
             .action(title: "Reset New Address Bar Picker Data", resetNewAddressBarPickerData),
+            .action(title: "Reset Fire Mode Promotion", { _ in
+                FireModePromotionsCoordinator.resetState()
+                ActionMessageView.present(message: "Fire Mode Promotion state reset")
+            }),
             .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
 
             // MARK: SwiftUI Views

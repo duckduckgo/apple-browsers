@@ -209,7 +209,8 @@ extension TabExtensionsBuilder {
             AutoplayPolicyTabExtension(
                 autoplayPreferences: dependencies.autoplayPreferences,
                 featureFlagger: dependencies.featureFlagger,
-                permissionManager: dependencies.permissionManager
+                permissionManager: dependencies.permissionManager,
+                telemetryScriptPublisher: userScripts.compactMap { $0 }
             )
         }
 

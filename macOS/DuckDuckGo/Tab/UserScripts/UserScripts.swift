@@ -60,6 +60,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let serpSettingsUserScript: SERPSettingsUserScript?
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let faviconScript = FaviconUserScript()
+    let webTelemetryScript = WebTelemetryUserScript()
 
     private let contentScopePreferences: ContentScopePreferences
 
@@ -187,6 +188,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             userScripts.append(autoconsentUserScript)
         }
 
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)

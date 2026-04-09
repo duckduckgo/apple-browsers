@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
+import Combine
 import FeatureFlags
 import PrivacyConfig
+import UserScript
 import WebKit
 import XCTest
 
@@ -31,6 +33,7 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var autoplayPreferences: AutoplayPreferences!
     private var persistor: AutoplayPreferencesPersistorMock!
+    private var telemetryScriptSubject: PassthroughSubject<MockWebTelemetryScriptProvider, Never>!
     private var webView: WKWebView!
 
     override func setUp() {
@@ -39,6 +42,9 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         persistor = AutoplayPreferencesPersistorMock(autoplayBlockingModeRawValue: AutoplayBlockingMode.blockAudio.rawValue)
         autoplayPreferences = AutoplayPreferences(persistor: persistor)
+        telemetryScriptSubject = PassthroughSubject<MockWebTelemetryScriptProvider, Never>()
+        telemetryScriptSubject.send(MockWebTelemetryScriptProvider())
+
         webView = WKWebView()
     }
 
@@ -47,6 +53,7 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
         mockFeatureFlagger = nil
         autoplayPreferences = nil
         persistor = nil
+        telemetryScriptSubject = nil
         webView = nil
         super.tearDown()
     }
@@ -57,7 +64,8 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
         AutoplayPolicyTabExtension(
             autoplayPreferences: autoplayPreferences,
             featureFlagger: mockFeatureFlagger,
-            permissionManager: mockPermissionManager
+            permissionManager: mockPermissionManager,
+            telemetryScriptPublisher: telemetryScriptSubject
         )
     }
 
@@ -247,4 +255,35 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
 
         XCTAssertNil(policy, "Policy should be .next (nil) to pass to the next responder")
     }
+
+    // MARK: - Video playback detection
+
+    func testWhenVideoPlaybackDetectedThenPublishedPropertyIsTrue() async {
+        let ext = makeExtension()
+        let script = WebTelemetryUserScript()
+        let payload = WebTelemetryUserScript.VideoPlaybackPayload(userInteraction: false)
+
+        ext.webTelemetryUserScript(script, didDetectVideoPlayback: payload, in: webView)
+
+        XCTAssertTrue(ext.videoPlaybackDetected)
+    }
+
+    func testWhenNavigationOccursThenVideoPlaybackDetectedResets() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+        let ext = makeExtension()
+        let script = WebTelemetryUserScript()
+        let payload = WebTelemetryUserScript.VideoPlaybackPayload(userInteraction: false)
+
+        ext.webTelemetryUserScript(script, didDetectVideoPlayback: payload, in: webView)
+        XCTAssertTrue(ext.videoPlaybackDetected)
+
+        var prefs = NavigationPreferences.default
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertFalse(ext.videoPlaybackDetected)
+    }
+}
+
+private struct MockWebTelemetryScriptProvider: WebTelemetryUserScriptProvider {
+    var webTelemetryScript = WebTelemetryUserScript()
 }

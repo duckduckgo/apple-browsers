@@ -274,6 +274,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var privacyEntryPointIconUpdateCancellable: AnyCancellable?
     private var tabRemovalCancellables = Set<AnyCancellable>()
     private var aiChatChromeSidebarFeatureFlagCancellable: AnyCancellable?
+    private var videoPlaybackCancellable: AnyCancellable?
 
     private struct TrackerAnimationDomainState {
         var lastVisitedDomain: String?
@@ -603,6 +604,7 @@ final class AddressBarButtonsViewController: NSViewController {
             subscribeToUrl()
             subscribeToPermissions()
             subscribeToPrivacyEntryPointIconUpdateTrigger()
+            subscribeToVideoPlayback()
 
             updatePrivacyEntryPointIcon()
             updateAIChatButtonState()
@@ -686,6 +688,14 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyEntryPointIconUpdateCancellable = tabViewModel?.privacyEntryPointIconUpdateTrigger
             .sink { [weak self] _ in
                 self?.updatePrivacyEntryPointIcon()
+            }
+    }
+
+    private func subscribeToVideoPlayback() {
+        videoPlaybackCancellable = tabViewModel?.tab.$mustDisplayAutoplayPolicy
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updatePermissionCenterButton()
             }
     }
 

@@ -83,7 +83,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let headerHeight: CGFloat = 44
         static let headerButtonSize: CGFloat = 44
         static let headerHorizontalPadding: CGFloat = 16
-        static let daxIconSize: CGFloat = 24
         static let titleSpacing: CGFloat = 8
         static let sheetCornerRadius: CGFloat = 24
         static let contentTopPadding: CGFloat = 8
@@ -210,14 +209,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         stack.spacing = Constants.titleSpacing
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
-    }()
-
-    private lazy var daxIcon: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = DesignSystemImages.Color.Size24.duckAI
-        imageView.contentMode = .scaleAspectFit
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView
     }()
 
     private lazy var titleLabel: UILabel = {
@@ -955,7 +946,6 @@ private extension AIChatContextualSheetViewController {
         leftButtonStack.addArrangedSubview(newChatButton)
 
         headerView.addSubview(titleContainer)
-        titleContainer.addArrangedSubview(daxIcon)
         titleContainer.addArrangedSubview(titleLabel)
 
         headerView.addSubview(rightButtonContainer)
@@ -1004,9 +994,6 @@ private extension AIChatContextualSheetViewController {
 
             titleContainer.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             titleContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-
-            daxIcon.widthAnchor.constraint(equalToConstant: Constants.daxIconSize),
-            daxIcon.heightAnchor.constraint(equalToConstant: Constants.daxIconSize),
 
             rightButtonContainer.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -Constants.headerHorizontalPadding),
             rightButtonContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),

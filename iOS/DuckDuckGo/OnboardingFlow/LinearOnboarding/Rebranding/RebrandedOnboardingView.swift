@@ -76,10 +76,10 @@ enum OnboardingBubbleAnimationMetrics {
 
     /// Current key window bounds, falling back to the first connected scene's window.
     private static var windowSize: CGSize {
-        let scene = UIApplication.shared.connectedScenes
+        UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
-            .first
-        return scene?.screen.bounds.size ?? .zero
+            .first?
+            .keyWindow?.bounds.size ?? .zero
     }
 }
 
@@ -135,7 +135,7 @@ extension OnboardingRebranding.OnboardingView {
             VStack(spacing: metrics.outerSpacing) {
                 title
 
-                VStack(spacing: metrics.outerSpacing) {
+                VStack(spacing: metrics.textSpacing) {
                     if let message {
                         message
                     }
@@ -558,15 +558,6 @@ extension OnboardingRebranding {
             case .chooseAddressBarPositionDialog: return AddressBarPositionContent.daxAnimation
             case .chooseSearchExperienceDialog: return SearchExperienceContent.daxAnimation
             }
-        }
-
-        /// Reverses the current step's Dax animation (plays from last frame back to first).
-        ///
-        /// Call this in response to a user interaction that should animate Dax out.
-        /// The animation plays once in reverse and stops on the first frame.
-        func reverseDaxAnimation() {
-            daxPlayForward = false
-            daxAnimationID += 1
         }
 
         /// Animates a hide -> action -> show sequence to prevent cross-fading between steps.

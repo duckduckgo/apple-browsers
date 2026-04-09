@@ -25,6 +25,7 @@ extension OnboardingRebranding.OnboardingView {
 
     /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-44303
     struct SkipOnboardingContent: View {
+        private static let fireButtonCopy = "Fire Button"
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @State private var shouldStartTyping = false
@@ -95,7 +96,7 @@ extension OnboardingRebranding.OnboardingView {
         /// Uses Text concatenation so the bold weight inherits from the outer `.font(...)` modifier.
         private func styledMessage() -> Text {
             let message = UserText.Onboarding.Skip.message
-            let highlight = UserText.Onboarding.Skip.fireButton
+            let highlight = OnboardingRebranding.OnboardingView.SkipOnboardingContent.fireButtonCopy
             let parts = message.components(separatedBy: highlight)
             guard parts.count == 2 else { return Text(message) }
             return Text(parts[0]) + Text(highlight).bold() + Text(parts[1])

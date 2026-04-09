@@ -2641,9 +2641,6 @@ https://duckduckgo.com/mac";
 /* The message of the skip onboarding dialog popup. */
 "onboarding.skip.message" = "Remember: you can delete all your tabs, history, and browsing data in two taps with the Fire Button 🔥";
 
-/* The 'Fire Button' product name within the skip-onboarding message, highlighted in bold. Must match the exact substring in 'onboarding.skip.message'. */
-"onboarding.skip.message.fireButton" = "Fire Button";
-
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Got it! I’ll skip the other tips.";
 

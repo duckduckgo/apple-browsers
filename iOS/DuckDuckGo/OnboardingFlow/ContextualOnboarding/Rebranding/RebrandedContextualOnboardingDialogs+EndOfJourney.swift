@@ -95,12 +95,12 @@ private struct ScreenBottomDaxOverlay: View {
         GeometryReader { proxy in
             let globalFrame = proxy.frame(in: .global)
 
-            // Get the window height from the active window scene to support iPad Stage Manager.
+            // Get the window height from the key window to support iPad Stage Manager.
             let windowHeight: CGFloat = {
-                let scene = UIApplication.shared.connectedScenes
+                UIApplication.shared.connectedScenes
                     .compactMap { $0 as? UIWindowScene }
-                    .first
-                return scene?.screen.bounds.height ?? globalFrame.maxY
+                    .first?
+                    .keyWindow?.bounds.height ?? globalFrame.maxY
             }()
             let distanceToScreenBottom = windowHeight - globalFrame.maxY
 

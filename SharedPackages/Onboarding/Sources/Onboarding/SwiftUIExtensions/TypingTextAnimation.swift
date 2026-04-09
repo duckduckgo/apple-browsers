@@ -36,38 +36,43 @@ extension EnvironmentValues {
 
 // MARK: - Animation State
 
-/// Owns the typing timer and the published display text.
+/// Owns the typing timer and the published visible character count.
 /// Uses weak self in the Timer callback to avoid retain cycles.
 @MainActor
 private final class TypingAnimationState: ObservableObject {
-    @Published private(set) var displayedText: String = ""
+    /// Number of characters currently visible. The view uses this to style
+    /// typed characters as visible and the remainder as transparent.
+    @Published private(set) var visibleCount: Int = 0
+    /// `true` once the full text has been revealed (or skipped).
+    @Published private(set) var isFinished: Bool = false
 
     private var timer: Timer?
     /// Once set, `start()` becomes a no-op until `stop()` resets this flag.
     private var skipped = false
     private static let typingInterval: TimeInterval = 0.025
 
-    func start(text: String, onFinished: (() -> Void)? = nil) {
+    func start(totalCount: Int, onFinished: (() -> Void)? = nil) {
         guard !skipped else { return }
         invalidateTimer()
-        displayedText = ""
-        guard !text.isEmpty else {
-            displayedText = text
+        visibleCount = 0
+        isFinished = false
+        guard totalCount > 0 else {
+            visibleCount = totalCount
+            isFinished = true
             onFinished?()
             return
         }
 
-        var index = text.startIndex
+        var current = 0
         let t = Timer(timeInterval: Self.typingInterval, repeats: true) { [weak self] timer in
-            // Timer is added to RunLoop.main so it always fires on the main thread;
-            // assumeIsolated lets the compiler verify @MainActor property access is safe.
             MainActor.assumeIsolated {
                 guard let self, timer.isValid else { return }
-                text.formIndex(after: &index)
-                self.displayedText = String(text[..<index])
-                if index == text.endIndex {
+                current += 1
+                self.visibleCount = current
+                if current >= totalCount {
                     timer.invalidate()
                     self.timer = nil
+                    self.isFinished = true
                     onFinished?()
                 }
             }
@@ -77,10 +82,11 @@ private final class TypingAnimationState: ObservableObject {
         timer = t
     }
 
-    func skip(to text: String, onFinished: (() -> Void)? = nil) {
+    func skip(totalCount: Int, onFinished: (() -> Void)? = nil) {
         skipped = true
         invalidateTimer()
-        displayedText = text
+        visibleCount = totalCount
+        isFinished = true
         onFinished?()
     }
 
@@ -124,33 +130,44 @@ public struct TypingText: View {
         self.onTypingFinished = onTypingFinished
     }
 
+    /// Builds an `AttributedString` where the first `visibleCount` characters inherit
+    /// the environment's foreground style and the rest are transparent.
+    /// Because the full text is always rendered, line breaks never shift.
+    private var revealedText: Text {
+        if state.isFinished {
+            return Text(text)
+        }
+        let chars = Array(text)
+        let visible = AttributedString(String(chars.prefix(state.visibleCount)))
+        var hidden = AttributedString(String(chars.suffix(from: state.visibleCount)))
+        hidden.foregroundColor = .clear
+        return Text(visible) + Text(hidden)
+    }
+
     public var body: some View {
-        // Hidden text reserves layout space; overlay reveals progressively.
-        Text(text)
-            .hidden()
-            .overlay(alignment: .topLeading) { Text(state.displayedText) }
+        revealedText
             .onChange(of: skipAnimation) { shouldSkip in
-                if shouldSkip { state.skip(to: text, onFinished: onTypingFinished) }
+                if shouldSkip { state.skip(totalCount: text.count, onFinished: onTypingFinished) }
             }
             .onChange(of: startAnimating.wrappedValue) { shouldAnimate in
                 if shouldAnimate {
                     if reduceMotion {
-                        state.skip(to: text, onFinished: onTypingFinished)
+                        state.skip(totalCount: text.count, onFinished: onTypingFinished)
                     } else {
-                        state.start(text: text, onFinished: onTypingFinished)
+                        state.start(totalCount: text.count, onFinished: onTypingFinished)
                     }
                 } else {
                     state.stop()
                 }
             }
             .onChange(of: reduceMotion) { shouldReduce in
-                if shouldReduce { state.skip(to: text, onFinished: onTypingFinished) }
+                if shouldReduce { state.skip(totalCount: text.count, onFinished: onTypingFinished) }
             }
             .onAppear {
                 if reduceMotion || skipAnimation {
-                    state.skip(to: text, onFinished: onTypingFinished)
+                    state.skip(totalCount: text.count, onFinished: onTypingFinished)
                 } else if startAnimating.wrappedValue {
-                    state.start(text: text, onFinished: onTypingFinished)
+                    state.start(totalCount: text.count, onFinished: onTypingFinished)
                 }
             }
             .onDisappear { state.stop() }

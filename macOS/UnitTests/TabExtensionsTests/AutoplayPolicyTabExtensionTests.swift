@@ -264,6 +264,7 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     // MARK: - Video playback detection
 
     func testWhenVideoPlaybackDetectedThenPublishedPropertyIsTrue() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         let ext = makeExtension()
         let script = WebTelemetryUserScript()
         let payload = WebTelemetryUserScript.VideoPlaybackPayload(userInteraction: false)

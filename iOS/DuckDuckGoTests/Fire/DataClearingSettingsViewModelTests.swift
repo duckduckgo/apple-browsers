@@ -22,7 +22,9 @@ import XCTest
 @testable import Core
 import AIChat
 
-final class MockDataClearingCapability: DataClearingCapable { }
+final class MockDataClearingCapability: DataClearingCapable {
+    var isFireButtonRefinementsEnabled: Bool = false
+}
 
 @MainActor
 final class DataClearingSettingsViewModelTests: XCTestCase {

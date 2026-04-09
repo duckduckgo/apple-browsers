@@ -23,9 +23,9 @@ enum OmniBarLayoutMode {
     /// No external buttons visible, full-width search bar (iPhone portrait, iPad compact, editing)
     case compact
     /// External buttons with wide spacing (iPad full width)
-    case expanded
-    /// External buttons with tight spacing (iPhone landscape minimal chrome)
-    case phoneLandscape
+    case expandedPad
+    /// External buttons with tight spacing (iPhone landscape)
+    case expandedPhone
 }
 
 protocol OmniBarView: UIView, OmniBarStatusUpdateable {
@@ -49,7 +49,10 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var bookmarksButton: UIButton! { get }
     var aiChatButton: UIButton! { get }
     var menuButton: UIButton! { get }
+    var fireButton: UIButton! { get }
     var tabSwitcherContainerView: UIView { get }
+
+    func configureForSwipeTemplate(mode: OmniBarLayoutMode, tabCount: Int)
 
     var refreshButton: UIButton! { get }
     var customizableButton: UIButton! { get }

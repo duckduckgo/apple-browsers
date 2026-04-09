@@ -145,21 +145,12 @@ extension MainViewController {
             return
         }
 
-        let storyboard = UIStoryboard(name: "PrivacyDashboard", bundle: nil)
-        let controller = storyboard.instantiateInitialViewController { coder in
-            PrivacyDashboardViewController(coder: coder,
-                                           privacyInfo: privacyInfo,
-                                           entryPoint: entryPoint,
-                                           privacyConfigurationManager: self.privacyConfigurationManager,
-                                           contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                           breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo())
-        }
-        
-        guard let controller = controller else {
-            assertionFailure("PrivacyDashboardViewController not initialised")
-            return
-        }
-        
+        let controller = PrivacyDashboardViewController(privacyInfo: privacyInfo,
+                                                        entryPoint: entryPoint,
+                                                        privacyConfigurationManager: self.privacyConfigurationManager,
+                                                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
+                                                        breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo())
+
         currentTab?.privacyDashboard = controller
 
         controller.popoverPresentationController?.delegate = controller
@@ -427,7 +418,8 @@ extension MainViewController {
                                                             remoteMessagingDebugHandler: remoteMessagingDebugHandler,
                                                             productSurfaceTelemetry: productSurfaceTelemetry,
                                                             webExtensionManager: webExtensionManager,
-                                                            syncAutoRestoreHandler: syncAutoRestoreHandler)
+                                                            syncAutoRestoreHandler: syncAutoRestoreHandler,
+                                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
@@ -531,7 +523,8 @@ extension MainViewController {
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
-            webExtensionManager: self.webExtensionManager))
+            webExtensionManager: self.webExtensionManager,
+            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler))
 
         debug.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
 

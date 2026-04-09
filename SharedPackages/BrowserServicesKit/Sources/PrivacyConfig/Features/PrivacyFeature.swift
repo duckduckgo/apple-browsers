@@ -256,6 +256,12 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/task/1213314048601761
     case fireMode
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
+    case fireButtonRefinements
+
+    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1212810377867736
+    case filterAddressBarUpdates
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -448,6 +454,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Prevents about: scheme navigations (e.g. about:srcdoc) from opening new tabs in the sidebar
     case sidebarAboutSchemeNavigationFix
+
+    /// Enables image generation mode toggle in the Duck.ai omnibar
+    case omnibarImageGeneration
+
+    /// Enables web search tool in the Duck.ai omnibar
+    case omnibarWebSearch
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

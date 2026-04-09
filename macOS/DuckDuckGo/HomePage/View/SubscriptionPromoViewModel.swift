@@ -161,7 +161,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
         shouldShowPromo = false
         defer { onPromoEvaluated?(shouldShowPromo) }
 
-        // guard featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) else { return } // Temporarily disabled for testing
+        guard featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) else { return }
         guard isUSLocale else { return }
         guard !subscriptionManager.isSubscriptionPresent() else { return }
         guard persistor.fireTabVisitCount >= Self.requiredVisitCount else { return }

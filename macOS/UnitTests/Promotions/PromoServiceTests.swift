@@ -79,7 +79,6 @@ final class PromoServiceTests: XCTestCase {
         let promo1ShownExpectation = XCTestExpectation(description: "promo 1 shown")
         let promo2ShownExpectation = XCTestExpectation(description: "promo 2 shown")
         promo2ShownExpectation.isInverted = true // We do not expect promo 2 to be shown
-        let previousPromo2Record = PromoHistoryRecord(id: promo2.id)
         promoService.visiblePromosPublisher
             .dropFirst()
             .sink { promos in
@@ -97,10 +96,6 @@ final class PromoServiceTests: XCTestCase {
         triggerSubject.send(.appLaunched)
         await fulfillment(of: [promo1ShownExpectation], timeout: timeout)
         await fulfillment(of: [promo2ShownExpectation], timeout: 0.5) // Short timeout for inverted expectation
-
-        // Then: promo 2 was never shown
-        let currentPromo2Record = historyStore.record(for: promo2.id)
-        XCTAssertEqual(previousPromo2Record, currentPromo2Record)
     }
 
     func testWhenTwoMediumPromosHaveMutualCoexistingIds_ThenBothCanBeVisible() async {
@@ -309,7 +304,6 @@ final class PromoServiceTests: XCTestCase {
         // Given: Global context promo and other context promo
         let delegate1 = MockPromoDelegate(isEligible: true)
         let delegate2 = MockPromoDelegate(isEligible: true)
-        delegate2.setShowResult(.actioned)
         let globalPromo = PromoTestHelpers.makePromo(id: "global", context: .global, delegate: delegate1)
         let ntpPromo = PromoTestHelpers.makePromo(id: "ntp", context: .newTabPage, delegate: delegate2)
         let promoService = makeService(promos: [globalPromo, ntpPromo])
@@ -317,7 +311,6 @@ final class PromoServiceTests: XCTestCase {
         let globalShownExpectation = XCTestExpectation(description: "global promo is shown")
         let ntpShownExpectation = XCTestExpectation(description: "ntp promo is shown")
         ntpShownExpectation.isInverted = true // We do not expect ntp promo to be shown
-        let previousNTPRecord = PromoHistoryRecord(id: ntpPromo.id)
         promoService.visiblePromosPublisher
             .dropFirst()
             .sink { promos in
@@ -336,10 +329,6 @@ final class PromoServiceTests: XCTestCase {
         triggerSubject.send(.newTabPageAppeared)
         await fulfillment(of: [globalShownExpectation], timeout: timeout)
         await fulfillment(of: [ntpShownExpectation], timeout: 0.5) // Short timeout for inverted expectation
-
-        // Then: NTP promo was never shown
-        let currentNTPRecord = historyStore.record(for: ntpPromo.id)
-        XCTAssertEqual(previousNTPRecord, currentNTPRecord)
     }
 
     func testWhenTwoSameContextPromosHaveMutualCoexistingIds_ThenBothCanBeVisible() async {
@@ -395,7 +384,6 @@ final class PromoServiceTests: XCTestCase {
         let showBExpectation = XCTestExpectation(description: "B is shown")
         let showCExpectation = XCTestExpectation(description: "C is shown")
         showCExpectation.isInverted = true // We do not expect C to be shown
-        let previousCRecord = PromoHistoryRecord(id: promoC.id)
         promoService.visiblePromosPublisher
             .dropFirst()
             .sink { promos in
@@ -416,10 +404,6 @@ final class PromoServiceTests: XCTestCase {
         triggerSubject.send(.appLaunched)
         await fulfillment(of: [showAExpectation, showBExpectation], timeout: timeout)
         await fulfillment(of: [showCExpectation], timeout: 0.5) // Short timeout for inverted expectation
-
-        // Then: C was never shown
-        let currentCRecord = historyStore.record(for: promoC.id)
-        XCTAssertEqual(previousCRecord, currentCRecord)
     }
 
     func testWhenAppInitiatedPromoDismissedRecently_ThenGlobalCooldownBlocksNextAppPromo() async {

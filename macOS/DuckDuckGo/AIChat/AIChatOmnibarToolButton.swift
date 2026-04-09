@@ -77,9 +77,17 @@ final class AIChatOmnibarToolButton: NSView {
         }
     }
 
-    /// When true, the icon stays at the leading position even when the label is hidden.
-    /// Use this for buttons that toggle their label on/off to prevent icon shifting.
-    var keepIconLeadingAligned: Bool = false
+    /// When true, the icon always uses the leading constraint instead of centering.
+    /// The leading inset matches the centered position at default button size, so the icon
+    /// stays visually centered when icon-only and doesn't shift when the label toggles.
+    var keepIconLeadingAligned: Bool = false {
+        didSet {
+            if keepIconLeadingAligned {
+                iconCenterXConstraint?.isActive = false
+                iconLeadingConstraint?.isActive = true
+            }
+        }
+    }
 
     /// Optional text label shown next to the icon. When set, the button expands horizontally.
     var label: String? {
@@ -87,9 +95,10 @@ final class AIChatOmnibarToolButton: NSView {
             let hasLabel = label.map { !$0.isEmpty } ?? false
             textLabel.stringValue = label ?? ""
             textLabel.isHidden = !hasLabel
-            let useLeading = hasLabel || keepIconLeadingAligned
-            iconCenterXConstraint?.isActive = !useLeading
-            iconLeadingConstraint?.isActive = useLeading
+            if !keepIconLeadingAligned {
+                iconCenterXConstraint?.isActive = !hasLabel
+                iconLeadingConstraint?.isActive = hasLabel
+            }
             invalidateIntrinsicContentSize()
         }
     }
@@ -160,7 +169,7 @@ final class AIChatOmnibarToolButton: NSView {
     override var intrinsicContentSize: NSSize {
         if let label, !label.isEmpty {
             let labelWidth = textLabel.intrinsicContentSize.width
-            var width = Constants.iconSize + labelWidth + 20
+            var width = Constants.iconSize + labelWidth + 18
             if trailingImage != nil {
                 width += Self.trailingImageSize + 4
             }
@@ -209,7 +218,7 @@ final class AIChatOmnibarToolButton: NSView {
 
         iconCenterXConstraint = iconImageView.centerXAnchor.constraint(equalTo: centerXAnchor)
         iconCenterXConstraint?.isActive = true
-        iconLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8)
+        iconLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6)
         iconLeadingConstraint?.isActive = false
 
         trailingImageTrailingConstraint = trailingImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8)

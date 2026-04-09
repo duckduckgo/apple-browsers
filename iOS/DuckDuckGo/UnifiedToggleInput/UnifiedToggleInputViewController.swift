@@ -121,6 +121,7 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     var isGenerating: Bool = false {
         didSet {
+            guard isGenerating != oldValue else { return }
             handler.isGenerating = isGenerating
             inputBarView.isGenerating = isGenerating
         }

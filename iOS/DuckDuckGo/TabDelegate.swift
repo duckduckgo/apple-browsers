@@ -119,6 +119,8 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String)
 
+    func tabDidRequestToggleSidebarOnCurrentTab(_ tab: TabViewController)
+
     func tabDidRequestPrivacyDashboardButtonPulse(tab: TabViewController, animated: Bool)
 
     func tabDidRequestSearchBarRect(tab: TabViewController) -> CGRect

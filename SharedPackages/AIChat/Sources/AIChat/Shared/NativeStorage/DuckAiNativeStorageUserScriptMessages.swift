@@ -29,6 +29,7 @@ public enum DuckAiNativeStorageUserScriptMessages: String, CaseIterable {
 
     // Chats
     case putChat
+    case putChats
     case getAllChats
     case deleteChat
     case deleteAllChats

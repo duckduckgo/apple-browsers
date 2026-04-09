@@ -102,8 +102,12 @@ struct PermissionCenterView: View {
                             AutoplayPermissionRowView(
                                 item: item,
                                 currentDecision: viewModel.currentAutoplayDecision(),
+                                isRemoveAllowed: viewModel.allowsAutoplayPolicyRemoval(),
                                 onDecisionChanged: { decision in
                                     viewModel.setAutoplayDecision(decision)
+                                },
+                                onRemove: {
+                                    viewModel.removePermission(item.permissionType)
                                 }
                             )
                         default:
@@ -676,18 +680,29 @@ struct AutoplayPermissionRowView: View {
 
     let item: PermissionCenterItem
     let currentDecision: AutoplayDecision
+    let isRemoveAllowed: Bool
     let onDecisionChanged: (AutoplayDecision) -> Void
+    let onRemove: () -> Void
 
     @State private var selectedDecision: AutoplayDecision
+    @State private var isRemoveButtonHovered = false
+
+    private var pendingRemovalOpacity: Double {
+        item.isPendingRemoval ? 0.5 : 1
+    }
 
     init(
         item: PermissionCenterItem,
         currentDecision: AutoplayDecision,
-        onDecisionChanged: @escaping (AutoplayDecision) -> Void
+        isRemoveAllowed: Bool,
+        onDecisionChanged: @escaping (AutoplayDecision) -> Void,
+        onRemove: @escaping () -> Void
     ) {
         self.item = item
         self.currentDecision = currentDecision
+        self.isRemoveAllowed = isRemoveAllowed
         self.onDecisionChanged = onDecisionChanged
+        self.onRemove = onRemove
         self._selectedDecision = State(initialValue: currentDecision)
     }
 
@@ -695,19 +710,46 @@ struct AutoplayPermissionRowView: View {
         HStack(spacing: 8) {
             // Icon
             Image(nsImage: item.permissionType.icon)
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .foregroundColor(
+                    Color(designSystemColor: .textSecondary)
+                        .opacity(pendingRemovalOpacity)
+                )
                 .frame(width: 24, height: 24)
 
             // Permission name
             Text(UserText.permissionAutoplay)
                 .font(.system(size: 13))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .foregroundColor(
+                    item.isPendingRemoval ? Color(designSystemColor: .textSecondary) : Color(designSystemColor: .textPrimary)
+                )
                 .fixedSize(horizontal: false, vertical: true)
 
             Spacer()
 
             // Decision dropdown
             autoplayDecisionPopUpButton
+                .disabled(item.isPendingRemoval)
+                .opacity(pendingRemovalOpacity)
+
+            // Remove button
+            Button(action: onRemove) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PlainButtonStyle())
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(isRemoveButtonHovered && !item.isPendingRemoval ? Color(.buttonMouseOver) : Color.clear)
+            )
+            .onHover { hovering in
+                isRemoveButtonHovered = hovering
+            }
+            .help(UserText.permissionCenterResetTooltip)
+            .disabled(item.isPendingRemoval || !isRemoveAllowed)
+            .opacity(pendingRemovalOpacity)
         }
         .padding(.leading, 12)
         .padding(.trailing, 12)

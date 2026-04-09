@@ -3568,7 +3568,8 @@ extension MainViewController: OmniBarDelegate {
         segueToSettings()
     }
 
-    @objc func onMenuLongPressed() {
+    @objc func onMenuLongPressed(_ sender: UILongPressGestureRecognizer) {
+        guard sender.state == .began else { return }
         if featureFlagger.internalUserDecider.isInternalUser || isDebugBuild {
             segueToDebugSettings()
         } else {

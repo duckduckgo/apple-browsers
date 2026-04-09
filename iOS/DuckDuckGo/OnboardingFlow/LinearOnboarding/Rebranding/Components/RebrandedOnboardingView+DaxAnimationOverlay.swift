@@ -212,8 +212,11 @@ struct DaxAnimationOverlay: View {
                         positionOffset = .zero
                     }
                 }
-                let fadeDuration = animation.fadeInTime ?? 0.25
-                withAnimation(.easeIn(duration: fadeDuration)) {
+                if let fadeDuration = animation.fadeInTime {
+                    withAnimation(.easeIn(duration: fadeDuration)) {
+                        opacity = 1
+                    }
+                } else {
                     opacity = 1
                 }
             }

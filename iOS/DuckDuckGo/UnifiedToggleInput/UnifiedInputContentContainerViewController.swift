@@ -481,8 +481,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                     return
                 }
 
-                self.syncURLFallbackState()
                 self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
+                self.syncURLFallbackState()
                 self.updateSectionTitle()
 
                 scheduleAnimation {

@@ -40,7 +40,7 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
         static let sectionHeaderLeading: CGFloat = 8
         static let cellIconSize: CGFloat = 20
         static let cellIconGap: CGFloat = 8
-        static let cellVerticalPadding: CGFloat = 14
+        static let cellVerticalPadding: CGFloat = 10
         static let cellLeadingPadding: CGFloat = 6
         static let separatorHorizontalInset: CGFloat = 8
         static let separatorContainerHeight: CGFloat = 21

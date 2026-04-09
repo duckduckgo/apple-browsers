@@ -314,7 +314,8 @@ class MainViewController: UIViewController {
         featureFlagger: featureFlagger,
         privacyConfigurationManager: privacyConfigurationManager,
         aiChatSettings: aiChatSettings,
-        iPadTabFeature: aichatIPadTabFeature
+        iPadTabFeature: aichatIPadTabFeature,
+        duckAiNativeStorageHandler: duckAiNativeStorageHandler
     )
     private var iPadAIChatQuery = ""
     private var allowIPadAIAutocompleteShow = false
@@ -551,7 +552,8 @@ class MainViewController: UIViewController {
                                                               featureFlagger: featureFlagger,
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
-                                                              mobileCustomization: mobileCustomization)
+                                                              mobileCustomization: mobileCustomization,
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         if featureFlagger.isFeatureOn(.iPadAIToggle) {
             viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
@@ -730,7 +732,8 @@ class MainViewController: UIViewController {
                                                       aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
-                                                      mobileCustomization: mobileCustomization)
+                                                      mobileCustomization: mobileCustomization,
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,

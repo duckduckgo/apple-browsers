@@ -60,6 +60,7 @@ final class IPadTabChatHistoryCoordinator {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
     private let iPadTabFeature: AIChatIPadTabFeatureProviding
+    private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let textSubject = PassthroughSubject<String, Never>()
     private var currentQuery = ""
 
@@ -68,11 +69,13 @@ final class IPadTabChatHistoryCoordinator {
     init(featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          aiChatSettings: AIChatSettingsProvider,
-         iPadTabFeature: AIChatIPadTabFeatureProviding) {
+         iPadTabFeature: AIChatIPadTabFeatureProviding,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
         self.iPadTabFeature = iPadTabFeature
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
     }
 
     // MARK: - Public Methods
@@ -169,7 +172,12 @@ final class IPadTabChatHistoryCoordinator {
         } else {
             let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
             let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-            suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
+            suggestionsReader = AIChatSuggestionsReader(
+                suggestionsReader: reader,
+                localSuggestionsReader: duckAiNativeStorageHandler.map { LocalSuggestionsReader(storageHandler: $0) },
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger),
+                historySettings: historySettings
+            )
         }
 
         let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)

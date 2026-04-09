@@ -383,6 +383,8 @@ public enum FeatureFlag: String {
 
     case aiChatNativeStorage
 
+    case aiChatLocalStorageManipulation
+
     /// Failsafe feature flag. Filters intermediate redirect URLs from the address bar.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213972422695959
     case filterAddressBarUpdates
@@ -665,6 +667,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.minimalChromeInLandscape)))
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)))
+        case .aiChatLocalStorageManipulation:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.localStorageManipulation)))
         case .filterAddressBarUpdates:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.filterAddressBarUpdates)))
         }

@@ -38,6 +38,6 @@ struct AIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
     }
 
     func isLocalStorageManipulationEnabled() -> Bool {
-        false
+        featureFlagger.isFeatureOn(for: FeatureFlag.aiChatLocalStorageManipulation)
     }
 }

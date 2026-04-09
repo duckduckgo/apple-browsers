@@ -437,7 +437,8 @@ class TabViewController: UIViewController {
                                    privacyStats: PrivacyStatsProviding,
                                    voiceSearchHelper: VoiceSearchHelperProtocol,
                                    darkReaderFeatureSettings: DarkReaderFeatureSettings,
-                                   autoplaySettings: AutoplaySettings) -> TabViewController {
+                                   autoplaySettings: AutoplaySettings,
+                                   duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) -> TabViewController {
 
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
@@ -472,7 +473,8 @@ class TabViewController: UIViewController {
                               privacyStats: privacyStats,
                               voiceSearchHelper: voiceSearchHelper,
                               darkReaderFeatureSettings: darkReaderFeatureSettings,
-                              autoplaySettings: autoplaySettings
+                              autoplaySettings: autoplaySettings,
+                              duckAiNativeStorageHandler: duckAiNativeStorageHandler
             )
         })
         return controller
@@ -528,6 +530,7 @@ class TabViewController: UIViewController {
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
     let darkReaderFeatureSettings: DarkReaderFeatureSettings
     let autoplaySettings: AutoplaySettings
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
         let pageContextHandler = AIChatPageContextHandler(
             webViewProvider: { [weak self] in self?.webView },
@@ -542,7 +545,8 @@ class TabViewController: UIViewController {
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
             pageContextHandler: pageContextHandler,
-            isFireTab: tabModel.fireTab
+            isFireTab: tabModel.fireTab,
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler
         )
         coordinator.delegate = self
         return coordinator
@@ -585,6 +589,7 @@ class TabViewController: UIViewController {
                    voiceSearchHelper: VoiceSearchHelperProtocol,
                    darkReaderFeatureSettings: DarkReaderFeatureSettings,
                    autoplaySettings: AutoplaySettings,
+                   duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                    addressBarURLFilter: AddressBarURLFiltering = AddressBarURLFilter()) {
 
         self.tabModel = tabModel
@@ -629,6 +634,7 @@ class TabViewController: UIViewController {
         self.voiceSearchHelper = voiceSearchHelper
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.autoplaySettings = autoplaySettings
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.addressBarURLFilter = addressBarURLFilter
 
         self.productSurfaceTelemetry = productSurfaceTelemetry

@@ -48,22 +48,45 @@ protocol AIChatSuggestionsReading {
 @MainActor
 final class AIChatSuggestionsReader: AIChatSuggestionsReading {
     private let suggestionsReader: SuggestionsReading
+    private let localSuggestionsReader: SuggestionsReading?
+    private let featureFlagProvider: AIChatFeatureFlagProviding
     private let historySettings: AIChatHistorySettings
 
     var maxHistoryCount: Int {
         historySettings.maxHistoryCount
     }
 
-    init(suggestionsReader: SuggestionsReading, historySettings: AIChatHistorySettings) {
+    init(
+        suggestionsReader: SuggestionsReading,
+        localSuggestionsReader: SuggestionsReading? = nil,
+        featureFlagProvider: AIChatFeatureFlagProviding,
+        historySettings: AIChatHistorySettings
+    ) {
         self.suggestionsReader = suggestionsReader
+        self.localSuggestionsReader = localSuggestionsReader
+        self.featureFlagProvider = featureFlagProvider
         self.historySettings = historySettings
     }
 
     func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
-        let result = await suggestionsReader.fetchSuggestions(query: query, maxChats: maxChats)
+        let flagEnabled = featureFlagProvider.isLocalStorageManipulationEnabled()
+        let hasLocalReader = localSuggestionsReader != nil
+        Logger.aiChat.debug("AIChatSuggestionsReader: flagEnabled=\(flagEnabled), hasLocalReader=\(hasLocalReader)")
+
+        let reader: SuggestionsReading
+        if flagEnabled, let localReader = localSuggestionsReader {
+            Logger.aiChat.debug("AIChatSuggestionsReader: Using local storage reader")
+            reader = localReader
+        } else {
+            Logger.aiChat.debug("AIChatSuggestionsReader: Using webview reader")
+            reader = suggestionsReader
+        }
+
+        let result = await reader.fetchSuggestions(query: query, maxChats: maxChats)
 
         switch result {
         case .success(let suggestions):
+            Logger.aiChat.debug("AIChatSuggestionsReader: Got \(suggestions.pinned.count) pinned, \(suggestions.recent.count) recent")
             return suggestions
         case .failure(let error):
             Logger.aiChat.error("Failed to fetch AI chat suggestions: \(error.localizedDescription)")

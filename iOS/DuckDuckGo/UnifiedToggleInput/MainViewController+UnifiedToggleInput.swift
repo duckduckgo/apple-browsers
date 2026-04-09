@@ -38,7 +38,10 @@ extension MainViewController {
     func setUpUnifiedToggleInputIfNeeded() {
         guard unifiedToggleInputFeature.isAvailable else { return }
 
-        let coordinator = UnifiedToggleInputCoordinator(isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+        let coordinator = UnifiedToggleInputCoordinator(
+            isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler
+        )
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)

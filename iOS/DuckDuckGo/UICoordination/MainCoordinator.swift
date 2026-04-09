@@ -189,6 +189,7 @@ final class MainCoordinator {
                                 voiceSearchHelper: voiceSearchHelper,
                                 launchSourceManager: launchSourceManager,
                                 darkReaderFeatureSettings: darkReaderFeatureSettings,
+                                duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
                                 fireModePromotionEligibility: fireModePromotionsCoordinator)
         let fireExecutor = FireExecutor(tabManager: tabManager,

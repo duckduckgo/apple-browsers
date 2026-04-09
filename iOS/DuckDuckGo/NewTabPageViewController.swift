@@ -69,6 +69,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
+         fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
          appSettings: AppSettings,
          faviconsCache: FavoritesFaviconCaching,
          subscriptionManager: any SubscriptionManager,
@@ -92,7 +93,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 subscriptionDataReporter: subscriptionDataReporting,
                                                 messageActionHandler: remoteMessagingActionHandler,
                                                 imageLoader: remoteMessagingImageLoader,
-                                                pixelReporter: remoteMessagingPixelReporter)
+                                                pixelReporter: remoteMessagingPixelReporter,
+                                                fireModePromotionEligibility: fireModePromotionEligibility)
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
@@ -102,6 +104,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             favoritesViewModel: self.favoritesModel))
 
         assignFavoriteModelActions()
+        messagesModel.onFireModeRequested = { [weak self] in
+            guard let self else { return }
+            self.delegate?.newTabPageDidRequestFireMode(self)
+        }
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {

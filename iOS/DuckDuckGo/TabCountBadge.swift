@@ -35,6 +35,15 @@ struct TabCountBadge: View {
     private enum Metrics {
         static let iconSize: CGFloat = 24
         static let maxTextTabs = 100
+        
+        static let fontSize = 12.0
+        static let fontWeight = Font.Weight.bold
+
+        static let symbolFontSize = 14.0
+        static let symbolFontWeight = Font.Weight.semibold
+        
+        static let symbolYOffset: CGFloat = 1
+        static let normalYOffset: CGFloat = 0
     }
 
     var body: some View {
@@ -43,11 +52,24 @@ struct TabCountBadge: View {
                 .renderingMode(.template)
 
             if model.count > 0 {
-                let text = model.count >= Metrics.maxTextTabs ? "∞" : "\(model.count)"
+                let isShowingSymbol = model.count >= Metrics.maxTextTabs
+                let text = isShowingSymbol ? "∞" : "\(model.count)"
                 Text(text)
-                    .daxCaptionBold()
+                    .font(textFont(isShowingSymbol))
+                    .offset(y: -(isShowingSymbol ? Metrics.symbolYOffset : Metrics.normalYOffset))
             }
         }
         .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+    }
+    
+    private func textFont(_ isShowingSymbol: Bool) -> Font {
+        let size = isShowingSymbol ? Metrics.symbolFontSize : Metrics.fontSize
+        let weight = isShowingSymbol ? Metrics.symbolFontWeight : Metrics.fontWeight
+
+        let font = Font.system(size: size, weight: weight)
+        if #available(iOS 16.0, *) {
+            return font.width(.condensed)
+        }
+        return font
     }
 }

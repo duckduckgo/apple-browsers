@@ -270,6 +270,43 @@ extension PermissionManagerTests {
     }
 }
 
+// MARK: - PermissionType Round-Trip Tests
+
+extension PermissionManagerTests {
+
+    func testAutoplayPolicyRawValueRoundTrip() {
+        XCTAssertEqual(PermissionType.autoplayPolicy.rawValue, "autoplay_policy")
+        XCTAssertEqual(PermissionType(rawValue: "autoplay_policy"), .autoplayPolicy)
+    }
+
+    func testAutoplayPolicyPermissionCanBeStoredAndRetrieved() {
+        store.permissions = []
+
+        manager.setPermission(.allow, forDomain: "example.com", permissionType: .autoplayPolicy)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
+        XCTAssertEqual(result, .allow)
+    }
+
+    func testAutoplayPolicyPermissionCanBeSetToDeny() {
+        store.permissions = []
+
+        manager.setPermission(.deny, forDomain: "example.com", permissionType: .autoplayPolicy)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
+        XCTAssertEqual(result, .deny)
+    }
+
+    func testAutoplayPolicyPermissionCanBeSetToAsk() {
+        store.permissions = []
+
+        manager.setPermission(.ask, forDomain: "example.com", permissionType: .autoplayPolicy)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
+        XCTAssertEqual(result, .ask)
+    }
+}
+
 fileprivate extension PermissionEntity {
     static let entity1 = PermissionEntity(permission: .init(id: .init(), decision: .allow),
                                           domain: "duckduckgo.com",

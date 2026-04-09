@@ -37,10 +37,12 @@ struct ReturnToTabCard: View {
                             .daxHeadline()
                             .foregroundColor(Color(designSystemColor: .textPrimary))
                             .lineLimit(1)
-                        Text(model.subtitle)
-                            .daxFootnoteRegular()
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                            .lineLimit(1)
+                        if !model.subtitle.isEmpty {
+                            Text(model.subtitle)
+                                .daxFootnoteRegular()
+                                .foregroundColor(Color(designSystemColor: .textSecondary))
+                                .lineLimit(1)
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }

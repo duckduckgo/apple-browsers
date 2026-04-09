@@ -171,7 +171,7 @@ final class UTIRenderStateTests: XCTestCase {
     }
 
     func test_floatingSubmit_hiddenForOmnibarInactive() {
-        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .top)
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
         sut.updateOmnibarInputVisibility(false)
         let state = sut.computeRenderState()
         XCTAssertFalse(state.isFloatingSubmitVisible)

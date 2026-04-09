@@ -451,6 +451,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Prevents about: scheme navigations (e.g. about:srcdoc) from opening new tabs in the sidebar
     case sidebarAboutSchemeNavigationFix
+
+    /// Enables image generation mode toggle in the Duck.ai omnibar
+    case omnibarImageGeneration
+
+    /// Enables web search tool in the Duck.ai omnibar
+    case omnibarWebSearch
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

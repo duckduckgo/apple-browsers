@@ -114,4 +114,17 @@ final class UnloadedTabViewModel: TabBarViewModel, Previewable {
         cachedSnapshot = image
         return image
     }
+
+    deinit {
+        clearSnapshot()
+    }
+
+    /// Consider refactoring it to use TabSnapshotStore
+    private func clearSnapshot() {
+        guard let idString = unloadedTab.tabSnapshotIdentifier,
+              let uuid = UUID(uuidString: idString) else { return }
+
+        let url = URL.persistenceLocation(for: "\(TabSnapshotStore.directoryName)/\(uuid.uuidString)")
+        fileStore.remove(fileAtURL: url)
+    }
 }

@@ -37,17 +37,12 @@ final class DataImportHubViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupNavigationBar()
         setupView()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         callOnCancelledIfNeeded()
-    }
-
-    private func setupNavigationBar() {
-        navigationItem.largeTitleDisplayMode = .never
     }
 
     private func setupView() {

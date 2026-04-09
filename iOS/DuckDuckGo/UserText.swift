@@ -2430,7 +2430,6 @@ public struct UserText {
     public static let dataImportHubOtherSectionTitle = NSLocalizedString("data.import.hub.section.other", value: "Other", comment: "Section title on the data import hub for secondary import actions")
     public static let dataImportHubUploadExportedFileButton = NSLocalizedString("data.import.hub.button.upload", value: "Upload Exported File...", comment: "Button title on the data import hub for uploading an export file")
 
-
     public static let dataImportFailedNoDataInZipErrorMessage = NSLocalizedString("data.import.failed.no-data-in-zip-error-message", value: "No supported data found in the zip file. Please review the Safari export instructions and try again.", comment: "Error message displayed when no supported data is found in the zip file")
     public static let dataImportFailedReadErrorMessage = NSLocalizedString("data.import.failed.zip-read-error-message", value: "The %@ file could not be read. There may be an issue with the data in the file.", comment: "Error message displayed when the (csv|html|zip) file can't be read.")
     public static let dataImportFileTypeCsv = NSLocalizedString("data.import.file-type.csv", value: "CSV", comment: "File type for CSV files")

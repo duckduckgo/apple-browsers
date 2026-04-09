@@ -96,10 +96,3 @@ struct DataImportHubView: View {
     }
 
 }
-
-@available(iOS 16.0, *)
-#Preview {
-    NavigationStack {
-        DataImportHubView(viewModel: DataImportHubViewModel())
-    }
-}

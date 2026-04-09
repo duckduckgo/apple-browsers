@@ -125,10 +125,10 @@ extension NewTabPageActionsManager {
             suggestionsReader: AIChatSuggestionsReader(
                 suggestionsReader: SuggestionsReader(
                     featureFlagger: featureFlagger,
-                    privacyConfig: contentBlocking.privacyConfigurationManager
+                    privacyConfig: contentBlocking.privacyConfigurationManager,
+                    nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
+                    featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
                 ),
-                localSuggestionsReader: NSApp.delegateTyped.duckAiNativeStorageHandler.map { LocalSuggestionsReader(storageHandler: $0) },
-                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger),
                 historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
             )
         )

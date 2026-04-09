@@ -439,14 +439,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         if switchBarHandler.isFireTab {
             suggestionsReader = NilSuggestionsReader()
         } else {
-            let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
-            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-            suggestionsReader = AIChatSuggestionsReader(
-                suggestionsReader: reader,
-                localSuggestionsReader: duckAiNativeStorageHandler.map { LocalSuggestionsReader(storageHandler: $0) },
-                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger),
-                historySettings: historySettings
+            let reader = SuggestionsReader(
+                featureFlagger: featureFlagger,
+                privacyConfig: privacyConfigurationManager,
+                nativeStorageHandler: duckAiNativeStorageHandler,
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
             )
+            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
+            suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
         }
 
         return AIChatHistoryManager(suggestionsReader: suggestionsReader,

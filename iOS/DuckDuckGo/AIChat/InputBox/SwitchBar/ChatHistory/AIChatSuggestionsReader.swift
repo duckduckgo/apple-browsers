@@ -48,35 +48,19 @@ protocol AIChatSuggestionsReading {
 @MainActor
 final class AIChatSuggestionsReader: AIChatSuggestionsReading {
     private let suggestionsReader: SuggestionsReading
-    private let localSuggestionsReader: SuggestionsReading?
-    private let featureFlagProvider: AIChatFeatureFlagProviding
     private let historySettings: AIChatHistorySettings
 
     var maxHistoryCount: Int {
         historySettings.maxHistoryCount
     }
 
-    init(
-        suggestionsReader: SuggestionsReading,
-        localSuggestionsReader: SuggestionsReading? = nil,
-        featureFlagProvider: AIChatFeatureFlagProviding,
-        historySettings: AIChatHistorySettings
-    ) {
+    init(suggestionsReader: SuggestionsReading, historySettings: AIChatHistorySettings) {
         self.suggestionsReader = suggestionsReader
-        self.localSuggestionsReader = localSuggestionsReader
-        self.featureFlagProvider = featureFlagProvider
         self.historySettings = historySettings
     }
 
     func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
-        let reader: SuggestionsReading
-        if featureFlagProvider.isLocalStorageManipulationEnabled(), let localReader = localSuggestionsReader {
-            reader = localReader
-        } else {
-            reader = suggestionsReader
-        }
-
-        let result = await reader.fetchSuggestions(query: query, maxChats: maxChats)
+        let result = await suggestionsReader.fetchSuggestions(query: query, maxChats: maxChats)
 
         switch result {
         case .success(let suggestions):

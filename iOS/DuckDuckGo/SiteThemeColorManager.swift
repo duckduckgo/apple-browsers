@@ -82,9 +82,7 @@ final class SiteThemeColorManager {
     private func startObservingThemeColor() {
         themeColorObservation = tabViewController?.webView?.observe(\.themeColor, options: [.initial, .new]) { [weak self] webView, change in
 
-            guard let self, self.isCurrentTabShowingDaxPlayer == false, self.isCurrentTabShowingAIChat == false else {
-                return
-            }
+            guard let self, self.isCurrentTabShowingDaxPlayer == false, self.isCurrentTabShowingAIChat == false else { return }
 
             guard self.shouldApplyColorToCurrentTab, let host = webView.url?.host else {
                 self.resetThemeColor()
@@ -142,14 +140,14 @@ final class SiteThemeColorManager {
 
     private func applyThemeColor(_ color: UIColor?) {
         let newColor = color ?? UIColor(designSystemColor: .background)
+        let statusBackgroundColor: UIColor
 
-        if !viewCoordinator.isNavigationChromeHidden {
-            if AppWidthObserver.shared.isPad && viewCoordinator.parentController?.traitCollection.horizontalSizeClass == .regular {
-                viewCoordinator.statusBackground.backgroundColor = themeManager.currentTheme.tabsBarBackgroundColor
-            } else {
-                viewCoordinator.statusBackground.backgroundColor = newColor
-            }
+        if AppWidthObserver.shared.isPad && viewCoordinator.parentController?.traitCollection.horizontalSizeClass == .regular {
+            statusBackgroundColor = themeManager.currentTheme.tabsBarBackgroundColor
+        } else {
+            statusBackgroundColor = newColor
         }
+        viewCoordinator.setStandardStatusBackgroundColor(statusBackgroundColor)
         tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
         tabViewController?.webView?.underPageBackgroundColor = newColor
         tabViewController?.webView?.scrollView.backgroundColor = newColor

@@ -351,6 +351,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/task/1213314048601761
     case fireMode
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
+    case fireButtonRefinements
+
     /// https://app.asana.com/1/137249556945/project/1202500774821704/task/1212559012504218
     case autoplayBlocking
 
@@ -379,6 +382,10 @@ public enum FeatureFlag: String {
     case minimalChromeInLandscape
 
     case aiChatNativeStorage
+
+    /// Failsafe feature flag. Filters intermediate redirect URLs from the address bar.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213972422695959
+    case filterAddressBarUpdates
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -636,6 +643,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion)))
         case .fireMode:
             Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireMode)))
+        case .fireButtonRefinements:
+            Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireButtonRefinements)))
         case .autoplayBlocking:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.autoplayBlocking)))
         case .customXSafariRedirectHandling:
@@ -656,6 +665,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.minimalChromeInLandscape)))
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)))
+        case .filterAddressBarUpdates:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.filterAddressBarUpdates)))
         }
     }
 

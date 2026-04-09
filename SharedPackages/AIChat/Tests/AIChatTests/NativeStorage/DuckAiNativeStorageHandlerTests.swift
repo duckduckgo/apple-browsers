@@ -184,6 +184,19 @@ final class DuckAiNativeStorageHandlerTests: XCTestCase {
         XCTAssertEqual(mockDataStore.lastPutChatData, data)
     }
 
+    func testWhenPutChatsThenDelegatesToDataStore() throws {
+        let chats = [
+            DuckAiChatRecord(chatId: "chat-1", data: Data("a".utf8)),
+            DuckAiChatRecord(chatId: "chat-2", data: Data("b".utf8))
+        ]
+        try handler.putChats(chats)
+
+        XCTAssertEqual(mockDataStore.putChatsCallCount, 1)
+        XCTAssertEqual(mockDataStore.lastPutChats?.count, 2)
+        XCTAssertEqual(mockDataStore.lastPutChats?[0].chatId, "chat-1")
+        XCTAssertEqual(mockDataStore.lastPutChats?[1].chatId, "chat-2")
+    }
+
     func testWhenDeleteChatThenDelegatesToDataStore() throws {
         try handler.deleteChat(chatId: "chat-1")
 
@@ -225,6 +238,9 @@ private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring {
     var getAllChatsCallCount = 0
     var stubbedChats: [DuckAiChatRecord] = []
 
+    var putChatsCallCount = 0
+    var lastPutChats: [DuckAiChatRecord]?
+
     var deleteChatCallCount = 0
     var lastDeleteChatId: String?
 
@@ -250,6 +266,11 @@ private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring {
         putChatCallCount += 1
         lastPutChatId = chatId
         lastPutChatData = data
+    }
+
+    func putChats(_ chats: [DuckAiChatRecord]) throws {
+        putChatsCallCount += 1
+        lastPutChats = chats
     }
 
     func getAllChats() throws -> [DuckAiChatRecord] {

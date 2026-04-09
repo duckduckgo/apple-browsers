@@ -131,6 +131,7 @@ let package = Package(
             dependencies: [
                 "Common",
                 "Persistence",
+                "SecureStorage",
                 "GRDB",
             ],
             swiftSettings: [
@@ -723,6 +724,7 @@ let package = Package(
             dependencies: [
                 "DuckAiDataStore",
                 "PersistenceTestingUtils",
+                "SecureStorage",
             ]
         ),
         .testTarget(

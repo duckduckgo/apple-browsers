@@ -222,6 +222,28 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a model from the model picker menu
     case aiChatAddressBarModelSelected
 
+    // MARK: - Image Generation Mode
+
+    /// Event Trigger: User activates image generation mode via the Tools menu
+    case aiChatAddressBarImageGenerationActivated
+
+    /// Event Trigger: User dismisses the image generation chip (× button)
+    case aiChatAddressBarImageGenerationDeactivated
+
+    /// Event Trigger: User submits a prompt while image generation mode is active
+    case aiChatAddressBarImageGenerationSubmitted
+
+    // MARK: - Web Search Mode
+
+    /// Event Trigger: User activates web search mode via the Tools menu
+    case aiChatAddressBarWebSearchActivated
+
+    /// Event Trigger: User dismisses the web search chip (× button)
+    case aiChatAddressBarWebSearchDeactivated
+
+    /// Event Trigger: User submits a prompt while web search mode is active
+    case aiChatAddressBarWebSearchSubmitted
+
     /// Event Trigger: User submits a prompt with images from the New Tab Page omnibar
     case aiChatNtpSubmitWithImage(imageCount: Int)
 
@@ -443,6 +465,18 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_submit_with_image"
         case .aiChatAddressBarModelSelected:
             return "aichat_addressbar_model_selected"
+        case .aiChatAddressBarImageGenerationActivated:
+            return "aichat_addressbar_image_generation_activated"
+        case .aiChatAddressBarImageGenerationDeactivated:
+            return "aichat_addressbar_image_generation_deactivated"
+        case .aiChatAddressBarImageGenerationSubmitted:
+            return "aichat_addressbar_image_generation_submitted"
+        case .aiChatAddressBarWebSearchActivated:
+            return "aichat_addressbar_web_search_activated"
+        case .aiChatAddressBarWebSearchDeactivated:
+            return "aichat_addressbar_web_search_deactivated"
+        case .aiChatAddressBarWebSearchSubmitted:
+            return "aichat_addressbar_web_search_submitted"
         case .aiChatNtpSubmitWithImage:
             return "aichat_ntp_submit_with_image"
         case .aiChatNtpModelSelected:
@@ -539,6 +573,12 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageAttached,
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarModelSelected,
+                .aiChatAddressBarImageGenerationActivated,
+                .aiChatAddressBarImageGenerationDeactivated,
+                .aiChatAddressBarImageGenerationSubmitted,
+                .aiChatAddressBarWebSearchActivated,
+                .aiChatAddressBarWebSearchDeactivated,
+                .aiChatAddressBarWebSearchSubmitted,
                 .aiChatNtpModelSelected,
                 .aiChatNtpViewAllChatsClicked,
                 .aiChatViewAllChatsClicked,
@@ -678,6 +718,12 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatNewImageChatMoreOptionsMenu,
                 .aiChatRecentChatSelectedMoreOptionsMenu,
                 .aiChatDeleteAllChatsMoreOptionsMenu,
+                .aiChatAddressBarImageGenerationActivated,
+                .aiChatAddressBarImageGenerationDeactivated,
+                .aiChatAddressBarImageGenerationSubmitted,
+                .aiChatAddressBarWebSearchActivated,
+                .aiChatAddressBarWebSearchDeactivated,
+                .aiChatAddressBarWebSearchSubmitted,
                 .aiChatIsEnabled:
             return [.pixelSource]
         }

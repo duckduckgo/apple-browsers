@@ -84368,6 +84368,18 @@
         }
       }
     },
+    "preferences.autoplay.caption" : {
+      "comment" : "Caption for the autoplay blocking preference picker in General preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Doesn't apply to videos opened in Duck Player when 'Autoplay videos when opened in Duck Player' is on."
+          }
+        }
+      }
+    },
     "preferences.autoplay.label" : {
       "comment" : "Label for the autoplay blocking preference picker in General preferences",
       "extractionState" : "extracted_with_value",
@@ -84554,55 +84566,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Video mit stummgeschaltetem Ton"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Video with audio muted"
+            "value" : "Stop media with sound"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Vídeo con audio silenciado"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Vidéo avec son désactivé"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Video con audio disattivato"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Video met gedempt geluid"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wideo z wyciszonym dźwiękiem"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Vídeo com áudio silenciado"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Видео без звука"
           }
         }

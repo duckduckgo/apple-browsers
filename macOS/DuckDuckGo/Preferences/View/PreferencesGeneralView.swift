@@ -335,6 +335,7 @@ extension Preferences {
                                     }
                                 }
                             }
+                            TextMenuItemCaption(UserText.autoplayCaption)
                         }
                     }
                 }

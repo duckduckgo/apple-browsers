@@ -229,12 +229,13 @@ final class AIChatMenu: NSMenu {
 
     @objc private func deleteAllChatsTapped() {
         var dialog = AIChatDeleteChatsDialog()
-        dialog.confirmed = { [weak self] in
-            guard let self else { return }
+        let actions = self.actions
+        let origin = self.origin
+        dialog.confirmed = {
             let pixel: AIChatPixel = origin == .moreOptionsMenu ? .aiChatDeleteAllChatsMoreOptionsMenu : .aiChatDeleteAllChatsMainMenu
             PixelKit.fire(pixel, frequency: .dailyAndStandard)
             Task { @MainActor in
-                await self.actions.deleteAllChats()
+                await actions.deleteAllChats()
             }
         }
         dialog.show()

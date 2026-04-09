@@ -29,7 +29,7 @@ final class PermissionManagerMock: PermissionManagerProtocol {
         permissionSubject.eraseToAnyPublisher()
     }
 
-    var savedPermissions = [String: [PermissionType: Bool]]()
+    var savedPermissions = [String: [PermissionType: PersistedPermissionDecision]]()
     var setPermissionCalls: [(decision: PersistedPermissionDecision, domain: String, permissionType: PermissionType)] = []
 
     var persistedPermissionTypes: Set<PermissionType> {
@@ -53,13 +53,12 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     }
 
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision {
-        guard let allow = savedPermissions[domain.droppingWwwPrefix()]?[permissionType] else { return .ask }
-        return PersistedPermissionDecision(allow: allow, isRemoved: false)
+        savedPermissions[domain.droppingWwwPrefix()]?[permissionType] ?? .ask
     }
 
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
         setPermissionCalls.append((decision: decision, domain: domain, permissionType: permissionType))
-        savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = decision == .ask ? nil : decision.boolValue
+        savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = decision
     }
 
     func removePermission(forDomain domain: String, permissionType: PermissionType) {

@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import DuckAiDataStore
 import Foundation
 import Core
 import BrowserServicesKit
@@ -296,7 +297,8 @@ final class AppDependencyProvider: DependencyProvider {
            let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) {
             let containerURL = groupContainer.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
             do {
-                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: containerURL).handler
+                let keyStoreProvider = DuckAiKeyStoreProvider(accessGroup: Global.appConfigurationGroupName)
+                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: containerURL, keyStoreProvider: keyStoreProvider).handler
             } catch {
                 Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
                 duckAiNativeStorageHandler = nil

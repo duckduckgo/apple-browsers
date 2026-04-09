@@ -88,6 +88,8 @@ protocol TabExtensionDependencies {
     var aiChatSessionStore: AIChatSessionStoring { get }
     var tabCrashAggregator: TabCrashAggregator { get }
     var tabsPreferences: TabsPreferences { get }
+    var autoplayPreferences: AutoplayPreferences { get }
+    var permissionManager: PermissionManagerProtocol { get }
     var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
 }
 
@@ -201,6 +203,14 @@ extension TabExtensionsBuilder {
                 webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences
             )
 
+        }
+
+        add {
+            AutoplayPolicyTabExtension(
+                autoplayPreferences: dependencies.autoplayPreferences,
+                featureFlagger: dependencies.featureFlagger,
+                permissionManager: dependencies.permissionManager
+            )
         }
 
         add {

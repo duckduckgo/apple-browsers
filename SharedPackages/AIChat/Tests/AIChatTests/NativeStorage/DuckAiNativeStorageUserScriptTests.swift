@@ -61,6 +61,7 @@ private final class MockDuckAiNativeStorageHandler: DuckAiNativeStorageHandling 
     func deleteAllSettings() throws {}
     func replaceAllSettings(_ settings: [String: Any]) throws {}
     func putChat(chatId: String, data: Data) throws {}
+    func putChats(_ chats: [DuckAiChatRecord]) throws {}
     func getAllChats() throws -> [DuckAiChatRecord] { [] }
     func deleteChat(chatId: String) throws {}
     func deleteAllChats() throws {}

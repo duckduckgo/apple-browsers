@@ -61,8 +61,7 @@ struct Connected: ConnectedHandling {
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
-        let dataClearingCapability = DataClearingCapability.create(using: appDependencies.featureFlagger)
-        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor, dataClearingCapability: dataClearingCapability)
+        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor)
         let autoClearService = AutoClearService(autoClear: autoClear,
                                                 overlayWindowManager: overlayWindowManager,
                                                 aiChatSyncCleaner: appDependencies.services.syncService.aiChatSyncCleaner)
@@ -98,8 +97,7 @@ struct Connected: ConnectedHandling {
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
-        let dataClearingCapability = DataClearingCapability.create(using: appDependencies.featureFlagger)
-        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor, dataClearingCapability: dataClearingCapability)
+        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor)
         let autoClearService = AutoClearService(autoClear: autoClear,
                                                 overlayWindowManager: overlayWindowManager,
                                                 aiChatSyncCleaner: appDependencies.services.syncService.aiChatSyncCleaner)
@@ -129,8 +127,7 @@ struct Connected: ConnectedHandling {
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
-        let dataClearingCapability = DataClearingCapability.create(using: appDependencies.featureFlagger)
-        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor, dataClearingCapability: dataClearingCapability)
+        let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor)
         let autoClearService = AutoClearService(autoClear: autoClear,
                                                 overlayWindowManager: overlayWindowManager,
                                                 aiChatSyncCleaner: appDependencies.services.syncService.aiChatSyncCleaner)

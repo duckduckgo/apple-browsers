@@ -36,6 +36,7 @@ import CrashReportingShared
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DDGSync
+import DuckAiDataStore
 import FeatureFlags
 import Freemium
 import History
@@ -134,6 +135,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let downloadsPreferences: DownloadsPreferences
     let searchPreferences: SearchPreferences
     let tabsPreferences: TabsPreferences
+    let autoplayPreferences: AutoplayPreferences
     let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let aboutPreferences: AboutPreferences
@@ -218,6 +220,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
     let aiChatPreferences: AIChatPreferences
+    private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
+
+    private(set) lazy var aiChatSuggestionsReader: AIChatSuggestionsReading = MainActor.assumeMainThread {
+        AIChatSuggestionsReader(
+            suggestionsReader: SuggestionsReader(
+                featureFlagger: featureFlagger,
+                privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager
+            ),
+            historySettings: AIChatHistorySettings(
+                privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager
+            )
+        )
+    }
 
     let privacyStats: PrivacyStatsCollecting
     let autoconsentStats: AutoconsentStatsCollecting
@@ -773,6 +788,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             persistor: TabsPreferencesUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
             windowControllersManager: windowControllersManager
         )
+        autoplayPreferences = AutoplayPreferences()
         windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
 
@@ -816,7 +832,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
 
-        let aiChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: featureFlagger,
+        aiChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: featureFlagger,
                                                         aiChatMenuConfiguration: aiChatMenuConfiguration,
                                                         featureDiscovery: DefaultFeatureDiscovery(),
                                                         privacyConfig: privacyConfigurationManager)
@@ -1155,7 +1171,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
            let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
             let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
             do {
-                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: nativeStorageContainerURL).handler
+                let keyStoreProvider = DuckAiKeyStoreProvider()
+                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: nativeStorageContainerURL, keyStoreProvider: keyStoreProvider).handler
             } catch {
                 Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
                 duckAiNativeStorageHandler = nil

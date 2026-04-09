@@ -98,6 +98,13 @@ public struct DaxFootnoteSemibold: ViewModifier {
     }
 }
 
+public struct DaxCallout: ViewModifier {
+    public func body(content: Content) -> some View {
+        content
+            .font(Font(UIFont.daxCallout()))
+    }
+}
+
 public struct DaxCaption: ViewModifier {
     public func body(content: Content) -> some View {
         content
@@ -162,6 +169,10 @@ public extension View {
 
     func daxFootnoteSemibold() -> some View {
         modifier(DaxFootnoteSemibold())
+    }
+
+    func daxCallout() -> some View {
+        modifier(DaxCallout())
     }
 
     func daxCaption1() -> some View {

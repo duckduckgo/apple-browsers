@@ -987,6 +987,9 @@ final class MainMenu: NSMenu {
                 }
             }
 
+            NSMenuItem(title: "Tab Suspension")
+                .submenu(TabSuspensionDebugMenu(title: "Tab Suspension"))
+
             NSMenuItem(title: "Memory Usage Reporting") {
                 NSMenuItem(title: "Simulate Memory Report...", action: #selector(AppDelegate.simulateMemoryUsageReport))
                 NSMenuItem(title: "Clear Simulated Memory", action: #selector(AppDelegate.clearSimulatedMemory))

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PersistenceTestingUtils
 import PixelKit
 import PrivacyConfig
 import XCTest
@@ -64,6 +65,7 @@ final class TabSuspensionServiceTests: XCTestCase {
             featureFlagger: featureFlagger,
             memoryUsageMonitor: mockMemoryUsageMonitor,
             pixelFiring: mockPixelFiring,
+            keyValueStore: InMemoryKeyValueStore(),
             notificationCenter: notificationCenter,
             dateProvider: { [unowned self] in self.now }
         )

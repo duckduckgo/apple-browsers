@@ -60,6 +60,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let serpSettingsUserScript: SERPSettingsUserScript?
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let faviconScript = FaviconUserScript()
+    let tabSuspensionScript = TabSuspensionUserScript()
 
     private let contentScopePreferences: ContentScopePreferences
 
@@ -188,6 +189,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: tabSuspensionScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)

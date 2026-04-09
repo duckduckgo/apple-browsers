@@ -412,16 +412,22 @@ final class PromoServiceTests: XCTestCase {
         let promoB = PromoTestHelpers.makePromo(id: "promo-b", coexistingPromoIDs: ["promo-a"], delegate: delegateB)
         let promoC = PromoTestHelpers.makePromo(id: "promo-c", coexistingPromoIDs: [], delegate: delegateC)
         let promoService = makeService(promos: [promoA, promoB, promoC])
+        let showAExpectation = XCTestExpectation(description: "A is shown")
         let showBExpectation = XCTestExpectation(description: "B is shown")
-        let hideExpectation = XCTestExpectation(description: "all hidden")
+        let showCExpectation = XCTestExpectation(description: "C is shown")
+        showCExpectation.isInverted = true // We do not expect C to be shown
+        let previousCRecord = PromoHistoryRecord(id: promoC.id)
         promoService.visiblePromosPublisher
             .dropFirst()
             .sink { promos in
-                if promos.contains(where: { $0.id == "promo-b" }) && !promos.contains(where: { $0.id == "promo-c" }) {
+                if promos.contains(where: { $0.id == promoA.id }) {
+                    showAExpectation.fulfill()
+                }
+                if promos.contains(where: { $0.id == promoB.id }) {
                     showBExpectation.fulfill()
                 }
-                if promos.isEmpty {
-                    hideExpectation.fulfill()
+                if promos.contains(where: { $0.id == promoC.id }) {
+                    showCExpectation.fulfill()
                 }
             }
             .store(in: &cancellables)
@@ -429,13 +435,12 @@ final class PromoServiceTests: XCTestCase {
         // When: show A and B (they coexist), C is blocked when evaluated
         promoService.applicationDidBecomeActive()
         triggerSubject.send(.appLaunched)
-        await fulfillment(of: [showBExpectation], timeout: timeout)
-        delegateA.completeShow(with: .actioned)
-        delegateB.completeShow(with: .actioned)
-        await fulfillment(of: [hideExpectation], timeout: timeout)
+        await fulfillment(of: [showAExpectation, showBExpectation], timeout: timeout)
+        await fulfillment(of: [showCExpectation], timeout: 0.5) // Short timeout for inverted expectation
 
         // Then: C was never shown
-        XCTAssertEqual(delegateC.hideCallCount, 0)
+        let currentCRecord = historyStore.record(for: promoC.id)
+        XCTAssertEqual(previousCRecord, currentCRecord)
     }
 
     func testWhenAppInitiatedPromoDismissedRecently_ThenGlobalCooldownBlocksNextAppPromo() async {

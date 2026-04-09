@@ -522,9 +522,9 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
 
 extension MainViewController: UnifiedToggleInputDelegate {
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, images: [AIChatNativePrompt.NativePromptImage]?) {
         commitUnifiedToggleStateToCurrentTab()
-        openAIChat(prompt, autoSend: true, modelId: modelId, images: images)
+        openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, images: images)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {

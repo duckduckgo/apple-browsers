@@ -204,7 +204,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 private final class SpyUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, images: [AIChatNativePrompt.NativePromptImage]?) {
         submittedImages = images
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}

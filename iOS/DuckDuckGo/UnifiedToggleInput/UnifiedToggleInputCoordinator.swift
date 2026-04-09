@@ -145,6 +145,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var cancellables = Set<AnyCancellable>()
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
+    private let toolsController = UTIToolsController()
+    private let toolsMenuFactory = UTIToolsMenuFactory()
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -186,15 +188,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         super.init()
         viewController.delegate = self
         modelStore.onModelsUpdated = { [weak self] in
-            self?.updateModelChipLabel()
-            self?.updateImageButtonVisibility()
+            self?.handleModelsUpdated()
         }
         subscribeToGeneratingState()
         subscribeToStopGeneratingTap()
         subscribeToCustomizeResponsesTap()
         subscribeToVoiceSearchTap()
         subscribeToAttachmentUsageChanges()
-        viewController.isCustomizeResponsesButtonHidden = true
+        viewController.isToolsButtonHidden = true
 
         if let cachedLabel = modelStore.preferences.selectedModelShortName {
             viewController.modelName = cachedLabel
@@ -231,18 +232,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private var isNewChatPending = false
 
-    private func syncChipVisibility(hasExistingChat: Bool) {
-        if isNewChatPending && hasExistingChat {
-            return
-        }
-        isNewChatPending = false
-        let shouldHide = hasExistingChat || hasSubmittedPrompt
-        guard hasSubmittedPrompt != shouldHide else { return }
-        hasSubmittedPrompt = shouldHide
-        updateModelChipVisibility()
-        syncHasSubmittedPromptToHandler()
-    }
-
     // MARK: - AI Tab State
 
     func showCollapsed() {
@@ -253,8 +242,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let renderState = computeRenderState()
 
         viewController.apply(renderState.viewConfig, animated: false)
+        applyToolbarPresentation()
         viewController.deactivateInput()
-        viewController.isCustomizeResponsesButtonHidden = false
         intentSubject.send(.showCollapsed)
     }
 
@@ -266,7 +255,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let renderState = computeRenderState()
 
         viewController.apply(renderState.viewConfig, animated: false)
-        viewController.isCustomizeResponsesButtonHidden = false
+        applyToolbarPresentation()
         fetchModels()
 
         if let prefilledText, !prefilledText.isEmpty {
@@ -293,11 +282,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func hide() {
         displayState = .hidden
         isInputVisibleForKeyboard = true
+        resetToolsSelection()
 
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
+        applyToolbarPresentation()
         viewController.deactivateInput()
-        viewController.isCustomizeResponsesButtonHidden = true
         contentViewController.setDismissButtonVisible(renderState.isContentVisible)
         intentSubject.send(.hide)
     }
@@ -313,13 +303,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateToolbarAIVoiceChat()
         isInputVisibleForKeyboard = true
         hasSubmittedPrompt = false
+        resetToolsSelection()
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
 
         viewController.setExpanded(false, animated: false)
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
-        viewController.isCustomizeResponsesButtonHidden = true
+        applyToolbarPresentation()
         fetchModels()
 
         if let text = prefilledText, !text.isEmpty {
@@ -359,14 +350,17 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         cardPosition = .bottom
         isInputVisibleForKeyboard = true
         setText("")
+        resetToolsSelection()
         clearAttachments()
 
         if resetView {
             let renderState = computeRenderState()
             viewController.apply(renderState.viewConfig, animated: false)
+            applyToolbarPresentation()
             viewController.deactivateInput()
             contentViewController.setDismissButtonVisible(renderState.isContentVisible)
         } else {
+            applyToolbarPresentation()
             viewController.deactivateInput()
             let renderState = computeRenderState()
             contentViewController.setDismissButtonVisible(renderState.isContentVisible)
@@ -381,6 +375,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if !enabled, isOmnibarSession {
             inputMode = .search
             viewController.apply(computeRenderState().viewConfig, animated: false)
+            refreshToolsPresentation()
             modeChangeSubject.send(.search)
         }
     }
@@ -415,6 +410,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.setInputMode(effectiveMode, animated: animated)
         modeChangeSubject.send(effectiveMode)
         updateToolbarAIVoiceChat()
+        refreshToolsPresentation()
         if effectiveMode == .search {
             clearAttachments()
         }
@@ -426,11 +422,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateToolbarAIVoiceChat()
     }
 
-    private func updateToolbarAIVoiceChat() {
-        viewController.isToolbarAIVoiceChatActive = viewController.handler.isAIVoiceChatEnabled && inputMode == .aiChat
-    }
-
-
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
         let effectiveMode: TextEntryMode = (!isToggleEnabled && isOmnibarSession) ? .search : mode
         let didModeChange = inputMode != effectiveMode
@@ -441,6 +432,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if didModeChange {
             modeChangeSubject.send(effectiveMode)
             updateToolbarAIVoiceChat()
+            refreshToolsPresentation()
         }
     }
 
@@ -511,6 +503,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         hasSubmittedPrompt = true
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
+        resetToolsSelection()
         showCollapsed()
         userScript.submitPrompt(text, images: nil, modelId: modelId)
     }
@@ -522,7 +515,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         case .aiTab:
             switch type {
             case .query: hide()
-            case .prompt: showCollapsed()
+            case .prompt:
+                resetToolsSelection()
+                showCollapsed()
             }
         case .hidden:
             break
@@ -620,6 +615,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var persistedModelId: String? { modelStore.persistedModelId }
     var currentModelId: String? { modelStore.currentModelId }
     var selectedModelSupportsImageUpload: Bool { modelStore.selectedModelSupportsImageUpload }
+    var selectedTool: AIChatRAGTool? { toolsController.selectedTool }
 
     func fetchModels() {
         modelStore.fetchModels()
@@ -628,6 +624,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func startNewChat() {
         isNewChatPending = true
         hasSubmittedPrompt = false
+        resetToolsSelection()
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
         clearAttachments()
@@ -637,59 +634,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func updateSelectedModel(_ modelId: String) {
         modelStore.updateSelectedModel(modelId)
-        updateModelChipLabel()
-        updateImageButtonVisibility()
+        handleModelsUpdated()
     }
 
-    private func buildModelMenuDescription() -> UnifiedToggleInputModelMenu {
-        UnifiedToggleInputModelMenu.build(
-            models: modelStore.models,
-            selectedId: modelStore.persistedModelId,
-            isBottomAnchored: viewController.cardPosition == .bottom,
-            hasActiveSubscription: modelStore.subscriptionState.hasActiveSubscription,
-            advancedSectionTitle: modelStore.subscriptionState.hasActiveSubscription
-                ? UserText.aiChatAdvancedModelsSectionHeader
-                : UserText.aiChatAdvancedModelsMenuTitle,
-            basicSectionTitle: UserText.aiChatBasicModelsSectionHeader
-        )
+    func selectTool(_ tool: AIChatRAGTool) {
+        toolsController.select(tool, for: modelStore)
+        refreshToolsPresentation()
     }
 
-    private func buildModelPickerMenu() -> UIMenu {
-        let description = buildModelMenuDescription()
-        let modelLookup = Dictionary(uniqueKeysWithValues: modelStore.models.map { ($0.id, $0) })
-
-        let uiSections: [UIMenu] = description.sections.map { section in
-            let actions = section.items.map { item -> UIAction in
-                let model = modelLookup[item.modelId]
-                return UIAction(
-                    title: item.name,
-                    image: model?.menuIcon,
-                    attributes: item.isDisabled ? .disabled : [],
-                    state: item.isSelected ? .on : .off
-                ) { [weak self] _ in
-                    self?.updateSelectedModel(item.modelId)
-                }
-            }
-
-            var options: UIMenu.Options = .displayInline
-            if !section.items.contains(where: { $0.isDisabled }) {
-                options.insert(.singleSelection)
-            }
-
-            return UIMenu(title: section.title, options: options, children: actions)
-        }
-
-        return UIMenu(children: uiSections)
-    }
-
-    private func updateModelChipLabel() {
-        let selectedId = modelStore.persistedModelId
-        let shortName = modelStore.models.first(where: { $0.id == selectedId })?.shortName
-        if let shortName {
-            viewController.modelName = shortName
-            modelStore.cacheSelectedModelShortName(shortName)
-        }
-        viewController.modelPickerMenu = modelStore.models.isEmpty ? nil : buildModelPickerMenu()
+    func clearSelectedTool() {
+        resetToolsSelection()
     }
 
     // MARK: - Attachments
@@ -733,28 +687,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         root.present(sheet, animated: true)
     }
 
-    private func presentCamera(from presenter: UIViewController) {
-        let picker = UIImagePickerController()
-        picker.sourceType = .camera
-        picker.delegate = self
-        presenter.present(picker, animated: true)
-    }
-
-    private func presentPhotoPicker(from presenter: UIViewController, remaining: Int) {
-        var config = PHPickerConfiguration()
-        config.filter = .images
-        config.selectionLimit = remaining
-        let picker = PHPickerViewController(configuration: config)
-        picker.delegate = self
-        presenter.present(picker, animated: true)
-    }
-
-    private func expandIfOnAITab() {
-        if case .aiTab = displayState {
-            showExpanded()
-        }
-    }
-
     func addImageAttachment(image: UIImage, fileName: String) {
         guard !viewController.isAttachmentsFull, !isConversationImageLimitReached else { return }
         let attachment = AIChatImageAttachment(image: image, fileName: fileName)
@@ -776,83 +708,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateImageButtonEnabledState()
     }
 
-    private func updateImageButtonEnabledState() {
-        let canAttachMore = remainingImagesForPicker > 0 && !viewController.isGenerating
-        viewController.isImageButtonEnabled = canAttachMore
-    }
-
-    // MARK: - Subscriptions
-
-    private func subscribeToGeneratingState() {
-        $aiChatStatus
-            .map { status in
-                status == .loading || status == .streaming || status == .startStreamNewPrompt
-            }
-            .removeDuplicates()
-            .sink { [weak self] isGenerating in
-                guard let self else { return }
-                self.viewController.isGenerating = isGenerating
-                self.updateImageButtonEnabledState()
-            }
-            .store(in: &cancellables)
-    }
-
-    private func subscribeToStopGeneratingTap() {
-        viewController.handler.stopGeneratingButtonTappedPublisher
-            .sink { [weak self] in
-                self?.didPressStopGeneratingButton.send()
-            }
-            .store(in: &cancellables)
-    }
-
-    private func subscribeToAttachmentUsageChanges() {
-        $attachmentUsage
-            .removeDuplicates()
-            .sink { [weak self] _ in
-                self?.updateImageButtonVisibility()
-            }
-            .store(in: &cancellables)
-    }
-
-    private func subscribeToCustomizeResponsesTap() {
-        viewController.handler.customizeResponsesButtonTappedPublisher
-            .sink { [weak self] in
-                guard let self else { return }
-                self.didPressCustomizeResponsesButton.send()
-                self.showCollapsed()
-            }
-            .store(in: &cancellables)
-    }
-
-    private func subscribeToVoiceSearchTap() {
-        viewController.handler.microphoneButtonTappedPublisher
-            .sink { [weak self] in
-                self?.delegate?.unifiedToggleInputDidRequestVoiceSearch()
-            }
-            .store(in: &cancellables)
-    }
-
-    // MARK: - State Reset
-
-    private func updateModelChipVisibility() {
-        viewController.isModelChipHidden = hasSubmittedPrompt
-    }
-
-    private func syncHasSubmittedPromptToHandler() {
-        switchBarHandler.hasSubmittedPrompt = hasSubmittedPrompt
-    }
-
-    private func resetSessionState() {
-        isNewChatPending = false
-        setText("")
-        aiChatStatus = .unknown
-        aiChatInputBoxVisibility = .unknown
-        attachmentUsage = nil
-        hasSubmittedPrompt = false
-        updateModelChipVisibility()
-        syncHasSubmittedPromptToHandler()
-        clearAttachments()
-    }
 }
 
 // MARK: - UnifiedToggleInputViewControllerDelegate
@@ -876,6 +731,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
+            let tools = toolsController.selectedToolsForSubmission()
             let images = selectedModelSupportsImageUpload
                 ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
                 : nil
@@ -884,15 +740,16 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             hasSubmittedPrompt = true
             updateModelChipVisibility()
             syncHasSubmittedPromptToHandler()
+            resetToolsSelection()
             if isOmnibarSession {
                 deactivateToOmnibar()
             } else {
                 showCollapsed()
             }
             if let userScript = boundUserScript {
-                userScript.submitPrompt(text, images: images, modelId: modelId)
+                userScript.submitPrompt(text, images: images, modelId: modelId, tools: tools)
             } else {
-                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: modelId, images: images)
+                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: modelId, tools: tools, images: images)
             }
         }
     }
@@ -913,6 +770,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidTapAttach(_ vc: UnifiedToggleInputViewController) {
         presentAttachmentOptions()
+    }
+
+    func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController) {
+        clearSelectedTool()
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID) {
@@ -964,5 +825,228 @@ extension UnifiedToggleInputCoordinator: UIImagePickerControllerDelegate, UINavi
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         picker.dismiss(animated: true)
         expandIfOnAITab()
+    }
+}
+
+private extension UnifiedToggleInputCoordinator {
+
+    // MARK: Session State
+
+    func syncChipVisibility(hasExistingChat: Bool) {
+        if isNewChatPending && hasExistingChat {
+            return
+        }
+        isNewChatPending = false
+        let shouldHide = hasExistingChat || hasSubmittedPrompt
+        guard hasSubmittedPrompt != shouldHide else { return }
+        hasSubmittedPrompt = shouldHide
+        updateModelChipVisibility()
+        syncHasSubmittedPromptToHandler()
+    }
+
+    func updateModelChipVisibility() {
+        viewController.isModelChipHidden = hasSubmittedPrompt
+    }
+
+    func syncHasSubmittedPromptToHandler() {
+        switchBarHandler.hasSubmittedPrompt = hasSubmittedPrompt
+    }
+
+    func resetSessionState() {
+        isNewChatPending = false
+        setText("")
+        aiChatStatus = .unknown
+        aiChatInputBoxVisibility = .unknown
+        attachmentUsage = nil
+        hasSubmittedPrompt = false
+        resetToolsSelection()
+        updateModelChipVisibility()
+        syncHasSubmittedPromptToHandler()
+        clearAttachments()
+    }
+
+    // MARK: Toolbar
+
+    func updateToolbarAIVoiceChat() {
+        viewController.isToolbarAIVoiceChatActive = viewController.handler.isAIVoiceChatEnabled && inputMode == .aiChat
+    }
+
+    func applyToolbarPresentation() {
+        refreshToolsPresentation()
+    }
+
+    // MARK: Tools
+
+    func handleModelsUpdated() {
+        toolsController.clearSelectionIfUnsupported(for: modelStore)
+        updateModelChipLabel()
+        updateImageButtonVisibility()
+        refreshToolsPresentation()
+    }
+
+    func refreshToolsPresentation() {
+        let presentation = toolsController.presentation(
+            displayState: displayState,
+            inputMode: inputMode,
+            modelStore: modelStore
+        )
+        let toolsMenu = presentation.toolsMenu.map { [weak self] menu in
+            self?.toolsMenuFactory.makeMenu(menu) { identifier in
+                self?.handleToolsMenuSelection(identifier)
+            }
+        } ?? nil
+        viewController.applyToolsPresentation(
+            isToolsButtonHidden: presentation.isToolsButtonHidden,
+            selectedTool: presentation.selectedTool,
+            toolsMenu: toolsMenu
+        )
+    }
+
+    func resetToolsSelection() {
+        toolsController.clearSelection()
+        refreshToolsPresentation()
+    }
+
+    func handleToolsMenuSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
+        switch identifier {
+        case .customizeResponses:
+            viewController.handler.customizeResponsesButtonTapped()
+        case .webSearch:
+            selectTool(.webSearch)
+        }
+    }
+
+    // MARK: Models
+
+    func buildModelMenuDescription() -> UnifiedToggleInputModelMenu {
+        UnifiedToggleInputModelMenu.build(
+            models: modelStore.models,
+            selectedId: modelStore.persistedModelId,
+            isBottomAnchored: viewController.cardPosition == .bottom,
+            hasActiveSubscription: modelStore.subscriptionState.hasActiveSubscription,
+            advancedSectionTitle: modelStore.subscriptionState.hasActiveSubscription
+                ? UserText.aiChatAdvancedModelsSectionHeader
+                : UserText.aiChatAdvancedModelsMenuTitle,
+            basicSectionTitle: UserText.aiChatBasicModelsSectionHeader
+        )
+    }
+
+    func buildModelPickerMenu() -> UIMenu {
+        let description = buildModelMenuDescription()
+        let modelLookup = Dictionary(uniqueKeysWithValues: modelStore.models.map { ($0.id, $0) })
+
+        let uiSections: [UIMenu] = description.sections.map { section in
+            let actions = section.items.map { item -> UIAction in
+                let model = modelLookup[item.modelId]
+                return UIAction(
+                    title: item.name,
+                    image: model?.menuIcon,
+                    attributes: item.isDisabled ? .disabled : [],
+                    state: item.isSelected ? .on : .off
+                ) { [weak self] _ in
+                    self?.updateSelectedModel(item.modelId)
+                }
+            }
+
+            var options: UIMenu.Options = .displayInline
+            if !section.items.contains(where: { $0.isDisabled }) {
+                options.insert(.singleSelection)
+            }
+
+            return UIMenu(title: section.title, options: options, children: actions)
+        }
+
+        return UIMenu(children: uiSections)
+    }
+
+    func updateModelChipLabel() {
+        let selectedId = modelStore.persistedModelId
+        let shortName = modelStore.models.first(where: { $0.id == selectedId })?.shortName
+        if let shortName {
+            viewController.modelName = shortName
+            modelStore.cacheSelectedModelShortName(shortName)
+        }
+        viewController.modelPickerMenu = modelStore.models.isEmpty ? nil : buildModelPickerMenu()
+    }
+
+    // MARK: Attachments
+
+    func presentCamera(from presenter: UIViewController) {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = self
+        presenter.present(picker, animated: true)
+    }
+
+    func presentPhotoPicker(from presenter: UIViewController, remaining: Int) {
+        var config = PHPickerConfiguration()
+        config.filter = .images
+        config.selectionLimit = remaining
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = self
+        presenter.present(picker, animated: true)
+    }
+
+    func expandIfOnAITab() {
+        if case .aiTab = displayState {
+            showExpanded()
+        }
+    }
+
+    func updateImageButtonEnabledState() {
+        let canAttachMore = remainingImagesForPicker > 0 && !viewController.isGenerating
+        viewController.isImageButtonEnabled = canAttachMore
+    }
+
+    // MARK: Subscriptions
+
+    func subscribeToGeneratingState() {
+        $aiChatStatus
+            .map { status in
+                status == .loading || status == .streaming || status == .startStreamNewPrompt
+            }
+            .removeDuplicates()
+            .sink { [weak self] isGenerating in
+                guard let self else { return }
+                self.viewController.isGenerating = isGenerating
+                self.updateImageButtonEnabledState()
+            }
+            .store(in: &cancellables)
+    }
+
+    func subscribeToStopGeneratingTap() {
+        viewController.handler.stopGeneratingButtonTappedPublisher
+            .sink { [weak self] in
+                self?.didPressStopGeneratingButton.send()
+            }
+            .store(in: &cancellables)
+    }
+
+    func subscribeToAttachmentUsageChanges() {
+        $attachmentUsage
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.updateImageButtonVisibility()
+            }
+            .store(in: &cancellables)
+    }
+
+    func subscribeToCustomizeResponsesTap() {
+        viewController.handler.customizeResponsesButtonTappedPublisher
+            .sink { [weak self] in
+                guard let self else { return }
+                self.didPressCustomizeResponsesButton.send()
+                self.resetToolsSelection()
+                self.showCollapsed()
+            }
+            .store(in: &cancellables)
+    }
+
+    func subscribeToVoiceSearchTap() {
+        viewController.handler.microphoneButtonTappedPublisher
+            .sink { [weak self] in
+                self?.delegate?.unifiedToggleInputDidRequestVoiceSearch()
+            }
+            .store(in: &cancellables)
     }
 }

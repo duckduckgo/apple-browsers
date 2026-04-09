@@ -225,8 +225,7 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
     private func findNextUnloadedTabIndex() -> Int? {
         let center = dataSource.selectedTabIndex.flatMap({ $0.isUnpinnedTab ? $0.item : nil }) ?? 0
         let count = dataSource.totalTabCount
-        if center < count, dataSource.isUnloaded(at: center) { return center }
-        for offset in 1..<count {
+        for offset in 0..<count {
             for candidate in [center + offset, center - offset] {
                 guard candidate >= 0, candidate < count else { continue }
                 if dataSource.isUnloaded(at: candidate) {

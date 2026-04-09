@@ -85,8 +85,8 @@ enum AnyTab: Identifiable {
 
     var isSuspended: Bool {
         switch self {
-        case .unloaded: return true
-        case .loaded(let t): return t.isSuspended
+        case .unloaded(let unloadedTab): return unloadedTab.isSuspended
+        case .loaded: return false
         }
     }
 

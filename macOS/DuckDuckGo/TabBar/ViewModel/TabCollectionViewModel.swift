@@ -40,8 +40,6 @@ protocol TabCollectionViewModelDelegate: AnyObject {
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: TabIndex, to newIndex: TabIndex)
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?)
     func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel)
-    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMaterializeTabAt index: Int)
-
 }
 
 @MainActor
@@ -285,6 +283,20 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
+    /// This method ensures that `tabViewModels` dictionary value for `tab`
+    /// has the correct type, matching the type of tab it represents.
+    func updateTabBarViewModelIfNeeded(for tab: AnyTab) {
+        guard let tabViewModel = tabViewModels[tab.uuid] else {
+            return
+        }
+
+        if case .loaded(let loadedTab) = tab, tabViewModel is UnloadedTabViewModel {
+            tabViewModels[tab.uuid] = TabViewModel(tab: loadedTab)
+        } else if case .unloaded(let unloadedTab) = tab, tabViewModel is TabViewModel {
+            tabViewModels[tab.uuid] = UnloadedTabViewModel(unloadedTab: unloadedTab)
+        }
+    }
+
     // MARK: - Selection
 
     @discardableResult func selectTab(at index: TabIndex, forceChange: Bool = false) -> Tab? {
@@ -293,10 +305,6 @@ final class TabCollectionViewModel: NSObject {
         guard result else { return nil }
 
         let tab = materialize(at: index)
-
-        if let tab, tab.isSuspended {
-            tab.resume()
-        }
         return tab
     }
 
@@ -308,14 +316,7 @@ final class TabCollectionViewModel: NSObject {
         guard let index = tabCollection.firstIndex(of: tab) else {
             return false
         }
-
-        let result = selectUnpinnedTab(at: index, forceChange: forceChange)
-
-        if result, tab.isSuspended {
-            tab.resume()
-        }
-
-        return result
+        return selectUnpinnedTab(at: index, forceChange: forceChange)
     }
 
     @discardableResult func selectDisplayableTabIfPresent(_ content: Tab.TabContent) -> Bool {
@@ -834,24 +835,29 @@ final class TabCollectionViewModel: NSObject {
     @discardableResult
     func suspendTab(at tabIndex: TabIndex) -> Bool {
         guard changesEnabled else { return false }
+        guard !isBurner else {
+            assertionFailure("Cannot suspend a burner tab")
+            return false
+        }
         guard let oldTab = tab(at: tabIndex) else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: Index out of bounds")
             return false
         }
         guard tabIndex != selectionIndex else { return false }
         guard case .loaded(let loadedTab) = oldTab, loadedTab.tabSuspension?.canBeSuspended == true else { return false }
-        guard let suspendedTab = loadedTab.makeSuspendedTab() else {
-            return false
-        }
+        let suspendedTab = loadedTab.makeSuspendedTab()
 
-        _ = replaceTab(at: tabIndex, with: suspendedTab)
+        _ = replaceTab(at: tabIndex, with: .unloaded(suspendedTab))
         return true
     }
 
+    /// This method is only called from the "Resume Tab" debug option in tab context menu
     func resumeTab(at tabIndex: TabIndex) {
         guard changesEnabled else { return }
-        if let tab = materialize(at: tabIndex), tab.isSuspended {
-            tab.resume()
+        if let tab = materialize(at: tabIndex) {
+            // Reload is called here only to trigger loading a page (simulate selection).
+            // In real world, tabs are resumed on selection which triggers reloading (via private reloadIfNeeded).
+            tab.reload()
         }
     }
 
@@ -878,6 +884,10 @@ final class TabCollectionViewModel: NSObject {
     }
 
     func replaceTab(at index: TabIndex, with tab: Tab, forceChange: Bool = false) -> Result<Void, Error> {
+        return replaceTab(at: index, with: .loaded(tab), forceChange: forceChange)
+    }
+
+    func replaceTab(at index: TabIndex, with tab: AnyTab, forceChange: Bool = false) -> Result<Void, Error> {
         guard changesEnabled || forceChange else { return .success(()) }
         guard let tabCollection = tabCollection(for: index) else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: Tab collection for index \(String(describing: index)) not found")
@@ -885,12 +895,16 @@ final class TabCollectionViewModel: NSObject {
         }
 
         tabCollection.replaceTab(at: index.item, with: tab)
+        updateTabBarViewModelIfNeeded(for: tab)
 
         guard let selectionIndex else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: No tab selected")
             return .failure(TabCollectionViewModelError.noTabSelected)
         }
-        select(at: selectionIndex, forceChange: forceChange)
+        if index == selectionIndex {
+            // only reselect if we've replaced a selected tab
+            select(at: selectionIndex, forceChange: forceChange)
+        }
 
         delegate?.tabCollectionViewModel(self, didReplaceTabAt: index)
         return .success(())
@@ -931,16 +945,6 @@ final class TabCollectionViewModel: NSObject {
                     self.tabViewModels[tab.uuid] = TabViewModel(tab: tab)
                 case .unloaded(let unloaded):
                     self.tabViewModels[unloaded.uuid] = UnloadedTabViewModel(unloadedTab: unloaded)
-                }
-            }
-
-            // Detect materialization: existing UUID but inner object changed from unloaded to loaded
-            for (index, tab) in newTabs.enumerated() where !addedUUIDs.contains(tab.uuid) {
-                if case .loaded(let tab) = tab, self.tabViewModels[tab.uuid] is UnloadedTabViewModel {
-                    self.tabViewModels[tab.uuid] = TabViewModel(tab: tab)
-                    self.updateSelectedTabViewModel()
-                    self.delegate?.tabCollectionViewModel(self, didMaterializeTabAt: index)
-                    break
                 }
             }
 
@@ -1046,7 +1050,7 @@ extension TabCollectionViewModel {
         case .unloaded(let unloaded):
             Logger.tabLazyLoading.debug("Materializing unloaded tab \(unloaded.uuid) at \(String(reflecting: index))")
             let tab = unloaded.materialize()
-            tabCollection(for: index)?.replaceTab(at: index.item, with: .loaded(tab))
+            _ = replaceTab(at: index, with: tab)
             return tab
         }
     }

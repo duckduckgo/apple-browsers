@@ -404,9 +404,6 @@ private class TabBarViewModelMock: TabBarViewModel {
 
     @Published
     var isSuspended: Bool = false
-    var isSuspendedPublisher: AnyPublisher<Bool, Never> {
-        $isSuspended.eraseToAnyPublisher()
-    }
 
     var canBeSuspended: Bool = false
 

@@ -83,8 +83,9 @@ final class UnloadedTabViewModel: TabBarViewModel, Previewable {
     }
     private let _renderingProgressDidChangePublisher = PassthroughSubject<Void, Never>()
 
-    var isSuspended: Bool { true }
-    var isSuspendedPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
+    var isSuspended: Bool {
+        unloadedTab.isSuspended
+    }
     var canBeSuspended: Bool { false }
 
     // MARK: - Previewable
@@ -112,5 +113,18 @@ final class UnloadedTabViewModel: TabBarViewModel, Previewable {
 
         cachedSnapshot = image
         return image
+    }
+
+    deinit {
+        clearSnapshot()
+    }
+
+    /// Consider refactoring it to use TabSnapshotStore
+    private func clearSnapshot() {
+        guard let idString = unloadedTab.tabSnapshotIdentifier,
+              let uuid = UUID(uuidString: idString) else { return }
+
+        let url = URL.persistenceLocation(for: "\(TabSnapshotStore.directoryName)/\(uuid.uuidString)")
+        fileStore.remove(fileAtURL: url)
     }
 }

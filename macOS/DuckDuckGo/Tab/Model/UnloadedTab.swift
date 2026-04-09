@@ -36,6 +36,7 @@ final class UnloadedTab: Identifiable {
     let burnerMode: BurnerMode
     let isPersistent: Bool
     let interactionStateData: Data?
+    var isSuspended: Bool
 
     /// Pass-through from HistoryTabExtension — preserved so re-encoding doesn't lose extension state.
     var localHistoryIDs: [URL]?
@@ -50,7 +51,8 @@ final class UnloadedTab: Identifiable {
          burnerMode: BurnerMode = .regular,
          interactionStateData: Data? = nil,
          localHistoryIDs: [URL]? = nil,
-         tabSnapshotIdentifier: String? = nil) {
+         tabSnapshotIdentifier: String? = nil,
+         isSuspended: Bool = false) {
         self.uuid = uuid
         self.content = content
         self.title = title
@@ -61,6 +63,7 @@ final class UnloadedTab: Identifiable {
         self.interactionStateData = interactionStateData
         self.localHistoryIDs = localHistoryIDs
         self.tabSnapshotIdentifier = tabSnapshotIdentifier
+        self.isSuspended = isSuspended
     }
 
     init(from data: TabRestorationData) {
@@ -74,6 +77,7 @@ final class UnloadedTab: Identifiable {
         self.isPersistent = true    // Restored tabs always come from persistent storage
         self.localHistoryIDs = data.localHistoryIDs
         self.tabSnapshotIdentifier = data.tabSnapshotIdentifier
+        self.isSuspended = false
     }
 
     func clearNavigationHistory(keepingCurrent: Bool) {

@@ -344,6 +344,7 @@ private class TabSnapshotExtensionMock: TabExtension, TabSnapshotExtensionProtoc
     var snapshot: NSImage?
     var identifier = UUID()
     var setIdentifierValue: UUID?
+    var shouldClearSnapshotOnDeinit: Bool = true
 
     func getPublicProtocol() -> TabSnapshotExtensionProtocol { self }
 

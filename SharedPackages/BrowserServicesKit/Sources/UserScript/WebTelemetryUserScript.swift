@@ -58,8 +58,8 @@ public final class WebTelemetryUserScript: NSObject, Subfeature {
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
         switch MessageNames(rawValue: methodName) {
         case .videoPlayback:
-            return {
-                [weak self] in try await self?.videoPlayback(params: $0, original: $1)
+            return { [weak self] in
+                try await self?.videoPlayback(params: $0, original: $1)
             }
         default:
             return nil

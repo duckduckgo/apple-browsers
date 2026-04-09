@@ -48,12 +48,14 @@ final class AutoplayPolicyTabExtension {
         self.featureFlagger = featureFlagger
         self.permissionManager = permissionManager
 
-        telemetryScriptPublisher.sink { [weak self] scripts in
-            Task { @MainActor in
-                self?.telemetryUserScript = scripts.webTelemetryScript
-                self?.telemetryUserScript?.delegate = self
+        telemetryScriptPublisher
+            .sink { [weak self] scripts in
+                Task { @MainActor in
+                    self?.telemetryUserScript = scripts.webTelemetryScript
+                    self?.telemetryUserScript?.delegate = self
+                }
             }
-        }.store(in: &cancellables)
+            .store(in: &cancellables)
     }
 }
 

@@ -175,6 +175,16 @@ final class OnboardingSharedPixelTests: XCTestCase {
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertNil(event.additionalParameters?["d"])
     }
+
+    func testAddToDockEventIncludesPixelSourceParameter() throws {
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        pixelHandler.fire(.addToDock(.clicked(.engage)))
+
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.pixel.standardParameters, [.pixelSource])
+    }
 }
 
 private extension OnboardingSharedPixelTests {

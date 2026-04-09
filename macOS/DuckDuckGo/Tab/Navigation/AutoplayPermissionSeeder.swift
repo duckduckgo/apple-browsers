@@ -38,12 +38,13 @@ final class AutoplayPermissionSeeder {
     }
 
     func seedIfNeeded(domain: String) {
-        guard allowlistDomains.contains(domain), !autoplayPreferences.seededDomains.contains(domain) else {
+        let domainWithoutPrefix = domain.droppingWwwPrefix()
+        guard allowlistDomains.contains(domainWithoutPrefix), !autoplayPreferences.seededDomains.contains(domainWithoutPrefix) else {
             return
         }
 
-        permissionManager.setPermission(.allow, forDomain: domain, permissionType: .autoplayPolicy)
-        autoplayPreferences.seededDomains.append(domain)
+        permissionManager.setPermission(.allow, forDomain: domainWithoutPrefix, permissionType: .autoplayPolicy)
+        autoplayPreferences.seededDomains.append(domainWithoutPrefix)
     }
 }
 

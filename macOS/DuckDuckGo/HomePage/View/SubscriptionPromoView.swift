@@ -27,49 +27,41 @@ struct SubscriptionPromoView: View {
         case learnMore
     }
 
-    private static let closeButtonSize: CGFloat = 26
-    private static let closeButtonInset: CGFloat = 13
-
     let actionType: ActionType
     let promoCardWidth: CGFloat
     let onButtonTap: () -> Void
     let onClose: () -> Void
 
-    @State private var isHovering = false
-
     var body: some View {
         promoCard
-            .overlay(
-                CloseButton(icon: .close, size: Self.closeButtonSize, backgroundColor: Color(designSystemColor: .surfaceTertiary), backgroundColorOnHover: Color(designSystemColor: .surfaceTertiary)) {
-                    onClose()
-                }
-                .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 3, x: 0, y: 0)
-                .offset(x: Self.closeButtonInset, y: -Self.closeButtonInset)
-                .opacity(isHovering ? 1 : 0)
-                .disabled(!isHovering)
-                , alignment: .topTrailing
-            )
-            .onHover { isHovering = $0 }
     }
 
     private var promoCard: some View {
-        cardContent
-            .padding(.vertical, 12)
-            .padding(.horizontal, 24)
-            .frame(width: promoCardWidth)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(designSystemColor: .surfaceTertiary))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.homeFavoritesGhost, lineWidth: 1)
-                    )
-            )
+        ZStack(alignment: .topTrailing) {
+            cardContent
+                .padding(.vertical, 14)
+                .padding(.leading, 8)
+                .padding(.trailing, 32)
+
+            CloseButton(icon: .close, size: 16, backgroundColorOnHover: Color(designSystemColor: .controlsFillSecondary)) {
+                onClose()
+            }
+            .padding(6)
+        }
+        .frame(width: promoCardWidth)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.32))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
+                )
+        )
     }
 
     private var cardContent: some View {
         HStack(spacing: 8) {
-            HStack(spacing: 4) {
+            HStack(spacing: 8) {
                 iconView
                 textContent
             }
@@ -82,33 +74,28 @@ struct SubscriptionPromoView: View {
         Image(.burnerWindowHomepageSubscriptionPromo)
             .resizable()
             .aspectRatio(contentMode: .fit)
-            .frame(width: 64, height: 48)
+            .frame(width: 48, height: 48)
     }
 
     private var textContent: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(UserText.subscriptionPromoTitle)
                 .font(.headline)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             Text(UserText.subscriptionPromoSubtitle)
                 .font(.system(size: 13))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
         }
     }
 
-
+    @ViewBuilder
     private var actionButton: some View {
-        let isFreeTrial = actionType == .tryForFree
-        return Button(action: onButtonTap) {
-            Text(isFreeTrial ? UserText.subscriptionPromoTryForFree : UserText.subscriptionPromoLearnMore)
-                .font(.system(size: 13))
-                .foregroundColor(isFreeTrial ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textPrimary))
-                .padding(.vertical, 9.5)
-                .padding(.horizontal, 12)
-                .background(isFreeTrial ? Color(designSystemColor: .buttonsPrimaryDefault) : Color(designSystemColor: .controlsFillPrimary))
-                .cornerRadius(8)
+        if actionType == .tryForFree {
+            Button(UserText.subscriptionPromoTryForFree, action: onButtonTap)
+                .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
+        } else {
+            Button(UserText.subscriptionPromoLearnMore, action: onButtonTap)
+                .buttonStyle(DismissActionButtonStyle())
         }
-        .buttonStyle(PlainButtonStyle())
-        .cursor(.pointingHand)
     }
 }

@@ -174,6 +174,7 @@ extension MainViewController {
         experimentDuckAIFireOnboardingFlow.state = .completed
         experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
         experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
+        daxDialogsManager.setFireEducationMessageSeen()
         setExperimentFireControlsLocked(false)
         experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = UserText.Onboarding.DuckAIQueryExperiment.completionOnboardingMessage
         if let tabToClose = currentTab?.tabModel {
@@ -200,8 +201,12 @@ extension MainViewController {
 
     func markSearchContextualOnboardingAsSeenForExperiment() {
         daxDialogsManager.setTryAnonymousSearchMessageSeen()
+        daxDialogsManager.setTryVisitSiteMessageSeen()
         daxDialogsManager.setSearchMessageSeen()
         daxDialogsManager.overrideShownFlagFor(.afterSearch, flag: true)
+        daxDialogsManager.overrideShownFlagFor(.withoutTrackers, flag: true)
+        daxDialogsManager.overrideShownFlagFor(.withOneTracker, flag: true)
+        daxDialogsManager.overrideShownFlagFor(.siteIsMajorTracker, flag: true)
         experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = nil
         AppUserDefaults().duckAIOnboardingResumeStep = nil
         ensureExperimentCompletionDialogPresentationPrerequisites()

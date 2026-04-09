@@ -135,7 +135,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         case .siteIsMajorTracker, .siteOwnedByMajorTracker:
             settings.browsingMajorTrackingSiteShown = flag
             settings.browsingWithoutTrackersShown = flag
-        case .fire(_):
+        case .fire:
             settings.fireMessageExperimentShown = flag
         case .final:
             settings.browsingFinalDialogShown = flag
@@ -146,7 +146,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         // swiftlint:disable nesting
 
         enum SpecType: Equatable {
-            enum FireVariant {
+            enum FireVariant: Equatable {
                 case standard
                 case duckAIOnboarding
             }

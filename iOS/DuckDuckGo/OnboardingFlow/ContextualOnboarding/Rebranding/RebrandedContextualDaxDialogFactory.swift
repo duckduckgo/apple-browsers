@@ -248,7 +248,7 @@ private extension RebrandedContextualDaxDialogFactory {
         allowsManualDismiss: Bool
     ) -> some View {
         let isDuckAIOnboardingFireDialog = fireVariant == .duckAIOnboarding
-        let backgroundType: ContextualOnboardingBackgroundType = isDuckAIOnboardingFireDialog ? .tryASearchDuckAIExperimentFire : .fireDialog
+        let backgroundType: ContextualOnboardingBackgroundType = isDuckAIOnboardingFireDialog ? .tryASearchCompleted : .fireDialog
 
         let onManualDismiss: (() -> Void)? = allowsManualDismiss ? { [weak delegate, weak self] in
             self?.contextualOnboardingPixelReporter.measureFireDialogDismissButtonTapped()
@@ -259,7 +259,6 @@ private extension RebrandedContextualDaxDialogFactory {
             OnboardingRebranding.OnboardingFireDialog(
                 title: title,
                 message: message,
-                isDuckAIExperiment: isDuckAIOnboardingFireDialog,
                 onManualDismiss: onManualDismiss
             )
         }

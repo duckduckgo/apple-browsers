@@ -4902,11 +4902,6 @@ extension MainViewController {
         }
     }
 
-    private func showAIChatButtonPulse() {
-        guard let window = view.window else { return }
-        ViewHighlighter.showIn(window, focussedOnView: viewCoordinator.omniBar.barView.aiChatButton)
-    }
-
     func findFireButton() -> UIView? {
         let state = mobileCustomization.state
 
@@ -5200,11 +5195,10 @@ extension MainViewController: OnboardingDelegate {
 
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
+
         controller.modalTransitionStyle = .crossDissolve
-        controller.dismiss(animated: true) { [weak self] in
-            self?.showBars()
-            self?.newTabPageViewController?.onboardingCompleted()
-        }
+        controller.dismiss(animated: true)
+        newTabPageViewController?.onboardingCompleted()
     }
 
     func markOnboardingSeen() {

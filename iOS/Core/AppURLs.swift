@@ -57,7 +57,7 @@ public extension URL {
 
     static let surrogates = URL(string: "\(staticBase)/surrogates.txt")!
 
-    // The following URLs shall match the ones in update_embedded.sh. 
+    // The following URLs shall match the ones in update_embedded.sh.
     // Danger checks that the URLs match on every PR. If the code changes, the regex that Danger uses may need an update.
     // TODO(rollback): Revert this temporary PR override URL after privacy-configuration PR #4630 is merged.
     static let privacyConfig = URL(string: "https://duckduckgo.github.io/privacy-configuration/pr-4630/v4/ios-config.json")!

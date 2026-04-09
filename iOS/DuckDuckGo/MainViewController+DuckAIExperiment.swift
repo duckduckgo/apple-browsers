@@ -189,8 +189,7 @@ extension MainViewController {
     }
 
     func markSearchContextualOnboardingAsSeenForExperiment() {
-        daxDialogsManager.setTryAnonymousSearchMessageSeen()
-        daxDialogsManager.setSearchMessageSeen()
+        daxDialogsManager.disableContextualDaxDialogs()
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
         }

@@ -2757,8 +2757,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "スキップ";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "こんにちは。\n\n保護された状態を維持する、より高速なブラウザの準備はできていますか？";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "こんにちは。\n\nより高速で、ユーザーを保護し、AIの使用タイミングと方法を自分で決定できるブラウザをお探しですか？";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "次へ";
@@ -2772,11 +2772,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "設定＞AI機能。";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "プライベートAIチャットに簡単にアクセスしたいですか？";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "検索とDuck.aiを切り替える";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "使用を開始";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "検索のみ表示";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "アドレスバーからプライベートなAIチャットに簡単にアクセスしたいですか？";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "始めましょう！";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "すでに確認しています";
@@ -2803,7 +2809,7 @@
 "onboarding.rebranding.first-search-done.title" = "それがDuckDuckGo Searchです！";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "保護された状態を維持する、より高速なブラウザの準備はできていますか？";
+"onboarding.rebranding.intro.message" = "より高速で、ユーザーを保護し、AIの使用タイミングと方法を自分で決定できるブラウザをお探しですか？";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "こんにちは。";

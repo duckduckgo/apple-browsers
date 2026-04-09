@@ -2757,8 +2757,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Praleisti";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Sveiki.\n\nPasiruošę greitesnei naršyklei, kuri jus apsaugo?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Sveiki.\n\nAr nori greitesnės naršyklės, kuri saugo tave ir leidžia nuspręsti, kada ir kaip naudoti dirbtinį intelektą?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Kitas";
@@ -2772,11 +2772,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Nustatymai > DI funkcijos.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Norite lengvos prieigos prie privačių DI pokalbių?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Perjungti tarpusavyje \npaiešką ir Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Pirmyn!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Tik paieška";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Ar nori lengvai pasiekti privatų DI pokalbį adreso juostoje?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Pradėkime!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Jau buvau čia anksčiau";
@@ -2803,7 +2809,7 @@
 "onboarding.rebranding.first-search-done.title" = "Tai – „DuckDuckGo Search“!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Pasiruošę greitesnei naršyklei, kuri jus apsaugo?";
+"onboarding.rebranding.intro.message" = "Ar nori greitesnės naršyklės, kuri saugo tave ir leidžia nuspręsti, kada ir kaip naudoti dirbtinį intelektą?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Sveiki.";

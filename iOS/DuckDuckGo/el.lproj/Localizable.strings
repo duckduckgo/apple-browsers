@@ -2755,8 +2755,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Παράλειψη";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Γεια σας.\n\nΕίστε έτοιμοι για ένα ταχύτερο πρόγραμμα περιήγησης που σας διατηρεί προστατευμένους;";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Γεια σας.\n\nΕίστε έτοιμοι για ένα ταχύτερο πρόγραμμα περιήγησης το οποίο σας προστατεύει και σας επιτρέπει να αποφασίζετε πότε και πώς να χρησιμοποιείτε την τεχνητή νοημοσύνη;";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Επόμενο";
@@ -2770,11 +2770,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Ρυθμίσεις > Λειτουργίες τεχνητής νοημοσύνης.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Θέλετε εύκολη πρόσβαση στο ιδιωτικό AI chat;";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Εναλλαγή μεταξύ\nΑναζήτησης και Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Ας το δοκιμάσουμε!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Αναζήτηση μόνο";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Θέλετε εύκολη πρόσβαση σε ιδιωτική συνομιλία με τεχνητή νοημοσύνη στη γραμμή διευθύνσεων;";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Ας ξεκινήσουμε!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Έχω ξαναβρεθεί εδώ";
@@ -2801,7 +2807,7 @@
 "onboarding.rebranding.first-search-done.title" = "Αυτό είναι το DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Είστε έτοιμοι για ένα ταχύτερο πρόγραμμα περιήγησης που σας διατηρεί προστατευμένους;";
+"onboarding.rebranding.intro.message" = "Είστε έτοιμοι για ένα ταχύτερο πρόγραμμα περιήγησης το οποίο σας προστατεύει και σας επιτρέπει να αποφασίζετε πότε και πώς να χρησιμοποιείτε την τεχνητή νοημοσύνη;";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Γεια σας.";

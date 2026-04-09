@@ -2757,8 +2757,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Пропустить";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Привет!\n\nБыстрый и надежный браузер заказывали?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Привет!\n\nКак насчет быстрого браузера, который защищает ваши данные и дает вам право решать, когда использовать ИИ?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Далее";
@@ -2772,11 +2772,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Настройки > Функции ИИ";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Нужен удобный доступ к приватному чату с ИИ?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Переключатель между \nобычным поиском и Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Поехали!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Только поиск";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Нужен доступ к приватным чатам с ИИ прямо из адресной строки?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Итак, начнем!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Мы уже это проходили";
@@ -2803,7 +2809,7 @@
 "onboarding.rebranding.first-search-done.title" = "Это — DuckDuckGo Search.";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Быстрый и надежный браузер заказывали?";
+"onboarding.rebranding.intro.message" = "Как насчет быстрого браузера, который защищает ваши данные и дает вам право решать, когда использовать ИИ?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Привет!";

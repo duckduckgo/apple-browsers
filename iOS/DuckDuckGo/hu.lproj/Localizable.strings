@@ -2757,8 +2757,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Kihagyás";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Üdv!\n\nFelkészültél egy gyorsabb böngészőre, amely védelmet nyújt neked?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Üdv!\n\nKészen állsz egy gyorsabb böngészőre, amely védelmet nyújt, és lehetővé teszi, hogy eldöntsd, mikor és hogyan használd az AI-t?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Következő";
@@ -2772,11 +2772,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Beállítások > AI-funkciók";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Szeretnél könnyedén hozzáférni a privát AI-csevegéshez?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Váltás a keresés\nés a Duck.ai között";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Rajta, csináljuk!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Csak keresés";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Szeretnél a címsorból könnyen hozzáférni a privát AI-csevegéshez?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Kezdjünk hozzá!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Már jártam itt korábban";
@@ -2803,7 +2809,7 @@
 "onboarding.rebranding.first-search-done.title" = "Ez a DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Felkészültél egy gyorsabb böngészőre, amely védelmet nyújt neked?";
+"onboarding.rebranding.intro.message" = "Készen állsz egy gyorsabb böngészőre, amely védelmet nyújt, és lehetővé teszi, hogy eldöntsd, mikor és hogyan használd az AI-t?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Szia!";

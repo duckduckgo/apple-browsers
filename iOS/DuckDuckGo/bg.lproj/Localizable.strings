@@ -2755,8 +2755,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Пропускане";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Здравейте.\n\nГотови ли сте за по-бърз браузър, който осигурява защита?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Здравейте.\n\nГотови ли сте за по-бърз браузър, който осигурява защита и позволява да решавате кога и как да използвате AI?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Следващ";
@@ -2770,11 +2770,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Настройки > AI Функции.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Искаш ли лесен достъп до поверителен чат с изкуствен интелект?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Превключвайте между\nТърсене и Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Да го направим!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Само търсене";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Искате лесен достъп до поверителен чат с AI в адресната лента?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Да започваме!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Запознат/а съм вече";
@@ -2801,7 +2807,7 @@
 "onboarding.rebranding.first-search-done.title" = "Това е DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Готови ли сте за по-бърз браузър, който осигурява защита?";
+"onboarding.rebranding.intro.message" = "Готови ли сте за по-бърз браузър, който осигурява защита и позволява да решавате кога и как да използвате AI?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Здравейте.";

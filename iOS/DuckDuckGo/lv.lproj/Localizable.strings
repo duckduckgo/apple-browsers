@@ -2757,8 +2757,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Izlaist";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Sveiki!\n\nVai esi gatavs ātrākai pārlūkprogrammai, kas tevi aizsargā?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Sveiki!\n\nVai esi gatavs ātrākai pārlūkprogrammai, kas tevi aizsargā un ļauj tev izlemt, kad un kā izmantot mākslīgo intelektu?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Nākamais";
@@ -2772,11 +2772,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Iestatījumi > MI funkcijas.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vēlies ērtu piekļuvi privātai MI tērzēšanai?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Pārslēdzies starp\nmeklēšanu un Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Aiziet!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Meklēt tikai";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vai vēlies ērti piekļūt privātai mākslīgā intelekta tērzēšanai adreses joslā?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Sāksim!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Es jau esmu bijis/-usi šeit agrāk";
@@ -2803,7 +2809,7 @@
 "onboarding.rebranding.first-search-done.title" = "Tā ir DuckDuckGo Search meklēšana!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Vai esi gatavs ātrākai pārlūkprogrammai, kas tevi aizsargā?";
+"onboarding.rebranding.intro.message" = "Vai esi gatavs ātrākai pārlūkprogrammai, kas tevi aizsargā un ļauj tev izlemt, kad un kā izmantot mākslīgo intelektu?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Sveiki!";

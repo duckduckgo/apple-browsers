@@ -2757,8 +2757,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Ignorare";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Salut!\n\nEști gata pentru un browser mai rapid care îți asigură protecția?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Salut!\n\nEști gata pentru un browser mai rapid, care te protejează și îți permite să decizi când și cum să folosești inteligența artificială?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Următorul";
@@ -2772,10 +2772,16 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Setări > Funcții IA.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vrei acces ușor la chatul privat cu IA?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Comută între căutare și Duck.ai";
 
-/* Button to continue the onboarding process */
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Doar căutare";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vrei acces rapid la chat privat cu inteligență artificială în bara de adrese?";
+
+/* Button to continue the onboarding process. */
 "onboarding.intro.cta" = "Să începem!";
 
 /* Button to skip the onboarding process */
@@ -2803,7 +2809,7 @@
 "onboarding.rebranding.first-search-done.title" = "Acesta este DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ești gata pentru un browser mai rapid care îți asigură protecția?";
+"onboarding.rebranding.intro.message" = "Ești gata pentru un browser mai rapid, care te protejează și îți permite să decizi când și cum să folosești inteligența artificială?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Salut!";

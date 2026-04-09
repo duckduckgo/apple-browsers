@@ -2756,8 +2756,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Überspringen";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Hallo.\n\nBereit für einen schnelleren Browser, der dich schützt?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Hallo.\n\nBereit für einen schnelleren Browser, der dich schützt und dir die Entscheidung überlässt, wann und wie du KI einsetzt?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Weiter";
@@ -2771,10 +2771,16 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Einstellungen > KI-Funktionen.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Möchtest du einfachen Zugriff auf den privaten KI-Chat?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Wechseln zwischen\nSuche und Duck.ai";
 
-/* Button to continue the onboarding process */
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Nur Suchen";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Möchtest du über die Adressleiste einfach auf den privaten KI-Chat zugreifen?";
+
+/* Button to continue the onboarding process. */
 "onboarding.intro.cta" = "Los geht's!";
 
 /* Button to skip the onboarding process */
@@ -2802,7 +2808,7 @@
 "onboarding.rebranding.first-search-done.title" = "Das ist die DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Bereit für einen schnelleren Browser, der dich schützt?";
+"onboarding.rebranding.intro.message" = "Bereit für einen schnelleren Browser, der dich schützt und dir die Entscheidung überlässt, wann und wie du KI einsetzt?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hallo.";

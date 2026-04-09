@@ -2757,8 +2757,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Ignorer";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Bonjour.\n\nEnvie de profiter d'un navigateur plus rapide qui vous protège ?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Bonjour.\n\nEnvie d'un navigateur plus rapide qui vous protège et vous laisse décider quand et comment utiliser l'IA ?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Suivant";
@@ -2772,11 +2772,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Paramètres > Fonctionnalités d'IA.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vous voulez accéder facilement au chat IA privé ?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Basculer entre\nla recherche et Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "C'est parti !";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Recherche uniquement";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vous souhaitez accéder facilement à un chat privé alimenté par l'IA depuis la barre d'adresse ?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Commençons !";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Je suis déjà venu ici";
@@ -2803,7 +2809,7 @@
 "onboarding.rebranding.first-search-done.title" = "C'est DuckDuckGo Search !";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Envie de profiter d'un navigateur plus rapide qui vous protège ?";
+"onboarding.rebranding.intro.message" = "Envie d'un navigateur plus rapide qui vous protège et vous laisse décider quand et comment utiliser l'IA ?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Bonjour.";

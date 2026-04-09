@@ -2755,8 +2755,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Hoppa över";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Hej!\n\nÄr du redo för en snabbare webbläsare som också skyddar dig?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Hej!\n\nÄr du redo för en snabbare webbläsare som skyddar dig och låter dig själv bestämma när och hur du vill använda AI?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Nästa";
@@ -2770,11 +2770,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Inställningar > AI-funktioner.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vill du ha enkel tillgång till privat AI-chatt?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Växla mellan\nSök och Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Vi kör!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Sök endast";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vill du ha enkel tillgång till privat AI-chatt i adressfältet?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Då sätter vi igång!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Jag har varit här förut";
@@ -2801,7 +2807,7 @@
 "onboarding.rebranding.first-search-done.title" = "Det är DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Är du redo för en snabbare webbläsare som också skyddar dig?";
+"onboarding.rebranding.intro.message" = "Är du redo för en snabbare webbläsare som skyddar dig och låter dig själv bestämma när och hur du vill använda AI?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hej!";

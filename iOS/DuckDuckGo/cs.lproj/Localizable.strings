@@ -2755,8 +2755,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Přeskočit";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Dobrý den.\n\nJsi připravený na rychlejší prohlížeč, který tě ochrání?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Dobrý den.\n\nUž se těšíš na rychlejší prohlížeč, který tě ochrání a umožní ti rozhodnout, kdy a jak používat AI?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Další";
@@ -2770,11 +2770,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Nastavení > Funkce AI.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Chceš mít soukromý AI chat hned po ruce?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Přepínej mezi\nHledáním a Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Pojďme na to!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Jen vyhledávání";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Chceš snadný přístup k soukromému chatu s umělou inteligencí v adresním řádku?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Tak se do toho pustíme!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Tohle už znám";
@@ -2801,7 +2807,7 @@
 "onboarding.rebranding.first-search-done.title" = "To je vyhledávač DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Jsi připravený na rychlejší prohlížeč, který tě ochrání?";
+"onboarding.rebranding.intro.message" = "Už se těšíš na rychlejší prohlížeč, který tě ochrání a umožní ti rozhodnout, kdy a jak používat AI?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Zdravíme tě.";

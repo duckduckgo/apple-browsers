@@ -2757,8 +2757,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Pomiń";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Cześć!\n\nChcesz skorzystać z szybszej przeglądarki, która zapewni Ci ochronę?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Cześć!\n\nChcesz korzystać z szybszej przeglądarki, która chroni Cię i pozwala zdecydować, kiedy i jak korzystać z AI?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Dalej";
@@ -2772,11 +2772,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Ustawienia > Funkcje AI.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Chcesz łatwego dostępu do prywatnego czatu AI?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Przełączanie między\nwyszukiwaniem a Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Zróbmy to!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Tylko wyszukiwanie";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Chcesz mieć łatwy dostęp do prywatnego czatu AI na pasku adresu?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Zaczynajmy!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Już o tym wiem";
@@ -2803,7 +2809,7 @@
 "onboarding.rebranding.first-search-done.title" = "To DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Chcesz skorzystać z szybszej przeglądarki, która zapewni Ci ochronę?";
+"onboarding.rebranding.intro.message" = "Chcesz korzystać z szybszej przeglądarki, która chroni Cię i pozwala zdecydować, kiedy i jak korzystać z AI?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Cześć!";

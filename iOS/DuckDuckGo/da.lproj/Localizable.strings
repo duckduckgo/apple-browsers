@@ -2755,8 +2755,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Spring over";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Hej\n\nEr du klar til en hurtigere browser, der holder dig beskyttet?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Hej\n\nEr du klar til en hurtigere browser, der beskytter dig og lader dig bestemme, hvornår og hvordan du vil bruge AI?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Næste";
@@ -2770,11 +2770,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Indstillinger > AI-funktioner.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vil du have nem adgang til privat AI-chat?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Skift mellem\nSøg og Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Lad os gøre det!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Kun søgning";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vil du have nem adgang til privat AI-chat i adresselinjen?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Lad os komme i gang!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Jeg har været her før";
@@ -2801,7 +2807,7 @@
 "onboarding.rebranding.first-search-done.title" = "Det er DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Er du klar til en hurtigere browser, der holder dig beskyttet?";
+"onboarding.rebranding.intro.message" = "Er du klar til en hurtigere browser, der beskytter dig og lader dig bestemme, hvornår og hvordan du vil bruge AI?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hej";

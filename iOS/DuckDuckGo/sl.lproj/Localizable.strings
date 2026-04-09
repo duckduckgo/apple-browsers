@@ -2755,8 +2755,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Preskoči";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Pozdravljeni!\n\nSte pripravljeni na hitrejši brskalnik, ki vas zaščiti?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Pozdravljeni!\n\nSte pripravljeni na hitrejši brskalnik, ki vas ščiti in vam omogoča, da se odločite, kdaj in kako boste uporabljali umetno inteligenco?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Naslednji";
@@ -2770,11 +2770,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Nastavitvah > Funkcije UI.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Želite preprost dostop do zasebnega klepeta z umetno inteligenco?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Preklopite med\niskanjem in Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Pa začnimo!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Samo iskanje";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Želite preprost dostop do zasebnega klepeta z umetno inteligenco v naslovni vrstici?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Začnimo!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Tukaj sem že bil/-a";
@@ -2801,7 +2807,7 @@
 "onboarding.rebranding.first-search-done.title" = "To je iskanje DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ste pripravljeni na hitrejši brskalnik, ki vas zaščiti?";
+"onboarding.rebranding.intro.message" = "Ste pripravljeni na hitrejši brskalnik, ki vas ščiti in vam omogoča, da se odločite, kdaj in kako boste uporabljali umetno inteligenco?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Pozdravljeni.";

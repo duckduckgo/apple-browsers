@@ -3215,7 +3215,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     var toolbarHeight: CGFloat {
-        return viewCoordinator.toolbar.frame.size.height
+        viewCoordinator.constraints.toolbarHeightConstraint.constant
     }
     
     var barsMaxHeight: CGFloat {

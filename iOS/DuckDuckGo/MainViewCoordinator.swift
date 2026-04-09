@@ -95,6 +95,7 @@ class MainViewCoordinator {
         var navigationBarContainerMinHeight: NSLayoutConstraint!
         var navigationBarCollectionViewSafeAreaBottom: NSLayoutConstraint!
         var toolbarBottom: NSLayoutConstraint!
+        var toolbarHeightConstraint: NSLayoutConstraint!
         var contentContainerTop: NSLayoutConstraint!
         var tabBarContainerTop: NSLayoutConstraint!
         var progressBarTop: NSLayoutConstraint?

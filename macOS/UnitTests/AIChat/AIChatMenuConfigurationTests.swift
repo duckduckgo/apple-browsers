@@ -70,6 +70,7 @@ class AIChatMenuConfigurationTests: XCTestCase {
     func testShouldDisplayApplicationMenuShortcut() {
         remoteSettings.isAIChatEnabled = true
         mockStorage.isAIFeaturesEnabled = true
+        featureFlagger.featuresStub["aiChatMainMenuShortcut"] = true
         let result = configuration.shouldDisplayApplicationMenuShortcut
 
         XCTAssertTrue(result, "Application menu shortcut should be displayed when AI Chat is enabled.")
@@ -179,6 +180,7 @@ class AIChatMenuConfigurationTests: XCTestCase {
     func testShouldDisplayApplicationMenuShortcutWhenRemoteFlagAndStorageAreTrue() {
         remoteSettings.isAIChatEnabled = true
         mockStorage.isAIFeaturesEnabled = true
+        featureFlagger.featuresStub["aiChatMainMenuShortcut"] = true
 
         let result = configuration.shouldDisplayApplicationMenuShortcut
 

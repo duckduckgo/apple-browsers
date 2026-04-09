@@ -48,6 +48,7 @@ protocol TabManaging {
     func controller(for tab: Tab) -> TabViewController?
     /// Closes the tab and navigates to homepage reusing an existing homepage or creating a new one
     @MainActor func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool)
+    @MainActor func closeTabAndOpenNewChat(_ tab: Tab, clearTabHistory: Bool)
     @MainActor func setBrowsingMode(_ mode: BrowsingMode)
 }
 
@@ -482,10 +483,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     @discardableResult
-    func select(_ tab: Tab, forcingMode: Bool = false, dismissCurrent: Bool = true, in tabsModel: TabsModelManaging? = nil) -> TabViewController? {
-        if forcingMode {
-            setBrowsingMode(tab.mode)
-        }
+    func select(_ tab: Tab, dismissCurrent: Bool = true, in tabsModel: TabsModelManaging? = nil) -> TabViewController? {
+        setBrowsingMode(tab.mode)
         let model = tabsModel ?? currentTabsModel
         if dismissCurrent {
             current()?.dismiss()
@@ -633,6 +632,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         // Close the tab and create or reuse an empty tab
         delegate?.tabDidRequestClose(tab,
                                      behavior: .createOrReuseEmptyTab,
+                                     clearTabHistory: clearTabHistory)
+    }
+    
+    @MainActor
+    func closeTabAndOpenNewChat(_ tab: Tab, clearTabHistory: Bool) {
+        // Close the tab and create or reuse an empty tab
+        delegate?.tabDidRequestClose(tab,
+                                     behavior: .createNewChat,
                                      clearTabHistory: clearTabHistory)
     }
 

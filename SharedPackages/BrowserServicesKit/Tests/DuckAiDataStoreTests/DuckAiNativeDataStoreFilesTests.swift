@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import CryptoKit
 import Foundation
 import XCTest
 @testable import DuckAiDataStore
@@ -31,7 +32,8 @@ final class DuckAiNativeDataStoreFilesTests: XCTestCase {
         tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let databaseURL = tempDirectory.appendingPathComponent("db.sqlite")
         filesDirectory = tempDirectory.appendingPathComponent("files")
-        sut = try! DuckAiNativeDataStore(databaseURL: databaseURL, filesDirectoryURL: filesDirectory)
+        let key = SymmetricKey(size: .bits256).withUnsafeBytes { Data($0) }
+        sut = try! DuckAiNativeDataStore(databaseURL: databaseURL, filesDirectoryURL: filesDirectory, key: key)
     }
 
     override func tearDown() {
@@ -55,7 +57,7 @@ final class DuckAiNativeDataStoreFilesTests: XCTestCase {
         XCTAssertEqual(result, DuckAiFileContent(uuid: uuid, chatId: chatId, data: data))
     }
 
-    func testWhenPutFileThenFileExistsOnDisk() throws {
+    func testWhenPutFileThenFileExistsOnDiskEncrypted() throws {
         let uuid = "A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
         let data = Data("file content".utf8)
 
@@ -63,7 +65,9 @@ final class DuckAiNativeDataStoreFilesTests: XCTestCase {
 
         let fileURL = filesDirectory.appendingPathComponent(uuid)
         XCTAssertTrue(FileManager.default.fileExists(atPath: fileURL.path))
-        XCTAssertEqual(try Data(contentsOf: fileURL), data)
+
+        let rawBytes = try Data(contentsOf: fileURL)
+        XCTAssertNotEqual(rawBytes, data, "File on disk should be encrypted, not plaintext")
     }
 
     func testWhenListFilesThenReturnsMetadataWithoutFileIO() throws {
@@ -154,6 +158,59 @@ final class DuckAiNativeDataStoreFilesTests: XCTestCase {
         XCTAssertThrowsError(try sut.deleteFile(uuid: "../chats.db")) { error in
             guard case DuckAiNativeDataStoreError.invalidFileIdentifier = error else {
                 return XCTFail("Expected invalidFileIdentifier, got \(error)")
+            }
+        }
+    }
+
+    // MARK: - Decryption Failure
+
+    func testWhenFileOnDiskIsUnencryptedThenGetFileThrowsFileReadError() throws {
+        let uuid = "A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
+        let plaintext = Data("not encrypted".utf8)
+
+        // Write the DB record via the store, then overwrite the file with raw plaintext
+        try sut.putFile(uuid: uuid, chatId: "chat-1", data: plaintext)
+        let fileURL = filesDirectory.appendingPathComponent(uuid)
+        try plaintext.write(to: fileURL)
+
+        XCTAssertThrowsError(try sut.getFile(uuid: uuid)) { error in
+            guard case DuckAiNativeDataStoreError.fileReadError = error else {
+                return XCTFail("Expected fileReadError, got \(error)")
+            }
+        }
+    }
+
+    func testWhenFileIsCorruptedThenGetFileThrowsFileReadError() throws {
+        let uuid = "A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
+        let data = Data("some content".utf8)
+
+        try sut.putFile(uuid: uuid, chatId: "chat-1", data: data)
+        let fileURL = filesDirectory.appendingPathComponent(uuid)
+        // Corrupt the encrypted file by truncating it
+        try Data("bad".utf8).write(to: fileURL)
+
+        XCTAssertThrowsError(try sut.getFile(uuid: uuid)) { error in
+            guard case DuckAiNativeDataStoreError.fileReadError = error else {
+                return XCTFail("Expected fileReadError, got \(error)")
+            }
+        }
+    }
+
+    func testWhenFileEncryptedWithDifferentKeyThenGetFileThrowsFileReadError() throws {
+        let uuid = "A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
+        let data = Data("secret".utf8)
+
+        try sut.putFile(uuid: uuid, chatId: "chat-1", data: data)
+
+        // Overwrite with data encrypted using a different key
+        let differentKey = SymmetricKey(size: .bits256)
+        let sealed = try AES.GCM.seal(data, using: differentKey)
+        let fileURL = filesDirectory.appendingPathComponent(uuid)
+        try sealed.combined!.write(to: fileURL)
+
+        XCTAssertThrowsError(try sut.getFile(uuid: uuid)) { error in
+            guard case DuckAiNativeDataStoreError.fileReadError = error else {
+                return XCTFail("Expected fileReadError, got \(error)")
             }
         }
     }

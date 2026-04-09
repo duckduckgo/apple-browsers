@@ -52,6 +52,13 @@ public extension UIFont {
         return UIFont.preferredFont(forTextStyle: .callout)
     }
 
+    static func daxBodySemibold() -> UIFont {
+        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .callout)
+        let newDescriptor = descriptor.addingAttributes([.traits: [
+            UIFontDescriptor.TraitKey.weight: UIFont.Weight.semibold]])
+        return UIFont(descriptor: newDescriptor, size: descriptor.pointSize)
+    }
+
     static func daxBodyBold() -> UIFont {
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .callout)
         let newDescriptor = descriptor.addingAttributes([.traits: [

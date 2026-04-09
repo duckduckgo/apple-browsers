@@ -402,6 +402,22 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .omnibar(.inactive))
     }
 
+    func test_updateOmnibarInputVisibility_topOmnibarAwaitFallbackTransitionsToInactive() {
+        sut.activateFromOmnibar(cardPosition: .top)
+
+        sut.updateOmnibarInputVisibility(false)
+
+        XCTAssertEqual(sut.displayState, .omnibar(.active))
+
+        let exp = expectation(description: "top omnibar keyboard await fallback transitions to inactive")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            XCTAssertEqual(self?.sut.displayState, .omnibar(.inactive))
+            exp.fulfill()
+        }
+
+        waitForExpectations(timeout: 1)
+    }
+
     func test_updateOmnibarInputVisibility_inactiveToActive() {
         sut.activateFromOmnibar()
         sut.updateOmnibarInputVisibility(false)

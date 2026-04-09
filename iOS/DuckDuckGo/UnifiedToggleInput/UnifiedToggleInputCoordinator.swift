@@ -76,6 +76,10 @@ struct SubscriptionState {
 @MainActor
 final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
+    private enum Constants {
+        static let topOmnibarKeyboardPresentationTimeout: TimeInterval = 0.35
+    }
+
     private var attachmentPolicy: UTIAttachmentPolicy {
         UTIAttachmentPolicy(
             attachmentUsage: attachmentUsage,
@@ -114,6 +118,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var cardPosition: UnifiedToggleInputCardPosition = .bottom
     private(set) var isInputVisibleForKeyboard: Bool = true
     private var isAwaitingTopOmnibarKeyboardPresentation = false
+    private var topOmnibarKeyboardPresentationFallback: DispatchWorkItem?
 
     private(set) var currentText: String = ""
     var hasActiveChat: Bool { boundUserScript != nil }
@@ -254,6 +259,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - AI Tab State
 
     func showCollapsed() {
+        cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .aiTab(.collapsed)
         inputMode = .aiChat
@@ -268,6 +274,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat) {
+        cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .aiTab(.expanded)
         self.inputMode = inputMode
@@ -301,6 +308,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func hide() {
+        cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .hidden
         isInputVisibleForKeyboard = true
@@ -317,6 +325,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func activateFromOmnibar(prefilledText: String? = nil, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
         let effectiveInputMode = isToggleEnabled ? inputMode : .search
+        cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = cardPosition == .top
         displayState = .omnibar(.active)
         self.inputMode = effectiveInputMode
@@ -356,6 +365,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             intentSubject.send(.showOmnibarEditing(expandedHeight: expandedHeight))
         }
 
+        if cardPosition == .top {
+            scheduleTopOmnibarKeyboardPresentationFallback()
+        }
+
         DispatchQueue.main.async { [weak self] in
             guard let self, case .omnibar(.active) = displayState else { return }
             viewController.activateInput()
@@ -367,6 +380,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func deactivateToOmnibar(resetView: Bool = true, animateDismiss: Bool = true) {
         guard isOmnibarSession else { return }
+        cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .hidden
         cardPosition = .bottom
@@ -476,13 +490,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         case (.omnibar(.active), false) where isAwaitingTopOmnibarKeyboardPresentation:
             return
         case (.omnibar(.active), false):
-            isAwaitingTopOmnibarKeyboardPresentation = false
-            displayState = .omnibar(.inactive)
-            let renderState = computeRenderState()
-            viewController.apply(renderState.viewConfig, animated: false)
-            contentViewController.setDismissButtonVisible(renderState.isContentVisible)
-            intentSubject.send(.showOmnibarInactive)
+            cancelTopOmnibarKeyboardPresentationFallback()
+            transitionOmnibarToInactive()
         case (.omnibar(.inactive), true):
+            cancelTopOmnibarKeyboardPresentationFallback()
             isAwaitingTopOmnibarKeyboardPresentation = false
             displayState = .omnibar(.active)
             let renderState = computeRenderState()
@@ -490,6 +501,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             contentViewController.setDismissButtonVisible(renderState.isContentVisible)
             intentSubject.send(.showOmnibarActive)
         case (.omnibar(.active), true):
+            cancelTopOmnibarKeyboardPresentationFallback()
             isAwaitingTopOmnibarKeyboardPresentation = false
         case (.aiTab(.expanded), false) where isAITabSearch:
             let renderState = computeRenderState()
@@ -519,6 +531,41 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func updateVoiceSearchAvailability(_ enabled: Bool) {
         viewController.isVoiceSearchAvailable = enabled
+    }
+
+    private func cancelTopOmnibarKeyboardPresentationFallback() {
+        topOmnibarKeyboardPresentationFallback?.cancel()
+        topOmnibarKeyboardPresentationFallback = nil
+    }
+
+    private func scheduleTopOmnibarKeyboardPresentationFallback() {
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self,
+                  case .omnibar(.active) = self.displayState,
+                  self.cardPosition == .top,
+                  self.isAwaitingTopOmnibarKeyboardPresentation else {
+                return
+            }
+
+            self.topOmnibarKeyboardPresentationFallback = nil
+            if !self.isInputVisibleForKeyboard, !self.viewController.isInputFirstResponder {
+                self.transitionOmnibarToInactive()
+            } else {
+                self.isAwaitingTopOmnibarKeyboardPresentation = false
+            }
+        }
+
+        topOmnibarKeyboardPresentationFallback = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.topOmnibarKeyboardPresentationTimeout, execute: workItem)
+    }
+
+    private func transitionOmnibarToInactive() {
+        isAwaitingTopOmnibarKeyboardPresentation = false
+        displayState = .omnibar(.inactive)
+        let renderState = computeRenderState()
+        viewController.apply(renderState.viewConfig, animated: false)
+        contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+        intentSubject.send(.showOmnibarInactive)
     }
 
     func clearText() {

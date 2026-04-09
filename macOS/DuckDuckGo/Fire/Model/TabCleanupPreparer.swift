@@ -47,6 +47,7 @@ final class TabCleanupPreparer: NSObject, WKNavigationDelegate, TabCleanupPrepar
         guard !tabs.isEmpty else { return }
 
         assert(self.completion == nil)
+        processedTabs = 0
         await withCheckedContinuation { continuation in
             self.completion = {
                 continuation.resume()

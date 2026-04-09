@@ -177,12 +177,12 @@ public final class DuckAiStorageDebugServer {
 
     private func registerSettingsRoutes() {
         server.addRoute("/api/settings", method: .GET) { [storageHandler] _ in
-            let settings = try storageHandler.getAllSettings()
-            return .json(try JSONSerialization.data(withJSONObject: settings))
+            let entries = try storageHandler.getAllEntries()
+            return .json(try JSONSerialization.data(withJSONObject: entries))
         }
 
         server.addRoute("/api/settings", method: .DELETE) { [storageHandler] _ in
-            try storageHandler.deleteAllSettings()
+            try storageHandler.deleteAllEntries()
             return .json(try JSONSerialization.data(withJSONObject: ["deleted": true]))
         }
     }

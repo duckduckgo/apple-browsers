@@ -21,14 +21,14 @@ import DuckAiDataStore
 
 public protocol DuckAiNativeStorageHandling {
 
-    // MARK: - Settings
+    // MARK: - Entries
 
-    func putSetting(key: String, value: Any) throws
-    func getSetting(key: String) throws -> Any?
-    func getAllSettings() throws -> [String: Any]
-    func deleteSetting(key: String) throws
-    func deleteAllSettings() throws
-    func replaceAllSettings(_ settings: [String: Any]) throws
+    func putEntry(key: String, value: Any) throws
+    func getEntry(key: String) throws -> Any?
+    func getAllEntries() throws -> [String: Any]
+    func deleteEntry(key: String) throws
+    func deleteAllEntries() throws
+    func replaceAllEntries(_ entries: [String: Any]) throws
 
     // MARK: - Chats
 
@@ -48,6 +48,6 @@ public protocol DuckAiNativeStorageHandling {
 
     // MARK: - Migration
 
-    func isMigrationDone() throws -> Bool
-    func markMigrationDone() throws
+    func isMigrationDone(key: String) throws -> Bool
+    func markMigrationDone(key: String) throws
 }

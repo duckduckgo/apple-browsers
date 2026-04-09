@@ -34,47 +34,47 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
         self.dataStore = dataStore
     }
 
-    // MARK: - Settings
+    // MARK: - Entries
 
-    public func putSetting(key: String, value: Any) throws {
+    public func putEntry(key: String, value: Any) throws {
         settingsLock.lock()
         defer { settingsLock.unlock() }
-        var settings = try loadSettingsBlob()
-        settings[key] = value
-        try saveSettingsBlob(settings)
+        var entries = try loadSettingsBlob()
+        entries[key] = value
+        try saveSettingsBlob(entries)
     }
 
-    public func getSetting(key: String) throws -> Any? {
+    public func getEntry(key: String) throws -> Any? {
         settingsLock.lock()
         defer { settingsLock.unlock() }
-        let settings = try loadSettingsBlob()
-        return settings[key]
+        let entries = try loadSettingsBlob()
+        return entries[key]
     }
 
-    public func getAllSettings() throws -> [String: Any] {
+    public func getAllEntries() throws -> [String: Any] {
         settingsLock.lock()
         defer { settingsLock.unlock() }
         return try loadSettingsBlob()
     }
 
-    public func deleteSetting(key: String) throws {
+    public func deleteEntry(key: String) throws {
         settingsLock.lock()
         defer { settingsLock.unlock() }
-        var settings = try loadSettingsBlob()
-        settings.removeValue(forKey: key)
-        try saveSettingsBlob(settings)
+        var entries = try loadSettingsBlob()
+        entries.removeValue(forKey: key)
+        try saveSettingsBlob(entries)
     }
 
-    public func deleteAllSettings() throws {
+    public func deleteAllEntries() throws {
         settingsLock.lock()
         defer { settingsLock.unlock() }
         try settingsStore.set(nil, for: \.settings)
     }
 
-    public func replaceAllSettings(_ settings: [String: Any]) throws {
+    public func replaceAllEntries(_ entries: [String: Any]) throws {
         settingsLock.lock()
         defer { settingsLock.unlock() }
-        try saveSettingsBlob(settings)
+        try saveSettingsBlob(entries)
     }
 
     // MARK: - Chats (delegation)
@@ -123,12 +123,25 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
 
     // MARK: - Migration
 
-    public func isMigrationDone() throws -> Bool {
-        return try settingsStore.value(for: \.migrationDone) ?? false
+    public func isMigrationDone(key: String) throws -> Bool {
+        guard let data = try settingsStore.value(for: \.migrationStatus) else {
+            return false
+        }
+        guard let dict = try JSONSerialization.jsonObject(with: data) as? [String: Bool] else {
+            return false
+        }
+        return dict[key] ?? false
     }
 
-    public func markMigrationDone() throws {
-        try settingsStore.set(true, for: \.migrationDone)
+    public func markMigrationDone(key: String) throws {
+        var dict: [String: Bool] = [:]
+        if let data = try settingsStore.value(for: \.migrationStatus),
+           let existing = try? JSONSerialization.jsonObject(with: data) as? [String: Bool] {
+            dict = existing
+        }
+        dict[key] = true
+        let data = try JSONSerialization.data(withJSONObject: dict)
+        try settingsStore.set(data, for: \.migrationStatus)
     }
 
     // MARK: - Private helpers

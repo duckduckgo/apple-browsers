@@ -704,6 +704,12 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatNewImageChatMoreOptionsMenu,
                 .aiChatRecentChatSelectedMoreOptionsMenu,
                 .aiChatDeleteAllChatsMoreOptionsMenu,
+                .aiChatAddressBarImageGenerationActivated,
+                .aiChatAddressBarImageGenerationDeactivated,
+                .aiChatAddressBarImageGenerationSubmitted,
+                .aiChatAddressBarWebSearchActivated,
+                .aiChatAddressBarWebSearchDeactivated,
+                .aiChatAddressBarWebSearchSubmitted,
                 .aiChatIsEnabled:
             return [.pixelSource]
         }

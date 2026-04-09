@@ -427,6 +427,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables AI chat tools (model selector, image upload) on the New Tab Page omnibar
     case ntpChatTools
 
+    /// Enables image generation mode on the New Tab Page omnibar
+    case ntpImageGeneration
+
+    case ntpWebSearch
+
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
 

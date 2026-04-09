@@ -54,18 +54,20 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         configProvider.mode = .search
         configProvider.isAIChatShortcutEnabled = true
         configProvider.isAIChatSettingVisible = false
+        configProvider.isWebSearchEnabled = true
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
         XCTAssertEqual(config.mode, configProvider.mode)
         XCTAssertEqual(config.enableAi, configProvider.isAIChatShortcutEnabled)
         XCTAssertEqual(config.showAiSetting, configProvider.isAIChatSettingVisible)
+        XCTAssertEqual(config.enableWebSearch, configProvider.isWebSearchEnabled)
     }
 
     // MARK: - setConfig
 
     @MainActor
     func testSetConfigUpdatesModeAndSettings() async throws {
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true, showCustomizePopover: true, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, selectedModelId: nil, aiModelSections: nil)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true, showCustomizePopover: true, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: nil, aiModelSections: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
         XCTAssertEqual(configProvider.mode, .ai)
         XCTAssertEqual(configProvider.isAIChatShortcutEnabled, false)
@@ -74,7 +76,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     @MainActor
     func testWhenSetConfigWithSelectedModelIdThenModelIdIsPersisted() async throws {
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
         XCTAssertEqual(configProvider.selectedModelId, "gpt-4o-mini")
     }
@@ -212,16 +214,21 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     func testSubmitChatIsForwardedToHandler() async throws {
         let expectation = expectation(description: "submitChatCalled")
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { chat, target, modelId, images in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { chat, mode, toolChoice, images, target in
             XCTAssertEqual(chat, "Hello Chat")
+            XCTAssertNil(mode)
+            XCTAssertEqual(toolChoice, ["WebSearch"])
+            XCTAssertNil(images)
             XCTAssertEqual(target, .newWindow)
-            XCTAssertEqual(modelId, "gpt-4o-mini")
-            XCTAssertEqual(images?.count, 1)
             expectation.fulfill()
         }
 
-        let image = NewTabPageDataModel.SubmitChatImage(data: "base64data", format: "png")
-        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hello Chat", target: .newWindow, modelId: "gpt-4o-mini", images: [image])
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hello Chat",
+                                                          target: .newWindow,
+                                                          mode: nil,
+                                                          toolChoice: ["WebSearch"],
+                                                          modelId: nil,
+                                                          images: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
         await fulfillment(of: [expectation], timeout: 1)
     }

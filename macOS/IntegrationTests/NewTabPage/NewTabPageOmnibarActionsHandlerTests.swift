@@ -39,6 +39,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
         autoreleasepool {
             firedPixels = []
             promptHandler = AIChatPromptHandler.shared
+            promptHandler.reset()
             windowControllersManager = Application.appDelegate.windowControllersManager
             tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager)
             handler = NewTabPageOmnibarActionsHandler(
@@ -56,6 +57,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
 
     override func tearDown() {
         autoreleasepool {
+            promptHandler?.reset()
             promptHandler = nil
             windowControllersManager = nil
             tabsPreferences = nil
@@ -99,7 +101,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnSameTab_ThenAIChatOpens() {
         let target: NewTabPageDataModel.OpenTarget = .sameTab
 
-        handler.submitChat("duckduckgo", target: target)
+        handler.submitChat("duckduckgo", mode: nil, toolChoice: nil, images: nil, target: target)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 1)
@@ -109,10 +111,22 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnNewTab_ThenNewTabOpensWithAIChat() {
         let target: NewTabPageDataModel.OpenTarget = .newTab
 
-        handler.submitChat("duckduckgo", target: target)
+        handler.submitChat("duckduckgo", mode: nil, toolChoice: nil, images: nil, target: target)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)
+    }
+
+    @MainActor
+    func testWhenSubmitAIChatWithWebSearchToolChoice_ThenPromptIncludesToolChoice() throws {
+        handler.submitChat("duckduckgo", mode: nil, toolChoice: ["WebSearch"], images: nil, target: .sameTab)
+
+        guard case .query(let query) = try XCTUnwrap(promptHandler.consumeData()?.tool) else {
+            XCTFail("Expected query prompt")
+            return
+        }
+
+        XCTAssertEqual(query.toolChoice, ["WebSearch"])
     }
 
     // MARK: - openAiChat pixels

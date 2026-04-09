@@ -52,5 +52,9 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var isAIChatToolsEnabled: Bool = false
 
+    var isImageGenerationEnabled: Bool = false
+
+    var isWebSearchEnabled: Bool = false
+
     var selectedModelId: String?
 }

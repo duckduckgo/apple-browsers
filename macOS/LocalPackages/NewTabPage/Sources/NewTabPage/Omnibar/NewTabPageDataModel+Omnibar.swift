@@ -60,6 +60,8 @@ public extension NewTabPageDataModel {
         let enableRecentAiChats: Bool?
         let showViewAllAiChats: Bool?
         let enableAiChatTools: Bool?
+        let enableImageGeneration: Bool?
+        let enableWebSearch: Bool?
         let selectedModelId: String?
         let aiModelSections: [AIModelSection]?
     }
@@ -224,6 +226,8 @@ public extension NewTabPageDataModel {
     struct SubmitChatAction: Codable, Equatable {
         let chat: String
         let target: OpenTarget
+        let mode: String?
+        let toolChoice: [String]?
         let modelId: String?
         let images: [SubmitChatImage]?
     }

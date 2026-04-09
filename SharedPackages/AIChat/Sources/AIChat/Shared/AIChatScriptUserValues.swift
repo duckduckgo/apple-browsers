@@ -197,6 +197,20 @@ public struct AIChatNativePrompt: Codable, Equatable {
         public let images: [NativePromptImage]?
         public let modelId: String?
         public let mode: String?
+
+        public init(prompt: String,
+                    autoSubmit: Bool,
+                    toolChoice: [String]? = nil,
+                    images: [NativePromptImage]? = nil,
+                    modelId: String? = nil,
+                    mode: String? = nil) {
+            self.prompt = prompt
+            self.autoSubmit = autoSubmit
+            self.toolChoice = toolChoice
+            self.images = images
+            self.modelId = modelId
+            self.mode = mode
+        }
     }
 
     public struct TextSummary: Codable, Equatable {

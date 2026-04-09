@@ -292,10 +292,24 @@ private extension DuckURLSchemeHandler {
             directoryURL.deleteLastPathComponent()
         }
 
+        #if DEBUG
+        let localCSSPath = "/Users/alavrenchuk/code/content-scope-scripts/Sources/ContentScopeScripts/dist"
+        let localFile = localCSSPath + directoryURL.path + "/\(fileName).\(fileExtension)"
+        let file: String
+        if FileManager.default.fileExists(atPath: localFile) {
+            file = localFile
+        } else if let bundleFile = ContentScopeScripts.Bundle.path(forResource: fileName, ofType: fileExtension, inDirectory: directoryURL.path) {
+            file = bundleFile
+        } else {
+            let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: "HTTP/1.1", headerFields: nil)!
+            return (response, Data())
+        }
+        #else
         guard let file = ContentScopeScripts.Bundle.path(forResource: fileName, ofType: fileExtension, inDirectory: directoryURL.path) else {
             let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: "HTTP/1.1", headerFields: nil)!
             return (response, Data())
         }
+        #endif
 
         guard let data = try? Data(contentsOf: URL(fileURLWithPath: file)) else {
             return nil

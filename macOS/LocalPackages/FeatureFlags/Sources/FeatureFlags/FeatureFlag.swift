@@ -288,6 +288,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213622362394873
     case aiChatNtpChatTools
 
+    /// https://app.asana.com/1/137249556945/project/1213083312441631/task/1213493651880757?focus=true
+    case aiChatNtpImageGeneration
+
+    /// https://app.asana.com/1/137249556945/project/1213083312441631/task/1213493672373295?focus=true
+    case aiChatNtpWebSearch
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
     case aiChatSidebarFloating
 
@@ -564,6 +570,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpViewAllChats)), category: .duckAI)
         case .aiChatNtpChatTools:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpChatTools)), category: .duckAI)
+        case .aiChatNtpImageGeneration:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpImageGeneration)), category: .duckAI)
+        case .aiChatNtpWebSearch:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpWebSearch)), category: .duckAI)
         case .aiChatSidebarFloating:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarFloating)), category: .duckAI)
         case .privateProcessName:

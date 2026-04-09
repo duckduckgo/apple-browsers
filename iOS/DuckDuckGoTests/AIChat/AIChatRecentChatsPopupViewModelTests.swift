@@ -43,9 +43,14 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
     }
 
     private final class MockDelegate: AIChatRecentChatsPopupViewModelDelegate {
+        var newChatCallCount = 0
         var selectedChats: [AIChatSuggestion] = []
         var viewAllCallCount = 0
         var dismissCallCount = 0
+
+        func recentChatsPopupDidSelectNewChat() {
+            newChatCallCount += 1
+        }
 
         func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion) {
             selectedChats.append(chat)
@@ -104,6 +109,16 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
     }
 
     // MARK: - Action Tests
+
+    func testDidSelectNewChatCallsDelegate() {
+        let vm = AIChatRecentChatsPopupViewModel(suggestions: makeSuggestions(count: 1), hasMore: false, showNewChat: true)
+        let mockDelegate = MockDelegate()
+        vm.delegate = mockDelegate
+
+        vm.didSelectNewChat()
+
+        XCTAssertEqual(mockDelegate.newChatCallCount, 1)
+    }
 
     func testDidSelectChatCallsDelegateWithCorrectSuggestion() {
         let suggestions = makeSuggestions(count: 3)

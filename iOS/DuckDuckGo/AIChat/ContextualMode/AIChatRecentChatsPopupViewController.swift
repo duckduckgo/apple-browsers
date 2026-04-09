@@ -170,6 +170,14 @@ private extension AIChatRecentChatsPopupViewController {
     func buildContent() {
         guard !viewModel.suggestions.isEmpty else { return }
 
+        if viewModel.showNewChat {
+            let newChatRow = makeNewChatRow()
+            stackView.addArrangedSubview(newChatRow)
+
+            let separator = makeSeparator()
+            stackView.addArrangedSubview(separator)
+        }
+
         // Section header
         let headerLabel = makeSectionHeader(UserText.aiChatRecentChatsSectionTitle)
         stackView.addArrangedSubview(headerLabel)
@@ -314,10 +322,52 @@ private extension AIChatRecentChatsPopupViewController {
         return container
     }
 
+    func makeNewChatRow() -> UIView {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(newChatTapped))
+        container.addGestureRecognizer(tapGesture)
+
+        let iconView = UIImageView()
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        iconView.contentMode = .scaleAspectFit
+        iconView.tintColor = UIColor(designSystemColor: .icons)
+        iconView.image = DesignSystemImages.Glyphs.Size24.aiChatAdd.withRenderingMode(.alwaysTemplate)
+
+        let titleLabel = UILabel()
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.text = UserText.actionNewAIChat
+        titleLabel.font = .daxBodyRegular()
+        titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
+
+        container.addSubview(iconView)
+        container.addSubview(titleLabel)
+
+        NSLayoutConstraint.activate([
+            iconView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Constants.cellLeadingPadding),
+            iconView.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            iconView.widthAnchor.constraint(equalToConstant: Constants.cellIconSize),
+            iconView.heightAnchor.constraint(equalToConstant: Constants.cellIconSize),
+
+            titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: Constants.cellIconGap),
+            titleLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+
+            container.heightAnchor.constraint(equalToConstant: Constants.cellIconSize + Constants.cellVerticalPadding * 2),
+        ])
+
+        return container
+    }
+
     // MARK: - Actions
 
     @objc func backgroundTapped() {
         viewModel.didDismiss()
+    }
+
+    @objc func newChatTapped() {
+        viewModel.didSelectNewChat()
     }
 
     @objc func chatRowTapped(_ gesture: UITapGestureRecognizer) {

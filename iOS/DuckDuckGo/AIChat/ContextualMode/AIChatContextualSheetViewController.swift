@@ -179,17 +179,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         return button
     }()
 
-    private lazy var newChatButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(DesignSystemImages.Glyphs.Size24.aiChatAdd, for: .normal)
-        button.tintColor = UIColor(designSystemColor: .textPrimary)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(newChatButtonTapped), for: .touchUpInside)
-        button.accessibilityTraits = .button
-        button.isHidden = true
-        return button
-    }()
-
     private lazy var recentChatsButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.list, for: .normal)
@@ -392,11 +381,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url, shouldToggleSidebar: false)
     }
 
-    @objc private func newChatButtonTapped() {
-        pixelHandler.fireNewChatButtonTapped()
-        delegate?.aiChatContextualSheetViewControllerDidRequestNewChat(self)
-    }
-
     @objc private func fireButtonTapped() {
         pixelHandler.fireFireButtonTapped()
         showFireConfirmation()
@@ -415,8 +399,10 @@ final class AIChatContextualSheetViewController: UIViewController {
         isFetchingRecentChats = true
         Task { @MainActor in
             defer { isFetchingRecentChats = false }
-            guard let viewModel = await AIChatRecentChatsPopupViewModel.fetch(using: suggestionsReader),
-                  view.window != nil, !isBeingDismissed else { return }
+            guard let viewModel = await AIChatRecentChatsPopupViewModel.fetch(
+                using: suggestionsReader,
+                showNewChat: sessionState.hasActiveChat
+            ), view.window != nil, !isBeingDismissed else { return }
             showRecentChatsPopup(with: viewModel)
         }
     }
@@ -789,6 +775,12 @@ extension AIChatContextualSheetViewController: VoiceSearchViewControllerDelegate
 
 extension AIChatContextualSheetViewController: AIChatRecentChatsPopupViewModelDelegate {
 
+    func recentChatsPopupDidSelectNewChat() {
+        dismissRecentChatsPopup()
+        pixelHandler.fireNewChatButtonTapped()
+        delegate?.aiChatContextualSheetViewControllerDidRequestNewChat(self)
+    }
+
     func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion) {
         dismissRecentChatsPopup()
         pixelHandler.fireRecentChatSelected()
@@ -873,7 +865,6 @@ private extension AIChatContextualSheetViewController {
 
     func apply(_ viewState: SheetViewState) {
         expandButton.isEnabled = viewState.isExpandButtonEnabled
-        newChatButton.isHidden = !viewState.shouldShowNewChatButton
         contextualInputViewController.updateQuickActions(with: viewState.quickActions)
 
         switch viewState.content {
@@ -943,8 +934,6 @@ private extension AIChatContextualSheetViewController {
                 recentChatsButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
             ])
         }
-        leftButtonStack.addArrangedSubview(newChatButton)
-
         headerView.addSubview(titleContainer)
         titleContainer.addArrangedSubview(titleLabel)
 
@@ -988,9 +977,6 @@ private extension AIChatContextualSheetViewController {
 
             expandButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
             expandButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-
-            newChatButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-            newChatButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
 
             titleContainer.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             titleContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),

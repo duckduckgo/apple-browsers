@@ -941,6 +941,10 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireExpandButtonTapped() { expandButtonTappedFired = true }
     func fireNewChatButtonTapped() { newChatButtonTappedFired = true }
     func fireQuickActionSummarizeSelected() { quickActionSummarizeSelectedFired = true }
+    func fireQuickActionAskAboutPageSelected() {}
+    func fireRecentChatsPopupDisplayed() {}
+    func fireRecentChatSelected() {}
+    func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() { fireButtonTappedFired = true }
     func fireFireButtonConfirmed() { fireButtonConfirmedFired = true }
     func firePageContextPlaceholderShown() { pageContextPlaceholderShownFired = true }

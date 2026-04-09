@@ -386,6 +386,7 @@ enum GeneralPixel: PixelKitEvent {
     case keyValueFileStoreInitError
     case dbContainerInitializationError(error: Error)
     case dbInitializationError(error: Error)
+    case dbValueTransformerRegistrationError
     case dbSaveExcludedHTTPSDomainsError(error: Error?)
     case dbSaveBloomFilterError(error: Error?)
 
@@ -1058,6 +1059,8 @@ enum GeneralPixel: PixelKitEvent {
             return "database_container_error"
         case .dbInitializationError:
             return "dbie"
+        case .dbValueTransformerRegistrationError:
+            return "db_value_transformer_registration_error"
         case .dbSaveExcludedHTTPSDomainsError:
             return "database_save_excluded_https_domains_error"
         case .dbSaveBloomFilterError:
@@ -1747,6 +1750,7 @@ enum GeneralPixel: PixelKitEvent {
                 .keyValueFileStoreInitError,
                 .dbContainerInitializationError,
                 .dbInitializationError,
+                .dbValueTransformerRegistrationError,
                 .dbSaveExcludedHTTPSDomainsError,
                 .dbSaveBloomFilterError,
                 .remoteMessagingSaveConfigError,

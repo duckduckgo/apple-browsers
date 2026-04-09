@@ -36,6 +36,7 @@ import CrashReportingShared
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DDGSync
+import DuckAiDataStore
 import FeatureFlags
 import Freemium
 import History
@@ -1170,7 +1171,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
            let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
             let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
             do {
-                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: nativeStorageContainerURL).handler
+                let keyStoreProvider = DuckAiKeyStoreProvider()
+                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: nativeStorageContainerURL, keyStoreProvider: keyStoreProvider).handler
             } catch {
                 Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
                 duckAiNativeStorageHandler = nil

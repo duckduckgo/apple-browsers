@@ -43,9 +43,14 @@ extension Tab: NSSecureCoding {
     }
 
     func makeRestorationData() -> TabRestorationData {
-        TabRestorationData(
+        let restorableContent: Tab.TabContent = {
+            guard case .url(let url, let credential, _) = content else { return content }
+            return .url(url, credential: credential, source: .pendingStateRestoration)
+        }()
+
+        return TabRestorationData(
             uuid: uuid,
-            content: content,
+            content: restorableContent,
             title: title,
             favicon: favicon,
             interactionStateData: getActualInteractionStateData(),

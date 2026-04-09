@@ -432,7 +432,7 @@ final class TabSuspensionExtensionTests: XCTestCase {
 
         sut.lastSuspendedURL = nil
 
-        XCTAssertEqual(sut.suspensionState, .never)
+        XCTAssertEqual(sut.lastSuspensionState, .never)
     }
 
     @MainActor
@@ -442,7 +442,7 @@ final class TabSuspensionExtensionTests: XCTestCase {
 
         sut.lastSuspendedURL = .duckDuckGo
 
-        XCTAssertEqual(sut.suspensionState, .sameURL)
+        XCTAssertEqual(sut.lastSuspensionState, .sameURL)
     }
 
     @MainActor
@@ -454,7 +454,7 @@ final class TabSuspensionExtensionTests: XCTestCase {
 
         sut.lastSuspendedURL = suspendedURL
 
-        XCTAssertEqual(sut.suspensionState, .samePath)
+        XCTAssertEqual(sut.lastSuspensionState, .samePath)
     }
 
     @MainActor
@@ -465,7 +465,7 @@ final class TabSuspensionExtensionTests: XCTestCase {
 
         sut.lastSuspendedURL = .duckDuckGo
 
-        XCTAssertEqual(sut.suspensionState, .sameHostname)
+        XCTAssertEqual(sut.lastSuspensionState, .sameHostname)
     }
 
     @MainActor
@@ -477,7 +477,7 @@ final class TabSuspensionExtensionTests: XCTestCase {
 
         sut.lastSuspendedURL = suspendedURL
 
-        XCTAssertEqual(sut.suspensionState, .sameDomain)
+        XCTAssertEqual(sut.lastSuspensionState, .sameDomain)
     }
 
     @MainActor
@@ -488,7 +488,7 @@ final class TabSuspensionExtensionTests: XCTestCase {
 
         sut.lastSuspendedURL = .duckDuckGo
 
-        XCTAssertEqual(sut.suspensionState, .differentDomain)
+        XCTAssertEqual(sut.lastSuspensionState, .differentDomain)
     }
 
     @MainActor
@@ -498,7 +498,7 @@ final class TabSuspensionExtensionTests: XCTestCase {
 
         sut.lastSuspendedURL = .duckDuckGo
 
-        XCTAssertEqual(sut.suspensionState, .differentDomain)
+        XCTAssertEqual(sut.lastSuspensionState, .differentDomain)
     }
 }
 

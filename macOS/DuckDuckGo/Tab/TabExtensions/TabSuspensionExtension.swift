@@ -86,7 +86,7 @@ final class TabSuspensionExtension {
         aiChatSessionStore.sessions[tabID] != nil
     }
 
-    var suspensionState: SuspensionState {
+    var lastSuspensionState: SuspensionState {
         switch (lastSuspendedURL, tabContent.urlForWebView) {
         case (nil, _):
             return .never
@@ -193,7 +193,7 @@ final class TabSuspensionExtension {
 protocol TabSuspensionExtensionProtocol: AnyObject, NavigationResponder {
     var canBeSuspended: Bool { get }
     var hasVideoInPictureInPicture: Bool { get set }
-    var suspensionState: TabSuspensionExtension.SuspensionState { get }
+    var lastSuspensionState: TabSuspensionExtension.SuspensionState { get }
     var lastSuspendedURL: URL? { get set }
 }
 

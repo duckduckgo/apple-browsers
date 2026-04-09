@@ -117,7 +117,7 @@ public struct BrokenSiteReport {
 #endif
 
 #if os(macOS)
-    let tabSuspensionState: String?
+    let lastTabSuspension: String?
 #endif
 
 #if os(macOS)
@@ -150,7 +150,7 @@ public struct BrokenSiteReport {
         privacyExperiments: String,
         isPirEnabled: Bool?,
         isForceDarkModeEnabled: Bool?,
-        tabSuspensionState: String?,
+        lastTabSuspension: String?,
         autoplayBlockingMode: String? = nil,
         pageLoadTiming: WKPageLoadTiming?,
         breakageData: String? = nil
@@ -183,7 +183,7 @@ public struct BrokenSiteReport {
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
         self.isForceDarkModeEnabled = isForceDarkModeEnabled
-        self.tabSuspensionState = tabSuspensionState
+        self.lastTabSuspension = lastTabSuspension
         self.autoplayBlockingMode = autoplayBlockingMode
         self.pageLoadTiming = pageLoadTiming
         self.breakageData = breakageData
@@ -357,8 +357,8 @@ public struct BrokenSiteReport {
 #endif
 
 #if os(macOS)
-        if let tabSuspensionState {
-            result["tabSuspensionState"] = tabSuspensionState
+        if let lastTabSuspension {
+            result["lastTabSuspension"] = lastTabSuspension
         }
 #endif
 

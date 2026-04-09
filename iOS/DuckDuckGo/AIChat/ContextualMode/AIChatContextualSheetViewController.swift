@@ -543,6 +543,7 @@ private extension AIChatContextualSheetViewController {
 
         popupWindow = overlay
         recentChatsPopup = popup
+        pixelHandler.fireRecentChatsPopupDisplayed()
     }
 
     func dismissRecentChatsPopup() {
@@ -753,6 +754,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
         switch action {
         case .askAboutPage:
+            pixelHandler.fireQuickActionAskAboutPageSelected()
             delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
             contextualInputViewController.becomeFirstResponder()
         case .summarize:
@@ -798,12 +800,14 @@ extension AIChatContextualSheetViewController: AIChatRecentChatsPopupViewModelDe
 
     func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion) {
         dismissRecentChatsPopup()
+        pixelHandler.fireRecentChatSelected()
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
         delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url, shouldToggleSidebar: false)
     }
 
     func recentChatsPopupDidSelectViewAll() {
         dismissRecentChatsPopup()
+        pixelHandler.fireViewAllChatsTapped()
         let url = aiChatSettings.aiChatURL
         delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url, shouldToggleSidebar: true)
     }

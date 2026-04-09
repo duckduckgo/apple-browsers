@@ -88,6 +88,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
         scrollView.documentView = textView
         textView.navigationDelegate = self
+        textView.registerForImageDrop()
     }
 
     override func viewWillAppear() {
@@ -230,6 +231,23 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 self.updatePlaceholderVisibility()
             }
             .store(in: &cancellables)
+
+        Publishers.CombineLatest(
+            omnibarController.$activeToolMode,
+            omnibarController.$hasImageAttachments
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] toolMode, hasAttachments in
+            switch toolMode {
+            case .imageGeneration where hasAttachments:
+                self?.placeholderLabel.stringValue = UserText.aiChatImageGenWithAttachmentPlaceholder
+            case .imageGeneration:
+                self?.placeholderLabel.stringValue = UserText.aiChatImageGenPlaceholder
+            default:
+                self?.placeholderLabel.stringValue = UserText.aiChatOmnibarPlaceholder
+            }
+        }
+        .store(in: &cancellables)
     }
 
     @objc func textDidChange(_ notification: Notification) {
@@ -330,8 +348,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             focusTextViewWithCursorAtEnd()
             return
         }
-        if containerVC.isImageUploadButtonAvailableForFocus {
-            containerVC.makeImageUploadButtonFirstResponder()
+        if containerVC.firstAvailableToolButtonForFocus() != nil {
+            containerVC.makeFirstAvailableToolButtonFirstResponder()
         } else if containerVC.isModelPickerButtonAvailableForFocus {
             containerVC.makeModelPickerButtonFirstResponder()
         } else {
@@ -342,16 +360,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private func wireTabCycle() {
         guard let containerVC = containerViewController else { return }
 
-        containerVC.onImageUploadButtonTabPressed = { [weak self, weak containerVC] in
-            guard let self, let containerVC else { return }
-            if containerVC.isModelPickerButtonAvailableForFocus {
-                containerVC.makeModelPickerButtonFirstResponder()
-            } else {
-                self.focusTextViewWithCursorAtEnd()
-            }
-        }
-
-        containerVC.onModelPickerButtonTabPressed = { [weak self] in
+        containerVC.onToolButtonTabPressed = { [weak self] in
             self?.focusTextViewWithCursorAtEnd()
         }
     }
@@ -415,6 +424,18 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
         omnibarController.delegate?.aiChatOmnibarController(omnibarController, didSelectSuggestion: suggestion)
         return true
     }
+
+    func textViewDidReceiveImageDrop(_ fileURLs: [URL]) -> Bool {
+        guard let containerVC = containerViewController else { return false }
+        guard omnibarController.isOmnibarToolsEnabled else { return false }
+        let canAttach = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
+        guard canAttach else { return false }
+        var accepted = false
+        for url in fileURLs where containerVC.addImageAttachmentFromDrop(url) {
+            accepted = true
+        }
+        return accepted
+    }
 }
 
 /// Delegate protocol for handling navigation events from FocusableTextView
@@ -428,12 +449,53 @@ protocol FocusableTextViewNavigationDelegate: AnyObject {
     /// Called when user presses Enter while a suggestion is selected
     /// - Returns: `true` if a suggestion was selected, `false` otherwise
     func textViewDidRequestSelectCurrentSuggestion() -> Bool
+    /// Called when the user drops image files onto the text view
+    /// - Returns: `true` if any images were accepted, `false` otherwise
+    func textViewDidReceiveImageDrop(_ fileURLs: [URL]) -> Bool
 }
 
 /// Custom NSTextView that ensures it can always accept focus when clicked
 private final class FocusableTextView: NSTextView {
 
     weak var navigationDelegate: FocusableTextViewNavigationDelegate?
+
+    private static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tiff", "tif"]
+
+    func registerForImageDrop() {
+        registerForDraggedTypes([.fileURL])
+    }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if !Self.imageFileURLs(from: sender).isEmpty {
+            return .copy
+        }
+        return super.draggingEntered(sender)
+    }
+
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if !Self.imageFileURLs(from: sender).isEmpty {
+            return .copy
+        }
+        return super.draggingUpdated(sender)
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let imageURLs = Self.imageFileURLs(from: sender)
+        if !imageURLs.isEmpty,
+           navigationDelegate?.textViewDidReceiveImageDrop(imageURLs) == true {
+            return true
+        }
+        return super.performDragOperation(sender)
+    }
+
+    private static func imageFileURLs(from draggingInfo: NSDraggingInfo) -> [URL] {
+        guard let urls = draggingInfo.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: [
+            .urlReadingFileURLsOnly: true
+        ]) as? [URL] else {
+            return []
+        }
+        return urls.filter { imageExtensions.contains($0.pathExtension.lowercased()) }
+    }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         return true

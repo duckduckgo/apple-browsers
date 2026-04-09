@@ -963,7 +963,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func subscribeToModelUpdates() {
         modelsCancellable = omnibarController.$models
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] models in
+            .sink { [weak self] _ in
                 guard let self else { return }
                 modelPickerButton.isHidden = !shouldShowModelPicker
                 // Refresh button label once models arrive

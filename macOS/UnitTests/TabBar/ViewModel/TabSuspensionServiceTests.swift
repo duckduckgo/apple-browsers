@@ -304,7 +304,7 @@ final class TabSuspensionServiceTests: XCTestCase {
         XCTAssertTrue(vm.tabBarViewModel(at: .unpinned(0)) is TabViewModel)
 
         // Content should be preserved through the roundtrip
-        XCTAssertEqual(materializedTab?.content, .url(.duckDuckGo, credential: nil, source: .link))
+        XCTAssertEqual(materializedTab?.content, .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
     }
 
     func testWhenSuspendedTabIsSelected_ThenUUIDIsPreserved() {

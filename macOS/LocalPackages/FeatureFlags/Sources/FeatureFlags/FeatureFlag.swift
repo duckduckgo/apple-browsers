@@ -571,9 +571,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNtpChatTools:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpChatTools)), category: .duckAI)
         case .aiChatNtpImageGeneration:
-            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpImageGeneration)), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpImageGeneration)), category: .duckAI)
         case .aiChatNtpWebSearch:
-            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpWebSearch)), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpWebSearch)), category: .duckAI)
         case .aiChatSidebarFloating:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarFloating)), category: .duckAI)
         case .privateProcessName:

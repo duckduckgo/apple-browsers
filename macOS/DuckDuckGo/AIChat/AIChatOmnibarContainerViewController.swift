@@ -325,7 +325,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private var shouldShowAttachments: Bool {
-        omnibarController.isOmnibarToolsEnabled || omnibarController.isImageGenerationMode
+        shouldShowImageUpload
     }
 
     private var shouldShowModelPicker: Bool {

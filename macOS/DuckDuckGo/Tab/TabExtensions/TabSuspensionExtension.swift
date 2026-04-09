@@ -103,6 +103,9 @@ final class TabSuspensionExtension {
         guard !webView.isLoading else { return false }
 
         // not playing audio
+        // NOTE: This doesn't take into account muted tabs (`webView.audioState.isMuted`). Tab muted state is not persisted by
+        // state restoration, and a tab that was playing audio but was muted, would not be muted after restoration.
+        // We're playing safe and not suspending such tabs (they would report `webView.isPlayingAudio` as `true` here).
         guard !webView.isPlayingAudio else { return false }
 
         // not capturing audio

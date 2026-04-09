@@ -22,12 +22,7 @@ import PrivacyConfig
 
 protocol MinimalChromeSettingsProviding {
 
-    /// Whether the minimal-chrome-in-landscape feature flag is on.
-    /// Use for structural guards (keyboard suppression, triggering `applyWidth`).
     var isFeatureEnabled: Bool { get }
-
-    /// Whether minimal chrome should actually be applied given the current tab.
-    /// Returns false when the feature flag is off or on an AI tab with unified input.
     func shouldApplyMinimalChrome(isCurrentTabAITab: Bool) -> Bool
 }
 

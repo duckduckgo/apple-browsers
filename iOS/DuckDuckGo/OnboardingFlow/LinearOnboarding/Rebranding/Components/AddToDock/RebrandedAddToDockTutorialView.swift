@@ -91,6 +91,7 @@ extension OnboardingRebranding.OnboardingView {
                 }
             )
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
+            .environment(\.typingAnimationSkip, false)
         }
 
         /// Scales the border image and video proportionally to fill the available width.

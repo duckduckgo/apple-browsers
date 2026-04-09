@@ -81,22 +81,31 @@ private struct ScreenBottomDaxOverlay: View {
     let animation: DaxAnimation
 
     /// Distance from the screen bottom to the bottom of the animation (above toolbar).
-    private let screenBottomPadding: CGFloat = 60
+    private static let screenBottomPadding: CGFloat = 60
+
+    /// Extracts the xOffset from the animation's position (only `.left` is supported here).
+    private var xOffset: CGFloat {
+        switch animation.position {
+        case .left(_, let xOffset): return xOffset
+        default: return 0
+        }
+    }
 
     var body: some View {
         GeometryReader { proxy in
             let globalFrame = proxy.frame(in: .global)
-            let screenHeight = UIScreen.main.bounds.height
 
-            // How far below this overlay's bottom edge the screen bottom is.
-            let distanceToScreenBottom = screenHeight - globalFrame.maxY
+            // Get the window height from the active window scene to support iPad Stage Manager.
+            let windowHeight: CGFloat = {
+                let scene = UIApplication.shared.connectedScenes
+                    .compactMap { $0 as? UIWindowScene }
+                    .first
+                return scene?.screen.bounds.height ?? globalFrame.maxY
+            }()
+            let distanceToScreenBottom = windowHeight - globalFrame.maxY
 
-            // X: left-aligned with offset (matching .left(xOffset: -40) from daxAnimation).
-            let xCenter = animation.size.width / 2 + (-40 as CGFloat)
-
-            // Y: push from the overlay's local coordinate space down to the screen bottom,
-            // then offset upward by the padding and half the animation height.
-            let yCenter = proxy.size.height + distanceToScreenBottom - screenBottomPadding - animation.size.height / 2
+            let xCenter = animation.size.width / 2 + xOffset
+            let yCenter = proxy.size.height + distanceToScreenBottom - Self.screenBottomPadding - animation.size.height / 2
 
             Lottie.LottieView {
                 try await DotLottieFile.asset(named: animation.animationName)

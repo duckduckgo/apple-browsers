@@ -66,13 +66,13 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    TypingText(Copy.body, startAnimating: $shouldStartTyping)
+                    Text(Copy.body)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)
                 ),
                 title: {
-                    Text(Copy.title)
+                    TypingText(Copy.title, startAnimating: $shouldStartTyping)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
                         .multilineTextAlignment(.center)

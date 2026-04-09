@@ -39,7 +39,6 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         @Environment(\.onboardingTheme) private var onboardingTheme
-        @Environment(\.scenePhase) private var scenePhase
 
         @Binding var isVisible: Bool
         @State private var shouldStartTyping = false
@@ -90,18 +89,6 @@ extension OnboardingRebranding.OnboardingView {
                 .animation(.easeIn(duration: 0.25), value: showContent)
             }
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
-            // Re-trigger the typing pipeline when returning from Settings (e.g. after "Set as Default Browser").
-            // `isVisible` stays `true` during backgrounding so `onChange(of: isVisible)` never fires on return;
-            // observing `scenePhase` catches that case.
-            .onChange(of: scenePhase) { phase in
-                if phase == .active, isVisible {
-                    shouldStartTyping = false
-                    showContent = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
-                        shouldStartTyping = true
-                    }
-                }
-            }
         }
 
     }

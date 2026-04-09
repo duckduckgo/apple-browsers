@@ -182,6 +182,8 @@ private extension OnboardingRebranding {
         #if os(iOS)
         let title: AttributedString?
         let message: AttributedString
+
+        @State private var startTypingMessage = false
         #else
         let title: NSAttributedString?
         let message: NSAttributedString
@@ -194,6 +196,22 @@ private extension OnboardingRebranding {
 
         var body: some View {
             VStack(alignment: .leading, spacing: titleBodyVerticalSpacing) {
+                #if os(iOS)
+                if let title {
+                    let titleAlignment = titleTextAlignment ?? theme.contextualOnboardingMetrics.contextualTitleTextAlignment
+                    TypingText(String(title.characters), onTypingFinished: {
+                        startTypingMessage = true
+                    })
+                        .font(theme.typography.contextual.title)
+                        .multilineTextAlignment(titleAlignment)
+                        .frame(maxWidth: .infinity, alignment: Alignment(titleAlignment))
+                }
+                let messageAlignment = messageTextAlignment ?? theme.contextualOnboardingMetrics.contextualBodyTextAlignment
+                TypingText(String(message.characters), startAnimating: title != nil ? $startTypingMessage : .constant(true))
+                    .font(theme.typography.contextual.body)
+                    .multilineTextAlignment(messageAlignment)
+                    .frame(maxWidth: .infinity, alignment: Alignment(messageAlignment))
+                #else
                 if let title {
                     let titleAlignment = titleTextAlignment ?? theme.contextualOnboardingMetrics.contextualTitleTextAlignment
                     StyledAttributedText(title)
@@ -206,6 +224,7 @@ private extension OnboardingRebranding {
                     .font(theme.typography.contextual.body)
                     .multilineTextAlignment(messageAlignment)
                     .frame(maxWidth: .infinity, alignment: Alignment(messageAlignment))
+                #endif
             }
             .padding(theme.contextualOnboardingMetrics.titleBodyInset)
 

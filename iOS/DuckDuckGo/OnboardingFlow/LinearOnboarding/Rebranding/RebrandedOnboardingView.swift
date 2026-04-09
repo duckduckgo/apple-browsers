@@ -60,8 +60,8 @@ enum OnboardingBubbleAnimationMetrics {
     /// `true` when the device screen is smaller than `referenceScreenSize` in either dimension.
     /// On compact devices, Dax animations and bubble tails are hidden entirely.
     static var isCompactDevice: Bool {
-        let screen = UIScreen.main.bounds.size
-        return screen.width < referenceScreenSize.width || screen.height < referenceScreenSize.height
+        let size = windowSize
+        return size.width < referenceScreenSize.width || size.height < referenceScreenSize.height
     }
 
     /// Large-screen threshold (iPad Pro 13″ portrait: 1032 × 1376 pt).
@@ -70,9 +70,16 @@ enum OnboardingBubbleAnimationMetrics {
 
     /// `true` on large devices (e.g. iPad Pro 13″) where Dax positioning needs adjustment.
     static var isLargeScreen: Bool {
-        let screen = UIScreen.main.bounds.size
-        let maxDimension = max(screen.width, screen.height)
+        let maxDimension = max(windowSize.width, windowSize.height)
         return maxDimension >= largeScreenThreshold.height
+    }
+
+    /// Current key window bounds, falling back to the first connected scene's window.
+    private static var windowSize: CGSize {
+        let scene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first
+        return scene?.screen.bounds.size ?? .zero
     }
 }
 

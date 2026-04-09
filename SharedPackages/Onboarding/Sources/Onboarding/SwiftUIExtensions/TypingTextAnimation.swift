@@ -45,7 +45,7 @@ private final class TypingAnimationState: ObservableObject {
     private var timer: Timer?
     /// Once set, `start()` becomes a no-op until `stop()` resets this flag.
     private var skipped = false
-    private static let typingInterval: TimeInterval = 0.020
+    private static let typingInterval: TimeInterval = 0.025
 
     func start(text: String, onFinished: (() -> Void)? = nil) {
         guard !skipped else { return }
@@ -128,7 +128,7 @@ public struct TypingText: View {
         // Hidden text reserves layout space; overlay reveals progressively.
         Text(text)
             .hidden()
-            .overlay { Text(state.displayedText) }
+            .overlay(alignment: .topLeading) { Text(state.displayedText) }
             .onChange(of: skipAnimation) { shouldSkip in
                 if shouldSkip { state.skip(to: text, onFinished: onTypingFinished) }
             }

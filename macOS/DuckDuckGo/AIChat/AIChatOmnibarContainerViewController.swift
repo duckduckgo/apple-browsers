@@ -64,8 +64,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let attachmentsBottomSpacing: CGFloat = 16
         static let attachmentsRowHeight: CGFloat = AIChatImageAttachmentThumbnailView.totalHeight
         static let attachmentsErrorHeight: CGFloat = 18
-        static let maxAttachments: Int = 3
-        static let attachmentsDisplayCap: Int = maxAttachments + 1
+        static let attachmentsDisplayCap: Int = AIChatImageAttachmentsContainerView.maxAttachments + 1
         static let suggestionsBottomPadding: CGFloat = 4
     }
 

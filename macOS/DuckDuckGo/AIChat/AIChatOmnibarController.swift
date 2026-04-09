@@ -408,8 +408,6 @@ final class AIChatOmnibarController {
             }
     }
 
-    static let maxAttachments = 3
-
     func submit() {
         guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return
@@ -417,7 +415,7 @@ final class AIChatOmnibarController {
 
         // Block submission if too many images are attached and would be sent
         let canSendImages = isImageGenerationMode || selectedModelSupportsImageUpload
-        if canSendImages, let attachments = attachmentsProvider?(), attachments.count > Self.maxAttachments {
+        if canSendImages, let attachments = attachmentsProvider?(), attachments.count > AIChatImageAttachmentsContainerView.maxAttachments {
             return
         }
 

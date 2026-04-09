@@ -22,9 +22,10 @@ import AIChat
 /// A horizontal container view that displays up to 3 image attachment thumbnails.
 final class AIChatImageAttachmentsContainerView: NSView {
 
+    static let maxAttachments = 3
+
     private enum Constants {
         static let spacing: CGFloat = 4
-        static let maxAttachments = 3
     }
 
     private let stackView: NSStackView = {
@@ -45,7 +46,7 @@ final class AIChatImageAttachmentsContainerView: NSView {
     var onAttachmentWillRemove: ((UUID) -> Void)?
 
     var isFull: Bool {
-        attachments.count >= Constants.maxAttachments
+        attachments.count >= Self.maxAttachments
     }
 
     override init(frame frameRect: NSRect) {
@@ -72,10 +73,10 @@ final class AIChatImageAttachmentsContainerView: NSView {
     }
 
     var hasExcessAttachments: Bool {
-        attachments.count > Constants.maxAttachments
+        attachments.count > Self.maxAttachments
     }
 
-    private static let displayCap = Constants.maxAttachments + 1
+    private static let displayCap = maxAttachments + 1
 
     func addAttachment(_ attachment: AIChatImageAttachment) {
         guard attachments.count < Self.displayCap else { return }

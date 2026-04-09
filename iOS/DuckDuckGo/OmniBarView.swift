@@ -80,8 +80,10 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var onClearButtonPressed: (() -> Void)? { get set }
     var onPrivacyIconPressed: (() -> Void)? { get set }
     var onMenuButtonPressed: (() -> Void)? { get set }
+    var onMenuButtonLongPressed: (() -> Void)? { get set }
     var onTrackersViewPressed: (() -> Void)? { get set }
     var onSettingsButtonPressed: (() -> Void)? { get set }
+    var onSettingsButtonLongPressed: (() -> Void)? { get set }
     var onCancelPressed: (() -> Void)? { get set }
     var onRefreshPressed: (() -> Void)? { get set }
     var onCustomizableButtonPressed: (() -> Void)? { get set }

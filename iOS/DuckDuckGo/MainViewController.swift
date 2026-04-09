@@ -971,7 +971,7 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarFireBarButtonItem.setCustomItemAction(on: self, action: #selector(performCustomizationActionForToolbar))
 
         viewCoordinator.menuToolbarButton.customView?
-            .addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onMenuLongPressed)))
+            .addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onMenuToolbarLongPressed)))
     }
 
     private func registerForPageRefreshPatterns() {
@@ -3592,7 +3592,12 @@ extension MainViewController: OmniBarDelegate {
         segueToSettings()
     }
 
-    @objc func onMenuLongPressed() {
+    @objc func onMenuToolbarLongPressed(_ sender: UILongPressGestureRecognizer) {
+        guard sender.state == .began else { return }
+        onMenuLongPressed()
+    }
+
+    func onMenuLongPressed() {
         if featureFlagger.internalUserDecider.isInternalUser || isDebugBuild {
             segueToDebugSettings()
         } else {

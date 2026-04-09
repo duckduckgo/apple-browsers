@@ -273,20 +273,6 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         }
         Logger.aiChat.debug("DuckAiNativeStorage: getAllChats → \(chats.count) chats")
 
-        // DEBUG: Print chat JSON to console
-        do {
-            let rawChats: [[String: Any]] = chatRecords.compactMap { record in
-                guard var obj = try? JSONSerialization.jsonObject(with: record.data) as? [String: Any] else { return nil }
-                obj["chatId"] = record.chatId
-                return obj
-            }
-            let jsonData = try JSONSerialization.data(withJSONObject: rawChats, options: [.prettyPrinted, .sortedKeys])
-            if let jsonString = String(data: jsonData, encoding: .utf8) {
-                print("[DuckAiNativeStorage] getAllChats JSON:\n\(jsonString)")
-            }
-        } catch {
-            print("[DuckAiNativeStorage] getAllChats JSON serialization failed: \(error)")
-        }
 
         return AllChatsResponse(chats: chats)
     }

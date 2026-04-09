@@ -51,4 +51,38 @@ final class AIChatURLParametersTests: XCTestCase {
         let result = AIChatURLParameters.voiceModeURL(from: baseURL)
         XCTAssertEqual(result.absoluteString, "https://duck.ai/chat?mode=voice")
     }
+
+    // MARK: - imageModeURL
+
+    func testImageModeURLAppendsMode() {
+        let baseURL = URL(string: "https://duck.ai")!
+        let result = AIChatURLParameters.imageModeURL(from: baseURL)
+        XCTAssertEqual(result.absoluteString, "https://duck.ai?mode=image")
+    }
+
+    func testImageModeURLPreservesExistingQueryItems() {
+        let baseURL = URL(string: "https://duck.ai?q=hello")!
+        let result = AIChatURLParameters.imageModeURL(from: baseURL)
+
+        let components = URLComponents(url: result, resolvingAgainstBaseURL: false)!
+        let queryItems = components.queryItems ?? []
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "q", value: "hello")))
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "mode", value: "image")))
+    }
+
+    func testImageModeURLReplacesExistingModeParam() {
+        let baseURL = URL(string: "https://duck.ai?mode=voice")!
+        let result = AIChatURLParameters.imageModeURL(from: baseURL)
+
+        let components = URLComponents(url: result, resolvingAgainstBaseURL: false)!
+        let modeItems = (components.queryItems ?? []).filter { $0.name == "mode" }
+        XCTAssertEqual(modeItems.count, 1)
+        XCTAssertEqual(modeItems.first?.value, "image")
+    }
+
+    func testImageModeURLWithPath() {
+        let baseURL = URL(string: "https://duck.ai/chat")!
+        let result = AIChatURLParameters.imageModeURL(from: baseURL)
+        XCTAssertEqual(result.absoluteString, "https://duck.ai/chat?mode=image")
+    }
 }

@@ -43,7 +43,7 @@ extension Tab: WKWebExtensionTab {
 
     private func indexInWindow(for context: WKWebExtensionContext!) -> UInt {
         let tabCollection = tabCollectionViewModel?.tabCollection
-        return UInt(tabCollection?.tabs.firstIndex(of: self) ?? 0)
+        return UInt(tabCollection?.firstIndex(of: self) ?? 0)
     }
 
     func parentTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {

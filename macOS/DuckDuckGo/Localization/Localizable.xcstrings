@@ -26132,6 +26132,246 @@
         }
       }
     },
+    "duckai.menu.delete-all-chats" : {
+      "comment" : "Duck.ai main menu item to delete all chat history",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Chats löschen ..."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete All Chats..."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar todos los chats..."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer toutes les discussions..."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina tutte le chat..."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle chats verwijderen..."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń wszystkie czaty..."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar todos os chats..."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить все чаты..."
+          }
+        }
+      }
+    },
+    "duckai.menu.delete-all-chats.alert-message" : {
+      "comment" : "Message body of the confirmation dialog before deleting all Duck.ai chats",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dadurch werden alle deine Duck.ai-Chats dauerhaft gelöscht."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This will permanently delete all your Duck.ai chats."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto borrará permanentemente todos tus chats de Duck.ai."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette opération supprimera définitivement tous vos chats Duck.ai."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In questo modo verranno eliminate definitivamente tutte le tue chat di Duck.ai."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hiermee worden al je chats met Duck.ai definitief verwijderd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To trwale usunie wszystkie twoje czaty Duck.ai."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isto vai apagar permanentemente todos os teus chats do Duck.ai."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все ваши чаты в Duck.ai будут полностью удалены."
+          }
+        }
+      }
+    },
+    "duckai.menu.delete-all-chats.confirm-button" : {
+      "comment" : "Confirm button in the Delete All Duck.ai Chats alert",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats löschen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete Chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar chats"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer les discussions"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina chat"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń czaty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar conversas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить чаты"
+          }
+        }
+      }
+    },
+    "duckai.menu.delete-all-chats.dialog-title" : {
+      "comment" : "Title of the custom delete dialog when there are 2 or fewer chats to delete",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats löschen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete Chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar chats"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer les discussions"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina chat"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń czaty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar conversas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить чаты"
+          }
+        }
+      }
+    },
     "duckai.menu.new" : {
       "comment" : "Menu item to launch AI Chat",
       "extractionState" : "extracted_with_value",
@@ -26188,6 +26428,305 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Новый чат Duck.ai"
+          }
+        }
+      }
+    },
+    "duckai.menu.new-chat" : {
+      "comment" : "Duck.ai menu item to start a new chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neuer Chat"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New Chat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo chat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelle discussion"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova Chat"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe chat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowy czat"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova conversa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запустить чат"
+          }
+        }
+      }
+    },
+    "duckai.menu.new-image-chat" : {
+      "comment" : "Duck.ai main menu item to start a new image chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neuer Bild-Chat"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New Image Chat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo chat de imágenes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau chat image"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova chat con immagini"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe afbeeldings-chat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowy czat z obrazami"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novo chat de imagem"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начать графический чат"
+          }
+        }
+      }
+    },
+    "duckai.menu.new-voice-chat" : {
+      "comment" : "Duck.ai main menu item to start a new voice chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neuer Voice-Chat"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New Voice Chat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo chat de voz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau chat vocal"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova Chat vocale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe spraakchat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowy czat głosowy"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novo chat de voz"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новый голосовой чат"
+          }
+        }
+      }
+    },
+    "duckai.menu.open-duck-ai" : {
+      "comment" : "Duck.ai menu item to open Duck.ai",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть Duck.ai"
+          }
+        }
+      }
+    },
+    "duckai.menu.recent-chats" : {
+      "comment" : "Duck.ai main menu section label for recent chat history",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktuelle Chats"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Recent Chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats recientes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discussions récentes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat recenti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recente chats"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostatnie czaty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversas recentes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последние чаты"
           }
         }
       }

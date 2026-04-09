@@ -29,10 +29,10 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
     // MARK: - Constants
 
     private enum Constants {
-        static let cornerRadius: CGFloat = 34
+        static let cornerRadius: CGFloat = 32
         static let shadowOffsetY: CGFloat = 8
-        static let shadowRadius: CGFloat = 40
-        static let shadowOpacity: Float = 0.12
+        static let shadowRadius: CGFloat = 20
+        static let shadowOpacity: Float = 1.0
         static let horizontalPadding: CGFloat = 16
         static let verticalPadding: CGFloat = 10
         static let sectionHeaderTopPadding: CGFloat = 4
@@ -106,6 +106,14 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        shadowContainer.layer.shadowPath = UIBezierPath(
+            roundedRect: shadowContainer.bounds,
+            cornerRadius: Constants.cornerRadius
+        ).cgPath
     }
 
     // MARK: - Public

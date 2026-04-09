@@ -55,6 +55,12 @@ protocol AIChatMenuVisibilityConfigurable {
     /// - Returns: `true` if the application menu shortcut should be displayed; otherwise, `false`.
     var shouldDisplayApplicationMenuShortcut: Bool { get }
 
+    /// This property validates user settings to determine if the Duck.ai submenu
+    /// should be presented in the more options (hamburger) menu.
+    ///
+    /// - Returns: `true` if the more options menu shortcut should be displayed; otherwise, `false`.
+    var shouldDisplayMoreOptionsMenuShortcut: Bool { get }
+
     /// This property determines whether AI Chat should open in the sidebar.
     ///
     /// - Returns: `true` if AI Chat should open in the sidebar; otherwise, `false`.
@@ -125,7 +131,11 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     }
 
     var shouldDisplayApplicationMenuShortcut: Bool {
-        return shouldDisplayAnyAIChatFeature
+        return shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatMainMenuShortcut)
+    }
+
+    var shouldDisplayMoreOptionsMenuShortcut: Bool {
+        return shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatMoreOptionsMenuShortcut)
     }
 
     var shouldDisplayAddressBarShortcut: Bool {
@@ -160,18 +170,35 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     }
 
     private func subscribeToValuesChanged() {
-        Publishers.Merge8(
-            storage.isAIFeaturesEnabledPublisher.removeDuplicates(),
-            storage.showShortcutOnNewTabPagePublisher.removeDuplicates(),
-            storage.showShortcutInApplicationMenuPublisher.removeDuplicates(),
-            storage.showShortcutInAddressBarPublisher.removeDuplicates(),
-            storage.showShortcutInAddressBarWhenTypingPublisher.removeDuplicates(),
-            storage.openAIChatInSidebarPublisher.removeDuplicates(),
-            storage.shouldAutomaticallySendPageContextPublisher.removeDuplicates(),
-            storage.showSearchAndDuckAITogglePublisher.removeDuplicates()
-        )
-        .sink { [weak self] _ in
-            self?.valuesChangedPublisher.send()
-        }.store(in: &cancellables)
+        let storagePublishers: [AnyPublisher<Bool, Never>] = [
+            storage.isAIFeaturesEnabledPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showShortcutOnNewTabPagePublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showShortcutInApplicationMenuPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showShortcutInAddressBarPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showShortcutInAddressBarWhenTypingPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.openAIChatInSidebarPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.shouldAutomaticallySendPageContextPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showSearchAndDuckAITogglePublisher.removeDuplicates().eraseToAnyPublisher(),
+        ]
+
+        let mainMenuShortcutFlagPublisher = featureFlagger.updatesPublisher
+            .map { [weak self] in self?.featureFlagger.isFeatureOn(.aiChatMainMenuShortcut) ?? false }
+            .removeDuplicates()
+            .map { _ in () }
+            .eraseToAnyPublisher()
+
+        let moreOptionsMenuShortcutFlagPublisher = featureFlagger.updatesPublisher
+            .map { [weak self] in self?.featureFlagger.isFeatureOn(.aiChatMoreOptionsMenuShortcut) ?? false }
+            .removeDuplicates()
+            .map { _ in () }
+            .eraseToAnyPublisher()
+
+        Publishers.MergeMany(storagePublishers)
+            .map { _ in () }
+            .merge(with: mainMenuShortcutFlagPublisher)
+            .merge(with: moreOptionsMenuShortcutFlagPublisher)
+            .sink { [weak self] in
+                self?.valuesChangedPublisher.send()
+            }.store(in: &cancellables)
     }
 }

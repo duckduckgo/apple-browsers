@@ -4338,6 +4338,10 @@ extension MainViewController: TabDelegate {
         showFireButtonPulse()
     }
 
+    func tabDidRequestToggleSidebarOnCurrentTab(_ tab: TabViewController) {
+        currentTab?.submitToggleSidebarAction()
+    }
+
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String) {
         let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
                                      privacyConfig: privacyConfigurationManager)
@@ -5228,6 +5232,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
         // No action needed for full mode - notification handles metrics
     }
+
 }
 
 private extension UIBarButtonItem {

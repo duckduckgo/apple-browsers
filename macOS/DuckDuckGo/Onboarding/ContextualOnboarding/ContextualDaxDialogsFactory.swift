@@ -74,7 +74,11 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
     private func searchDoneDialog(shouldFollowUp: Bool, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> some View {
         let suggestedSitesProvider = OnboardingSuggestedSitesProvider(surpriseItemTitle: OnboardingSuggestedSitesProvider.surpriseItemTitle)
         let viewModel = OnboardingSiteSuggestionsViewModel(title: "", suggestedSitesProvider: suggestedSitesProvider, delegate: delegate, onSuggestionPressed: onSuggestionPressed)
-        let gotIt = shouldFollowUp ? onGotItPressed : onDismiss
+        let onDismissGotIt = {
+            onboardingPixelReporter.measureGotItPressed(dialogType: .searchDone(shouldFollowUp: shouldFollowUp))
+            onDismiss()
+        }
+        let gotIt = shouldFollowUp ? onGotItPressed : onDismissGotIt
         return OnboardingFirstSearchDoneDialog(shouldFollowUp: shouldFollowUp, viewModel: viewModel, gotItAction: gotIt, onManualDismiss: onManualDismiss)
     }
 
@@ -85,7 +89,11 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
     }
 
     private func trackersDialog(message: NSAttributedString, shouldFollowUp: Bool, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {
-        let gotIt = shouldFollowUp ? onGotItPressed : onDismiss
+        let onDismissGotIt = {
+            onboardingPixelReporter.measureGotItPressed(dialogType: .trackers(message: message, shouldFollowUp: shouldFollowUp))
+            onDismiss()
+        }
+        let gotIt = shouldFollowUp ? onGotItPressed : onDismissGotIt
         let viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: onboardingPixelReporter, fireCoordinator: fireCoordinator, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
         return OnboardingTrackersDoneDialog(shouldFollowUp: true, message: message, blockedTrackersCTAAction: gotIt, viewModel: viewModel, onManualDismiss: onManualDismiss)
     }

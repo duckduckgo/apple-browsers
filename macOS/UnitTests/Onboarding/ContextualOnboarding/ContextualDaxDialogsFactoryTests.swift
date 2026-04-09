@@ -154,6 +154,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // THEN
         XCTAssertTrue(onDismissRun)
         XCTAssertFalse(onGotItPressedRun)
+        XCTAssertEqual(reporter.gotItPressedDialog, dialogType)
         XCTAssertFalse(onManualDismissRun)
     }
 
@@ -252,6 +253,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertTrue(onDismissRun)
         XCTAssertFalse(onManualDismissRun)
         XCTAssertFalse(onGotItPressedRun)
+        XCTAssertEqual(reporter.gotItPressedDialog, dialogType)
     }
 
     func testWhenMakeViewForHighFiveThenFinalDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
@@ -364,6 +366,7 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     var measureSiteVisitedCalled = false
     var dismissedDialog: ContextualDialogType?
     var shownDialog: ContextualDialogType?
+    var gotItPressedDialog: ContextualDialogType?
 
     func measureFireButtonSkipped() {
         measureFireButtonSkippedCalled = true
@@ -408,6 +411,7 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     }
 
     func measureGotItPressed(dialogType: ContextualDialogType) {
+        gotItPressedDialog = dialogType
     }
 }
 extension CapturingOnboardingNavigationDelegate: OnboardingNavigationDelegate {}

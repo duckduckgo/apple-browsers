@@ -395,7 +395,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     // MARK: - Omnibar Editing Input Visibility
 
     func test_updateOmnibarInputVisibility_activeToInactive() {
-        sut.activateFromOmnibar()
+        sut.activateFromOmnibar(cardPosition: .bottom)
 
         sut.updateOmnibarInputVisibility(false)
 
@@ -419,7 +419,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_updateOmnibarInputVisibility_inactiveToActive() {
-        sut.activateFromOmnibar()
+        sut.activateFromOmnibar(cardPosition: .bottom)
         sut.updateOmnibarInputVisibility(false)
 
         sut.updateOmnibarInputVisibility(true)
@@ -428,7 +428,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_updateOmnibarInputVisibility_emitsInactiveIntent() {
-        sut.activateFromOmnibar()
+        sut.activateFromOmnibar(cardPosition: .bottom)
         let exp = expectation(description: "showOmnibarInactive intent emitted")
         sut.intentPublisher
             .sink { if $0 == .showOmnibarInactive { exp.fulfill() } }
@@ -440,7 +440,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_updateOmnibarInputVisibility_emitsActiveIntent() {
-        sut.activateFromOmnibar()
+        sut.activateFromOmnibar(cardPosition: .bottom)
         sut.updateOmnibarInputVisibility(false)
         let exp = expectation(description: "showOmnibarActive intent emitted")
         sut.intentPublisher

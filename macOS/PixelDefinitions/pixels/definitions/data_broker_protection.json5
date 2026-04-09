@@ -25,12 +25,7 @@
             "pixelSource",
             "dbpDataBroker",
             "dbpParentBroker",
-            "dbpAttemptId",
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
-            }
+            "dbpAttemptId"
         ]
     },
     "m_mac_dbp_optout_stage_email-generate": {
@@ -115,12 +110,7 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId",
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
-            }
+            "dbpActionId"
         ]
     },
     "m_mac_dbp_optout_stage_email-receive": {
@@ -272,11 +262,6 @@
                 "description": "VPN bypass status when the attempt succeeded",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
-            },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
             }
         ]
     },
@@ -330,11 +315,6 @@
                 "description": "VPN bypass status when the failure happened",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
-            },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
             }
         ]
     },
@@ -1048,11 +1028,6 @@
                 "key": "optout_submit_success_rate",
                 "description": "The opt-out submission success rate for this broker",
                 "type": "number"
-            },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
             }
         ]
     },
@@ -1068,11 +1043,6 @@
                 "key": "optout_submit_success_rate",
                 "description": "The global opt-out submission success rate",
                 "type": "number"
-            },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
             }
         ]
     }

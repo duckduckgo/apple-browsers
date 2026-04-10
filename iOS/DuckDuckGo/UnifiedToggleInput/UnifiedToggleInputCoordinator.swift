@@ -177,6 +177,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     init(
         isToggleEnabled: Bool,
+        duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
         modelsService: AIChatModelsProviding = AIChatModelsService(),
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager
@@ -188,7 +189,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             subscriptionManager: subscriptionManager
         )
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled)
-        contentViewController = UnifiedInputContentContainerViewController(switchBarHandler: viewController.handler)
+        contentViewController = UnifiedInputContentContainerViewController(
+            switchBarHandler: viewController.handler,
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler
+        )
         floatingSubmitViewController = UnifiedToggleInputFloatingSubmitViewController()
         super.init()
         viewController.delegate = self

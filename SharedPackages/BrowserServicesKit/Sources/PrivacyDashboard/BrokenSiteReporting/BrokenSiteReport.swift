@@ -110,7 +110,6 @@ public struct BrokenSiteReport {
     let autoplayBlockingMode: String?
 #if os(iOS)
     let siteType: SiteType
-    let atb: String
     let model: String
     let variant: String
     let isAfterSuppressedXSafariRedirect: Bool
@@ -202,7 +201,6 @@ public struct BrokenSiteReport {
         protectionsState: Bool,
         reportFlow: Source,
         siteType: SiteType,
-        atb: String,
         model: String,
         errors: [Error]?,
         httpStatusCodes: [Int]?,
@@ -239,7 +237,6 @@ public struct BrokenSiteReport {
         self.urlParametersRemoved = urlParametersRemoved
         self.reportFlow = reportFlow
         self.siteType = siteType
-        self.atb = atb
         self.model = model
         self.errors = errors
         self.httpStatusCodes = httpStatusCodes
@@ -342,7 +339,6 @@ public struct BrokenSiteReport {
         }
 #if os(iOS)
         result["siteType"] = siteType.rawValue
-        result["atb"] = atb
         result["model"] = model
         result["variant"] = variant
         if isAfterSuppressedXSafariRedirect {

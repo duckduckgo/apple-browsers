@@ -43,6 +43,7 @@ extension OnboardingRebranding {
             animationName: "Dax-WingBottom",
             size: CGSize(width: 390/3, height: 211/3),
             position: .bottom(leftCenterOffset: 150, yOffset: -10.0),
+            largeScreenPosition: .left(bottomPadding: 0.0, xOffset: 0.0),
             twoStagesAnimation: 0.5
         )
 

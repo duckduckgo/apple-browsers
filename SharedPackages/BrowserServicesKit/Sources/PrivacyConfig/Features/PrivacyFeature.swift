@@ -467,7 +467,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case omnibarWebSearch
 
     /// Enables querying AI Chat data directly from local storage instead of via webview
-    case localStorageManipulation
+    case nativeDataAccess
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

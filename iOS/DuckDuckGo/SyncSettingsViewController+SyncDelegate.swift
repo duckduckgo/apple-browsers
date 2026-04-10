@@ -640,6 +640,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         navController.overrideUserInterfaceStyle = .dark
         if useSimplifiedLayout {
             navController.view.backgroundColor = UIColor(baseColor: .gray90)
+            let transparentAppearance = UINavigationBarAppearance()
+            transparentAppearance.configureWithTransparentBackground()
+            navController.navigationBar.standardAppearance = transparentAppearance
+            navController.navigationBar.scrollEdgeAppearance = transparentAppearance
         }
         navController.setNeedsStatusBarAppearanceUpdate()
         navController.modalPresentationStyle = .fullScreen

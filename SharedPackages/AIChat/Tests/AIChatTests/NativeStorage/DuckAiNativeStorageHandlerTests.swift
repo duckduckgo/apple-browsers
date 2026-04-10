@@ -162,22 +162,22 @@ final class DuckAiNativeStorageHandlerTests: XCTestCase {
     // MARK: - Migration
 
     func testWhenMigrationNotDoneThenReturnsFalse() throws {
-        let result = try handler.isMigrationDone(key: DuckAiNativeStorageHandling.MigrationKey.chats)
+        let result = try handler.isMigrationDone(key: DuckAiMigrationKey.chats)
         XCTAssertFalse(result)
     }
 
     func testWhenMarkMigrationDoneThenReturnsTrue() throws {
-        try handler.markMigrationDone(key: DuckAiNativeStorageHandling.MigrationKey.chats)
+        try handler.markMigrationDone(key: DuckAiMigrationKey.chats)
 
-        let result = try handler.isMigrationDone(key: DuckAiNativeStorageHandling.MigrationKey.chats)
+        let result = try handler.isMigrationDone(key: DuckAiMigrationKey.chats)
         XCTAssertTrue(result)
     }
 
     func testWhenMarkMigrationDoneForKeyThenOtherKeyStillFalse() throws {
-        try handler.markMigrationDone(key: DuckAiNativeStorageHandling.MigrationKey.chats)
+        try handler.markMigrationDone(key: DuckAiMigrationKey.chats)
 
-        XCTAssertTrue(try handler.isMigrationDone(key: DuckAiNativeStorageHandling.MigrationKey.chats))
-        XCTAssertFalse(try handler.isMigrationDone(key: DuckAiNativeStorageHandling.MigrationKey.files))
+        XCTAssertTrue(try handler.isMigrationDone(key: DuckAiMigrationKey.chats))
+        XCTAssertFalse(try handler.isMigrationDone(key: DuckAiMigrationKey.files))
     }
 
     // MARK: - Chat delegation

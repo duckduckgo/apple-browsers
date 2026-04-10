@@ -52,10 +52,7 @@ public protocol DuckAiNativeStorageHandling {
     func markMigrationDone(key: String) throws
 }
 
-public extension DuckAiNativeStorageHandling {
-
-    enum MigrationKey {
-        public static let chats = "chats"
-        public static let files = "files"
-    }
+public enum DuckAiMigrationKey {
+    public static let chats = "chats"
+    public static let files = "files"
 }

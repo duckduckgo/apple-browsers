@@ -47,6 +47,7 @@ extension SimplifiedScanOrShowCodeView {
 
             appNameChip
         }
+        .frame(minHeight: 72)
     }
 
     private var appNameChip: some View {

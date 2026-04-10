@@ -126,6 +126,7 @@ final class MockOmniBar: OmniBar {
         var onClearButtonPressed: (() -> Void)?
         var onPrivacyIconPressed: (() -> Void)?
         var onMenuButtonPressed: (() -> Void)?
+        var onMenuButtonLongPressed: (() -> Void)?
         var onTrackersViewPressed: (() -> Void)?
         var onSettingsButtonPressed: (() -> Void)?
         var onCancelPressed: (() -> Void)?
@@ -137,7 +138,7 @@ final class MockOmniBar: OmniBar {
         var onDismissPressed: (() -> Void)?
         var onFirePressed: (() -> Void)?
         var onPasswordsPressed: (() -> Void)?
-        var onSettingsLongPress: (() -> Void)?
+        var onSettingsButtonLongPressed: (() -> Void)?
         var onCustomizableButtonPressed: (() -> Void)?
         var onAIChatLeftButtonPressed: (() -> Void)?
         var onAIChatBrandingPressed: (() -> Void)?

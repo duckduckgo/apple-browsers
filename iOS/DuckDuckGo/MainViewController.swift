@@ -5245,6 +5245,10 @@ extension MainViewController: OnboardingNavigationDelegate {
     }
 
     func searchFromOnboarding(for query: String) {
+        if featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) {
+            // suppress the Search onboarding dialog for the Search path
+            daxDialogsManager.setTryAnonymousSearchMessageSeen()
+        }
         self.loadQuery(query)
     }
 }

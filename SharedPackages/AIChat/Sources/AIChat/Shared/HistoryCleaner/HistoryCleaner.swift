@@ -78,7 +78,7 @@ public final class HistoryCleaner: HistoryCleaning {
 
     private func clearLocalStorageIfAvailable(chatID: String?) -> Result<Void, Error>? {
         guard let featureFlagProvider, featureFlagProvider.isNativeDataAccessEnabled(),
-              let nativeStorageHandler, (try? nativeStorageHandler.isMigrationDone(key: "chats")) == true else {
+              let nativeStorageHandler, (try? nativeStorageHandler.isMigrationDone(key: DuckAiNativeStorageHandling.MigrationKey.chats)) == true else {
             return nil
         }
 

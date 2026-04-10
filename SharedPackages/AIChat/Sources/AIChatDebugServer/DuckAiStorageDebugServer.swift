@@ -182,7 +182,7 @@ public final class DuckAiStorageDebugServer {
             let entries = try storageHandler.getAllEntries()
             result["entries"] = entries
 
-            let migrationKeys = ["chats", "files"]
+            let migrationKeys = [DuckAiNativeStorageHandling.MigrationKey.chats, DuckAiNativeStorageHandling.MigrationKey.files]
             var migration: [String: Bool] = [:]
             for key in migrationKeys {
                 migration[key] = (try? storageHandler.isMigrationDone(key: key)) ?? false

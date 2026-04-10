@@ -51,3 +51,11 @@ public protocol DuckAiNativeStorageHandling {
     func isMigrationDone(key: String) throws -> Bool
     func markMigrationDone(key: String) throws
 }
+
+public extension DuckAiNativeStorageHandling {
+
+    enum MigrationKey {
+        public static let chats = "chats"
+        public static let files = "files"
+    }
+}

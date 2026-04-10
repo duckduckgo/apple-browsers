@@ -458,6 +458,7 @@ final class NavigationBarViewController: NSViewController {
         setupNavigationButtons()
         setupOverflowMenu()
         setupNetworkProtectionButton()
+        setupQuickFeedbackButton()
 
         subscribeToThemeChanges()
         listenToPasswordManagerNotifications()
@@ -1970,6 +1971,62 @@ extension NavigationBarViewController: NSMenuDelegate {
     ///
     /// This method should be run just once during the lifecycle of this view.
     /// .
+    // MARK: - Quick Feedback Button
+
+    private var feedbackButton: MouseOverButton?
+    private var feedbackTipController: QuickFeedbackTipController?
+
+    private func setupQuickFeedbackButton() {
+        guard !isInPopUpWindow else { return }
+
+        let internalUserDecider = NSApp.delegateTyped.internalUserDecider
+        guard internalUserDecider.isInternalUser else { return }
+
+        let button = MouseOverButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.bezelStyle = .shadowlessSquare
+        button.isBordered = false
+        button.imagePosition = .imageOnly
+        button.imageScaling = .scaleProportionallyDown
+        button.toolTip = "Send Internal Feedback"
+        button.target = self
+        button.action = #selector(quickFeedbackButtonClicked)
+
+        if let icon = NSImage(named: "Feedback-Color-16") {
+            button.image = icon
+        } else {
+            button.image = NSImage(systemSymbolName: "bubble.left.fill", accessibilityDescription: "Feedback")
+            button.contentTintColor = .systemYellow
+        }
+
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: 28),
+            button.heightAnchor.constraint(equalToConstant: 28),
+        ])
+
+        menuButtons.insertArrangedSubview(button, at: 0)
+
+        let spacer = NSView()
+        spacer.translatesAutoresizingMaskIntoConstraints = false
+        spacer.widthAnchor.constraint(equalToConstant: 6).isActive = true
+        menuButtons.insertArrangedSubview(spacer, at: 1)
+
+        feedbackButton = button
+
+        let tipController = QuickFeedbackTipController()
+        feedbackTipController = tipController
+
+        DispatchQueue.main.async { [weak tipController, weak button] in
+            guard let button else { return }
+            tipController?.scheduleIfNeeded(anchoredTo: button)
+        }
+    }
+
+    @objc private func quickFeedbackButtonClicked(_ sender: Any?) {
+        feedbackTipController?.recordButtonClick()
+        Application.appDelegate.quickFeedbackService.openFeedbackPopup(from: view.window)
+    }
+
     private func setupNetworkProtectionButton() {
         guard !isInPopUpWindow else {
             networkProtectionButton.isHidden = true

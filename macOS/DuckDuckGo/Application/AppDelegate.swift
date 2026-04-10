@@ -123,6 +123,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var promoService: PromoService?
     var privacyDashboardWindow: NSWindow?
 
+    private(set) lazy var quickFeedbackService: QuickFeedbackService = {
+        let diagnosticsCollector = QuickFeedbackDiagnosticsCollector(
+            tabCountProvider: windowControllersManager
+        )
+        return QuickFeedbackService(
+            diagnosticsCollector: diagnosticsCollector,
+            firePublisher: fireCoordinator.fireViewModel.fire.burningDataPublisher
+        )
+    }()
+
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
     let tabSuspensionService: TabSuspensionService

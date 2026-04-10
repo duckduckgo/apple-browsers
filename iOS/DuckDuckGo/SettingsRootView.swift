@@ -94,7 +94,7 @@ struct SettingsRootView: View {
         .conditionalInsetGroupedListStyle()
         .onFirstAppear {
             viewModel.onFirstAppear()
-        } then: {
+        } subsequently: {
             viewModel.onSubsequentAppear()
         }
 

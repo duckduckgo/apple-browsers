@@ -1193,10 +1193,6 @@ extension SettingsViewModel {
         }
     }
 
-    func clearDeepLinkTarget() {
-        self.deepLinkTarget = nil
-    }
-
     @MainActor
     func setAsDefaultBrowser(_ source: String? = nil) {
         var parameters: [String: String] = [:]

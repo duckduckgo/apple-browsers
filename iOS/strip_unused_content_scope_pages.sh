@@ -16,9 +16,6 @@
 
 set -euo pipefail
 
-# Pages that iOS actually loads
-IOS_PAGES=("duckplayer" "special-error")
-
 # Pages to remove (macOS-only or unused)
 UNUSED_PAGES=("onboarding" "new-tab" "history" "release-notes" "errorpage")
 

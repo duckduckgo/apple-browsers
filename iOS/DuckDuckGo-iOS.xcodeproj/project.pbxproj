@@ -11843,7 +11843,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Strips macOS-only pages from ContentScopeScripts bundles in the built iOS app.\n# iOS only uses duckplayer and special-error.\n\nAPP=\"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\"\necho \"Stripping unused ContentScopeScripts pages from: ${APP}\"\n\nfind \"${APP}\" -name ContentScopeScripts_ContentScopeScripts.bundle -type d | while read -r bundle; do\n    for page in onboarding new-tab history release-notes errorpage; do\n        dir=\"${bundle}/pages/${page}\"\n        if [ -d \"$dir\" ]; then\n            rm -rf \"$dir\"\n            echo \"  Stripped ${page}/ from ${bundle#${APP}/}\"\n        fi\n    done\ndone\n";
+			shellScript = "\"${SRCROOT}/strip_unused_content_scope_pages.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

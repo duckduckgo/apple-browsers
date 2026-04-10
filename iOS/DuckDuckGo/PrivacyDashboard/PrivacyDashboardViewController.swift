@@ -365,7 +365,6 @@ extension PrivacyDashboardViewController {
                                 protectionsState: protectionsState,
                                 reportFlow: source,
                                 siteType: breakageAdditionalInfo.isDesktop ? .desktop : .mobile,
-                                atb: StatisticsUserDefaults().atb ?? "",
                                 model: UIDevice.current.model,
                                 errors: errors,
                                 httpStatusCodes: statusCodes,

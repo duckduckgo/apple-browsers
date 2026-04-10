@@ -37,12 +37,14 @@ enum AutoplayBlockingMode: String, CaseIterable, CustomStringConvertible {
 
 protocol AutoplayPreferencesPersistor {
     var autoplayBlockingModeRawValue: String { get set }
+    var seededDomains: [String] { get set }
 }
 
 struct AutoplayPreferencesUserDefaultsPersistor: AutoplayPreferencesPersistor {
 
     enum Key: String {
         case autoplayBlockingMode = "preferences.autoplay.blocking-mode"
+        case seededDomains = "preferences.autoplay.seeded-domains"
     }
 
     private let keyValueStore: KeyValueStoring
@@ -54,6 +56,11 @@ struct AutoplayPreferencesUserDefaultsPersistor: AutoplayPreferencesPersistor {
     var autoplayBlockingModeRawValue: String {
         get { keyValueStore.object(forKey: Key.autoplayBlockingMode.rawValue) as? String ?? AutoplayBlockingMode.blockAudio.rawValue }
         set { keyValueStore.set(newValue, forKey: Key.autoplayBlockingMode.rawValue) }
+    }
+
+    var seededDomains: [String] {
+        get { keyValueStore.object(forKey: Key.seededDomains.rawValue) as? [String] ?? [] }
+        set { keyValueStore.set(newValue, forKey: Key.seededDomains.rawValue) }
     }
 }
 
@@ -80,6 +87,11 @@ final class AutoplayPreferences: ObservableObject {
     init(persistor: AutoplayPreferencesPersistor = AutoplayPreferencesUserDefaultsPersistor()) {
         self.persistor = persistor
         self.autoplayBlockingMode = AutoplayBlockingMode(rawValue: persistor.autoplayBlockingModeRawValue) ?? .blockAudio
+    }
+
+    var seededDomains: [String] {
+        get { persistor.seededDomains }
+        set { persistor.seededDomains = newValue }
     }
 
     private var persistor: AutoplayPreferencesPersistor

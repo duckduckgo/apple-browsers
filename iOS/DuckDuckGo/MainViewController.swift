@@ -314,7 +314,8 @@ class MainViewController: UIViewController {
         featureFlagger: featureFlagger,
         privacyConfigurationManager: privacyConfigurationManager,
         aiChatSettings: aiChatSettings,
-        iPadTabFeature: aichatIPadTabFeature
+        iPadTabFeature: aichatIPadTabFeature,
+        duckAiNativeStorageHandler: duckAiNativeStorageHandler
     )
     private var iPadAIChatQuery = ""
     private var allowIPadAIAutocompleteShow = false
@@ -551,7 +552,8 @@ class MainViewController: UIViewController {
                                                               featureFlagger: featureFlagger,
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
-                                                              mobileCustomization: mobileCustomization)
+                                                              mobileCustomization: mobileCustomization,
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         if featureFlagger.isFeatureOn(.iPadAIToggle) {
             viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
@@ -730,7 +732,8 @@ class MainViewController: UIViewController {
                                                       aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
-                                                      mobileCustomization: mobileCustomization)
+                                                      mobileCustomization: mobileCustomization,
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -1886,7 +1889,11 @@ class MainViewController: UIViewController {
         chromeManager.attach(to: tab.webView.scrollView)
         themeColorManager.attach(to: tab)
         tab.chromeDelegate = self
-        tab.updateWebViewBottomAnchor(for: viewCoordinator.toolbar.alpha)
+        tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
+
+        if isInMinimalChromeLayout {
+            tab.borderView.isBottomVisible = appSettings.currentAddressBarPosition.isBottom
+        }
 
         refreshControls()
     }
@@ -2099,6 +2106,10 @@ class MainViewController: UIViewController {
                 self.omniBar.beginEditing(animated: false)
             }
 
+            if self.isInMinimalChromeLayout && self.viewCoordinator.addressBarPosition.isBottom {
+                self.currentTab?.updateWebViewBottomAnchor(for: self.currentBarsVisibility)
+            }
+
             ViewHighlighter.updatePositions()
             self.recomputeOmnibarEditingHeightIfNeeded()
         }
@@ -2209,13 +2220,13 @@ class MainViewController: UIViewController {
         viewCoordinator.navigationBarContainer.transform = .identity
         viewCoordinator.omniBar.barView.setLayoutMode(.compact, animated: false)
         viewCoordinator.resetMinimalChromeLayout()
+        currentTab?.borderView.isBottomVisible = true
     }
 
     private func applyMinimalChromeWidth() {
         viewCoordinator.tabBarContainer.isHidden = true
         viewCoordinator.toolbar.isHidden = true
-        let bottomHeight = toolbarHeight + view.safeAreaInsets.bottom
-        viewCoordinator.constraints.toolbarBottom.constant = bottomHeight
+        viewCoordinator.constraints.toolbarBottom.constant = minimalChromeBottomHeight
         setMinimalChromeMode(true)
         viewCoordinator.omniBar.enterPhoneState()
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
@@ -2225,6 +2236,7 @@ class MainViewController: UIViewController {
         } else {
             viewCoordinator.resetMinimalChromeLayout()
         }
+        currentTab?.borderView.isBottomVisible = appSettings.currentAddressBarPosition.isBottom
 
         swipeTabsCoordinator?.isEnabled = true
     }
@@ -2948,7 +2960,7 @@ class MainViewController: UIViewController {
             pixelParameters[PixelParameters.emailCohort] = cohort
         }
         
-        Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters, includedParameters: [.atb])
+        Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters)
     }
 
     func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil, fromDeepLink: Bool = false) {
@@ -3142,6 +3154,9 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     var isToolbarHidden: Bool {
+        if isInMinimalChromeLayout {
+            return viewCoordinator.navigationBarContainer.alpha < 1
+        }
         return viewCoordinator.toolbar.isHidden || viewCoordinator.toolbar.alpha < 1
     }
 
@@ -3150,7 +3165,23 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     var barsMaxHeight: CGFloat {
-        max(toolbarHeight, viewCoordinator.omniBar.barView.expectedHeight)
+        let height = max(toolbarHeight, viewCoordinator.omniBar.barView.expectedHeight)
+        if isInMinimalChromeLayout && viewCoordinator.addressBarPosition.isBottom {
+            return height + view.safeAreaInsets.bottom
+        }
+        return height
+    }
+
+    var minimalChromeBottomHeight: CGFloat {
+        toolbarHeight + view.safeAreaInsets.bottom
+    }
+
+    /// Current visibility fraction of the chrome bars (1.0 = fully visible, 0.0 = hidden).
+    /// In minimal chrome the toolbar is hidden so we read the navigation bar container alpha instead.
+    var currentBarsVisibility: CGFloat {
+        viewCoordinator.toolbar.isHidden
+            ? viewCoordinator.navigationBarContainer.alpha
+            : viewCoordinator.toolbar.alpha
     }
 
     // 1.0 - full size, 0.0 - hidden
@@ -4438,7 +4469,9 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String) {
         let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
-                                     privacyConfig: privacyConfigurationManager)
+                                     privacyConfig: privacyConfigurationManager,
+                                     nativeStorageHandler: duckAiNativeStorageHandler,
+                                     featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
         Task { @MainActor in
             await cleaner.deleteAIChat(chatID: chatID)
         }

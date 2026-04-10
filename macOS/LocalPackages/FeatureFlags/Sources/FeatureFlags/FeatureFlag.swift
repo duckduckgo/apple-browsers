@@ -354,6 +354,9 @@ public enum FeatureFlag: String, CaseIterable {
     case aiChatViewAllChatsNativeOmnibar
 
     case aiChatNativeStorage
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
+    case aiChatNativeDataAccess
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -581,7 +584,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.screenTimeCleaning)))
         case .tabSuspension:
-            Config(source: .disabled)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(TabSuspensionSubfeature.memoryPressureTrigger)))
         case .tabSuspensionDebugging:
             Config(source: .disabled)
         case .aiChatMoreOptionsMenuShortcut:
@@ -596,6 +599,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                    category: .duckAI)
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)), category: .duckAI)
+        case .aiChatNativeDataAccess:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeDataAccess)), category: .duckAI)
         case .autoplayPolicy:
             Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.autoplayPolicy)), supportsLocalOverriding: true)
         }

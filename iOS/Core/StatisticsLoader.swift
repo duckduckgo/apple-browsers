@@ -39,7 +39,7 @@ public class StatisticsLoader {
     private let fireAppRetentionExperimentPixels: () -> Void
     private let pixelFiring: PixelFiring.Type
     private var isDuckAIRetentionRequestInProgress = false
-    private var isPad: Bool
+    private let isPad: Bool
 
     init(statisticsStore: StatisticsStore = StatisticsUserDefaults(),
          returnUserMeasurement: ReturnUserMeasurement = KeychainReturnUserMeasurement(),

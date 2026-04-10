@@ -47,6 +47,7 @@ import SERPSettings
 import AIChat
 import PixelKit
 import PrivacyConfig
+import WebExtensions
 
 class TabViewController: UIViewController {
 
@@ -1374,12 +1375,13 @@ class TabViewController: UIViewController {
 
     func showPrivacyDashboard() {
         Pixel.fire(pixel: .privacyDashboardOpened, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .privacyDashboard))
+        let webExtManager = (delegate as? MainViewController)?.webExtensionManager
         let controller = PrivacyDashboardViewController(
             privacyInfo: privacyInfo,
             entryPoint: .dashboard,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-            breakageAdditionalInfo: makeBreakageAdditionalInfo())
+            breakageAdditionalInfo: makeBreakageAdditionalInfo(webExtensionManager: webExtManager))
 
         guard let chromeDelegate = chromeDelegate else { return }
 
@@ -1529,10 +1531,17 @@ class TabViewController: UIViewController {
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.isLoading))
     }
 
-    public func makeBreakageAdditionalInfo() -> PrivacyDashboardViewController.BreakageAdditionalInfo? {
-        
+    public func makeBreakageAdditionalInfo(webExtensionManager: WebExtensionManaging? = nil) -> PrivacyDashboardViewController.BreakageAdditionalInfo? {
+
         guard let currentURL = url else {
             return nil
+        }
+
+        var loadedWebExtensions: String?
+        var adBlockingScriptletsVersion: String?
+        if #available(iOS 18.4, *), let webExtensionManager {
+            loadedWebExtensions = webExtensionManager.loadedWebExtensionsString()
+            adBlockingScriptletsVersion = webExtensionManager.adBlockingScriptletsVersion()
         }
 
         return PrivacyDashboardViewController.BreakageAdditionalInfo(currentURL: currentURL,
@@ -1548,7 +1557,9 @@ class TabViewController: UIViewController {
                                                                      breakageReportingSubfeature: breakageReportingSubfeature,
                                                                      isForceDarkModeEnabled: darkReaderFeatureSettings.isForceDarkModeEnabled,
                                                                      autoplayBlockingMode: featureFlagger.isFeatureOn(.autoplayBlocking) ? autoplaySettings.currentAutoplayBlockingMode.rawValue : nil,
-                                                                     isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL))
+                                                                     isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL),
+                                                                     loadedWebExtensions: loadedWebExtensions,
+                                                                     adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion)
     }
 
     public func print() {

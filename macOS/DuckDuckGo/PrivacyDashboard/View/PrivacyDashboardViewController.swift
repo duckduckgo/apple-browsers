@@ -26,6 +26,7 @@ import PixelKit
 import PixelExperimentKit
 import os.log
 import FeatureFlags
+import WebExtensions
 
 protocol PrivacyDashboardViewControllerSizeDelegate: AnyObject {
 
@@ -415,6 +416,13 @@ extension PrivacyDashboardViewController {
 
         let isPirEnabled = await isPirEnabledAndUserHasProfile()
 
+        var loadedWebExtensions: String?
+        var adBlockingScriptletsVersion: String?
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            loadedWebExtensions = webExtensionManager.loadedWebExtensionsString()
+            adBlockingScriptletsVersion = webExtensionManager.adBlockingScriptletsVersion()
+        }
+
         let websiteBreakage = BrokenSiteReport(siteUrl: currentURL,
                                                category: category.lowercased(),
                                                description: description,
@@ -443,7 +451,9 @@ extension PrivacyDashboardViewController {
                                                isPirEnabled: isPirEnabled,
                                                isForceDarkModeEnabled: NSApp.delegateTyped.darkReaderFeatureSettings?.isForceDarkModeEnabled,
                                                pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming,
-                                               breakageData: breakageData)
+                                               breakageData: breakageData,
+                                               loadedWebExtensions: loadedWebExtensions,
+                                               adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion)
         return websiteBreakage
     }
 }

@@ -226,6 +226,7 @@ final class MainCoordinator {
                                         syncDataProviders: syncService.syncDataProviders,
                                         userScriptsDependencies: contentBlockingService.userScriptsDependencies,
                                         contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
+                                        duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
                                         tabManager: tabManager,

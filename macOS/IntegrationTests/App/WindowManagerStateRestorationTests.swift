@@ -35,21 +35,21 @@ final class WindowManagerStateRestorationTests: XCTestCase {
         WindowsManager.closeWindows()
     }
 
-    func isTab(_ a: Tab, equalTo b: Tab) -> Bool {
+    func isTabEqual(_ a: AnyTab, _ b: AnyTab) -> Bool {
         a.url == b.url
         && a.title == b.title
-        && a.getActualInteractionStateData() == b.getActualInteractionStateData()
-        && a.webView.configuration.websiteDataStore.isPersistent == b.webView.configuration.websiteDataStore.isPersistent
+        && a.interactionStateData == b.interactionStateData
+        && a.burnerMode == b.burnerMode
     }
 
-    func areTabsEqual(_ a: [Tab], _ b: [Tab]) -> Bool {
+    func areTabsEqual(_ a: [AnyTab], _ b: [AnyTab]) -> Bool {
         a.count == b.count &&
-            !a.enumerated().contains { !isTab($0.1, equalTo: b[$0.0]) }
+            !a.enumerated().contains { !isTabEqual($0.1, b[$0.0]) }
     }
 
     @MainActor
     func areTabCollectionViewModelsEqual(_ a: TabCollectionViewModel, _ b: TabCollectionViewModel) -> Bool {
-        a.selectionIndex == b.selectionIndex && areTabsEqual(a.tabCollection.tabs, b.tabCollection.tabs)
+        return a.selectionIndex == b.selectionIndex && areTabsEqual(a.tabCollection.tabs, b.tabCollection.tabs)
     }
 
     // MARK: -
@@ -128,7 +128,7 @@ final class WindowManagerStateRestorationTests: XCTestCase {
             return XCTFail("Could not unarchive WindowManagerStateRestoration")
         }
 
-        XCTAssertTrue(areTabsEqual(restored.applicationPinnedTabs!.tabs, pinnedTabs))
+        XCTAssertTrue(areTabsEqual(restored.applicationPinnedTabs!.tabs, pinnedTabs.map { .loaded($0) }))
         XCTAssertEqual(restored.windows.count, 2)
         XCTAssertEqual(restored.keyWindowIndex, 1)
 

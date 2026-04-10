@@ -21,6 +21,7 @@ import XCTest
 import Persistence
 import PersistenceTestingUtils
 import PrivacyConfig
+import NewTabPage
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockNewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding {
@@ -191,6 +192,106 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         cancellable.cancel()
 
         XCTAssertEqual(events, [true, false, true])
+    }
+
+    // MARK: - showViewAllAiChats
+
+    @MainActor
+    func testShowViewAllAiChats_whenRecentChatsFlagOff_returnsFalse() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": false, "aiChatNtpViewAllChats": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let excessProvider = MockAIChatExcessProvider()
+
+        provider.configure(aiChatsProvider: excessProvider)
+        excessProvider.publishExcess(true)
+
+        XCTAssertFalse(provider.showViewAllAiChats)
+    }
+
+    @MainActor
+    func testShowViewAllAiChats_whenViewAllChatsFlagOff_returnsFalse() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": false]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let excessProvider = MockAIChatExcessProvider()
+
+        provider.configure(aiChatsProvider: excessProvider)
+        excessProvider.publishExcess(true)
+
+        XCTAssertFalse(provider.showViewAllAiChats)
+    }
+
+    @MainActor
+    func testShowViewAllAiChats_whenBothFlagsOn_andNoExcess_returnsFalse() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let excessProvider = MockAIChatExcessProvider()
+
+        provider.configure(aiChatsProvider: excessProvider)
+        excessProvider.publishExcess(false)
+
+        XCTAssertFalse(provider.showViewAllAiChats)
+    }
+
+    @MainActor
+    func testShowViewAllAiChats_whenBothFlagsOn_andHasExcess_returnsTrue() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let excessProvider = MockAIChatExcessProvider()
+
+        provider.configure(aiChatsProvider: excessProvider)
+        excessProvider.publishExcess(true)
+
+        XCTAssertTrue(provider.showViewAllAiChats)
+    }
+
+    @MainActor
+    func testShowViewAllAiChatsPublisher_emitsWhenExcessChanges() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true, "aiChatNtpViewAllChats": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger)
+        let excessProvider = MockAIChatExcessProvider()
+
+        var events: [Bool] = []
+        let cancellable = provider.showViewAllAiChatsPublisher.sink { events.append($0) }
+
+        provider.configure(aiChatsProvider: excessProvider)
+        excessProvider.publishExcess(true)
+        excessProvider.publishExcess(false)
+
+        cancellable.cancel()
+
+        XCTAssertTrue(events.contains(true))
+        XCTAssertEqual(events.last, false)
+    }
+
+}
+
+// MARK: - Mocks
+
+private final class MockAIChatExcessProvider: NewTabPageOmnibarAiChatsProviding {
+
+    private let subject = CurrentValueSubject<Bool, Never>(false)
+
+    var hasExcessChatsPublisher: AnyPublisher<Bool, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    func publishExcess(_ value: Bool) {
+        subject.send(value)
+    }
+
+    @MainActor
+    func aiChats(query: String?) async -> NewTabPageDataModel.AiChatsData {
+        NewTabPageDataModel.AiChatsData(chats: [])
     }
 
 }

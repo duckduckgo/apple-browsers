@@ -225,7 +225,6 @@
                 "description": "Whether the site was loaded in desktop or mobile mode",
                 "enum": ["desktop", "mobile"]
             },
-            "atb",
             {
                 "key": "model",
                 "type": "string",
@@ -539,7 +538,6 @@
                 "description": "Whether the site was loaded in desktop or mobile mode",
                 "enum": ["desktop", "mobile"]
             },
-            "atb",
             {
                 "key": "model",
                 "type": "string",

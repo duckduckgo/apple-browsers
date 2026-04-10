@@ -133,6 +133,7 @@ class FireExecutor: FireExecuting {
          appSettings: AppSettings,
          privacyStats: PrivacyStatsProviding? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter(),
          wideEvent: WideEventManaging? = nil,
          idManager: DataStoreIDManaging = DataStoreIDManager.shared) {
@@ -147,7 +148,9 @@ class FireExecutor: FireExecuting {
         self.historyCleanerProvider = historyCleanerProvider ??
         { dataStore in return HistoryCleaner(featureFlagger: featureFlagger,
                                              privacyConfig: privacyConfigurationManager,
-                                             websiteDataStore: dataStore)}
+                                             websiteDataStore: dataStore,
+                                             nativeStorageHandler: duckAiNativeStorageHandler,
+                                             featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))}
         self.appSettings = appSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.pixelsReporter = pixelsReporter

@@ -400,7 +400,7 @@ final class TabCollectionViewModel: NSObject {
         tabCollection.append(tab: tab)
         if tab.content == .newtab {
             NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
-            if isBurner, NSApp.delegateTyped.featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) {
+            if isBurner/*, NSApp.delegateTyped.featureFlagger.isFeatureOn(.subscriptionPromoFireWindow)*/ { // Temporarily disabled for testing
                 var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
                 if persistor.fireTabVisitCount < SubscriptionPromoViewModel.requiredVisitCount {
                     persistor.fireTabVisitCount += 1

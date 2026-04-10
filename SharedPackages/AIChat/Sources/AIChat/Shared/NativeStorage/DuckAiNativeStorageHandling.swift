@@ -19,6 +19,7 @@
 import Foundation
 import DuckAiDataStore
 
+/// https://app.asana.com/1/137249556945/project/1209671977594486/task/1213837712627367?focus=true
 public protocol DuckAiNativeStorageHandling {
 
     // MARK: - Entries

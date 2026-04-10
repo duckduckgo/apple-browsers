@@ -171,16 +171,7 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
 
     public func deleteChat(chatId: String) throws {
         do {
-            let filePaths = try dbQueue.read { db in
-                try String.fetchAll(db, sql: "SELECT filePath FROM duck_ai_files WHERE chatId = ?", arguments: [chatId])
-            }
-            for filePath in filePaths {
-                let fileURL = filesDirectoryURL.appendingPathComponent(filePath)
-                try? FileManager.default.removeItem(at: fileURL)
-            }
-
             try dbQueue.write { db in
-                try db.execute(sql: "DELETE FROM duck_ai_files WHERE chatId = ?", arguments: [chatId])
                 try db.execute(sql: "DELETE FROM duck_ai_chats WHERE chatId = ?", arguments: [chatId])
             }
         } catch {
@@ -189,16 +180,8 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
     }
 
     public func deleteAllChats() throws {
-        let fileManager = FileManager.default
-        if let contents = try? fileManager.contentsOfDirectory(at: filesDirectoryURL, includingPropertiesForKeys: nil) {
-            for fileURL in contents {
-                try? fileManager.removeItem(at: fileURL)
-            }
-        }
-
         do {
             try dbQueue.write { db in
-                try db.execute(sql: "DELETE FROM duck_ai_files")
                 try db.execute(sql: "DELETE FROM duck_ai_chats")
             }
         } catch {

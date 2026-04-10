@@ -85,9 +85,14 @@ public final class HistoryCleaner: HistoryCleaning {
         do {
             if let chatID {
                 Logger.aiChat.debug("HistoryCleaner: deleting chat \(chatID) from localStorage")
+                let files = try nativeStorageHandler.listFiles().filter { $0.chatId == chatID }
+                for file in files {
+                    try nativeStorageHandler.deleteFile(uuid: file.uuid)
+                }
                 try nativeStorageHandler.deleteChat(chatId: chatID)
             } else {
                 Logger.aiChat.debug("HistoryCleaner: deleting all chats from localStorage")
+                try nativeStorageHandler.deleteAllFiles()
                 try nativeStorageHandler.deleteAllChats()
             }
             return .success(())

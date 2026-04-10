@@ -584,7 +584,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.screenTimeCleaning)))
         case .tabSuspension:
-            Config(source: .disabled)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(TabSuspensionSubfeature.memoryPressureTrigger)))
         case .tabSuspensionDebugging:
             Config(source: .disabled)
         case .aiChatMoreOptionsMenuShortcut:
@@ -600,7 +600,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)), category: .duckAI)
         case .aiChatNativeDataAccess:
-            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.localStorageManipulation)), category: .duckAI)
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeDataAccess)), category: .duckAI)
         case .autoplayPolicy:
             Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.autoplayPolicy)), supportsLocalOverriding: true)
         }

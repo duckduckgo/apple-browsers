@@ -83,7 +83,7 @@ extension MainViewController {
         switch action {
         case .unbindInactiveNonAITab:
             refreshInactiveNonAITab(tab: tab, coordinator: coordinator)
-            tab.updateWebViewBottomAnchor(for: viewCoordinator.toolbar.alpha)
+            tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
             return
         case .refreshAITab(let behavior):
             let completedRefresh = refreshAITab(tab: tab, coordinator: coordinator, behavior: behavior)
@@ -94,7 +94,7 @@ extension MainViewController {
             refreshNonAITab(tab: tab, coordinator: coordinator)
         }
 
-        tab.updateWebViewBottomAnchor(for: viewCoordinator.toolbar.alpha)
+        tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
     }
 
     func applyUnifiedInputChromeBackground(_ state: UnifiedInputChromeBackgroundState, updateWebView: Bool = true) {

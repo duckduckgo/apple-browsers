@@ -1180,6 +1180,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         tabSuspensionService = TabSuspensionService(
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             memoryUsageMonitor: memoryUsageMonitor,
             pixelFiring: PixelKit.shared,
             keyValueStore: keyValueStore

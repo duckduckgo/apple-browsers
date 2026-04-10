@@ -664,7 +664,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)))
         case .aiChatNativeDataAccess:
-            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.localStorageManipulation)))
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeDataAccess)))
         case .filterAddressBarUpdates:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.filterAddressBarUpdates)))
         }

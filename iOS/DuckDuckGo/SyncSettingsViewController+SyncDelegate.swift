@@ -625,18 +625,12 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         model.delegate = self
         
         var controller: UIHostingController<AnyView>
-        if showQRCode {
-            if useSimplifiedLayout {
-                controller = UIHostingController(rootView: AnyView(SimplifiedScanOrShowCodeView(model: model)))
-            } else {
-                controller = UIHostingController(rootView: AnyView(ScanOrSeeCode(model: model)))
-            }
+        if useSimplifiedLayout {
+            controller = UIHostingController(rootView: AnyView(SimplifiedScanOrShowCodeView(model: model)))
+        } else if showQRCode {
+            controller = UIHostingController(rootView: AnyView(ScanOrSeeCode(model: model)))
         } else {
-            if useSimplifiedLayout {
-                controller = UIHostingController(rootView: AnyView(SimplifiedScanOrShowCodeView(model: model)))
-            } else {
-                controller = UIHostingController(rootView: AnyView(ScanOrEnterCodeToRecoverSyncedDataView(model: model)))
-            }
+            controller = UIHostingController(rootView: AnyView(ScanOrEnterCodeToRecoverSyncedDataView(model: model)))
         }
         
         let navController = UIDevice.current.userInterfaceIdiom == .phone

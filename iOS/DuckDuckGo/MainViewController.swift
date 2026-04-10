@@ -155,6 +155,7 @@ class MainViewController: UIViewController {
 
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     private let tutorialSettings: TutorialSettings
     private let contextualOnboardingLogic: ContextualOnboardingLogic
@@ -165,6 +166,7 @@ class MainViewController: UIViewController {
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
+    private let lastActiveTabStore: LastActiveTabStoring
     private let fireModeCapability: FireModeCapable
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
@@ -187,6 +189,7 @@ class MainViewController: UIViewController {
     private var settingsCancellables = Set<AnyCancellable>()
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
     private var currentNTPEscapeHatch: EscapeHatchModel?
+    private var hasCompletedInitialLoad = false
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     let subscriptionDataReporter: SubscriptionDataReporting
@@ -311,7 +314,8 @@ class MainViewController: UIViewController {
         featureFlagger: featureFlagger,
         privacyConfigurationManager: privacyConfigurationManager,
         aiChatSettings: aiChatSettings,
-        iPadTabFeature: aichatIPadTabFeature
+        iPadTabFeature: aichatIPadTabFeature,
+        duckAiNativeStorageHandler: duckAiNativeStorageHandler
     )
     private var iPadAIChatQuery = ""
     private var allowIPadAIAutocompleteShow = false
@@ -339,6 +343,7 @@ class MainViewController: UIViewController {
         syncDataProviders: SyncDataProviders,
         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
+        duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
         appSettings: AppSettings,
         previewsSource: TabPreviewsSource,
         tabManager: TabManager,
@@ -352,6 +357,7 @@ class MainViewController: UIViewController {
         voiceSearchHelper: VoiceSearchHelperProtocol,
         featureFlagger: FeatureFlagger,
         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+        lastActiveTabStore: LastActiveTabStoring = LastActiveTabStore(),
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
         fireproofing: Fireproofing,
@@ -402,6 +408,7 @@ class MainViewController: UIViewController {
         self.syncDataProviders = syncDataProviders
         self.userScriptsDependencies = userScriptsDependencies
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.favoritesViewModel = FavoritesListViewModel(bookmarksDatabase: bookmarksDatabase, favoritesDisplayMode: appSettings.favoritesDisplayMode)
         self.bookmarksCachingSearch = BookmarksCachingSearch(bookmarksStore: CoreDataBookmarksSearchStore(bookmarksStore: bookmarksDatabase))
         self.appSettings = appSettings
@@ -422,6 +429,7 @@ class MainViewController: UIViewController {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.lastActiveTabStore = lastActiveTabStore
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.fireproofing = fireproofing
@@ -544,7 +552,8 @@ class MainViewController: UIViewController {
                                                               featureFlagger: featureFlagger,
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
-                                                              mobileCustomization: mobileCustomization)
+                                                              mobileCustomization: mobileCustomization,
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         if featureFlagger.isFeatureOn(.iPadAIToggle) {
             viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
@@ -723,7 +732,8 @@ class MainViewController: UIViewController {
                                                       aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
-                                                      mobileCustomization: mobileCustomization)
+                                                      mobileCustomization: mobileCustomization,
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -1179,7 +1189,7 @@ class MainViewController: UIViewController {
 
         let coordinator = unifiedToggleInputCoordinator
         let isAITabCollapsed = coordinator?.displayState == .aiTab(.collapsed)
-        let isBottomOmnibarKeyboardAnchored = coordinator?.isOmnibarSession == true
+        let isBottomExpandedUTIKeyboardAnchored = (coordinator?.isOmnibarSession == true || coordinator?.isAITabExpanded == true)
             && coordinator?.cardPosition == .bottom
             && viewCoordinator.isNavigationBarContainerBottomKeyboardBased
 
@@ -1199,7 +1209,7 @@ class MainViewController: UIViewController {
 
         let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + baseInputHeight : 0
         if !isAITabCollapsed {
-            let newHeight = isBottomOmnibarKeyboardAnchored ? baseInputHeight : max(baseInputHeight, containerHeight)
+            let newHeight = isBottomExpandedUTIKeyboardAnchored ? baseInputHeight : max(baseInputHeight, containerHeight)
             self.viewCoordinator.constraints.navigationBarContainerHeight.constant = newHeight
         }
 
@@ -1369,6 +1379,7 @@ class MainViewController: UIViewController {
         guard !hasLoadedInitialView else { return }
         hasLoadedInitialView = true
         loadInitialView()
+        hasCompletedInitialLoad = true
     }
 
     func handlePressEvent(event: UIPressesEvent?) {
@@ -1390,11 +1401,23 @@ class MainViewController: UIViewController {
     }
     
     private func makeEscapeHatchModel(targetTab: Tab) -> EscapeHatchModel? {
+        if targetTab.fireTab {
+            if targetTab.link != nil || targetTab.isAITab {
+                return EscapeHatchModel(
+                    title: UserText.escapeHatchFireTabTitle,
+                    subtitle: "",
+                    tabType: .fire,
+                    domain: nil,
+                    targetTab: targetTab
+                )
+            }
+            return nil
+        }
         if targetTab.isAITab {
             return EscapeHatchModel(
                 title: targetTab.aiChatConversationTitle ?? UserText.omnibarFullAIChatModeDisplayTitle,
                 subtitle: UserText.omnibarFullAIChatModeDisplayTitle,
-                isAITab: true,
+                tabType: .aiChat,
                 domain: nil,
                 targetTab: targetTab
             )
@@ -1404,7 +1427,7 @@ class MainViewController: UIViewController {
             return EscapeHatchModel(
                 title: link.displayTitle,
                 subtitle: subtitle,
-                isAITab: false,
+                tabType: .regular,
                 domain: link.url.host,
                 targetTab: targetTab
             )
@@ -1412,22 +1435,21 @@ class MainViewController: UIViewController {
         return nil
     }
 
-    // TODO: - Adjust this to support cross-mode hatches
-    private func buildEscapeHatch(sourceTabViewController: TabViewController? = nil) -> EscapeHatchModel? {
+    private func buildEscapeHatch() -> EscapeHatchModel? {
         guard idleReturnEligibilityManager.isEligibleForNTPAfterIdle() else {
             return nil
         }
         let currentTab = tabManager.currentTabsModel.currentTab
-        let targetTab: Tab?
-        if let sourceTab = sourceTabViewController?.tabModel,
-           sourceTab !== currentTab {
-            targetTab = sourceTab
-        } else if let previousTab = tabManager.currentTabsModel.tabBefore {
-            targetTab = previousTab
-        } else {
-            targetTab = nil
+        if currentTab?.fireTab == true {
+            // Avoid showing a hatch on fire tabs
+            return nil
         }
-        guard let targetTab else { return nil }
+        guard let lastUID = lastActiveTabStore.lastActiveNonEmptyTabUID,
+              let targetTab = tabManager.allTabsModel.tabs.first(where: { $0.uid == lastUID }),
+              targetTab !== currentTab else {
+            // Couldn't find the last active tab
+            return nil
+        }
         return makeEscapeHatchModel(targetTab: targetTab)
     }
 
@@ -1490,9 +1512,13 @@ class MainViewController: UIViewController {
 
         newTabPageViewController = controller
 
-        let hatch = buildEscapeHatch(sourceTabViewController: previousTab)
+        let hatch = buildEscapeHatch()
         controller.setEscapeHatch(hatch)
         currentNTPEscapeHatch = hatch
+        
+        if hasCompletedInitialLoad {
+            lastActiveTabStore.recordActiveTab(uid: tabModel.uid)
+        }
 
         if let hatch {
             let targetTab = hatch.targetTab
@@ -1806,6 +1832,7 @@ class MainViewController: UIViewController {
 
         tab.tabModel.openedAfterIdle = false
         request()
+        lastActiveTabStore.recordActiveTab(uid: tab.tabModel.uid)
         dismissOmniBar()
         transitionTo(tab: tab, from: nil)
     }
@@ -1861,6 +1888,9 @@ class MainViewController: UIViewController {
     }
 
     private func attachTab(tab: TabViewController) {
+        if hasCompletedInitialLoad {
+            lastActiveTabStore.recordActiveTab(uid: tab.tabModel.uid)
+        }
         removeHomeScreen()
         updateFindInPage()
         hideNotificationBarIfBrokenSitePromptShown()
@@ -3975,7 +4005,8 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onSwitchToTab(_ tab: Tab) {
-        guard tabManager.currentTabsModel.tabExists(tab: tab) else {
+        let targetTabsModel = tabManager.tabsModel(for: tab.mode)
+        guard targetTabsModel.tabExists(tab: tab) else {
             viewCoordinator.omniBar.endEditing()
             return
         }
@@ -3986,11 +4017,11 @@ extension MainViewController: OmniBarDelegate {
         }
         let wasAfterIdle = currentTab?.openedAfterIdle ?? false
         ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
-        selectTab(tab)
         viewCoordinator.omniBar.endEditing()
         if let currentTab {
             closeTab(currentTab)
         }
+        selectTab(tab)
     }
 
     func onToggleModeSwitched() {
@@ -4141,7 +4172,8 @@ extension MainViewController: NewTabPageControllerDelegate {
     }
 
     func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
-        guard tabManager.currentTabsModel.tabExists(tab: tab) else {
+        let targetTabsModel = tabManager.tabsModel(for: tab.mode)
+        guard targetTabsModel.tabExists(tab: tab) else {
             controller.setEscapeHatch(nil)
             currentNTPEscapeHatch = nil
             unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
@@ -4151,10 +4183,10 @@ extension MainViewController: NewTabPageControllerDelegate {
         guard tab !== currentTab else { return }
         let wasAfterIdle = currentTab?.openedAfterIdle ?? false
         ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
-        selectTab(tab)
         if let currentTab {
             closeTab(currentTab)
         }
+        selectTab(tab)
         currentNTPEscapeHatch = nil
         unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
     }
@@ -4427,7 +4459,9 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String) {
         let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
-                                     privacyConfig: privacyConfigurationManager)
+                                     privacyConfig: privacyConfigurationManager,
+                                     nativeStorageHandler: duckAiNativeStorageHandler,
+                                     featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
         Task { @MainActor in
             await cleaner.deleteAIChat(chatID: chatID)
         }
@@ -4536,7 +4570,7 @@ extension MainViewController: TabSwitcherDelegate {
         }
         
         if let tab {
-            tabManager.select(tab, forcingMode: true, dismissCurrent: false)
+            tabManager.select(tab, dismissCurrent: false)
         }
 
         guard let newTab = tabManager.current(createIfNeeded: true) else {

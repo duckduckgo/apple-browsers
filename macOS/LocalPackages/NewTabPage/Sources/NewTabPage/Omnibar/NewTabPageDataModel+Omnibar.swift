@@ -58,6 +58,7 @@ public extension NewTabPageDataModel {
         let showAiSetting: Bool?
         let showCustomizePopover: Bool?
         let enableRecentAiChats: Bool?
+        let showViewAllAiChats: Bool?
         let enableAiChatTools: Bool?
         let selectedModelId: String?
         let aiModelSections: [AIModelSection]?
@@ -239,6 +240,12 @@ public extension NewTabPageDataModel {
         let target: OpenTarget
         let trigger: OpenAiChatTrigger?
         let isPinned: Bool?
+    }
+
+    // MARK: - omnibar_viewAllAIChats
+
+    struct ViewAllAiChatsAction: Codable, Equatable {
+        let target: OpenTarget
     }
 
     // MARK: - omnibar_getAiChats

@@ -37,10 +37,12 @@ struct ReturnToTabCard: View {
                             .daxHeadline()
                             .foregroundColor(Color(designSystemColor: .textPrimary))
                             .lineLimit(1)
-                        Text(model.subtitle)
-                            .daxFootnoteRegular()
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                            .lineLimit(1)
+                        if !model.subtitle.isEmpty {
+                            Text(model.subtitle)
+                                .daxFootnoteRegular()
+                                .foregroundColor(Color(designSystemColor: .textSecondary))
+                                .lineLimit(1)
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -74,18 +76,25 @@ struct ReturnToTabCard: View {
             .foregroundColor(Color(designSystemColor: .textSecondary))
     }
 
-    /// Favicon from .tabs cache, or Duck.ai logo when `model.isAITab`, matching tab switcher (TabsBarCell).
+    /// Favicon from .tabs cache, fire tab icon, Duck.ai logo, or placeholder depending on tab type.
     private var iconView: some View {
         Group {
-            if model.isAITab {
+            switch model.tabType {
+            case .fire:
+                Image(uiImage: DesignSystemImages.Color.Size96.fireTab)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            case .aiChat:
                 Image(uiImage: UIImage(resource: .duckAIDefault))
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-            } else if let domain = model.domain {
-                DomainFaviconView(domain: domain)
-            } else {
-                RoundedRectangle(cornerRadius: Metrics.iconCornerRadius)
-                    .fill(Color(designSystemColor: .controlsFillSecondary))
+            case .regular:
+                if let domain = model.domain {
+                    DomainFaviconView(domain: domain)
+                } else {
+                    RoundedRectangle(cornerRadius: Metrics.iconCornerRadius)
+                        .fill(Color(designSystemColor: .controlsFillSecondary))
+                }
             }
         }
         .frame(width: Metrics.iconSize, height: Metrics.iconSize)
@@ -133,7 +142,7 @@ private enum Metrics {
         model: EscapeHatchModel(
             title: "Tokamak - Wikipedia",
             subtitle: "en.wikipedia.org/wiki/Tokamak",
-            isAITab: false,
+            tabType: .regular,
             domain: "en.wikipedia.org",
             targetTab: Tab(fireTab: false)
         ),
@@ -148,9 +157,24 @@ private enum Metrics {
         model: EscapeHatchModel(
             title: "Good Dog Name Ideas",
             subtitle: "Duck.ai",
-            isAITab: true,
+            tabType: .aiChat,
             domain: nil,
             targetTab: Tab(fireTab: false)
+        ),
+        onTap: {}
+    )
+    .padding()
+    .frame(width: 360)
+}
+
+#Preview("Return to Fire Tab") {
+    ReturnToTabCard(
+        model: EscapeHatchModel(
+            title: "Last Used Fire Tab",
+            subtitle: "",
+            tabType: .fire,
+            domain: nil,
+            targetTab: Tab(fireTab: true)
         ),
         onTap: {}
     )

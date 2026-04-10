@@ -2,7 +2,7 @@
 {
     "m_mac_bookmarks_save-all-open-tabs": {
         "description": "Daily and count pixel fired when user bookmark all open tabs",
-        "owners": ["aboron"],
+        "owners": ["alessandroboron"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource"]

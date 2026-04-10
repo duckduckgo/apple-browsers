@@ -18,36 +18,129 @@
 
 import Combine
 import Foundation
+import Navigation
 import PrivacyConfig
+import UserScript
 import WebKit
+
+protocol TabSuspensionUserScriptProvider {
+    var tabSuspensionScript: TabSuspensionUserScript { get }
+}
+extension UserScripts: TabSuspensionUserScriptProvider {}
+
+/// This protocol encapsulates checks for tab suspension eligibility performed on a web view instance.
+protocol TabSuspensionWebViewChecking: AnyObject {
+    var isLoading: Bool { get }
+    var isPlayingAudio: Bool { get }
+    var isCapturingAudio: Bool { get }
+    var isCapturingVideo: Bool { get }
+    var isDisplayingPDF: Bool { get async }
+}
+
+extension WKWebView: TabSuspensionWebViewChecking {
+    var isCapturingAudio: Bool {
+        return microphoneState != .none
+    }
+
+    var isCapturingVideo: Bool {
+        return cameraState != .none
+    }
+
+    var isDisplayingPDF: Bool {
+        get async {
+            return await mimeType == "application/pdf"
+        }
+    }
+}
 
 final class TabSuspensionExtension {
 
     private var cancellables = Set<AnyCancellable>()
 
-    private weak var webView: WKWebView?
+    private weak var webView: TabSuspensionWebViewChecking?
+    private weak var tabSuspensionUserScript: TabSuspensionUserScript?
     private var tabContent: Tab.TabContent = .none
+    private let tabID: TabIdentifier
     private let isTabPinned: () -> Bool
+    private let aiChatSessionStore: AIChatSessionStoring
     private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+
+    var hasVideoInPictureInPicture: Bool = false
+    var isDisplayingPDF: Bool = false
+    private(set) var pageReportsUnableToSuspend: Bool = false
+
+    private var hasActiveAIChatSession: Bool {
+        aiChatSessionStore.sessions[tabID] != nil
+    }
 
     var canBeSuspended: Bool {
+
+        // feature flag on
         guard featureFlagger.isFeatureOn(.tabSuspension) else { return false }
-        guard case let .url(url, _, _) = tabContent, !url.isDuckPlayer else { return false }
+
+        // only URL tab content
+        guard case let .url(url, _, _) = tabContent else { return false }
+
+        // only HTTP/HTTPS (this skips Duck Player which is duck://)
+        guard url.navigationalScheme?.isHypertextScheme == true else { return false }
+
+        // skip Duck.ai
+        guard !url.isDuckAIURL else { return false }
+
+        // domain not in exceptions list
+        guard privacyConfigurationManager.privacyConfig.isFeature(.tabSuspension, enabledForDomain: url.host) else { return false }
+
+        // not pinned
         guard !isTabPinned() else { return false }
-        guard let webView else {
-            return false
-        }
-        return !webView.audioState.isPlayingAudio
+
+        // without active AI chat
+        guard !hasActiveAIChatSession else { return false }
+
+        guard let webView else { return false }
+
+        // not currently loading
+        guard !webView.isLoading else { return false }
+
+        // not playing audio
+        // NOTE: This doesn't take into account muted tabs (`webView.audioState.isMuted`). Tab muted state is not persisted by
+        // state restoration, and a tab that was playing audio but was muted, would not be muted after restoration.
+        // We're playing safe and not suspending such tabs (they would report `webView.isPlayingAudio` as `true` here).
+        guard !webView.isPlayingAudio else { return false }
+
+        // not capturing audio
+        guard !webView.isCapturingAudio else { return false }
+
+        // not capturing video
+        guard !webView.isCapturingVideo else { return false }
+
+        // not using picture in picture
+        guard !hasVideoInPictureInPicture else { return false }
+
+        // not displaying a PDF
+        guard !isDisplayingPDF else { return false }
+
+        // page doesn't report conditions preventing suspension
+        guard !pageReportsUnableToSuspend else { return false }
+
+        return true
     }
 
     init(
-        webViewPublisher: some Publisher<WKWebView, Never>,
+        tabID: TabIdentifier,
+        webViewPublisher: some Publisher<TabSuspensionWebViewChecking, Never>,
         contentPublisher: some Publisher<Tab.TabContent, Never>,
+        scriptsPublisher: some Publisher<some TabSuspensionUserScriptProvider, Never>,
         featureFlagger: FeatureFlagger,
+        aiChatSessionStore: AIChatSessionStoring,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
         isTabPinned: @escaping () -> Bool
     ) {
+        self.tabID = tabID
         self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.isTabPinned = isTabPinned
+        self.aiChatSessionStore = aiChatSessionStore
 
         contentPublisher.sink { [weak self] content in
             self?.tabContent = content
@@ -56,15 +149,53 @@ final class TabSuspensionExtension {
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView
         }.store(in: &cancellables)
+
+        scriptsPublisher.sink { [weak self] scripts in
+            Task { @MainActor in
+                self?.tabSuspensionUserScript = scripts.tabSuspensionScript
+                self?.tabSuspensionUserScript?.delegate = self
+            }
+        }.store(in: &cancellables)
     }
 }
 
-protocol TabSuspensionExtensionProtocol: AnyObject {
+protocol TabSuspensionExtensionProtocol: AnyObject, NavigationResponder {
     var canBeSuspended: Bool { get }
+    var hasVideoInPictureInPicture: Bool { get set }
 }
 
 extension TabSuspensionExtension: TabSuspensionExtensionProtocol, TabExtension {
     func getPublicProtocol() -> TabSuspensionExtensionProtocol { self }
+}
+
+extension TabSuspensionExtension: NavigationResponder {
+    @MainActor
+    func didCommit(_ navigation: Navigation) {
+        pageReportsUnableToSuspend = false
+        isDisplayingPDF = false
+    }
+
+    @MainActor
+    func navigationDidFinish(_ navigation: Navigation) {
+        // This flag already gets reset in didCommit but let's repeat it here in case
+        // there are automated 'focusin' events that happen at page load.
+        // We're not interested in these as they aren't user-initiated.
+        // The didCommit is still needed to handle websites that fail to load or get stuck loading.
+        pageReportsUnableToSuspend = false
+
+        guard let webView else { return }
+        Task { @MainActor [weak self, weak webView] in
+            let isPDF = await webView?.isDisplayingPDF ?? false
+            self?.isDisplayingPDF = isPDF
+        }
+    }
+}
+
+extension TabSuspensionExtension: TabSuspensionUserScriptDelegate {
+    @MainActor
+    func tabSuspensionUserScript(_ script: TabSuspensionUserScript, didReceiveCanBeSuspended canBeSuspended: Bool) {
+        pageReportsUnableToSuspend = !canBeSuspended
+    }
 }
 
 extension TabExtensions {

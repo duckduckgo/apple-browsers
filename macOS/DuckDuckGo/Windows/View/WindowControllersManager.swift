@@ -398,10 +398,10 @@ extension WindowControllersManager {
         let tabCollection = tabCollectionViewModel.tabCollection
 
         if tabCollection.tabs.count == 1,
-           let firstTab = tabCollection.tabs.first,
-           case .newtab = firstTab.content,
+           case .newtab = tabCollection.tabs.first?.content,
            !newTab {
-            firstTab.setContent(url.map { .contentFromURL($0, source: source) } ?? .newtab)
+            let tab = tabCollectionViewModel.materialize(at: .unpinned(0))
+            tab?.setContent(url.map { .contentFromURL($0, source: source) } ?? .newtab)
         } else if let tab = tabCollectionViewModel.selectedTabViewModel?.tab, !newTab {
             tab.setContent(url.map { .contentFromURL($0, source: source) } ?? .newtab)
         } else {
@@ -444,7 +444,7 @@ extension WindowControllersManager {
 
     /// Returns the window controller containing the given tab.
     private func windowController(containing tab: Tab) -> MainWindowController? {
-        return mainWindowControllers.first(where: { $0.mainViewController.tabCollectionViewModel.tabs.contains(tab) })
+        return mainWindowControllers.first(where: { $0.mainViewController.tabCollectionViewModel.tabCollection.contains(tab: tab) })
     }
 
     /// Returns the window controller for opening a tab from the given originating window controller and opener tab.
@@ -501,7 +501,7 @@ extension WindowControllersManager {
         if let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
             parentWindowController.window?.beginSheet(feedbackFormWindow)
         } else {
-            let tabCollection = TabCollection(tabs: [])
+            let tabCollection = TabCollection()
             let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection)
             let window = WindowsManager.openNewWindow(with: tabCollectionViewModel)
             window?.beginSheet(feedbackFormWindow)
@@ -510,7 +510,7 @@ extension WindowControllersManager {
 
     func showMainWindow() {
         guard Application.appDelegate.windowControllersManager.lastKeyMainWindowController == nil else { return }
-        let tabCollection = TabCollection(tabs: [])
+        let tabCollection = TabCollection()
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection)
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel)
     }
@@ -577,7 +577,7 @@ extension WindowControllersManagerProtocol {
 
     var allTabViewModels: [TabViewModel] {
         return allTabCollectionViewModels.flatMap {
-            $0.tabViewModels.values
+            $0.tabViewModels.values.compactMap { $0 as? TabViewModel }
         }
     }
 
@@ -605,7 +605,7 @@ extension WindowControllersManagerProtocol {
 
     func windowController(for tab: Tab) -> MainWindowController? {
         return mainWindowControllers.first(where: {
-            $0.mainViewController.tabCollectionViewModel.tabCollection.tabs.contains(tab)
+            $0.mainViewController.tabCollectionViewModel.tabCollection.contains(tab: tab)
         })
     }
 

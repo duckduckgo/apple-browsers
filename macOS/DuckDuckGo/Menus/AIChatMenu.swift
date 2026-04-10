@@ -141,13 +141,17 @@ final class AIChatMenu: NSMenu {
         fetchTask?.cancel()
         fetchTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            let maxChats = maxChatItems ?? .max
-            let (pinned, recent) = await suggestionsReader.fetchSuggestions(query: nil, maxChats: maxChats)
+            // Fetch one extra item to detect whether there are more chats than we display,
+            // which determines whether to show "View All Chats...".
+            let fetchLimit = maxChatItems.map { $0 + 1 } ?? .max
+            let (pinned, recent) = await suggestionsReader.fetchSuggestions(query: nil, maxChats: fetchLimit)
             guard !Task.isCancelled else { return }
             let sorted = (pinned + recent)
                 .sorted { ($0.timestamp ?? .distantPast) > ($1.timestamp ?? .distantPast) }
+            let hasMore = maxChatItems.map { sorted.count > $0 } ?? false
+            let visible = maxChatItems.map { Array(sorted.prefix($0)) } ?? sorted
             clearChatItems()
-            insertChatItems(sorted)
+            insertChatItems(visible, hasMore: hasMore)
         }
     }
 
@@ -158,7 +162,7 @@ final class AIChatMenu: NSMenu {
         chatItems.removeAll()
     }
 
-    private func insertChatItems(_ chats: [AIChatSuggestion]) {
+    private func insertChatItems(_ chats: [AIChatSuggestion], hasMore: Bool) {
         let labelIndex = index(of: recentChatsLabel)
         guard labelIndex != -1 else { return }
         for (offset, chat) in chats.enumerated() {
@@ -170,6 +174,17 @@ final class AIChatMenu: NSMenu {
                 : (origin == .moreOptionsMenu ? DesignSystemImages.Color.Size16.chat : DesignSystemImages.Color.Size12.chat)
             insertItem(item, at: labelIndex + 1 + offset)
             chatItems.append(item)
+        }
+        if hasMore {
+            let separator = NSMenuItem.separator()
+            let viewAllItem = NSMenuItem(title: UserText.aiChatMenuViewAllChats, action: #selector(viewAllChatsTapped), keyEquivalent: "")
+            viewAllItem.target = self
+            viewAllItem.image = origin == .moreOptionsMenu ? DesignSystemImages.Glyphs.Size16.aiChatHistory : DesignSystemImages.Glyphs.Size12.aiChatHistory
+            let insertIndex = labelIndex + 1 + chats.count
+            insertItem(separator, at: insertIndex)
+            insertItem(viewAllItem, at: insertIndex + 1)
+            chatItems.append(separator)
+            chatItems.append(viewAllItem)
         }
     }
 
@@ -206,14 +221,21 @@ final class AIChatMenu: NSMenu {
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
     }
 
+    @objc private func viewAllChatsTapped() {
+        actions.openNewChat()
+        let pixel: AIChatPixel = origin == .moreOptionsMenu ? .aiChatViewAllChatsMoreOptionsMenu : .aiChatViewAllChatsMainMenu
+        PixelKit.fire(pixel, frequency: .dailyAndStandard)
+    }
+
     @objc private func deleteAllChatsTapped() {
         var dialog = AIChatDeleteChatsDialog()
-        dialog.confirmed = { [weak self] in
-            guard let self else { return }
+        let actions = self.actions
+        let origin = self.origin
+        dialog.confirmed = {
             let pixel: AIChatPixel = origin == .moreOptionsMenu ? .aiChatDeleteAllChatsMoreOptionsMenu : .aiChatDeleteAllChatsMainMenu
             PixelKit.fire(pixel, frequency: .dailyAndStandard)
             Task { @MainActor in
-                await self.actions.deleteAllChats()
+                await actions.deleteAllChats()
             }
         }
         dialog.show()

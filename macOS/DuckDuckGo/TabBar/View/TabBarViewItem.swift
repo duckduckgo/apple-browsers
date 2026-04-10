@@ -47,7 +47,6 @@ protocol TabBarViewModel {
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> { get }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { get }
     var isSuspended: Bool { get }
-    var isSuspendedPublisher: AnyPublisher<Bool, Never> { get }
     var canBeSuspended: Bool { get }
 }
 
@@ -75,7 +74,10 @@ extension TabViewModel: TabBarViewModel {
             .eraseToAnyPublisher()
     }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { tab.webViewRenderingProgressDidChangePublisher }
-    var isSuspendedPublisher: AnyPublisher<Bool, Never> { $isSuspended.eraseToAnyPublisher() }
+
+    var isSuspended: Bool {
+        false
+    }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {
@@ -1036,18 +1038,6 @@ final class TabBarViewItem: NSCollectionViewItem {
                 self?.refreshProgressColors(rendered: true)
             }
             .store(in: &cancellables)
-
-        tabViewModel.isSuspendedPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isSuspended in
-                guard let self else {
-                    return
-                }
-                let alpha: CGFloat = isSuspended && featureFlagger.isFeatureOn(.tabSuspensionDebugging) ? 0.5 : 1.0
-                cell.faviconView.alphaValue = alpha
-                cell.titleView.alphaValue = alpha
-            }
-            .store(in: &cancellables)
     }
 
     func clear() {
@@ -1093,6 +1083,10 @@ final class TabBarViewItem: NSCollectionViewItem {
         let tabStyleProvider = theme.tabStyleProvider
 
         withoutAnimation {
+            let alpha = (tabViewModel?.isSuspended == true && featureFlagger.isFeatureOn(.tabSuspensionDebugging)) ? 0.5 : 1.0
+            cell.faviconView.alphaValue = alpha
+            cell.titleView.alphaValue = alpha
+
             if displaysTabsAnimations {
                 cell.mouseOverView.backgroundColor = nil
                 cell.mouseOverView.mouseOverColor = nil
@@ -1408,7 +1402,9 @@ extension TabBarViewItem: NSMenuDelegate {
             }
         }
 
-        addSuspendResumeMenuItem(to: menu)
+        if !isBurner {
+            addSuspendResumeMenuItem(to: menu)
+        }
 
         if tabViewModel?.canKillWebContentProcess == true {
             menu.addItem(.separator())
@@ -1510,15 +1506,16 @@ extension TabBarViewItem: NSMenuDelegate {
         guard
             featureFlagger.isFeatureOn(.tabSuspension),
             featureFlagger.isFeatureOn(.tabSuspensionDebugging),
-            case .url = tabViewModel?.tabContent
+            let tabViewModel,
+            case .url = tabViewModel.tabContent
         else {
             return
         }
 
-        let isSuspended = tabViewModel?.isSuspended ?? false
+        let isSuspended = tabViewModel.isSuspended
         // This item is only ever visible to internal users so we don't need translations.
         let title = isSuspended ? "Resume Tab" : "Suspend Tab"
-        let canToggleSuspension = isSuspended || (tabViewModel?.canBeSuspended == true)
+        let canToggleSuspension = isSuspended || tabViewModel.canBeSuspended
         let isEnabled = !isSelected && canToggleSuspension
 
         let menuItem = NSMenuItem(title: title, action: #selector(suspendTabAction(_:)), keyEquivalent: "")
@@ -1800,7 +1797,6 @@ extension TabBarViewItem {
             var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never>
 
             @Published var isSuspended: Bool = false
-            var isSuspendedPublisher: AnyPublisher<Bool, Never> { $isSuspended.eraseToAnyPublisher() }
             var canBeSuspended: Bool = true
 
             init(width: CGFloat, title: String = "Test Title", url: URL? = nil, favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, isPinned: Bool = false, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, isLoading: Bool = false, error: WKError? = nil) {

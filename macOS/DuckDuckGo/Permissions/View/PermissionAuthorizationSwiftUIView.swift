@@ -27,7 +27,7 @@ import UserNotifications
 
 /// UI-only permission type for the authorization SwiftUI view.
 /// This handles the combined camera+microphone case without modifying the model layer.
-enum PermissionAuthorizationType {
+enum PermissionAuthorizationType: Equatable {
     case camera
     case microphone
     case cameraAndMicrophone
@@ -48,6 +48,9 @@ enum PermissionAuthorizationType {
             case .popups: self = .popups
             case .notification: self = .notification
             case .externalScheme(let scheme): self = .externalScheme(scheme: scheme)
+            case .autoplayPolicy:
+                assertionFailure("Autoplay policy does not use authorization flow")
+                self = .camera // fallback, shouldn't happen
             }
         } else {
             assertionFailure("Unexpected permission types combination")
@@ -434,7 +437,8 @@ struct PermissionAuthorizationSwiftUIView: View {
     private var systemPermissionDisabledView: some View {
         SystemPermissionWarningView(
             prefixText: permissionType.systemPermissionDisabledText,
-            linkText: permissionType.systemSettingsLinkText
+            linkText: permissionType.systemSettingsLinkText,
+            linkOnNewLine: permissionType == .notification
         ) {
             openSystemSettings()
         }
@@ -559,7 +563,7 @@ struct PermissionAuthorizationSwiftUIView: View {
         (Text(permissionType.systemPermissionDisabledTextStandalone)
             .font(.system(size: 12))
             .foregroundColor(Color(designSystemColor: .textSecondary))
-        + Text(" ")
+        + Text(verbatim: permissionType == .notification ? "\n" : " ")
         + Text(permissionType.systemSettingsLinkText)
             .font(.system(size: 12))
             .foregroundColor(Color(designSystemColor: .textLink)))
@@ -670,7 +674,7 @@ extension PermissionType {
             return UserText.permissionSystemLocationDisabled
         case .notification:
             return UserText.permissionCenterSystemNotificationDisabled
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
             return ""
         }
     }
@@ -682,7 +686,7 @@ extension PermissionType {
             return UserText.permissionSystemSettingsLocation
         case .notification:
             return UserText.permissionCenterSystemSettingsNotifications
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
             return ""
         }
     }
@@ -694,7 +698,7 @@ extension PermissionType {
             return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")
         case .notification:
             return URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
             return nil
         }
     }

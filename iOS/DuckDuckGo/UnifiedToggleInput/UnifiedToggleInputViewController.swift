@@ -120,6 +120,7 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     var isGenerating: Bool = false {
         didSet {
+            guard isGenerating != oldValue else { return }
             handler.isGenerating = isGenerating
             inputBarView.isGenerating = isGenerating
         }
@@ -143,6 +144,16 @@ final class UnifiedToggleInputViewController: UIViewController {
     var isImageButtonHidden: Bool {
         get { inputBarView.isImageButtonHidden }
         set { inputBarView.isImageButtonHidden = newValue }
+    }
+
+    var isImageButtonEnabled: Bool {
+        get { inputBarView.isImageButtonEnabled }
+        set { inputBarView.isImageButtonEnabled = newValue }
+    }
+
+    var modelSupportsImageAttachments: Bool {
+        get { inputBarView.modelSupportsImageAttachments }
+        set { inputBarView.modelSupportsImageAttachments = newValue }
     }
 
     var isCustomizeResponsesButtonHidden: Bool {

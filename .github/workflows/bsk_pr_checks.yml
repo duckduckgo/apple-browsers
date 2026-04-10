@@ -109,7 +109,7 @@ jobs:
         run: >
           set -o pipefail && swift test --enable-swift-testing
           | tee -a build-log.txt
-          | grep -vE "CoreData: error:|CoreData: XPC:"
+          | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g'
           | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
 
       - name: Send Unit Tests Status Pixel
@@ -262,7 +262,7 @@ jobs:
         id: select-simulator
         uses: ./.github/actions/select-ios-simulator
         with:
-          preferred-versions: "26.2"
+          preferred-versions: "26.4"
 
       - name: Resolve package dependencies
         run: |

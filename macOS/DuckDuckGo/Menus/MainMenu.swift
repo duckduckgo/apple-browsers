@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Cocoa
 import Common
@@ -94,6 +95,7 @@ final class MainMenu: NSMenu {
     let closeAllWindowsMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseAllWindows, action: #selector(AppDelegate.closeAllWindows), keyEquivalent: [.option, .command, "W"])
     let closeTabMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(MainViewController.closeTab), keyEquivalent: "w")
     let importBrowserDataMenuItem = NSMenuItem(title: UserText.mainMenuFileImportBookmarksandPasswords, action: #selector(AppDelegate.openImportBrowserDataWindow))
+    let newAIChatFileMenuItem = NSMenuItem(title: UserText.newAIChatMenuItem, action: #selector(AppDelegate.newAIChat), keyEquivalent: "")
 
     @MainActor
     lazy var sharingMenu = SharingMenu(title: UserText.shareMenuItem, location: .mainMenu, delegate: self)
@@ -144,7 +146,11 @@ final class MainMenu: NSMenu {
     let toggleDownloadsShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowDownloadsShortcut, action: #selector(MainViewController.toggleDownloadsShortcut), keyEquivalent: "J")
     let toggleAutofillShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowAutofillShortcut, action: #selector(MainViewController.toggleAutofillShortcut), keyEquivalent: "A")
     let toggleBookmarksShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowBookmarksShortcut, action: #selector(MainViewController.toggleBookmarksShortcut), keyEquivalent: "K")
-    var aiChatMenu = NSMenuItem(title: UserText.newAIChatMenuItem, action: #selector(AppDelegate.newAIChat), keyEquivalent: [.option, .command, "n"])
+    private(set) lazy var aiChatMenu: NSMenuItem = MainActor.assumeMainThread {
+        let container = NSMenuItem(title: "Duck.ai")
+        container.submenu = makeAIChatMenu()
+        return container
+    }
     let toggleNetworkProtectionShortcutMenuItem = NSMenuItem(title: UserText.showNetworkProtectionShortcut, action: #selector(MainViewController.toggleNetworkProtectionShortcut), keyEquivalent: "")
 
     // MARK: Window
@@ -180,6 +186,8 @@ final class MainMenu: NSMenu {
     private let dockCustomizer: DockCustomization
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
+    private let aiChatSuggestionsReader: AIChatSuggestionsReading
+    private let aiChatHistoryCleaner: AIChatHistoryCleaning
     private let internalUserDecider: InternalUserDecider
     private let appearancePreferences: AppearancePreferences
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -203,6 +211,8 @@ final class MainMenu: NSMenu {
          dockCustomizer: DockCustomization,
          defaultBrowserPreferences: DefaultBrowserPreferences,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+         aiChatSuggestionsReader: AIChatSuggestionsReading,
+         aiChatHistoryCleaner: AIChatHistoryCleaning,
          internalUserDecider: InternalUserDecider,
          appearancePreferences: AppearancePreferences,
          privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -224,6 +234,8 @@ final class MainMenu: NSMenu {
         self.dockCustomizer = dockCustomizer
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiChatMenuConfig = aiChatMenuConfig
+        self.aiChatSuggestionsReader = aiChatSuggestionsReader
+        self.aiChatHistoryCleaner = aiChatHistoryCleaner
         self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, recentlyClosedCoordinator: recentlyClosedCoordinator, featureFlagger: featureFlagger)
         self.configurationURLProvider = configurationURLProvider
         self.contentScopePreferences = contentScopePreferences
@@ -239,6 +251,7 @@ final class MainMenu: NSMenu {
             buildEditMenu()
             buildViewMenu()
             buildHistoryMenu()
+            aiChatMenu
             buildBookmarksMenu()
             buildWindowMenu()
             buildDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator)
@@ -300,7 +313,8 @@ final class MainMenu: NSMenu {
                 newBurnerWindowMenuItem
             }
 
-            aiChatMenu
+            newAIChatFileMenuItem
+            NSMenuItem.separator()
 
             openFileMenuItem
             openLocationMenuItem
@@ -913,6 +927,8 @@ final class MainMenu: NSMenu {
                     NSMenuItem(title: "50 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 50)
                     NSMenuItem(title: "100 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 100)
                     NSMenuItem(title: "150 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 150)
+                    NSMenuItem(title: "500 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 500)
+                    NSMenuItem(title: "1000 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 1000)
                 }
                 NSMenuItem(title: "Show Save Credentials Popover", action: #selector(MainViewController.showSaveCredentialsPopover))
                 NSMenuItem(title: "Show Credentials Saved Popover", action: #selector(MainViewController.showCredentialsSavedPopover))
@@ -970,6 +986,9 @@ final class MainMenu: NSMenu {
                     NSMenuItem(title: "Crash All Tabs", action: #selector(MainViewController.crashAllTabs))
                 }
             }
+
+            NSMenuItem(title: "Tab Suspension")
+                .submenu(TabSuspensionDebugMenu(title: "Tab Suspension"))
 
             NSMenuItem(title: "Memory Usage Reporting") {
                 NSMenuItem(title: "Simulate Memory Report...", action: #selector(AppDelegate.simulateMemoryUsageReport))
@@ -1190,8 +1209,20 @@ final class MainMenu: NSMenu {
         return menu
     }
 
+    @MainActor private func makeAIChatMenu() -> AIChatMenu {
+        let actions = AIChatMenu.Actions.makeDefault(
+            remoteSettings: AIChatRemoteSettings(),
+            tabOpener: NSApp.delegateTyped.aiChatTabOpener,
+            historyCleaner: aiChatHistoryCleaner,
+            windowControllersManager: Application.appDelegate.windowControllersManager
+        )
+        return AIChatMenu(suggestionsReader: aiChatSuggestionsReader, actions: actions, maxChatItems: 8)
+    }
+
     private func setupAIChatMenu() {
-        aiChatMenu.isHidden = !aiChatMenuConfig.shouldDisplayApplicationMenuShortcut
+        let showTopLevelMenu = aiChatMenuConfig.shouldDisplayApplicationMenuShortcut
+        aiChatMenu.isHidden = !showTopLevelMenu
+        newAIChatFileMenuItem.isHidden = !aiChatMenuConfig.shouldDisplayAnyAIChatFeature || showTopLevelMenu
     }
 
     private func updateInternalUserItem() {

@@ -66,6 +66,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         var aiChatSessionStore: AIChatSessionStoring
         var tabCrashAggregator: TabCrashAggregator
         var tabsPreferences: TabsPreferences
+        var autoplayPreferences: AutoplayPreferences
+        var permissionManager: PermissionManagerProtocol
         var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     }
 
@@ -136,7 +138,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      shouldLoadInBackground: Bool = false,
                      burnerMode: BurnerMode = .regular,
                      isLoadedInSidebar: Bool = false,
-                     isSuspended: Bool = false,
                      canBeClosedWithBack: Bool = false,
                      lastSelectedAt: Date? = nil,
                      webViewSize: CGSize = CGSize(width: 1024, height: 768),
@@ -145,6 +146,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      tunnelController: NetworkProtectionIPCTunnelController? = TunnelControllerProvider.shared.tunnelController,
                      maliciousSiteDetector: MaliciousSiteDetecting = MaliciousSiteProtectionManager.shared,
                      tabsPreferences: TabsPreferences? = nil,
+                     autoplayPreferences: AutoplayPreferences? = nil,
                      webTrackingProtectionPreferences: WebTrackingProtectionPreferences? = nil,
                      onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
                      pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
@@ -202,7 +204,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   shouldLoadInBackground: shouldLoadInBackground,
                   burnerMode: burnerMode,
                   isLoadedInSidebar: isLoadedInSidebar,
-                  isSuspended: isSuspended,
                   canBeClosedWithBack: canBeClosedWithBack,
                   lastSelectedAt: lastSelectedAt,
                   webViewSize: webViewSize,
@@ -211,6 +212,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   tunnelController: tunnelController,
                   maliciousSiteDetector: maliciousSiteDetector,
                   tabsPreferences: tabsPreferences ?? NSApp.delegateTyped.tabsPreferences,
+                  autoplayPreferences: autoplayPreferences ?? NSApp.delegateTyped.autoplayPreferences,
                   webTrackingProtectionPreferences: webTrackingProtectionPreferences ?? NSApp.delegateTyped.webTrackingProtectionPreferences,
                   onboardingPixelReporter: onboardingPixelReporter,
                   pageRefreshMonitor: pageRefreshMonitor,
@@ -253,7 +255,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          shouldLoadInBackground: Bool,
          burnerMode: BurnerMode,
          isLoadedInSidebar: Bool,
-         isSuspended: Bool,
          canBeClosedWithBack: Bool,
          lastSelectedAt: Date?,
          webViewSize: CGSize,
@@ -262,6 +263,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          tunnelController: NetworkProtectionIPCTunnelController?,
          maliciousSiteDetector: MaliciousSiteDetecting,
          tabsPreferences: TabsPreferences,
+         autoplayPreferences: AutoplayPreferences,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          onboardingPixelReporter: OnboardingAddressBarReporting,
          pageRefreshMonitor: PageRefreshMonitoring,
@@ -283,12 +285,11 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.title = title
         self.favicon = favicon
         self.parentTab = parentTab
-        self.parentTabID = parentTab?.id
+        self.parentTabID = parentTab?.uuid
         self.securityOrigin = securityOrigin ?? .empty
         self.burnerMode = burnerMode
         self._canBeClosedWithBack = canBeClosedWithBack
         self.interactionState = interactionStateData.map(InteractionState.loadCachedFromTabContent) ?? .none
-        self.isSuspended = isSuspended
         self.lastSelectedAt = lastSelectedAt
         self.startupPreferences = startupPreferences
         self.tabsPreferences = tabsPreferences
@@ -353,6 +354,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                           aiChatSessionStore: aiChatSessionStore,
                                                           tabCrashAggregator: tabCrashAggregator,
                                                           tabsPreferences: tabsPreferences,
+                                                          autoplayPreferences: autoplayPreferences,
+                                                          permissionManager: permissionManager,
                                                           webTrackingProtectionPreferences: webTrackingProtectionPreferences)
         let tabExtensionsBuilderArguments: TabExtensionsBuilderArguments = (tabIdentifier: instrumentation.currentTabIdentifier,
                                                                             tabID: self.uuid,
@@ -444,7 +447,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 let knownUserContentControllers = processPool.knownUserContentControllers
                 processPool.onDeinit {
                     for controller in knownUserContentControllers {
-                        assert(controller.userContentController == nil, "\(controller.userContentController!) has not been deallocated")
+                        controller.userContentController?.ensureObjectDeallocated(after: 1, do: .assert)
                     }
                 }
             }
@@ -462,12 +465,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             (tabExtension as? (any NSCodingExtension))?.awakeAfter(using: decoder)
         }
         return self
-    }
-
-    func encodeExtensions(with coder: NSCoder) {
-        for tabExtension in self.extensions {
-            (tabExtension as? (any NSCodingExtension))?.encode(using: coder)
-        }
     }
 
     @MainActor
@@ -568,8 +565,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @Published private(set) var audioStateTest: WebView.AudioState = .unmuted(isPlayingAudio: false)
 
     // MARK: - Tab Suspension
-
-    @Published private(set) var isSuspended: Bool
 
     var audioStatePublisher: AnyPublisher<WebView.AudioState, Never> {
         webView.audioStatePublisher
@@ -1279,6 +1274,19 @@ extension Tab {
     }
 }
 
+// MARK: - Autoplay
+
+extension Tab {
+
+    var mustDisplayAutoplayPolicy: Bool {
+        guard featureFlagger.isFeatureOn(.autoplayPolicy), let targetURL = content.urlForWebView else {
+            return false
+        }
+
+        return targetURL.isHttp || targetURL.isHttps
+    }
+}
+
 // MARK: -
 
 extension Tab: UserContentControllerDelegate {
@@ -1584,37 +1592,19 @@ extension Tab: TabDataClearing {
 
 extension Tab {
 
-    // Creates a fresh, unloaded Tab to hold the slot. Because it never navigates,
-    // no web content process is spawned. The old Tab (and its WKWebView) is released
-    // when replaceTab assigns the new one, letting the OS reclaim the process memory.
-    @MainActor
-    func makeSuspendedTab() -> Tab? {
-        guard case .url(let url, _, _) = content else {
-            return nil
+    /// Creates an UnloadedTab to hold the slot. Because it never navigates,
+    /// no web content process is spawned. The old Tab (and its WKWebView) is released
+    /// when replaceTab assigns the new one, letting the OS reclaim the process memory.
+    func makeSuspendedTab() -> UnloadedTab {
+        let unloadedTab = UnloadedTab(from: self.makeRestorationData())
+        unloadedTab.isSuspended = true
+
+        if let snapshotsExtension = self.tabSnapshots {
+            snapshotsExtension.shouldClearSnapshotOnDeinit = false
         }
 
-        let suspendedTab = Tab(
-            content: .url(url, source: .pendingStateRestoration),
-            title: title,
-            favicon: favicon,
-            interactionStateData: getActualInteractionStateData(),
-            shouldLoadInBackground: false,
-            burnerMode: burnerMode,
-            isSuspended: true,
-            lastSelectedAt: lastSelectedAt
-        )
-        return suspendedTab
+        return unloadedTab
     }
-
-    /// Resumes a suspended tab by loading its content URL.
-    @MainActor
-    func resume() {
-        guard isSuspended else { return }
-        isSuspended = false
-        // Use `webViewDisplayed` since `contentUpdated` creates a new local history entry.
-        reloadIfNeeded(source: .webViewDisplayed)
-    }
-
 }
 
 // "protected" properties meant to access otherwise private properties from Tab extensions

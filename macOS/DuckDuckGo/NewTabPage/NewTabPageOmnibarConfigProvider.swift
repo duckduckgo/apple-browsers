@@ -75,9 +75,9 @@ final class NewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSet
 }
 
 final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
-
     private enum Key: String {
         case newTabPageOmnibarMode
+        case newTabPageSelectedModelId
     }
 
     private enum Constants: Int {
@@ -90,6 +90,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let firePixel: (PixelKitEvent) -> Void
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
+    @Published private var hasExcessChats = false
+    private var aiChatsProviderCancellable: AnyCancellable?
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
@@ -157,6 +159,31 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
     }
 
+    var isAIChatToolsEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpChatTools)
+    }
+
+    var selectedModelId: String? {
+        get {
+            do {
+                return try keyValueStore.object(forKey: Key.newTabPageSelectedModelId.rawValue) as? String
+            } catch {
+                Logger.newTabPageOmnibar.error("Failed to retrieve selectedModelId from keyValueStore: \(error.localizedDescription)")
+                return nil
+            }
+        }
+        set {
+            do {
+                try keyValueStore.set(newValue, forKey: Key.newTabPageSelectedModelId.rawValue)
+                if newValue != nil {
+                    PixelKit.fire(AIChatPixel.aiChatNtpModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                }
+            } catch {
+                Logger.newTabPageOmnibar.error("Failed to set selectedModelId in keyValueStore: \(error.localizedDescription)")
+            }
+        }
+    }
+
     var showCustomizePopover: Bool {
         get {
             // We no longer present the tooltip
@@ -164,6 +191,31 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         }
         set {
         }
+    }
+
+    var showViewAllAiChats: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
+            && featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
+            && hasExcessChats
+    }
+
+    var showViewAllAiChatsPublisher: AnyPublisher<Bool, Never> {
+        $hasExcessChats
+            .map { [weak self] hasExcess in
+                guard let self else { return false }
+                return self.featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
+                    && self.featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
+                    && hasExcess
+            }
+            .eraseToAnyPublisher()
+    }
+
+    func configure(aiChatsProvider: NewTabPageOmnibarAiChatsProviding) {
+        aiChatsProviderCancellable = aiChatsProvider.hasExcessChatsPublisher
+            .sink { [weak self] hasExcess in
+                guard let self else { return }
+                self.hasExcessChats = hasExcess
+            }
     }
 
 }

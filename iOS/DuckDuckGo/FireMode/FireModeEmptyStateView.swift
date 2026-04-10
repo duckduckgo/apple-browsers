@@ -40,6 +40,15 @@ struct FireModeEmptyStateView: View {
                 return UserText.fireModeEmptyStateTitle
             }
         }
+        
+        var includeBullets: Bool {
+            switch self {
+            case .tab:
+                return false
+            case .tabSwitcher(let onNewFireTab):
+                return true
+            }
+        }
     }
 
     // MARK: - Variables
@@ -106,8 +115,10 @@ struct FireModeEmptyStateView: View {
 
     private var contentCard: some View {
         VStack(spacing: Constants.cardContentSpacing) {
-            bulletPoints
-            separator
+            if type.includeBullets {
+                bulletPoints
+                separator
+            }
             infoFooter
             newFireTabButton
         }
@@ -158,7 +169,7 @@ struct FireModeEmptyStateView: View {
                 .padding(.top, Constants.iconTopPadding)
                 .foregroundColor(Color(designSystemColor: .iconsTertiary))
             Text(UserText.fireModeEmptyStateDescription)
-                .daxFootnoteRegular()
+                .daxSubheadRegular()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             Spacer()
         }

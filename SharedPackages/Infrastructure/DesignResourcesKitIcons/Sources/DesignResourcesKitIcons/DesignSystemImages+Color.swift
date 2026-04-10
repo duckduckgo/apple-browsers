@@ -18,6 +18,11 @@
 
 public extension DesignSystemImages {
     enum Color {
+        public enum Size12 {
+            public static var chat: DesignSystemImage { .init(resource: .chatColor12) }
+            public static var chatPinned: DesignSystemImage { .init(resource: .chatPinned12) }
+        }
+
         public enum Size16 {
             public static var accessibility: DesignSystemImage { .init(resource: .accessibilityColor16) }
             public static var addToDock: DesignSystemImage { .init(resource: .addToDockColor16) }
@@ -41,7 +46,8 @@ public extension DesignSystemImages {
             public static var calendarToday: DesignSystemImage { .init(resource: .calendarTodayColor16) }
             public static var calendarWeek: DesignSystemImage { .init(resource: .calendarWeekColor16) }
             public static var calendarYesterday: DesignSystemImage { .init(resource: .calendarYesterdayColor16) }
-            public static var check: DesignSystemImage { .init(resource: .checkColor16) }
+            public static var chat: DesignSystemImage { .init(resource: .chatColor16) }
+            public static var chatPinned: DesignSystemImage { .init(resource: .chatPinned16) }
             public static var cookie: DesignSystemImage { .init(resource: .cookieColor16) }
             public static var cookieBlocked: DesignSystemImage { .init(resource: .cookieBlockedColor16) }
             public static var dashboard: DesignSystemImage { .init(resource: .dashboardColor16) }
@@ -126,6 +132,7 @@ public extension DesignSystemImages {
             public static var aiGeneral: DesignSystemImage { .init(resource: .aiGeneralColor24) }
             public static var announce: DesignSystemImage { .init(resource: .announceColor24) }
             public static var appTP: DesignSystemImage { .init(resource: .appTPColor24) }
+            public static var appDuckDuckGo: DesignSystemImage { .init(resource: .appDuckDuckGo24) }
             public static var appearance: DesignSystemImage { .init(resource: .appearanceColor24) }
             public static var askSiri: DesignSystemImage { .init(resource: .askSiriColor24) }
             public static var autofill: DesignSystemImage { .init(resource: .autofillColor24) }

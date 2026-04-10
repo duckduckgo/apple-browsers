@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKitTestsUtils
 import WebKit
 import XCTest
 @testable import NewTabPage
@@ -40,9 +41,9 @@ final class NewTabPageUserScriptTests: XCTestCase {
         let barHandler = try XCTUnwrap(script.handler(forMethodNamed: "bar"))
         let bazHandler = try XCTUnwrap(script.handler(forMethodNamed: "baz"))
 
-        let foo = try await fooHandler([], WKScriptMessage())
-        let bar = try await barHandler([], WKScriptMessage())
-        let baz = try await bazHandler([], WKScriptMessage())
+        let foo = try await fooHandler([], WKScriptMessage.mock())
+        let bar = try await barHandler([], WKScriptMessage.mock())
+        let baz = try await bazHandler([], WKScriptMessage.mock())
 
         XCTAssertEqual(try XCTUnwrap(foo as? SampleEncodable), SampleEncodable(value: "foo"))
         XCTAssertEqual(try XCTUnwrap(bar as? SampleEncodable), SampleEncodable(value: "bar"))
@@ -61,7 +62,7 @@ final class NewTabPageUserScriptTests: XCTestCase {
         ])
 
         let fooHandler = try XCTUnwrap(script.handler(forMethodNamed: "foo"))
-        let foo = try await fooHandler([], WKScriptMessage())
+        let foo = try await fooHandler([], WKScriptMessage.mock())
 
         XCTAssertEqual(try XCTUnwrap(foo as? SampleEncodable), SampleEncodable(value: "bar"))
     }

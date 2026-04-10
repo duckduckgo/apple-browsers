@@ -69,6 +69,9 @@ extension Tab: NavigationResponder {
 
             .struct(redirectNavigationResponder),
 
+            // set autoplay policy based on user preferences
+            .weak(nullable: self.autoplayPolicy),
+
             // ensure Content Blocking Rules are applied before navigation
             .weak(nullable: self.contentBlockingAndSurrogates),
             // update click-to-load state
@@ -93,9 +96,12 @@ extension Tab: NavigationResponder {
             // Internal Feedback Form
             .weak(nullable: self.internalFeedbackForm),
 
+            // Tab Suspension
+            .weak(nullable: self.tabSuspension),
+
             // should be the last, for Unit Tests navigation events tracking
             .struct(nullable: testsClosureNavigationResponder)
-            // !! don‘t add Tab Extensions here !!
+            // !! don't add Tab Extensions after this line !!
         )
 
         newWindowPolicyDecisionMakers = [NewWindowPolicyDecisionMaking?](arrayLiteral:

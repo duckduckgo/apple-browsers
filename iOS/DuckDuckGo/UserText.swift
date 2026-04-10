@@ -44,10 +44,11 @@ public struct UserText {
     public static let actionDelete = NSLocalizedString("action.title.delete", value: "Delete", comment: "Delete action - button shown in alert")
     public static let actionBookmark = NSLocalizedString("action.title.bookmark", value: "Bookmark", comment: "Confirmation of Add to Bookmarks action in Add All Open Tabs to Bookmarks alert")
     public static let actionNewTab = NSLocalizedString("action.title.newTabAction", value: "New Tab", comment: "Create New Tab action")
+    public static let actionNewFireTab = NotLocalizedString("action.title.newFireTabAction", value: "New Fire Tab", comment: "Create New Fire Tab action")
     public static let actionNewTabForUrl = NSLocalizedString("action.title.newTabForUrl", value: "Open in New Tab", comment: "Open in New Tab action")
+    public static let actionNewFireTabForUrl = NotLocalizedString("action.title.newFireTabForUrl", value: "Open in a Fire Tab", comment: "Open in New Fire Tab action")
     public static let actionNewBackgroundTabForUrl = NSLocalizedString("action.title.newBackgroundTabForUrl", value: "Open in Background", comment: "Open in New Background Tab action")
     public static let actionForgetAll = NSLocalizedString("action.title.forgetAll", value: "Clear Tabs and Data", comment: "")
-    public static let actionForgetAllWithAIChat = NSLocalizedString("action.title.forgetAllWithAIChat", value: "Clear Tabs, Data, and Duck.ai Chats", comment: "Fire button title when AI chat clearing is enabled")
     public static let actionForgetAllDone = NSLocalizedString("action.title.forgetAllDone", value: "Tabs and data cleared", comment: "Confirmation message")
 
     // MARK: Scoped Fire Confirmation
@@ -80,12 +81,27 @@ public struct UserText {
     public static let fireModeEmptyStateBulletTroubleshoot = NotLocalizedString("fire.mode.empty.state.bullet.troubleshoot", value: "Troubleshoot websites", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
     public static let fireModeEmptyStateDescription = NotLocalizedString("fire.mode.empty.state.description", value: "Fire Tabs are isolated from other browser data, and their data is burned when you close them all. They have the same tracking protection as other tabs.", comment: "Description explaining how Fire Tabs work on the empty state screen")
     public static let fireModeEmptyStateNewFireTab = NotLocalizedString("fire.mode.empty.state.new.fire.tab", value: "New Fire Tab", comment: "Button label to create a new Fire Tab on the empty state screen")
-    
+
+    // MARK: Fire Mode NTP Promotion
+
+    public static let fireModePromotionTitle = NotLocalizedString("fire.mode.promotion.title", value: "Try Fire Tabs", comment: "Title for promotion element for pushing users to try fire mode.")
+    public static let fireModeNTPPromotionDescription = NotLocalizedString("fire.mode.ntp.promotion.description", value: "Browse without saving local history or sign in to sites with a different account.", comment: "Description for the Fire Mode promotion card shown on the new tab page")
+    public static let fireModeNTPPromotionPrimaryAction = NotLocalizedString("fire.mode.ntp.promotion.primary.action", value: "Try Fire Tabs", comment: "Primary action button on the Fire Mode promotion card that opens Fire Mode")
+    public static let fireModeNTPPromotionDismiss = NotLocalizedString("fire.mode.ntp.promotion.dismiss", value: "Not Now", comment: "Dismiss button on the Fire Mode promotion card on the new tab page")
+
+    // MARK: Fire Mode Menu Promotion
+
+    public static let fireModeMenuPromotionBadge = NotLocalizedString("fire.mode.menu.promotion.badge", value: "New", comment: "Badge label on the Fire Mode promotion entry in the browsing menu")
+
     // MARK: - Tab Switcher Fire Mode
     public static let openNewTab = NotLocalizedString("tab.open.new", value: "Open new tab", comment: "Accessibility label on tab cell")
     public static let openNewFireTab = NotLocalizedString("tab.open.newFireTab", value: "Open fire tab", comment: "Accessibility label on tab cell")
     public static let closeFireTab = NotLocalizedString("tab.close.closeFireTab", value: "Close fire tab", comment: "Accessibility label on tab cell")
     public static let closeNewTab = NotLocalizedString("tab.close.closeNewTab", value: "Close tab", comment: "Accessibility label on tab cell")
+
+    // MARK: - Tab Cell Accessibility
+    public static let tabCellCloseButtonAccessibility = NSLocalizedString("tab.cell.closeButton.accessibility", value: "Close Tab", comment: "Accessibility label for the close button on a tab cell")
+    public static let tabCellUnreadAccessibility = NSLocalizedString("tab.cell.unread.accessibility", value: "Tab Unread", comment: "Accessibility label for the unread indicator on a tab cell")
     public static let newTabTitle = NotLocalizedString("tab.new.title", value: "New Tab", comment: "New tab title")
     public static let fireTabTitle = NotLocalizedString("tab.fire.title", value: "Fire Tab", comment: "Fire tab title")
 
@@ -1226,6 +1242,9 @@ public struct UserText {
     public static let simplifiedSyncTurnOffTitle = NotLocalizedString("sync.simplified.turn.off.title", value: "Turn Off Sync & Backup?", comment: "Alert title when turning off sync")
     public static let simplifiedSyncTurnOffMessage = NotLocalizedString("sync.simplified.turn.off.message", value: "Your bookmarks and passwords on this device won't be affected.", comment: "Alert message when turning off sync")
     public static let simplifiedSyncTurnOffAction = NotLocalizedString("sync.simplified.turn.off.action", value: "Turn Off", comment: "Alert button to confirm turning off sync")
+    public static let simplifiedCodeCopiedToast = NotLocalizedString("sync.simplified.code.copied.toast", value: "Code copied", comment: "Toast message shown after copying sync code to clipboard")
+    public static let simplifiedRecoveryCodeCopiedToast = NotLocalizedString("sync.simplified.recovery.code.copied.toast", value: "Recovery code copied", comment: "Toast message shown after copying recovery code to clipboard from settings")
+    public static let simplifiedSyncSetupFailedToast = NotLocalizedString("sync.simplified.setup.failed.toast", value: "Couldn't enable Sync & Backup", comment: "Toast message shown when sync setup fails")
 
     // MARK: Sync Errors
     static let syncLimitExceededTitle = NSLocalizedString("prefrences.sync.limit-exceeded-title", value: "Sync Paused", comment: "Title for sync limits exceeded warning")
@@ -1530,19 +1549,14 @@ public struct UserText {
     public static let settingsGPC = NSLocalizedString("settings.gpc", value: "Global Privacy Control (GPC)", comment: "Settings screen cell text for GPC")
     public static let settingsCookiePopups = NSLocalizedString("settings.cookie.popups", value: "Manage Cookie Pop-ups", comment: "Settings screen cell text for Cookie popups")
     public static let settingsUnprotectedSites = NSLocalizedString("settings.unprotected.sites", value: "Unprotected Sites", comment: "Settings screen cell text for Unprotected Sites")
-    public static let settingsFireproofSites = NSLocalizedString("settings.fireproof.sites", value: "Fireproof Sites", comment: "Settings screen cell text for Fireproof Sites")
     public static let settingsFireproofedSites = NSLocalizedString("settings.fireproofed.sites", value: "Fireproofed Sites", comment: "Settings screen cell text for Fireproofed Sites")
     public static func settingsFireproofedSitesSubtitle(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "settings.fireproofed.sites.subtitle", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
     }
-    public static let settingsClearData = NSLocalizedString("settings.clear.data", value: "Automatically Clear Data", comment: "Settings screen cell text for Automatically Clearing Data")
     public static let settingsAutomaticDataClearing = NSLocalizedString("settings.automatic.data.clearing.title", value: "Automatic Data Clearing", comment: "Settings row title for automatic data clearing")
     public static let settingsDataClearingDescription = NSLocalizedString("settings.data.clearing.description", value: "Deleting your data can help protect your privacy online. Use the Fire Button to clear data manually, or set up automatic clearing.", comment: "Data Clearing settings header description")
     public static let settingsClearBrowsingData = NSLocalizedString("settings.clear.browsing.data", value: "Clear Browsing Data", comment: "Button to clear browsing data")
-    public static let settingsAutoClearTabsAndData = NSLocalizedString("settings.autoclear.tabs.and.data", value: "Clear Tabs and Data", comment: "Autoclear action option to clear tabs and data")
-    public static let settingsAutoClearTabsAndDataWithAIChat = NSLocalizedString("settings.autoclear.tabs.and.data.with.aichat", value: "Clear Tabs, Data, and Duck.ai Chats", comment: "Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled")
-    public static let settingsClearAIChatHistory = NSLocalizedString("settings.clear.aichat.history.title", value: "Clear Duck.ai Chats", comment: "Settings screen cell text for clearing AI chat history")
     public static let settingsClearAIChatHistoryFooter = NSLocalizedString("settings.clear.aichat.history.footer", value: "Fire Button will also delete Duck.ai history, including pinned chats.", comment: "Settings screen footer text explaining that Fire Button also clears AI chat history")
 
     // MARK: - Auto Clear Settings
@@ -1589,9 +1603,7 @@ public struct UserText {
     public static let escapeHatchReturnToAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.accessibility.label", value: "Return to %@", comment: "Accessibility label for escape hatch card; %@ is the tab title")
     public static let escapeHatchReturnToWithSubtitleAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.withSubtitle.accessibility.label", value: "Return to %@, %@", comment: "Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain")
     public static let escapeHatchAccessibilityHint = NSLocalizedString("escapeHatch.accessibility.hint", value: "Switches to this tab", comment: "Accessibility hint for the escape hatch card")
-
-    public static let settingsDataClearingForgetAllFootnote = NSLocalizedString("settings.data.clear.forget.all.footnote", value: "Clears all tabs and data for any sites you haven't fireproofed.", comment: "Clear data button explanation")
-    public static let settingsDataClearingForgetAllWithAiChatFootnote = NSLocalizedString("settings.data.clear.forget.all.duck.ai.footnote", value: "Clears all tabs, Duck.ai chats, and data for any sites you haven't fireproofed.", comment: "Clear data button explanation")
+    public static let escapeHatchFireTabTitle = NotLocalizedString("escapeHatch.fireTab.title", value: "Last used Fire Tab", comment: "Title shown on the escape hatch card when the target is a fire tab")
 
     // Subscription Section
     public static let settingsSubscriptionSection = NSLocalizedString("settings.subscription.Section", value: "DuckDuckGo Subscription", comment: "Product name for the subscription bundle")
@@ -2146,6 +2158,11 @@ public struct UserText {
     public static let aiChatQuickActionSummarize = NSLocalizedString("duckai.quick.action.summarize", value: "Summarize This Page", comment: "Title for the summarize quick action chip in Duck.ai contextual sheet")
     public static let aiChatQuickActionSummarizePage = NotLocalizedString("duckai.quick.action.summarize.page", value: "Summarize Page", comment: "Title for the summarize page quick action chip in the improved Duck.ai contextual sheet")
     public static let aiChatQuickActionAttach = NSLocalizedString("duckai.quick.action.attach", value: "Attach Page Content", comment: "Title for the attach page content quick action chip in Duck.ai contextual sheet")
+
+    // MARK: - AI Chat Recent Chats Popup
+    public static let aiChatRecentChatsButtonAccessibility = NotLocalizedString("duckai.contextual.recent.chats.button", value: "Recent Chats", comment: "Accessibility label for the recent chats button in the Duck.ai contextual sheet header")
+    public static let aiChatRecentChatsSectionTitle = NotLocalizedString("duckai.contextual.recent.chats.section", value: "Recent Chats", comment: "Section header in the recent chats popup")
+    public static let aiChatViewAllChats = NotLocalizedString("duckai.contextual.view.all.chats", value: "View all chats", comment: "Action to view all chats in the recent chats popup")
 
     // MARK: - AI Chat Context Chip
     public static let aiChatAttachPageContent = NSLocalizedString("duckai.attach.page.content", value: "Attach Page Content", comment: "Menu option to attach current page content to Duck.ai chat")

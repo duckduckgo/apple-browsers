@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 
 extension TabCollection: NSSecureCoding {
@@ -23,15 +24,61 @@ extension TabCollection: NSSecureCoding {
     static var supportsSecureCoding: Bool { true }
 
     convenience init?(coder decoder: NSCoder) {
-        guard let tabs = decoder.decodeObject(of: [NSArray.self, Tab.self],
-                                              forKey: NSKeyedArchiveRootObjectKey) as? [Tab] else {
+        // Remap Tab's module-qualified class name to TabRestorationData so we can decode
+        // archives from old versions (actual Tab objects) and current version (TabRestorationData
+        // encoded under Tab's class name for rollback compatibility).
+        if let unarchiver = decoder as? NSKeyedUnarchiver {
+            unarchiver.setClass(TabRestorationData.self, forClassName: NSStringFromClass(Tab.self))
+        }
+
+        guard let restorationDataArray = decoder.decodeObject(
+            of: [NSArray.self, TabRestorationData.self],
+            forKey: NSKeyedArchiveRootObjectKey
+        ) as? [TabRestorationData] else {
+            if let unarchiver = decoder as? NSKeyedUnarchiver {
+                unarchiver.setClass(Tab.self, forClassName: NSStringFromClass(Tab.self))
+            }
             return nil
         }
+
+        if let unarchiver = decoder as? NSKeyedUnarchiver {
+            unarchiver.setClass(Tab.self, forClassName: NSStringFromClass(Tab.self))
+        }
+
+        let tabs: [AnyTab] = restorationDataArray.map { .unloaded(UnloadedTab(from: $0)) }
         self.init(tabs: tabs)
     }
 
     func encode(with coder: NSCoder) {
-        coder.encode(tabs, forKey: NSKeyedArchiveRootObjectKey)
+        // Encode TabRestorationData under Tab's module-qualified class name so that:
+        // - Old binaries (rollback) can decode it via decodeObject(of: [Tab.self]) which
+        //   matches against NSStringFromClass(Tab.self) = "DuckDuckGo_Privacy_Browser.Tab"
+        // - New binaries can decode it via the setClass remapping in init?(coder:)
+        if let archiver = coder as? NSKeyedArchiver {
+            archiver.setClassName(NSStringFromClass(Tab.self), for: TabRestorationData.self)
+        }
+
+        let restorationData: [TabRestorationData] = tabs.compactMap { tab in
+            switch tab {
+            case .loaded(let tab):
+                guard tab.webView.configuration.websiteDataStore.isPersistent else { return nil }
+                return tab.makeRestorationData()
+            case .unloaded(let unloaded):
+                guard unloaded.isPersistent else { return nil }
+                return TabRestorationData(
+                    uuid: unloaded.uuid,
+                    content: unloaded.content,
+                    title: unloaded.title,
+                    favicon: unloaded.favicon,
+                    interactionStateData: unloaded.interactionStateData,
+                    lastSelectedAt: unloaded.lastSelectedAt,
+                    localHistoryIDs: unloaded.localHistoryIDs,
+                    tabSnapshotIdentifier: unloaded.tabSnapshotIdentifier
+                )
+            }
+        }
+
+        coder.encode(restorationData, forKey: NSKeyedArchiveRootObjectKey)
     }
 
 }

@@ -88,6 +88,8 @@ protocol TabExtensionDependencies {
     var aiChatSessionStore: AIChatSessionStoring { get }
     var tabCrashAggregator: TabCrashAggregator { get }
     var tabsPreferences: TabsPreferences { get }
+    var autoplayPreferences: AutoplayPreferences { get }
+    var permissionManager: PermissionManagerProtocol { get }
     var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
 }
 
@@ -201,6 +203,14 @@ extension TabExtensionsBuilder {
                 webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences
             )
 
+        }
+
+        add {
+            AutoplayPolicyTabExtension(
+                autoplayPreferences: dependencies.autoplayPreferences,
+                featureFlagger: dependencies.featureFlagger,
+                permissionManager: dependencies.permissionManager
+            )
         }
 
         add {
@@ -341,9 +351,14 @@ extension TabExtensionsBuilder {
 
         add {
             TabSuspensionExtension(
-                webViewPublisher: args.webViewFuture,
+                tabID: args.tabID,
+                webViewPublisher: args.webViewFuture.map { $0 as TabSuspensionWebViewChecking },
                 contentPublisher: args.contentPublisher,
+                scriptsPublisher: userScripts.compactMap { $0 },
                 featureFlagger: dependencies.featureFlagger,
+                aiChatSessionStore: dependencies.aiChatSessionStore,
+                privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                tld: dependencies.privacyFeatures.contentBlocking.tld,
                 isTabPinned: args.isTabPinned
             )
         }

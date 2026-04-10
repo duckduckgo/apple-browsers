@@ -21,41 +21,35 @@ import Core
 import Foundation
 import PrivacyConfig
 
-/// Protocol for resolving enhanced data clearing feature state.
-///
-/// Enhanced data clearing is only enabled when both `burnSingleTab` and `enhancedDataClearingSettings`
-/// feature flags are enabled. This supports dependent gradual rollout where `enhancedDataClearingSettings`
-/// is rolled out at 100% while `burnSingleTab` is rolled out to x%.
 protocol DataClearingCapable {
-    /// Whether the enhanced data clearing settings UI should be shown.
-    /// This requires both `burnSingleTab` and `enhancedDataClearingSettings` feature flags to be enabled.
-    var isEnhancedDataClearingEnabled: Bool { get }
-
-    /// Whether the burn single tab feature is enabled.
-    var isBurnSingleTabEnabled: Bool { get }
+    var isFireButtonRefinementsEnabled: Bool { get }
 }
 
 enum DataClearingCapability {
-    static func create(using featureFlagger: FeatureFlagger) -> DataClearingCapable {
-        DataClearingDefaultCapability(featureFlagger: featureFlagger)
+    static func create(using featureFlagger: FeatureFlagger,
+                       fireModeCapability: FireModeCapable = FireModeCapability.create()) -> DataClearingCapable {
+        DataClearingDefaultCapability(featureFlagger: featureFlagger, fireModeCapability: fireModeCapability)
     }
 }
 
 struct DataClearingDefaultCapability: DataClearingCapable {
     private let featureFlagger: FeatureFlagger
+    private let fireModeCapability: FireModeCapable
 
-    init(featureFlagger: FeatureFlagger) {
+    init(featureFlagger: FeatureFlagger, fireModeCapability: FireModeCapable) {
         self.featureFlagger = featureFlagger
+        self.fireModeCapability = fireModeCapability
     }
 
-    var isEnhancedDataClearingEnabled: Bool {
-        // Enhanced data clearing is only enabled with burnSingleTab. But can be disabled on its own.
-        // This supports dependent gradual rollout (Rolling out two features to the same cohort of users.
-        // enhancedDataClearingSettings rolled out at 100%, while burnSingleTab rolled out to x%.
-        featureFlagger.isFeatureOn(for: FeatureFlag.enhancedDataClearingSettings) && isBurnSingleTabEnabled
-    }
-
-    var isBurnSingleTabEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.burnSingleTab)
+    var isFireButtonRefinementsEnabled: Bool {
+        if #available(iOS 17, *) {
+            // On iOS 17+ the refinements are gated on fire mode being enabled.
+            fireModeCapability.isFireModeEnabled
+                && featureFlagger.isFeatureOn(for: FeatureFlag.fireButtonRefinements)
+        } else {
+            // Fire mode requires iOS 17+ so it's never enabled on older OSes,
+            // but the refinements should still apply independently.
+            featureFlagger.isFeatureOn(for: FeatureFlag.fireButtonRefinements)
+        }
     }
 }

@@ -109,8 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Karty a údaje boli vymazané";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Vymazať karty, údaje a chaty Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otvoriť na pozadí";
@@ -3342,11 +3340,7 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Vymazať";
 
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Vymazať karty a údaje";
 
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Vymazať karty, údaje a chaty Duck.ai";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Zatvor všetky otvorené karty";
@@ -3414,14 +3408,10 @@
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button tiež vymaže históriu Duck.ai vrátane pripnutých rozhovorov.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Vymazať chaty Duck.ai";
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Vymaž údaje o prehliadaní";
 
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Automaticky vymazať údaje";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Dokonči svoje nastavenie";
@@ -3441,11 +3431,7 @@
 /* Settings title for the customize section */
 "settings.customize" = "Prispôsobiť";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Zatvorí všetky karty, chaty Duck.ai a vymaže údaje zo všetkých stránok, ktoré si neochránil/-a ochranou Fireproof.";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Vymaže všetky karty a údaje pre všetky stránky, ktoré si neochránil/-a ochranou Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Vymazanie údajov";
@@ -3505,8 +3491,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animácia tlačidla ohňa";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Zabezpečené stránky";
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Stránky s ochranou Fireproof";
@@ -4188,6 +4172,12 @@
 
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Je nám ľúto, ale služba Synchronizácia a zálohovanie už nie je v tejto verzii aplikácie k dispozícii. Ak chcete pokračovať, aktualizujte DuckDuckGo na najnovšiu verziu.";
+
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Zatvoriť karta";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Neprečítaná karta";
 
 /* Accessibility label on remove button */
 "tab.close.home" = "Zatvorte kartu domovskej stránky";

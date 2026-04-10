@@ -99,6 +99,7 @@ class FireExecutor: FireExecuting {
     private let historyManager: HistoryManaging
     private let featureFlagger: FeatureFlagger
     private let fireModeCapability: FireModeCapable
+    private let dataClearingCapability: DataClearingCapable
     private let appSettings: AppSettings
     private let aiChatSyncCleaner: AIChatSyncCleaning
     let pixelsReporter: DataClearingPixelsReporter
@@ -132,6 +133,7 @@ class FireExecutor: FireExecuting {
          appSettings: AppSettings,
          privacyStats: PrivacyStatsProviding? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter(),
          wideEvent: WideEventManaging? = nil,
          idManager: DataStoreIDManaging = DataStoreIDManager.shared) {
@@ -142,10 +144,13 @@ class FireExecutor: FireExecuting {
         self.featureFlagger = featureFlagger
         self.idManager = idManager
         self.fireModeCapability = FireModeCapability.create()
+        self.dataClearingCapability = DataClearingCapability.create(using: featureFlagger)
         self.historyCleanerProvider = historyCleanerProvider ??
         { dataStore in return HistoryCleaner(featureFlagger: featureFlagger,
                                              privacyConfig: privacyConfigurationManager,
-                                             websiteDataStore: dataStore)}
+                                             websiteDataStore: dataStore,
+                                             nativeStorageHandler: duckAiNativeStorageHandler,
+                                             featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))}
         self.appSettings = appSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.pixelsReporter = pixelsReporter
@@ -349,8 +354,11 @@ class FireExecutor: FireExecuting {
             // Pass false to clearTabHistory to preserve tab history while burning
             // As tab history is needed by other processes running in parallel
             // didFinishBurning(fireRequest:) manually clears data after burn is complete
-            // Close the tab and append a new empty tab, reusing existing one if exists
-            tabManager.closeTabAndNavigateToHomepage(viewModel.tab, clearTabHistory: false)
+            if dataClearingCapability.isFireButtonRefinementsEnabled && viewModel.tab.isAITab {
+                tabManager.closeTabAndOpenNewChat(viewModel.tab, clearTabHistory: false)
+            } else {
+                tabManager.closeTabAndNavigateToHomepage(viewModel.tab, clearTabHistory: false)
+            }
 
             dataClearingWideEventService?.start(.clearFaviconCache)
             let faviconResult = favicons.removeTabFavicons(forDomains: domains)

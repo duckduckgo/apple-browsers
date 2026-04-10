@@ -354,11 +354,11 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/task/1213314048601761
     case fireMode
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
+    case fireButtonRefinements
+
     /// https://app.asana.com/1/137249556945/project/1202500774821704/task/1212559012504218
     case autoplayBlocking
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213554455515126?focus=true
-    case customXSafariRedirectHandling
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213617478454569?focus=true
     case simplifiedSyncSetupExperiment
@@ -382,6 +382,13 @@ public enum FeatureFlag: String {
     case minimalChromeInLandscape
 
     case aiChatNativeStorage
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
+    case aiChatNativeDataAccess
+
+    /// Failsafe feature flag. Filters intermediate redirect URLs from the address bar.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213972422695959
+    case filterAddressBarUpdates
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -641,10 +648,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion)))
         case .fireMode:
             Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireMode)))
+        case .fireButtonRefinements:
+            Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireButtonRefinements)))
         case .autoplayBlocking:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.autoplayBlocking)))
-        case .customXSafariRedirectHandling:
-            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.customXSafariRedirectHandling)))
         case .simplifiedSyncSetupExperiment:
             Config(source: .remoteReleasable(.subfeature(SyncSubfeature.simplifiedSyncSetupExperiment)), cohortType: SimplifiedSyncSetupExperimentCohort.self)
         case .aiChatOmnibarDefaultPosition:
@@ -658,9 +665,13 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatContextualFireButton:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualFireButton)))
         case .minimalChromeInLandscape:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.minimalChromeInLandscape)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.minimalChromeInLandscape)))
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)))
+        case .aiChatNativeDataAccess:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeDataAccess)))
+        case .filterAddressBarUpdates:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.filterAddressBarUpdates)))
         }
     }
 

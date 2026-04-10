@@ -30,8 +30,7 @@ import PixelExperimentKit
 
 final class PrivacyDashboardViewController: UIViewController {
 
-    @IBOutlet private(set) weak var webView: WKWebView!
-
+    let webView: WKWebView = WKWebView()
     public var breakageAdditionalInfo: BreakageAdditionalInfo?
 
     private let privacyDashboardController: PrivacyDashboardController
@@ -70,7 +69,7 @@ final class PrivacyDashboardViewController: UIViewController {
         }
     }
 
-    init?(coder: NSCoder,
+    init(
           privacyInfo: PrivacyInfo?,
           entryPoint: PrivacyDashboardEntryPoint,
           privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -88,8 +87,9 @@ final class PrivacyDashboardViewController: UIViewController {
         self.contentBlockingManager = contentBlockingManager
         self.breakageAdditionalInfo = breakageAdditionalInfo
         self.entryPoint = entryPoint
-        super.init(coder: coder)
-        
+
+        super.init(nibName: nil, bundle: nil)
+
         privacyDashboardController.delegate = self
     }
 
@@ -99,10 +99,26 @@ final class PrivacyDashboardViewController: UIViewController {
 
     public override func viewDidLoad() {
         super.viewDidLoad()
+
+        setupWebView()
+
         privacyDashboardController.setup(for: webView)
         privacyDashboardController.preferredLocale = Bundle.main.preferredLocalizations.first
         
         decorate()
+    }
+
+    private func setupWebView() {
+        webView.translatesAutoresizingMaskIntoConstraints = false
+        webView.preventFlashOnLoad()
+
+        view.addSubview(webView)
+        NSLayoutConstraint.activate([
+            webView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            webView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            webView.topAnchor.constraint(equalTo: view.topAnchor),
+            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
     }
 
     public override func viewDidDisappear(_ animated: Bool) {
@@ -349,7 +365,6 @@ extension PrivacyDashboardViewController {
                                 protectionsState: protectionsState,
                                 reportFlow: source,
                                 siteType: breakageAdditionalInfo.isDesktop ? .desktop : .mobile,
-                                atb: StatisticsUserDefaults().atb ?? "",
                                 model: UIDevice.current.model,
                                 errors: errors,
                                 httpStatusCodes: statusCodes,

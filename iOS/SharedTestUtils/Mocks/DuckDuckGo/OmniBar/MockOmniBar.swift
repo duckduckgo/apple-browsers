@@ -31,7 +31,8 @@ final class MockOmniBar: OmniBar {
     var isBackButtonEnabled: Bool = false
     var isForwardButtonEnabled: Bool = false
     var omniDelegate: (any DuckDuckGo.OmniBarDelegate)?
-    var isPhoneLandscape: Bool = false
+    var isExpandedPhone: Bool = false
+    func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int) { }
     var isTextFieldEditing: Bool = false
     var text: String?
     
@@ -98,13 +99,15 @@ final class MockOmniBar: OmniBar {
         var bookmarksButton: UIButton! = UIButton()
         var aiChatButton: UIButton! = UIButton()
         var menuButton: UIButton! = UIButton()
-        var tabSwitcherContainerView: UIView = UIView()
+        var fireButton: UIButton! = UIButton()
         var refreshButton: UIButton! = UIButton()
         var leftIconContainerView: UIView! = UIView()
         var customIconView: UIImageView = UIImageView()
         var clearButton: UIButton! = UIButton()
         var customizableButton: UIButton! = UIButton()
 
+        var tabSwitcherContainerView: UIView = UIView()
+        func configureForSwipeTemplate(mode: OmniBarLayoutMode, tabCount: Int) { }
         func showSeparator() { }
         func hideSeparator() { }
         func moveSeparatorToTop() { }
@@ -123,6 +126,7 @@ final class MockOmniBar: OmniBar {
         var onClearButtonPressed: (() -> Void)?
         var onPrivacyIconPressed: (() -> Void)?
         var onMenuButtonPressed: (() -> Void)?
+        var onMenuButtonLongPressed: (() -> Void)?
         var onTrackersViewPressed: (() -> Void)?
         var onSettingsButtonPressed: (() -> Void)?
         var onCancelPressed: (() -> Void)?
@@ -134,7 +138,7 @@ final class MockOmniBar: OmniBar {
         var onDismissPressed: (() -> Void)?
         var onFirePressed: (() -> Void)?
         var onPasswordsPressed: (() -> Void)?
-        var onSettingsLongPress: (() -> Void)?
+        var onSettingsButtonLongPressed: (() -> Void)?
         var onCustomizableButtonPressed: (() -> Void)?
         var onAIChatLeftButtonPressed: (() -> Void)?
         var onAIChatBrandingPressed: (() -> Void)?

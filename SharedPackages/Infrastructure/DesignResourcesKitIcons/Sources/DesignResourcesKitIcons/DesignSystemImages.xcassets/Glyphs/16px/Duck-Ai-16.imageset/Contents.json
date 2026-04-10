@@ -3,6 +3,16 @@
     {
       "filename" : "Duck-Ai-16.svg",
       "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "Duck-Ai-Dark-16.svg",
+      "idiom" : "universal"
     }
   ],
   "info" : {

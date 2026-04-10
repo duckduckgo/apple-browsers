@@ -20,6 +20,7 @@ public extension DesignSystemImages {
     enum Glyphs {
         public enum Size12 {
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat12) }
+            public static var aiChatHistory: DesignSystemImage { .init(resource: .aiChatHistory12) }
             public static var aiChatSolid: DesignSystemImage { .init(resource: .aiChatSolid12) }
             public static var app: DesignSystemImage { .init(resource: .app12) }
             public static var arrowCircleLeft: DesignSystemImage { .init(resource: .arrowCircleLeft12) }
@@ -41,6 +42,7 @@ public extension DesignSystemImages {
             public static var chat: DesignSystemImage { .init(resource: .chat12) }
             public static var check: DesignSystemImage { .init(resource: .check12) }
             public static var chip: DesignSystemImage { .init(resource: .chip12) }
+            public static var closeSmall: DesignSystemImage { .init(resource: .closeSmall12) }
             public static var compose: DesignSystemImage { .init(resource: .compose12) }
             public static var cookie: DesignSystemImage { .init(resource: .cookie12) }
             public static var currency: DesignSystemImage { .init(resource: .currency12) }
@@ -206,6 +208,7 @@ public extension DesignSystemImages {
             public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid16) }
             public static var jump: DesignSystemImage { .init(resource: .jump16) }
             public static var jumpRecolorable: DesignSystemImage { .init(resource: .jumpRecolorable16) }
+            public static var keyboard: DesignSystemImage { .init(resource: .keyboard16) }
             public static var keyLogin: DesignSystemImage { .init(resource: .keyLogin16) }
             public static var linkRecolorable: DesignSystemImage { .init(resource: .linkRecolorable16) }
             public static var lock: DesignSystemImage { .init(resource: .lock16) }

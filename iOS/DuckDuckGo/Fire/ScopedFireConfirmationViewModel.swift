@@ -26,6 +26,15 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
 
     // MARK: - Types
 
+    struct FireConfirmationButton {
+        enum Style { case primary, secondary }
+
+        let title: String
+        let style: Style
+        let action: () -> Void
+        let accessibilityIdentifier: String
+    }
+
     enum FireContext {
         /// Standard fire confirmation with "Delete All" and optional "Delete This Tab/Chat" buttons.
         case `default`(daxDialogsManager: DaxDialogsManaging)
@@ -39,24 +48,26 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         static let signOutWarningShowCount = "com.duckduckgo.fire.signOutWarningShowCount"
     }
 
+    private enum AccessibilityIdentifiers {
+        static let deleteAll = "alert.forget-data.confirm"
+        static let thisTab = "Fire.Confirmation.Button.ThisTab"
+    }
+
     private static let maxSubtitleShowCount = 2
 
-    // MARK: - Published Properties
+    // MARK: - Public Properties
 
     /// The subtitle text to display. Computed once during initialization.
     @Published private(set) var subtitle: String?
 
+    let headerTitle: String
+    let showAnimation: Bool
+    let buttons: [FireConfirmationButton]
+
     // MARK: - Private Variables
 
     private let fireContext: FireContext
-    private let onConfirm: (FireRequest) -> Void
     private let onCancel: () -> Void
-    private let tabViewModel: TabViewModel?
-    private let downloadManager: DownloadManaging
-    private let keyValueStore: KeyValueStoring
-    private let appSettings: AppSettings
-    private let source: FireRequest.Source
-    private let browsingMode: BrowsingMode
 
     // MARK: - Initializer
 
@@ -66,72 +77,123 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
          downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager,
          keyValueStore: KeyValueStoring = UserDefaults.standard,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+         dataClearingCapability: DataClearingCapable = DataClearingCapability.create(using: AppDependencyProvider.shared.featureFlagger),
          browsingMode: BrowsingMode,
          onConfirm: @escaping (FireRequest) -> Void,
          onCancel: @escaping () -> Void) {
-        self.tabViewModel = tabViewModel
-        self.source = source
         self.fireContext = fireContext
-        self.downloadManager = downloadManager
-        self.keyValueStore = keyValueStore
-        self.appSettings = appSettings
-        self.browsingMode = browsingMode
-        self.onConfirm = onConfirm
         self.onCancel = onCancel
-        self.subtitle = computeSubtitle()
-    }
 
-    // MARK: - Computed Variables
+        let isRefinementsEnabled = dataClearingCapability.isFireButtonRefinementsEnabled
+        let isSingleChatConfirmation = Self.isSingleChatConfirmation(fireContext: fireContext,
+                                                                     isRefinementsEnabled: isRefinementsEnabled,
+                                                                     tabViewModel: tabViewModel)
 
-    /// Indicates whether the single tab burn option should be shown.
-    /// Returns `true` when a tab view model is available and fire context is default.
-    var canBurnSingleTab: Bool {
-        if case .contextualChat = fireContext { return false }
-        guard let tab = tabViewModel?.tab, tab.supportsTabHistory else {
-            return false
-        }
-        return true
-    }
-
-    var headerTitle: String {
-        if case .contextualChat = fireContext {
-            return UserText.contextualChatDeleteConfirmationTitle
-        }
-        if browsingMode == .fire {
-            return UserText.scopedFireConfirmationAlertFireModeTitle
-        } else {
-            let shouldIncludeAIChat = appSettings.autoClearAIChatHistory
-            return shouldIncludeAIChat ? UserText.scopedFireConfirmationAlertTitleWithAIChat : UserText.scopedFireConfirmationAlertTitle
-        }
-    }
-
-    var primaryButtonTitle: String {
-        if case .contextualChat = fireContext {
-            return UserText.contextualChatDeleteConfirmationButton
-        }
-        return UserText.scopedFireConfirmationDeleteAllButton
-    }
-
-    var tabScopeButtonTitle: String {
-        guard let tab = tabViewModel?.tab, tab.isAITab else {
-            return UserText.scopedFireConfirmationDeleteThisTabButton
-        }
-        return UserText.scopedFireConfirmationDeleteThisChatButton
+        self.headerTitle = Self.computeHeaderTitle(isSingleChatConfirmation: isSingleChatConfirmation,
+                                                   browsingMode: browsingMode,
+                                                   appSettings: appSettings)
+        self.showAnimation = !(isRefinementsEnabled && appSettings.currentFireButtonAnimation == .none)
+        self.buttons = Self.makeButtons(fireContext: fireContext,
+                                        tabViewModel: tabViewModel,
+                                        browsingMode: browsingMode,
+                                        source: source,
+                                        isRefinementsEnabled: isRefinementsEnabled,
+                                        isSingleChatConfirmation: isSingleChatConfirmation,
+                                        onConfirm: onConfirm)
+        self.subtitle = Self.computeSubtitle(fireContext: fireContext,
+                                             tabViewModel: tabViewModel,
+                                             browsingMode: browsingMode,
+                                             isSingleChatConfirmation: isSingleChatConfirmation,
+                                             downloadManager: downloadManager,
+                                             keyValueStore: keyValueStore,
+                                             appSettings: appSettings)
     }
 
     // MARK: - Public Functions
 
-    func burnAllTabs() {
+    func cancel() {
+        onCancel()
+    }
+
+    // MARK: - Button Building
+
+    /// Returns `true` when the dialog should show only a single chat-delete button
+    /// (contextual chat deletion, or AI tab with refinements enabled).
+    private static func isSingleChatConfirmation(fireContext: FireContext,
+                                                 isRefinementsEnabled: Bool,
+                                                 tabViewModel: TabViewModel?) -> Bool {
+        if case .contextualChat = fireContext { return true }
+        if isRefinementsEnabled && tabViewModel?.tab.isAITab == true { return true }
+        return false
+    }
+
+    /// Builds the ordered list of action buttons for the confirmation sheet.
+    ///
+    /// - Contextual chat: single "Delete Chat" button
+    /// - AI tab + refinements: single "Delete This Chat" (tab-scoped)
+    /// - Normal tab + refinements: "Delete This Tab" (primary) then "Delete All" (secondary)
+    /// - Default: "Delete All" (primary), optionally "Delete This Tab" (secondary) if tab supports history
+    private static func makeButtons(fireContext: FireContext,
+                                    tabViewModel: TabViewModel?,
+                                    browsingMode: BrowsingMode,
+                                    source: FireRequest.Source,
+                                    isRefinementsEnabled: Bool,
+                                    isSingleChatConfirmation: Bool,
+                                    onConfirm: @escaping (FireRequest) -> Void) -> [FireConfirmationButton] {
+        // Contextual chat: single "Delete Chat" button calling contextual onDelete
         if case .contextualChat(let onDelete) = fireContext {
-            onDelete()
-            return
+            return [FireConfirmationButton(title: UserText.contextualChatDeleteConfirmationButton,
+                               style: .primary,
+                               action: onDelete,
+                               accessibilityIdentifier: AccessibilityIdentifiers.deleteAll)]
         }
+
+        // AI tab + refinements: single "Delete This Chat" (tab-scoped burn)
+        if isSingleChatConfirmation {
+            return [FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteThisChatButton,
+                               style: .primary,
+                               action: { burnTab(tabViewModel: tabViewModel, source: source, onConfirm: onConfirm) },
+                               accessibilityIdentifier: AccessibilityIdentifiers.thisTab)]
+        }
+
+        let deleteAllAction = { burnAll(browsingMode: browsingMode, source: source, onConfirm: onConfirm) }
+        let canBurnTab = tabViewModel?.tab.supportsTabHistory == true
+
+        // Refinements enabled: "Delete This Tab" (primary) then "Delete All" (secondary)
+        if isRefinementsEnabled && canBurnTab {
+            return [
+                FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteThisTabButton,
+                           style: .primary,
+                           action: { burnTab(tabViewModel: tabViewModel, source: source, onConfirm: onConfirm) },
+                           accessibilityIdentifier: AccessibilityIdentifiers.thisTab),
+                FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteAllButton,
+                           style: .secondary,
+                           action: deleteAllAction,
+                           accessibilityIdentifier: AccessibilityIdentifiers.deleteAll)
+            ]
+        }
+
+        // Default: "Delete All" (primary), optionally "Delete This Tab" (secondary)
+        var buttons = [FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteAllButton,
+                                  style: .primary,
+                                  action: deleteAllAction,
+                                  accessibilityIdentifier: AccessibilityIdentifiers.deleteAll)]
+        if canBurnTab {
+            buttons.append(FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteThisTabButton,
+                                      style: .secondary,
+                                      action: { burnTab(tabViewModel: tabViewModel, source: source, onConfirm: onConfirm) },
+                                      accessibilityIdentifier: AccessibilityIdentifiers.thisTab))
+        }
+        return buttons
+    }
+
+    private static func burnAll(browsingMode: BrowsingMode, source: FireRequest.Source, onConfirm: (FireRequest) -> Void) {
         let scope: FireRequest.Scope = browsingMode == .fire ? .fireMode : .all
         let request = FireRequest(options: .all, trigger: .manualFire, scope: scope, source: source)
         onConfirm(request)
     }
 
-    func burnThisTab() {
+    private static func burnTab(tabViewModel: TabViewModel?, source: FireRequest.Source, onConfirm: (FireRequest) -> Void) {
         guard let tabViewModel else {
             return
         }
@@ -139,11 +201,23 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         onConfirm(request)
     }
 
-    func cancel() {
-        onCancel()
+    // MARK: - Header Title
+
+    private static func computeHeaderTitle(isSingleChatConfirmation: Bool,
+                                           browsingMode: BrowsingMode,
+                                           appSettings: AppSettings) -> String {
+        if isSingleChatConfirmation {
+            return UserText.contextualChatDeleteConfirmationTitle
+        }
+        if browsingMode == .fire {
+            return UserText.scopedFireConfirmationAlertFireModeTitle
+        }
+        return appSettings.autoClearAIChatHistory
+            ? UserText.scopedFireConfirmationAlertTitleWithAIChat
+            : UserText.scopedFireConfirmationAlertTitle
     }
 
-    // MARK: - Private Functions
+    // MARK: - Subtitle
 
     /// Computes the subtitle text for the confirmation dialog.
     ///
@@ -156,7 +230,13 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     /// 5. For AI tabs → show AI-specific description (up to 2 times)
     /// 6. For normal web tabs → show sign out warning (up to 2 times)
     /// 7. Otherwise → return nil
-    private func computeSubtitle() -> String? {
+    private static func computeSubtitle(fireContext: FireContext,
+                                        tabViewModel: TabViewModel?,
+                                        browsingMode: BrowsingMode,
+                                        isSingleChatConfirmation: Bool,
+                                        downloadManager: DownloadManaging,
+                                        keyValueStore: KeyValueStoring,
+                                        appSettings: AppSettings) -> String? {
         if case .contextualChat = fireContext {
             return nil
         }
@@ -168,7 +248,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         }
 
         // Check for ongoing downloads first
-        if hasOngoingDownloads() {
+        if hasOngoingDownloads(downloadManager: downloadManager) {
             return UserText.scopedFireConfirmationDownloadsWarning
         }
 
@@ -189,18 +269,18 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
 
         // Check tab type and show count
         if tabViewModel.tab.isAITab {
-            return aiTabSubtitle()
+            return aiTabSubtitle(isSingleChatConfirmation: isSingleChatConfirmation, appSettings: appSettings)
         } else {
-            return webTabSubtitle()
+            return webTabSubtitle(keyValueStore: keyValueStore)
         }
     }
-    
-    private func hasOngoingDownloads() -> Bool {
+
+    private static func hasOngoingDownloads(downloadManager: DownloadManaging) -> Bool {
         let ongoingDownloads = downloadManager.downloadList.filter { $0.isRunning && !$0.temporary }
         return !ongoingDownloads.isEmpty
     }
-    
-    private func webTabSubtitle() -> String? {
+
+    private static func webTabSubtitle(keyValueStore: KeyValueStoring) -> String? {
         let showCount = keyValueStore.object(forKey: Keys.signOutWarningShowCount) as? Int ?? 0
         
         guard showCount < Self.maxSubtitleShowCount else {
@@ -210,8 +290,9 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         keyValueStore.set(showCount + 1, forKey: Keys.signOutWarningShowCount)
         return UserText.scopedFireConfirmationSignOutWarning
     }
-    
-    private func aiTabSubtitle() -> String? {
+
+    private static func aiTabSubtitle(isSingleChatConfirmation: Bool, appSettings: AppSettings) -> String? {
+        if isSingleChatConfirmation { return nil }
         return appSettings.autoClearAIChatHistory ? nil : UserText.scopedFireConfirmationDeleteThisChatDescription
     }
 }

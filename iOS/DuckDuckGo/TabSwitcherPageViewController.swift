@@ -265,6 +265,7 @@ class TabSwitcherPageViewController: UIViewController {
     }
 
     func refreshCurrentTabIndicators() {
+        guard currentSelection != nil else { return }
         for cell in collectionView.visibleCells {
             guard let tabCell = cell as? TabViewCell,
                   let tab = tabCell.tab else { continue }

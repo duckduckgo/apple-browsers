@@ -123,6 +123,10 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
 
     // MARK: - Migration
 
+    public func isMigrationDone() throws -> Bool {
+        try DuckAiMigrationKey.allKeys.allSatisfy { try isMigrationDone(key: $0) }
+    }
+
     public func isMigrationDone(key: String) throws -> Bool {
         settingsLock.lock()
         defer { settingsLock.unlock() }

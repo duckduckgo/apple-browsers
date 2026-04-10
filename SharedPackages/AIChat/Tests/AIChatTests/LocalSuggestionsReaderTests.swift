@@ -246,6 +246,7 @@ private final class CapturingStorageHandler: DuckAiNativeStorageHandling {
     func listFiles() throws -> [DuckAiFileMetadata] { [] }
     func deleteFile(uuid: String) throws {}
     func deleteAllFiles() throws {}
+    func isMigrationDone() throws -> Bool { false }
     func isMigrationDone(key: String) throws -> Bool { false }
     func markMigrationDone(key: String) throws {}
 }

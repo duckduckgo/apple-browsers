@@ -19,7 +19,7 @@
 import Foundation
 import DuckAiDataStore
 
-/// https://app.asana.com/1/137249556945/project/1209671977594486/task/1213837712627367?focus=true
+/// 
 public protocol DuckAiNativeStorageHandling {
 
     // MARK: - Entries
@@ -49,11 +49,17 @@ public protocol DuckAiNativeStorageHandling {
 
     // MARK: - Migration
 
+    /// Returns `true` only when all migration keys have completed.
+    func isMigrationDone() throws -> Bool
+    /// Returns `true` when the migration for the given key has completed.
     func isMigrationDone(key: String) throws -> Bool
+    /// Marks the migration for the given key as complete.
     func markMigrationDone(key: String) throws
 }
 
 public enum DuckAiMigrationKey {
     public static let chats = "chats"
     public static let files = "files"
+
+    static let allKeys = [chats, files]
 }

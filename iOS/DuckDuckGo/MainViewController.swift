@@ -17,44 +17,57 @@
 //  limitations under the License.
 //
 
-import UIKitExtensions
-import WebKit
-import WidgetKit
+import AIChat
+import Bookmarks
+import BrokenSitePrompt
+import BrowserServicesKit
 import Combine
 import Common
+import Configuration
 import Core
+import DataBrokerProtection_iOS
 import DDGSync
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import Kingfisher
-import BrowserServicesKit
-import Bookmarks
-import Persistence
-import RemoteMessaging
-import PrivacyDashboard
+import NetworkExtension
 import Networking
-import Suggestions
-import Subscription
-import SwiftUI
-import VPN
 import Onboarding
 import os.log
 import PageRefreshMonitor
-import BrokenSitePrompt
-import AIChat
-import NetworkExtension
-import DesignResourcesKit
-import DesignResourcesKitIcons
-import Configuration
+import Persistence
 import PixelKit
-import SystemSettingsPiPTutorial
-import DataBrokerProtection_iOS
-import UserScript
 import PrivacyConfig
+import PrivacyDashboard
+import RemoteMessaging
+import Subscription
+import Suggestions
+import SwiftUI
+import SystemSettingsPiPTutorial
+import UIKitExtensions
+import UserScript
+import VPN
 import WebExtensions
+import WebKit
+import WidgetKit
 
 struct StartupOnboardingDecision {
     let shouldShowOnboarding: Bool
 
-    init(onboardingStatus: LaunchOptionsHandler.OnboardingStatus, tutorialSettings: TutorialSettings) {
+    init(onboardingStatus: LaunchOptionsHandler.OnboardingStatus,
+         tutorialSettings: TutorialSettings,
+         resumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil) {
+        let resumeStepStore: any KeyedStoring<DuckAIOnboardingStoringKeys> = if let resumeStepStore { resumeStepStore } else { UserDefaults.app.keyedStoring() }
+        if resumeStepStore.resumeStep == .duckAIQueryExperimentSelection {
+            shouldShowOnboarding = true
+            return
+        }
+
+        if resumeStepStore.resumeStep == .duckAIAnswerStep {
+            shouldShowOnboarding = false
+            return
+        }
+
         switch onboardingStatus {
         case .notOverridden:
             shouldShowOnboarding = !tutorialSettings.hasSeenOnboarding
@@ -138,7 +151,7 @@ class MainViewController: UIViewController {
     var autoClearShouldRefreshUIAfterClear = true
     private var hasLoadedInitialView = false
     private weak var burningOverlayView: UIView?
-    private var isStartupOnboardingPending = false
+    var isStartupOnboardingPending = false
     private var hasPresentedStartupOnboarding = false
     private lazy var startupOnboardingCover = StartupOnboardingCover(
         parentViewController: self,
@@ -284,6 +297,7 @@ class MainViewController: UIViewController {
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
+    let duckAIOnboardingResumeStepStore: any KeyedStoring<DuckAIOnboardingStoringKeys>
 
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
@@ -391,7 +405,8 @@ class MainViewController: UIViewController {
         darkReaderFeatureSettings: DarkReaderFeatureSettings,
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
-        fireModePromotionEligibility: FireModePromotionCoordinating? = nil
+        fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
+        duckAIOnboardingResumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -434,6 +449,7 @@ class MainViewController: UIViewController {
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.keyValueStore = keyValueStore
+        self.duckAIOnboardingResumeStepStore = if let duckAIOnboardingResumeStepStore { duckAIOnboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
@@ -615,7 +631,8 @@ class MainViewController: UIViewController {
     private func configureStartupPresentation() {
         let startupOnboardingDecision = StartupOnboardingDecision(
             onboardingStatus: LaunchOptionsHandler().onboardingStatus,
-            tutorialSettings: tutorialSettings
+            tutorialSettings: tutorialSettings,
+            resumeStepStore: duckAIOnboardingResumeStepStore
         )
 
         isStartupOnboardingPending = startupOnboardingDecision.shouldShowOnboarding
@@ -651,6 +668,7 @@ class MainViewController: UIViewController {
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
         startOnboardingFlowIfNotSeenBefore()
+        restorePendingDuckAIAnswerStepIfNeeded()
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
@@ -1578,7 +1596,6 @@ class MainViewController: UIViewController {
         if isExperimentDuckAIFireFlow {
             // Keep this path scoped to the onboarding experiment: single "Delete This Chat" action only,
             // whether the contextual dialog has already appeared or is still pending.
-            setExperimentFireControlsLocked(false)
             contextualOnboardingPixelReporter.measureDuckAIExperimentFireButtonCTAAction()
             presentExperimentDuckAIFireConfirmation()
             performCancel()
@@ -3198,7 +3215,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     var toolbarHeight: CGFloat {
-        return viewCoordinator.toolbar.frame.size.height
+        viewCoordinator.constraints.toolbarHeightConstraint.constant
     }
     
     var barsMaxHeight: CGFloat {
@@ -3703,6 +3720,7 @@ extension MainViewController: OmniBarDelegate {
 
     private func newTabShortcutAction() {
         Pixel.fire(pixel: .tabSwitchLongPressNewTab)
+        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
         performCancel()
         newTab()
     }
@@ -4209,6 +4227,10 @@ extension MainViewController: NewTabPageControllerDelegate {
             closeTab(currentTab)
         }
         currentNTPEscapeHatch = nil
+    }
+
+    func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {
+        markSearchContextualOnboardingAsSeenForExperiment()
     }
 
     func newTabPageDidRequestFireMode(_ controller: NewTabPageViewController) {
@@ -5141,7 +5163,6 @@ extension MainViewController {
         if !themeColorManager.updateThemeColor() {
             updateStatusBarBackgroundColor()
         }
-
         updateFindInPage()
     }
 
@@ -5195,6 +5216,10 @@ extension MainViewController: OnboardingDelegate {
 
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
+        if experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse {
+            onboardingCompletedWithExperimentTransition(controller: controller)
+            return
+        }
 
         controller.modalTransitionStyle = .crossDissolve
         controller.dismiss(animated: true)
@@ -5204,6 +5229,7 @@ extension MainViewController: OnboardingDelegate {
     func markOnboardingSeen() {
         isStartupOnboardingPending = false
         tutorialSettings.hasSeenOnboarding = true
+        clearDuckAIOnboardingResumeStepIfNeeded()
     }
 
     func needsToShowOnboardingIntro() -> Bool {
@@ -5211,6 +5237,7 @@ extension MainViewController: OnboardingDelegate {
     }
 
 }
+
 
 extension MainViewController: OnboardingNavigationDelegate {
     func navigateFromOnboarding(to url: URL) {

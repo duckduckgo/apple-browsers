@@ -17,11 +17,13 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Core
+import PersistenceTestingUtils
 import PrivacyConfig
-import SystemSettingsPiPTutorialTestSupport
 import SetDefaultBrowserTestSupport
+import SystemSettingsPiPTutorialTestSupport
+import XCTest
+
 @testable import DuckDuckGo
 
 @MainActor
@@ -856,6 +858,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onCompletingOnboardingIntro = { didComplete = true }
 
         // WHEN
+        sut.onAppear()
         sut.selectSearchExperienceAction()
 
         // THEN: no experiment step inserted → onboarding completes
@@ -877,6 +880,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onCompletingOnboardingIntro = { didComplete = true }
 
         // WHEN
+        sut.onAppear()
         sut.selectSearchExperienceAction()
 
         // THEN: control cohort → no experiment step → onboarding completes
@@ -895,6 +899,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
                           featureFlagger: featureFlagger)
 
         // WHEN
+        sut.onAppear()
         sut.selectSearchExperienceAction()
 
         // THEN: treatmentA → experiment step inserted, state transitions to it with .duckAI default
@@ -918,6 +923,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
                           featureFlagger: featureFlagger)
 
         // WHEN
+        sut.onAppear()
         sut.selectSearchExperienceAction()
 
         // THEN: treatmentB → experiment step inserted, default mode is .search
@@ -943,6 +949,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onCompletingOnboardingIntro = { didComplete = true }
 
         // WHEN
+        sut.onAppear()
         sut.selectSearchExperienceAction()
 
         // THEN: search-only → no experiment step → onboarding completes
@@ -992,6 +999,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIQueryExperimentSelectionImpression)
 
         // WHEN
+        sut.onAppear()
         sut.selectSearchExperienceAction()
 
         // THEN
@@ -1020,7 +1028,8 @@ extension OnboardingIntroViewModelTests {
             addressBarPositionProvider: addressBarPositionProvider,
             featureFlagger: featureFlagger,
             restorePromptHandler: restorePromptHandler,
-            tutorialSettings: tutorialSettingsMock
+            tutorialSettings: tutorialSettingsMock,
+            duckAIOnboardingResumeStepStore: MockKeyValueStore().keyedStoring()
         )
     }
 }

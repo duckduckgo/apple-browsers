@@ -121,14 +121,18 @@ final class SwipeContainerManager: NSObject {
             searchPageContainer.superview?.bringSubviewToFront(searchPageContainer)
             searchPageContainer.alpha = 1.0
         } else {
-            let returnToNaturalPosition = {
+            let fadeOut = {
+                self.searchPageContainer.alpha = 0.0
+            }
+            let resetTransform = { (_: Bool) in
                 self.searchPageContainer.transform = .identity
                 self.searchPageContainer.alpha = 1.0
             }
             if animated {
-                UIView.animate(withDuration: 0.2, animations: returnToNaturalPosition)
+                UIView.animate(withDuration: 0.2, animations: fadeOut, completion: resetTransform)
             } else {
-                returnToNaturalPosition()
+                fadeOut()
+                resetTransform(true)
             }
         }
     }

@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Common
 @testable import Navigation
 import PrivacyConfig
 import PrivacyConfigTestsUtils
@@ -76,6 +77,7 @@ final class TabSuspensionExtensionTests: XCTestCase {
             featureFlagger: featureFlagger,
             aiChatSessionStore: aiChatSessionStore,
             privacyConfigurationManager: privacyConfigurationManager,
+            tld: TLD(),
             isTabPinned: { [unowned self] in self.isPinned }
         )
     }
@@ -419,6 +421,98 @@ final class TabSuspensionExtensionTests: XCTestCase {
         sut.navigationDidFinish(Navigation(identity: NavigationIdentity(nil), responders: ResponderChain(), state: .started, isCurrent: true))
 
         XCTAssertFalse(sut.pageReportsUnableToSuspend)
+    }
+
+    // MARK: - Suspension State
+
+    @MainActor
+    func testWhenLastSuspendedURLIsNil_ThenSuspensionStateIsNever() {
+        sut = makeSUT()
+        contentPublisher.send(.url(.duckDuckGo, credential: nil, source: .link))
+
+        sut.lastSuspendedURL = nil
+
+        XCTAssertEqual(sut.lastSuspensionState, .never)
+    }
+
+    @MainActor
+    func testWhenLastSuspendedURLMatchesCurrentURL_ThenSuspensionStateIsSameURL() {
+        sut = makeSUT()
+        contentPublisher.send(.url(.duckDuckGo, credential: nil, source: .link))
+
+        sut.lastSuspendedURL = .duckDuckGo
+
+        XCTAssertEqual(sut.lastSuspensionState, .sameURL)
+    }
+
+    @MainActor
+    func testWhenLastSuspendedURLHasSamePathButDifferentQuery_ThenSuspensionStateIsSamePath() throws {
+        let currentURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/about?q=test"))
+        let suspendedURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/about?q=other"))
+        sut = makeSUT()
+        contentPublisher.send(.url(currentURL, credential: nil, source: .link))
+
+        sut.lastSuspendedURL = suspendedURL
+
+        XCTAssertEqual(sut.lastSuspensionState, .samePath)
+    }
+
+    @MainActor
+    func testWhenLastSuspendedURLHasSameHostButDifferentPath_ThenSuspensionStateIsSameHostname() throws {
+        let currentURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/about"))
+        let suspendedURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/"))
+        sut = makeSUT()
+        contentPublisher.send(.url(currentURL, credential: nil, source: .link))
+
+        sut.lastSuspendedURL = suspendedURL
+
+        XCTAssertEqual(sut.lastSuspensionState, .sameHostname)
+    }
+
+    @MainActor
+    func testWhenLastSuspendedURLHasSameETLDPlus1ButDifferentHost_ThenSuspensionStateIsSameDomain() throws {
+        let currentURL = try XCTUnwrap(URL(string: "https://www.example.com/page"))
+        let suspendedURL = try XCTUnwrap(URL(string: "https://mail.example.com/inbox"))
+        sut = makeSUT()
+        contentPublisher.send(.url(currentURL, credential: nil, source: .link))
+
+        sut.lastSuspendedURL = suspendedURL
+
+        XCTAssertEqual(sut.lastSuspensionState, .sameDomain)
+    }
+
+    @MainActor
+    func testWhenLastSuspendedURLHasDifferentDomain_ThenSuspensionStateIsDifferentDomain() throws {
+        let currentURL = try XCTUnwrap(URL(string: "https://example.com"))
+        let suspendedURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/"))
+        sut = makeSUT()
+        contentPublisher.send(.url(currentURL, credential: nil, source: .link))
+
+        sut.lastSuspendedURL = suspendedURL
+
+        XCTAssertEqual(sut.lastSuspensionState, .differentDomain)
+    }
+
+    @MainActor
+    func testWhenLastSuspendedURLHasDifferentIPAddresses_ThenSuspensionStateIsDifferentDomain() throws {
+        let currentURL = try XCTUnwrap(URL(string: "http://10.0.0.1"))
+        let suspendedURL = try XCTUnwrap(URL(string: "https://10.0.0.2/"))
+        sut = makeSUT()
+        contentPublisher.send(.url(currentURL, credential: nil, source: .link))
+
+        sut.lastSuspendedURL = suspendedURL
+
+        XCTAssertEqual(sut.lastSuspensionState, .differentDomain)
+    }
+
+    @MainActor
+    func testWhenLastSuspendedURLIsNotNilAndContentHasNoURL_ThenSuspensionStateIsDifferentDomain() {
+        sut = makeSUT()
+        contentPublisher.send(.none)
+
+        sut.lastSuspendedURL = .duckDuckGo
+
+        XCTAssertEqual(sut.lastSuspensionState, .differentDomain)
     }
 }
 

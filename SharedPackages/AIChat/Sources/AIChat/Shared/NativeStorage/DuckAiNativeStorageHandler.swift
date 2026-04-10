@@ -139,6 +139,7 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
         settingsLock.lock()
         defer { settingsLock.unlock() }
         var dict: [String: Bool] = [:]
+        // try? so corrupt JSON self-heals instead of blocking future markMigrationDone calls
         if let data = try settingsStore.value(for: \.migrationStatus),
            let existing = try? JSONSerialization.jsonObject(with: data) as? [String: Bool] {
             dict = existing

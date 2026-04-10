@@ -509,7 +509,8 @@ extension SimplifiedSyncSettingsView {
         } header: {
             Text(UserText.recoverySectionHeader)
         } footer: {
-            Text(UserText.simplifiedRecoverySectionFooter)
+            Text(LocalizedStringKey(String(format: UserText.simplifiedRecoverySectionFooterFormat, "ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting#does-my-sync--backup-data-ever-expire")))
+                .tint(Color(designSystemColor: .accent))
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }

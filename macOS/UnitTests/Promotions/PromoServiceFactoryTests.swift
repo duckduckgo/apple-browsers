@@ -118,6 +118,20 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNotNil(promo.delegate)
     }
 
+    func testFactoryCreatesSubscriptionPromoWithCorrectConfiguration() {
+        let delegate = FireWindowSubscriptionPromoDelegate()
+        let promo = PromoServiceFactory.subscriptionPromo(delegate: delegate)
+
+        XCTAssertEqual(promo.id, "subscription-promo-fire-window")
+        XCTAssertTrue(promo.triggers.isEmpty)
+        XCTAssertEqual(promo.initiated, .app)
+        XCTAssertEqual(promo.promoType.severity, .medium)
+        XCTAssertEqual(promo.context, .fireWindow)
+        XCTAssertFalse(promo.respectsGlobalCooldown)
+        XCTAssertTrue(promo.setsGlobalCooldown)
+        XCTAssertNotNil(promo.delegate)
+    }
+
 }
 
 extension PromoServiceFactoryTests {
@@ -144,7 +158,8 @@ extension PromoServiceFactoryTests {
             isOnboardingCompletedProvider: { true },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
-            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock()
+            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),
+            subscriptionPromoDelegate: nil
         )
     }
 }

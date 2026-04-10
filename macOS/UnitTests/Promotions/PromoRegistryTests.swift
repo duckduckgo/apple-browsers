@@ -50,7 +50,8 @@ final class PromoRegistryTests: XCTestCase {
             isOnboardingCompletedProvider: { true },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
-            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock())
+            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),
+            subscriptionPromoDelegate: nil)
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)

@@ -92,8 +92,15 @@ final class SubscriptionPromoViewModel: ObservableObject {
     private let pixelFiring: PixelFiring?
     private var persistor: SubscriptionPromoPersisting
     private let locale: Locale
-    @Published private(set) var shouldShowPromo: Bool = false
+    @Published private(set) var shouldShowPromo: Bool = false {
+        didSet {
+            guard oldValue != shouldShowPromo else { return }
+            promoDelegate?.updateVisibility(shouldShowPromo, for: self)
+        }
+    }
     @Published private(set) var isEligibleForFreeTrial: Bool = false
+
+    private weak var promoDelegate: (any PromoVisibilityReporting)?
 
     var onButtonAction: (() -> Void)?
     var onPromoEvaluated: ((Bool) -> Void)?
@@ -103,12 +110,18 @@ final class SubscriptionPromoViewModel: ObservableObject {
          featureFlagger: FeatureFlagger,
          pixelFiring: PixelFiring? = PixelKit.shared,
          persistor: SubscriptionPromoPersisting? = nil,
-         locale: Locale = .current) {
+         locale: Locale = .current,
+         promoDelegate: (any PromoVisibilityReporting)? = nil) {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.persistor = persistor ?? SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
         self.locale = locale
+        self.promoDelegate = promoDelegate
+    }
+
+    deinit {
+        promoDelegate?.updateVisibility(false, for: self)
     }
 
     enum TabPromoState {

@@ -334,7 +334,43 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         XCTAssertFalse(sut.shouldShowPromo, "Promo should not show on new tabs after CTA tap")
     }
 
-    // MARK: - Helpers
+    // MARK: - Promo Delegate Visibility Reporting
+
+    func testWhenPromoShows_ThenDelegateVisibilityUpdatedToTrue() {
+        let delegate = MockPromoVisibilityReporting()
+        persistor.fireTabVisitCount = 3
+        sut = makeSUT(promoDelegate: delegate)
+
+        sut.updateForTab(.notEvaluated)
+
+        XCTAssertTrue(sut.shouldShowPromo)
+        XCTAssertTrue(delegate.lastVisibility == true)
+    }
+
+    func testWhenPromoDismissed_ThenDelegateVisibilityUpdatedToFalse() {
+        let delegate = MockPromoVisibilityReporting()
+        persistor.fireTabVisitCount = 3
+        sut = makeSUT(promoDelegate: delegate)
+
+        sut.updateForTab(.notEvaluated)
+        XCTAssertTrue(delegate.lastVisibility == true)
+
+        sut.dismiss()
+
+        XCTAssertFalse(sut.shouldShowPromo)
+        XCTAssertTrue(delegate.lastVisibility == false)
+    }
+
+    func testWhenPromoConditionsNotMet_ThenDelegateNotUpdated() {
+        let delegate = MockPromoVisibilityReporting()
+        persistor.fireTabVisitCount = 0
+        sut = makeSUT(promoDelegate: delegate)
+
+        sut.updateForTab(.notEvaluated)
+
+        XCTAssertFalse(sut.shouldShowPromo)
+        XCTAssertNil(delegate.lastVisibility)
+    }
 
     // MARK: - Feature Flag
 
@@ -348,12 +384,14 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         XCTAssertFalse(sut.shouldShowPromo)
     }
 
-    private func makeSUT(locale: Locale = Locale(identifier: "en_US")) -> SubscriptionPromoViewModel {
+    private func makeSUT(locale: Locale = Locale(identifier: "en_US"),
+                         promoDelegate: (any PromoVisibilityReporting)? = nil) -> SubscriptionPromoViewModel {
         SubscriptionPromoViewModel(
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
             persistor: persistor,
-            locale: locale
+            locale: locale,
+            promoDelegate: promoDelegate
         )
     }
 
@@ -381,4 +419,14 @@ final class MockSubscriptionPromoPersisting: SubscriptionPromoPersisting {
     var promoDismissedDate: Date?
     var promoDisplayCount: Int = 0
     var promoDisplayWindowStart: Date?
+}
+
+final class MockPromoVisibilityReporting: PromoVisibilityReporting {
+    private(set) var lastVisibility: Bool?
+    private(set) var updateCount: Int = 0
+
+    func updateVisibility(_ isVisible: Bool, for source: AnyObject) {
+        lastVisibility = isVisible
+        updateCount += 1
+    }
 }

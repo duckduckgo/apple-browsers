@@ -69,6 +69,10 @@ struct PromoServiceFactory {
             defaultBrowserAndDockInactiveModal(service: dependencies.defaultBrowserAndDockPromptService)
         ]
 
+        if let subscriptionDelegate = dependencies.subscriptionPromoDelegate {
+            promos.append(subscriptionPromo(delegate: subscriptionDelegate))
+        }
+
         if includeTestPromos {
             promos.append(contentsOf: testPromos)
         }

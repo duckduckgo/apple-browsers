@@ -668,7 +668,7 @@ extension View {
 
 private struct RebrandingBadge: View {
     var body: some View {
-        Text("REBRANDED")
+        Text(verbatim: "REBRANDED")
             .font(.caption2.weight(.semibold))
             .textCase(.uppercase)
             .foregroundColor(.white)

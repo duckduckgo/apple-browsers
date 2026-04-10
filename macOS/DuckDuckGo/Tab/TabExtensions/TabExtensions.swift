@@ -209,7 +209,9 @@ extension TabExtensionsBuilder {
             AutoplayPolicyTabExtension(
                 autoplayPreferences: dependencies.autoplayPreferences,
                 featureFlagger: dependencies.featureFlagger,
-                permissionManager: dependencies.permissionManager
+                permissionManager: dependencies.permissionManager,
+                privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                telemetryScriptPublisher: userScripts.compactMap { $0 }
             )
         }
 
@@ -351,9 +353,14 @@ extension TabExtensionsBuilder {
 
         add {
             TabSuspensionExtension(
-                webViewPublisher: args.webViewFuture,
+                tabID: args.tabID,
+                webViewPublisher: args.webViewFuture.map { $0 as TabSuspensionWebViewChecking },
                 contentPublisher: args.contentPublisher,
+                scriptsPublisher: userScripts.compactMap { $0 },
                 featureFlagger: dependencies.featureFlagger,
+                aiChatSessionStore: dependencies.aiChatSessionStore,
+                privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                tld: dependencies.privacyFeatures.contentBlocking.tld,
                 isTabPinned: args.isTabPinned
             )
         }

@@ -93,6 +93,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
+    private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     // MARK: - Manager Components
 
@@ -127,6 +128,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                   privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
                   aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
                   voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
+                  duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                   escapeHatch: EscapeHatchModel? = nil) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
@@ -136,6 +138,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
         self.voiceShortcutFeature = voiceShortcutFeature
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.escapeHatchModel = escapeHatch
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
@@ -373,7 +376,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         if switchBarHandler.isFireTab {
             suggestionsReader = NilSuggestionsReader()
         } else {
-            let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
+            let reader = SuggestionsReader(
+                featureFlagger: featureFlagger,
+                privacyConfig: privacyConfigurationManager,
+                nativeStorageHandler: duckAiNativeStorageHandler,
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+            )
             let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
             suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
         }

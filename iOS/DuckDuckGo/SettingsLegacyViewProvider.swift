@@ -27,6 +27,7 @@ import Persistence
 import Common
 import Configuration
 import SystemSettingsPiPTutorial
+import AIChat
 import DataBrokerProtection_iOS
 import Subscription
 import WebExtensions
@@ -58,6 +59,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
     let webExtensionManager: WebExtensionManaging?
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -77,7 +79,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          webExtensionManager: WebExtensionManaging?,
-         syncAutoRestoreHandler: SyncAutoRestoreHandling) {
+         syncAutoRestoreHandler: SyncAutoRestoreHandling,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -97,6 +100,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.webExtensionManager = webExtensionManager
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
     }
     
     enum LegacyView {
@@ -151,7 +155,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
-            webExtensionManager: self.webExtensionManager))
+            webExtensionManager: self.webExtensionManager,
+            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

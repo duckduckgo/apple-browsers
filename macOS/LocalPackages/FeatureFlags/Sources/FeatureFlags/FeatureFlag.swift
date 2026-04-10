@@ -279,6 +279,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1213356927349370?focus=true
     case aiChatNtpRecentChats
 
+    /// https://app.asana.com/1/137249556945/task/1213833143996469
+    case aiChatNtpViewAllChats
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213622362394873
     case aiChatNtpChatTools
 
@@ -347,7 +350,13 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213973058005627?focus=true
     case aiChatSidebarAboutSchemeNavigationFix
 
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1213833143996468?focus=true
+    case aiChatViewAllChatsNativeOmnibar
+
     case aiChatNativeStorage
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
+    case aiChatNativeDataAccess
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -546,6 +555,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable)), category: .duckAI)
         case .aiChatNtpRecentChats:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpRecentChats)), category: .duckAI)
+        case .aiChatNtpViewAllChats:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpViewAllChats)), category: .duckAI)
         case .aiChatNtpChatTools:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpChatTools)), category: .duckAI)
         case .aiChatSidebarFloating:
@@ -573,17 +584,23 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.screenTimeCleaning)))
         case .tabSuspension:
-            Config(source: .disabled)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(TabSuspensionSubfeature.memoryPressureTrigger)))
         case .tabSuspensionDebugging:
             Config(source: .disabled)
         case .aiChatMoreOptionsMenuShortcut:
-            Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.moreOptionsMenuShortcut)), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.moreOptionsMenuShortcut)), category: .duckAI)
         case .aiChatMainMenuShortcut:
-            Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.mainMenuShortcut)), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.mainMenuShortcut)), category: .duckAI)
         case .aiChatSidebarAboutSchemeNavigationFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarAboutSchemeNavigationFix)), category: .duckAI)
+        case .aiChatViewAllChatsNativeOmnibar:
+            Config(defaultValue: .enabled,
+                   source: .remoteReleasable(.subfeature(AIChatSubfeature.viewAllChatsNativeOmnibar)),
+                   category: .duckAI)
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)), category: .duckAI)
+        case .aiChatNativeDataAccess:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeDataAccess)), category: .duckAI)
         case .autoplayPolicy:
             Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.autoplayPolicy)), supportsLocalOverriding: true)
         }

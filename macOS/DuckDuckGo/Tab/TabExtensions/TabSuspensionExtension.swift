@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Common
 import Foundation
 import Navigation
 import PrivacyConfig
@@ -55,6 +56,15 @@ extension WKWebView: TabSuspensionWebViewChecking {
 
 final class TabSuspensionExtension {
 
+    enum SuspensionState: String {
+        case never
+        case sameURL
+        case samePath
+        case sameHostname
+        case sameDomain
+        case differentDomain
+    }
+
     private var cancellables = Set<AnyCancellable>()
 
     private weak var webView: TabSuspensionWebViewChecking?
@@ -65,13 +75,32 @@ final class TabSuspensionExtension {
     private let aiChatSessionStore: AIChatSessionStoring
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let tld: TLD
 
     var hasVideoInPictureInPicture: Bool = false
     var isDisplayingPDF: Bool = false
+    var lastSuspendedURL: URL?
     private(set) var pageReportsUnableToSuspend: Bool = false
 
     private var hasActiveAIChatSession: Bool {
         aiChatSessionStore.sessions[tabID] != nil
+    }
+
+    var lastSuspensionState: SuspensionState {
+        switch (lastSuspendedURL, tabContent.urlForWebView) {
+        case (nil, _):
+            return .never
+        case (.some(let a), .some(let b)) where a == b:
+            return .sameURL
+        case (.some(let a), .some(let b)) where a.trimmingQueryItemsAndFragment() == b.trimmingQueryItemsAndFragment():
+            return .samePath
+        case (.some(let a), .some(let b)) where a.host == b.host:
+            return .sameHostname
+        case (.some(let a), .some(let b)) where tld.eTLDplus1(a.host) != nil && tld.eTLDplus1(a.host) == tld.eTLDplus1(b.host):
+            return .sameDomain
+        default:
+            return .differentDomain
+        }
     }
 
     var canBeSuspended: Bool {
@@ -134,6 +163,7 @@ final class TabSuspensionExtension {
         featureFlagger: FeatureFlagger,
         aiChatSessionStore: AIChatSessionStoring,
         privacyConfigurationManager: PrivacyConfigurationManaging,
+        tld: TLD,
         isTabPinned: @escaping () -> Bool
     ) {
         self.tabID = tabID
@@ -141,6 +171,7 @@ final class TabSuspensionExtension {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.isTabPinned = isTabPinned
         self.aiChatSessionStore = aiChatSessionStore
+        self.tld = tld
 
         contentPublisher.sink { [weak self] content in
             self?.tabContent = content
@@ -162,6 +193,8 @@ final class TabSuspensionExtension {
 protocol TabSuspensionExtensionProtocol: AnyObject, NavigationResponder {
     var canBeSuspended: Bool { get }
     var hasVideoInPictureInPicture: Bool { get set }
+    var lastSuspensionState: TabSuspensionExtension.SuspensionState { get }
+    var lastSuspendedURL: URL? { get set }
 }
 
 extension TabSuspensionExtension: TabSuspensionExtensionProtocol, TabExtension {

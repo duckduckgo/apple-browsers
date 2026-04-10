@@ -242,8 +242,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213557229772465?focus=true
     case autoplayBlocking
 
-    case customXSafariRedirectHandling
-
     case crashReportOptInStatusResetting
 
     case fireproofingETLDPlus1
@@ -467,6 +465,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables web search tool in the Duck.ai omnibar
     case omnibarWebSearch
+
+    /// Enables querying AI Chat data directly from local storage instead of via webview
+    case nativeDataAccess
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -584,6 +585,11 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature { .htmlHistoryPage }
     case isLaunched
+}
+
+public enum TabSuspensionSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .tabSuspension }
+    case memoryPressureTrigger
 }
 
 public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {

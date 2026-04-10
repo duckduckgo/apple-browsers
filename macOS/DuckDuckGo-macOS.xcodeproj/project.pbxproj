@@ -3082,6 +3082,8 @@
 		B5F31F4D2F50E2B90060E5C1 /* PerformanceMetricsReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5F31F4B2F50E2B90060E5C1 /* PerformanceMetricsReporterTests.swift */; };
 		B5F7BDC92EBD1D9D00ECE33A /* TabFaviconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */; };
 		B5F7BDCA2EBD1D9D00ECE33A /* TabFaviconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */; };
+		B5FBAFCF2F87049400CE51F3 /* AutoplayPermissionSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5FBAFCE2F87049400CE51F3 /* AutoplayPermissionSeeder.swift */; };
+		B5FBAFD02F87049400CE51F3 /* AutoplayPermissionSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5FBAFCE2F87049400CE51F3 /* AutoplayPermissionSeeder.swift */; };
 		B602E7CF2A93A5FF00F12201 /* WKBackForwardListExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B602E7CE2A93A5FF00F12201 /* WKBackForwardListExtension.swift */; };
 		B602E7D02A93A5FF00F12201 /* WKBackForwardListExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B602E7CE2A93A5FF00F12201 /* WKBackForwardListExtension.swift */; };
 		B602E8162A1E2570006D261F /* URL+NetworkProtection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B602E8152A1E2570006D261F /* URL+NetworkProtection.swift */; };
@@ -6093,6 +6095,7 @@
 		B5F31F452F50C7650060E5C1 /* SystemEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemEnvironment.swift; sourceTree = "<group>"; };
 		B5F31F482F50C7950060E5C1 /* PerformanceMetricsReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceMetricsReporter.swift; sourceTree = "<group>"; };
 		B5F31F4B2F50E2B90060E5C1 /* PerformanceMetricsReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceMetricsReporterTests.swift; sourceTree = "<group>"; };
+		B5FBAFCE2F87049400CE51F3 /* AutoplayPermissionSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayPermissionSeeder.swift; sourceTree = "<group>"; };
 		B602E7CE2A93A5FF00F12201 /* WKBackForwardListExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKBackForwardListExtension.swift; sourceTree = "<group>"; };
 		B602E8152A1E2570006D261F /* URL+NetworkProtection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "URL+NetworkProtection.swift"; sourceTree = "<group>"; };
 		B602E81C2A1E25B0006D261F /* NEOnDemandRuleExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NEOnDemandRuleExtension.swift; sourceTree = "<group>"; };
@@ -11980,9 +11983,10 @@
 		B6BF5D912947198E006742B1 /* Navigation */ = {
 			isa = PBXGroup;
 			children = (
+				B5FBAFCE2F87049400CE51F3 /* AutoplayPermissionSeeder.swift */,
+				1E559BAD2BBCA9F1002B4AF6 /* AutoplayPolicyTabExtension.swift */,
 				31F28C5228C8EECA00119F70 /* DuckURLSchemeHandler.swift */,
 				B687B7CB2947A1E9001DEA6F /* ExternalAppSchemeHandler.swift */,
-				1E559BAD2BBCA9F1002B4AF6 /* AutoplayPolicyTabExtension.swift */,
 				1E559BB02BBCA9F1002B4AF6 /* RedirectNavigationResponder.swift */,
 				B60C6F7629B0E286007BFAA8 /* SearchNonexistentDomainNavigationResponder.swift */,
 				B6BF5D922947199A006742B1 /* SerpHeadersNavigationResponder.swift */,
@@ -15405,6 +15409,7 @@
 				1D220BFD2B87AACF00F8BBC6 /* PrivacyProtectionStatus.swift in Sources */,
 				3706FBF8293F65D500E42796 /* TabBarFooter.swift in Sources */,
 				9F08B3102DE5A55400C68C0E /* DefaultBrowserAndDockPromptDebugMenu.swift in Sources */,
+				B5FBAFD02F87049400CE51F3 /* AutoplayPermissionSeeder.swift in Sources */,
 				CC199E982F4E183000964713 /* DebugSimulatedDateStore.swift in Sources */,
 				B626A7612992407D00053070 /* CancellableExtension.swift in Sources */,
 				3706FBF9293F65D500E42796 /* BookmarksBarCollectionViewItem.swift in Sources */,
@@ -17629,6 +17634,7 @@
 				37EE55EF2D5F197300D53C7C /* NavigationBarBadgeAnimator.swift in Sources */,
 				37EE55F02D5F197300D53C7C /* AddressBarButton.swift in Sources */,
 				37EE55F12D5F197300D53C7C /* AddressBarButtonsViewController.swift in Sources */,
+				B5FBAFCF2F87049400CE51F3 /* AutoplayPermissionSeeder.swift in Sources */,
 				37EE55F22D5F197300D53C7C /* AddressBarTextEditor.swift in Sources */,
 				37EE55F32D5F197300D53C7C /* AddressBarTextField.swift in Sources */,
 				37EE55F42D5F197300D53C7C /* AddressBarTextSelectionNavigation.swift in Sources */,

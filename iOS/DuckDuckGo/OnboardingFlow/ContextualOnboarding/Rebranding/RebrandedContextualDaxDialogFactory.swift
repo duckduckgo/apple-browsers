@@ -321,5 +321,6 @@ private extension RebrandedContextualDaxDialogFactory {
             return AttributedString(string)
         }
     }
-    
+
 }
+

@@ -41,7 +41,8 @@ extension OnboardingRebranding {
         static let daxAnimation = DaxAnimation(
             animationName: "Dax-EndOfJourney-TryWebsite",
             size: CGSize(width: 153, height: 169.67),
-            position: .left(bottomPadding: -60, xOffset: -40)
+            position: .left(bottomPadding: -60.0, xOffset: -40.0),
+            largeScreenPosition: .left(bottomPadding: 0.0, xOffset: 0.0)
         )
 
         var body: some View {
@@ -64,7 +65,9 @@ extension OnboardingRebranding {
             .padding(theme.contextualOnboardingMetrics.containerPadding)
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
             .overlay {
-                if !OnboardingBubbleAnimationMetrics.isCompactDevice {
+                // On iPhone, position Dax at the screen bottom using global coordinates.
+                // On iPad, DaxAnimationOverlay is added by RebrandedNewTabDaxDialogFactory instead.
+                if !OnboardingBubbleAnimationMetrics.isCompactDevice && !OnboardingBubbleAnimationMetrics.isLargeScreen {
                     ScreenBottomDaxOverlay(animation: Self.daxAnimation)
                 }
             }
@@ -73,17 +76,16 @@ extension OnboardingRebranding {
 
 }
 
-// MARK: - Screen-Bottom Dax Overlay
+// MARK: - Screen-Bottom Dax Overlay (iPhone only)
 
 /// Positions the Dax animation at the bottom of the screen using global coordinate calculation.
-/// The animation renders beyond the hosting controller's bounds (clipsToBounds = false).
+/// The animation renders beyond the hosting controller's bounds (clipsToBounds = false on UIHostingController).
+/// Used only on iPhone where the bubble is close enough to the screen bottom that clipping is not an issue.
 private struct ScreenBottomDaxOverlay: View {
     let animation: DaxAnimation
 
-    /// Distance from the screen bottom to the bottom of the animation (above toolbar).
     private static let screenBottomPadding: CGFloat = 60
 
-    /// Extracts the xOffset from the animation's position (only `.left` is supported here).
     private var xOffset: CGFloat {
         switch animation.position {
         case .left(_, let xOffset): return xOffset
@@ -94,8 +96,6 @@ private struct ScreenBottomDaxOverlay: View {
     var body: some View {
         GeometryReader { proxy in
             let globalFrame = proxy.frame(in: .global)
-
-            // Get the window height from the key window to support iPad Stage Manager.
             let windowHeight: CGFloat = {
                 UIApplication.shared.connectedScenes
                     .compactMap { $0 as? UIWindowScene }

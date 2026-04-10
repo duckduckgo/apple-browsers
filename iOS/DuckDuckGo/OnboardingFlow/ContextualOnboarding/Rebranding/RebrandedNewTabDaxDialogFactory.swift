@@ -132,22 +132,30 @@ private extension RebrandedNewTabDaxDialogFactory {
 private extension RebrandedNewTabDaxDialogFactory {
     
     func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
-        return FadeInView {
-            ScrollView(.vertical, showsIndicators: false) {
-                OnboardingRebranding.OnboardingEndOfJourneyDialog(
-                    message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
-                    cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-                    dismissAction: { [weak self] in
-                        self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
-                        onCompletion(true)
-                    },
-                    onManualDismiss: { [weak self] in
-                        self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
-                        onManualDismiss()
-                    }
-                )
+        let daxAnimation = OnboardingRebranding.OnboardingEndOfJourneyDialog.daxAnimation
+
+        return ZStack {
+            FadeInView {
+                ScrollView(.vertical, showsIndicators: false) {
+                    OnboardingRebranding.OnboardingEndOfJourneyDialog(
+                        message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
+                        cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
+                        dismissAction: { [weak self] in
+                            self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
+                            onCompletion(true)
+                        },
+                        onManualDismiss: { [weak self] in
+                            self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
+                            onManualDismiss()
+                        }
+                    )
+                }
+                .scrollIfNeeded()
             }
-            .scrollIfNeeded()
+
+            if !OnboardingBubbleAnimationMetrics.isCompactDevice && OnboardingBubbleAnimationMetrics.isLargeScreen {
+                DaxAnimationOverlay(animation: daxAnimation, playForward: true, isExiting: false)
+            }
         }
         .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTP)
         .onFirstAppear { [weak self] in

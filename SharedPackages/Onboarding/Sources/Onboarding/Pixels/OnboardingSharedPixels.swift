@@ -51,12 +51,12 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
 
     let platform: Platform
     let installType: InstallType?
-    let installDate: Date?
+    let installDateProvider: () -> Date?
     let currentDateProvider: () -> Date
     let pixelFiring: PixelFiring?
 
     var daysSinceInstall: Int? {
-        guard let installDate else { return nil }
+        guard let installDate = installDateProvider() else { return nil }
         return Calendar.current.numberOfDaysBetween(installDate, and: currentDateProvider())
     }
 
@@ -76,12 +76,12 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
 
     public init(platform: Platform,
                 installType: InstallType?,
-                installDate: Date?,
+                installDateProvider: @escaping () -> Date?,
                 currentDateProvider: @escaping () -> Date = { Date() },
                 pixelFiring: PixelFiring? = PixelKit.shared) {
         self.platform = platform
         self.installType = installType
-        self.installDate = installDate
+        self.installDateProvider = installDateProvider
         self.currentDateProvider = currentDateProvider
         self.pixelFiring = pixelFiring
     }

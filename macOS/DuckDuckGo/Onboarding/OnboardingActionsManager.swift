@@ -179,7 +179,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         pinningManager: PinningManager,
         featureFlagger: FeatureFlagger,
         reinstallUserDetection: ReinstallingUserDetecting,
-        installDateProvider: () -> Date
+        installDateProvider: @escaping () -> Date
     ) {
         self.init(
             navigationDelegate: navigationDelegate,
@@ -193,7 +193,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             onboardingSharedPixelHandler: OnboardingSharedPixelHandler(
                 platform: .macOS,
                 installType: reinstallUserDetection.isReinstallingUser ? .reinstall : .newInstall,
-                installDate: installDateProvider()
+                installDateProvider: installDateProvider
              )
         )
     }

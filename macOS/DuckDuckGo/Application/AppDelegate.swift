@@ -1487,6 +1487,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyActiveUserPixels()
         fireDailyFireWindowConfigurationPixels()
         fireDailyAIChatEnabledPixel()
+        fireDailyAdBlockingPixel()
 
         fireAutoconsentDailyPixel()
         fireThemeDailyPixel()
@@ -1535,6 +1536,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fireDailyAIChatEnabledPixel() {
         PixelKit.fire(AIChatPixel.aiChatIsEnabled(isEnabled: aiChatPreferences.isAIFeaturesEnabled), frequency: .daily)
+    }
+
+    private func fireDailyAdBlockingPixel() {
+        PixelKit.fire(WebExtensionPixel.dailyAdBlockingState(isEnabled: adBlockingAvailability.isEnabled), frequency: .daily)
     }
 
     private func fireAutoconsentDailyPixel() {
@@ -1953,6 +1958,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             privacyConfigManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             apiService: DefaultAPIService(),
             baseDirectory: scriptletsDirectory,
+            pixelFiring: MacOSWebExtensionPixelFiring(),
             isProduction: !StandardApplicationBuildType().isDebugBuild
         )
     }

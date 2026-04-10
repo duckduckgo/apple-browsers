@@ -122,6 +122,9 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                 pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                 error: error
             )
+        case .scriptletFetchSuccess, .scriptletFetchError, .scriptletValidationError,
+             .scriptletInstalled, .scriptletInstallError:
+            break
         }
     }
 }

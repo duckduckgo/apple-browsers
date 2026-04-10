@@ -2078,7 +2078,7 @@
 "import.passwords.promo.title" = "Import your passwords to DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Ask anything privately";
+"input.field.placeholder.duckai" = "Ask privately";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Ask a follow-up question...";

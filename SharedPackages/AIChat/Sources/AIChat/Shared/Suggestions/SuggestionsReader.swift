@@ -107,7 +107,7 @@ public final class SuggestionsReader: SuggestionsReading {
     @MainActor
     public func fetchSuggestions(query: String?, maxChats: Int) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
         // Use local storage when the flag is enabled, the handler is available, and migration is done
-        if let featureFlagProvider, featureFlagProvider.isLocalStorageManipulationEnabled(),
+        if let featureFlagProvider, featureFlagProvider.isNativeDataAccessEnabled(),
            let nativeStorageHandler, (try? nativeStorageHandler.isMigrationDone()) == true,
            let localReader {
             return await localReader.fetchSuggestions(query: query, maxChats: maxChats)

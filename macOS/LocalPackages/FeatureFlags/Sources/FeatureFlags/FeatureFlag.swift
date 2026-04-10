@@ -355,7 +355,7 @@ public enum FeatureFlag: String, CaseIterable {
 
     case aiChatNativeStorage
 
-    case aiChatLocalStorageManipulation
+    case aiChatNativeDataAccess
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -598,7 +598,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                    category: .duckAI)
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)), category: .duckAI)
-        case .aiChatLocalStorageManipulation:
+        case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.localStorageManipulation)), category: .duckAI)
         case .autoplayPolicy:
             Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.autoplayPolicy)), supportsLocalOverriding: true)

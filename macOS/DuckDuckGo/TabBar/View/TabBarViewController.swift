@@ -1200,6 +1200,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let locationInWindow = event.locationInWindow
 
         if let indexPath = collectionView.indexPathForItemAtMouseLocation(locationInWindow) {
+            // When clicking a tab in an inactive window, the selection change bypasses
+            // the normal layout update path, so we flag for an explicit layout invalidation.
             selectionNeedsLayoutInvalidation = true
             tabCollectionViewModel.select(at: .unpinned(indexPath.item))
             return

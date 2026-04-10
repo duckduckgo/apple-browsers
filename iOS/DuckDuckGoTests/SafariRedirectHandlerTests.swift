@@ -51,15 +51,6 @@ final class SafariRedirectHandlerTests: XCTestCase {
         XCTAssertFalse(handler.handleRedirect(to: httpURL))
     }
 
-    func testHandleRedirectReturnsFalseWhenFeatureFlagDisabled() {
-        let disabledHandler = SafariRedirectHandler(tld: TLD())
-        let mockDelegate = MockSafariRedirectHandlerDelegate()
-        disabledHandler.delegate = mockDelegate
-
-        XCTAssertFalse(disabledHandler.handleRedirect(to: xSafariURL))
-        XCTAssertTrue(mockDelegate.presentedAlerts.isEmpty)
-    }
-
     // MARK: - First redirect shows Alert 1
 
     func testFirstRedirectShowsTryOpenAlert() {

@@ -358,6 +358,7 @@ extension TabExtensionsBuilder {
                 featureFlagger: dependencies.featureFlagger,
                 aiChatSessionStore: dependencies.aiChatSessionStore,
                 privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                tld: dependencies.privacyFeatures.contentBlocking.tld,
                 isTabPinned: args.isTabPinned
             )
         }

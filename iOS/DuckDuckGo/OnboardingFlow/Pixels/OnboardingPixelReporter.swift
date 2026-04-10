@@ -135,8 +135,6 @@ final class OnboardingPixelReporter {
     private let userDefaults: UserDefaults
     private let siteVisitedUserDefaultsKey = "com.duckduckgo.ios.site-visited"
 
-    private(set) var enqueuedPixels: [EnqueuedPixel] = []
-
     init(
         pixel: OnboardingPixelFiring.Type = Pixel.self,
         uniquePixel: OnboardingPixelFiring.Type = UniquePixel.self,
@@ -156,21 +154,6 @@ final class OnboardingPixelReporter {
     }
 
     private func fire(event: Pixel.Event, unique: Bool, additionalParameters: [String: String] = [:], includedParameters: [Pixel.QueryParameters] = [.appVersion]) {
-        
-        func enqueue(event: Pixel.Event, unique: Bool, additionalParameters: [String: String], includedParameters: [Pixel.QueryParameters]) {
-            enqueuedPixels.append(.init(event: event, unique: unique, additionalParameters: additionalParameters, includedParameters: includedParameters))
-        }
-
-        // If the Pixel needs the ATB and ATB is available, fire the Pixel immediately. Otherwise enqueue the pixel and process it once the ATB is available.
-        // If the Pixel does not need the ATB there's no need to wait for the ATB to become available.
-        if includedParameters.contains(.atb) && statisticsStore.atb == nil {
-            enqueue(event: event, unique: unique, additionalParameters: additionalParameters, includedParameters: includedParameters)
-        } else {
-            performFire(event: event, unique: unique, additionalParameters: additionalParameters, includedParameters: includedParameters)
-        }
-    }
-
-    private func performFire(event: Pixel.Event, unique: Bool, additionalParameters: [String: String], includedParameters: [Pixel.QueryParameters]) {
         if unique {
             uniquePixel.fire(pixel: event, withAdditionalParameters: additionalParameters, includedParameters: includedParameters)
         } else {
@@ -178,18 +161,6 @@ final class OnboardingPixelReporter {
         }
     }
 
-}
-
-// MARK: - Fire Enqueued Pixels
-
-extension OnboardingPixelReporter {
-
-    func fireEnqueuedPixelsIfNeeded() {
-        while !enqueuedPixels.isEmpty {
-            let event = enqueuedPixels.removeFirst()
-            performFire(event: event.event, unique: event.unique, additionalParameters: event.additionalParameters, includedParameters: event.includedParameters)
-        }
-    }
 }
 
 // MARK: - OnboardingPixelReporter + Intro
@@ -287,7 +258,7 @@ extension OnboardingPixelReporter: OnboardingCustomInteractionPixelReporting {
             PixelParameters.fromOnboarding: "true",
             PixelParameters.daysSinceInstall: String(daysSinceInstall ?? 0)
         ]
-        fire(event: .privacyDashboardFirstTimeOpenedUnique, unique: true, additionalParameters: additionalParameters, includedParameters: [.appVersion])
+        fire(event: .privacyDashboardFirstTimeOpenedUnique, unique: true, additionalParameters: additionalParameters)
     }
 
 }
@@ -363,20 +334,3 @@ extension OnboardingPixelReporter: OnboardingAddToDockReporting {
     }
 
 }
-
-struct EnqueuedPixel {
-    let event: Pixel.Event
-    let unique: Bool
-    let additionalParameters: [String: String]
-    let includedParameters: [Pixel.QueryParameters]
-}
-
-#if canImport(XCTest) || DEBUG
-extension OnboardingPixelReporter {
-
-    func fireTestPixelWithATB(event: Pixel.Event) {
-        fire(event: event, unique: true, includedParameters: [.appVersion, .atb])
-    }
-
-}
-#endif

@@ -226,7 +226,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AIChatSuggestionsReader(
             suggestionsReader: SuggestionsReader(
                 featureFlagger: featureFlagger,
-                privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager
+                privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager,
+                nativeStorageHandler: duckAiNativeStorageHandler,
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
             ),
             historySettings: AIChatHistorySettings(
                 privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager
@@ -832,10 +834,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
 
+        if featureFlagger.isFeatureOn(.aiChatNativeStorage),
+           let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
+            do {
+                let keyStoreProvider = DuckAiKeyStoreProvider()
+                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: nativeStorageContainerURL, keyStoreProvider: keyStoreProvider).handler
+            } catch {
+                Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
+                duckAiNativeStorageHandler = nil
+            }
+        } else {
+            duckAiNativeStorageHandler = nil
+        }
+
         aiChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: featureFlagger,
                                                         aiChatMenuConfiguration: aiChatMenuConfiguration,
                                                         featureDiscovery: DefaultFeatureDiscovery(),
-                                                        privacyConfig: privacyConfigurationManager)
+                                                        privacyConfig: privacyConfigurationManager,
+                                                        nativeStorageHandler: duckAiNativeStorageHandler)
         dataClearingPreferences = DataClearingPreferences(
             fireproofDomains: fireproofDomains,
             faviconManager: faviconManager,
@@ -1167,20 +1184,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pixelFiring: PixelKit.shared,
             keyValueStore: keyValueStore
         )
-
-        if featureFlagger.isFeatureOn(.aiChatNativeStorage),
-           let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-            let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
-            do {
-                let keyStoreProvider = DuckAiKeyStoreProvider()
-                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: nativeStorageContainerURL, keyStoreProvider: keyStoreProvider).handler
-            } catch {
-                Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
-                duckAiNativeStorageHandler = nil
-            }
-        } else {
-            duckAiNativeStorageHandler = nil
-        }
 
         super.init()
 

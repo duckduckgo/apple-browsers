@@ -115,7 +115,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var toolsLeadingToContainer: NSLayoutConstraint?
     private lazy var historyCleaner: HistoryCleaning = HistoryCleaner(
         featureFlagger: NSApp.delegateTyped.featureFlagger,
-        privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager
+        privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
+        nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
+        featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: NSApp.delegateTyped.featureFlagger)
     )
 
     /// Current suggestions height - cached to avoid recalculation

@@ -168,6 +168,22 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         tabOpener.openAIChatTab(with: .existingChat(chatId: chatId), behavior: behavior)
     }
 
+    func viewAllAiChats(target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+        PixelKit.fire(AIChatPixel.aiChatNtpViewAllChatsClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
+
+        let tabOpener = AIChatTabOpener(
+            promptHandler: promptHandler,
+            aiChatTabManaging: windowControllersManager
+        )
+
+        var behavior = linkOpenBehavior(for: target, using: tabsPreferences)
+        if isCommandPressed() {
+            behavior = .newTab(selected: isShiftPressed())
+        }
+
+        tabOpener.openNewAIChat(in: behavior)
+    }
+
     private func linkOpenBehavior(for target: NewTabPageDataModel.OpenTarget, using tabsPreferences: TabsPreferences) -> LinkOpenBehavior {
         switch target {
         case .sameTab:

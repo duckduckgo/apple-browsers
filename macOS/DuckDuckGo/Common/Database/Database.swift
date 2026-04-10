@@ -61,14 +61,20 @@ final class Database {
 
         let mainModel = NSManagedObjectModel.mergedModel(from: [.main])!
 
-        _ = mainModel.registerValueTransformers(withAllowedPropertyClasses: [
-            NSImage.self,
-            NSString.self,
-            NSURL.self,
-            NSNumber.self,
-            NSError.self,
-            NSData.self
-        ], keyStore: keyStore)
+        do {
+            _ = try mainModel.registerValueTransformers(withAllowedPropertyClasses: [
+                NSImage.self,
+                NSString.self,
+                NSURL.self,
+                NSNumber.self,
+                NSError.self,
+                NSData.self
+            ], keyStore: keyStore)
+        } catch {
+            PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: error), frequency: .dailyAndCount)
+            Thread.sleep(forTimeInterval: 1)
+            fatalError("Could not register value transformers: \(error.localizedDescription)")
+        }
 
         let httpsUpgradeModel = HTTPSUpgrade.managedObjectModel
 

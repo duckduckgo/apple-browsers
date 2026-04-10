@@ -130,6 +130,7 @@ extension NewTabPageActionsManager {
                 historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
             )
         )
+        omnibarConfigProvider.configure(aiChatsProvider: aiChatsProvider)
         let stateProvider = NewTabPageStateProvider(
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger

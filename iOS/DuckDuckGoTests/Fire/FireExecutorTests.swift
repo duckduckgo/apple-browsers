@@ -366,7 +366,37 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageCalledWith, tabViewModel.tab)
         XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageClearTabHistory, false)
     }
-    
+
+    func testWhenRefinementsEnabledAndAITabBurnedThenOpensNewChat() async {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireButtonRefinements)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+        let tabViewModel = makeAITabViewModel(chatID: "chat-to-burn")
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        // Then - AI tab is closed and a new chat is opened instead of homepage
+        XCTAssertTrue(mockTabManager.closeTabAndOpenNewChatCalled)
+        XCTAssertEqual(mockTabManager.closeTabAndOpenNewChatCalledWith, tabViewModel.tab)
+        XCTAssertFalse(mockTabManager.closeTabAndNavigateToHomepageCalled)
+    }
+
+    func testWhenRefinementsDisabledAndAITabBurnedThenNavigatesToHomepage() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeAITabViewModel(chatID: "chat-to-burn")
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        // Then - Without refinements, AI tab still navigates to homepage
+        XCTAssertTrue(mockTabManager.closeTabAndNavigateToHomepageCalled)
+        XCTAssertFalse(mockTabManager.closeTabAndOpenNewChatCalled)
+    }
+
     func testBurnTabsWithTabScopeCleansUpTabHistoryAfterBurnCompletes() async {
         // Given
         let executor = makeFireExecutor()

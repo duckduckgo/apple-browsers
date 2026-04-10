@@ -128,13 +128,24 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
 
     private(set) var cache = [RecentlyClosedCacheItem]()
 
-    private func cacheTabContent(_ tab: Tab, of tabCollection: TabCollection, at tabIndex: TabIndex) {
+    private func cacheTabContent(_ tab: AnyTab, of tabCollection: TabCollection, at tabIndex: TabIndex) {
         guard !tab.content.isEmpty, !tab.burnerMode.isBurner else {
             // Don't cache empty tabs and burner tabs
             return
         }
 
-        let cacheItem = RecentlyClosedTab(tab: tab, originalTabCollection: tabCollection, tabIndex: tabIndex)
+        let cacheItem: RecentlyClosedTab
+        switch tab {
+        case .loaded(let tab):
+            cacheItem = RecentlyClosedTab(tab: tab, originalTabCollection: tabCollection, tabIndex: tabIndex)
+        case .unloaded(let unloaded):
+            cacheItem = RecentlyClosedTab(tabContent: unloaded.content,
+                                          favicon: unloaded.favicon,
+                                          title: unloaded.title,
+                                          interactionData: unloaded.interactionStateData,
+                                          originalTabCollection: tabCollection,
+                                          index: tabIndex)
+        }
         cache.append(cacheItem)
     }
 
@@ -147,8 +158,18 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
             return
         }
 
-        let tabCacheItems = tabCollection.tabs.enumerated().map {
-            RecentlyClosedTab(tab: $0.element, originalTabCollection: tabCollection, tabIndex: .unpinned($0.offset))
+        let tabCacheItems = tabCollection.tabs.enumerated().compactMap { (offset, tab) -> RecentlyClosedTab? in
+            switch tab {
+            case .loaded(let tab):
+                return RecentlyClosedTab(tab: tab, originalTabCollection: tabCollection, tabIndex: .unpinned(offset))
+            case .unloaded(let unloaded):
+                return RecentlyClosedTab(tabContent: unloaded.content,
+                                         favicon: unloaded.favicon,
+                                         title: unloaded.title,
+                                         interactionData: unloaded.interactionStateData,
+                                         originalTabCollection: tabCollection,
+                                         index: .unpinned(offset))
+            }
         }
         let droppingPoint = mainWindowController.window?.frame.droppingPoint
         let contentSize = mainWindowController.window?.frame.size

@@ -461,8 +461,8 @@ final class MainViewController: NSViewController {
     }
 
     private func closeFloatingAIChatsForCurrentWindow() {
-        let regularTabIDs = tabCollectionViewModel.tabViewModels.keys.map(\.uuid)
-        let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabViewModels.keys.map(\.uuid) ?? []
+        let regularTabIDs = Array(tabCollectionViewModel.tabViewModels.keys)
+        let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager.map { Array($0.tabViewModels.keys) } ?? []
 
         for tabID in Set(regularTabIDs + pinnedTabIDs) {
             aiChatCoordinator.closeFloatingWindow(for: tabID)

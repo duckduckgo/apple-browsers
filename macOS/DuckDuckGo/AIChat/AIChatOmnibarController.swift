@@ -37,7 +37,17 @@ protocol AIChatOmnibarControllerDelegate: AnyObject {
 /// to coordinate text input and submission.
 @MainActor
 final class AIChatOmnibarController {
+    enum ToolMode: Equatable {
+        case imageGeneration
+        case webSearch
+    }
+
     @Published private(set) var currentText: String = ""
+    @Published private(set) var activeToolMode: ToolMode?
+    @Published var hasImageAttachments: Bool = false
+
+    var isImageGenerationMode: Bool { activeToolMode == .imageGeneration }
+    var isWebSearchMode: Bool { activeToolMode == .webSearch }
     weak var delegate: AIChatOmnibarControllerDelegate?
     private let aiChatTabOpener: AIChatTabOpening
     private let promptHandler: AIChatPromptHandler
@@ -82,6 +92,28 @@ final class AIChatOmnibarController {
     /// Whether the omnibar tools (customize, search toggle, image upload) are enabled.
     var isOmnibarToolsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarTools)
+    }
+
+    var isViewAllChatsEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatViewAllChatsNativeOmnibar)
+    }
+
+    /// Whether the image generation tool is available.
+    var isImageGenerationEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarImageGeneration)
+    }
+
+    /// Whether the web search tool is available.
+    var isWebSearchEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarWebSearch)
+    }
+
+    func toggleImageGenerationMode() {
+        activeToolMode = isImageGenerationMode ? nil : .imageGeneration
+    }
+
+    func toggleWebSearchMode() {
+        activeToolMode = isWebSearchMode ? nil : .webSearch
     }
 
     /// Publisher that emits when the omnibar tools enabled state changes.
@@ -204,12 +236,15 @@ final class AIChatOmnibarController {
         currentFetchTask = Task { [weak self] in
             guard let self else { return }
 
-            let suggestions = await reader.fetchSuggestions(query: query.isEmpty ? nil : query)
+            let maxChats = isViewAllChatsEnabled ? reader.maxHistoryCount + 1 : reader.maxHistoryCount
+            let suggestions = await reader.fetchSuggestions(query: query.isEmpty ? nil : query, maxChats: maxChats)
 
             // Check if task was cancelled
             guard !Task.isCancelled else { return }
 
-            self.suggestionsViewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
+            let totalFetched = suggestions.pinned.count + suggestions.recent.count
+            let showViewAllChats = isViewAllChatsEnabled && totalFetched > reader.maxHistoryCount
+            self.suggestionsViewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent, showViewAllChats: showViewAllChats)
         }
     }
 
@@ -264,6 +299,22 @@ final class AIChatOmnibarController {
         return models.first(where: { $0.id == persistedModelId })?.supportedImageFormats ?? ["png", "jpeg", "webp"]
     }
 
+    /// The model ID to use for the current submission.
+    /// Returns nil when image generation mode is active — the mode field handles routing.
+    var effectiveModelId: String? {
+        isImageGenerationMode ? nil : currentModelId
+    }
+
+    /// The mode to include in the prompt payload (e.g., "image-generation").
+    var effectiveMode: String? {
+        isImageGenerationMode ? "image-generation" : nil
+    }
+
+    /// The tool choice to include in the prompt payload (e.g., ["WebSearch"]).
+    var effectiveToolChoice: [String]? {
+        isWebSearchMode ? [AIChatRAGTool.webSearch.rawValue] : nil
+    }
+
     /// Updates the selected model ID and persists it (along with its short name) for future sessions.
     func updateSelectedModel(_ modelId: String) {
         preferences.selectedModelId = modelId
@@ -281,6 +332,8 @@ final class AIChatOmnibarController {
 
     func cleanup() {
         currentText = ""
+        activeToolMode = nil
+        hasImageAttachments = false
         hasBeenActivated = false
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
@@ -309,11 +362,17 @@ final class AIChatOmnibarController {
     /// Submits the currently selected suggestion, if any.
     /// - Returns: `true` if a suggestion was submitted, `false` if no suggestion was selected.
     func submitSelectedSuggestion() -> Bool {
-        guard isSuggestionsEnabled,
-              let selectedSuggestion = suggestionsViewModel.selectedSuggestion else {
-            return false
+        guard isSuggestionsEnabled else { return false }
+
+        if suggestionsViewModel.isViewAllChatsSelected {
+            viewAllChats()
+            currentText = ""
+            return true
         }
 
+        guard let selectedSuggestion = suggestionsViewModel.selectedSuggestion else {
+            return false
+        }
         delegate?.aiChatOmnibarController(self, didSelectSuggestion: selectedSuggestion)
         currentText = ""
         return true
@@ -362,8 +421,19 @@ final class AIChatOmnibarController {
             }
     }
 
+    func viewAllChats() {
+        PixelKit.fire(AIChatPixel.aiChatViewAllChatsClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
+    }
+
     func submit() {
         guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return
+        }
+
+        // Block submission if too many images are attached and would be sent
+        let canSendImages = isImageGenerationMode || selectedModelSupportsImageUpload
+        if canSendImages, let attachments = attachmentsProvider?(), attachments.count > AIChatImageAttachmentsContainerView.maxAttachments {
             return
         }
 
@@ -378,12 +448,23 @@ final class AIChatOmnibarController {
 
         PixelKit.fire(AIChatPixel.aiChatAddressBarAIChatSubmitPrompt, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
+        if isImageGenerationMode {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarImageGenerationSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        } else if isWebSearchMode {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        }
+
+        // Capture mode/model/toolChoice before async work — cleanup() may reset activeToolMode
+        let modelId = effectiveModelId
+        let mode = effectiveMode
+        let toolChoice = effectiveToolChoice
+
         Task { @MainActor in
             // Wait for any pending image resizes to complete
             await waitForAttachmentsReady?()
 
-            // Get attachments after resizes are complete
-            let attachments = attachmentsProvider?() ?? []
+            // Get attachments after resizes are complete — only include if model supports images or in image gen mode
+            let attachments = canSendImages ? (attachmentsProvider?() ?? []) : []
             let images = Self.nativePromptImages(from: attachments, supportedFormats: self.selectedModelImageFormats)
 
             if !attachments.isEmpty {
@@ -394,11 +475,11 @@ final class AIChatOmnibarController {
                 with: .query(trimmedText, shouldAutoSubmit: true),
                 behavior: .currentTab
             )
-            // Re-set prompt after tab opener to include images and model selection (tab opener overwrites with a plain query)
-            let modelId = self.currentModelId
-            let prompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true, images: images, modelId: modelId)
+            // Re-set prompt after tab opener to include images, model selection, and mode (tab opener overwrites with a plain query)
+            let prompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true, toolChoice: toolChoice, images: images, modelId: modelId, mode: mode)
             promptHandler.setData(prompt)
 
+            self.activeToolMode = nil
             onAttachmentsClearRequested?()
             delegate?.aiChatOmnibarControllerDidSubmit(self)
         }

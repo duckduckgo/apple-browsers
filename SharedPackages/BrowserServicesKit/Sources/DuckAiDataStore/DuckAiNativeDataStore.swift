@@ -198,8 +198,8 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
 
         do {
             try dbQueue.write { db in
-                try db.execute(sql: "DELETE FROM duck_ai_chats")
                 try db.execute(sql: "DELETE FROM duck_ai_files")
+                try db.execute(sql: "DELETE FROM duck_ai_chats")
             }
         } catch {
             throw DuckAiNativeDataStoreError.databaseError(error)

@@ -213,6 +213,7 @@ extension SimplifiedSyncSettingsView {
                     }
                 ))
                 .labelsHidden()
+                .tint(Color(designSystemColor: .accent))
             }
             .animation(.easeInOut(duration: 0.3), value: model.isBusy)
             .disabled(model.isBusy || (!model.isSyncEnabled && !model.isAccountCreationAvailable))

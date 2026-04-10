@@ -155,6 +155,7 @@ class MainViewController: UIViewController {
 
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     private let tutorialSettings: TutorialSettings
     private let contextualOnboardingLogic: ContextualOnboardingLogic
@@ -313,7 +314,8 @@ class MainViewController: UIViewController {
         featureFlagger: featureFlagger,
         privacyConfigurationManager: privacyConfigurationManager,
         aiChatSettings: aiChatSettings,
-        iPadTabFeature: aichatIPadTabFeature
+        iPadTabFeature: aichatIPadTabFeature,
+        duckAiNativeStorageHandler: duckAiNativeStorageHandler
     )
     private var iPadAIChatQuery = ""
     private var allowIPadAIAutocompleteShow = false
@@ -341,6 +343,7 @@ class MainViewController: UIViewController {
         syncDataProviders: SyncDataProviders,
         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
+        duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
         appSettings: AppSettings,
         previewsSource: TabPreviewsSource,
         tabManager: TabManager,
@@ -405,6 +408,7 @@ class MainViewController: UIViewController {
         self.syncDataProviders = syncDataProviders
         self.userScriptsDependencies = userScriptsDependencies
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.favoritesViewModel = FavoritesListViewModel(bookmarksDatabase: bookmarksDatabase, favoritesDisplayMode: appSettings.favoritesDisplayMode)
         self.bookmarksCachingSearch = BookmarksCachingSearch(bookmarksStore: CoreDataBookmarksSearchStore(bookmarksStore: bookmarksDatabase))
         self.appSettings = appSettings
@@ -548,7 +552,8 @@ class MainViewController: UIViewController {
                                                               featureFlagger: featureFlagger,
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
-                                                              mobileCustomization: mobileCustomization)
+                                                              mobileCustomization: mobileCustomization,
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         if featureFlagger.isFeatureOn(.iPadAIToggle) {
             viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
@@ -727,7 +732,8 @@ class MainViewController: UIViewController {
                                                       aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
-                                                      mobileCustomization: mobileCustomization)
+                                                      mobileCustomization: mobileCustomization,
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -2945,7 +2951,7 @@ class MainViewController: UIViewController {
             pixelParameters[PixelParameters.emailCohort] = cohort
         }
         
-        Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters, includedParameters: [.atb])
+        Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters)
     }
 
     func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil, modelId: String? = nil, images: [AIChatNativePrompt.NativePromptImage]? = nil, fromDeepLink: Bool = false) {
@@ -4440,7 +4446,9 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String) {
         let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
-                                     privacyConfig: privacyConfigurationManager)
+                                     privacyConfig: privacyConfigurationManager,
+                                     nativeStorageHandler: duckAiNativeStorageHandler,
+                                     featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
         Task { @MainActor in
             await cleaner.deleteAIChat(chatID: chatID)
         }

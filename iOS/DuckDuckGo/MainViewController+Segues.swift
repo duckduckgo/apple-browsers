@@ -418,7 +418,8 @@ extension MainViewController {
                                                             remoteMessagingDebugHandler: remoteMessagingDebugHandler,
                                                             productSurfaceTelemetry: productSurfaceTelemetry,
                                                             webExtensionManager: webExtensionManager,
-                                                            syncAutoRestoreHandler: syncAutoRestoreHandler)
+                                                            syncAutoRestoreHandler: syncAutoRestoreHandler,
+                                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
@@ -522,7 +523,8 @@ extension MainViewController {
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
-            webExtensionManager: self.webExtensionManager))
+            webExtensionManager: self.webExtensionManager,
+            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler))
 
         debug.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
 

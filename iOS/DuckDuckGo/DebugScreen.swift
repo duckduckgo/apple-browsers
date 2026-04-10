@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import DDGSync
 import Persistence
 import PrivacyConfig
@@ -54,6 +55,7 @@ enum DebugScreen: Identifiable {
         let subscriptionDataReporter: SubscriptionDataReporting
         let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
         let webExtensionManager: WebExtensionManaging?
+        let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     }
 

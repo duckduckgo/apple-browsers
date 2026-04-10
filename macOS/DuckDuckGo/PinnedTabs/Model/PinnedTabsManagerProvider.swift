@@ -137,7 +137,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
         switch pinnedTabsMode {
         case .separate:
             assert(windowControllersManager != nil, "windowControllersManager must be set")
-            return windowControllersManager?.allTabCollectionViewModels.first(where: { $0.tabs.contains(tab) || $0.pinnedTabs.contains(tab) })?.pinnedTabsManager
+            return windowControllersManager?.allTabCollectionViewModels.first(where: { $0.tabCollection.contains(tab: tab) || $0.pinnedTabsCollection?.contains(tab: tab) == true })?.pinnedTabsManager
         case .shared:
             return sharedPinnedTabsManager
         }
@@ -199,7 +199,12 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
 
     @MainActor
     private func migrateAllPerWindowPinnedTabsToShared() {
-        let allTabs = perWindowPinnedTabsManagers.flatMap { $0.tabCollection.tabs }
+        let allTabs: [Tab] = perWindowPinnedTabsManagers.flatMap { $0.tabCollection.tabs }.map { tab in
+            switch tab {
+            case .loaded(let tab): tab
+            case .unloaded(let unloaded): unloaded.materialize()
+            }
+        }
         perWindowPinnedTabsManagers.forEach { $0.tabCollection.removeAll() }
         allTabs.forEach { sharedPinnedTabsManager.pin($0, firePixel: false) }
     }

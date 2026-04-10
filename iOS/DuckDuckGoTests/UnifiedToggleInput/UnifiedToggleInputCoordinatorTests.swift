@@ -29,12 +29,18 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     private var sut: UnifiedToggleInputCoordinator!
     private var mockDelegate: MockUnifiedToggleInputDelegate!
     private var mockPreferences: MockAIChatPreferences!
+    private var mockToggleModeStorage: MockToggleModeStorage!
     private var cancellables = Set<AnyCancellable>()
 
     override func setUp() {
         super.setUp()
         mockPreferences = MockAIChatPreferences()
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: true, preferences: mockPreferences)
+        mockToggleModeStorage = MockToggleModeStorage()
+        sut = UnifiedToggleInputCoordinator(
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage
+        )
         mockDelegate = MockUnifiedToggleInputDelegate()
         sut.delegate = mockDelegate
     }
@@ -44,6 +50,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut = nil
         mockDelegate = nil
         mockPreferences = nil
+        mockToggleModeStorage = nil
         super.tearDown()
     }
 
@@ -1116,6 +1123,59 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.textState, .empty)
     }
 
+    // MARK: - Toggle State Persistence
+
+    func test_submitSearch_commitsInputModeToStorage() {
+        sut.activateFromOmnibar(inputMode: .search)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .search)
+        XCTAssertEqual(mockToggleModeStorage.restore(), .search)
+    }
+
+    func test_submitAIChat_commitsInputModeToStorage() {
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat)
+        XCTAssertEqual(mockToggleModeStorage.restore(), .aiChat)
+    }
+
+    func test_submitSearch_notifiesDelegateOfCommit() {
+        sut.activateFromOmnibar(inputMode: .search)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .search)
+        XCTAssertEqual(mockDelegate.committedMode, .search)
+    }
+
+    func test_submitAIChat_notifiesDelegateOfCommit() {
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat)
+        XCTAssertEqual(mockDelegate.committedMode, .aiChat)
+    }
+
+    func test_activateFromOmnibar_setsCommittedInputMode() {
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertEqual(sut.committedInputMode, .aiChat)
+    }
+
+    func test_toggleWithoutSubmit_doesNotCommit() {
+        sut.activateFromOmnibar(inputMode: .search)
+        sut.updateInputMode(.aiChat, animated: false)
+        XCTAssertNil(mockToggleModeStorage.restore(), "Toggling without submitting should not persist")
+        XCTAssertEqual(sut.committedInputMode, .search, "Committed mode should not change on toggle")
+    }
+
+    func test_deactivateToOmnibar_revertsToCommittedMode() {
+        sut.activateFromOmnibar(inputMode: .search)
+        sut.updateInputMode(.aiChat, animated: false)
+        sut.deactivateToOmnibar()
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_externalSubmission_commitsCurrentMode() {
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        mockDelegate.committedMode = nil
+        sut.handleExternalSubmission(.prompt)
+        XCTAssertEqual(mockToggleModeStorage.restore(), .aiChat)
+        XCTAssertEqual(mockDelegate.committedMode, .aiChat)
+    }
+
     // MARK: - Helpers
 
     private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false) -> AIChatModel {
@@ -1175,6 +1235,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedModelId: String?
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
     var submittedQuery: String?
+    var committedMode: TextEntryMode?
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?) {
         submittedPrompt = prompt
@@ -1184,9 +1245,18 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() {}
     func unifiedToggleInputDidChangeHeight() {}
+    func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
+        committedMode = mode
+    }
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {
     var selectedModelId: String?
     var selectedModelShortName: String?
+}
+
+private final class MockToggleModeStorage: ToggleModeStoring {
+    private var storedMode: TextEntryMode?
+    func save(_ mode: TextEntryMode) { storedMode = mode }
+    func restore() -> TextEntryMode? { storedMode }
 }

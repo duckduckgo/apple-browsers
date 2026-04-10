@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Cocoa
 import PixelKit
 import SwiftUI
@@ -264,7 +265,9 @@ final class PermissionAuthorizationViewController: NSViewController {
         isAuthorizationInProgress = false
         fireAuthorizationPixel(decision: .allow)
         dismiss()
-        query?.handleDecision(grant: true, remember: nil)
+        // For duck.ai microphone, persist "always allow" so voice chat doesn't re-prompt on every session.
+        let alwaysRemember = query?.permissions.contains(.microphone) == true && query?.domain.isDuckAIHost == true
+        query?.handleDecision(grant: true, remember: alwaysRemember ? true : nil)
     }
 
     private func handleDismiss() {

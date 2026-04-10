@@ -20,13 +20,13 @@ import Foundation
 import Persistence
 
 public enum DuckAiNativeStorageKeyNames: String, StorageKeyDescribing {
-    case migrationDone = "duckAiNativeStorage-migrationDone"
+    case migrationStatus = "duckAiNativeStorage-migrationStatus"
     case settings = "duckAiNativeStorage-settings"
 }
 
 public struct DuckAiNativeStorageSettings: StoringKeys {
     public init() {}
 
-    public let migrationDone = StorageKey<Bool>(DuckAiNativeStorageKeyNames.migrationDone)
+    public let migrationStatus = StorageKey<Data>(DuckAiNativeStorageKeyNames.migrationStatus)
     public let settings = StorageKey<Data>(DuckAiNativeStorageKeyNames.settings)
 }

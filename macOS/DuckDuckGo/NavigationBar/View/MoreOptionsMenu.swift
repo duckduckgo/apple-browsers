@@ -572,9 +572,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @MainActor
     private func addUtilityItems() {
         if aiChatMenuConfiguration.shouldDisplayMoreOptionsMenuShortcut {
-            let aiChatItem = NSMenuItem(title: "Duck.ai", action: nil, keyEquivalent: "n")
+            let aiChatItem = NSMenuItem(title: "Duck.ai", action: #selector(newAiChat), keyEquivalent: "n")
             aiChatItem.keyEquivalentModifierMask = [.command, .option]
             aiChatItem.image = DesignSystemImages.Glyphs.Size16.duckAi
+            aiChatItem.target = self
             aiChatItem.submenu = makeAIChatMenu()
             addItem(aiChatItem)
         }

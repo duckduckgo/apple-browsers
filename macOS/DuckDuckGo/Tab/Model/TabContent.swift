@@ -251,7 +251,28 @@ extension TabContent {
         }
     }
 
-    // !!! don‘t add `url` property to avoid ambiguity with the `.url` enum case
+    /// Resolves the display title for this content type.
+    ///
+    /// For content types with well-known titles (bookmarks, settings, etc.), returns those directly.
+    /// For URL-based content, falls back through: page title → host → file name → "Untitled".
+    func displayTitle(pageTitle: String?, pageURL: URL?) -> String {
+        if let title = self.title {
+            return title
+        }
+        if case .newtab = self {
+            return UserText.tabHomeTitle
+        }
+        if let tabTitle = pageTitle?.trimmingWhitespace(), !tabTitle.isEmpty {
+            return tabTitle
+        } else if let host = pageURL?.suggestedTitlePlaceholder, !host.isEmpty {
+            return host
+        } else if let pageURL, pageURL.isFileURL {
+            return pageURL.lastPathComponent
+        }
+        return UserText.tabUntitledTitle
+    }
+
+    // !!! don’t add `url` property to avoid ambiguity with the `.url` enum case
     // use `userEditableUrl` or `urlForWebView` instead.
 
     /// user-editable URL displayed in the address bar

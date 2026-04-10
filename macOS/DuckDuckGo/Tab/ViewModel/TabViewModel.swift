@@ -39,7 +39,6 @@ final class TabViewModel: NSObject {
     @Published private(set) var canGoBack: Bool = false
 
     @Published private(set) var canReload: Bool = false
-    @Published private(set) var isSuspended: Bool = false
     @Published private(set) var canBeBookmarked: Bool = false
     @Published private(set) var canShare: Bool = false
     @Published var isLoading: Bool = false {
@@ -157,9 +156,6 @@ final class TabViewModel: NSObject {
             .store(in: &cancellables)
         tab.$loadingProgress
             .assign(to: \.progress, onWeaklyHeld: self)
-            .store(in: &cancellables)
-        tab.$isSuspended
-            .assign(to: \.isSuspended, onWeaklyHeld: self)
             .store(in: &cancellables)
         if case .url(_, credential: _, source: .pendingStateRestoration) = tab.content {
             updateAddressBarStrings()
@@ -307,7 +303,7 @@ final class TabViewModel: NSObject {
     }
 
     private func subscribeToPreferences() {
-        self.tab.webView.zoomLevelDelegate = self
+        tab.webView.zoomLevelDelegate = self
         appearancePreferences.$showFullURL.dropFirst().sink { [weak self] showFullURL in
             self?.updatePassiveAddressBarString(showFullURL: showFullURL)
         }.store(in: &cancellables)
@@ -448,48 +444,23 @@ final class TabViewModel: NSObject {
 
     private func updateTitle() {
         var title: String
-        switch tab.content {
-            // keep an old tab title for web page terminated page, display "Failed to open page" for loading errors
-        case _ where isShowingErrorPage && (tab.error?.isWebContentProcessTerminated != true || tab.title == nil):
+
+        // keep an old tab title for web page terminated page, display "Failed to open page" for loading errors
+        if isShowingErrorPage && (tab.error?.isWebContentProcessTerminated != true || tab.title == nil) {
             switch tab.error as NSError? {
             case is URLError where tab.error?.isServerCertificateUntrusted == true:
                 title = UserText.sslErrorPageTabTitle
-            case .some( _ as MaliciousSiteError):
+            case .some(_ as MaliciousSiteError):
                 title = UserText.maliciousSiteErrorPageTabTitle
             default:
                 title = UserText.tabErrorTitle
             }
+        } else if case .newtab = tab.content, tab.burnerMode.isBurner {
+            title = UserText.burnerTabHomeTitle
+        } else {
+            title = tab.content.displayTitle(pageTitle: tab.title, pageURL: tab.url)
+        }
 
-        case .dataBrokerProtection:
-            title = UserText.tabDataBrokerProtectionTitle
-        case .settings:
-            title = UserText.tabPreferencesTitle
-        case .bookmarks:
-            title = UserText.tabBookmarksTitle
-        case .history:
-            title = UserText.mainMenuHistory
-        case .newtab:
-            if tab.burnerMode.isBurner {
-                title = UserText.burnerTabHomeTitle
-            } else {
-                title = UserText.tabHomeTitle
-            }
-        case .url, .none, .subscription, .identityTheftRestoration, .onboarding, .webExtensionUrl, .aiChat:
-            if let tabTitle = tab.title?.trimmingWhitespace(), !tabTitle.isEmpty {
-                title = tabTitle
-            } else if let host = tab.url?.suggestedTitlePlaceholder {
-                title = host
-            } else if let url = tab.url, url.isFileURL {
-                title = url.lastPathComponent
-            } else {
-                title = addressBarString
-            }
-        case .releaseNotes:
-            title = UserText.releaseNotesTitle
-        }
-        if title.isEmpty {
-            title = UserText.tabUntitledTitle
-        }
         if self.title != title {
             self.title = title
         }

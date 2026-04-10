@@ -588,7 +588,7 @@ public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {
 
 public enum TabSuspensionSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature { .tabSuspension }
-    case isMemoryPressureTriggerEnabled
+    case memoryPressureTrigger
 }
 
 public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {

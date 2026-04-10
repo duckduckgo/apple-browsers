@@ -268,7 +268,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             return
         }
 
-        let compensation = isBottomBar ? Metrics.chatHistoryBottomBarCompensation : Metrics.chatHistoryEscapeHatchInsetCompensation
+        let compensation = isBottomBar ? Metrics.chatHistoryBottomBarCompensation : 0
         let emptyListBoost: CGFloat = (!chatHasSuggestions && !isBottomBar) ? Metrics.escapeHatchEmptyListBoost : 0
         let chatInset = suggestionInset - compensation + emptyListBoost
         aiChatHistoryManager?.setAdditionalTopInset(chatInset)
@@ -690,9 +690,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let backgroundColor = UIColor(designSystemColor: .panel)
         static let contentTopInset: CGFloat = 10
         static let escapeHatchDismissButtonInset: CGFloat = 44
-        static let chatHistoryEscapeHatchInsetCompensation: CGFloat = 0
         static let chatHistoryBottomBarCompensation: CGFloat = 8
         static let escapeHatchLogoOffset: CGFloat = 120
+        // Vertically centers the escape hatch card when the chat history list is empty (no recent chats)
         static let escapeHatchEmptyListBoost: CGFloat = 150
     }
 }

@@ -103,7 +103,7 @@ extension ContentBlockerRulesManager: EntityProviding {
 
 final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, ContextualDaxDialogStatusProvider {
     // TODO: Temporary override for experiment validation. Remove when onboarding style is controlled by remote config.
-    static let shouldForceRebrandedOnboarding = true
+    static let shouldForceRebrandedOnboarding = false
     
     struct MajorTrackers {
         

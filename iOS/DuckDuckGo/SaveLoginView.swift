@@ -64,7 +64,7 @@ struct SaveLoginView: View {
                 .zIndex(1)
 
             innerContent
-                .padding([.bottom], Const.Size.bodyBottomPadding)
+                .padding([.bottom], (layoutType == .newUser || layoutType == .saveLogin) ? 0 : Const.Size.bodyBottomPadding)
                 .fixedSize(horizontal: false, vertical: shouldFixSize)
                 .background(GeometryReader { proxy -> Color in
                     DispatchQueue.main.async { viewModel.contentHeight = proxy.size.height }

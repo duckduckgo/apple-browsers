@@ -68,7 +68,7 @@ final class TabSuspensionExtensionTests: XCTestCase {
     }
 
     @MainActor
-    private func makeSUT(tld: TLD = TLD()) -> TabSuspensionExtension {
+    private func makeSUT() -> TabSuspensionExtension {
         TabSuspensionExtension(
             tabID: tabID,
             webViewPublisher: webViewPublisher,
@@ -77,7 +77,7 @@ final class TabSuspensionExtensionTests: XCTestCase {
             featureFlagger: featureFlagger,
             aiChatSessionStore: aiChatSessionStore,
             privacyConfigurationManager: privacyConfigurationManager,
-            tld: tld,
+            tld: TLD(),
             isTabPinned: { [unowned self] in self.isPinned }
         )
     }
@@ -459,11 +459,12 @@ final class TabSuspensionExtensionTests: XCTestCase {
 
     @MainActor
     func testWhenLastSuspendedURLHasSameHostButDifferentPath_ThenSuspensionStateIsSameHostname() throws {
-        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/about"))
+        let currentURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/about"))
+        let suspendedURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/"))
         sut = makeSUT()
-        contentPublisher.send(.url(url, credential: nil, source: .link))
+        contentPublisher.send(.url(currentURL, credential: nil, source: .link))
 
-        sut.lastSuspendedURL = .duckDuckGo
+        sut.lastSuspendedURL = suspendedURL
 
         XCTAssertEqual(sut.lastSuspensionState, .sameHostname)
     }
@@ -472,7 +473,7 @@ final class TabSuspensionExtensionTests: XCTestCase {
     func testWhenLastSuspendedURLHasSameETLDPlus1ButDifferentHost_ThenSuspensionStateIsSameDomain() throws {
         let currentURL = try XCTUnwrap(URL(string: "https://www.example.com/page"))
         let suspendedURL = try XCTUnwrap(URL(string: "https://mail.example.com/inbox"))
-        sut = makeSUT(tld: TLD())
+        sut = makeSUT()
         contentPublisher.send(.url(currentURL, credential: nil, source: .link))
 
         sut.lastSuspendedURL = suspendedURL
@@ -482,11 +483,12 @@ final class TabSuspensionExtensionTests: XCTestCase {
 
     @MainActor
     func testWhenLastSuspendedURLHasDifferentDomain_ThenSuspensionStateIsDifferentDomain() throws {
-        let url = try XCTUnwrap(URL(string: "https://example.com"))
+        let currentURL = try XCTUnwrap(URL(string: "https://example.com"))
+        let suspendedURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/"))
         sut = makeSUT()
-        contentPublisher.send(.url(url, credential: nil, source: .link))
+        contentPublisher.send(.url(currentURL, credential: nil, source: .link))
 
-        sut.lastSuspendedURL = .duckDuckGo
+        sut.lastSuspendedURL = suspendedURL
 
         XCTAssertEqual(sut.lastSuspensionState, .differentDomain)
     }

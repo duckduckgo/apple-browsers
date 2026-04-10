@@ -126,7 +126,7 @@ extension MainViewController {
     }
 
     @objc func keyboardReload() {
-        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        guard isShortcutEnabled() else { return }
         self.currentTab?.refresh()
     }
 
@@ -140,7 +140,7 @@ extension MainViewController {
 
     @objc func keyboardLocation() {
         guard tabSwitcherController == nil else { return }
-        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        guard isShortcutEnabled() else { return }
 
         showBars()
         viewCoordinator.omniBar.beginEditing(animated: true)
@@ -151,7 +151,7 @@ extension MainViewController {
     }
     
     @objc func keyboardFind() {
-        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        guard isShortcutEnabled() else { return }
         currentTab?.requestFindInPage()
     }
     
@@ -164,7 +164,7 @@ extension MainViewController {
     
     @objc func keyboardNewTab() {
         guard tabSwitcherController == nil else { return }
-        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        guard isShortcutEnabled() else { return }
         
         if currentTab != nil {
             newTab()
@@ -175,7 +175,7 @@ extension MainViewController {
     
     @objc func keyboardCloseTab() {
         guard tabSwitcherController == nil else { return }
-        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        guard isShortcutEnabled() else { return }
         
         guard let tab = currentTab else { return }
         closeTab(tab.tabModel)
@@ -199,7 +199,7 @@ extension MainViewController {
     
     @objc func keyboardShowAllTabs() {
         guard tabSwitcherController == nil else { return }
-        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        guard isShortcutEnabled() else { return }
         
         performCancel()
         showTabSwitcher()
@@ -207,34 +207,38 @@ extension MainViewController {
     
     @objc func keyboardBrowserForward() {
         guard tabSwitcherController == nil else { return }
-        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        guard isShortcutEnabled() else { return }
         
         currentTab?.goForward()
     }
     
     @objc func keyboardBrowserBack() {
         guard tabSwitcherController == nil else { return }
-        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        guard isShortcutEnabled() else { return }
         
         currentTab?.goBack()
     }
     
     @objc func keyboardPrint() {
-        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        guard isShortcutEnabled() else { return }
         currentTab?.print()
     }
 
     @objc func keyboardAddBookmark() {
-        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        guard isShortcutEnabled() else { return }
         saveBookmark(favorite: false)
     }
 
     @objc func keyboardAddFavorite() {
-        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        guard isShortcutEnabled() else { return }
         saveBookmark(favorite: true)
     }
     
     @objc func keyboardNoOperation() { }
+
+    private func isShortcutEnabled() -> Bool {
+        !experimentDuckAIFireOnboardingFlow.controlsLocked
+    }
 
     private func saveBookmark(favorite: Bool) {
         currentTab?.saveAsBookmark(favorite: favorite, viewModel: menuBookmarksViewModel)

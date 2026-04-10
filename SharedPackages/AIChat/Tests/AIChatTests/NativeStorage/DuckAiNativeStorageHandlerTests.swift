@@ -287,11 +287,6 @@ private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring {
         deleteAllChatsCallCount += 1
     }
 
-    func deleteAllChatsAndFiles() throws {
-        deleteAllChatsCallCount += 1
-        deleteAllFilesCallCount += 1
-    }
-
     func putFile(uuid: String, chatId: String, data: Data) throws {
         putFileCallCount += 1
         lastPutFileUuid = uuid

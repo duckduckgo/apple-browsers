@@ -27,7 +27,6 @@ public protocol DuckAiNativeDataStoring {
     func getAllChats() throws -> [DuckAiChatRecord]
     func deleteChat(chatId: String) throws
     func deleteAllChats() throws
-    func deleteAllChatsAndFiles() throws
 
     // MARK: - Files
 

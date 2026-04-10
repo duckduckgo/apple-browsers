@@ -893,6 +893,7 @@ private extension AIChatContextualSheetViewController {
                 transitionToWebView()
             }
             fireButton.isHidden = false
+            recentChatsButton.isHidden = false
         }
 
     }

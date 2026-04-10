@@ -517,6 +517,57 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         XCTAssertTrue(delegate.didCallDismissViewHighlight)
     }
 
+    func testWhenDialogSuggestionPressed_ThenPixelReporterMeasuresSuggestionPressed() throws {
+        // GIVEN
+        dialogProvider.dialog = .tryASearch
+        let url = URL.duckDuckGo
+        let delegate = BrowserTabViewControllerDelegateSpy()
+        viewController.delegate = delegate
+        tab.navigateFromOnboarding(to: url)
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertFalse(pixelReporter.measureSuggestionPressedCalled)
+
+        // WHEN
+        factory.performOnSuggestionPressed()
+
+        // THEN
+        XCTAssertTrue(pixelReporter.measureSuggestionPressedCalled)
+    }
+
+    func testWhenDialogManuallyDismissed_ThenPixelReporterMeasuresManuallyDismissed() throws {
+        // GIVEN
+        dialogProvider.dialog = .tryASearch
+        let url = URL.duckDuckGo
+        let delegate = BrowserTabViewControllerDelegateSpy()
+        viewController.delegate = delegate
+        tab.navigateFromOnboarding(to: url)
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertNil(pixelReporter.manuallyDismissedDialog)
+
+        // WHEN
+        factory.performOnManualDismiss()
+
+        // THEN
+        XCTAssertEqual(pixelReporter.manuallyDismissedDialog, .tryASearch)
+    }
+
+    func testWhenDialogGotItPressed_ThenPixelReporterMeasuresGotItPressed() {
+        // GIVEN
+        dialogProvider.dialog = .defaultSearchDone
+        let url = URL.duckDuckGo
+        let delegate = BrowserTabViewControllerDelegateSpy()
+        viewController.delegate = delegate
+        tab.navigateFromOnboarding(to: url)
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertNil(pixelReporter.gotItPressedDialog)
+
+        // WHEN
+        factory.performOnGotItPressed()
+
+        // THEN
+        XCTAssertEqual(pixelReporter.gotItPressedDialog, .defaultSearchDone)
+    }
+
 }
 
 class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {

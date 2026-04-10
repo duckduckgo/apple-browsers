@@ -141,6 +141,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         return isMouseOverTab
     }
 
+    private var selectionNeedsLayoutInvalidation = false
+
     /// Returns mouse location in window if window is key
     private func mouseLocationInKeyWindow() -> NSPoint? {
         guard let window = view.window, window.isKeyWindow else { return nil }
@@ -1149,11 +1151,21 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         let newSelectionIndexPath = IndexPath(item: selectionIndex.item)
         if tabMode == .divided {
+            invalidateLayoutIfNeeded(for: collectionView)
             collectionView.animator().selectItems(at: [newSelectionIndexPath], scrollPosition: .centeredHorizontally)
         } else {
             collectionView.selectItems(at: [newSelectionIndexPath], scrollPosition: .centeredHorizontally)
             collectionView.scrollToSelected()
         }
+    }
+
+    private func invalidateLayoutIfNeeded(for collectionView: TabBarCollectionView) {
+        guard selectionNeedsLayoutInvalidation else {
+            return
+        }
+
+        collectionView.invalidateLayout()
+        selectionNeedsLayoutInvalidation = false
     }
 
     private func refreshPinnedTabsLastSeparator() {
@@ -1188,6 +1200,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let locationInWindow = event.locationInWindow
 
         if let indexPath = collectionView.indexPathForItemAtMouseLocation(locationInWindow) {
+            selectionNeedsLayoutInvalidation = true
             tabCollectionViewModel.select(at: .unpinned(indexPath.item))
             return
         }

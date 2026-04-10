@@ -224,11 +224,17 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onMenuButtonPressed = { [weak self] in
             self?.onMenuButtonPressed()
         }
+        barView.onMenuButtonLongPressed = { [weak self] in
+            self?.omniDelegate?.onMenuLongPressed()
+        }
         barView.onTrackersViewPressed = { [weak self] in
             self?.onTrackersViewPressed()
         }
         barView.onSettingsButtonPressed = { [weak self] in
             self?.onSettingsButtonPressed()
+        }
+        barView.onSettingsButtonLongPressed = { [weak self] in
+            self?.omniDelegate?.onMenuLongPressed()
         }
         barView.onCancelPressed = { [weak self] in
             self?.onCancelPressed()

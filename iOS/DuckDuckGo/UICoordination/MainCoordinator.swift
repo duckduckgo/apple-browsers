@@ -415,6 +415,7 @@ final class MainCoordinator {
             privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
             apiService: DefaultAPIService(),
             baseDirectory: scriptletsDirectory,
+            pixelFiring: iOSWebExtensionPixelFiring(),
             isProduction: !isDebugBuild
         )
     }
@@ -535,6 +536,8 @@ final class MainCoordinator {
         controller.showBars()
         controller.onForeground()
 
+        fireDailyAdBlockingPixel()
+
         if #available(iOS 18.4, *) {
             webExtensionEventsCoordinator?.didFocusWindow()
         }
@@ -549,6 +552,14 @@ final class MainCoordinator {
 
     private func resetAppStartTime() {
         controller.appDidFinishLaunchingStartTime = nil
+    }
+
+    private func fireDailyAdBlockingPixel() {
+        let isEnabled = controller.adBlockingAvailability.isEnabled
+        DailyPixel.fire(
+            pixel: .webExtensionDailyAdBlockingState,
+            withAdditionalParameters: ["is_enabled": isEnabled ? "true" : "false"]
+        )
     }
 
 }

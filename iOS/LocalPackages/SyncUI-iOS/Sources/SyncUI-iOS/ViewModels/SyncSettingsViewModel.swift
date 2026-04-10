@@ -415,7 +415,6 @@ public class SyncSettingsViewModel: ObservableObject {
         isBusy = true
         Task { @MainActor in
             defer { isBusy = false }
-            guard await commonAuthenticate() else { return }
             if await delegate?.simplifiedConfirmAndDisableSync() == true {
                 isSyncEnabled = false
             }

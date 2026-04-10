@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
+import Combine
 import NewTabPage
 
 final class MockNewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding {
 
     var aiChatsHandler: ((String?) async -> NewTabPageDataModel.AiChatsData)?
+    var hasExcessChatsPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
 
     @MainActor
     func aiChats(query: String?) async -> NewTabPageDataModel.AiChatsData {

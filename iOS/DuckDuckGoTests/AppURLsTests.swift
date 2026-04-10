@@ -218,15 +218,27 @@ final class AppURLsTests: XCTestCase {
     }
 
     func testExtiUrlCreatesUrlWithAtbParam() throws {
-        let url = URL.makeExtiURL(atb: "x")
+        let url = URL.makeExtiURL(atb: "x", isPad: false)
         XCTAssertEqual(url.getParameter(named: "atb"), "x")
+        XCTAssertEqual(url.getParameter(named: "is_tablet"), "0")
+    }
+
+    func testExtiUrlCreatesUrlWithAtbParamForPad() throws {
+        let url = URL.makeExtiURL(atb: "x", isPad: true)
+        XCTAssertEqual(url.getParameter(named: "atb"), "x")
+        XCTAssertEqual(url.getParameter(named: "is_tablet"), "1")
     }
 
     func testSearchUrlCreatesUrlWithSourceParam() throws {
         let url = StatisticsDependentURLFactory(statisticsStore: mockStatisticsStore).makeSearchURL(text: "query")!
         XCTAssertEqual(url.getParameter(named: "t"), "ddg_ios")
     }
-    
+
+    func testSearchUrlCreatesUrlWithSourceParamForiPad() throws {
+        let url = StatisticsDependentURLFactory(statisticsStore: mockStatisticsStore, isPad: true).makeSearchURL(text: "query")!
+        XCTAssertEqual(url.getParameter(named: "t"), "ddg_ios_tablet")
+    }
+
     func testWhenExistingQueryUsesVerticalThenItIsAppliedToNewOne() throws {
         let contextURL = URL(string: "https://duckduckgo.com/?q=query&iar=images&ko=-1&ia=images")!
         let url = StatisticsDependentURLFactory(statisticsStore: mockStatisticsStore)

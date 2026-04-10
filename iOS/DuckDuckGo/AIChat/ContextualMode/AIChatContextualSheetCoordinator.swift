@@ -65,6 +65,7 @@ final class AIChatContextualSheetCoordinator {
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
+    private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
     private let isFireTab: Bool
 
@@ -104,6 +105,7 @@ final class AIChatContextualSheetCoordinator {
          featureFlagger: FeatureFlagger,
          pageContextHandler: AIChatPageContextHandling,
          isFireTab: Bool = false,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()) {
         self.voiceSearchHelper = voiceSearchHelper
@@ -114,6 +116,7 @@ final class AIChatContextualSheetCoordinator {
         self.featureFlagger = featureFlagger
         self.pageContextHandler = pageContextHandler
         self.isFireTab = isFireTab
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.debugSettings = debugSettings
         self.pixelHandler = pixelHandler
         self.sessionState = AIChatContextualChatSessionState(
@@ -223,7 +226,12 @@ private extension AIChatContextualSheetCoordinator {
 
     func makeSuggestionsReaderIfEnabled() -> AIChatSuggestionsReading? {
         guard featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements) else { return nil }
-        let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
+        let reader = SuggestionsReader(
+            featureFlagger: featureFlagger,
+            privacyConfig: privacyConfigurationManager,
+            nativeStorageHandler: duckAiNativeStorageHandler,
+            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+        )
         let settings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
         return AIChatSuggestionsReader(suggestionsReader: reader, historySettings: settings)
     }

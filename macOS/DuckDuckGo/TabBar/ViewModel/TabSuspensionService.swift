@@ -19,6 +19,7 @@
 import Combine
 import Foundation
 import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
 
@@ -54,8 +55,14 @@ enum TabSuspensionPixel: PixelKitEvent {
 @MainActor
 final class TabSuspensionService {
 
-    private static let minimumInactiveInterval: TimeInterval = 10 * 60
+    private static let defaultMinimumInactiveInterval: TimeInterval = 10 * 60
+    private static let debugMinimumInactiveInterval: TimeInterval = 5
 
+    enum Key: String {
+        case useShortInactiveInterval = "debug.tab-suspension.use-short-inactive-interval"
+    }
+
+    private let keyValueStore: ThrowingKeyValueStoring
     private let windowControllersManager: WindowControllersManagerProtocol
     private let featureFlagger: FeatureFlagger
     private let memoryUsageMonitor: MemoryUsageMonitoring
@@ -64,11 +71,28 @@ final class TabSuspensionService {
     private let dateProvider: () -> Date
     private var cancellables: Set<AnyCancellable> = []
 
+    var useShortInactiveInterval: Bool {
+        get {
+            let storedValue = (try? keyValueStore.object(forKey: Key.useShortInactiveInterval.rawValue) as? Bool) ?? false
+            // only allow to override interval for internal users
+            return featureFlagger.internalUserDecider.isInternalUser ? storedValue : false
+        }
+
+        set {
+            try? keyValueStore.set(newValue, forKey: Key.useShortInactiveInterval.rawValue)
+        }
+    }
+
+    private var minimumInactiveInterval: TimeInterval {
+        useShortInactiveInterval ? Self.debugMinimumInactiveInterval : Self.defaultMinimumInactiveInterval
+    }
+
     init(
         windowControllersManager: WindowControllersManagerProtocol,
         featureFlagger: FeatureFlagger,
         memoryUsageMonitor: MemoryUsageMonitoring,
         pixelFiring: PixelFiring?,
+        keyValueStore: ThrowingKeyValueStoring,
         notificationCenter: NotificationCenter = .default,
         dateProvider: @escaping () -> Date = { Date() }
     ) {
@@ -76,6 +100,7 @@ final class TabSuspensionService {
         self.featureFlagger = featureFlagger
         self.memoryUsageMonitor = memoryUsageMonitor
         self.pixelFiring = pixelFiring
+        self.keyValueStore = keyValueStore
         self.notificationCenter = notificationCenter
         self.dateProvider = dateProvider
 
@@ -99,7 +124,7 @@ final class TabSuspensionService {
 
         Logger.tabSuspension.info("Critical memory pressure event received, starting tab suspension")
 
-        let cutoffDate = dateProvider().addingTimeInterval(-Self.minimumInactiveInterval)
+        let cutoffDate = dateProvider().addingTimeInterval(-minimumInactiveInterval)
         var suspendedCount = 0
 
         for viewModel in windowControllersManager.allTabCollectionViewModels where !viewModel.isBurner {

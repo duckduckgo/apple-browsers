@@ -474,10 +474,16 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private func subscribeToTabs() {
-        tabCollectionViewModel.tabCollection.$tabs
-            .sink {  [weak self] tabs in
+        tabCollectionViewModel.tabCollection.loadedTabsPublisher
+            .sink { [weak self] loadedTabs in
                 guard let self else { return }
-                setDelegate(for: tabs)
+                setDelegate(for: loadedTabs)
+            }
+            .store(in: &cancellables)
+
+        tabCollectionViewModel.tabCollection.$tabs
+            .sink { [weak self] tabs in
+                guard let self else { return }
                 removeDataBrokerViewIfNecessary(for: tabs)
             }
             .store(in: &cancellables)
@@ -492,10 +498,10 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private func subscribeToPinnedTabs() {
-        pinnedTabsDelegatesCancellable = tabCollectionViewModel.pinnedTabsCollection?.$tabs
-            .sink(receiveValue: { [weak self] tabs in
+        pinnedTabsDelegatesCancellable = tabCollectionViewModel.pinnedTabsCollection?.loadedTabsPublisher
+            .sink(receiveValue: { [weak self] loadedTabs in
                 guard let self else { return }
-                setDelegate(for: tabs)
+                setDelegate(for: loadedTabs)
             })
     }
 
@@ -547,7 +553,7 @@ final class BrowserTabViewController: NSViewController {
                                                object: nil)
     }
 
-    private func removeDataBrokerViewIfNecessary(for tabs: [Tab]) {
+    private func removeDataBrokerViewIfNecessary(for tabs: [AnyTab]) {
         if let dataBrokerProtectionHomeViewController,
            !tabs.contains(where: { $0.content == .dataBrokerProtection }) {
             dataBrokerProtectionHomeViewController.removeCompletely()
@@ -1162,7 +1168,7 @@ final class BrowserTabViewController: NSViewController {
         guard let tabViewModel else { return false }
 
         let newWebView = webView(for: tabViewModel)
-        let isPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.tabs.contains(tabViewModel.tab) == true
+        let isPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.contains(tab: tabViewModel.tab) == true
         let isKeyWindow = view.window?.isKeyWindow == true
 
         let tabIsNotOnScreen = webView?.tabContentView.superview == nil
@@ -1401,7 +1407,7 @@ extension BrowserTabViewController: TabDelegate {
     }
 
     func closeTab(_ tab: Tab) {
-        guard let index = tabCollectionViewModel.tabCollection.tabs.firstIndex(of: tab) else {
+        guard let index = tabCollectionViewModel.tabCollection.firstIndex(of: tab) else {
             return
         }
         tabCollectionViewModel.remove(at: .unpinned(index))

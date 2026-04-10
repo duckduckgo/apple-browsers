@@ -179,7 +179,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         persistentPixel.fire(
             pixel: .networkProtectionControllerStartAttempt,
             error: nil,
-            includedParameters: [.appVersion, .atb],
+            includedParameters: [.appVersion],
             withAdditionalParameters: [:],
             onComplete: { _ in })
 
@@ -190,7 +190,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             persistentPixel.fire(
                 pixel: .networkProtectionControllerStartSuccess,
                 error: nil,
-                includedParameters: [.appVersion, .atb],
+                includedParameters: [.appVersion],
                 withAdditionalParameters: [:],
                 onComplete: { _ in })
         } catch {
@@ -203,7 +203,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             persistentPixel.fire(
                 pixel: .networkProtectionControllerStartFailure,
                 error: error,
-                includedParameters: [.appVersion, .atb],
+                includedParameters: [.appVersion],
                 withAdditionalParameters: [:],
                 onComplete: { _ in })
 
@@ -339,7 +339,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         do {
             self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
             try tunnelManager.connection.startVPNTunnel(options: options)
-            UniquePixel.fire(pixel: .networkProtectionNewUser, includedParameters: [.appVersion, .atb]) { error in
+            UniquePixel.fire(pixel: .networkProtectionNewUser, includedParameters: [.appVersion]) { error in
                 guard error != nil else { return }
                 UserDefaults.networkProtectionGroupDefaults.vpnFirstEnabled = Pixel.Event.networkProtectionNewUser.lastFireDate(
                     uniquePixelStorage: UniquePixel.storage

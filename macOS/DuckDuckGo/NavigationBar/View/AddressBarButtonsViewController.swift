@@ -274,6 +274,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var privacyEntryPointIconUpdateCancellable: AnyCancellable?
     private var tabRemovalCancellables = Set<AnyCancellable>()
     private var aiChatChromeSidebarFeatureFlagCancellable: AnyCancellable?
+    private var videoPlaybackCancellable: AnyCancellable?
 
     private struct TrackerAnimationDomainState {
         var lastVisitedDomain: String?
@@ -603,6 +604,7 @@ final class AddressBarButtonsViewController: NSViewController {
             subscribeToUrl()
             subscribeToPermissions()
             subscribeToPrivacyEntryPointIconUpdateTrigger()
+            subscribeToVideoPlayback()
 
             updatePrivacyEntryPointIcon()
             updateAIChatButtonState()
@@ -686,6 +688,14 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyEntryPointIconUpdateCancellable = tabViewModel?.privacyEntryPointIconUpdateTrigger
             .sink { [weak self] _ in
                 self?.updatePrivacyEntryPointIcon()
+            }
+    }
+
+    private func subscribeToVideoPlayback() {
+        videoPlaybackCancellable = tabViewModel?.tab.$mustDisplayAutoplayPolicy
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updatePermissionCenterButton()
             }
     }
 
@@ -844,8 +854,7 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
             isPermissionCenterPopoverShown: isPermissionCenterPopoverShown,
             isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
-            hasAnyPersistedPermissions: hasAnyPersistedPermissions,
-            isMouseOverNavigationBar: isMouseOverNavigationBar
+            hasAnyPersistedPermissions: hasAnyPersistedPermissions
         )
 
         showOrHidePermissionCenterPopoverIfNeeded()
@@ -2844,8 +2853,7 @@ extension TabViewModel {
     func shouldShowPermissionCenterButton(
         isPermissionCenterPopoverShown: Bool,
         isTextFieldEditorFirstResponder: Bool,
-        hasAnyPersistedPermissions: Bool,
-        isMouseOverNavigationBar: Bool = false
+        hasAnyPersistedPermissions: Bool
     ) -> Bool {
         // Show permission buttons when there's a requested permission on NTP even if address bar is focused,
         // since NTP has the address bar focused by default
@@ -2859,7 +2867,7 @@ extension TabViewModel {
         // so user can access permission center to change the decision
         return (shouldShowWhileFocused
             || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions))
-            || (!isTextFieldEditorFirstResponder && isMouseOverNavigationBar && mustDisplayAutoplayPolicy)
+            || (!isTextFieldEditorFirstResponder && mustDisplayAutoplayPolicy)
             || (!isTextFieldEditorFirstResponder && isPermissionCenterPopoverShown))
         && !isShowingErrorPage
     }

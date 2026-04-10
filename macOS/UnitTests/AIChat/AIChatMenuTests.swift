@@ -153,6 +153,87 @@ final class AIChatMenuTests: XCTestCase {
         XCTAssertEqual(suggestionsReader.receivedMaxChats, .max)
     }
 
+    func testUpdateWithMaxChatItems_fetchesMaxPlusOne() async {
+        let menu = AIChatMenu(suggestionsReader: suggestionsReader, actions: actions, maxChatItems: 8)
+        menu.update()
+
+        await fulfillment(of: [suggestionsReader.fetchExpectation], timeout: 1)
+
+        XCTAssertEqual(suggestionsReader.receivedMaxChats, 9)
+    }
+
+    // MARK: - View All Chats
+
+    func testViewAllChatsNotShown_whenChatsDoNotExceedLimit() async {
+        suggestionsReader.recentChats = (1...8).map { makeChat(chatId: "\($0)", title: "Chat \($0)") }
+        let menu = AIChatMenu(suggestionsReader: suggestionsReader, actions: actions, maxChatItems: 8)
+        menu.update()
+
+        await fulfillment(of: [suggestionsReader.fetchExpectation], timeout: 1)
+
+        XCTAssertFalse(menu.items.contains { $0.title == UserText.aiChatMenuViewAllChats })
+    }
+
+    func testViewAllChatsShown_whenChatsExceedLimit() async {
+        suggestionsReader.recentChats = (1...9).map { makeChat(chatId: "\($0)", title: "Chat \($0)") }
+        let menu = AIChatMenu(suggestionsReader: suggestionsReader, actions: actions, maxChatItems: 8)
+        menu.update()
+
+        await fulfillment(of: [suggestionsReader.fetchExpectation], timeout: 1)
+
+        XCTAssertTrue(menu.items.contains { $0.title == UserText.aiChatMenuViewAllChats })
+    }
+
+    func testViewAllChatsNotShown_whenNoMaxChatItems() async {
+        suggestionsReader.recentChats = (1...20).map { makeChat(chatId: "\($0)", title: "Chat \($0)") }
+        let menu = AIChatMenu(suggestionsReader: suggestionsReader, actions: actions)
+        menu.update()
+
+        await fulfillment(of: [suggestionsReader.fetchExpectation], timeout: 1)
+
+        XCTAssertFalse(menu.items.contains { $0.title == UserText.aiChatMenuViewAllChats })
+    }
+
+    func testViewAllChats_appearsAfterChatsAndBeforeDeleteAll() async {
+        suggestionsReader.recentChats = (1...9).map { makeChat(chatId: "\($0)", title: "Chat \($0)") }
+        let menu = AIChatMenu(suggestionsReader: suggestionsReader, actions: actions, maxChatItems: 8)
+        menu.update()
+
+        await fulfillment(of: [suggestionsReader.fetchExpectation], timeout: 1)
+
+        let viewAllIndex = menu.items.firstIndex { $0.title == UserText.aiChatMenuViewAllChats }!
+        let deleteAllIndex = menu.items.firstIndex { $0.title == UserText.aiChatMenuDeleteAllChats }!
+        XCTAssertLessThan(viewAllIndex, deleteAllIndex)
+        XCTAssertTrue(menu.items[viewAllIndex + 1].isSeparatorItem)
+        XCTAssertEqual(menu.items[viewAllIndex + 2].title, UserText.aiChatMenuDeleteAllChats)
+    }
+
+    func testViewAllChatsOnlyShowsMaxChatItems() async {
+        suggestionsReader.recentChats = (1...9).map { makeChat(chatId: "\($0)", title: "Chat \($0)") }
+        let menu = AIChatMenu(suggestionsReader: suggestionsReader, actions: actions, maxChatItems: 8)
+        menu.update()
+
+        await fulfillment(of: [suggestionsReader.fetchExpectation], timeout: 1)
+
+        let labelIndex = menu.items.firstIndex { $0.title == UserText.aiChatMenuRecentChats }!
+        let viewAllIndex = menu.items.firstIndex { $0.title == UserText.aiChatMenuViewAllChats }!
+        // separator before "View All Chats..." is at viewAllIndex - 1
+        let chatCount = viewAllIndex - 1 - labelIndex - 1
+        XCTAssertEqual(chatCount, 8)
+    }
+
+    func testViewAllChatsTapped_callsOpenNewChat() async {
+        suggestionsReader.recentChats = (1...9).map { makeChat(chatId: "\($0)", title: "Chat \($0)") }
+        let menu = AIChatMenu(suggestionsReader: suggestionsReader, actions: actions, maxChatItems: 8)
+        menu.update()
+
+        await fulfillment(of: [suggestionsReader.fetchExpectation], timeout: 1)
+
+        let item = menu.items.first { $0.title == UserText.aiChatMenuViewAllChats }!
+        menu.performActionForItem(at: menu.index(of: item))
+        XCTAssertTrue(openNewChatCalled)
+    }
+
     // MARK: - Action handlers
 
     func testOpenDuckAITappedCallsAction() {

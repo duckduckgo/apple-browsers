@@ -345,10 +345,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         let tabCollection = mainVC.tabCollectionViewModel.tabCollection
-        let pinnedTabs = mainVC.tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []
-        let allTabs = pinnedTabs + tabCollection.tabs
+        let pinnedTabs = mainVC.tabCollectionViewModel.pinnedTabsCollection?.loadedTabs ?? []
+        let allLoadedTabs = pinnedTabs + tabCollection.loadedTabs
 
-        guard let tab = allTabs.first(where: { $0.uuid == params.tabId }) else {
+        guard let tab = allLoadedTabs.first(where: { $0.uuid == params.tabId }) else {
             return AIChatTabContentResponse(pageContext: nil)
         }
 

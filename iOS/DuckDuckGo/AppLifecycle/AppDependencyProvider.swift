@@ -17,8 +17,6 @@
 //  limitations under the License.
 //
 
-import AIChat
-import DuckAiDataStore
 import Foundation
 import Core
 import BrowserServicesKit
@@ -65,7 +63,6 @@ protocol DependencyProvider {
     var tokenHandlerProvider: any SubscriptionTokenHandling { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
     var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging { get }
-    var duckAiNativeStorageHandler: DuckAiNativeStorageHandling? { get }
 }
 
 /// Provides dependencies for objects that are not directly instantiated
@@ -108,7 +105,6 @@ final class AppDependencyProvider: DependencyProvider {
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
-    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     private init() {
 
@@ -293,19 +289,6 @@ final class AppDependencyProvider: DependencyProvider {
                                                                               freeTrialConversionService: freeTrialConversionService
         )
 
-        if featureFlagger.isFeatureOn(.aiChatNativeStorage),
-           let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) {
-            let containerURL = groupContainer.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
-            do {
-                let keyStoreProvider = DuckAiKeyStoreProvider(accessGroup: Global.appConfigurationGroupName)
-                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: containerURL, keyStoreProvider: keyStoreProvider).handler
-            } catch {
-                Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
-                duckAiNativeStorageHandler = nil
-            }
-        } else {
-            duckAiNativeStorageHandler = nil
-        }
     }
 
 }

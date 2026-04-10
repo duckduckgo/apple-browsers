@@ -333,7 +333,8 @@ final class Fire: FireProtocol {
         self.aiChatHistoryCleaner = aIChatHistoryCleaner ?? AIChatHistoryCleaner(featureFlagger: NSApp.delegateTyped.featureFlagger,
                                                                                  aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
                                                                                  featureDiscovery: DefaultFeatureDiscovery(),
-                                                                                 privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager)
+                                                                                 privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                                                                 nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler)
         self.dataClearingPixelsReporter = dataClearingPixelsReporter
         self.dataClearingWideEventService = dataClearingWideEventService
         self.tabCleanupPreparer = tabCleanupPreparer
@@ -374,11 +375,11 @@ final class Fire: FireProtocol {
         let bookmarkDatabaseResult = burnDeletedBookmarks()
         dataClearingWideEventService?.update(.clearBookmarkDatabase, result: bookmarkDatabaseResult)
 
-        let tabViewModels = tabViewModels(of: entity)
+        let tabsToClean = tabsForCleanup(of: entity)
 
         Task {
             if entity.shouldClose {
-                await tabCleanupPreparer.prepareTabsForCleanup(tabViewModels)
+                await tabCleanupPreparer.prepareTabsForCleanup(tabsToClean)
             }
 
             group.enter()
@@ -514,10 +515,10 @@ final class Fire: FireProtocol {
 
         let windowControllers = windowControllersManager.mainWindowControllers
 
-        let tabViewModels = tabViewModels(of: entity)
+        let tabsToClean = tabsForCleanup(of: entity)
 
         Task {
-            await tabCleanupPreparer.prepareTabsForCleanup(tabViewModels)
+            await tabCleanupPreparer.prepareTabsForCleanup(tabsToClean)
 
             group.enter()
             dataClearingWideEventService?.start(.clearTabs)
@@ -967,7 +968,7 @@ final class Fire: FireProtocol {
     private func burnTabs(burningEntity: BurningEntity) -> Result<Void, Error> {
         var firstError: Error?
 
-        func replacementPinnedTab(from pinnedTab: Tab) -> Tab {
+        func replacementPinnedTab(from pinnedTab: AnyTab) -> Tab {
             return Tab(content: pinnedTab.content.loadedFromCache(), shouldLoadInBackground: true)
         }
 
@@ -1030,7 +1031,7 @@ final class Fire: FireProtocol {
             if shouldClose {
                 closeFloatingAIChatWindows(for: [tabViewModel.tab.uuid])
                 if tabCollectionViewModel.pinnedTabsManager?.isTabPinned(tabViewModel.tab) ?? false {
-                    let tab = replacementPinnedTab(from: tabViewModel.tab)
+                    let tab = replacementPinnedTab(from: .loaded(tabViewModel.tab))
                     if let index = tabCollectionViewModel.selectionIndex {
                         let result = tabCollectionViewModel.replaceTab(at: index, with: tab, forceChange: true)
                         measureError(result)
@@ -1103,20 +1104,19 @@ final class Fire: FireProtocol {
     }
 
     @MainActor
-    private func tabViewModels(of entity: BurningEntity) -> [TabViewModel] {
+    private func tabsForCleanup(of entity: BurningEntity) -> [any TabDataClearing] {
         switch entity {
         case .none:
             return []
         case .tab(tabViewModel: let tabViewModel, selectedDomains: _, parentTabCollectionViewModel: _, _):
-            return [tabViewModel]
+            return [AnyTab.loaded(tabViewModel.tab)]
         case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _, _):
-            let pinnedTabViewModels = Array(tabCollectionViewModel.pinnedTabsManager?.tabViewModels.values ?? Dictionary().values)
-            let tabViewModels = Array(tabCollectionViewModel.tabViewModels.values)
-            return pinnedTabViewModels + tabViewModels
+            let pinnedTabs = tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs ?? []
+            return pinnedTabs + tabCollectionViewModel.tabCollection.tabs
         case .allWindows:
-            let pinnedTabViewModels = Array(pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabViewModels.values })
-            let tabViewModels = windowControllersManager.allTabViewModels
-            return pinnedTabViewModels + tabViewModels
+            let pinnedTabs = pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabCollection.tabs }
+            let windowTabs = windowControllersManager.allTabCollectionViewModels.flatMap { $0.tabCollection.tabs }
+            return pinnedTabs + windowTabs
         }
     }
 
@@ -1183,7 +1183,7 @@ final class Fire: FireProtocol {
 extension TabCollection {
 
     // Local history of TabCollection instance including history of already closed tabs
-    var localHistory: [Visit] {
+    @MainActor var localHistory: [Visit] {
         tabs.flatMap { $0.localHistory }
     }
 
@@ -1197,7 +1197,7 @@ extension TabCollection {
     }
 
     var localHistoryDomainsOfRemovedTabs: Set<String> {
-        var domains = Set<String>()
+        var domains = removedTabDomains
         for visit in localHistoryOfRemovedTabs {
             if let host = visit.historyEntry?.url.host {
                 domains.insert(host)

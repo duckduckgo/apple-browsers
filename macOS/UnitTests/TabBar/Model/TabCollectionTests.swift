@@ -41,11 +41,11 @@ final class TabCollectionTests: XCTestCase {
 
             let tab1 = Tab()
             tabCollection.append(tab: tab1)
-            XCTAssertEqual(tabCollection.tabs[tabCollection.tabs.count - 1], tab1)
+            XCTAssertEqual(tabCollection.tabs[tabCollection.tabs.count - 1], .loaded(tab1))
 
             let tab2 = Tab()
             tabCollection.append(tab: tab2)
-            XCTAssertEqual(tabCollection.tabs[tabCollection.tabs.count - 1], tab2)
+            XCTAssertEqual(tabCollection.tabs[tabCollection.tabs.count - 1], .loaded(tab2))
         }
     }
 
@@ -59,7 +59,7 @@ final class TabCollectionTests: XCTestCase {
 
             tabCollection.insert(tab, at: -1)
             XCTAssertEqual(tabCollection.tabs.count, 0)
-            XCTAssertFalse(tabCollection.tabs.contains(tab))
+            XCTAssertFalse(tabCollection.contains(tab: tab))
         }
     }
 
@@ -70,12 +70,12 @@ final class TabCollectionTests: XCTestCase {
 
             let tab1 = Tab()
             tabCollection.insert(tab1, at: 0)
-            XCTAssertEqual(tabCollection.tabs[0], tab1)
+            XCTAssertEqual(tabCollection.tabs[0], .loaded(tab1))
 
             let tab2 = Tab()
             tabCollection.insert(tab2, at: 0)
-            XCTAssertEqual(tabCollection.tabs[0], tab2)
-            XCTAssertEqual(tabCollection.tabs[1], tab1)
+            XCTAssertEqual(tabCollection.tabs[0], .loaded(tab2))
+            XCTAssertEqual(tabCollection.tabs[1], .loaded(tab1))
         }
 
     }
@@ -90,11 +90,11 @@ final class TabCollectionTests: XCTestCase {
             let tab = Tab()
             tabCollection.append(tab: tab)
             XCTAssertEqual(tabCollection.tabs.count, 1)
-            XCTAssert(tabCollection.tabs.contains(tab))
+            XCTAssert(tabCollection.contains(tab: tab))
 
             XCTAssertFalse(tabCollection.removeTab(at: 1))
             XCTAssertEqual(tabCollection.tabs.count, 1)
-            XCTAssert(tabCollection.tabs.contains(tab))
+            XCTAssert(tabCollection.contains(tab: tab))
         }
     }
 
@@ -112,8 +112,8 @@ final class TabCollectionTests: XCTestCase {
 
             XCTAssert(tabCollection.removeTab(at: 0))
 
-            XCTAssertEqual(tabCollection.tabs[0], tab2)
-            XCTAssertEqual(tabCollection.tabs[1], tab3)
+            XCTAssertEqual(tabCollection.tabs[0], .loaded(tab2))
+            XCTAssertEqual(tabCollection.tabs[1], .loaded(tab3))
         }
     }
 
@@ -157,8 +157,8 @@ final class TabCollectionTests: XCTestCase {
             tabCollection.moveTab(at: 0, to: -1)
             tabCollection.moveTab(at: 3, to: 0)
             tabCollection.moveTab(at: -1, to: 0)
-            XCTAssertEqual(tabCollection.tabs[0], tab1)
-            XCTAssertEqual(tabCollection.tabs[1], tab2)
+            XCTAssertEqual(tabCollection.tabs[0], .loaded(tab1))
+            XCTAssertEqual(tabCollection.tabs[1], .loaded(tab2))
         }
     }
 
@@ -174,8 +174,8 @@ final class TabCollectionTests: XCTestCase {
 
             tabCollection.moveTab(at: 0, to: 0)
             tabCollection.moveTab(at: 1, to: 1)
-            XCTAssertEqual(tabCollection.tabs[0], tab1)
-            XCTAssertEqual(tabCollection.tabs[1], tab2)
+            XCTAssertEqual(tabCollection.tabs[0], .loaded(tab1))
+            XCTAssertEqual(tabCollection.tabs[1], .loaded(tab2))
         }
     }
 
@@ -192,14 +192,14 @@ final class TabCollectionTests: XCTestCase {
             tabCollection.append(tab: tab3)
 
             tabCollection.moveTab(at: 0, to: 1)
-            XCTAssertEqual(tabCollection.tabs[0], tab2)
-            XCTAssertEqual(tabCollection.tabs[1], tab1)
-            XCTAssertEqual(tabCollection.tabs[2], tab3)
+            XCTAssertEqual(tabCollection.tabs[0], .loaded(tab2))
+            XCTAssertEqual(tabCollection.tabs[1], .loaded(tab1))
+            XCTAssertEqual(tabCollection.tabs[2], .loaded(tab3))
 
             tabCollection.moveTab(at: 0, to: 2)
-            XCTAssertEqual(tabCollection.tabs[0], tab1)
-            XCTAssertEqual(tabCollection.tabs[1], tab3)
-            XCTAssertEqual(tabCollection.tabs[2], tab2)
+            XCTAssertEqual(tabCollection.tabs[0], .loaded(tab1))
+            XCTAssertEqual(tabCollection.tabs[1], .loaded(tab3))
+            XCTAssertEqual(tabCollection.tabs[2], .loaded(tab2))
         }
     }
 
@@ -225,6 +225,164 @@ final class TabCollectionTests: XCTestCase {
         XCTAssertEqual(popup.tabs.count, 1)
     }
 
+    // MARK: - Unloaded Tabs
+
+    @MainActor
+    func testLoadedTabsFiltersUnloadedTabs() {
+        let loadedTab = Tab()
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .unloaded(unloaded)])
+
+        XCTAssertEqual(tabCollection.tabs.count, 2)
+        XCTAssertEqual(tabCollection.loadedTabs.count, 1)
+        XCTAssertTrue(tabCollection.loadedTabs[0] === loadedTab)
+    }
+
+    @MainActor
+    func testLocalHistoryDomainsIncludesUnloadedTabVisitedDomains() {
+        let unloaded = UnloadedTab(
+            content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+            localHistoryIDs: [URL(string: "https://example.com")!, URL(string: "https://test.org")!]
+        )
+        let tabCollection = TabCollection(tabs: [.unloaded(unloaded)])
+
+        let domains = tabCollection.localHistoryDomains
+        XCTAssertTrue(domains.contains("example.com"))
+        XCTAssertTrue(domains.contains("test.org"))
+    }
+
+    @MainActor
+    func testLocalHistoryDomainsEmptyForUnloadedTabWithoutVisitedDomains() {
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.unloaded(unloaded)])
+
+        XCTAssertTrue(tabCollection.localHistoryDomains.isEmpty)
+    }
+
+    @MainActor
+    func testRemoveUnloadedTab() {
+        let loadedTab = Tab()
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .unloaded(unloaded)])
+
+        XCTAssertTrue(tabCollection.removeTab(at: 1))
+        XCTAssertEqual(tabCollection.tabs.count, 1)
+        XCTAssertEqual(tabCollection.tabs[0], .loaded(loadedTab))
+    }
+
+    @MainActor
+    func testContainsAndFirstIndexWithMixedTabs() {
+        let tab1 = Tab()
+        let tab2 = Tab()
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(tab1), .unloaded(unloaded), .loaded(tab2)])
+
+        XCTAssertTrue(tabCollection.contains(tab: tab1))
+        XCTAssertTrue(tabCollection.contains(tab: tab2))
+        XCTAssertEqual(tabCollection.firstIndex(of: tab1), 0)
+        XCTAssertEqual(tabCollection.firstIndex(of: tab2), 2)
+        XCTAssertTrue(tabCollection.contains(uuid: unloaded.uuid))
+    }
+
+    // MARK: - Clear Navigation History
+
+    @MainActor
+    func testClearNavigationHistoryOnUnloadedTabClearsVisitedDomainURLs() {
+        let urls = [URL(string: "https://example.com")!, URL(string: "https://test.org")!]
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+                                   localHistoryIDs: urls)
+
+        unloaded.clearNavigationHistory(keepingCurrent: false)
+
+        XCTAssertNil(unloaded.localHistoryIDs)
+    }
+
+    @MainActor
+    func testClearNavigationHistoryKeepingCurrentPreservesCurrentDomain() {
+        let duckDuckGoURL = URL.duckDuckGo
+        let otherURL = URL(string: "https://example.com")!
+        let unloaded = UnloadedTab(content: .url(duckDuckGoURL, credential: nil, source: .pendingStateRestoration),
+                                   localHistoryIDs: [duckDuckGoURL, otherURL])
+
+        unloaded.clearNavigationHistory(keepingCurrent: true)
+
+        XCTAssertEqual(unloaded.localHistoryIDs?.count, 1)
+        XCTAssertEqual(unloaded.localHistoryIDs?.first?.host, duckDuckGoURL.host)
+    }
+
+    @MainActor
+    func testRemovedUnloadedTabDomainsCapturedInRemovedTabDomains() {
+        let urls = [URL(string: "https://example.com")!, URL(string: "https://test.org")!]
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+                                   localHistoryIDs: urls)
+        let tabCollection = TabCollection(tabs: [AnyTab.unloaded(unloaded)])
+
+        tabCollection.removeTab(at: 0)
+
+        XCTAssertTrue(tabCollection.removedTabDomains.contains("example.com"))
+        XCTAssertTrue(tabCollection.removedTabDomains.contains("test.org"))
+    }
+
+    @MainActor
+    func testMaterializationDoesNotLeakHistoryIntoRemovedTabDomains() {
+        let urls = [URL(string: "https://example.com")!, URL(string: "https://test.org")!]
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+                                   localHistoryIDs: urls)
+        let tabCollection = TabCollection(tabs: [AnyTab.unloaded(unloaded)])
+
+        let loadedTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        tabCollection.replaceTab(at: 0, with: .loaded(loadedTab), keepHistory: false)
+
+        XCTAssertTrue(tabCollection.removedTabDomains.isEmpty)
+    }
+
+    @MainActor
+    func testClearNavigationHistoryOnAnyTabClearsUnloadedTab() {
+        let urls = [URL(string: "https://example.com")!]
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+                                   localHistoryIDs: urls)
+        let anyTab = AnyTab.unloaded(unloaded)
+
+        anyTab.clearNavigationHistory(keepingCurrent: false)
+
+        XCTAssertNil(unloaded.localHistoryIDs)
+    }
+
+    // MARK: - AnyTab Identity vs UUID Equality
+
+    @MainActor
+    func testAnyTabIdentityEquality() {
+        let tab = Tab()
+        let wrapped1 = AnyTab.loaded(tab)
+        let wrapped2 = AnyTab.loaded(tab)
+
+        // Same instance → equal
+        XCTAssertEqual(wrapped1, wrapped2)
+
+        // Different instance, same content → not equal (identity-based)
+        let otherTab = Tab()
+        XCTAssertNotEqual(AnyTab.loaded(tab), AnyTab.loaded(otherTab))
+
+        // Suspended vs loaded with same UUID → not equal
+        let unloaded = UnloadedTab(uuid: tab.uuid, content: tab.content)
+        XCTAssertNotEqual(AnyTab.loaded(tab), AnyTab.unloaded(unloaded))
+    }
+
+    @MainActor
+    func testContainsUUIDMatchesSuspendedAndLoadedTabs() {
+        let tab = Tab()
+        let unloaded = UnloadedTab(uuid: "specific-uuid", content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(tab), .unloaded(unloaded)])
+
+        // UUID lookup finds both types
+        XCTAssertTrue(tabCollection.contains(uuid: tab.uuid))
+        XCTAssertTrue(tabCollection.contains(uuid: "specific-uuid"))
+
+        // Identity lookup only finds loaded tabs
+        XCTAssertTrue(tabCollection.contains(tab: tab))
+        XCTAssertNil(tabCollection.firstIndex(of: Tab())) // different instance, not found
+    }
+
 }
 
 private extension Tab {
@@ -242,7 +400,11 @@ private extension Tab {
 class HistoryTabExtensionMock: TabExtension, HistoryExtensionProtocol {
 
     var localHistory: [Visit] = []
+    var restoredURLs: [URL]?
     func getPublicProtocol() -> HistoryExtensionProtocol { self }
 
     func clearNavigationHistory(keepingCurrent: Bool) {}
+    func restoreLocalHistoryIDs(_ urls: [URL]) {
+        restoredURLs = urls
+    }
 }

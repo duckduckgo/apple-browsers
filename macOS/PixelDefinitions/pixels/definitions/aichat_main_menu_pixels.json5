@@ -82,5 +82,19 @@
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_view_all_chats_main_menu": {
+        "description": "Fired when user taps View All Chats... from the main menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_view_all_chats_more_options_menu": {
+        "description": "Fired when user taps View All Chats... from the more options menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

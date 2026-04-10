@@ -28,11 +28,16 @@ import DebugServer
 
 struct AIChatDebugView: View {
     @StateObject private var viewModel = AIChatDebugViewModel()
+    private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+
+    init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+    }
 
     var body: some View {
         List {
             #if DEBUG
-            AIChatStorageServerSection()
+            AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
             #endif
 
             Section(footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
@@ -304,6 +309,7 @@ private struct AIChatDebugSessionTimerEntryView: View {
 
 #if DEBUG
 private struct AIChatStorageServerSection: View {
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     @StateObject private var serverState = StorageServerState()
 
     var body: some View {
@@ -327,7 +333,7 @@ private struct AIChatStorageServerSection: View {
                     Text(error).foregroundColor(.red).font(.caption)
                 }
                 Button("Start Server") {
-                    serverState.start()
+                    serverState.start(handler: duckAiNativeStorageHandler)
                 }
             }
         }
@@ -348,8 +354,8 @@ private final class StorageServerState: ObservableObject {
         serverForDeinit?.stop()
     }
 
-    func start() {
-        guard let handler = AppDependencyProvider.shared.duckAiNativeStorageHandler else {
+    func start(handler: DuckAiNativeStorageHandling?) {
+        guard let handler else {
             errorMessage = "Native storage is not available (feature flag may be disabled)"
             return
         }

@@ -103,7 +103,6 @@ final class BrokenSiteReportingTests: XCTestCase {
                                       protectionsState: test.protectionsEnabled,
                                       reportFlow: .dashboard,
                                       siteType: .mobile,
-                                      atb: "",
                                       model: test.model ?? "",
                                       errors: errors,
                                       httpStatusCodes: test.httpErrorCodes ?? [],

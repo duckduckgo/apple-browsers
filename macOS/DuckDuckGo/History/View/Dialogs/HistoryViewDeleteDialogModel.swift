@@ -132,7 +132,8 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
         aiChatHistoryCleaner: AIChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: Application.appDelegate.featureFlagger,
                                                                           aiChatMenuConfiguration: Application.appDelegate.aiChatMenuConfiguration,
                                                                           featureDiscovery: DefaultFeatureDiscovery(),
-                                                                          privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager)
+                                                                          privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                                                          nativeStorageHandler: Application.appDelegate.duckAiNativeStorageHandler)
     ) {
         self.message = {
             guard entriesCount > 1 else {

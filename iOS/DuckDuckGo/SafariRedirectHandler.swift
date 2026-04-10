@@ -59,14 +59,12 @@ final class SafariRedirectHandler: SafariRedirectHandling {
     }
 
     private let tld: TLD
-    private let featureFlagger: FeatureFlagger
     private var hostStates: [String: HostState] = [:]
 
     weak var delegate: SafariRedirectHandlerDelegate?
 
-    init(tld: TLD, featureFlagger: FeatureFlagger) {
+    init(tld: TLD) {
         self.tld = tld
-        self.featureFlagger = featureFlagger
     }
 
     func isAfterSuppressedXSafariRedirect(for url: URL) -> Bool {
@@ -75,8 +73,7 @@ final class SafariRedirectHandler: SafariRedirectHandling {
     }
 
     func handleRedirect(to url: URL) -> Bool {
-        guard url.scheme == Constants.safariRedirectScheme,
-              featureFlagger.isFeatureOn(.customXSafariRedirectHandling) else { return false }
+        guard url.scheme == Constants.safariRedirectScheme else { return false }
 
         guard let host = domain(for: url) else { return false }
         var state = hostStates[host, default: HostState()]

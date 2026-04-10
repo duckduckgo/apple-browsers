@@ -34,7 +34,7 @@ final class SafariRedirectHandlerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        handler = SafariRedirectHandler(tld: TLD(), featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.customXSafariRedirectHandling]))
+        handler = SafariRedirectHandler(tld: TLD())
         delegate = MockSafariRedirectHandlerDelegate()
         handler.delegate = delegate
     }
@@ -52,7 +52,7 @@ final class SafariRedirectHandlerTests: XCTestCase {
     }
 
     func testHandleRedirectReturnsFalseWhenFeatureFlagDisabled() {
-        let disabledHandler = SafariRedirectHandler(tld: TLD(), featureFlagger: MockFeatureFlagger())
+        let disabledHandler = SafariRedirectHandler(tld: TLD())
         let mockDelegate = MockSafariRedirectHandlerDelegate()
         disabledHandler.delegate = mockDelegate
 

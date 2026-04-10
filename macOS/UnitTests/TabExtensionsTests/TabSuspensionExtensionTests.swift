@@ -493,7 +493,7 @@ final class TabSuspensionExtensionTests: XCTestCase {
         XCTAssertEqual(sut.lastSuspensionState, .differentDomain)
     }
 
-    @MainActors
+    @MainActor
     func testWhenLastSuspendedURLHasDifferentIPAddresses_ThenSuspensionStateIsDifferentDomain() throws {
         let currentURL = try XCTUnwrap(URL(string: "http://10.0.0.1"))
         let suspendedURL = try XCTUnwrap(URL(string: "https://10.0.0.2/"))

@@ -241,6 +241,7 @@ private final class CapturingStorageHandler: DuckAiNativeStorageHandling {
     func putChats(_ chats: [DuckAiChatRecord]) throws {}
     func deleteChat(chatId: String) throws {}
     func deleteAllChats() throws {}
+    func deleteAllChatsAndFiles() throws {}
     func putFile(uuid: String, chatId: String, data: Data) throws {}
     func getFile(uuid: String) throws -> DuckAiFileContent? { nil }
     func listFiles() throws -> [DuckAiFileMetadata] { [] }

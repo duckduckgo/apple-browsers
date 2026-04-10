@@ -92,28 +92,7 @@ public final class HistoryCleaner: HistoryCleaning {
                 try nativeStorageHandler.deleteChat(chatId: chatID)
             } else {
                 Logger.aiChat.debug("HistoryCleaner: deleting all chats from localStorage")
-                var chatError: Error?
-                var fileError: Error?
-                do {
-                    try nativeStorageHandler.deleteAllChats()
-                } catch {
-                    chatError = error
-                }
-                do {
-                    try nativeStorageHandler.deleteAllFiles()
-                } catch {
-                    fileError = error
-                }
-                switch (chatError, fileError) {
-                case let (chatErr?, fileErr?):
-                    throw HistoryCleanerError.chatAndFileDeletionFailed(chatError: chatErr, fileError: fileErr)
-                case let (chatErr?, nil):
-                    throw HistoryCleanerError.chatDeletionFailed(chatErr)
-                case let (nil, fileErr?):
-                    throw HistoryCleanerError.fileDeletionFailed(fileErr)
-                case (nil, nil):
-                    break
-                }
+                try nativeStorageHandler.deleteAllChatsAndFiles()
             }
             return .success(())
         } catch {
@@ -291,9 +270,6 @@ extension HistoryCleaner {
         case webViewNotInitialized
         case scriptNotInitialized
         case operationInProgress
-        case chatDeletionFailed(Error)
-        case fileDeletionFailed(Error)
-        case chatAndFileDeletionFailed(chatError: Error, fileError: Error)
     }
 }
 

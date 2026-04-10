@@ -99,6 +99,10 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
         try dataStore.deleteAllChats()
     }
 
+    public func deleteAllChatsAndFiles() throws {
+        try dataStore.deleteAllChatsAndFiles()
+    }
+
     // MARK: - Files (delegation)
 
     public func putFile(uuid: String, chatId: String, data: Data) throws {

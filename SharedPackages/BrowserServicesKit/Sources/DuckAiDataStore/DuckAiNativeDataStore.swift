@@ -189,6 +189,24 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         }
     }
 
+    public func deleteAllChatsAndFiles() throws {
+        let fileManager = FileManager.default
+        if let contents = try? fileManager.contentsOfDirectory(at: filesDirectoryURL, includingPropertiesForKeys: nil) {
+            for fileURL in contents {
+                try? fileManager.removeItem(at: fileURL)
+            }
+        }
+
+        do {
+            try dbQueue.write { db in
+                try db.execute(sql: "DELETE FROM duck_ai_chats")
+                try db.execute(sql: "DELETE FROM duck_ai_files")
+            }
+        } catch {
+            throw DuckAiNativeDataStoreError.databaseError(error)
+        }
+    }
+
     // MARK: - Files (Implemented in Task 3)
 
     private func validatedFileUUID(for uuid: String) throws -> String {

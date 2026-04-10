@@ -2106,8 +2106,11 @@ class MainViewController: UIViewController {
                 self.omniBar.beginEditing(animated: false)
             }
 
-            if self.isInMinimalChromeLayout && self.viewCoordinator.addressBarPosition.isBottom {
-                self.currentTab?.updateWebViewBottomAnchor(for: self.currentBarsVisibility)
+            if self.isInMinimalChromeLayout {
+                self.viewCoordinator.constraints.toolbarBottom.constant = self.minimalChromeBottomHeight
+                if self.viewCoordinator.addressBarPosition.isBottom {
+                    self.currentTab?.updateWebViewBottomAnchor(for: self.currentBarsVisibility)
+                }
             }
 
             ViewHighlighter.updatePositions()

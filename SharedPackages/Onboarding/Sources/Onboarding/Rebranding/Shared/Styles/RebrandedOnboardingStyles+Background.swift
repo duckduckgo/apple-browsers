@@ -331,18 +331,15 @@ public extension View {
     ///
     /// The background appears immediately without entrance animation.
     ///
-    /// - Parameters:
-    ///   - backgroundType: The type of background illustration to display.
-    ///   - imageOffsetY: Vertical offset for the background image. Positive values push the image down.
+    /// - Parameter backgroundType: The type of background illustration to display.
     func applyNewTabOnboardingBackground(
-        backgroundType: ContextualOnboardingBackgroundType,
-        imageOffsetY: CGFloat = 0
+        backgroundType: ContextualOnboardingBackgroundType
     ) -> some View {
         #if os(iOS)
             self.modifier(
                 OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(
                     backgroundType: backgroundType,
-                    imageOffsetY: imageOffsetY,
+                    imageOffsetY: 0,
                     keyboardBehavior: .adjustForKeyboard
                 )
             )
@@ -350,7 +347,7 @@ public extension View {
             self.modifier(
                 OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(
                     backgroundType: backgroundType,
-                    imageOffsetY: imageOffsetY
+                    imageOffsetY: 0
                 )
             )
         #endif

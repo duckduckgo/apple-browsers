@@ -132,6 +132,7 @@ public extension DesignSystemImages {
             public static var aiGeneral: DesignSystemImage { .init(resource: .aiGeneralColor24) }
             public static var announce: DesignSystemImage { .init(resource: .announceColor24) }
             public static var appTP: DesignSystemImage { .init(resource: .appTPColor24) }
+            public static var appDuckDuckGo: DesignSystemImage { .init(resource: .appDuckDuckGo24) }
             public static var appearance: DesignSystemImage { .init(resource: .appearanceColor24) }
             public static var askSiri: DesignSystemImage { .init(resource: .askSiriColor24) }
             public static var autofill: DesignSystemImage { .init(resource: .autofillColor24) }

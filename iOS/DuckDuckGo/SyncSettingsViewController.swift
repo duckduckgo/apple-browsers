@@ -99,6 +99,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     var onConfirmSyncDisable: (() -> Void)?
     var onConfirmAndDeleteAllData: (() -> Void)?
 
+    let useSimplifiedLayout: Bool
+
     // For some reason, on iOS 14, the viewDidLoad wasn't getting called so do some setup here
     init(
         syncService: DDGSyncing,
@@ -134,7 +136,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         )
         self.viewModel = viewModel
 
-        let useSimplifiedLayout = (featureFlagger.resolveCohort(for: FeatureFlag.simplifiedSyncSetupExperiment) as? FeatureFlag.SimplifiedSyncSetupExperimentCohort) == .treatment
+        self.useSimplifiedLayout = (featureFlagger.resolveCohort(for: FeatureFlag.simplifiedSyncSetupExperiment) as? FeatureFlag.SimplifiedSyncSetupExperimentCohort) == .treatment
         let rootView = SyncSettingsRootView(model: viewModel, useSimplifiedLayout: useSimplifiedLayout)
 
         super.init(rootView: rootView)
@@ -520,6 +522,20 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         self.navigationController?.topViewController?.dismiss(animated: true, completion: self.showRecoveryPDF)
     }
 
+    func dismissVCAndShowSyncEnabledToast() {
+        self.navigationController?.topViewController?.dismiss(animated: true) {
+            self.enableAutoRestoreByDefaultIfNeeded()
+            ActionMessageView.present(message: UserText.simplifiedSyncEnabledToast)
+        }
+    }
+
+    func enableAutoRestoreByDefaultIfNeeded() {
+        guard syncAutoRestoreHandler.isAutoRestoreFeatureEnabled,
+              syncAutoRestoreHandler.existingDecision() == nil else { return }
+        try? syncAutoRestoreHandler.persistDecision(true)
+        refreshAutoRestoreDecisionState()
+    }
+
     func codeCollectionCancelled() {
         assert(navigationController?.visibleViewController is UIHostingController<AnyView>)
         needsPreservedAccountCleanupBeforeServerOperation = false
@@ -546,15 +562,23 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             .prefix(1)
             .sink { [weak self] _ in
                 guard let self else { return }
-                self.dismissVCAndShowRecoveryPDF()
+                if self.useSimplifiedLayout {
+                    self.dismissVCAndShowSyncEnabledToast()
+                } else {
+                    self.dismissVCAndShowRecoveryPDF()
+                }
             }.store(in: &cancellables)
     }
-    
+
     func controllerDidCreateSyncAccount() {
         let additionalParameters = source.map { ["source": $0] } ?? [:]
         Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
-        self.dismissVCAndShowRecoveryPDF()
+        if useSimplifiedLayout {
+            dismissVCAndShowSyncEnabledToast()
+        } else {
+            self.dismissVCAndShowRecoveryPDF()
+        }
         viewModel.syncEnabled(recoveryCode: recoveryCode)
     }
     
@@ -595,7 +619,11 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.dismissVCAndShowRecoveryPDF()
+            if self.useSimplifiedLayout, !isRecovery {
+                self.dismissVCAndShowSyncEnabledToast()
+            } else {
+                self.dismissVCAndShowRecoveryPDF()
+            }
         }
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
             return

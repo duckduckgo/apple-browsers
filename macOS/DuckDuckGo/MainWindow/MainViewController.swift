@@ -299,7 +299,12 @@ final class MainViewController: NSViewController {
 
         // Create the shared AI Chat omnibar controller
         let suggestionsReader = AIChatSuggestionsReader(
-            suggestionsReader: SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: contentBlocking.privacyConfigurationManager),
+            suggestionsReader: SuggestionsReader(
+                featureFlagger: featureFlagger,
+                privacyConfig: contentBlocking.privacyConfigurationManager,
+                nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+            ),
             historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
         )
         let aiChatOmnibarController = AIChatOmnibarController(
@@ -461,8 +466,8 @@ final class MainViewController: NSViewController {
     }
 
     private func closeFloatingAIChatsForCurrentWindow() {
-        let regularTabIDs = tabCollectionViewModel.tabViewModels.keys.map(\.uuid)
-        let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabViewModels.keys.map(\.uuid) ?? []
+        let regularTabIDs = Array(tabCollectionViewModel.tabViewModels.keys)
+        let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager.map { Array($0.tabViewModels.keys) } ?? []
 
         for tabID in Set(regularTabIDs + pinnedTabIDs) {
             aiChatCoordinator.closeFloatingWindow(for: tabID)

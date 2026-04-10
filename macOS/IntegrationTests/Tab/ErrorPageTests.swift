@@ -862,7 +862,7 @@ class ErrorPageTests: XCTestCase {
         provider.newPinnedTabsManager = manager
         manager.pin(tab)
 
-        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: []), pinnedTabsManagerProvider: provider)
+        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider)
         window = WindowsManager.openNewWindow(with: viewModel)!
         viewModel.select(at: .pinned(0))
         let webViewShownPromise = tab.webView.publisher(for: \.superview).compactMap { $0 }.timeout(5).first().promise()

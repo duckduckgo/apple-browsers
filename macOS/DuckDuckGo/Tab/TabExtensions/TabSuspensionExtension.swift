@@ -96,7 +96,7 @@ final class TabSuspensionExtension {
             return .samePath
         case (.some(let a), .some(let b)) where a.host == b.host:
             return .sameHostname
-        case (.some(let a), .some(let b)) where tld.eTLDplus1(a.host) == tld.eTLDplus1(b.host):
+        case (.some(let a), .some(let b)) where tld.eTLDplus1(a.host) != nil && tld.eTLDplus1(a.host) == tld.eTLDplus1(b.host):
             return .sameDomain
         default:
             return .differentDomain

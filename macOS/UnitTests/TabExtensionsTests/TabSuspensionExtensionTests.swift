@@ -493,6 +493,18 @@ final class TabSuspensionExtensionTests: XCTestCase {
         XCTAssertEqual(sut.lastSuspensionState, .differentDomain)
     }
 
+    @MainActors
+    func testWhenLastSuspendedURLHasDifferentIPAddresses_ThenSuspensionStateIsDifferentDomain() throws {
+        let currentURL = try XCTUnwrap(URL(string: "http://10.0.0.1"))
+        let suspendedURL = try XCTUnwrap(URL(string: "https://10.0.0.2/"))
+        sut = makeSUT()
+        contentPublisher.send(.url(currentURL, credential: nil, source: .link))
+
+        sut.lastSuspendedURL = suspendedURL
+
+        XCTAssertEqual(sut.lastSuspensionState, .differentDomain)
+    }
+
     @MainActor
     func testWhenLastSuspendedURLIsNotNilAndContentHasNoURL_ThenSuspensionStateIsDifferentDomain() {
         sut = makeSUT()

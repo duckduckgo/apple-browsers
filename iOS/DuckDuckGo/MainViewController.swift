@@ -3568,8 +3568,11 @@ extension MainViewController: OmniBarDelegate {
                                  aiChat: .keyboardGoWhileOnAIChat)
     }
 
-    func fireControllerAwarePixel(ntp: Pixel.Event, serp: Pixel.Event, website: Pixel.Event, aiChat: Pixel.Event,
-                                   additionalParameters: [String: String] = [:]) {
+    func fireControllerAwarePixel(ntp: Pixel.Event,
+                                  serp: Pixel.Event,
+                                  website: Pixel.Event,
+                                  aiChat: Pixel.Event,
+                                  additionalParameters: [String: String] = [:]) {
         if newTabPageViewController != nil {
             Pixel.fire(pixel: ntp, withAdditionalParameters: additionalParameters)
         } else if let currentTab {

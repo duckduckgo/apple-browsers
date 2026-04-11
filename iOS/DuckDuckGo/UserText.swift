@@ -2454,14 +2454,8 @@ public struct UserText {
     public static let importDetailChromeStep2 = NSLocalizedString("data.import.detail.chrome.step2", value: "Press **Continue**", comment: "Step 2 instruction for importing from Chrome")
     public static let importDetailChromeStep3 = NSLocalizedString("data.import.detail.chrome.step3", value: "Select **DuckDuckGo** as Destination", comment: "Step 3 instruction for importing from Chrome")
 
-    public static let importDetailSyncTitle = NSLocalizedString("data.import.detail.sync.title", value: "Sync from DuckDuckGo", comment: "Navigation title for the DuckDuckGo sync import detail screen")
-    public static let importDetailSyncDescription = NSLocalizedString("data.import.detail.sync.description", value: "Sync your passwords from another device.", comment: "Description on the DuckDuckGo sync import detail screen")
-    public static let importDetailSyncButton = NSLocalizedString("data.import.detail.sync.button", value: "Sync Passwords", comment: "Primary button on the DuckDuckGo sync import detail screen")
-
     public static let importDetailDoneExportingHeader = NSLocalizedString("data.import.detail.done-exporting-header", value: "Done Exporting?", comment: "Section header above the upload file row on the Safari import detail screen")
     public static let importDetailUploadFileRow = NSLocalizedString("data.import.detail.upload-file-row", value: "Upload Exported File...", comment: "Row label on import detail screens that opens a file picker to upload an exported password file")
-    public static let importDetailGetDesktopBrowserTitle = NSLocalizedString("data.import.detail.get-desktop-browser.title", value: "Get Our Desktop Browser", comment: "Row title for getting the DuckDuckGo desktop browser on the sync import detail screen")
-    public static let importDetailGetDesktopBrowserSubtitle = NSLocalizedString("data.import.detail.get-desktop-browser.subtitle", value: "DuckDuckGo for Mac or Windows", comment: "Row subtitle describing the DuckDuckGo desktop browser platforms")
 
     public static let dataImportFailedNoDataInZipErrorMessage = NSLocalizedString("data.import.failed.no-data-in-zip-error-message", value: "No supported data found in the zip file. Please review the Safari export instructions and try again.", comment: "Error message displayed when no supported data is found in the zip file")
     public static let dataImportFailedReadErrorMessage = NSLocalizedString("data.import.failed.zip-read-error-message", value: "The %@ file could not be read. There may be an issue with the data in the file.", comment: "Error message displayed when the (csv|html|zip) file can't be read.")

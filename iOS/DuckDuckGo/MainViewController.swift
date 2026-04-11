@@ -2326,7 +2326,7 @@ class MainViewController: UIViewController {
         case .legacy(let importScreen):
             rootViewController = makeDataImportViewController(source: importScreen, onFinished: onFinished, onCancelled: onCancelled)
         case .hub:
-            rootViewController = DataImportHubViewController(onCancelled: onCancelled)
+            rootViewController = DataImportHubViewController(syncService: syncService, onCancelled: onCancelled)
         }
 
         let navigationController = UINavigationController(rootViewController: rootViewController)
@@ -5436,7 +5436,7 @@ extension MainViewController: MessageNavigationDelegate {
             case .legacy(let importScreen):
                 destinationViewController = makeDataImportViewController(source: importScreen)
             case .hub:
-                destinationViewController = DataImportHubViewController()
+                destinationViewController = DataImportHubViewController(syncService: syncService)
             }
             guard let viewController = topMostPresentedViewController() else {
                 assertionFailure("No ViewController presented.")

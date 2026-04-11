@@ -27,7 +27,6 @@ struct ImportSourceDetailView: View {
     let source: ImportPasswordSource
     var onPrimaryAction: (() -> Void)?
     var onUploadFile: (() -> Void)?
-    var onGetDesktopBrowser: (() -> Void)?
 
     var body: some View {
         ScrollView {
@@ -117,12 +116,7 @@ struct ImportSourceDetailView: View {
         Button {
             onPrimaryAction?()
         } label: {
-            HStack(spacing: 8) {
-                if source.primaryButtonHasQRIcon {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size16.qr)
-                }
-                Text(title)
-            }
+            Text(title)
         }
         .buttonStyle(PrimaryButtonStyle())
         .frame(maxWidth: .infinity)
@@ -159,32 +153,6 @@ struct ImportSourceDetailView: View {
                         .fill(Color(designSystemColor: .surface))
                 )
             }
-
-        case .getDesktopBrowser:
-            Button {
-                onGetDesktopBrowser?()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(uiImage: DesignSystemImages.Color.Size24.deviceLaptopInstall)
-                        .foregroundColor(Color(designSystemColor: .textPrimary))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(UserText.importDetailGetDesktopBrowserTitle)
-                            .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                        Text(UserText.importDetailGetDesktopBrowserSubtitle)
-                            .daxFootnoteRegular()
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                    }
-                    Spacer()
-                    SettingsCellComponents.chevron
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-            }
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(designSystemColor: .surface))
-            )
         }
     }
 }

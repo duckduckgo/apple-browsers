@@ -19,14 +19,18 @@
 
 import UIKit
 import SwiftUI
+import DDGSync
 
 final class DataImportHubViewController: UIViewController {
 
     private let viewModel = DataImportHubViewModel()
+    private let syncService: DDGSyncing
     private let onCancelled: (() -> Void)?
     private var didCallOnCancelled = false
 
-    init(onCancelled: (() -> Void)? = nil) {
+    init(syncService: DDGSyncing,
+         onCancelled: (() -> Void)? = nil) {
+        self.syncService = syncService
         self.onCancelled = onCancelled
         super.init(nibName: nil, bundle: nil)
     }
@@ -71,14 +75,24 @@ final class DataImportHubViewController: UIViewController {
     private func navigateToSourceSelection() {
         let sourceSelectionVC = ImportSourceSelectionViewController()
         sourceSelectionVC.onSourceSelected = { [weak self] source in
-            self?.navigateToSourceDetail(source)
+            self?.navigateToSource(source)
         }
         navigationController?.pushViewController(sourceSelectionVC, animated: true)
     }
 
-    private func navigateToSourceDetail(_ source: ImportPasswordSource) {
-        let detailVC = ImportSourceDetailViewController(source: source)
-        navigationController?.pushViewController(detailVC, animated: true)
+    private func navigateToSource(_ source: ImportPasswordSource) {
+        if source.hasDetailScreen {
+            let detailVC = ImportSourceDetailViewController(source: source)
+            navigationController?.pushViewController(detailVC, animated: true)
+        } else {
+            navigateToImportViaSync()
+        }
+    }
+
+    private func navigateToImportViaSync() {
+        let importController = ImportPasswordsViaSyncViewController(syncService: syncService)
+        importController.delegate = self
+        navigationController?.pushViewController(importController, animated: true)
     }
 
     private func callOnCancelledIfNeeded() {
@@ -86,5 +100,21 @@ final class DataImportHubViewController: UIViewController {
         guard isBeingDismissed || navigationController?.isBeingDismissed == true || isMovingFromParent else { return }
         didCallOnCancelled = true
         onCancelled?()
+    }
+}
+
+// MARK: - ImportPasswordsViaSyncViewControllerDelegate
+
+extension DataImportHubViewController: ImportPasswordsViaSyncViewControllerDelegate {
+
+    func importPasswordsViaSyncViewControllerDidRequestOpenSync(_ viewController: ImportPasswordsViaSyncViewController) {
+        if let settingsVC = navigationController?.children.first as? SettingsHostingController {
+            navigationController?.popToRootViewController(animated: true)
+            settingsVC.viewModel.presentLegacyView(.sync(nil))
+        } else if let mainVC = presentingViewController as? MainViewController {
+            dismiss(animated: true) {
+                mainVC.segueToSettingsSync(with: nil)
+            }
+        }
     }
 }

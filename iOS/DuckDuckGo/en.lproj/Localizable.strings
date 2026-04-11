@@ -1180,12 +1180,6 @@
 /* Section header above the upload file row on the Safari import detail screen */
 "data.import.detail.done-exporting-header" = "Done Exporting?";
 
-/* Row subtitle describing the DuckDuckGo desktop browser platforms */
-"data.import.detail.get-desktop-browser.subtitle" = "DuckDuckGo for Mac or Windows";
-
-/* Row title for getting the DuckDuckGo desktop browser on the sync import detail screen */
-"data.import.detail.get-desktop-browser.title" = "Get Our Desktop Browser";
-
 /* Description on the Passwords App import detail screen */
 "data.import.detail.passwords.description" = "You need to go to the Passwords app, then follow the steps to import.";
 
@@ -1209,15 +1203,6 @@
 
 /* Navigation title for the Safari import detail screen */
 "data.import.detail.safari.title" = "Import from Safari";
-
-/* Primary button on the DuckDuckGo sync import detail screen */
-"data.import.detail.sync.button" = "Sync Passwords";
-
-/* Description on the DuckDuckGo sync import detail screen */
-"data.import.detail.sync.description" = "Sync your passwords from another device.";
-
-/* Navigation title for the DuckDuckGo sync import detail screen */
-"data.import.detail.sync.title" = "Sync from DuckDuckGo";
 
 /* Row label on import detail screens that opens a file picker to upload an exported password file */
 "data.import.detail.upload-file-row" = "Upload Exported File...";

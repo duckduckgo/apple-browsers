@@ -47,9 +47,6 @@ final class ImportSourceDetailViewController: UIViewController {
             },
             onUploadFile: { [weak self] in
                 self?.handleUploadFile()
-            },
-            onGetDesktopBrowser: { [weak self] in
-                self?.handleGetDesktopBrowser()
             })
         let hostingController = UIHostingController(rootView: detailView)
         hostingController.view.backgroundColor = .clear
@@ -61,10 +58,6 @@ final class ImportSourceDetailViewController: UIViewController {
     }
 
     private func handleUploadFile() {
-        // Wired up in future PR
-    }
-
-    private func handleGetDesktopBrowser() {
         // Wired up in future PR
     }
 }

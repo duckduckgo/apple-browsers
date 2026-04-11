@@ -108,7 +108,16 @@ enum ImportPasswordSource: CaseIterable, Identifiable {
         case .chrome:
             return UserText.importDetailChromeTitle
         case .syncFromDuckDuckGo:
-            return UserText.importDetailSyncTitle
+            return title
+        }
+    }
+
+    var hasDetailScreen: Bool {
+        switch self {
+        case .passwordsApp, .safari, .chrome:
+            return true
+        case .syncFromDuckDuckGo:
+            return false
         }
     }
 
@@ -121,7 +130,7 @@ enum ImportPasswordSource: CaseIterable, Identifiable {
         case .chrome:
             return UserText.importDetailChromeDescription
         case .syncFromDuckDuckGo:
-            return UserText.importDetailSyncDescription
+            return ""
         }
     }
 
@@ -148,17 +157,8 @@ enum ImportPasswordSource: CaseIterable, Identifiable {
         switch self {
         case .safari:
             return UserText.importDetailSafariExportButton
-        case .syncFromDuckDuckGo:
-            return UserText.importDetailSyncButton
-        case .passwordsApp, .chrome:
+        case .passwordsApp, .chrome, .syncFromDuckDuckGo:
             return nil
-        }
-    }
-
-    var primaryButtonHasQRIcon: Bool {
-        switch self {
-        case .syncFromDuckDuckGo: return true
-        default: return false
         }
     }
 
@@ -166,15 +166,12 @@ enum ImportPasswordSource: CaseIterable, Identifiable {
         switch self {
         case .safari:
             return .uploadFile
-        case .syncFromDuckDuckGo:
-            return .getDesktopBrowser
-        case .passwordsApp, .chrome:
+        case .passwordsApp, .chrome, .syncFromDuckDuckGo:
             return nil
         }
     }
 
     enum BottomSection {
         case uploadFile
-        case getDesktopBrowser
     }
 }

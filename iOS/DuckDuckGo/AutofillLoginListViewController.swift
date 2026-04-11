@@ -448,7 +448,7 @@ final class AutofillLoginListViewController: UIViewController {
         case .legacy(let importScreen):
             destinationViewController = makeDataImportViewController(importScreen: importScreen)
         case .hub:
-            destinationViewController = DataImportHubViewController()
+            destinationViewController = DataImportHubViewController(syncService: syncService)
         }
         navigationController?.pushViewController(destinationViewController, animated: true)
     }

@@ -120,7 +120,7 @@
         "owners": ["hassaanelgarem"],
         "triggers": ["user_submitted"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "burnSource", "tabType"]
+        "parameters": ["appVersion", "burnSource", "tabType", "browsingMode"]
     },
 
     "m_normal-mode_burn_executed": {
@@ -128,7 +128,7 @@
         "owners": ["hassaanelgarem"],
         "triggers": ["user_submitted"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "burnSource", "tabType"]
+        "parameters": ["appVersion", "burnSource", "tabType", "browsingMode"]
     },
 
     "m_fire-mode_data-cleared": {

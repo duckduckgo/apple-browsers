@@ -53,15 +53,12 @@ protocol TabManaging {
 }
 
 enum FireModeSwitchSource: String {
-    case tabSwitcherToggle = "tab_switcher_toggle"
-    case tabSwitcherSwipe = "tab_switcher_swipe"
+    case tabSelection = "tab_selection"
     case longPressTabsIcon = "long_press_tabs_icon"
     case menuPromotion = "menu_promotion"
     case ntpPromotion = "ntp_promotion"
     case longPressLink = "long_press_link"
     case browsingMenu = "browsing_menu"
-    case tabSelection = "tab_selection"
-    case `internal` = "internal"
 }
 
 /// Receives lifecycle events for TabViewController instances managed by TabManager.
@@ -255,7 +252,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
     
     @MainActor
-    func setBrowsingMode(_ mode: BrowsingMode, source: FireModeSwitchSource = .internal) {
+    func setBrowsingMode(_ mode: BrowsingMode, source: FireModeSwitchSource) {
         guard mode != currentBrowsingMode else {
             return
         }
@@ -264,7 +261,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         if mode == .fire {
             fireModePromotionEligibility?.markFireModeVisited()
         }
-        Pixel.fire(pixel: .fireModeSwitched, withAdditionalParameters: [
+        Pixel.fire(pixel: .browsingModeSwitched, withAdditionalParameters: [
             PixelParameters.browsingMode: mode.pixelParamValue,
             PixelParameters.source: source.rawValue
         ])
@@ -499,7 +496,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     @MainActor
     @discardableResult
     func select(_ tab: Tab, dismissCurrent: Bool = true, in tabsModel: TabsModelManaging? = nil) -> TabViewController? {
-        setBrowsingMode(tab.mode)
+        setBrowsingMode(tab.mode, source: .tabSelection)
         let model = tabsModel ?? currentTabsModel
         if dismissCurrent {
             current()?.dismiss()

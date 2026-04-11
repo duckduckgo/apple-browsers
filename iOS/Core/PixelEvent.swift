@@ -1740,7 +1740,8 @@ extension Pixel {
         case fireModeNTPPromotionEngaged
         case fireModeMenuPromotionShown
         case fireModeMenuPromotionEngaged
-        case fireModeSwitched
+        case browsingModeSwitched
+        case tabSwitcherModeToggled
         case fireModeBurnExecuted
         case normalModeBurnExecuted
         case fireModeDataCleared
@@ -3402,7 +3403,8 @@ extension Pixel.Event {
         case .fireModeNTPPromotionEngaged: return "m_fire-mode_ntp-promotion_engaged"
         case .fireModeMenuPromotionShown: return "m_fire-mode_menu-promotion_shown"
         case .fireModeMenuPromotionEngaged: return "m_fire-mode_menu-promotion_engaged"
-        case .fireModeSwitched: return "m_fire-mode_switched"
+        case .browsingModeSwitched: return "m_browsing-mode_switched"
+        case .tabSwitcherModeToggled: return "m_tab-switcher_mode-toggled"
         case .fireModeBurnExecuted: return "m_fire-mode_burn_executed"
         case .normalModeBurnExecuted: return "m_normal-mode_burn_executed"
         case .fireModeDataCleared: return "m_fire-mode_data-cleared"

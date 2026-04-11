@@ -3031,7 +3031,7 @@ class MainViewController: UIViewController {
         action()
     }
     
-    func navigateToFireMode(source: FireModeSwitchSource = .internal) {
+    func navigateToFireMode(source: FireModeSwitchSource) {
         tabManager.setBrowsingMode(.fire, source: source)
         showTabSwitcher()
     }

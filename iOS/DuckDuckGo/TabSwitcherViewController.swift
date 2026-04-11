@@ -267,12 +267,12 @@ class TabSwitcherViewController: UIViewController {
         guard newMode != selectedBrowsingMode else {
             return
         }
-        let source: FireModeSwitchSource = modeChangeFromSwipe ? .tabSwitcherSwipe : .tabSwitcherToggle
+        let source = modeChangeFromSwipe ? "swipe" : "tap"
         modeChangeFromSwipe = false
         selectedBrowsingMode = newMode
-        Pixel.fire(pixel: .fireModeSwitched, withAdditionalParameters: [
+        Pixel.fire(pixel: .tabSwitcherModeToggled, withAdditionalParameters: [
             PixelParameters.browsingMode: newMode.pixelParamValue,
-            PixelParameters.source: source.rawValue
+            PixelParameters.source: source
         ])
         syncPagingScrollViewToCurrentMode(animated: true)
         scrollToInitialTab()
@@ -701,7 +701,7 @@ class TabSwitcherViewController: UIViewController {
         let tabsModel = tabManager.tabsModel(for: selectedBrowsingMode)
 
         if selectedBrowsingMode.allowsEmpty && tabsModel.isEmpty {
-            tabManager.setBrowsingMode(selectedBrowsingMode)
+            tabManager.setBrowsingMode(selectedBrowsingMode, source: .tabSelection)
         } else {
             let selectedTab = activePageController.selectedTab
             delegate?.tabSwitcher(self, didFinishWithSelectedTab: selectedTab)

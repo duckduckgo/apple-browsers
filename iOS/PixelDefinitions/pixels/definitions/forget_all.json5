@@ -34,11 +34,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
-            {
-                "key": "dur",
-                "type": "string",
-                "description": "Duration in seconds (as a floating-point string)"
-            },
+            "duration",
             {
                 "key": "tc",
                 "type": "string",
@@ -110,11 +106,7 @@
             "appVersion",
             "tabType",
             "browsingMode",
-            {
-                "key": "dur",
-                "type": "string",
-                "description": "Duration in seconds (as a floating-point string)"
-            },
+            "duration",
             {
                 "key": "domainsCount",
                 "type": "string",
@@ -140,12 +132,13 @@
     },
 
     "m_fire-mode_data-cleared": {
-        "description": "Timed pixel measuring the duration of Fire Mode data clearing",
+        "description": "Fired when Fire Mode data clearing completes, includes timing information",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            "duration",
             {
                 "key": "tc",
                 "type": "string",
@@ -155,12 +148,13 @@
     },
 
     "m_normal-mode_data-cleared": {
-        "description": "Timed pixel measuring the duration of Normal Mode data clearing",
+        "description": "Fired when Normal Mode data clearing completes, includes timing information",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            "duration",
             {
                 "key": "tc",
                 "type": "string",

@@ -311,5 +311,10 @@
         "type": "string",
         "description": "The current browsing mode: fire (Fire Tabs) or normal",
         "enum": ["fire", "normal"]
+    },
+    "duration": {
+        "key": "dur",
+        "type": "string",
+        "description": "Duration in seconds (as a floating-point string)"
     }
 }

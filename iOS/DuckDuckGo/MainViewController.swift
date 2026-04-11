@@ -3406,7 +3406,7 @@ extension MainViewController: OmniBarDelegate {
         let modeParam = [PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue]
         switch context {
         case .newTabPage:
-            Pixel.fire(pixel: .browsingMenuOpenedNewTabPage)
+            Pixel.fire(pixel: .browsingMenuOpenedNewTabPage, withAdditionalParameters: modeParam)
         case .aiChatTab:
             Pixel.fire(pixel: .browsingMenuOpened, withAdditionalParameters: modeParam)
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened)

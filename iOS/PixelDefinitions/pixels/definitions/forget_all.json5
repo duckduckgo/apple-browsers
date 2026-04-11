@@ -34,7 +34,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
-            "duration",
+            "durationSeconds",
             {
                 "key": "tc",
                 "type": "string",
@@ -106,7 +106,7 @@
             "appVersion",
             "tabType",
             "browsingMode",
-            "duration",
+            "durationSeconds",
             {
                 "key": "domainsCount",
                 "type": "string",
@@ -138,7 +138,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
-            "duration",
+            "durationSeconds",
             {
                 "key": "tc",
                 "type": "string",
@@ -154,7 +154,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
-            "duration",
+            "durationSeconds",
             {
                 "key": "tc",
                 "type": "string",

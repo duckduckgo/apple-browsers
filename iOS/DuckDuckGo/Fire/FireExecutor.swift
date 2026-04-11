@@ -397,9 +397,10 @@ class FireExecutor: FireExecuting {
         switch scope {
         case .tab:
             return TimedPixel(.singleTabDataCleared)
-        case .fireMode, .normalMode:
-            // TODO: - return new pixel
-            return nil
+        case .fireMode:
+            return TimedPixel(.fireModeDataCleared)
+        case .normalMode:
+            return TimedPixel(.normalModeDataCleared)
         case .all:
             return TimedPixel(.forgetAllDataCleared)
         }
@@ -413,7 +414,8 @@ class FireExecutor: FireExecuting {
             let tabType = viewModel.tab.isAITab ? "ai" : "web"
             return [
                 PixelParameters.tabType: tabType,
-                PixelParameters.domainsCount: "\(domains?.count ?? 0)"
+                PixelParameters.domainsCount: "\(domains?.count ?? 0)",
+                PixelParameters.browsingMode: viewModel.tab.pixelParamValue
             ]
         case .fireMode:
             tabsModel = self.tabManager.tabsModel(for: .fire)

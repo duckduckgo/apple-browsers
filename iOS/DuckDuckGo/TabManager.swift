@@ -49,7 +49,19 @@ protocol TabManaging {
     /// Closes the tab and navigates to homepage reusing an existing homepage or creating a new one
     @MainActor func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool)
     @MainActor func closeTabAndOpenNewChat(_ tab: Tab, clearTabHistory: Bool)
-    @MainActor func setBrowsingMode(_ mode: BrowsingMode)
+    @MainActor func setBrowsingMode(_ mode: BrowsingMode, source: FireModeSwitchSource)
+}
+
+enum FireModeSwitchSource: String {
+    case tabSwitcherToggle = "tab_switcher_toggle"
+    case tabSwitcherSwipe = "tab_switcher_swipe"
+    case longPressTabsIcon = "long_press_tabs_icon"
+    case menuPromotion = "menu_promotion"
+    case ntpPromotion = "ntp_promotion"
+    case longPressLink = "long_press_link"
+    case browsingMenu = "browsing_menu"
+    case tabSelection = "tab_selection"
+    case `internal` = "internal"
 }
 
 /// Receives lifecycle events for TabViewController instances managed by TabManager.
@@ -243,7 +255,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
     
     @MainActor
-    func setBrowsingMode(_ mode: BrowsingMode) {
+    func setBrowsingMode(_ mode: BrowsingMode, source: FireModeSwitchSource = .internal) {
         guard mode != currentBrowsingMode else {
             return
         }
@@ -252,7 +264,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         if mode == .fire {
             fireModePromotionEligibility?.markFireModeVisited()
         }
-        // TODO: - Fire pixel
+        Pixel.fire(pixel: .fireModeSwitched, withAdditionalParameters: [
+            PixelParameters.browsingMode: mode.pixelParamValue,
+            PixelParameters.source: source.rawValue
+        ])
     }
 
     func tabsModel(for mode: BrowsingMode) -> TabsModelManaging {

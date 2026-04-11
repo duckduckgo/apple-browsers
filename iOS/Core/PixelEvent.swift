@@ -1733,6 +1733,24 @@ extension Pixel {
         case webExtensionAdBlockingInstalled
         case webExtensionAdBlockingUpgraded
         case webExtensionAdBlockingInstallError
+
+        // MARK: - Fire Mode
+        case fireModeNTPPromotionShown
+        case fireModeNTPPromotionDismissed
+        case fireModeNTPPromotionEngaged
+        case fireModeMenuPromotionShown
+        case fireModeMenuPromotionEngaged
+        case fireModeSwitched
+        case fireModeBurnExecuted
+        case normalModeBurnExecuted
+        case fireModeDataCleared
+        case normalModeDataCleared
+        case fireModeLastTabClosedBurn
+        case fireModeEmptyStateNewTab
+        case linkLongPressMenuShown
+        case linkLongPressNewTab
+        case linkLongPressBackgroundTab
+        case linkLongPressFireTab
     }
 
 }
@@ -3377,6 +3395,24 @@ extension Pixel.Event {
         case .webExtensionAdBlockingInstalled: return "m_web_extension_ad_blocking_installed"
         case .webExtensionAdBlockingUpgraded: return "m_web_extension_ad_blocking_upgraded"
         case .webExtensionAdBlockingInstallError: return "m_web_extension_ad_blocking_install_error"
+
+        // MARK: - Fire Mode
+        case .fireModeNTPPromotionShown: return "m_fire-mode_ntp-promotion_shown"
+        case .fireModeNTPPromotionDismissed: return "m_fire-mode_ntp-promotion_dismissed"
+        case .fireModeNTPPromotionEngaged: return "m_fire-mode_ntp-promotion_engaged"
+        case .fireModeMenuPromotionShown: return "m_fire-mode_menu-promotion_shown"
+        case .fireModeMenuPromotionEngaged: return "m_fire-mode_menu-promotion_engaged"
+        case .fireModeSwitched: return "m_fire-mode_switched"
+        case .fireModeBurnExecuted: return "m_fire-mode_burn_executed"
+        case .normalModeBurnExecuted: return "m_normal-mode_burn_executed"
+        case .fireModeDataCleared: return "m_fire-mode_data-cleared"
+        case .normalModeDataCleared: return "m_normal-mode_data-cleared"
+        case .fireModeLastTabClosedBurn: return "m_fire-mode_last-tab-closed_burn"
+        case .fireModeEmptyStateNewTab: return "m_fire-mode_empty-state_new-tab"
+        case .linkLongPressMenuShown: return "m_link-long-press_menu-shown"
+        case .linkLongPressNewTab: return "m_link-long-press_new-tab"
+        case .linkLongPressBackgroundTab: return "m_link-long-press_background-tab"
+        case .linkLongPressFireTab: return "m_link-long-press_fire-tab"
         }
     }
 }

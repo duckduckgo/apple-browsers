@@ -656,7 +656,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
 
     func unifiedInputEditingStateDidRequestFireMode() {
         unifiedToggleInputCoordinator?.contentViewController.dismissAnimated()
-        navigateToFireMode()
+        navigateToFireMode(source: .ntpPromotion)
     }
 
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode) {

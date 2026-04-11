@@ -119,8 +119,9 @@ extension TabSwitcherViewController {
             )
         }
 
-        Pixel.fire(pixel: .forgetAllPressedTabSwitching)
-        DailyPixel.fire(pixel: .forgetAllPressedTabSwitcherDaily)
+        let browsingModeParam = [PixelParameters.browsingMode: selectedBrowsingMode.pixelParamValue]
+        Pixel.fire(pixel: .forgetAllPressedTabSwitching, withAdditionalParameters: browsingModeParam)
+        DailyPixel.fire(pixel: .forgetAllPressedTabSwitcherDaily, withAdditionalParameters: browsingModeParam)
         ViewHighlighter.hideAll()
         presentFireConfirmation()
     }

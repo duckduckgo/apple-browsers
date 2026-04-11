@@ -4,14 +4,14 @@
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "browsingMode"]
     },
     "mf_tp": {
         "description": "Fired when user pressed the Fire button in the tab switcher",
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "browsingMode"]
     },
     "m_forget-all-pressed_settings": {
         "description": "Fired when user pressed the button to clear data in Data Clearing Settings",
@@ -25,7 +25,7 @@
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "burnSource", "tabType"]
+        "parameters": ["appVersion", "burnSource", "tabType", "browsingMode"]
     },
     "mf_dc": {
         "description": "Fired when data clearing is completed after Fire button action, includes timing information",
@@ -51,21 +51,21 @@
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "browsingMode"]
     },
     "m_forget-all-pressed_tab-switcher_daily": {
         "description": "Fired daily when user pressed the Fire button in the tab switcher",
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "browsingMode"]
     },
     "m_forget-all-executed_daily": {
         "description": "Fired daily when user confirmed the Fire button action and data clearing is executed",
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "burnSource", "tabType"]
+        "parameters": ["appVersion", "burnSource", "tabType", "browsingMode"]
     },
     "m_automatic_data_clearing_options_updated": {
         "description": "Fired when user updates the automatic data clearing options (tabs, data, chats toggles) in Settings",
@@ -99,7 +99,7 @@
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "burnSource", "tabType"]
+        "parameters": ["appVersion", "burnSource", "tabType", "browsingMode"]
     },
     "m_single-tab-data_cleared": {
         "description": "Fired when single tab data clearing completes, includes timing information",
@@ -109,6 +109,7 @@
         "parameters": [
             "appVersion",
             "tabType",
+            "browsingMode",
             {
                 "key": "dur",
                 "type": "string",
@@ -120,5 +121,59 @@
                 "description": "Number of domains cleared"
             }
         ]
+    },
+
+    "m_fire-mode_burn_executed": {
+        "description": "Fired when the fire button burns Fire Mode data only",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "burnSource", "tabType"]
+    },
+
+    "m_normal-mode_burn_executed": {
+        "description": "Fired when the fire button burns Normal Mode data only",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "burnSource", "tabType"]
+    },
+
+    "m_fire-mode_data-cleared": {
+        "description": "Timed pixel measuring the duration of Fire Mode data clearing",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "tc",
+                "type": "string",
+                "description": "Tab count at time of firing"
+            }
+        ]
+    },
+
+    "m_normal-mode_data-cleared": {
+        "description": "Timed pixel measuring the duration of Normal Mode data clearing",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "tc",
+                "type": "string",
+                "description": "Tab count at time of firing"
+            }
+        ]
+    },
+
+    "m_fire-mode_last-tab-closed_burn": {
+        "description": "Fired when the last Fire Tab is closed, triggering an automatic burn of Fire Mode data",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

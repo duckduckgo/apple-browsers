@@ -26,41 +26,104 @@ final class TabCollection: NSObject {
     /// When true, this collection is used by a popup window and must contain at most one tab
     let isPopup: Bool
 
-    @Published private(set) var tabs: [Tab]
+    @Published private(set) var tabs: [AnyTab]
 
-    let didRemoveTabPublisher = PassthroughSubject<(Tab, Int), Never>()
+    var loadedTabs: [Tab] {
+        tabs.compactMap {
+            guard case .loaded(let tab) = $0 else { return nil }
+            return tab
+        }
+    }
 
-    init(tabs: [Tab] = [], isPopup: Bool = false) {
+    var loadedTabsPublisher: AnyPublisher<[Tab], Never> {
+        $tabs.map { tabs in
+            tabs.compactMap {
+                guard case .loaded(let tab) = $0 else { return nil }
+                return tab
+            }
+        }.eraseToAnyPublisher()
+    }
+
+    let didRemoveTabPublisher = PassthroughSubject<(AnyTab, Int), Never>()
+
+    init(tabs: [AnyTab] = [], isPopup: Bool = false) {
         assert(!isPopup || tabs.count <= 1, "Popup tab collections must contain at most one tab")
         self.isPopup = isPopup
         self.tabs = tabs
     }
 
+    /// Convenience initializer accepting loaded tabs.
+    convenience init(tabs: [Tab], isPopup: Bool = false) {
+        self.init(tabs: tabs.map { .loaded($0) }, isPopup: isPopup)
+    }
+
     deinit {
 #if DEBUG
-        // Check that all tabs deallocate
+        // Only check loaded tabs — they hold expensive resources (WKWebView, extensions).
+        // Unloaded tabs are lightweight data objects and don't inherit from NSObject
+        // (which ensureObjectDeallocated requires).
         for tab in tabs {
-            tab.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            if case .loaded(let tab) = tab {
+                tab.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            }
         }
 #endif
     }
 
+    func contains(uuid: String) -> Bool {
+        tabs.contains { $0.uuid == uuid }
+    }
+
+    func contains(tab: Tab) -> Bool {
+        tabs.contains(.loaded(tab))
+    }
+
+    func firstIndex(of tab: Tab) -> Int? {
+        tabs.firstIndex(of: .loaded(tab))
+    }
+
+    // MARK: - Append / Insert (Tab convenience wrappers)
+
     func append(tab: Tab) {
-        // Enforce single-tab popup: ignore attempts to add more than one tab
+        append(tab: .loaded(tab))
+    }
+
+    func append(tab: AnyTab) {
         if isPopup, !tabs.isEmpty {
             assertionFailure("Popup tab collections must contain at most one tab")
             return
         }
         tabs.append(tab)
 
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+        if #available(macOS 15.4, *), case .loaded(let tab) = tab,
+           let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
             webExtensionManager.eventsListener.didOpenTab(tab)
+        }
+    }
+
+    func append(tabs newTabs: [AnyTab]) {
+        if isPopup {
+            assertionFailure("Popup tab collections must not receive batch appends")
+            return
+        }
+        tabs.append(contentsOf: newTabs)
+
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            for tab in newTabs {
+                if case .loaded(let tab) = tab {
+                    webExtensionManager.eventsListener.didOpenTab(tab)
+                }
+            }
         }
     }
 
     @discardableResult
     func insert(_ tab: Tab, at index: Int) -> Bool {
-        // Enforce single-tab popup: ignore inserts beyond the first slot
+        insert(.loaded(tab), at: index)
+    }
+
+    @discardableResult
+    func insert(_ tab: AnyTab, at index: Int) -> Bool {
         if isPopup, !tabs.isEmpty {
             assertionFailure("Popup tab collections must contain at most one tab")
             return false
@@ -71,12 +134,16 @@ final class TabCollection: NSObject {
         }
 
         tabs.insert(tab, at: index)
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+        if #available(macOS 15.4, *), case .loaded(let tab) = tab,
+           let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
             webExtensionManager.eventsListener.didOpenTab(tab)
         }
         return true
     }
 
+    // MARK: - Remove
+
+    @MainActor
     func removeTab(at index: Int, published: Bool = true, forced: Bool = false) -> Bool {
         guard tabs.indices.contains(index) else {
             assertionFailure("TabCollection: Index out of bounds")
@@ -94,6 +161,8 @@ final class TabCollection: NSObject {
         return true
     }
 
+    // MARK: - Move
+
     func moveTab(at fromIndex: Int, to otherCollection: TabCollection, at toIndex: Int) -> Bool {
         guard let tab = tabs[safe: fromIndex],
               otherCollection.insert(tab, at: toIndex)
@@ -104,65 +173,6 @@ final class TabCollection: NSObject {
 
         tabs.remove(at: fromIndex)
         return true
-    }
-
-    func removeAll(andAppend tab: Tab? = nil) {
-        tabsWillClose(range: 0..<tabs.count)
-        tabs = tab.map { [$0] } ?? []
-    }
-
-    /// Clears tabViewModels and tabCollection after the tabs were moved to another collection
-    func clearAfterMerge() {
-        tabs.removeAll()
-    }
-
-    func removeTabs(before index: Int) {
-        tabsWillClose(range: 0..<index)
-        tabs.removeSubrange(0..<index)
-    }
-
-    func removeTabs(after index: Int) {
-        tabsWillClose(range: (index + 1)..<tabs.count)
-        tabs.removeSubrange((index + 1)...)
-    }
-
-    func removeTabs(at indexSet: IndexSet) {
-        guard !indexSet.contains(where: { index in
-            index < 0 && index >= tabs.count
-        }) else {
-            assertionFailure("TabCollection: Index out of bounds")
-            return
-        }
-
-        for i in indexSet {
-            tabWillClose(at: i, forced: false)
-        }
-        tabs.remove(atOffsets: indexSet)
-    }
-
-    func reorderTabs(_ newOrder: [Tab]) {
-        assert(tabs.count == newOrder.count && Set(tabs) == Set(newOrder), "tabs changed when reordering")
-        tabs = newOrder
-    }
-
-    private func tabWillClose(at index: Int, forced: Bool) {
-        if !forced {
-            keepLocalHistory(of: tabs[index])
-        }
-
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            webExtensionManager.eventsListener.didCloseTab(tabs[index], windowIsClosing: false)
-        }
-    }
-
-    private func tabsWillClose(range: Range<Int>) {
-        for i in range {
-            keepLocalHistory(of: tabs[i])
-
-            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-                webExtensionManager.eventsListener.didCloseTab(tabs[i], windowIsClosing: false)
-            }
-        }
     }
 
     func moveTab(at index: Int, to newIndex: Int) {
@@ -182,18 +192,123 @@ final class TabCollection: NSObject {
         self.tabs = tabs
     }
 
-    func replaceTab(at index: Int, with tab: Tab) {
+    // MARK: - Bulk operations
+
+    @MainActor
+    func removeAll() {
+        tabsWillClose(range: 0..<tabs.count)
+        tabs = []
+    }
+
+    @MainActor
+    func removeAll(andAppend tab: Tab) {
+        tabsWillClose(range: 0..<tabs.count)
+        tabs = [.loaded(tab)]
+    }
+
+    @MainActor
+    func removeAll(andAppend tab: AnyTab) {
+        tabsWillClose(range: 0..<tabs.count)
+        tabs = [tab]
+    }
+
+    /// Clears tabViewModels and tabCollection after the tabs were moved to another collection
+    func clearAfterMerge() {
+        tabs.removeAll()
+    }
+
+    @MainActor
+    func removeTabs(before index: Int) {
+        tabsWillClose(range: 0..<index)
+        tabs.removeSubrange(0..<index)
+    }
+
+    @MainActor
+    func removeTabs(after index: Int) {
+        tabsWillClose(range: (index + 1)..<tabs.count)
+        tabs.removeSubrange((index + 1)...)
+    }
+
+    @MainActor
+    func removeTabs(at indexSet: IndexSet) {
+        guard !indexSet.contains(where: { index in
+            index < 0 && index >= tabs.count
+        }) else {
+            assertionFailure("TabCollection: Index out of bounds")
+            return
+        }
+
+        for i in indexSet {
+            tabWillClose(at: i, forced: false)
+        }
+        tabs.remove(atOffsets: indexSet)
+    }
+
+    func reorderTabs(_ newOrder: [AnyTab]) {
+        assert(tabs.count == newOrder.count && Set(tabs) == Set(newOrder), "tabs changed when reordering")
+        tabs = newOrder
+    }
+
+    // MARK: - Replace
+
+    @MainActor
+    func replaceTab(at index: Int, with tab: AnyTab, suppressWebExtensionEvents: Bool = false, keepHistory: Bool = true) {
         guard tabs.indices.contains(index) else {
             assertionFailure("TabCollection: Index out of bounds")
             return
         }
 
-        keepLocalHistory(of: tabs[index])
+        if keepHistory {
+            keepLocalHistory(of: tabs[index])
+        }
         let oldTab = tabs[index]
         tabs[index] = tab
 
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            webExtensionManager.eventsListener.didReplaceTab(oldTab, with: tab)
+        if !suppressWebExtensionEvents {
+            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+                switch (oldTab, tab) {
+                case (.loaded(let oldLoadedTab), .loaded(let newLoadedTab)):
+                    webExtensionManager.eventsListener.didReplaceTab(oldLoadedTab, with: newLoadedTab)
+                case (.unloaded, .loaded(let newLoadedTab)):
+                    webExtensionManager.eventsListener.didOpenTab(newLoadedTab)
+                case (.loaded(let oldLoadedTab), .unloaded):
+                    webExtensionManager.eventsListener.didCloseTab(oldLoadedTab, windowIsClosing: false)
+                case (.unloaded, .unloaded):
+                    break
+                }
+            }
+        }
+    }
+
+    /// Convenience overload for replacing with a loaded Tab.
+    @MainActor
+    func replaceTab(at index: Int, with tab: Tab, keepHistory: Bool = true) {
+        replaceTab(at: index, with: .loaded(tab), keepHistory: keepHistory)
+    }
+
+    // MARK: - Private
+
+    @MainActor
+    private func tabWillClose(at index: Int, forced: Bool) {
+        if !forced {
+            keepLocalHistory(of: tabs[index])
+        }
+
+        if #available(macOS 15.4, *), case .loaded(let tab) = tabs[index],
+           let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didCloseTab(tab, windowIsClosing: false)
+        }
+    }
+
+    @MainActor
+    private func tabsWillClose(range: Range<Int>) {
+        for i in range {
+            keepLocalHistory(of: tabs[i])
+
+            if #available(macOS 15.4, *), case .loaded(let tab) = tabs[i],
+               let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+                webExtensionManager.eventsListener.didCloseTab(tab, windowIsClosing: false)
+            }
         }
     }
 
@@ -201,11 +316,14 @@ final class TabCollection: NSObject {
 
     // Visits of removed tabs used for fire button logic
     var localHistoryOfRemovedTabs = [Visit]()
+    var removedTabDomains = Set<String>()
 
-    private func keepLocalHistory(of tab: Tab) {
+    @MainActor
+    private func keepLocalHistory(of tab: AnyTab) {
         for visit in tab.localHistory where !localHistoryOfRemovedTabs.contains(visit) {
             localHistoryOfRemovedTabs.append(visit)
         }
+        removedTabDomains.formUnion(tab.localHistoryDomains)
     }
 
 }

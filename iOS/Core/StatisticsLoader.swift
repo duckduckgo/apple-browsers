@@ -39,19 +39,22 @@ public class StatisticsLoader {
     private let fireAppRetentionExperimentPixels: () -> Void
     private let pixelFiring: PixelFiring.Type
     private var isDuckAIRetentionRequestInProgress = false
+    private let isPad: Bool
 
     init(statisticsStore: StatisticsStore = StatisticsUserDefaults(),
          returnUserMeasurement: ReturnUserMeasurement = KeychainReturnUserMeasurement(),
          usageSegmentation: UsageSegmenting = UsageSegmentation(pixelEvents: UsageSegmentation.pixelEvents),
          fireAppRetentionExperimentPixels: @escaping () -> Void = PixelKit.fireAppRetentionExperimentPixels,
          fireSearchExperimentPixels: @escaping () -> Void = PixelKit.fireSearchExperimentPixels,
-         pixelFiring: PixelFiring.Type = Pixel.self) {
+         pixelFiring: PixelFiring.Type = Pixel.self,
+         isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad) {
         self.statisticsStore = statisticsStore
         self.returnUserMeasurement = returnUserMeasurement
         self.usageSegmentation = usageSegmentation
         self.fireSearchExperimentPixels = fireSearchExperimentPixels
         self.fireAppRetentionExperimentPixels = fireAppRetentionExperimentPixels
         self.pixelFiring = pixelFiring
+        self.isPad = isPad
     }
 
     public func load(shouldRefreshAtb: Bool = true, completion: @escaping Completion = {}) {
@@ -89,7 +92,7 @@ public class StatisticsLoader {
 
     private func requestExti(atb: Atb, completion: @escaping Completion = {}) {
         let installAtb = atb.version + (statisticsStore.variant ?? "")
-        let url = URL.makeExtiURL(atb: installAtb)
+        let url = URL.makeExtiURL(atb: installAtb, isPad: isPad)
 
         let configuration = APIRequest.Configuration(url: url)
         let request = APIRequest(configuration: configuration, urlSession: .session())

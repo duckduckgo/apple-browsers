@@ -85,6 +85,7 @@ class WebsiteBreakageReportTests: XCTestCase {
             privacyExperiments: "",
             isPirEnabled: nil,
             isForceDarkModeEnabled: nil,
+            lastTabSuspension: nil,
             pageLoadTiming: nil
         )
 
@@ -139,6 +140,7 @@ class WebsiteBreakageReportTests: XCTestCase {
             privacyExperiments: "",
             isPirEnabled: true,
             isForceDarkModeEnabled: nil,
+            lastTabSuspension: nil,
             pageLoadTiming: nil
         )
 

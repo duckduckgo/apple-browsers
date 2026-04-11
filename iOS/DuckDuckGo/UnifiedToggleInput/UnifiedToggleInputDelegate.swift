@@ -24,4 +24,5 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     func unifiedToggleInputDidSubmitQuery(_ query: String)
     func unifiedToggleInputDidRequestVoiceSearch()
     func unifiedToggleInputDidChangeHeight()
+    func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode)
 }

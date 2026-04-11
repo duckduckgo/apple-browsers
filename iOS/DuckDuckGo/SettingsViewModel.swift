@@ -1180,15 +1180,17 @@ extension SettingsViewModel {
         static let shouldCheckIfDefaultBrowserKey = "com.duckduckgo.settings.setup.check-browser-default"
     }
 
-    func onAppear() {
+    func onFirstAppear() {
         Task {
             await initState()
             triggerDeepLinkNavigation(to: self.deepLinkTarget)
         }
     }
-    
-    func onDisappear() {
-        self.deepLinkTarget = nil
+
+    func onSubsequentAppear() {
+        Task {
+            await setupSubscriptionEnvironment()
+        }
     }
 
     @MainActor

@@ -30,8 +30,9 @@ protocol AIChatSuggestionsReading {
     var maxHistoryCount: Int { get }
 
     /// Fetches AI chat suggestions from duck.ai.
-    /// - Parameter query: Optional search query to filter results
-    /// - Parameter maxChats: Maximum number of chat items to return
+    /// - Parameters:
+    ///   - query: Optional search query to filter results
+    ///   - maxChats: Maximum number of chats to fetch. Pass `maxHistoryCount + 1` to detect overflow.
     /// - Returns: Tuple of pinned and recent suggestions. Returns empty arrays on failure.
     func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])
 

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import BrowserServicesKit
 import Core
@@ -38,9 +39,10 @@ public final class ContentBlockingUpdating {
     struct NewContent: UserContentControllerNewContent {
         let rulesUpdate: ContentBlockerRulesManager.UpdateEvent
         let sourceProvider: ScriptSourceProviding
+        let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
-            { sourceProvider in
-                UserScripts(with: sourceProvider)
+            { [duckAiNativeStorageHandler] sourceProvider in
+                UserScripts(with: sourceProvider, duckAiNativeStorageHandler: duckAiNativeStorageHandler)
             }
         }
     }
@@ -50,11 +52,12 @@ public final class ContentBlockingUpdating {
 
     private(set) var userContentBlockingAssets: AnyPublisher<NewContent, Never>!
 
-    init(userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
+    init(userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
             let sourceProvider = DefaultScriptSourceProvider(dependencies: userScriptsDependencies)
-            return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
+            return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, duckAiNativeStorageHandler: duckAiNativeStorageHandler)
         }
 
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {

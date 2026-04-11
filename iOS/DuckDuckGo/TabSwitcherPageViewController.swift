@@ -263,6 +263,16 @@ class TabSwitcherPageViewController: UIViewController {
         collectionView.reloadData()
         updateEmptyStateVisibility()
     }
+
+    func refreshCurrentTabIndicators() {
+        guard currentSelection != nil else { return }
+        for cell in collectionView.visibleCells {
+            guard let tabCell = cell as? TabViewCell,
+                  let tab = tabCell.tab else { continue }
+            tabCell.isCurrent = isCurrent(tab: tab)
+            tabCell.updateCurrentTabBorder()
+        }
+    }
     
     func scrollToInitialTab() {
         guard let index = tabsModel.currentIndex,
@@ -301,6 +311,8 @@ class TabSwitcherPageViewController: UIViewController {
             pageDelegate.isProcessingUpdates = true
             pageDelegate.page(self, willDeleteTabs: tabsToClose, allDeleted: allTabsDeleted)
             collectionView.deleteItems(at: indexPaths)
+            currentSelection = tabsModel.currentIndex
+            refreshCurrentTabIndicators()
         } completion: { _ in
             pageDelegate.isProcessingUpdates = false
             pageDelegate.pageDidDeleteTabs(self, allDeleted: allTabsDeleted)

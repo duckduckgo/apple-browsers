@@ -30,7 +30,7 @@ public struct DataBrokerMacOSSchedulingConfig {
     public var activitySchedulerTriggerInterval: TimeInterval {
         switch mode {
         case .normal:
-            return 20 * 60 // 20 minutes
+            return 60 * 60 // 60 minutes
         case .fastForIntegrationTests:
             return 1 * 60 // 1 minute
         }
@@ -39,7 +39,7 @@ public struct DataBrokerMacOSSchedulingConfig {
     public var activitySchedulerIntervalTolerance: TimeInterval {
         switch mode {
         case .normal:
-            return 10 * 60 // 10 minutes
+            return 30 * 60 // 30 minutes
         case .fastForIntegrationTests:
             return 30 // 0.5 minutes
         }

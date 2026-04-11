@@ -308,6 +308,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         let escapeHatch = omniDelegate?.escapeHatchForEditingState()
         let editingStateViewController = OmniBarEditingStateViewController(
             switchBarHandler: switchBarHandler,
+            duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
             escapeHatch: escapeHatch
         )
         editingStateViewController.delegate = self

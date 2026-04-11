@@ -49,7 +49,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     private struct Constants {
         static let mockParams: [String: String] = [:]
-        @MainActor static let mockScriptMessage = WKScriptMessage.mock(name: "", body: "", webView: WKWebView() )
+        @MainActor static let mockWebView = WKWebView()
+        @MainActor static let mockScriptMessage = WKScriptMessage.mock(name: "", body: "", webView: mockWebView)
     }
 
     @MainActor

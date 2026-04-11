@@ -515,6 +515,7 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     case riskyDomainsProtection
 
     /// Connection failure loop detection for VPN
+    /// https://app.asana.com/1/137249556945/project/1207603085593419/task/1213755794484487?focus=true
     case connectionFailureLoopDetection
 }
 

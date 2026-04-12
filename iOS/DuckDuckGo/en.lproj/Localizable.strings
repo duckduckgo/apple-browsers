@@ -1270,8 +1270,8 @@
 /* Button on the Safari export interstitial that triggers the system import sheet */
 "data.import.safari.interstitial.button" = "Open Settings to Export";
 
-/* Tip text on the Safari export interstitial reminding users to export to files */
-"data.import.safari.interstitial.tip" = "Tip: Make sure to select\n\"Export to Files\"";
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Remember to click\n\"Export to Files\"";
 
 /* Row title for importing passwords from Chrome */
 "data.import.source.chrome" = "Chrome";

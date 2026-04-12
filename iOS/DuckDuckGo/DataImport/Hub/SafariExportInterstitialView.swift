@@ -26,6 +26,8 @@ struct SafariExportInterstitialView: View {
     var onOpenSettingsToExport: (() -> Void)?
     var onCancel: (() -> Void)?
 
+    @State private var isAnimating = false
+
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -40,13 +42,16 @@ struct SafariExportInterstitialView: View {
             .padding(.horizontal, 16)
             .padding(.top, 16)
 
-            Spacer().frame(height: 24)
+            Spacer()
+
+            ExportAnimationView(isAnimating: $isAnimating)
 
             Text(UserText.safariExportInterstitialTip)
-                .daxTitle1()
+                .daxTitle2()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
+                .padding(.top, 16)
 
             Spacer().frame(height: 24)
 
@@ -61,6 +66,24 @@ struct SafariExportInterstitialView: View {
             Spacer()
         }
         .background(Color(designSystemColor: .background))
+        .onFirstAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isAnimating = true
+            }
+        }
+    }
+
+    private struct ExportAnimationView: View {
+        @Binding var isAnimating: Bool
+
+        var body: some View {
+            LottieView(
+                lottieFile: "export-passwords-light-v4",
+                loopMode: .mode(.repeat(1.0)),
+                isAnimating: $isAnimating
+            )
+            .frame(width: 200, height: 200)
+        }
     }
 }
 

@@ -2453,7 +2453,7 @@ public struct UserText {
 
     // MARK: Safari Export Interstitial
 
-    public static let safariExportInterstitialTip = NSLocalizedString("data.import.safari.interstitial.tip", value: "Tip: Make sure to select\n\"Export to Files\"", comment: "Tip text on the Safari export interstitial reminding users to export to files")
+    public static let safariExportInterstitialTip = NSLocalizedString("data.import.safari.interstitial.tip", value: "Remember to click\n\"Export to Files\"", comment: "Tip text on the Safari export interstitial reminding users to click Export to Files")
     public static let safariExportInterstitialButton = NSLocalizedString("data.import.safari.interstitial.button", value: "Open Settings to Export", comment: "Button on the Safari export interstitial that triggers the system import sheet")
 
     public static let dataImportFailedNoDataInZipErrorMessage = NSLocalizedString("data.import.failed.no-data-in-zip-error-message", value: "No supported data found in the zip file. Please review the Safari export instructions and try again.", comment: "Error message displayed when no supported data is found in the zip file")

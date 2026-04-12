@@ -23,6 +23,7 @@ import SafariServices
 import Core
 import Common
 import DDGSync
+import BrowserKit
 import os.log
 
 final class ImportSourceDetailViewController: UIViewController {

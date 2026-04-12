@@ -2330,6 +2330,7 @@ class MainViewController: UIViewController {
                                                              keyValueStore: keyValueStore,
                                                              bookmarksDatabase: bookmarksDatabase,
                                                              favoritesDisplayMode: appSettings.favoritesDisplayMode,
+                                                             onFinished: onFinished,
                                                              onCancelled: onCancelled)
         }
 

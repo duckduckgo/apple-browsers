@@ -19,12 +19,10 @@
 
 import UIKit
 import SwiftUI
-import BrowserKit
 import Core
 import DDGSync
 import Persistence
 import Bookmarks
-import os.log
 
 final class DataImportHubViewController: UIViewController {
 
@@ -77,31 +75,7 @@ final class DataImportHubViewController: UIViewController {
     }
 
     private func setupActions() {
-        viewModel.onAction = { [weak self] action in
-            self?.handleAction(action)
-        }
-    }
-
-    private lazy var importManager: DataImportManaging = DataImportManager(
-        reporter: SecureVaultReporter(),
-        bookmarksDatabase: bookmarksDatabase,
-        favoritesDisplayMode: favoritesDisplayMode,
-        tld: AppDependencyProvider.shared.storageCache.tld)
-
-    private func handleAction(_ action: DataImportHubViewModel.Action) {
-        switch action {
-        case .importPasswords:
-            navigateToSourceSelection()
-        case .importBookmarksFromSafari:
-            triggerBrowserKitImport()
-        case .uploadExportedFile:
-            startUploadExportedFileFlow()
-        }
-    }
-
-    private func navigateToSourceSelection() {
-        let sourceSelectionVC = ImportSourceSelectionViewController()
-        sourceSelectionVC.onSourceSelected = { [weak self] source in
+        viewModel.onSourceSelected = { [weak self] source in
             self?.navigateToSource(source)
         }
     }

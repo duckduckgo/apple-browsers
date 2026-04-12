@@ -222,7 +222,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         return viewController
     }
 
-    func importPasswords(delegate: DataImportViewControllerDelegate) -> UIViewController {
+    func importPasswords(delegate: DataImportViewControllerDelegate, onFinished: (() -> Void)? = nil) -> UIViewController {
         switch DataImportEntryPointHandler().destination(for: .settings) {
         case .legacy(let importScreen):
             return makeDataImportViewController(importScreen: importScreen, delegate: delegate)
@@ -230,7 +230,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             return DataImportHubViewController(syncService: syncService,
                                                 keyValueStore: keyValueStore,
                                                 bookmarksDatabase: bookmarksDatabase,
-                                                favoritesDisplayMode: appSettings.favoritesDisplayMode)
+                                                favoritesDisplayMode: appSettings.favoritesDisplayMode,
+                                                onFinished: onFinished)
         }
     }
 

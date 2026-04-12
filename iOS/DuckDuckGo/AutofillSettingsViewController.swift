@@ -189,7 +189,10 @@ final class AutofillSettingsViewController: UIViewController {
             destinationViewController = DataImportHubViewController(syncService: syncService,
                                                                     keyValueStore: keyValueStore,
                                                                     bookmarksDatabase: bookmarksDatabase,
-                                                                    favoritesDisplayMode: favoritesDisplayMode)
+                                                                    favoritesDisplayMode: favoritesDisplayMode,
+                                                                    onFinished: { [weak self] in
+                                                                        self?.handleDataImportCompletion()
+                                                                    })
         }
         navigationController?.pushViewController(destinationViewController, animated: true)
         Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped, withAdditionalParameters: [PixelParameters.source: "settings"])
@@ -215,6 +218,11 @@ final class AutofillSettingsViewController: UIViewController {
                 mainVC.segueToSettingsSync(with: source)
             }
         }
+    }
+
+    private func handleDataImportCompletion() {
+        AppDependencyProvider.shared.autofillLoginSession.startSession()
+        segueToPasswords()
     }
 
     private func segueToExtensionManagement() {
@@ -257,8 +265,7 @@ extension AutofillSettingsViewController: AutofillSettingsViewModelDelegate {
 extension AutofillSettingsViewController: DataImportViewControllerDelegate {
     
     func dataImportViewControllerDidFinish(_ controller: DataImportViewController) {
-        AppDependencyProvider.shared.autofillLoginSession.startSession()
-        segueToPasswords()
+        handleDataImportCompletion()
     }
     
 }

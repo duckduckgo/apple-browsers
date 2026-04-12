@@ -451,7 +451,10 @@ final class AutofillLoginListViewController: UIViewController {
             destinationViewController = DataImportHubViewController(syncService: syncService,
                                                                     keyValueStore: keyValueStore,
                                                                     bookmarksDatabase: bookmarksDatabase,
-                                                                    favoritesDisplayMode: favoritesDisplayMode)
+                                                                    favoritesDisplayMode: favoritesDisplayMode,
+                                                                    onFinished: { [weak self] in
+                                                                        self?.handleDataImportCompletion()
+                                                                    })
         }
         navigationController?.pushViewController(destinationViewController, animated: true)
     }
@@ -475,6 +478,12 @@ final class AutofillLoginListViewController: UIViewController {
                 mainVC.segueToSettingsSync(with: source)
             }
         }
+    }
+
+    private func handleDataImportCompletion() {
+        clearTableHeaderView()
+        importPromoPresented = false
+        viewModel.updateData()
     }
 
     private func segueToExtensionManagement() {
@@ -1228,9 +1237,7 @@ extension AutofillLoginListViewController: AutofillExtensionSettingsViewControll
 extension AutofillLoginListViewController: DataImportViewControllerDelegate {
 
     func dataImportViewControllerDidFinish(_ viewController: DataImportViewController) {
-        clearTableHeaderView()
-        importPromoPresented = false
-        viewModel.updateData()
+        handleDataImportCompletion()
     }
 }
 

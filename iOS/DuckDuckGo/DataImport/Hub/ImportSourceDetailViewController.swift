@@ -31,13 +31,16 @@ final class ImportSourceDetailViewController: UIViewController {
     private let source: ImportPasswordSource
     private let syncService: DDGSyncing
     private let fileUploadCoordinator: DataImportFileUploadCoordinating
+    private let onFinished: (() -> Void)?
 
     init(source: ImportPasswordSource,
          syncService: DDGSyncing,
-         fileUploadCoordinator: DataImportFileUploadCoordinating) {
+         fileUploadCoordinator: DataImportFileUploadCoordinating,
+         onFinished: (() -> Void)? = nil) {
         self.source = source
         self.syncService = syncService
         self.fileUploadCoordinator = fileUploadCoordinator
+        self.onFinished = onFinished
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -134,6 +137,7 @@ final class ImportSourceDetailViewController: UIViewController {
 extension ImportSourceDetailViewController: DataImportFileUploadFlowOwner {
 
     func dataImportUploadDidCompleteSummary() {
+        onFinished?()
         navigationController?.popToRootViewController(animated: true)
     }
 

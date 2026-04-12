@@ -29,6 +29,7 @@ import os.log
 final class DataImportHubViewController: UIViewController {
 
     private let viewModel = DataImportHubViewModel()
+    private let onFinished: (() -> Void)?
     private let onCancelled: (() -> Void)?
     private var didCallOnCancelled = false
 
@@ -40,6 +41,7 @@ final class DataImportHubViewController: UIViewController {
          bookmarksDatabase: CoreDataDatabase,
          favoritesDisplayMode: FavoritesDisplayMode,
          fileUploadCoordinator: DataImportFileUploadCoordinating? = nil,
+         onFinished: (() -> Void)? = nil,
          onCancelled: (() -> Void)? = nil) {
         self.syncService = syncService
         self.fileUploadCoordinator = fileUploadCoordinator ?? DataImportFileUploadCoordinator(
@@ -48,6 +50,7 @@ final class DataImportHubViewController: UIViewController {
             syncService: syncService,
             keyValueStore: keyValueStore
         )
+        self.onFinished = onFinished
         self.onCancelled = onCancelled
         super.init(nibName: nil, bundle: nil)
     }
@@ -92,7 +95,7 @@ final class DataImportHubViewController: UIViewController {
         case .importBookmarksFromSafari:
             triggerBrowserKitImport()
         case .uploadExportedFile:
-            presentDocumentPicker()
+            startUploadExportedFileFlow()
         }
     }
 
@@ -108,7 +111,11 @@ final class DataImportHubViewController: UIViewController {
             let detailVC = ImportSourceDetailViewController(
                 source: source,
                 syncService: syncService,
-                fileUploadCoordinator: fileUploadCoordinator)
+                fileUploadCoordinator: fileUploadCoordinator
+            ) { [weak self] in
+                self?.didCallOnCancelled = true
+                self?.onFinished?()
+            }
             navigationController?.pushViewController(detailVC, animated: true)
         } else {
             navigateToImportViaSync()

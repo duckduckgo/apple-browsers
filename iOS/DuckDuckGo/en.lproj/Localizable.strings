@@ -1216,6 +1216,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "The %@ file could not be read. There may be an issue with the data in the file.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Got It";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "The %@ file could not be read. Try uploading another file or try another import method.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "File may be corrupt";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "No supported data found in the zip file. Please review the export instructions and try again.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "No Data Found";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "The file selected is not supported. Please select a different file and try again.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Unsupported File";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 

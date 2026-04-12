@@ -60,6 +60,9 @@ final class DataImportFileUploadCoordinator: NSObject {
         self.featureFlagger = featureFlagger
         super.init()
         self.viewModel.delegate = self
+        self.viewModel.onFileError = { [weak self] error in
+            self?.presentFileErrorSheet(error)
+        }
     }
 
     convenience init(bookmarksDatabase: CoreDataDatabase,
@@ -140,7 +143,7 @@ extension DataImportFileUploadCoordinator: UIDocumentPickerDelegate {
 
             guard let typeIdentifier = resourceValues.typeIdentifier,
                   let fileType = DataImportFileType(typeIdentifier: typeIdentifier) else {
-                ActionMessageView.present(message: UserText.dataImportFailedUnsupportedFileErrorMessage)
+                presentFileErrorSheet(.unsupportedFile)
                 return
             }
 
@@ -149,7 +152,7 @@ extension DataImportFileUploadCoordinator: UIDocumentPickerDelegate {
             fireFileSelectedPixel(for: fileType, importScreen: viewModel.state.importScreen)
         } catch {
             Logger.autofill.debug("Failed to determine the file type: \(error)")
-            ActionMessageView.present(message: UserText.dataImportFailedUnsupportedFileErrorMessage)
+            presentFileErrorSheet(.unsupportedFile)
         }
     }
 
@@ -185,9 +188,9 @@ private extension DataImportFileUploadCoordinator {
         let dataTypes = viewModel.importDataTypes(for: contents)
 
         guard !dataTypes.isEmpty else {
-            DispatchQueue.main.async {
-                ActionMessageView.present(message: String(format: UserText.dataImportFailedReadErrorMessage, UserText.dataImportFileTypeZip))
+            DispatchQueue.main.async { [weak self] in
                 viewModel.isLoading = false
+                self?.presentFileErrorSheet(.fileUnreadable(fileType: UserText.dataImportFileTypeZip))
             }
             return
         }
@@ -214,6 +217,17 @@ private extension DataImportFileUploadCoordinator {
                   let presentingViewController else { return }
             viewModel.isLoading = false
             presentingViewController.present(zipContentSelectionViewController, animated: true)
+        }
+    }
+
+    func presentFileErrorSheet(_ error: DataImportFileError) {
+        DispatchQueue.main.async { [weak self] in
+            guard let presentingViewController = self?.presentingViewController else { return }
+            let errorVC = FileCorruptErrorViewController(error: error)
+            if let sheet = errorVC.sheetPresentationController {
+                sheet.detents = [.medium()]
+            }
+            presentingViewController.present(errorVC, animated: true)
         }
     }
 

@@ -27,31 +27,20 @@ struct DataImportHubView: View {
 
     var body: some View {
         List {
-            Section {
-                actionRow(icon: DesignSystemImages.Color.Size24.key,
-                          title: UserText.dataImportHubImportPasswordsButton,
-                          disclosure: .chevron,
-                          action: .importPasswords)
-
-                actionRow(icon: DesignSystemImages.Color.Size24.bookmark,
-                          title: UserText.dataImportHubImportBookmarksFromSafariButton,
-                          disclosure: .externalLink,
-                          action: .importBookmarksFromSafari)
-            } header: {
-                headerView
-            }
-
-            Section(header: Text(UserText.dataImportHubOtherSectionTitle)) {
-                actionRow(icon: DesignSystemImages.Glyphs.Size24.uploadFile,
-                          title: UserText.dataImportHubUploadExportedFileButton,
-                          disclosure: .chevron,
-                          action: .uploadExportedFile)
+            ForEach(viewModel.sections, id: \.self) { section in
+                Section {
+                    ForEach(section.sources) { source in
+                        sourceRow(source)
+                    }
+                } header: {
+                    sectionHeader(for: section)
+                }
             }
         }
         .applyInsetGroupedListStyle()
     }
 
-    private var headerView: some View {
+    private var hubHeaderView: some View {
         VStack(spacing: 0) {
             Image(uiImage: DesignSystemImages.Color.Size128.bringStuff)
                 .padding(.bottom, 8)
@@ -59,38 +48,40 @@ struct DataImportHubView: View {
             Text(UserText.dataImportHubTitle)
                 .daxTitle2()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
-                .padding(.bottom, 24)
+                .padding(.bottom, 32)
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 16)
     }
 
-    private enum DisclosureStyle {
-        case chevron
-        case externalLink
+    @ViewBuilder
+    private func sectionHeader(for section: ImportPasswordSource.Section) -> some View {
+        if section == .importFrom {
+            VStack(spacing: 0) {
+                hubHeaderView
+                Text(section.title)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        } else {
+            Text(section.title)
+        }
     }
 
-    private func actionRow(icon: UIImage,
-                           title: String,
-                           disclosure: DisclosureStyle,
-                           action: DataImportHubViewModel.Action) -> some View {
+    private func sourceRow(_ source: ImportPasswordSource) -> some View {
         Button {
-            viewModel.select(action)
+            viewModel.select(source)
         } label: {
             HStack(spacing: 0) {
-                Image(uiImage: icon)
+                source.listIcon
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 28, height: 28)
                     .padding(.trailing, 8)
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                Text(title)
+                Text(source.title)
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                 Spacer()
-                switch disclosure {
-                case .chevron:
-                    SettingsCellComponents.chevron
-                case .externalLink:
-                    SettingsCellComponents.link
-                }
+                SettingsCellComponents.chevron
             }
         }
     }

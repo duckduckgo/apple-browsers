@@ -57,27 +57,9 @@ final class DataImportHubViewController: UIViewController {
     }
 
     private func setupActions() {
-        viewModel.onAction = { [weak self] action in
-            self?.handleAction(action)
-        }
-    }
-
-    private func handleAction(_ action: DataImportHubViewModel.Action) {
-        switch action {
-        case .importPasswords:
-            navigateToSourceSelection()
-        case .importBookmarksFromSafari, .uploadExportedFile:
-            // Will be tackled in subsequent PR
-            break
-        }
-    }
-
-    private func navigateToSourceSelection() {
-        let sourceSelectionVC = ImportSourceSelectionViewController()
-        sourceSelectionVC.onSourceSelected = { [weak self] source in
+        viewModel.onSourceSelected = { [weak self] source in
             self?.navigateToSource(source)
         }
-        navigationController?.pushViewController(sourceSelectionVC, animated: true)
     }
 
     private func navigateToSource(_ source: ImportPasswordSource) {

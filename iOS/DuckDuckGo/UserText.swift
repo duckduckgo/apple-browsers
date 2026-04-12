@@ -2425,14 +2425,8 @@ public struct UserText {
     public static let dataImportBookmarksFileButton = NSLocalizedString("data.import.bookmarks.file-button", value: "Import Bookmarks File...", comment: "Button label to select zip or html file for importing")
 
     public static let dataImportHubTitle = NSLocalizedString("data.import.hub.title", value: "Bring to DuckDuckGo", comment: "Title for the data import hub screen")
-    public static let dataImportHubImportPasswordsButton = NSLocalizedString("data.import.hub.button.passwords", value: "Import Passwords", comment: "Button title on the data import hub to start password import")
-    public static let dataImportHubImportBookmarksFromSafariButton = NSLocalizedString("data.import.hub.button.bookmarks-from-safari", value: "Import Bookmarks From Safari", comment: "Button title on the data import hub to start Safari bookmarks import")
-    public static let dataImportHubOtherSectionTitle = NSLocalizedString("data.import.hub.section.other", value: "Other", comment: "Section title on the data import hub for secondary import actions")
-    public static let dataImportHubUploadExportedFileButton = NSLocalizedString("data.import.hub.button.upload", value: "Upload Exported File...", comment: "Button title on the data import hub for uploading an export file")
-
-    public static let importSourceSelectionTitle = NSLocalizedString("data.import.source.selection.title", value: "Import Passwords", comment: "Navigation title for the import passwords source selection screen")
-    public static let importSourceSectionImportFrom = NSLocalizedString("data.import.source.section.import-from", value: "Import From", comment: "Section header for password import sources on the source selection screen")
-    public static let importSourceSectionSyncFrom = NSLocalizedString("data.import.source.section.sync-from", value: "Sync From", comment: "Section header for sync-based import sources on the source selection screen")
+    public static let importSourceSectionImportFrom = NSLocalizedString("data.import.source.section.import-from", value: "Import From", comment: "Section header for password import sources on the hub screen")
+    public static let importSourceSectionSyncFrom = NSLocalizedString("data.import.source.section.sync-from", value: "Sync From", comment: "Section header for sync-based import sources on the hub screen")
     public static let importSourcePasswordsApp = NSLocalizedString("data.import.source.passwords-app", value: "Passwords App", comment: "Row title for importing from the Apple Passwords app")
     public static let importSourceSafari = NSLocalizedString("data.import.source.safari", value: "Safari", comment: "Row title for importing passwords from Safari")
     public static let importSourceChrome = NSLocalizedString("data.import.source.chrome", value: "Chrome", comment: "Row title for importing passwords from Chrome")

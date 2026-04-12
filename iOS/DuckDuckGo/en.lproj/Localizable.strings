@@ -1225,18 +1225,6 @@
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
 
-/* Button title on the data import hub to start Safari bookmarks import */
-"data.import.hub.button.bookmarks-from-safari" = "Import Bookmarks From Safari";
-
-/* Button title on the data import hub to start password import */
-"data.import.hub.button.passwords" = "Import Passwords";
-
-/* Button title on the data import hub for uploading an export file */
-"data.import.hub.button.upload" = "Upload Exported File...";
-
-/* Section title on the data import hub for secondary import actions */
-"data.import.hub.section.other" = "Other";
-
 /* Title for the data import hub screen */
 "data.import.hub.title" = "Bring to DuckDuckGo";
 
@@ -1288,14 +1276,11 @@
 /* Row title for importing passwords from Safari */
 "data.import.source.safari" = "Safari";
 
-/* Section header for password import sources on the source selection screen */
+/* Section header for password import sources on the hub screen */
 "data.import.source.section.import-from" = "Import From";
 
-/* Section header for sync-based import sources on the source selection screen */
+/* Section header for sync-based import sources on the hub screen */
 "data.import.source.section.sync-from" = "Sync From";
-
-/* Navigation title for the import passwords source selection screen */
-"data.import.source.selection.title" = "Import Passwords";
 
 /* Row title for syncing passwords from DuckDuckGo on another device */
 "data.import.source.sync-duckduckgo" = "DuckDuckGo on Another Device";

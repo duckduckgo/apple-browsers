@@ -51,7 +51,7 @@ enum ImportPasswordSource: CaseIterable, Identifiable {
         var sources: [ImportPasswordSource] {
             switch self {
             case .importFrom:
-                return [.passwordsApp, .safari, .chrome]
+                return [.safari, .chrome, .passwordsApp]
             case .syncFrom:
                 return [.syncFromDuckDuckGo]
             }

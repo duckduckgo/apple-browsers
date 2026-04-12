@@ -49,7 +49,7 @@ private final class TypingAnimationState: ObservableObject {
     private var timer: Timer?
     /// Once set, `start()` becomes a no-op until `stop()` resets this flag.
     private var skipped = false
-    private static let typingInterval: TimeInterval = 0.025
+    private static let typingInterval: TimeInterval = 0.02
 
     func start(totalCount: Int, onFinished: (() -> Void)? = nil) {
         guard !skipped else { return }

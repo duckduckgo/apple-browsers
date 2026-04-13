@@ -19,6 +19,7 @@
 import XCTest
 import WebKit
 @testable import BrowserServicesKit
+import TrackerRadarKit
 
 class ContentScopePropertiesTests: XCTestCase {
     func testContentScopePropertiesInitializeCorrectly() {
@@ -29,5 +30,101 @@ class ContentScopePropertiesTests: XCTestCase {
 
         // ensure the platform.name key exists, as this will be expected in the output JSON
         XCTAssertEqual(properties.platform.name, ContentScopePlatform().name)
+    }
+
+    func testTrackerDataEncodedIntoUserPreferences() throws {
+        let trackerData = TrackerData(
+            trackers: ["tracker.example": KnownTracker(
+                domain: "tracker.example",
+                defaultAction: .block,
+                owner: KnownTracker.Owner(name: "Tracker Inc", displayName: "Tracker Inc", ownedBy: nil),
+                prevalence: 0.1,
+                subdomains: nil,
+                categories: nil,
+                rules: nil
+            )],
+            entities: ["Tracker Inc": Entity(displayName: "Tracker Inc", domains: ["tracker.example"], prevalence: 0.1)],
+            domains: ["tracker.example": "Tracker Inc"],
+            cnames: nil
+        )
+
+        let properties = ContentScopeProperties(
+            gpcEnabled: false,
+            sessionKey: "test-session",
+            messageSecret: "test-secret",
+            featureToggles: ContentScopeFeatureToggles.allTogglesOn,
+            trackerData: trackerData
+        )
+
+        // Encode to JSON
+        guard let jsonData = try? JSONEncoder().encode(properties),
+              let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+            XCTFail("Failed to encode ContentScopeProperties")
+            return
+        }
+
+        // Verify trackerData is present and contains expected structure
+        guard let encodedTrackerData = json["trackerData"] as? [String: Any] else {
+            XCTFail("trackerData missing from encoded properties")
+            return
+        }
+
+        XCTAssertNotNil(encodedTrackerData["trackers"], "trackerData should contain trackers")
+        XCTAssertNotNil(encodedTrackerData["entities"], "trackerData should contain entities")
+        XCTAssertNotNil(encodedTrackerData["domains"], "trackerData should contain domains")
+
+        // Verify the tracker domain is present
+        guard let trackers = encodedTrackerData["trackers"] as? [String: Any] else {
+            XCTFail("trackers should be a dictionary")
+            return
+        }
+        XCTAssertNotNil(trackers["tracker.example"], "tracker.example should be in trackers")
+
+        guard let tracker = trackers["tracker.example"] as? [String: Any] else {
+            XCTFail("tracker.example should encode to a dictionary")
+            return
+        }
+        XCTAssertNil(tracker["domain"], "trackerData should omit tracker.domain for JavaScript payloads")
+        XCTAssertNil(tracker["prevalence"], "trackerData should omit tracker.prevalence for JavaScript payloads")
+
+        guard let owner = tracker["owner"] as? [String: Any] else {
+            XCTFail("tracker owner should be encoded")
+            return
+        }
+        XCTAssertEqual(owner["name"] as? String, "Tracker Inc")
+        XCTAssertEqual(owner["displayName"] as? String, "Tracker Inc")
+        XCTAssertNil(owner["ownedBy"], "trackerData should omit owner.ownedBy for JavaScript payloads")
+
+        guard let entities = encodedTrackerData["entities"] as? [String: Any],
+              let entity = entities["Tracker Inc"] as? [String: Any] else {
+            XCTFail("Tracker Inc entity should be encoded")
+            return
+        }
+        XCTAssertEqual(entity["displayName"] as? String, "Tracker Inc")
+        let prevalence = try XCTUnwrap((entity["prevalence"] as? NSNumber)?.doubleValue)
+        XCTAssertEqual(prevalence, 0.1, accuracy: 0.0001)
+        XCTAssertNil(entity["domains"], "trackerData should omit entity.domains for JavaScript payloads")
+    }
+
+    func testTrackerDataNilByDefault() {
+        let properties = ContentScopeProperties(
+            gpcEnabled: false,
+            sessionKey: "test-session",
+            messageSecret: "test-secret",
+            featureToggles: ContentScopeFeatureToggles.allTogglesOn
+        )
+
+        XCTAssertNil(properties.trackerData, "trackerData should be nil by default")
+
+        // Verify the properties still encode correctly even with nil trackerData
+        guard let jsonData = try? JSONEncoder().encode(properties),
+              let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+            XCTFail("Failed to encode ContentScopeProperties")
+            return
+        }
+
+        // When trackerData is nil, Swift's Encodable omits the key entirely.
+        // This is fine - C-S-S handles absence of the key gracefully.
+        XCTAssertFalse(json.keys.contains("trackerData"), "trackerData key should be omitted when nil")
     }
 }

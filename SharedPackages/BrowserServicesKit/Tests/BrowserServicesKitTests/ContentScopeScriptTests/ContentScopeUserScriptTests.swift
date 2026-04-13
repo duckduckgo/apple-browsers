@@ -19,6 +19,7 @@
 import BrowserServicesKitTestsUtils
 import PrivacyConfig
 import PrivacyConfigTestsUtils
+import TrackerRadarKit
 import WebKit
 import XCTest
 @testable import BrowserServicesKit
@@ -181,6 +182,45 @@ final class ContentScopeUserScriptTests: XCTestCase {
         XCTAssertTrue(source.contains(experimentData.cohort))
         XCTAssertTrue(source.contains(experimentData.feature))
         XCTAssertTrue(source.contains(experimentData.subfeature))
+    }
+
+    func testWhenGeneratingIsolatedSourceThenTrackerDataIsOmittedWithoutMutatingSharedProperties() throws {
+        let trackerData = TrackerData(
+            trackers: ["tracker.example": KnownTracker(
+                domain: "tracker.example",
+                defaultAction: .block,
+                owner: KnownTracker.Owner(name: "Tracker Inc", displayName: "Tracker Inc", ownedBy: nil),
+                prevalence: 0.1,
+                subdomains: nil,
+                categories: nil,
+                rules: nil
+            )],
+            entities: ["Tracker Inc": Entity(displayName: "Tracker Inc", domains: ["tracker.example"], prevalence: 0.1)],
+            domains: ["tracker.example": "Tracker Inc"],
+            cnames: nil
+        )
+        properties.trackerData = trackerData
+
+        let isolatedSource = try ContentScopeUserScript.generateSource(
+            mockPrivacyConfigurationManager,
+            properties: properties,
+            scriptContext: .contentScopeIsolated,
+            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
+            privacyConfigurationJSONGenerator: configGenerator
+        )
+
+        XCTAssertFalse(isolatedSource.contains("\"trackerData\""))
+        XCTAssertNotNil(properties.trackerData)
+
+        let contentScopeSource = try ContentScopeUserScript.generateSource(
+            mockPrivacyConfigurationManager,
+            properties: properties,
+            scriptContext: .contentScope,
+            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
+            privacyConfigurationJSONGenerator: configGenerator
+        )
+
+        XCTAssertTrue(contentScopeSource.contains("\"trackerData\""))
     }
 
     // MARK: - ContentScopeScriptContext Tests

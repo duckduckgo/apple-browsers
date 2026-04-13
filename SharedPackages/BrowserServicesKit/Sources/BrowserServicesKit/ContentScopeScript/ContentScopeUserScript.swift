@@ -21,6 +21,7 @@ import Common
 import ContentScopeScripts
 import Foundation
 import PrivacyConfig
+import TrackerRadarKit
 import UserScript
 import WebKit
 
@@ -96,6 +97,9 @@ public final class ContentScopeProperties: Encodable {
     public let features: [String: ContentScopeFeature]
     public var currentCohorts: [ContentScopeExperimentData]
     public let themeVariant: String?
+    /// Tracker data payload for C-S-S injection.
+    /// Callers currently provide the surrogate-filtered subset used by C-S-S.
+    public var trackerData: TrackerData?
 
     public init(gpcEnabled: Bool,
                 sessionKey: String,
@@ -104,7 +108,8 @@ public final class ContentScopeProperties: Encodable {
                 debug: Bool = false,
                 featureToggles: ContentScopeFeatureToggles,
                 currentCohorts: [ContentScopeExperimentData] = [],
-                themeVariant: String? = nil) {
+                themeVariant: String? = nil,
+                trackerData: TrackerData? = nil) {
         self.globalPrivacyControlValue = gpcEnabled
         self.debug = debug
         self.sessionKey = sessionKey
@@ -116,6 +121,7 @@ public final class ContentScopeProperties: Encodable {
         ]
         self.currentCohorts = currentCohorts
         self.themeVariant = themeVariant
+        self.trackerData = trackerData
     }
 
     enum CodingKeys: String, CodingKey {
@@ -130,8 +136,26 @@ public final class ContentScopeProperties: Encodable {
         case features
         case currentCohorts
         case themeVariant
+        case trackerData = "trackerData"
     }
 
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(languageCode, forKey: .languageCode)
+        try container.encode(globalPrivacyControlValue, forKey: .globalPrivacyControlValue)
+        try container.encode(debug, forKey: .debug)
+        try container.encode(sessionKey, forKey: .sessionKey)
+        try container.encode(messageSecret, forKey: .messageSecret)
+        try container.encode(platform, forKey: .platform)
+        try container.encode(features, forKey: .features)
+        try container.encode(currentCohorts, forKey: .currentCohorts)
+        try container.encodeIfPresent(themeVariant, forKey: .themeVariant)
+
+        if let trackerData {
+            try container.encode(JavaScriptTrackerData(from: trackerData), forKey: .trackerData)
+        }
+    }
 }
 
 public struct ContentScopeFeature: Encodable {
@@ -253,7 +277,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                 properties: ContentScopeProperties,
                 scriptContext: ContentScopeScriptContext = .contentScope,
                 allowedNonisolatedFeatures: [String] = [],
-                privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
+                privacyConfigurationJSONGenerator: (any CustomisedPrivacyConfigurationJSONGenerating)? = nil
     ) throws {
         self.scriptContext = scriptContext
         self.allowedNonisolatedFeatures = allowedNonisolatedFeatures
@@ -275,13 +299,15 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                                       properties: ContentScopeProperties,
                                       scriptContext: ContentScopeScriptContext,
                                       config: WebkitMessagingConfig,
-                                      privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
+                                      privacyConfigurationJSONGenerator: (any CustomisedPrivacyConfigurationJSONGenerating)? = nil
     ) throws -> String {
         let privacyConfigJsonData = privacyConfigurationJSONGenerator?.privacyConfiguration ?? privacyConfigurationManager.currentConfig
         guard let privacyConfigJson = String(data: privacyConfigJsonData, encoding: .utf8),
               let userUnprotectedDomains = try? JSONEncoder().encode(privacyConfigurationManager.privacyConfig.userUnprotectedDomains),
               let userUnprotectedDomainsString = String(data: userUnprotectedDomains, encoding: .utf8),
-              let jsonPropertiesString = try? encodeProperties(properties, messagingContextName: scriptContext.messagingContextName),
+              let jsonPropertiesString = try? encodeProperties(properties,
+                                                               messagingContextName: scriptContext.messagingContextName,
+                                                               includeTrackerData: scriptContext == .contentScope),
               let jsonConfig = try? JSONEncoder().encode(config),
               let jsonConfigString = String(data: jsonConfig, encoding: .utf8)
         else {
@@ -296,9 +322,14 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
         ])
     }
 
-    private static func encodeProperties(_ properties: ContentScopeProperties, messagingContextName: String) throws -> String {
+    private static func encodeProperties(_ properties: ContentScopeProperties,
+                                         messagingContextName: String,
+                                         includeTrackerData: Bool) throws -> String {
         let jsonProperties = try JSONEncoder().encode(properties)
         var dict = try JSONSerialization.jsonObject(with: jsonProperties, options: []) as? [String: Any] ?? [:]
+        if !includeTrackerData {
+            dict.removeValue(forKey: "trackerData")
+        }
         dict["messagingContextName"] = messagingContextName
 
         let encoded = try JSONSerialization.data(withJSONObject: dict, options: [])

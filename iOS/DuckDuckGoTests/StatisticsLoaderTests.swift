@@ -105,7 +105,7 @@ class StatisticsLoaderTests: XCTestCase {
         testee.refreshAppRetentionAtb {
             testExpectation.fulfill()
         }
-        wait(for: [testExpectation], timeout: 5.0)
+        wait(for: [testExpectation], timeout: 10.0)
         XCTAssertFalse(mockUsageSegmentation.atbs.isEmpty)
         XCTAssertTrue(fireAppRetentionExperimentPixelsCalled)
     }

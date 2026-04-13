@@ -243,7 +243,7 @@ final class AdClickAttributionPixelTests: XCTestCase {
                                             eventReporting: mockEventMapping)
 
         logic.attributionDetection(mockDetection, didDetectVendor: "vendor.com")
-        logic.onDidFinishNavigation(host: "https://vendor.com")
+        logic.onDidFinishNavigation(host: "vendor.com")
 
         logic.onRequestDetected(request: DetectedRequest(url: "example.com",
                                                          eTLDplus1: "example.com",
@@ -260,6 +260,73 @@ final class AdClickAttributionPixelTests: XCTestCase {
                                                          pageUrl: "test.com"))
 
         await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    func testWhenAttributionIsActiveAndRuleExceptionOnVendorPageThenActivityPixelIsSent() async {
+        let expectation = expectation(description: "Event fired")
+        expectation.expectedFulfillmentCount = 1
+        currentEventHandler = { event, _ in
+            expectation.fulfill()
+            XCTAssertEqual(event, AdClickAttributionEvents.adAttributionActive)
+        }
+
+        let feature = MockAttributing()
+        let mockRulesProvider = await MockAttributionRulesProvider()
+        mockRulesProvider.onRequestingAttribution = { _, completion in
+            completion(mockRulesProvider.globalAttributionRules)
+        }
+        let mockDetection = AdClickAttributionDetection(feature: feature, tld: Self.tld)
+
+        let logic = AdClickAttributionLogic(featureConfig: feature,
+                                            rulesProvider: mockRulesProvider,
+                                            tld: Self.tld,
+                                            eventReporting: mockEventMapping)
+
+        logic.attributionDetection(mockDetection, didDetectVendor: "vendor.com")
+        logic.onDidFinishNavigation(host: "vendor.com")
+
+        logic.onRequestDetected(request: DetectedRequest(url: "https://tracker.example.com/pixel",
+                                                         eTLDplus1: "example.com",
+                                                         knownTracker: nil,
+                                                         entity: nil,
+                                                         state: .allowed(reason: .ruleException),
+                                                         pageUrl: "https://vendor.com/page"))
+
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    func testWhenAttributionIsActiveAndRuleExceptionOnNonVendorPageThenNoActivityPixelIsSent() async {
+        let expectation = expectation(description: "No adAttributionActive event fired")
+        expectation.isInverted = true
+        currentEventHandler = { event, _ in
+            if event == .adAttributionActive {
+                expectation.fulfill()
+            }
+        }
+
+        let feature = MockAttributing()
+        let mockRulesProvider = await MockAttributionRulesProvider()
+        mockRulesProvider.onRequestingAttribution = { _, completion in
+            completion(mockRulesProvider.globalAttributionRules)
+        }
+        let mockDetection = AdClickAttributionDetection(feature: feature, tld: Self.tld)
+
+        let logic = AdClickAttributionLogic(featureConfig: feature,
+                                            rulesProvider: mockRulesProvider,
+                                            tld: Self.tld,
+                                            eventReporting: mockEventMapping)
+
+        logic.attributionDetection(mockDetection, didDetectVendor: "vendor.com")
+        logic.onDidFinishNavigation(host: "vendor.com")
+
+        logic.onRequestDetected(request: DetectedRequest(url: "https://tracker.example.com/pixel",
+                                                         eTLDplus1: "example.com",
+                                                         knownTracker: nil,
+                                                         entity: nil,
+                                                         state: .allowed(reason: .ruleException),
+                                                         pageUrl: "https://other.com/page"))
+
+        await fulfillment(of: [expectation], timeout: 0.1)
     }
 
 }

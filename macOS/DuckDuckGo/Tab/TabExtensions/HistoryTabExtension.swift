@@ -101,9 +101,7 @@ final class HistoryTabExtension: NSObject {
                 switch tracker.type {
                 case .tracker:
                     self.historyCoordinating.addDetectedTracker(tracker.request, on: url)
-                case .trackerWithSurrogate:
-                    self.historyCoordinating.addDetectedTracker(tracker.request, on: url)
-                case .thirdPartyRequest:
+                case .trackerWithSurrogate, .thirdPartyRequest:
                     break
                 }
             }

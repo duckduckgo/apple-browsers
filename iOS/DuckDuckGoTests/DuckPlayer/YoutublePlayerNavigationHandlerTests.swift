@@ -275,9 +275,6 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Act
         let result1 = handler.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL, isNavigationError: false)
 
-        // Wait less than one second before calling again
-        try? await Task.sleep(nanoseconds: 500_000_000)
-
         let result2 = handler.handleURLChange(webView: mockWebView, previousURL: youtubeURL, newURL: youtubeURL, isNavigationError: false)
 
         // Assert

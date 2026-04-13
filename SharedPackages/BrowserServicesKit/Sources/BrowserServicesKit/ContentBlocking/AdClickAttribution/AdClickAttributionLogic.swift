@@ -230,8 +230,25 @@ public class AdClickAttributionLogic {
     }
 
     public func onRequestDetected(request: DetectedRequest) {
-        guard registerFirstActivity,
-            BlockingState.allowed(reason: .adClickAttribution) == request.state else { return }
+        guard registerFirstActivity else { return }
+
+        let isAttributionMatch: Bool
+        if case .allowed(reason: .adClickAttribution) = request.state {
+            isAttributionMatch = true
+        } else if case .activeAttribution(let vendor, _, _) = state,
+                  case .allowed(reason: .ruleException) = request.state,
+                  let pageHost = URL(string: request.pageUrl)?.host?.droppingWwwPrefix(),
+                  tld.eTLDplus1(pageHost) == vendor {
+            // A general TDS rule exception on the vendor's own page may allow a request
+            // that the attribution-specific rule list didn't explicitly tag as
+            // .adClickAttribution. Treat it as an attribution match so the activity
+            // pixel fires. Scoped to vendor pages to avoid false positives elsewhere.
+            isAttributionMatch = true
+        } else {
+            isAttributionMatch = false
+        }
+
+        guard isAttributionMatch else { return }
 
         eventReporting?.fire(.adAttributionActive)
         registerFirstActivity = false

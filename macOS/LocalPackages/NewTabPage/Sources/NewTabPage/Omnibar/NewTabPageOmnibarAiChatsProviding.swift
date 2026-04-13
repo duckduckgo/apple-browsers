@@ -16,9 +16,13 @@
 //  limitations under the License.
 //
 
+import Combine
+
 public protocol NewTabPageOmnibarAiChatsProviding: AnyObject {
 
     @MainActor
     func aiChats(query: String?) async -> NewTabPageDataModel.AiChatsData
+
+    var hasExcessChatsPublisher: AnyPublisher<Bool, Never> { get }
 
 }

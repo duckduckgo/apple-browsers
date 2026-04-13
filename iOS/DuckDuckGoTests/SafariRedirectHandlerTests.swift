@@ -34,7 +34,7 @@ final class SafariRedirectHandlerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        handler = SafariRedirectHandler(tld: TLD(), featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.customXSafariRedirectHandling]))
+        handler = SafariRedirectHandler(tld: TLD())
         delegate = MockSafariRedirectHandlerDelegate()
         handler.delegate = delegate
     }
@@ -49,15 +49,6 @@ final class SafariRedirectHandlerTests: XCTestCase {
     func testHandleRedirectReturnsFalseForHTTPScheme() {
         let httpURL = URL(string: "http://example.com/page")!
         XCTAssertFalse(handler.handleRedirect(to: httpURL))
-    }
-
-    func testHandleRedirectReturnsFalseWhenFeatureFlagDisabled() {
-        let disabledHandler = SafariRedirectHandler(tld: TLD(), featureFlagger: MockFeatureFlagger())
-        let mockDelegate = MockSafariRedirectHandlerDelegate()
-        disabledHandler.delegate = mockDelegate
-
-        XCTAssertFalse(disabledHandler.handleRedirect(to: xSafariURL))
-        XCTAssertTrue(mockDelegate.presentedAlerts.isEmpty)
     }
 
     // MARK: - First redirect shows Alert 1

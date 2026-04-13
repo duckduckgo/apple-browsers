@@ -144,7 +144,7 @@ struct FireConfirmationPresenter {
             sheet.prefersEdgeAttachedInCompactHeight = true
             sheet.widthFollowsPreferredContentSizeWhenEdgeAttached = true
         } else {
-            sheet.detents = [.large()]
+            sheet.detents = [.medium()]
         }
         sheet.prefersGrabberVisible = false
         if #unavailable(iOS 26) {

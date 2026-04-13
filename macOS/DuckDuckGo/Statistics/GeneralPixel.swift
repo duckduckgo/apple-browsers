@@ -492,6 +492,7 @@ enum GeneralPixel: PixelKitEvent {
     case bookmarksSortByName(origin: String)
     case bookmarksSearchExecuted(origin: String)
     case bookmarksSearchResultClicked(origin: String)
+    case bookmarksSaveAllOpenTabs
 
     case syncSentUnauthenticatedRequest
     case syncMetadataCouldNotLoadDatabase
@@ -1313,6 +1314,7 @@ enum GeneralPixel: PixelKitEvent {
         case .bookmarksSortByName: return "m_mac_sort_bookmarks_by_name"
         case .bookmarksSearchExecuted: return "m_mac_search_bookmarks_executed"
         case .bookmarksSearchResultClicked: return "m_mac_search_result_clicked"
+        case .bookmarksSaveAllOpenTabs: return "m_mac_bookmarks_save-all-open-tabs"
 
             // Broken site prompt
         case .pageRefreshThreeTimesWithin20Seconds: return "m_mac_reload-three-times-within-20-seconds"
@@ -1830,6 +1832,7 @@ enum GeneralPixel: PixelKitEvent {
                 .bookmarksSortByName,
                 .bookmarksSearchExecuted,
                 .bookmarksSearchResultClicked,
+                .bookmarksSaveAllOpenTabs,
                 .syncSentUnauthenticatedRequest,
                 .syncMetadataCouldNotLoadDatabase,
                 .syncBookmarksProviderInitializationFailed,

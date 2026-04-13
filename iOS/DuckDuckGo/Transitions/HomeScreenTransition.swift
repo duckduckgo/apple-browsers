@@ -168,7 +168,18 @@ class ToHomeScreenTransition: HomeScreenTransition {
               let rowIndex = tabSwitcherViewController.tabsModel.indexOf(tab: tab),
               let layoutAttr = tabSwitcherViewController.collectionView.layoutAttributesForItem(at: IndexPath(row: rowIndex, section: 0))
         else {
-            transitionContext.completeTransition(true)
+            // Layout attributes can be nil when a new tab was just added but the collection view
+            // hasn't laid out its cell yet. Fall back to a simple crossfade to avoid a flash.
+            if let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController {
+                mainViewController.view.alpha = 1
+            }
+            UIView.animate(withDuration: TabSwitcherTransition.Constants.duration, animations: {
+                self.tabSwitcherViewController.view.alpha = 0
+            }, completion: { _ in
+                self.solidBackground.removeFromSuperview()
+                self.imageContainer.removeFromSuperview()
+                transitionContext.completeTransition(true)
+            })
             return
         }
 

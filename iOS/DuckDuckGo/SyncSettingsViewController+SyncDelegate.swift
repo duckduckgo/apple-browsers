@@ -202,12 +202,14 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
                 AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
+                self.enableAutoRestoreByDefaultIfNeeded()
                 self.refreshDevices(clearDevices: false)
                 ActionMessageView.present(message: UserText.simplifiedSyncEnabledToast, onDidDismiss: {
                     optionsViewModel.checkAndShowSyncWithAnotherDevicePrompt()
                 })
             } catch {
-                await self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncSignupError)
+                self.firePixelIfNeededFor(event: .syncSignupError, error: error)
+                ActionMessageView.present(message: UserText.simplifiedSyncSetupFailedToast)
             }
         }
     }
@@ -324,11 +326,13 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             let readyView = AutoRestoreReadyView(model: self.viewModel, onCancel: { [weak self] in
                 Pixel.fire(pixel: .syncAutoRestoreSettingsCancelled, withAdditionalParameters: [PixelParameters.source: promptSource.rawValue])
                 self?.viewModel.clearPendingPreservedAccountContinuation()
+                self?.viewModel.isBusy = false
                 self?.autoRestorePromptSource = nil
                 self?.dismissPresentedViewController()
             })
             let controller = DismissibleHostingController(rootView: readyView, onDismiss: { [weak self] in
                 self?.viewModel.clearPendingPreservedAccountContinuation()
+                self?.viewModel.isBusy = false
                 if self?.needsPreservedAccountCleanupBeforeServerOperation == false {
                     self?.autoRestorePromptSource = nil
                 }
@@ -448,8 +452,25 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func showPreparingSync(_ completion: (() -> Void)?) {
-        let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: viewModel.isAIChatSyncEnabled))
-        navigationController?.present(controller, animated: true, completion: completion)
+        if useSimplifiedLayout {
+            let controller = UIHostingController(rootView: SimplifiedConnectingSheetView())
+            controller.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
+            if #available(iOS 16.4, *) {
+                controller.sizingOptions = .intrinsicContentSize
+            }
+            if #available(iOS 16.0, *) {
+                let fittingSize = controller.view.systemLayoutSizeFitting(
+                    CGSize(width: UIScreen.main.bounds.width, height: UIView.layoutFittingCompressedSize.height)
+                )
+                controller.sheetPresentationController?.detents = [
+                    .custom { _ in fittingSize.height }
+                ]
+            }
+            navigationController?.present(controller, animated: true, completion: completion)
+        } else {
+            let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: viewModel.isAIChatSyncEnabled))
+            navigationController?.present(controller, animated: true, completion: completion)
+        }
     }
 
     @MainActor
@@ -605,9 +626,17 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         
         var controller: UIHostingController<AnyView>
         if showQRCode {
-            controller = UIHostingController(rootView: AnyView(ScanOrSeeCode(model: model)))
+            if useSimplifiedLayout {
+                controller = UIHostingController(rootView: AnyView(SimplifiedScanOrShowCodeView(model: model)))
+            } else {
+                controller = UIHostingController(rootView: AnyView(ScanOrSeeCode(model: model)))
+            }
         } else {
-            controller = UIHostingController(rootView: AnyView(ScanOrEnterCodeToRecoverSyncedDataView(model: model)))
+            if useSimplifiedLayout {
+                controller = UIHostingController(rootView: AnyView(SimplifiedScanOrShowCodeView(model: model)))
+            } else {
+                controller = UIHostingController(rootView: AnyView(ScanOrEnterCodeToRecoverSyncedDataView(model: model)))
+            }
         }
         
         let navController = UIDevice.current.userInterfaceIdiom == .phone
@@ -615,6 +644,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         : UINavigationController(rootViewController: controller)
         
         navController.overrideUserInterfaceStyle = .dark
+        if useSimplifiedLayout {
+            navController.view.backgroundColor = UIColor(baseColor: .gray90)
+        }
         navController.setNeedsStatusBarAppearanceUpdate()
         navController.modalPresentationStyle = .fullScreen
         navigationController?.present(navController, animated: true) {
@@ -767,6 +799,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown, includedParameters: [.appVersion])
     }
 
+    func codeCopied() {
+        ActionMessageView.present(message: UserText.simplifiedCodeCopiedToast)
+    }
+
     @MainActor
     private func presentPreservedAccountCleanupFailureAlert() {
         let alertController = UIAlertController(title: SyncErrorMessage.unknownError.title, message: SyncErrorMessage.unknownError.description, preferredStyle: .alert)
@@ -807,6 +843,12 @@ extension SyncSettingsViewController {
     var simplifiedSyncAnotherDevicePromptState: SyncAnotherDevicePromptState {
         let rawValue = syncSettingsStore.object(forKey: SyncAnotherDevicePromptState.storageKey) as? Int ?? 0
         return SyncAnotherDevicePromptState(rawValue: rawValue) ?? .dismissed
+    }
+
+    func simplifiedCopyRecoveryCode() {
+        UIPasteboard.general.string = recoveryCode
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        ActionMessageView.present(message: UserText.simplifiedRecoveryCodeCopiedToast)
     }
 
     func simplifiedSyncAnotherDevicePromptWasDismissed() {

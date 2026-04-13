@@ -111,6 +111,10 @@ final class UnloadedTab: Identifiable {
             tab.tabSnapshots?.setIdentifier(snapshotId)
         }
 
+        if isSuspended {
+            tab.tabSuspension?.lastSuspendedURL = content.urlForWebView
+        }
+
         return tab
     }
 }

@@ -30,6 +30,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
     func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapAttach(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID)
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController)
@@ -136,9 +137,24 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.modelPickerMenu = newValue }
     }
 
+    var toolsMenu: UIMenu? {
+        get { inputBarView.toolsMenu }
+        set { inputBarView.toolsMenu = newValue }
+    }
+
     var isModelChipHidden: Bool {
         get { inputBarView.isModelChipHidden }
         set { inputBarView.isModelChipHidden = newValue }
+    }
+
+    var selectedTool: AIChatRAGTool? {
+        get { inputBarView.selectedTool }
+        set { inputBarView.selectedTool = newValue }
+    }
+
+    var isToolsButtonHidden: Bool {
+        get { inputBarView.isToolsButtonHidden }
+        set { inputBarView.isToolsButtonHidden = newValue }
     }
 
     var isImageButtonHidden: Bool {
@@ -154,11 +170,6 @@ final class UnifiedToggleInputViewController: UIViewController {
     var modelSupportsImageAttachments: Bool {
         get { inputBarView.modelSupportsImageAttachments }
         set { inputBarView.modelSupportsImageAttachments = newValue }
-    }
-
-    var isCustomizeResponsesButtonHidden: Bool {
-        get { inputBarView.isCustomizeResponsesButtonHidden }
-        set { inputBarView.isCustomizeResponsesButtonHidden = newValue }
     }
 
     var isAttachmentsFull: Bool {
@@ -189,6 +200,16 @@ final class UnifiedToggleInputViewController: UIViewController {
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
         setExpanded(config.isExpanded, animated: animated)
+    }
+
+    func applyToolsPresentation(
+        isToolsButtonHidden: Bool,
+        selectedTool: AIChatRAGTool?,
+        toolsMenu: UIMenu?
+    ) {
+        self.isToolsButtonHidden = isToolsButtonHidden
+        self.selectedTool = selectedTool
+        self.toolsMenu = toolsMenu
     }
 
     func setExpanded(_ expanded: Bool, animated: Bool) {
@@ -280,5 +301,9 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidTapSearchGoTo(self)
+    }
+
+    func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidClearSelectedTool(self)
     }
 }

@@ -31,6 +31,7 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
     func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView)
 }
 
 // MARK: - Card Position
@@ -127,14 +128,24 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.modelPickerMenu = newValue }
     }
 
+    var toolsMenu: UIMenu? {
+        get { toolsToolbar.toolsMenu }
+        set { toolsToolbar.toolsMenu = newValue }
+    }
+
     var isModelChipHidden: Bool {
         get { toolsToolbar.isModelChipHidden }
         set { toolsToolbar.isModelChipHidden = newValue }
     }
 
-    var isCustomizeResponsesButtonHidden: Bool {
-        get { toolsToolbar.isCustomizeResponsesButtonHidden }
-        set { toolsToolbar.isCustomizeResponsesButtonHidden = newValue }
+    var selectedTool: AIChatRAGTool? {
+        get { toolsToolbar.selectedTool }
+        set { toolsToolbar.selectedTool = newValue }
+    }
+
+    var isToolsButtonHidden: Bool {
+        get { toolsToolbar.isToolsButtonHidden }
+        set { toolsToolbar.isToolsButtonHidden = newValue }
     }
 
     /// Called inside animation blocks when a hierarchy-wide layout pass is needed
@@ -671,14 +682,15 @@ private extension UnifiedToggleInputView {
         toolsToolbar.onStopGeneratingTapped = { [weak self] in
             self?.handler.stopGeneratingButtonTapped()
         }
-        toolsToolbar.onCustomizeResponsesTapped = { [weak self] in
-            self?.handler.customizeResponsesButtonTapped()
-        }
         toolsToolbar.onAttachTapped = { [weak self] in
             self?.onAttachTapped?()
         }
         toolsToolbar.onVoiceTapped = { [weak self] in
             self?.handler.microphoneButtonTapped()
+        }
+        toolsToolbar.onSelectedToolClearTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputViewDidClearSelectedTool(self)
         }
         addSubview(toolsToolbar)
 

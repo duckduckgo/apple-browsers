@@ -242,8 +242,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213557229772465?focus=true
     case autoplayBlocking
 
-    case customXSafariRedirectHandling
-
     case crashReportOptInStatusResetting
 
     case fireproofingETLDPlus1
@@ -420,6 +418,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables recent AI chats on the New Tab Page omnibar
     case ntpRecentChats
 
+    /// Enables the "View all chats" button on the New Tab Page omnibar
+    case ntpViewAllChats
+
     /// Enables AI chat tools (model selector, image upload) on the New Tab Page omnibar
     case ntpChatTools
 
@@ -456,11 +457,17 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Prevents about: scheme navigations (e.g. about:srcdoc) from opening new tabs in the sidebar
     case sidebarAboutSchemeNavigationFix
 
+    /// Enabled 'View all chats' for Duck.ai in the omnibar
+    case viewAllChatsNativeOmnibar
+
     /// Enables image generation mode toggle in the Duck.ai omnibar
     case omnibarImageGeneration
 
     /// Enables web search tool in the Duck.ai omnibar
     case omnibarWebSearch
+
+    /// Enables querying AI Chat data directly from local storage instead of via webview
+    case nativeDataAccess
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -506,6 +513,10 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Risky Domain Protection for VPN
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case riskyDomainsProtection
+
+    /// Connection failure loop detection for VPN
+    /// https://app.asana.com/1/137249556945/project/1207603085593419/task/1213755794484487?focus=true
+    case connectionFailureLoopDetection
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {
@@ -578,6 +589,11 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature { .htmlHistoryPage }
     case isLaunched
+}
+
+public enum TabSuspensionSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .tabSuspension }
+    case memoryPressureTrigger
 }
 
 public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {

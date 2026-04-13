@@ -38,7 +38,11 @@ extension MainViewController {
     func setUpUnifiedToggleInputIfNeeded() {
         guard unifiedToggleInputFeature.isAvailable else { return }
 
-        let coordinator = UnifiedToggleInputCoordinator(isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+        let coordinator = UnifiedToggleInputCoordinator(
+            isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+            toggleModeStorage: toggleModeStorage
+        )
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
@@ -79,7 +83,7 @@ extension MainViewController {
         switch action {
         case .unbindInactiveNonAITab:
             refreshInactiveNonAITab(tab: tab, coordinator: coordinator)
-            tab.updateWebViewBottomAnchor(for: viewCoordinator.toolbar.alpha)
+            tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
             return
         case .refreshAITab(let behavior):
             let completedRefresh = refreshAITab(tab: tab, coordinator: coordinator, behavior: behavior)
@@ -90,7 +94,7 @@ extension MainViewController {
             refreshNonAITab(tab: tab, coordinator: coordinator)
         }
 
-        tab.updateWebViewBottomAnchor(for: viewCoordinator.toolbar.alpha)
+        tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
     }
 
     func applyUnifiedInputChromeBackground(_ state: UnifiedInputChromeBackgroundState, updateWebView: Bool = true) {
@@ -466,10 +470,6 @@ extension MainViewController {
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             if coordinator.isOmnibarSession {
                 self.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator)
-                // Restore the tab's committed mode — the user toggled but didn't submit.
-                if let tabMode = self.tabManager.currentTabsModel.currentTab?.preferredTextEntryMode {
-                    coordinator.updateInputMode(tabMode, animated: false)
-                }
             } else if coordinator.isAITabExpanded {
                 coordinator.showCollapsed()
             }
@@ -562,10 +562,6 @@ private extension MainViewController {
         }
     }
 
-    func commitUnifiedToggleStateToCurrentTab() {
-        guard let mode = unifiedToggleInputCoordinator?.inputMode else { return }
-        commitToggleMode(mode)
-    }
 }
 
 // MARK: - UnifiedToggleInputOmnibarActivating
@@ -588,13 +584,15 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
 
 extension MainViewController: UnifiedToggleInputDelegate {
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?) {
-        commitUnifiedToggleStateToCurrentTab()
-        openAIChat(prompt, autoSend: true, modelId: modelId, images: images)
+    func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
+        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
+    }
+
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, images: [AIChatNativePrompt.NativePromptImage]?) {
+        openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, images: images)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
-        commitUnifiedToggleStateToCurrentTab()
         handleUnifiedToggleInputSearchSubmission(query)
     }
 
@@ -621,14 +619,12 @@ extension MainViewController: UnifiedToggleInputDelegate {
 extension MainViewController: UnifiedInputContentContainerViewControllerDelegate {
 
     func unifiedInputEditingStateDidSubmitQuery(_ query: String) {
-        commitUnifiedToggleStateToCurrentTab()
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalSubmission(.query)
         handleUnifiedToggleInputSearchSubmission(query)
     }
 
     func unifiedInputEditingStateDidSubmitPrompt(_ query: String, tools: [AIChatRAGTool]?) {
-        commitUnifiedToggleStateToCurrentTab()
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalSubmission(.prompt)
         openAIChat(query, autoSend: true, tools: tools)

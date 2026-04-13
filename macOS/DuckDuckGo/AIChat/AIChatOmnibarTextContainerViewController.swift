@@ -396,9 +396,9 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
     func textViewDidRequestMoveToSuggestions() -> Bool {
         let viewModel = omnibarController.suggestionsViewModel
 
-        // If already at last suggestion, clear selection (cycle back to text field)
-        if let currentIndex = viewModel.selectedIndex,
-           currentIndex >= viewModel.filteredSuggestions.count - 1 {
+        // If already at last item (including the virtual "view all" row), clear selection (cycle back to text field)
+        let lastIndex = viewModel.filteredSuggestions.count - 1 + (viewModel.showViewAllChats ? 1 : 0)
+        if let currentIndex = viewModel.selectedIndex, currentIndex >= lastIndex {
             viewModel.clearSelection(keepMouseSuppressed: true)
             return true
         }
@@ -416,6 +416,10 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
     }
 
     func textViewDidRequestSelectCurrentSuggestion() -> Bool {
+        if omnibarController.suggestionsViewModel.isViewAllChatsSelected {
+            return omnibarController.submitSelectedSuggestion()
+        }
+
         guard let suggestion = omnibarController.suggestionsViewModel.selectedSuggestion else {
             return false
         }

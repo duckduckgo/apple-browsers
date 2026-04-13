@@ -87,8 +87,7 @@ final class DataImportHubViewController: UIViewController {
                 syncService: syncService,
                 fileUploadCoordinator: fileUploadCoordinator
             ) { [weak self] in
-                self?.didCallOnCancelled = true
-                self?.onFinished?()
+                self?.completeImportFlow()
             }
             navigationController?.pushViewController(detailVC, animated: true)
         } else {
@@ -100,6 +99,19 @@ final class DataImportHubViewController: UIViewController {
         let importController = ImportPasswordsViaSyncViewController(syncService: syncService)
         importController.delegate = self
         navigationController?.pushViewController(importController, animated: true)
+    }
+
+    private func completeImportFlow() {
+        didCallOnCancelled = true
+
+        if let navigationController,
+           let hubIndex = navigationController.viewControllers.firstIndex(where: { $0 === self }),
+           hubIndex > 0 {
+            let previousViewController = navigationController.viewControllers[hubIndex - 1]
+            navigationController.popToViewController(previousViewController, animated: false)
+        }
+
+        onFinished?()
     }
 
     private func callOnCancelledIfNeeded() {

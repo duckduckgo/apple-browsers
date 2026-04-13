@@ -69,16 +69,34 @@ struct AutofillSettingsView: View {
                     Button {
                         viewModel.navigateToFileImport()
                     } label: {
-                        Text(UserText.autofillEmptyViewImportButtonTitle)
-                            .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .accent))
+                        HStack {
+                            Image(uiImage: DesignSystemImages.Color.Size24.`import`)
+                            Text(UserText.autofillEmptyViewImportButtonTitle)
+                                .daxBodyRegular()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+
+                            Spacer()
+
+                            Image(systemName: "chevron.forward")
+                                .font(Font.system(.footnote).weight(.bold))
+                                .foregroundColor(Color(UIColor.tertiaryLabel))
+                        }
                     }
                     Button {
                         viewModel.navigateToImportViaSync()
                     } label: {
-                        Text(UserText.autofillEmptyViewImportViaSyncButtonTitle)
-                            .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .accent))
+                        HStack {
+                            Image(uiImage: DesignSystemImages.Color.Size24.sync)
+                            Text(UserText.autofillEmptyViewImportViaSyncButtonTitle)
+                                .daxBodyRegular()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+
+                            Spacer()
+
+                            Image(systemName: "chevron.forward")
+                                .font(Font.system(.footnote).weight(.bold))
+                                .foregroundColor(Color(UIColor.tertiaryLabel))
+                        }
                     }
                 } else {
                     Button {

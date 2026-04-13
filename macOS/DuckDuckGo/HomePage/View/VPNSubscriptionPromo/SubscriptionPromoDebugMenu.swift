@@ -48,8 +48,14 @@ final class SubscriptionPromoDebugMenu: NSMenuItem {
         displayCountItem.isEnabled = false
         menu.addItem(displayCountItem)
 
+        let dismissedItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        dismissedItem.tag = 3
+        dismissedItem.isEnabled = false
+        menu.addItem(dismissedItem)
+
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Reset Fire Tab Visit Count", action: #selector(resetFireTabVisitCount), target: self))
+        menu.addItem(NSMenuItem(title: "Reset Promo Dismissed Date", action: #selector(resetPromoDismissedDate), target: self))
         menu.addItem(NSMenuItem(title: "Reset Promo Display Count", action: #selector(resetPromoDisplayCount), target: self))
         menu.addItem(NSMenuItem(title: "Reset Promo Display Window Start", action: #selector(resetPromoDisplayWindowStart), target: self))
         menu.addItem(.separator())
@@ -61,6 +67,11 @@ final class SubscriptionPromoDebugMenu: NSMenuItem {
     @objc func resetFireTabVisitCount() {
         var p = persistor
         p.fireTabVisitCount = 0
+    }
+
+    @objc func resetPromoDismissedDate() {
+        var p = persistor
+        p.promoDismissedDate = nil
     }
 
     @objc func resetPromoDisplayCount() {
@@ -77,6 +88,7 @@ final class SubscriptionPromoDebugMenu: NSMenuItem {
     @objc func resetAllPromoState() {
         var p = persistor
         p.fireTabVisitCount = 0
+        p.promoDismissedDate = nil
         p.promoDisplayCount = 0
         p.promoDisplayWindowStart = nil
     }
@@ -90,5 +102,23 @@ extension SubscriptionPromoDebugMenu: NSMenuDelegate {
 
         let displayCount = persistor.promoDisplayCount
         menu.item(withTag: 2)?.title = "👀 Promo Display Count: \(displayCount)/\(SubscriptionPromoViewModel.maxDisplaysPerTimeWindow)"
+
+        let isDismissed = isDismissedWithinCooldown
+        let daysSinceLastDismissed = daysSinceLastDismissed.map { "\($0)" } ?? "N/A"
+        menu.item(withTag: 3)?.title = "👀 Dismissed: \(isDismissed) (days since: \(daysSinceLastDismissed))"
+    }
+
+    private var daysSinceLastDismissed: Int? {
+        guard let dismissedDate = persistor.promoDismissedDate else {
+            return nil
+        }
+        return Calendar.current.dateComponents([.day], from: dismissedDate, to: Date()).day ?? 0
+    }
+
+    private var isDismissedWithinCooldown: Bool {
+        guard let days = daysSinceLastDismissed else {
+            return false
+        }
+        return days < SubscriptionPromoViewModel.dismissCooldownDays
     }
 }

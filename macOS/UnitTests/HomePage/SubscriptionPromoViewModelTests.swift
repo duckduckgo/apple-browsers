@@ -87,8 +87,40 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         XCTAssertFalse(sut.shouldShowPromo)
     }
 
+    // MARK: - Dismiss Cooldown (fallback when PromoQueue is off)
+
+    func testWhenDismissedWithinCooldown_ThenDoesNotShowPromo() {
+        persistor.fireTabVisitCount = 3
+        persistor.promoDismissedDate = Date()
+        sut = makeSUT()
+
+        sut.updateForTab(.notEvaluated)
+
+        XCTAssertFalse(sut.shouldShowPromo)
+    }
+
+    func testWhenDismissedAfterCooldown_ThenShowsPromo() {
+        persistor.fireTabVisitCount = 3
+        persistor.promoDismissedDate = Calendar.current.date(byAdding: .day, value: -29, to: Date())
+        sut = makeSUT()
+
+        sut.updateForTab(.notEvaluated)
+
+        XCTAssertTrue(sut.shouldShowPromo)
+    }
+
+    func testWhenPromoQueueOn_ThenCooldownCheckSkipped() {
+        let delegate = FireWindowSubscriptionPromoDelegate()
+        persistor.fireTabVisitCount = 3
+        persistor.promoDismissedDate = Date()
+        sut = makeSUT(promoDelegate: delegate)
+
+        sut.updateForTab(.notEvaluated)
+
+        XCTAssertTrue(sut.shouldShowPromo, "PromoQueue handles cooldown, ViewModel should not block")
+    }
+
     // MARK: - Display Limit (4 times per 28-day rolling window)
-    // Note: 28-day dismiss cooldown is handled by PromoService via resultWhenHidden
 
     func testWhenDisplayCountBelowLimit_ThenShowsPromo() {
         persistor.fireTabVisitCount = 3
@@ -210,7 +242,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
 
     // MARK: - Dismiss & Action
 
-    func testDismissHidesPromo() {
+    func testDismissHidesPromoAndSetsDismissedDate() {
         persistor.fireTabVisitCount = 3
         sut = makeSUT()
         sut.updateForTab(.notEvaluated)
@@ -219,9 +251,10 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         sut.dismiss()
 
         XCTAssertFalse(sut.shouldShowPromo)
+        XCTAssertNotNil(persistor.promoDismissedDate)
     }
 
-    func testOnPromoButtonTappedKeepsPromoVisible() {
+    func testOnPromoButtonTappedKeepsPromoVisibleAndSetsDismissedDate() {
         persistor.fireTabVisitCount = 3
         sut = makeSUT()
         sut.updateForTab(.notEvaluated)
@@ -230,6 +263,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         sut.onPromoButtonTapped()
 
         XCTAssertTrue(sut.shouldShowPromo, "Promo stays visible on current tab after CTA tap")
+        XCTAssertNotNil(persistor.promoDismissedDate)
     }
 
     // MARK: - Promo Delegate Visibility Reporting
@@ -314,6 +348,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
 
 final class MockSubscriptionPromoPersisting: SubscriptionPromoPersisting {
     var fireTabVisitCount: Int = 0
+    var promoDismissedDate: Date?
     var promoDisplayCount: Int = 0
     var promoDisplayWindowStart: Date?
 }

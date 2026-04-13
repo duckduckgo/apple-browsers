@@ -32,6 +32,7 @@ extension ApplicationBuildType {
     /// Alpha builds are internal-only (canary); review builds are public beta / TestFlight (preview).
     /// Debug builds return nil because they use `test=1` instead.
     var channelName: String? {
+        if isDebugBuild { return nil }
         if isAlphaBuild { return "canary" }
         if isReviewBuild { return "preview" }
         return nil

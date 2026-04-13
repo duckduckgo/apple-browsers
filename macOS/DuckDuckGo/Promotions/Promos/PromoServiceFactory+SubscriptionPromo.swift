@@ -28,7 +28,7 @@ extension PromoServiceFactory {
             promoType: PromoType(.banner),
             context: .fireWindow,
             respectsGlobalCooldown: false, // ViewModel handles its own display rules
-            setsGlobalCooldown: true,
+            setsGlobalCooldown: false,
             delegate: delegate
         )
     }

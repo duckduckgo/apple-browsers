@@ -27,7 +27,6 @@ import Subscription
 protocol SubscriptionPromoPersisting {
     var fireTabVisitCount: Int { get set }
     var promoDismissedDate: Date? { get set }
-    var promoActioned: Bool { get set }
     var promoDisplayCount: Int { get set }
     var promoDisplayWindowStart: Date? { get set }
 }
@@ -37,7 +36,6 @@ struct SubscriptionPromoUserDefaultsPersistor: SubscriptionPromoPersisting {
     enum Key: String {
         case fireTabVisitCount = "subscription-promo.fire-tab-visit-count"
         case promoDismissedDate = "subscription-promo.dismissed-date"
-        case promoActioned = "subscription-promo.actioned"
         case promoDisplayCount = "subscription-promo.display-count"
         case promoDisplayWindowStart = "subscription-promo.display-window-start"
     }
@@ -62,11 +60,6 @@ struct SubscriptionPromoUserDefaultsPersistor: SubscriptionPromoPersisting {
                 keyValueStore.removeObject(forKey: Key.promoDismissedDate.rawValue)
             }
         }
-    }
-
-    var promoActioned: Bool {
-        get { keyValueStore.object(forKey: Key.promoActioned.rawValue) as? Bool ?? false }
-        set { keyValueStore.set(newValue, forKey: Key.promoActioned.rawValue) }
     }
 
     var promoDisplayCount: Int {
@@ -147,8 +140,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
 
     func onPromoButtonTapped() {
         pixelFiring?.fire(SubscriptionPromoPixel.promoCtaActioned(isEligibleForFreeTrial: isEligibleForFreeTrial))
-        persistor.promoActioned = true
-        shouldShowPromo = false
+        persistor.promoDismissedDate = Date()
         onButtonAction?()
     }
 
@@ -157,8 +149,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
     /// - US locale only
     /// - Non-subscriber only
     /// - Fire Tab visited >= 3 times
-    /// - User has not already actioned (tapped "Try for Free" / "Learn More")
-    /// - Not dismissed within the 28-day cooldown
+    /// - Not dismissed or CTA actioned within the 28-day cooldown
     /// - Not shown more than 4 times in any given 28-day rolling window
     private func evaluatePromoVisibility() {
         shouldShowPromo = false
@@ -168,7 +159,6 @@ final class SubscriptionPromoViewModel: ObservableObject {
         guard isUSLocale else { return }
         guard !subscriptionManager.isSubscriptionPresent() else { return }
         guard persistor.fireTabVisitCount >= Self.requiredVisitCount else { return }
-        guard !persistor.promoActioned else { return }
         guard !isDismissedWithinCooldown else { return }
         guard !hasReachedDisplayLimit else { return }
 

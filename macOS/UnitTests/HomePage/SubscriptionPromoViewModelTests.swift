@@ -87,14 +87,24 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         XCTAssertFalse(sut.shouldShowPromo)
     }
 
-    func testWhenPromoActioned_ThenDoesNotShowPromo() {
+    func testWhenCtaActionedWithinCooldown_ThenDoesNotShowPromo() {
         persistor.fireTabVisitCount = 3
-        persistor.promoActioned = true
+        persistor.promoDismissedDate = Date()
         sut = makeSUT()
 
         sut.updateForTab(.notEvaluated)
 
         XCTAssertFalse(sut.shouldShowPromo)
+    }
+
+    func testWhenCtaActionedAfterCooldown_ThenShowsPromo() {
+        persistor.fireTabVisitCount = 3
+        persistor.promoDismissedDate = Calendar.current.date(byAdding: .day, value: -29, to: Date())
+        sut = makeSUT()
+
+        sut.updateForTab(.notEvaluated)
+
+        XCTAssertTrue(sut.shouldShowPromo)
     }
 
     // MARK: - Dismiss Cooldown
@@ -301,7 +311,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         XCTAssertNotNil(persistor.promoDismissedDate)
     }
 
-    func testOnPromoButtonTappedSetsActionedAndHidesPromo() {
+    func testOnPromoButtonTappedSetsDismissedDateButKeepsPromoVisible() {
         persistor.fireTabVisitCount = 3
         sut = makeSUT()
         sut.updateForTab(.notEvaluated)
@@ -309,8 +319,19 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
 
         sut.onPromoButtonTapped()
 
-        XCTAssertFalse(sut.shouldShowPromo)
-        XCTAssertTrue(persistor.promoActioned)
+        XCTAssertTrue(sut.shouldShowPromo, "Promo stays visible on current tab after CTA tap")
+        XCTAssertNotNil(persistor.promoDismissedDate)
+    }
+
+    func testAfterCtaTapped_NewTabDoesNotShowPromo() {
+        persistor.fireTabVisitCount = 3
+        sut = makeSUT()
+        sut.updateForTab(.notEvaluated)
+        sut.onPromoButtonTapped()
+
+        sut.updateForTab(.notEvaluated)
+
+        XCTAssertFalse(sut.shouldShowPromo, "Promo should not show on new tabs after CTA tap")
     }
 
     // MARK: - Helpers
@@ -358,7 +379,6 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
 final class MockSubscriptionPromoPersisting: SubscriptionPromoPersisting {
     var fireTabVisitCount: Int = 0
     var promoDismissedDate: Date?
-    var promoActioned: Bool = false
     var promoDisplayCount: Int = 0
     var promoDisplayWindowStart: Date?
 }

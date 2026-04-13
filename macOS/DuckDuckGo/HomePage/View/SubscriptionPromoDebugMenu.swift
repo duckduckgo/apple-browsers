@@ -53,15 +53,9 @@ final class SubscriptionPromoDebugMenu: NSMenuItem {
         dismissedItem.isEnabled = false
         menu.addItem(dismissedItem)
 
-        let actionedItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-        actionedItem.tag = 4
-        actionedItem.isEnabled = false
-        menu.addItem(actionedItem)
-
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Reset Fire Tab Visit Count", action: #selector(resetFireTabVisitCount), target: self))
         menu.addItem(NSMenuItem(title: "Reset Promo Dismissed Date", action: #selector(resetPromoDismissedDate), target: self))
-        menu.addItem(NSMenuItem(title: "Reset Promo Actioned", action: #selector(resetPromoActioned), target: self))
         menu.addItem(NSMenuItem(title: "Reset Promo Display Count", action: #selector(resetPromoDisplayCount), target: self))
         menu.addItem(NSMenuItem(title: "Reset Promo Display Window Start", action: #selector(resetPromoDisplayWindowStart), target: self))
         menu.addItem(.separator())
@@ -80,11 +74,6 @@ final class SubscriptionPromoDebugMenu: NSMenuItem {
         p.promoDismissedDate = nil
     }
 
-    @objc func resetPromoActioned() {
-        var p = persistor
-        p.promoActioned = false
-    }
-
     @objc func resetPromoDisplayCount() {
         var p = persistor
         p.promoDisplayCount = 0
@@ -100,7 +89,6 @@ final class SubscriptionPromoDebugMenu: NSMenuItem {
         var p = persistor
         p.fireTabVisitCount = 0
         p.promoDismissedDate = nil
-        p.promoActioned = false
         p.promoDisplayCount = 0
         p.promoDisplayWindowStart = nil
     }
@@ -119,8 +107,6 @@ extension SubscriptionPromoDebugMenu: NSMenuDelegate {
         let daysSinceLastDismissed = daysSinceLastDismissed.map { "\($0)" } ?? "N/A"
         menu.item(withTag: 3)?.title = "👀 Dismissed: \(isDismissed) (days since: \(daysSinceLastDismissed))"
 
-        let isActioned = persistor.promoActioned
-        menu.item(withTag: 4)?.title = "👀 CTA Actioned: \(isActioned)"
     }
 
     private var daysSinceLastDismissed: Int? {

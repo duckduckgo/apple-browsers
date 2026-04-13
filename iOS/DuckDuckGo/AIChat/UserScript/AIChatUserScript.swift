@@ -185,6 +185,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.showChatInput
         case .reportMetric:
             return handler.reportMetric
+        case .responseReceived:
+            return handler.responseReceived
         case .togglePageContextTelemetry:
             return handler.togglePageContextTelemetry
         case .openKeyboard:

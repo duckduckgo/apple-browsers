@@ -376,6 +376,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Allows to present Search Experience choice screen during onboarding
     case onboardingSearchExperience
 
+    /// Enables Duck.ai query experiment during onboarding
+    case onboardingDuckAIQueryExperiment
+
     /// Enables the omnibar toggle for AI Chat
     case omnibarToggle
 

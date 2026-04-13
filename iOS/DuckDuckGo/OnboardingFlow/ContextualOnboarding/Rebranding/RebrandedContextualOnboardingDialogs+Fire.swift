@@ -17,9 +17,8 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import Onboarding
-import MetricBuilder
+import SwiftUI
 
 // MARK: - Fire Dialog
 
@@ -28,11 +27,25 @@ extension OnboardingRebranding {
     struct OnboardingFireDialog: View {
         @Environment(\.onboardingTheme) private var theme
 
-        let onManualDismiss: () -> Void
+        let title: String?
+        let message: String
+        let onManualDismiss: (() -> Void)?
+
+        init(title: String? = nil, message: String, onManualDismiss: (() -> Void)? = nil) {
+            self.title = title
+            self.message = message
+            self.onManualDismiss = onManualDismiss
+        }
 
         var body: some View {
-            OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
-                OnboardingRebranding.OnboardingFireDialogContent()
+            OnboardingBubbleView(tailPosition: nil) {
+                OnboardingRebranding.OnboardingFireDialogContent(
+                    title: title,
+                    message: message
+                )
+            }
+            .ifLet(onManualDismiss) { view, onManualDismiss in
+                view.onboardingDismissable(onManualDismiss)
             }
             .padding(theme.contextualOnboardingMetrics.containerPadding)
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
@@ -43,23 +56,29 @@ extension OnboardingRebranding {
         @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.horizontalSizeClass) private var hSizeClass
 
-        var message = UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage
+        let title: String?
+        let message: String
+
+        init(title: String? = nil, message: String) {
+            self.title = title
+            self.message = message
+        }
 
         var body: some View {
             OnboardingRebranding.ContextualDaxDialogContent<EmptyView>(
                 orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation().build(v: vSizeClass, h: hSizeClass),
+                title: title.flatMap(AttributedString.init),
                 message: attributedMessage
             )
         }
 
-        private let attributedMessage: AttributedString = {
-            var attributedString = AttributedString(UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
-            // Find the range of "Fire Button"
-            if let range = attributedString.range(of: "Fire Button") {
-                attributedString[range].inlinePresentationIntent = .stronglyEmphasized // Bold
+        private var attributedMessage: AttributedString {
+            var attributed = AttributedString(message)
+            if let range = attributed.range(of: "Fire Button") {
+                attributed[range].inlinePresentationIntent = .stronglyEmphasized
             }
-            return attributedString
-        }()
+            return attributed
+        }
     }
 
 }

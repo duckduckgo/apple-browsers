@@ -2314,6 +2314,56 @@ public struct UserText {
             }
         }
 
+        enum DuckAIQueryExperiment {
+            public static let title = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.title",
+                value: "Ready to get started?\nTry a search or AI chat!",
+                comment: "Title for the onboarding Duck.ai query experiment screen."
+            )
+            public static let aiPlaceholder = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.placeholder.ai",
+                value: "Ask privately",
+                comment: "Placeholder for AI query input in onboarding Duck.ai query experiment screen."
+            )
+            public static let searchPlaceholder = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.placeholder.search",
+                value: "Search privately",
+                comment: "Placeholder for search query input in onboarding Duck.ai query experiment screen."
+            )
+            public static let suggestionOption1 = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.suggestion.option1",
+                value: "Explain the stock market like I'm 10",
+                comment: "First suggestion chip label in onboarding Duck.ai query experiment screen."
+            )
+            public static let suggestionOption2 = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.suggestion.option2",
+                value: "Plan a perfect day in London",
+                comment: "Second suggestion chip label in onboarding Duck.ai query experiment screen."
+            )
+            public static let suggestionOption3VisibleTitle = Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle
+            public static let suggestionOption3Prompt = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.suggestion.option3.prompt",
+                value: "What are 10 fascinating facts across science, nature, and history?",
+                comment: "Prompt submitted when user taps the third suggestion in onboarding Duck.ai query experiment screen."
+            )
+
+            public static let fireOnboardingTitle = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.fire.title",
+                value: "That’s duck.ai!",
+                comment: "Experiment-only fire onboarding title shown after the first Duck.ai response."
+            )
+            public static let fireOnboardingMessage = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.fire.message",
+                value: "Private AI chats you can delete anytime with the Fire Button. Give it a try! 🔥",
+                comment: "Experiment-only fire onboarding message shown after the first Duck.ai response."
+            )
+            public static let completionOnboardingMessage = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.completion.message",
+                value: "Use the address bar to search and visit sites or toggle to Duck.ai for private AI chat.\n\nYou can use Duck.ai from anywhere you see the chat icon [[chat_icon]]",
+                comment: "Experiment-only completion onboarding message shown after finishing Fire onboarding in Duck.ai flow."
+            )
+        }
+
         enum ContextualOnboarding {
 
             enum Rebranding {
@@ -2325,6 +2375,7 @@ public struct UserText {
             static let onboardingTryASearchMessage = NSLocalizedString("contextual.onboarding.highlights.try-a-search.message", value: "Your DuckDuckGo searches are always private.", comment: "Message of a popover on the browser that invites the user to try a search explaining that their searches are private")
             static let onboardingFirstSearchDoneMessage = NSLocalizedString("contextual.onboarding.highlights.first-search-done.message", value: "That’s DuckDuckGo Search! Private. Fast. Fewer ads.", comment: "After the user performs their first search using the browser, this dialog explains the advantages of using DuckDuckGo")
             static let onboardingTryASiteTitle = NSLocalizedString("contextual.onboarding.try-a-site.title", value: "Next, try visiting a site!", comment: "Title of a popover on the browser that invites the user to try a visiting a website")
+            static let onboardingChatIconToken = "[[chat_icon]]"
             static let onboardingFinalScreenMessage = NSLocalizedString("contextual.onboarding.highlights.final-screen.message", value: "Remember: every time you browse with me a creepy ad loses its wings.", comment: "Message of the last screen of the onboarding to the browser app.")
             static let tryASearchOptionSurpriseMe = NSLocalizedString("contextual.onboarding.highlights.try-search.surprise-me", value: "baby ducklings", comment: "Browser Search query for baby ducklings")
             static let onboardingTryASiteNTPTitle = NSLocalizedString("contextual.onboarding.ntp.try-a-site.title", value: "Try visiting a site!", comment: "Title of a popover on the new tab page browser that invites the user to try a visiting a website")

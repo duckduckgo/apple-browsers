@@ -237,6 +237,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
     case onboardingSearchExperience
 
+    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1213320237636425?focus=true
+    case onboardingDuckAIQueryExperiment
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472842661
     case storeSerpSettings
 
@@ -392,7 +395,6 @@ public enum FeatureFlag: String {
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
-
     /// Test-only cohort for verifying UI test experiment override mechanism.
     public enum UITestExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
@@ -404,6 +406,15 @@ extension FeatureFlag: FeatureFlagDescribing {
         case variant1
         case variant2
         case variant3
+    }
+
+    public enum DuckAIQueryExperimentCohort: String, FeatureFlagCohortDescribing {
+        /// Control cohort skips the experiment and keeps the existing onboarding flow.
+        case control
+        /// Treatment A shows experiment screen with "Duck.ai" selected by default.
+        case treatmentA
+        /// Treatment B shows experiment screen with "Search" selected by default.
+        case treatmentB
     }
 
     public enum SimplifiedSyncSetupExperimentCohort: String, FeatureFlagCohortDescribing {
@@ -572,6 +583,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.feature(.attributedMetrics)))
         case .onboardingSearchExperience:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.onboardingSearchExperience)))
+        case .onboardingDuckAIQueryExperiment:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.onboardingDuckAIQueryExperiment)),
+                   cohortType: DuckAIQueryExperimentCohort.self)
         case .storeSerpSettings:
             Config(source: .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings)))
         case .showHideAIGeneratedImagesSection:

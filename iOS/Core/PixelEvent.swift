@@ -256,6 +256,12 @@ extension Pixel {
         case onboardingIntroChooseSearchExperienceImpressionUnique
         case onboardingIntroAIChatSelected
         case onboardingIntroSearchOnlySelected
+        case onboardingIntroDuckAIExperimentToggleImpressionUnique
+        case onboardingIntroDuckAIExperimentToggleContinuePressedSearch
+        case onboardingIntroDuckAIExperimentToggleContinuePressedAI
+        case onboardingDuckAIExperimentFireDialogShownUnique
+        case onboardingDuckAIExperimentFireButtonCTAPressed
+        case onboardingDuckAIExperimentFinalDialogShownUnique
 
         case onboardingContextualSearchOptionTappedUnique
         case onboardingContextualSearchCustomUnique
@@ -1962,6 +1968,12 @@ extension Pixel.Event {
         case .onboardingIntroChooseSearchExperienceImpressionUnique: return "m_preonboarding_choose_search_experience_impressions_unique"
         case .onboardingIntroAIChatSelected: return "m_preonboarding_aichat_selected"
         case .onboardingIntroSearchOnlySelected: return "m_preonboarding_search_only_selected"
+        case .onboardingIntroDuckAIExperimentToggleImpressionUnique: return "m_preonboarding_duckai_toggle-screen-impression_unique"
+        case .onboardingIntroDuckAIExperimentToggleContinuePressedSearch: return "m_preonboarding_duckai_toggle-continue-pressed_search"
+        case .onboardingIntroDuckAIExperimentToggleContinuePressedAI: return "m_preonboarding_duckai_toggle-continue-pressed_ai"
+        case .onboardingDuckAIExperimentFireDialogShownUnique: return "m_preonboarding_duckai_fire-dialog-impression_unique"
+        case .onboardingDuckAIExperimentFireButtonCTAPressed: return "m_preonboarding_duckai_fire-button-pressed"
+        case .onboardingDuckAIExperimentFinalDialogShownUnique: return "m_preonboarding_duckai_final-dialog-impression_unique"
 
         case .onboardingContextualSearchOptionTappedUnique: return "m_onboarding_search_option_tapped_unique"
         case .onboardingContextualSiteOptionTappedUnique: return "m_onboarding_visit_site_option_tapped_unique"

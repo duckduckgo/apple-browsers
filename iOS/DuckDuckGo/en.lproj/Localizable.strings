@@ -1259,7 +1259,7 @@
 "data.import.passwords.instructions.chrome.step1" = "In Chrome, go to **Google Password Manager** and then **Settings**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Select **Export passwords**, then **Save to Files** and save the file in a folder that you can remember.";
+"data.import.passwords.instructions.chrome.step2" = "Select **Export data**, then **···** and then **Donwload to CSV** and save the file in a folder that you can remember.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "How to export passwords";

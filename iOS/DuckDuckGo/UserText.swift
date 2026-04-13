@@ -2472,7 +2472,7 @@ public struct UserText {
     public static let dataImportFailedUnsupportedFileErrorMessage = NSLocalizedString("data.import.failed.unsupported-file-error-message", value: "The file selected is not supported. Please select a different file and try again.", comment: "Error message displayed when the user has selected an unsupported file")
 
     public static let dataImportPasswordsInstructionsChromeStep1 = NSLocalizedString("data.import.passwords.instructions.chrome.step1", value: "In Chrome, go to **Google Password Manager** and then **Settings**.", comment: "Step 1 for instructions to import passwords from Chrome")
-    public static let dataImportPasswordsInstructionsChromeStep2 = NSLocalizedString("data.import.passwords.instructions.chrome.step2", value: "Select **Export passwords**, then **Save to Files** and save the file in a folder that you can remember.", comment: "Step 2 for instructions to import passwords.")
+    public static let dataImportPasswordsInstructionsChromeStep2 = NSLocalizedString("data.import.passwords.instructions.chrome.step2", value: "Select **Export data**, then **···** and then **Donwload to CSV** and save the file in a folder that you can remember.", comment: "Step 2 for instructions to import passwords.")
 
     public static let zipContentSelectionTitle = NSLocalizedString("zip.content.import.types.title", value: "What do you want to import?", comment: "Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords)")
     public static let zipContentSelectionPasswords = NSLocalizedString("zip.content.import.type.passwords", value: "Passwords", comment: "Option to select to import passwords")

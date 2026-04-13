@@ -594,7 +594,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportSummarySyncPromotion:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DataImportSubfeature.dataImportSummarySyncPromotion)))
         case .dataImportNewUI:
-            Config(source: .remoteReleasable(.subfeature(DataImportSubfeature.newDataImportExperience)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DataImportSubfeature.newDataImportExperience)))
         case .appRatingPrompt:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.appRatingPrompt)))
         case .contextualDuckAIMode:

@@ -200,25 +200,30 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
             case continuePressedAI = "toggle-continue-pressed_ai"
             case fireButtonPressed = "fire-button-pressed"
         }
-        static let conversionWindow: ConversionWindow = 0...7
+        static let conversionWindowD0: ConversionWindow = 0...0
+        static let conversionWindowD7: ConversionWindow = 0...7
     }
 
     private func fireExperimentScreenImpressionPixel(value: DuckAIQueryExperimentMetric.ScreenImpressionValue) {
-        experimentPixel.fireExperimentPixel(
-            for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
-            metric: DuckAIQueryExperimentMetric.Name.screenImpression.rawValue,
-            conversionWindowDays: DuckAIQueryExperimentMetric.conversionWindow,
-            value: value.rawValue
-        )
+        for window in [DuckAIQueryExperimentMetric.conversionWindowD0, DuckAIQueryExperimentMetric.conversionWindowD7] {
+            experimentPixel.fireExperimentPixel(
+                for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
+                metric: DuckAIQueryExperimentMetric.Name.screenImpression.rawValue,
+                conversionWindowDays: window,
+                value: value.rawValue
+            )
+        }
     }
 
     private func fireExperimentCTAPressedPixel(value: DuckAIQueryExperimentMetric.CTAPressedValue) {
-        experimentPixel.fireExperimentPixel(
-            for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
-            metric: DuckAIQueryExperimentMetric.Name.ctaPressed.rawValue,
-            conversionWindowDays: DuckAIQueryExperimentMetric.conversionWindow,
-            value: value.rawValue
-        )
+        for window in [DuckAIQueryExperimentMetric.conversionWindowD0, DuckAIQueryExperimentMetric.conversionWindowD7] {
+            experimentPixel.fireExperimentPixel(
+                for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
+                metric: DuckAIQueryExperimentMetric.Name.ctaPressed.rawValue,
+                conversionWindowDays: window,
+                value: value.rawValue
+            )
+        }
     }
 
     func measureSkipOnboardingCTAAction() {
@@ -309,12 +314,14 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
             metricName = .search
         }
 
-        experimentPixel.fireExperimentPixel(
-            for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
-            metric: metricName.rawValue,
-            conversionWindowDays: DuckAIQueryExperimentMetric.conversionWindow,
-            value: promptSource.rawValue
-        )
+        for window in [DuckAIQueryExperimentMetric.conversionWindowD0, DuckAIQueryExperimentMetric.conversionWindowD7] {
+            experimentPixel.fireExperimentPixel(
+                for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
+                metric: metricName.rawValue,
+                conversionWindowDays: window,
+                value: promptSource.rawValue
+            )
+        }
     }
 
 }

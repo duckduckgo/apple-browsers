@@ -48,7 +48,7 @@ struct BurnerHomePageView: View {
                     VStack(spacing: 0) {
                         if promoViewModel.shouldShowPromo {
                             SubscriptionPromoView(
-                                actionType: promoViewModel.isEligibleForFreeTrial ? .tryForFree : .learnMore,
+                                actionType: .tryForFree,
                                 promoCardWidth: Self.targetWidth,
                                 onButtonTap: { promoViewModel.onPromoButtonTapped() },
                                 onClose: { promoViewModel.dismiss() }

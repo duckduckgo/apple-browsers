@@ -1828,7 +1828,6 @@
 		C16670E42EE7301300C6105C /* SubscriptionAIChatStateHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16670E32EE7301300C6105C /* SubscriptionAIChatStateHandlerTests.swift */; };
 		C167D9062DAD5BDA00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C167D9052DAD5BDA00FA1E70 /* SubscriptionFunnelOrigin.swift */; };
 		C17023AA2E589C6E00090178 /* DaxEasterEggLogoCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17023A92E589C6E00090178 /* DaxEasterEggLogoCache.swift */; };
-		C17115532F8B0EEF0000483C /* export-passwords-light-v4.json in Resources */ = {isa = PBXBuildFile; fileRef = C17115522F8B0EEF0000483C /* export-passwords-light-v4.json */; };
 		C177D9F62CFDDFEB0039CBF7 /* UIAlertControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C177D9F52CFDDFEB0039CBF7 /* UIAlertControllerExtension.swift */; };
 		C17A8E5D2E26C7D900CAE1B9 /* ImportPasswordsPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17A8E5A2E26C7D900CAE1B9 /* ImportPasswordsPromptView.swift */; };
 		C17A8E5E2E26C7D900CAE1B9 /* ImportPasswordsPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17A8E5B2E26C7D900CAE1B9 /* ImportPasswordsPromptViewController.swift */; };
@@ -4367,7 +4366,6 @@
 		C16670E32EE7301300C6105C /* SubscriptionAIChatStateHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionAIChatStateHandlerTests.swift; sourceTree = "<group>"; };
 		C167D9052DAD5BDA00FA1E70 /* SubscriptionFunnelOrigin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFunnelOrigin.swift; sourceTree = "<group>"; };
 		C17023A92E589C6E00090178 /* DaxEasterEggLogoCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxEasterEggLogoCache.swift; sourceTree = "<group>"; };
-		C17115522F8B0EEF0000483C /* export-passwords-light-v4.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "export-passwords-light-v4.json"; sourceTree = "<group>"; };
 		C174E08E2D08625300ACE1AF /* el */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = el; path = el.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C174E08F2D08625300ACE1AF /* el */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = el; path = el.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C177D9F52CFDDFEB0039CBF7 /* UIAlertControllerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIAlertControllerExtension.swift; sourceTree = "<group>"; };
@@ -11555,7 +11553,6 @@
 				98B001B3251EABB40090EC07 /* InfoPlist.strings in Resources */,
 				D65CEA702B6AC6C9008A759B /* Subscription.xcassets in Resources */,
 				F1E4A4451EE89460006F2EAE /* Bookmarks.storyboard in Resources */,
-				C17115532F8B0EEF0000483C /* export-passwords-light-v4.json in Resources */,
 				84E341A01E2F7EFB00BDBA6F /* LaunchScreen.storyboard in Resources */,
 				F4F7F10C25813FE200045D62 /* 03_Airstream_divided_by_four.json in Resources */,
 				6F33F3962E7969B1002E95B1 /* duckduckgo-ai-transition-dark.json in Resources */,

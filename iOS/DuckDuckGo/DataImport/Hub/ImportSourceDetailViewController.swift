@@ -113,7 +113,7 @@ final class ImportSourceDetailViewController: UIViewController {
     // MARK: - File Upload
 
     private func handleUploadFile() {
-        fileUploadCoordinator.startUploadFlow(from: self)
+        fileUploadCoordinator.startUploadFlow(from: self, source: source)
     }
 
     // MARK: - Sync
@@ -138,7 +138,6 @@ extension ImportSourceDetailViewController: DataImportFileUploadFlowOwner {
 
     func dataImportUploadDidCompleteSummary() {
         onFinished?()
-        navigationController?.popToRootViewController(animated: true)
     }
 
     func dataImportUploadDidRequestSync(source: String?) {
@@ -148,6 +147,18 @@ extension ImportSourceDetailViewController: DataImportFileUploadFlowOwner {
         mainViewController?.dismiss(animated: true) {
             mainViewController?.segueToSettingsSync(with: source)
         }
+    }
+
+    func dataImportUploadDidRequestContinueToSafariImport() {
+        guard source != .safari else { return }
+
+        let safariDetailViewController = ImportSourceDetailViewController(
+            source: .safari,
+            syncService: syncService,
+            fileUploadCoordinator: fileUploadCoordinator,
+            onFinished: onFinished
+        )
+        navigationController?.pushViewController(safariDetailViewController, animated: true)
     }
 
     func dataImportUploadDidCancel() {}

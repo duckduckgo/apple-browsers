@@ -25,6 +25,7 @@ import PrivacyConfig
 
 protocol DataImportSummaryViewModelDelegate: AnyObject {
     func dataImportSummaryViewModelDidRequestLaunchSync(_ viewModel: DataImportSummaryViewModel, source: String?)
+    func dataImportSummaryViewModelDidRequestContinueImportFromSafari(_ viewModel: DataImportSummaryViewModel)
     func dataImportSummaryViewModelComplete(_ viewModel: DataImportSummaryViewModel)
 }
 
@@ -33,6 +34,8 @@ final class DataImportSummaryViewModel: ObservableObject {
     enum Footer: Equatable {
         case syncButton(title: String)
         case syncPromo(title: String)
+        case passwordsPromo
+        case bookmarksPromo
         case message(body: String)
     }
 
@@ -46,22 +49,63 @@ final class DataImportSummaryViewModel: ObservableObject {
     private let syncService: DDGSyncing
     private let featureFlagger: FeatureFlagger
     private let syncPromoManager: SyncPromoManaging
+    private let sessionImportedDataTypes: Set<DataImport.DataType>
+    private let isSafariImportFlow: Bool
+    private let isSupportedOSVersion: () -> Bool
 
     var footer: Footer? {
         if importScreen == .whatsNew {
             return .message(body: UserText.dataImportSummaryVisitSyncSettings)
-        } else if !syncIsActive {
+        }
+
+        if shouldUseNewImportPromoStrategy {
+            return prioritizedFooterForNewImportFlow
+        }
+
+        if !syncIsActive {
             if featureFlagger.isFeatureOn(.dataImportSummarySyncPromotion) {
                 guard syncPromoManager.shouldPresentPromoFor(.dataImport, count: successfulImportsCount) else {
                     return nil
                 }
                 return .syncPromo(title: newSyncPromoTitle)
-            } else {
-                return .syncButton(title: syncButtonTitle)
             }
-        } else {
-            return nil
+            return .syncButton(title: syncButtonTitle)
         }
+
+        return nil
+    }
+
+    private var shouldUseNewImportPromoStrategy: Bool {
+        isSupportedOSVersion() && featureFlagger.isFeatureOn(.dataImportNewUI) && isSafariImportFlow
+    }
+
+    private var prioritizedFooterForNewImportFlow: Footer? {
+        if !hasImportedPasswordsInSession {
+            return .passwordsPromo
+        }
+
+        if !hasImportedBookmarksInSession {
+            return .bookmarksPromo
+        }
+
+        if !syncIsActive,
+           syncPromoManager.shouldPresentPromoFor(.dataImport, count: successfulImportsCount) {
+            return .syncPromo(title: newImportFlowSyncPromoTitle)
+        }
+
+        return nil
+    }
+
+    private var hasImportedPasswordsInSession: Bool {
+        passwordsSummary != nil || sessionImportedDataTypes.contains(.passwords)
+    }
+
+    private var hasImportedBookmarksInSession: Bool {
+        bookmarksSummary != nil || sessionImportedDataTypes.contains(.bookmarks)
+    }
+
+    private var hasImportedCreditCardsInSession: Bool {
+        creditCardsSummary != nil || sessionImportedDataTypes.contains(.creditCards)
     }
 
     private var syncIsActive: Bool {
@@ -103,9 +147,35 @@ final class DataImportSummaryViewModel: ObservableObject {
         return ""
     }
 
+    private var newImportFlowSyncPromoTitle: String {
+        let importedDataTypes = [hasImportedPasswordsInSession, hasImportedBookmarksInSession, hasImportedCreditCardsInSession]
+        let importedDataTypesCount = importedDataTypes.filter { $0 }.count
+
+        if importedDataTypesCount > 1 {
+            return UserText.syncPromoDataImportTitle
+        } else if hasImportedPasswordsInSession {
+            return UserText.syncPromoPasswordsTitle
+        } else if hasImportedBookmarksInSession {
+            return UserText.syncPromoBookmarksTitle
+        } else if hasImportedCreditCardsInSession {
+            return UserText.syncPromoCreditCardsTitle
+        }
+
+        return ""
+    }
+
     init(summary: DataImportSummary,
          importScreen: DataImportViewModel.ImportScreen,
          syncService: DDGSyncing,
+         sessionImportedDataTypes: Set<DataImport.DataType> = [],
+         isSafariImportFlow: Bool = false,
+         isSupportedOSVersion: @escaping () -> Bool = {
+             if #available(iOS 26.4, *) {
+                 return true
+             } else {
+                 return false
+             }
+         },
          syncPromoManager: SyncPromoManaging? = nil,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.passwordsSummary = try? summary[.passwords]?.get()
@@ -113,6 +183,9 @@ final class DataImportSummaryViewModel: ObservableObject {
         self.creditCardsSummary = try? summary[.creditCards]?.get()
         self.importScreen = importScreen
         self.syncService = syncService
+        self.sessionImportedDataTypes = sessionImportedDataTypes
+        self.isSafariImportFlow = isSafariImportFlow
+        self.isSupportedOSVersion = isSupportedOSVersion
         self.syncPromoManager = syncPromoManager ?? SyncPromoManager(syncService: syncService, featureFlagger: featureFlagger)
         self.featureFlagger = featureFlagger
 
@@ -181,6 +254,10 @@ final class DataImportSummaryViewModel: ObservableObject {
     func dismissSyncPromo() {
         syncPromoManager.dismissPromoFor(.dataImport)
         dismiss()
+    }
+
+    func continueImportFromSafari() {
+        delegate?.dataImportSummaryViewModelDidRequestContinueImportFromSafari(self)
     }
 
     func launchSync(source: String? = nil) {

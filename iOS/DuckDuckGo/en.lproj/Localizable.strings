@@ -1163,7 +1163,7 @@
 "data.import.bookmarks.title" = "Import Bookmarks to DuckDuckGo";
 
 /* Description on the Chrome import detail screen */
-"data.import.detail.chrome.description" = "Open Chrome, then follow the steps below in Chrome:";
+"data.import.detail.chrome.description" = "Open Chrome, then go to Password Manager and follow the steps below:";
 
 /* Step 1 instruction for importing from Chrome */
 "data.import.detail.chrome.step1" = "**Settings** > **Export Data**";
@@ -1187,7 +1187,7 @@
 "data.import.detail.passwords.step1" = "Tap **···** > **Export Data to Another App**";
 
 /* Step 2 instruction for importing from the Passwords app */
-"data.import.detail.passwords.step2" = "Tap **All Passwords** > **Continue**";
+"data.import.detail.passwords.step2" = "Tap **Select All** > **Continue**";
 
 /* Step 3 instruction for importing from the Passwords app */
 "data.import.detail.passwords.step3" = "Select **DuckDuckGo** as Destination";
@@ -1347,6 +1347,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Passwords";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Want to bring your bookmarks from Safari too?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Continue";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Not Now";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Want to bring your passwords too?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Past month";

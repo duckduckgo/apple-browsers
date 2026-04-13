@@ -2435,7 +2435,7 @@ public struct UserText {
     public static let importDetailPasswordsTitle = NSLocalizedString("data.import.detail.passwords.title", value: "Import from Passwords", comment: "Navigation title for the Passwords App import detail screen")
     public static let importDetailPasswordsDescription = NSLocalizedString("data.import.detail.passwords.description", value: "You need to go to the Passwords app, then follow the steps to import.", comment: "Description on the Passwords App import detail screen")
     public static let importDetailPasswordsStep1 = NSLocalizedString("data.import.detail.passwords.step1", value: "Tap **···** > **Export Data to Another App**", comment: "Step 1 instruction for importing from the Passwords app")
-    public static let importDetailPasswordsStep2 = NSLocalizedString("data.import.detail.passwords.step2", value: "Tap **All Passwords** > **Continue**", comment: "Step 2 instruction for importing from the Passwords app")
+    public static let importDetailPasswordsStep2 = NSLocalizedString("data.import.detail.passwords.step2", value: "Tap **Select All** > **Continue**", comment: "Step 2 instruction for importing from the Passwords app")
     public static let importDetailPasswordsStep3 = NSLocalizedString("data.import.detail.passwords.step3", value: "Select **DuckDuckGo** as Destination", comment: "Step 3 instruction for importing from the Passwords app")
 
     public static let importDetailSafariTitle = NSLocalizedString("data.import.detail.safari.title", value: "Import from Safari", comment: "Navigation title for the Safari import detail screen")
@@ -2443,7 +2443,7 @@ public struct UserText {
     public static let importDetailSafariExportButton = NSLocalizedString("data.import.detail.safari.export-button", value: "Export Safari Passwords", comment: "Primary button on the Safari import detail screen to start the export flow")
 
     public static let importDetailChromeTitle = NSLocalizedString("data.import.detail.chrome.title", value: "Import from Chrome", comment: "Navigation title for the Chrome import detail screen")
-    public static let importDetailChromeDescription = NSLocalizedString("data.import.detail.chrome.description", value: "Open Chrome, then follow the steps below in Chrome:", comment: "Description on the Chrome import detail screen")
+    public static let importDetailChromeDescription = NSLocalizedString("data.import.detail.chrome.description", value: "Open Chrome, then go to Password Manager and follow the steps below:", comment: "Description on the Chrome import detail screen")
     public static let importDetailChromeStep1 = NSLocalizedString("data.import.detail.chrome.step1", value: "**Settings** > **Export Data**", comment: "Step 1 instruction for importing from Chrome")
     public static let importDetailChromeStep2 = NSLocalizedString("data.import.detail.chrome.step2", value: "Press **Continue**", comment: "Step 2 instruction for importing from Chrome")
     public static let importDetailChromeStep3 = NSLocalizedString("data.import.detail.chrome.step3", value: "Select **DuckDuckGo** as Destination", comment: "Step 3 instruction for importing from Chrome")
@@ -2492,6 +2492,10 @@ public struct UserText {
     public static let dataImportSummarySyncPasswords = NSLocalizedString("data.import.summary.button.title.sync.passwords", value: "Passwords", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncBookmarks = NSLocalizedString("data.import.summary.button.title.sync.bookmarks", value: "Bookmarks", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncData = NSLocalizedString("data.import.summary.button.title.sync.data", value: "Data", comment: "Parameter for data.import.summary.button.title.sync")
+    public static let dataImportSummaryPasswordsPromoTitle = NSLocalizedString("data.import.summary.promo.passwords.title", value: "Want to bring your passwords too?", comment: "Title for the summary footer promo that suggests importing passwords")
+    public static let dataImportSummaryBookmarksPromoTitle = NSLocalizedString("data.import.summary.promo.bookmarks.title", value: "Want to bring your bookmarks from Safari too?", comment: "Title for the summary footer promo that suggests importing Safari bookmarks")
+    public static let dataImportSummaryPromoDismissAction = NSLocalizedString("data.import.summary.promo.dismiss.action", value: "Not Now", comment: "Dismiss button title for summary footer promos")
+    public static let dataImportSummaryPromoContinueAction = NSLocalizedString("data.import.summary.promo.continue.action", value: "Continue", comment: "Continue button title for summary footer promos")
     public static let dataImportSummaryVisitSyncSettings = NotLocalizedString("data.import.summary.message.sync.settings", value: "Visit Settings to securely sync bookmarks and passwords between your devices.", comment: "Message informing the user to visit settings to sync bookmarks and passwords. Used from What's New and for en_US locale only.")
     
     public enum SubscriptionPromotionOnboarding {

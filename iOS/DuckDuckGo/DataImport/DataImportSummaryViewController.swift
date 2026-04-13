@@ -30,13 +30,28 @@ final class DataImportSummaryViewController: UIViewController {
     private let importScreen: DataImportViewModel.ImportScreen
     private let onCompletion: () -> Void
     private let onSegueToSync: (String?) -> Void
+    private let onContinueToSafariImport: (() -> Void)?
 
-    init(summary: DataImportSummary, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing, onSegueToSync: @escaping (String?) -> Void, onCompletion: @escaping () -> Void) {
-        self.viewModel = DataImportSummaryViewModel(summary: summary, importScreen: importScreen, syncService: syncService)
+    init(summary: DataImportSummary,
+         importScreen: DataImportViewModel.ImportScreen,
+         syncService: DDGSyncing,
+         sessionImportedDataTypes: Set<DataImport.DataType> = [],
+         isSafariImportFlow: Bool = false,
+         onSegueToSync: @escaping (String?) -> Void,
+         onCompletion: @escaping () -> Void,
+         onContinueToSafariImport: (() -> Void)? = nil) {
+        self.viewModel = DataImportSummaryViewModel(
+            summary: summary,
+            importScreen: importScreen,
+            syncService: syncService,
+            sessionImportedDataTypes: sessionImportedDataTypes,
+            isSafariImportFlow: isSafariImportFlow
+        )
         self.importScreen = importScreen
 
         self.onCompletion = onCompletion
         self.onSegueToSync = onSegueToSync
+        self.onContinueToSafariImport = onContinueToSafariImport
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -91,6 +106,12 @@ extension DataImportSummaryViewController: DataImportSummaryViewModelDelegate {
             }
         } else {
             onSegueToSync(source)
+        }
+    }
+
+    func dataImportSummaryViewModelDidRequestContinueImportFromSafari(_ viewModel: DataImportSummaryViewModel) {
+        dismiss(animated: true) { [weak self] in
+            self?.onContinueToSafariImport?()
         }
     }
 }

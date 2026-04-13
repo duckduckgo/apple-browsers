@@ -149,6 +149,24 @@ struct DataImportSummaryView: View {
                 .onFirstAppear {
                     viewModel.fireSyncPromoDisplayedPixel()
                 }
+            case .passwordsPromo:
+                ContinueImportCard(
+                    title: UserText.dataImportSummaryPasswordsPromoTitle,
+                    icon: Image(uiImage: DesignSystemImages.Color.Size96.extensionPasswords),
+                    dismissButtonTitle: UserText.dataImportSummaryPromoDismissAction,
+                    continueButtonTitle: UserText.dataImportSummaryPromoContinueAction,
+                    onDismissTapped: { viewModel.dismiss() },
+                    onContinueTapped: { viewModel.continueImportFromSafari() }
+                )
+            case .bookmarksPromo:
+                ContinueImportCard(
+                    title: UserText.dataImportSummaryBookmarksPromoTitle,
+                    icon: Image(uiImage: DesignSystemImages.Color.Size96.extensionSafari),
+                    dismissButtonTitle: UserText.dataImportSummaryPromoDismissAction,
+                    continueButtonTitle: UserText.dataImportSummaryPromoContinueAction,
+                    onDismissTapped: { viewModel.dismiss() },
+                    onContinueTapped: { viewModel.continueImportFromSafari() }
+                )
             case .message(let body):
                 dismissButton
                 
@@ -308,7 +326,84 @@ struct DataImportSummaryView: View {
 
         }
     }
-        
+    
+    private struct ContinueImportCard: View {
+        let title: String
+        let icon: Image
+        let dismissButtonTitle: String
+        let continueButtonTitle: String
+        let onDismissTapped: () -> Void
+        let onContinueTapped: () -> Void
+
+        var body: some View {
+            VStack(alignment: .center, spacing: 0) {
+                icon
+                    .resizable()
+                    .frame(width: Metrics.imageSize, height: Metrics.imageSize)
+                    .padding(.top, 16)
+
+                Text(title)
+                    .daxHeadline()
+                    .foregroundStyle(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 12)
+
+                HStack(spacing: 8) {
+                    Button {
+                        onDismissTapped()
+                    } label: {
+                        Text(dismissButtonTitle)
+                            .daxButton()
+                            .foregroundStyle(Color(designSystemColor: .textPrimary))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: Metrics.buttonHeight)
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+
+                    Button {
+                        onContinueTapped()
+                    } label: {
+                        Text(continueButtonTitle)
+                            .daxButton()
+                            .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: Metrics.buttonHeight)
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                }
+                .padding(.top, 24)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(Color(designSystemColor: .panel))
+            )
+        }
+
+        fileprivate enum Metrics {
+            static let buttonCornerRadius: CGFloat = 12
+            static let buttonHeight: CGFloat = 40
+            static let imageSize: CGFloat = 64
+        }
+
+        private struct SecondaryButtonStyle: ButtonStyle {
+            func makeBody(configuration: Configuration) -> some View {
+                configuration.label
+                    .background(configuration.isPressed ? Color(designSystemColor: .controlsFillSecondary) : Color(designSystemColor: .controlsFillPrimary))
+                    .cornerRadius(Metrics.buttonCornerRadius)
+            }
+        }
+
+        private struct PrimaryButtonStyle: ButtonStyle {
+            func makeBody(configuration: Configuration) -> some View {
+                configuration.label
+                    .background(configuration.isPressed ? Color(designSystemColor: .buttonsPrimaryPressed) : Color(designSystemColor: .buttonsPrimaryDefault))
+                    .cornerRadius(Metrics.buttonCornerRadius)
+            }
+        }
+    }
+
     private struct SyncAndBackupCard: View {
         let title: String
         let onSyncTapped: () -> Void

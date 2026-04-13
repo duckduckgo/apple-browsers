@@ -31,11 +31,12 @@ import os.log
 protocol DataImportFileUploadFlowOwner: AnyObject {
     func dataImportUploadDidCompleteSummary()
     func dataImportUploadDidRequestSync(source: String?)
+    func dataImportUploadDidRequestContinueToSafariImport()
     func dataImportUploadDidCancel()
 }
 
 protocol DataImportFileUploadCoordinating: AnyObject {
-    func startUploadFlow(from owner: UIViewController & DataImportFileUploadFlowOwner)
+    func startUploadFlow(from owner: UIViewController & DataImportFileUploadFlowOwner, source: ImportPasswordSource)
 }
 
 final class DataImportFileUploadCoordinator: NSObject {
@@ -47,6 +48,8 @@ final class DataImportFileUploadCoordinator: NSObject {
     private let syncService: DDGSyncing
     private let keyValueStore: ThrowingKeyValueStoring
     private let featureFlagger: FeatureFlagger
+    private var sessionImportedDataTypes: Set<DataImport.DataType> = []
+    private var currentImportSource: ImportPasswordSource?
 
     init(viewModel: DataImportViewModel,
          importScreen: DataImportViewModel.ImportScreen,
@@ -92,9 +95,10 @@ final class DataImportFileUploadCoordinator: NSObject {
 
 extension DataImportFileUploadCoordinator: DataImportFileUploadCoordinating {
 
-    func startUploadFlow(from owner: UIViewController & DataImportFileUploadFlowOwner) {
+    func startUploadFlow(from owner: UIViewController & DataImportFileUploadFlowOwner, source: ImportPasswordSource) {
         presentingViewController = owner
         flowOwner = owner
+        currentImportSource = source
         viewModel.selectFile()
     }
 }
@@ -190,7 +194,7 @@ private extension DataImportFileUploadCoordinator {
         guard !dataTypes.isEmpty else {
             DispatchQueue.main.async { [weak self] in
                 viewModel.isLoading = false
-                self?.presentFileErrorSheet(.fileUnreadable(fileType: UserText.dataImportFileTypeZip))
+                self?.presentFileErrorSheet(.noDataInZip)
             }
             return
         }
@@ -236,17 +240,24 @@ private extension DataImportFileUploadCoordinator {
             return
         }
 
+        recordImportedDataTypes(from: summary)
+
         AutofillLoginImportState(keyValueStore: keyValueStore).hasImportedLogins = true
         AutofillOnboardingExperimentPixelReporter().fireImportCompleted()
 
         let summaryViewController = DataImportSummaryViewController(
             summary: summary,
             importScreen: importScreen,
-            syncService: syncService
+            syncService: syncService,
+            sessionImportedDataTypes: sessionImportedDataTypes,
+            isSafariImportFlow: currentImportSource == .safari
         ) { [weak self] source in
             self?.launchSync(source: source)
         } onCompletion: { [weak self] in
+            self?.clearSessionImportedDataTypes()
             self?.flowOwner?.dataImportUploadDidCompleteSummary()
+        } onContinueToSafariImport: { [weak self] in
+            self?.flowOwner?.dataImportUploadDidRequestContinueToSafariImport()
         }
 
         presentingViewController.present(summaryViewController, animated: true)
@@ -262,7 +273,21 @@ private extension DataImportFileUploadCoordinator {
 
 private extension DataImportFileUploadCoordinator {
 
+    func recordImportedDataTypes(from summary: DataImportSummary) {
+        for (dataType, result) in summary {
+            if (try? result.get()) != nil {
+                sessionImportedDataTypes.insert(dataType)
+            }
+        }
+    }
+
+    func clearSessionImportedDataTypes() {
+        sessionImportedDataTypes.removeAll()
+    }
+
     func launchSync(source: String?) {
+        clearSessionImportedDataTypes()
+
         if let flowOwner {
             flowOwner.dataImportUploadDidRequestSync(source: source)
             return

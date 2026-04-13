@@ -23,10 +23,16 @@ import SwiftUI
 final class SafariExportInterstitialViewController: UIViewController {
 
     var onRequestExport: (() -> Void)?
+    private var contentHeight: CGFloat = 420
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        updateSheetHeight(contentHeight)
     }
 
     private func setupView() {
@@ -38,9 +44,30 @@ final class SafariExportInterstitialViewController: UIViewController {
             },
             onCancel: { [weak self] in
                 self?.dismiss(animated: true)
-            })
+            },
+            onContentHeightChange: { [weak self] contentHeight in
+                self?.updateSheetHeight(contentHeight)
+            }
+        )
         let hostingController = UIHostingController(rootView: interstitialView)
         hostingController.view.backgroundColor = .clear
         installChildViewController(hostingController)
+    }
+
+    private func updateSheetHeight(_ nextHeight: CGFloat) {
+        guard #available(iOS 16.0, *) else { return }
+
+        let boundedHeight = max(360, nextHeight)
+        guard abs(boundedHeight - contentHeight) > 0.5 || (presentationController as? UISheetPresentationController)?.detents.isEmpty == true else {
+            return
+        }
+
+        contentHeight = boundedHeight
+
+        if let sheetPresentationController = presentationController as? UISheetPresentationController {
+            sheetPresentationController.animateChanges {
+                sheetPresentationController.detents = [.custom(resolver: { _ in boundedHeight })]
+            }
+        }
     }
 }

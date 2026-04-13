@@ -53,6 +53,10 @@ final class DataImportSummaryViewModel: ObservableObject {
     private let isSafariImportFlow: Bool
     private let isSupportedOSVersion: () -> Bool
 
+    var shouldShowPasswordsFileDeletionHint: Bool {
+        isSafariImportFlow && passwordsSummary != nil
+    }
+
     var footer: Footer? {
         if importScreen == .whatsNew {
             return .message(body: UserText.dataImportSummaryVisitSyncSettings)

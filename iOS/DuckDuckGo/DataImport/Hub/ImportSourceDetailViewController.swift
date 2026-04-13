@@ -86,11 +86,6 @@ final class ImportSourceDetailViewController: UIViewController {
         interstitialVC.onRequestExport = { [weak self] in
             self?.triggerBrowserKitImport()
         }
-
-        if let sheet = interstitialVC.sheetPresentationController {
-            sheet.detents = [.medium()]
-        }
-
         present(interstitialVC, animated: true)
     }
 

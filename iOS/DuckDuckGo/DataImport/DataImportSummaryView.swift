@@ -46,12 +46,13 @@ struct DataImportSummaryView: View {
                 
                 if viewModel.isAllSuccessful() {
                     SuccessContainer(
+                        shouldShowPasswordsFileDeletionHint: viewModel.shouldShowPasswordsFileDeletionHint,
                         passwordsSuccessCount: viewModel.passwordsSummary?.successful ?? 0,
                         bookmarksSuccessCount: viewModel.bookmarksSummary?.successful ?? 0,
                         creditCardsSuccessCount: viewModel.creditCardsSummary?.successful
                     )
                 } else {
-                    if viewModel.passwordsSummary != nil {
+                    if viewModel.shouldShowPasswordsFileDeletionHint {
                         Text(UserText.dataImportSummaryPasswordsSubtitle)
                             .daxSubheadRegular()
                             .multilineTextAlignment(.center)
@@ -214,18 +215,21 @@ struct DataImportSummaryView: View {
 
 
     private struct SuccessContainer: View {
+        var shouldShowPasswordsFileDeletionHint: Bool
         var passwordsSuccessCount: Int
         var bookmarksSuccessCount: Int
         var creditCardsSuccessCount: Int?
 
         var body: some View {
-            Text(UserText.dataImportSummaryPasswordsSubtitle)
-                .daxSubheadRegular()
-                .multilineTextAlignment(.center)
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .padding(.horizontal)
-                .padding(.top, 8)
-                .padding(.bottom, 28)
+            if shouldShowPasswordsFileDeletionHint {
+                Text(UserText.dataImportSummaryPasswordsSubtitle)
+                    .daxSubheadRegular()
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    .padding(.bottom, 28)
+            }
 
             VStack(spacing: 12) {
                 StatRow(isSuccess: true,

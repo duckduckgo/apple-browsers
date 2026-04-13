@@ -25,24 +25,20 @@ struct SafariExportInterstitialView: View {
 
     var onOpenSettingsToExport: (() -> Void)?
     var onCancel: (() -> Void)?
+    var onContentHeightChange: ((CGFloat) -> Void)?
 
     @State private var isAnimating = false
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Button(UserText.actionCancel) {
-                    onCancel?()
-                }
-                .daxBodyRegular()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-
-                Spacer()
+            Button(UserText.actionCancel) {
+                onCancel?()
             }
+            .daxBodyRegular()
+            .foregroundColor(Color(designSystemColor: .textPrimary))
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
             .padding(.top, 16)
-
-            Spacer()
 
             ExportAnimationView(isAnimating: $isAnimating)
 
@@ -50,10 +46,12 @@ struct SafariExportInterstitialView: View {
                 .daxTitle2()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
-
-            Spacer().frame(height: 24)
+                .padding(.bottom, 24)
 
             Button {
                 onOpenSettingsToExport?()
@@ -62,9 +60,16 @@ struct SafariExportInterstitialView: View {
             }
             .buttonStyle(PrimaryButtonStyle())
             .padding(.horizontal, 16)
+            .padding(.bottom, 12)
 
-            Spacer()
         }
+        .fixedSize(horizontal: false, vertical: true)
+        .background(GeometryReader { proxy -> Color in
+            DispatchQueue.main.async {
+                onContentHeightChange?(proxy.size.height)
+            }
+            return Color.clear
+        })
         .background(Color(designSystemColor: .background))
         .onFirstAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {

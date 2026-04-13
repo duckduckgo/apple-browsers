@@ -121,7 +121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var screenLockedCancellable: AnyCancellable?
     private var emailCancellables = Set<AnyCancellable>()
     private(set) var promoService: PromoService?
-    private(set) var subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
+    private(set) weak var subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
     var privacyDashboardWindow: NSWindow?
 
     let tabCrashAggregator = TabCrashAggregator()

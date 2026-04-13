@@ -30,5 +30,5 @@ struct PromoDependencies {
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
     let sessionRestoreCoordinator: SessionRestorePromptCoordinating
-    let subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
+    let subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate
 }

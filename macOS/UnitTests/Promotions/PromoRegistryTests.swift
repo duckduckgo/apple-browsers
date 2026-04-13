@@ -51,7 +51,7 @@ final class PromoRegistryTests: XCTestCase {
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
             sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),
-            subscriptionPromoDelegate: nil)
+            subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate())
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)

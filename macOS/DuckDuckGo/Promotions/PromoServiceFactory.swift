@@ -64,14 +64,11 @@ struct PromoServiceFactory {
             freemiumDBP,
             remoteMessageTabBar(model: dependencies.activeRemoteMessageModel),
             nextSteps,
+            subscriptionPromo(delegate: dependencies.subscriptionPromoDelegate),
             defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockInactiveModal(service: dependencies.defaultBrowserAndDockPromptService)
         ]
-
-        if let subscriptionDelegate = dependencies.subscriptionPromoDelegate {
-            promos.append(subscriptionPromo(delegate: subscriptionDelegate))
-        }
 
         if includeTestPromos {
             promos.append(contentsOf: testPromos)

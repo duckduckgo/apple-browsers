@@ -33,19 +33,17 @@ final class FireWindowSubscriptionPromoDelegateTests: XCTestCase {
 
     func testWhenVisibilityUpdatedToTrueThenDelegateIsVisible() {
         let delegate = FireWindowSubscriptionPromoDelegate()
-        let source = NSObject()
 
-        delegate.updateVisibility(true, for: source)
+        delegate.updateVisibility(true)
 
         XCTAssertTrue(delegate.isVisible)
     }
 
     func testWhenVisibilityUpdatedToFalseThenDelegateIsNotVisible() {
         let delegate = FireWindowSubscriptionPromoDelegate()
-        let source = NSObject()
 
-        delegate.updateVisibility(true, for: source)
-        delegate.updateVisibility(false, for: source)
+        delegate.updateVisibility(true)
+        delegate.updateVisibility(false)
 
         XCTAssertFalse(delegate.isVisible)
     }
@@ -58,7 +56,6 @@ final class FireWindowSubscriptionPromoDelegateTests: XCTestCase {
 
     func testWhenVisibilityUpdatedThenPublisherEmitsCorrectValue() {
         let delegate = FireWindowSubscriptionPromoDelegate()
-        let source = NSObject()
 
         let expectation = expectation(description: "Visibility emitted")
         var receivedVisible: Bool?
@@ -70,42 +67,30 @@ final class FireWindowSubscriptionPromoDelegateTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        delegate.updateVisibility(true, for: source)
+        delegate.updateVisibility(true)
         wait(for: [expectation], timeout: 1.0)
 
         XCTAssertTrue(try XCTUnwrap(receivedVisible))
     }
 
-    func testResultWhenHiddenIsIgnoredWithNoCooldown() {
+    func testResultWhenHiddenIsIgnoredWith28DayCooldown() {
         let delegate = FireWindowSubscriptionPromoDelegate()
 
-        XCTAssertEqual(delegate.resultWhenHidden, .ignored(cooldown: 0))
+        XCTAssertEqual(delegate.resultWhenHidden, .ignored(cooldown: .days(28)))
     }
 
-    // MARK: - Multi-Window Tests
-
-    func testWhenMultipleSourcesVisibleAndOneHidesThenDelegateRemainsVisible() {
+    func testWhenSameValueSentThenPublisherDoesNotReemit() {
         let delegate = FireWindowSubscriptionPromoDelegate()
-        let sourceA = NSObject()
-        let sourceB = NSObject()
 
-        delegate.updateVisibility(true, for: sourceA)
-        delegate.updateVisibility(true, for: sourceB)
-        delegate.updateVisibility(false, for: sourceA)
+        var emitCount = 0
+        delegate.isVisiblePublisher
+            .dropFirst()
+            .sink { _ in emitCount += 1 }
+            .store(in: &cancellables)
 
-        XCTAssertTrue(delegate.isVisible)
-    }
+        delegate.updateVisibility(true)
+        delegate.updateVisibility(true)
 
-    func testWhenAllSourcesHideThenDelegateIsNotVisible() {
-        let delegate = FireWindowSubscriptionPromoDelegate()
-        let sourceA = NSObject()
-        let sourceB = NSObject()
-
-        delegate.updateVisibility(true, for: sourceA)
-        delegate.updateVisibility(true, for: sourceB)
-        delegate.updateVisibility(false, for: sourceA)
-        delegate.updateVisibility(false, for: sourceB)
-
-        XCTAssertFalse(delegate.isVisible)
+        XCTAssertEqual(emitCount, 1)
     }
 }

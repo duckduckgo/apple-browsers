@@ -19,37 +19,21 @@
 import Combine
 import Foundation
 
-protocol PromoVisibilityReporting: AnyObject {
-    func updateVisibility(_ isVisible: Bool, for source: AnyObject)
-}
-
 /// Promo delegate for the subscription promo on the Fire Window home page.
 /// External promo: PromoService subscribes to isVisiblePublisher and records history.
 /// Visibility is driven by SubscriptionPromoViewModel, which owns all display rules.
-///
-/// Multiple fire windows can exist simultaneously, each with its own ViewModel.
-/// Tracks visibility per-ViewModel so closing one window doesn't hide the promo
-/// while another window is still showing it.
-final class FireWindowSubscriptionPromoDelegate: ExternalPromoDelegate, PromoVisibilityReporting {
+final class FireWindowSubscriptionPromoDelegate: ExternalPromoDelegate {
 
     private let visibilitySubject = CurrentValueSubject<Bool, Never>(false)
-    private var visibleSources = Set<ObjectIdentifier>()
 
     var isVisible: Bool { visibilitySubject.value }
     var isVisiblePublisher: AnyPublisher<Bool, Never> { visibilitySubject.eraseToAnyPublisher() }
 
-    /// ViewModel handles its own dismissal persistence, so no cooldown needed here.
-    var resultWhenHidden: PromoResult { .ignored(cooldown: 0) }
+    /// 28-day cooldown after the promo is hidden (dismiss or CTA).
+    var resultWhenHidden: PromoResult { .ignored(cooldown: .days(28)) }
 
-    func updateVisibility(_ isVisible: Bool, for source: AnyObject) {
-        dispatchPrecondition(condition: .onQueue(.main))
-        if isVisible {
-            visibleSources.insert(ObjectIdentifier(source))
-        } else {
-            visibleSources.remove(ObjectIdentifier(source))
-        }
-        let newValue = !visibleSources.isEmpty
-        guard newValue != visibilitySubject.value else { return }
-        visibilitySubject.send(newValue)
+    func updateVisibility(_ isVisible: Bool) {
+        guard isVisible != visibilitySubject.value else { return }
+        visibilitySubject.send(isVisible)
     }
 }

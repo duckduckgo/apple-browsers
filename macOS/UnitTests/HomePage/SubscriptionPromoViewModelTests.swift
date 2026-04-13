@@ -87,49 +87,8 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         XCTAssertFalse(sut.shouldShowPromo)
     }
 
-    func testWhenCtaActionedWithinCooldown_ThenDoesNotShowPromo() {
-        persistor.fireTabVisitCount = 3
-        persistor.promoDismissedDate = Date()
-        sut = makeSUT()
-
-        sut.updateForTab(.notEvaluated)
-
-        XCTAssertFalse(sut.shouldShowPromo)
-    }
-
-    func testWhenCtaActionedAfterCooldown_ThenShowsPromo() {
-        persistor.fireTabVisitCount = 3
-        persistor.promoDismissedDate = Calendar.current.date(byAdding: .day, value: -29, to: Date())
-        sut = makeSUT()
-
-        sut.updateForTab(.notEvaluated)
-
-        XCTAssertTrue(sut.shouldShowPromo)
-    }
-
-    // MARK: - Dismiss Cooldown
-
-    func testWhenDismissedWithinCooldown_ThenDoesNotShowPromo() {
-        persistor.fireTabVisitCount = 3
-        persistor.promoDismissedDate = Date()
-        sut = makeSUT()
-
-        sut.updateForTab(.notEvaluated)
-
-        XCTAssertFalse(sut.shouldShowPromo)
-    }
-
-    func testWhenDismissedAfterCooldown_ThenShowsPromo() {
-        persistor.fireTabVisitCount = 3
-        persistor.promoDismissedDate = Calendar.current.date(byAdding: .day, value: -29, to: Date())
-        sut = makeSUT()
-
-        sut.updateForTab(.notEvaluated)
-
-        XCTAssertTrue(sut.shouldShowPromo)
-    }
-
     // MARK: - Display Limit (4 times per 28-day rolling window)
+    // Note: 28-day dismiss cooldown is handled by PromoService via resultWhenHidden
 
     func testWhenDisplayCountBelowLimit_ThenShowsPromo() {
         persistor.fireTabVisitCount = 3
@@ -197,82 +156,34 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         XCTAssertFalse(sut.shouldShowPromo)
     }
 
-    // MARK: - Conflicting End Cases
+    // MARK: - Display Limit After Dismiss
 
-    func testWhenDismissedOnFourthDisplay_ThenDismissCooldownAndDisplayLimitBothBlock() {
+    func testWhenDismissedOnFourthDisplay_DisplayLimitBlocks() {
         persistor.fireTabVisitCount = 3
         sut = makeSUT()
 
-        // Show promo 3 times
         sut.updateForTab(.notEvaluated)
         sut.updateForTab(.notEvaluated)
         sut.updateForTab(.notEvaluated)
-        XCTAssertEqual(persistor.promoDisplayCount, 3)
-
-        // 4th display — user dismisses
-        sut.updateForTab(.notEvaluated)
-        XCTAssertEqual(persistor.promoDisplayCount, 4)
-        XCTAssertTrue(sut.shouldShowPromo)
-        sut.dismiss()
-        XCTAssertFalse(sut.shouldShowPromo)
-
-        // Dismiss cooldown still active (same day) — blocked by cooldown
-        sut.updateForTab(.notEvaluated)
-        XCTAssertFalse(sut.shouldShowPromo)
-    }
-
-    func testWhenDismissedOnFourthDisplay_AfterDismissCooldownExpires_DisplayLimitStillBlocks() {
-        persistor.fireTabVisitCount = 3
-        let windowStart = Calendar.current.date(byAdding: .day, value: -20, to: Date())!
-        persistor.promoDisplayWindowStart = windowStart
-        persistor.promoDisplayCount = 3
-        sut = makeSUT()
-
-        // 4th display — user dismisses
         sut.updateForTab(.notEvaluated)
         XCTAssertEqual(persistor.promoDisplayCount, 4)
         sut.dismiss()
 
-        // Simulate dismiss cooldown expiring (29 days ago) but display window still active (started 20 days ago)
-        persistor.promoDismissedDate = Calendar.current.date(byAdding: .day, value: -29, to: Date())
-
         sut.updateForTab(.notEvaluated)
-        XCTAssertFalse(sut.shouldShowPromo, "Display limit should still block even after dismiss cooldown expires")
+        XCTAssertFalse(sut.shouldShowPromo)
         XCTAssertEqual(persistor.promoDisplayCount, 4)
     }
 
-    func testWhenDismissedOnFourthDisplay_AfterBothCooldownAndWindowExpire_ThenShowsPromo() {
+    func testWhenDisplayWindowExpiredAfterDismiss_ThenShowsPromo() {
         persistor.fireTabVisitCount = 3
         persistor.promoDisplayWindowStart = Calendar.current.date(byAdding: .day, value: -29, to: Date())
         persistor.promoDisplayCount = 4
-        persistor.promoDismissedDate = Calendar.current.date(byAdding: .day, value: -29, to: Date())
         sut = makeSUT()
-
-        sut.updateForTab(.notEvaluated)
-
-        XCTAssertTrue(sut.shouldShowPromo, "Both cooldown and display window expired — promo should show again")
-        XCTAssertEqual(persistor.promoDisplayCount, 1, "Display count should reset for new window")
-    }
-
-    func testWhenDismissedOnThirdDisplay_AfterCooldownExpires_ThenStartsNewDisplayWindow() {
-        persistor.fireTabVisitCount = 3
-        sut = makeSUT()
-
-        // Show promo 3 times, user dismisses on 3rd
-        sut.updateForTab(.notEvaluated)
-        sut.updateForTab(.notEvaluated)
-        sut.updateForTab(.notEvaluated)
-        XCTAssertEqual(persistor.promoDisplayCount, 3)
-        sut.dismiss()
-
-        // Simulate both dismiss cooldown and display window expiring
-        persistor.promoDismissedDate = Calendar.current.date(byAdding: .day, value: -29, to: Date())
-        persistor.promoDisplayWindowStart = Calendar.current.date(byAdding: .day, value: -29, to: Date())
 
         sut.updateForTab(.notEvaluated)
 
         XCTAssertTrue(sut.shouldShowPromo)
-        XCTAssertEqual(persistor.promoDisplayCount, 1, "Should be first display in a new 28-day window")
+        XCTAssertEqual(persistor.promoDisplayCount, 1, "Display count should reset for new window")
     }
 
     // MARK: - Free Trial Eligibility
@@ -299,7 +210,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
 
     // MARK: - Dismiss & Action
 
-    func testDismissSetsDateAndHidesPromo() {
+    func testDismissHidesPromo() {
         persistor.fireTabVisitCount = 3
         sut = makeSUT()
         sut.updateForTab(.notEvaluated)
@@ -308,10 +219,9 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         sut.dismiss()
 
         XCTAssertFalse(sut.shouldShowPromo)
-        XCTAssertNotNil(persistor.promoDismissedDate)
     }
 
-    func testOnPromoButtonTappedSetsDismissedDateButKeepsPromoVisible() {
+    func testOnPromoButtonTappedKeepsPromoVisible() {
         persistor.fireTabVisitCount = 3
         sut = makeSUT()
         sut.updateForTab(.notEvaluated)
@@ -320,56 +230,44 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         sut.onPromoButtonTapped()
 
         XCTAssertTrue(sut.shouldShowPromo, "Promo stays visible on current tab after CTA tap")
-        XCTAssertNotNil(persistor.promoDismissedDate)
-    }
-
-    func testAfterCtaTapped_NewTabDoesNotShowPromo() {
-        persistor.fireTabVisitCount = 3
-        sut = makeSUT()
-        sut.updateForTab(.notEvaluated)
-        sut.onPromoButtonTapped()
-
-        sut.updateForTab(.notEvaluated)
-
-        XCTAssertFalse(sut.shouldShowPromo, "Promo should not show on new tabs after CTA tap")
     }
 
     // MARK: - Promo Delegate Visibility Reporting
 
     func testWhenPromoShows_ThenDelegateVisibilityUpdatedToTrue() {
-        let delegate = MockPromoVisibilityReporting()
+        let delegate = FireWindowSubscriptionPromoDelegate()
         persistor.fireTabVisitCount = 3
         sut = makeSUT(promoDelegate: delegate)
 
         sut.updateForTab(.notEvaluated)
 
         XCTAssertTrue(sut.shouldShowPromo)
-        XCTAssertTrue(delegate.lastVisibility == true)
+        XCTAssertTrue(delegate.isVisible)
     }
 
     func testWhenPromoDismissed_ThenDelegateVisibilityUpdatedToFalse() {
-        let delegate = MockPromoVisibilityReporting()
+        let delegate = FireWindowSubscriptionPromoDelegate()
         persistor.fireTabVisitCount = 3
         sut = makeSUT(promoDelegate: delegate)
 
         sut.updateForTab(.notEvaluated)
-        XCTAssertTrue(delegate.lastVisibility == true)
+        XCTAssertTrue(delegate.isVisible)
 
         sut.dismiss()
 
         XCTAssertFalse(sut.shouldShowPromo)
-        XCTAssertTrue(delegate.lastVisibility == false)
+        XCTAssertFalse(delegate.isVisible)
     }
 
     func testWhenPromoConditionsNotMet_ThenDelegateNotUpdated() {
-        let delegate = MockPromoVisibilityReporting()
+        let delegate = FireWindowSubscriptionPromoDelegate()
         persistor.fireTabVisitCount = 0
         sut = makeSUT(promoDelegate: delegate)
 
         sut.updateForTab(.notEvaluated)
 
         XCTAssertFalse(sut.shouldShowPromo)
-        XCTAssertNil(delegate.lastVisibility)
+        XCTAssertFalse(delegate.isVisible)
     }
 
     // MARK: - Feature Flag
@@ -385,7 +283,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
     }
 
     private func makeSUT(locale: Locale = Locale(identifier: "en_US"),
-                         promoDelegate: (any PromoVisibilityReporting)? = nil) -> SubscriptionPromoViewModel {
+                         promoDelegate: FireWindowSubscriptionPromoDelegate? = nil) -> SubscriptionPromoViewModel {
         SubscriptionPromoViewModel(
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
@@ -416,17 +314,6 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
 
 final class MockSubscriptionPromoPersisting: SubscriptionPromoPersisting {
     var fireTabVisitCount: Int = 0
-    var promoDismissedDate: Date?
     var promoDisplayCount: Int = 0
     var promoDisplayWindowStart: Date?
-}
-
-final class MockPromoVisibilityReporting: PromoVisibilityReporting {
-    private(set) var lastVisibility: Bool?
-    private(set) var updateCount: Int = 0
-
-    func updateVisibility(_ isVisible: Bool, for source: AnyObject) {
-        lastVisibility = isVisible
-        updateCount += 1
-    }
 }

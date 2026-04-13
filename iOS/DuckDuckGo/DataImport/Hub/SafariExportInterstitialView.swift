@@ -75,19 +75,19 @@ struct SafariExportInterstitialView: View {
 
     private struct ExportAnimationView: View {
         @Binding var isAnimating: Bool
+        @Environment(\.colorScheme) private var colorScheme
+
+        private var lottieFileName: String {
+            colorScheme == .dark ? "export-passwords-dark-optimised" : "export-passwords-light-optimised"
+        }
 
         var body: some View {
             LottieView(
-                lottieFile: "export-passwords-light-v4",
+                lottieFile: lottieFileName,
                 loopMode: .mode(.repeat(1.0)),
                 isAnimating: $isAnimating
             )
             .frame(width: 200, height: 200)
         }
     }
-}
-
-@available(iOS 16.0, *)
-#Preview {
-    SafariExportInterstitialView()
 }

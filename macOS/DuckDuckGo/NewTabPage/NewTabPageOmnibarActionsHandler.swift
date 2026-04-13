@@ -129,6 +129,11 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             PixelKit.fire(AIChatPixel.aiChatNtpSubmitWithImage(imageCount: images.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
 
+        if mode == "image-generation" {
+            PixelKit.fire(AIChatPixel.aiChatNtpImageGenerationSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        } else if toolChoice?.contains("WebSearch") == true {
+            PixelKit.fire(AIChatPixel.aiChatNtpWebSearchSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        }
 
         let tabOpener = AIChatTabOpener(
             promptHandler: promptHandler,

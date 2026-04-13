@@ -168,33 +168,31 @@ private extension AIChatRecentChatsPopupViewController {
     }
 
     func buildContent() {
-        guard !viewModel.suggestions.isEmpty else { return }
-
         if viewModel.showNewChat {
             let newChatRow = makeNewChatRow()
             stackView.addArrangedSubview(newChatRow)
 
-            let separator = makeSeparator()
-            stackView.addArrangedSubview(separator)
+            if !viewModel.suggestions.isEmpty {
+                let separator = makeSeparator()
+                stackView.addArrangedSubview(separator)
+            }
         }
 
-        // Section header
-        let headerLabel = makeSectionHeader(UserText.aiChatRecentChatsSectionTitle)
-        stackView.addArrangedSubview(headerLabel)
+        if !viewModel.suggestions.isEmpty {
+            let headerLabel = makeSectionHeader(UserText.aiChatRecentChatsSectionTitle)
+            stackView.addArrangedSubview(headerLabel)
 
-        // Chat rows
-        for (index, suggestion) in viewModel.suggestions.enumerated() {
-            let row = makeChatRow(for: suggestion, index: index)
-            stackView.addArrangedSubview(row)
-        }
+            for (index, suggestion) in viewModel.suggestions.enumerated() {
+                let row = makeChatRow(for: suggestion, index: index)
+                stackView.addArrangedSubview(row)
+            }
 
-        if viewModel.showViewAll {
             let separatorContainer = makeSeparator()
             stackView.addArrangedSubview(separatorContainer)
-
-            let footer = makeViewAllChatsRow()
-            stackView.addArrangedSubview(footer)
         }
+
+        let footer = makeViewAllChatsRow()
+        stackView.addArrangedSubview(footer)
     }
 
     // MARK: - Row Builders

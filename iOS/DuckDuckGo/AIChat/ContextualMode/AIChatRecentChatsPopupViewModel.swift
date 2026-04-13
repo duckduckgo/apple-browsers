@@ -45,9 +45,6 @@ final class AIChatRecentChatsPopupViewModel {
     /// Whether the "New chat" row should be shown at the top.
     let showNewChat: Bool
 
-    /// Whether the "View all chats" footer should be shown.
-    let showViewAll: Bool
-
     /// The chat suggestions (up to maxVisibleChats).
     let suggestions: [AIChatSuggestion]
 
@@ -56,11 +53,9 @@ final class AIChatRecentChatsPopupViewModel {
     /// Creates a view model from raw fetched data.
     /// - Parameters:
     ///   - suggestions: The chat suggestions to display (will be capped at maxVisibleChats).
-    ///   - hasMore: Whether there are more chats beyond the displayed ones.
     ///   - showNewChat: Whether the "New chat" row should be shown (true when there's an active chat).
-    init(suggestions: [AIChatSuggestion], hasMore: Bool, showNewChat: Bool = false) {
+    init(suggestions: [AIChatSuggestion], showNewChat: Bool = false) {
         self.suggestions = Array(suggestions.prefix(Self.maxVisibleChats))
-        self.showViewAll = hasMore
         self.showNewChat = showNewChat
     }
 
@@ -96,14 +91,13 @@ final class AIChatRecentChatsPopupViewModel {
 extension AIChatRecentChatsPopupViewModel {
 
     /// Fetches recent chats from the reader and creates a view model.
-    /// Returns nil if the reader is nil or there are no suggestions.
+    /// Returns nil only if the reader is nil.
+    /// When there are no recent suggestions, the popup shows just the "View all chats" link.
     static func fetch(using reader: AIChatSuggestionsReading?, showNewChat: Bool = false) async -> AIChatRecentChatsPopupViewModel? {
         guard let reader else { return nil }
         let result = await reader.fetchSuggestions(query: nil, maxChats: maxVisibleChats + 1)
         let all = result.pinned + result.recent
-        let hasMore = all.count > maxVisibleChats
         let capped = Array(all.prefix(maxVisibleChats))
-        guard !capped.isEmpty else { return nil }
-        return AIChatRecentChatsPopupViewModel(suggestions: capped, hasMore: hasMore, showNewChat: showNewChat)
+        return AIChatRecentChatsPopupViewModel(suggestions: capped, showNewChat: showNewChat)
     }
 }

@@ -187,7 +187,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         button.addTarget(self, action: #selector(recentChatsButtonTapped), for: .touchUpInside)
         button.accessibilityLabel = UserText.aiChatRecentChatsButtonAccessibility
         button.accessibilityTraits = .button
-        button.isHidden = true
         return button
     }()
 
@@ -403,7 +402,12 @@ final class AIChatContextualSheetViewController: UIViewController {
                 using: suggestionsReader,
                 showNewChat: sessionState.hasActiveChat
             ), view.window != nil, !isBeingDismissed else { return }
-            showRecentChatsPopup(with: viewModel)
+
+            if viewModel.suggestions.isEmpty {
+                recentChatsPopupDidSelectViewAll()
+            } else {
+                showRecentChatsPopup(with: viewModel)
+            }
         }
     }
 
@@ -495,10 +499,9 @@ private extension AIChatContextualSheetViewController {
         Task { @MainActor in
             let viewModel = await AIChatRecentChatsPopupViewModel.fetch(using: suggestionsReader)
             guard view.window != nil, !isBeingDismissed else { return }
-            recentChatsButton.isHidden = viewModel == nil
 
             // If we think there's an active chat but no suggestions exist, the chat was deleted externally
-            if viewModel == nil, sessionState.hasActiveChat, sessionState.contextualChatURL != nil {
+            if viewModel?.suggestions.isEmpty ?? true, sessionState.hasActiveChat, sessionState.contextualChatURL != nil {
                 Logger.aiChat.debug("[SheetVC] Active chat no longer exists, resetting to new chat")
                 delegate?.aiChatContextualSheetViewControllerDidRequestNewChat(self)
             }
@@ -893,7 +896,6 @@ private extension AIChatContextualSheetViewController {
                 transitionToWebView()
             }
             fireButton.isHidden = false
-            recentChatsButton.isHidden = false
         }
 
     }

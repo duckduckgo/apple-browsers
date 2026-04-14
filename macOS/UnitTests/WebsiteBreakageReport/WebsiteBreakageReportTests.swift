@@ -200,6 +200,7 @@ class WebsiteBreakageReportTests: XCTestCase {
             privacyExperiments: "",
             isPirEnabled: nil,
             isForceDarkModeEnabled: nil,
+            lastTabSuspension: nil,
             pageLoadTiming: nil,
             loadedWebExtensions: "embedded,darkMode,adBlocking",
             adBlockingExtensionScriptletsVersion: "1.2.3"
@@ -238,6 +239,7 @@ class WebsiteBreakageReportTests: XCTestCase {
             privacyExperiments: "",
             isPirEnabled: nil,
             isForceDarkModeEnabled: nil,
+            lastTabSuspension: nil,
             pageLoadTiming: nil
         )
 

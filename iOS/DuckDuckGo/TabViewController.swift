@@ -807,7 +807,8 @@ class TabViewController: UIViewController {
     
     func updateTabModel() {
         if let url = url {
-            let link = Link(title: title, url: url)
+            let resolvedTitle = title ?? tabModel.link?.title
+            let link = Link(title: resolvedTitle, url: url)
             tabModel.link = link
         } else {
             tabModel.link = nil

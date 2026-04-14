@@ -686,7 +686,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 #endif
 
         let appConfigDefaults = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .appConfiguration))
-        let channel = StandardApplicationBuildType().channelName(isInternalUser: appConfigDefaults?.isInternalUser == true)
+        let isInternalUser = appConfigDefaults?.bool(forKey: "isInternalUser") == true
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: isInternalUser)
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),

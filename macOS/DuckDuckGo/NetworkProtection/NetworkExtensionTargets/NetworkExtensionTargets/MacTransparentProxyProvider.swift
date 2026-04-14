@@ -57,7 +57,8 @@ final class MacTransparentProxyProvider: TransparentProxyProvider {
 
 #if !NETP_SYSTEM_EXTENSION
         let appConfigDefaults = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .appConfiguration))
-        let channel = StandardApplicationBuildType().channelName(isInternalUser: appConfigDefaults?.isInternalUser == true)
+        let isInternalUser = appConfigDefaults?.bool(forKey: "isInternalUser") == true
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: isInternalUser)
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: "vpnProxyExtension",

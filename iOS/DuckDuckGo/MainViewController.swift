@@ -151,7 +151,7 @@ class MainViewController: UIViewController {
     var autoClearShouldRefreshUIAfterClear = true
     private var hasLoadedInitialView = false
     private weak var burningOverlayView: UIView?
-    var isStartupOnboardingPending = false
+    private var isStartupOnboardingPending = false
     private var hasPresentedStartupOnboarding = false
     private lazy var startupOnboardingCover = StartupOnboardingCover(
         parentViewController: self,
@@ -170,7 +170,7 @@ class MainViewController: UIViewController {
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
-    let tutorialSettings: TutorialSettings
+    private let tutorialSettings: TutorialSettings
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     let contextualOnboardingPixelReporter: OnboardingPixelReporting
     private let statisticsStore: StatisticsStore

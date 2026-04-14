@@ -256,11 +256,7 @@ private extension RebrandedContextualDaxDialogFactory {
         } : nil
 
         return OnboardingConditionalCenteredScrollableContainerView {
-            OnboardingRebranding.OnboardingFireDialog(
-                title: title,
-                message: message,
-                onManualDismiss: onManualDismiss
-            )
+            OnboardingRebranding.OnboardingFireDialog(title: title, message: message, onManualDismiss: onManualDismiss)
         }
         .applyAnimatedContextualOnboardingBackground(backgroundType: backgroundType)
         .onFirstAppear { [weak self] in

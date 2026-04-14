@@ -410,11 +410,9 @@ private extension OnboardingIntroViewModel {
     }
 
     func insertExperimentStepIfNeeded() {
-        guard
-            let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
-            let cohort = resolveDuckAIQueryExperimentCohortID(), cohort != .control,
-            !introSteps.contains(.duckAIQueryExperimentSelection)
-        else {
+        guard let currentStepIndex = introSteps.firstIndex(of: currentIntroStep),
+              let cohort = resolveDuckAIQueryExperimentCohortID(), cohort != .control,
+              !introSteps.contains(.duckAIQueryExperimentSelection) else {
             return
         }
         introSteps.insert(.duckAIQueryExperimentSelection, at: currentStepIndex + 1)

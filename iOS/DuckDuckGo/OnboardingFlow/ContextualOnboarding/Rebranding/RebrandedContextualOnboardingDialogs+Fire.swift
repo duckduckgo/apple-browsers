@@ -39,10 +39,7 @@ extension OnboardingRebranding {
 
         var body: some View {
             OnboardingBubbleView(tailPosition: nil) {
-                OnboardingRebranding.OnboardingFireDialogContent(
-                    title: title,
-                    message: message
-                )
+                OnboardingRebranding.OnboardingFireDialogContent(title: title, message: message)
             }
             .ifLet(onManualDismiss) { view, onManualDismiss in
                 view.onboardingDismissable(onManualDismiss)
@@ -53,6 +50,8 @@ extension OnboardingRebranding {
     }
 
     struct OnboardingFireDialogContent: View {
+        private static let fireButtonCopy = "Fire Button"
+
         @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.horizontalSizeClass) private var hSizeClass
 
@@ -72,10 +71,12 @@ extension OnboardingRebranding {
             )
         }
 
+        /// Builds the message with bold applied to "Fire Button" via SwiftUI's
+        /// attribute system so the theme's body font applies uniformly.
         private var attributedMessage: AttributedString {
             var attributed = AttributedString(message)
-            if let range = attributed.range(of: "Fire Button") {
-                attributed[range].inlinePresentationIntent = .stronglyEmphasized
+            if let range = attributed.range(of: Self.fireButtonCopy) {
+                attributed[range].inlinePresentationIntent = .stronglyEmphasized // Bold
             }
             return attributed
         }

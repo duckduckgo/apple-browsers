@@ -226,10 +226,10 @@ public extension NewTabPageDataModel {
     struct SubmitChatAction: Codable, Equatable {
         let chat: String
         let target: OpenTarget
-        let mode: String?
-        let toolChoice: [String]?
         let modelId: String?
         let images: [SubmitChatImage]?
+        let mode: String?
+        let toolChoice: [String]?
     }
 
     // MARK: - omnibar_openAiChat

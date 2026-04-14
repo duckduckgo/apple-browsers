@@ -568,11 +568,11 @@ final class PixelKitTests: XCTestCase {
         let pixelKit = PixelKit(dryRun: false,
                                 appVersion: "2.0.0",
                                 source: "browser-dmg",
-                                channel: "preview",
+                                channel: "canary",
                                 defaultHeaders: [:],
                                 defaults: userDefaults()) { _, _, parameters, _, _, completion in
             fireCallbackCalled.fulfill()
-            XCTAssertEqual(parameters[PixelKit.Parameters.channel], "preview")
+            XCTAssertEqual(parameters[PixelKit.Parameters.channel], "canary")
             XCTAssertEqual(parameters[PixelKit.Parameters.appVersion], "2.0.0")
             XCTAssertEqual(parameters[PixelKit.Parameters.pixelSource], "browser-dmg")
             completion(true, nil)

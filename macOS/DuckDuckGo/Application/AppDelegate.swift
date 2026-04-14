@@ -1940,7 +1940,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private static func setUpPixelKit(dryRun: Bool) {
         let source = NSApp.isSandboxed ? "browser-appstore" : "browser-dmg"
-        let channel = StandardApplicationBuildType().channelName
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: UserDefaults.appConfiguration.isInternalUser)
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: dryRun,

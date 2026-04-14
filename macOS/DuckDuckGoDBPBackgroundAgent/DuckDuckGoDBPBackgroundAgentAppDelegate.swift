@@ -36,7 +36,8 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
 
     override init() {
         Logger.dbpBackgroundAgent.log("🟢 Starting: \(NSRunningApplication.current.processIdentifier, privacy: .public)")
-        let channel = StandardApplicationBuildType().channelName
+        let appConfigDefaults = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .appConfiguration))
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: appConfigDefaults?.isInternalUser == true)
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),

@@ -27,18 +27,6 @@ protocol ApplicationBuildType {
     var isAlphaBuild: Bool { get }
 }
 
-extension ApplicationBuildType {
-    /// Returns the channel name for non-production builds, or nil for production/debug.
-    /// Alpha builds are internal-only (canary); review builds are public beta / TestFlight (preview).
-    /// Debug builds return nil because they use `test=1` instead.
-    var channelName: String? {
-        if isDebugBuild { return nil }
-        if isAlphaBuild { return "canary" }
-        if isReviewBuild { return "preview" }
-        return nil
-    }
-}
-
 struct StandardApplicationBuildType: ApplicationBuildType {
 
     let isAppStoreBuild: Bool = AppVersion.isAppStoreBuild
@@ -55,4 +43,18 @@ struct StandardApplicationBuildType: ApplicationBuildType {
     let isReviewBuild: Bool = Bundle.main.bundleIdentifier?.contains(".review") ?? false
     let isAlphaBuild: Bool = Bundle.main.bundleIdentifier?.contains(".alpha") ?? false
 
+}
+
+extension ApplicationBuildType {
+
+    /// Returns the pixel channel name based on internal-user status and build type.
+    ///
+    /// - `"canary"` — internal users (logged in via the internal user flow)
+    /// - `"dev"` — alpha or review builds that are not internal users
+    /// - `nil` — production builds (channel parameter is omitted)
+    func channelName(isInternalUser: Bool) -> String? {
+        if isInternalUser { return "canary" }
+        if isAlphaBuild || isReviewBuild { return "dev" }
+        return nil
+    }
 }

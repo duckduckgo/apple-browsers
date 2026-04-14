@@ -685,7 +685,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         source = "vpnAppExtension"
 #endif
 
-        let channel = StandardApplicationBuildType().channelName
+        let appConfigDefaults = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .appConfiguration))
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: appConfigDefaults?.isInternalUser == true)
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),

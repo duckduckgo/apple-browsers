@@ -26259,55 +26259,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Öffnet Videos in einem privaten Theatermodus, der verhindert, dass das, was du ansiehst, deinen YouTube-Feed beeinflusst."
+            "value" : "Öffnet Videos im Theatermodus, der verhindert, dass das, was du ansiehst, deinen YouTube-Feed beeinflusst."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Opens videos in a private theatre mode that prevents what you watch from influencing your YouTube feed."
+            "value" : "Opens videos in theater mode that prevents what you watch from influencing your YouTube feed."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abre vídeos en modo teatro privado que impide que lo que ves influya en tu feed de YouTube."
+            "value" : "Abre vídeos en modo teatro que impide que lo que ves influya en tu feed de YouTube."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvre les vidéos en mode théâtre privé et empêche ce que tu regardes d’influencer ton flux YouTube."
+            "value" : "Ouvre les vidéos en mode « Salle de projection », ce qui empêche ce que vous regardez d'influencer votre fil d'actualité YouTube."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apre i video in una modalità cinema privata che impedisce a ciò che guardi di influenzare il tuo feed di YouTube."
+            "value" : "Apre i video in una modalità cinema che impedisce a ciò che guardi di influenzare il tuo feed di YouTube."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Opent video's in een privébioscoopmodus die voorkomt dat wat je bekijkt je YouTube-feed beïnvloedt."
+            "value" : "Opent video's in een bioscoopmodus die voorkomt dat wat je bekijkt je YouTube-feed beïnvloedt."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otwiera filmy w prywatnym trybie kinowym, dzięki czemu to, co oglądasz, nie wpływa na Twój kanał na YouTube."
+            "value" : "Otwiera filmy w trybie kinowym, dzięki czemu oglądane treści nie wpływają na Twój kanał na YouTube."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abre vídeos num modo de cinema privado que impede que o que vês influencie o teu feed do YouTube."
+            "value" : "Abre vídeos num modo de cinema que impede que o que vês influencie o teu feed do YouTube."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Открывает видео в режиме «личного кинотеатра»: ваши просмотры не влияют на ленту рекомендаций YouTube."
+            "value" : "Открывает видео в режиме кинотеатра: ваши просмотры не влияют на ленту рекомендаций YouTube."
           }
         }
       }
@@ -27458,7 +27458,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle Chats anzeigen ..."
+            "value" : "Alle Chats anzeigen ..."
           }
         },
         "en" : {
@@ -27506,7 +27506,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Просмотреть все чаты..."
+            "value" : "Посмотреть все чаты..."
           }
         }
       }
@@ -62886,6 +62886,66 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "omnibar.notification.youtube-ad-block-on" : {
+      "comment" : "Text displayed on notification appearing in the address bar when YouTube ad blocking is active",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube-Werbungsblocker aktiviert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YouTube Ad Block On"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueo de anuncios en YouTube activado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocage des publicités sur YouTube activé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocco degli annunci di YouTube attivato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokkering van YouTube-advertenties aan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokowanie reklam YouTube włączone"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueio de anúncios do YouTube ativo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировка рекламы на YouTube включена"
           }
         }
       }
@@ -113120,5 +113180,5 @@
       }
     }
   },
-  "version" : "1.0"
+  "version" : "1.1"
 }

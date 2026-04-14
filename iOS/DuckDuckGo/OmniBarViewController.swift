@@ -324,11 +324,8 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     func startLoading() {
-        // Cancel any pending animations when page starts loading
         cancelAllAnimations()
 
-        // Cancel any pending notification processing work item to prevent timer leak
-        // This is critical when navigating rapidly between pages
         pendingNotificationWorkItem?.cancel()
         pendingNotificationWorkItem = nil
 
@@ -428,6 +425,15 @@ class OmniBarViewController: UIViewController, OmniBar {
         enqueueAnimationIfNeeded(priority: .low) { [weak self] in
             guard let self else { return }
             self.notificationAnimator.showNotification(type, in: barView, viewController: self) { [weak self] in
+                self?.completeCurrentAnimation()
+            }
+        }
+    }
+
+    func showYouTubeAdBlockNotification() {
+        enqueueAnimationIfNeeded(priority: .low) { [weak self] in
+            guard let self else { return }
+            self.notificationAnimator.showNotification(.youTubeAdBlockOn, in: barView, viewController: self) { [weak self] in
                 self?.completeCurrentAnimation()
             }
         }

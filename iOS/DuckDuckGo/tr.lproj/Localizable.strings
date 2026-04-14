@@ -109,7 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Sekmeler ve veriler temizlendi";
 
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Arka Planda Aç";
 
@@ -944,6 +943,15 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Kullanıcı adı güncellensin mi?";
 
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Ses ve Videoya İzin Ver";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Ses ve Videoyu Engelle";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Sesi Engelle";
+
 /* No comment provided by engineer. */
 "Available Products" = "Mevcut Ürünler";
 
@@ -1235,8 +1243,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Özel URL: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Yer İşaretleri Dosyasını İçe Aktar...";
 
@@ -1495,6 +1501,12 @@
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Bu Sayfayı Özetle";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Duck.ai'ı Kontrol Merkezine ekleyin";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Duck.ai Widget'ı Ana Ekrana Ekleyin";
+
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "DuckDuckGo arama sonuçlarında Duck.ai düğmelerini ve bağlantılarını göster.";
 
@@ -1503,12 +1515,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Takip Soruları Sorun";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Duck.ai'ı Kontrol Merkezine ekleyin";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Duck.ai Widget'ı Ana Ekrana Ekleyin";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Tarayıcı kısayolları";
@@ -1534,9 +1540,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "iOS için DuckDuckGo";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Kısayollar";
 
@@ -1554,6 +1557,9 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Siri'yi kullanarak Duck.ai ile konuş!";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "iOS için DuckDuckGo";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "DuckDuckGo aboneliğinizi bu cihaza ekleyin";
@@ -1630,11 +1636,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Duck Player'da açılan videolar otomatik olarak oynatılmaya başlar. Duck Player'da açılan videoların oynatılmasını manuel olarak başlatmak istiyorsanız bunu kapatın.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Videoları otomatik olarak oynat";
+/* Label for the autoplay toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Videoları Otomatik Oynat";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Videoları özel bir sinema modunda açarak, izlediğiniz içeriklerin YouTube akışını etkilemesini engeller.";
+"duckplayer.settings.enable-footer" = "Videoları sinema modunda açarak izlediğiniz içeriklerin YouTube akışınızı etkilemesini engeller.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Duck Player'ı Aç";
@@ -1653,6 +1659,7 @@
 
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "Daha Fazla Bilgi";
+
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "Duck Player'ı yeni bir sekmede aç";
 
@@ -1664,6 +1671,7 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "DuckDuckGo Search Sonuçları";
+
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "Bu ayarın etkili olması için lütfen tüm sekmeleri kapatın.";
 
@@ -2664,8 +2672,6 @@
 "No active subscriptions" = "Aktif abonelik yok";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Abonelik bulunamadı";
 
 /* No comment provided by engineer. */
@@ -2707,8 +2713,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "App Store sürümlerinde bu ekran yalnızca **use-login.duckduckgo.com** üzerinden dahili kullanıcı olarak oturum açtıysanız görünür.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "YouTube'da Reklam Engelleme Açık";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Anladım";
@@ -2895,9 +2901,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Kapsam Dışı Kalınıyor...";
-
-/* No comment provided by engineer. */
-"Override" = "Geçersiz kılma";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Abonelere özel Duck.ai modellerine erişilemiyor.";
@@ -3349,8 +3352,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Temizle";
 
-
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Tüm açık sekmeleri kapatır";
 
@@ -3411,16 +3412,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Verileri Otomatik Olarak Sil";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Otomatik Oynatma";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Duck Player Ayarları";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Otomatik oynatma ayarları yalnızca yeni açılan sekmeler için geçerli olur. Uygulama yeniden başlatılmadığı sürece değişiklikler mevcut sekmelere uygulanamaz. Duck Player'da otomatik oynatma özelliğini yönetmek için şu adrese gidin: ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Tarayıcı Geri Bildirimi";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button, sabitlenmiş sohbetler dahil olmak üzere Duck.ai geçmişini de silecektir.";
 
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Tarama Verilerini Temizle";
-
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Kurulumu Tamamlayın";
@@ -3440,8 +3448,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Özelleştir";
 
-
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Veri Temizleme";
 
@@ -3451,10 +3457,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Varsayılan Tarayıcı";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Yeni sekmelerdeki varsayılan buton konumu.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Buton konumu";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Son Kullanılan";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Arama";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Duck.ai Sohbetlerini Sil";
 
@@ -3500,7 +3517,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Yangın Düğmesi Animasyonu";
 
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproof Uygulanan Siteler";
 
@@ -3542,6 +3558,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Hesabı Yönet";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Medya";
 
 /* Settings title for the 'More' section */
 "settings.more" = "DuckDuckGo'dan daha fazlası";
@@ -4635,12 +4654,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Neyi içe aktarmak istiyorsunuz?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Ses ve Videoya İzin Ver";
-"autoplay.mode.blockAll" = "Ses ve Videoyu Engelle";
-"autoplay.mode.blockAudio" = "Sesi Engelle";
-"settings.autoplay" = "Otomatik Oynatma";
-"settings.autoplay.duck.player.link" = "Duck Player Ayarları";
-"settings.autoplay.footer" = "Otomatik oynatma ayarları yalnızca yeni açılan sekmeler için geçerli olur. Uygulama yeniden başlatılmadığı sürece değişiklikler mevcut sekmelere uygulanamaz. Duck Player'da otomatik oynatma özelliğini yönetmek için şu adrese gidin: ";
-"settings.media.section" = "Medya";

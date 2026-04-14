@@ -109,7 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Karty a data vymazány";
 
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otevřít na pozadí";
 
@@ -944,6 +943,15 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Aktualizovat uživatelské jméno?";
 
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Povolit zvuk a video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Blokovat zvuk a video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Blokovat zvuk";
+
 /* No comment provided by engineer. */
 "Available Products" = "Dostupné produkty";
 
@@ -1235,8 +1243,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Vlastní URL: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importovat soubor se záložkami...";
 
@@ -1495,6 +1501,12 @@
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Shrnout tuhle stránku";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Přidání Duck.ai do Ovládacího centra";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Přidání widgetu Duck.ai na domovskou obrazovku";
+
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Zobrazí tlačítka a odkazy Duck.ai ve výsledcích vyhledávání DuckDuckGo.";
 
@@ -1503,12 +1515,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Pokládat navazující otázky";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Přidání Duck.ai do Ovládacího centra";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Přidání widgetu Duck.ai na domovskou obrazovku";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Zkratky prohlížeče";
@@ -1534,9 +1540,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "DuckDuckGo pro iOS";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Zkratky";
 
@@ -1554,6 +1557,9 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Povídej si s Duck.ai přes Siri.";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "DuckDuckGo pro iOS";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Přidej své předplatné DuckDuckGo do tohoto zařízení";
@@ -1630,11 +1636,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videa otevřená v Duck Playeru se automaticky začnou přehrávat. Pokud chceš přehrávání videí otevřených v Duck Playeru spouštět ručně, vypni tuto volbu.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Automatické přehrávání videí";
+/* Label for the autoplay toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Automaticky přehrávaná videa";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Otevírat videa v soukromém režimu kina, který brání tomu, aby sledovaná videa ovlivňovala tvůj feed na YouTube.";
+"duckplayer.settings.enable-footer" = "Otevírat videa v režimu kina, který brání tomu, aby sledovaná videa ovlivňovala tvůj feed na YouTube.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Aktivovat Duck Player";
@@ -1653,6 +1659,7 @@
 
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "Více informací";
+
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "Otevřít Duck Player na nové kartě";
 
@@ -1664,6 +1671,7 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "Výsledky vyhledávání na DuckDuckGo";
+
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "Nastavení se projeví po zavření všech panelů.";
 
@@ -2664,8 +2672,6 @@
 "No active subscriptions" = "Žádná aktivní předplatná";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Žádná existující předplatná nebyla nalezena";
 
 /* No comment provided by engineer. */
@@ -2707,8 +2713,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "V sestaveních z App Storu se tato obrazovka zobrazí pouze v případě, že jsi přihlášený jako interní uživatel prostřednictvím **use-login.duckduckgo.com**.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "Blokování reklam na YouTube zapnuto";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Mám to";
@@ -2895,9 +2901,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Odhlášení...";
-
-/* No comment provided by engineer. */
-"Override" = "Přepsat";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nemám přístup k modelům Duck.ai, které jsou jen pro předplatitele";
@@ -3349,8 +3352,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Vymazat";
 
-
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Zavře všechny otevřené karty";
 
@@ -3411,16 +3412,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Automatické mazání dat";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automatické přehrávání";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Nastavení Duck Player";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Nastavení automatického přehrávání se použije pouze na nově otevřené karty. Změny nelze použít na existující karty, leda po restartu aplikace. Chceš-li spravovat automatické přehrávání v Duck Player, přejdi na ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Zpětná vazba k prohlížeči";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Tlačítko Fire Button taky smaže historii Duck.ai, včetně připnutých chatů.";
 
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Vymazat údaje o prohlížení";
-
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Dokonči své nastavení";
@@ -3440,8 +3448,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Přizpůsobit";
 
-
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Vymazání dat";
 
@@ -3451,10 +3457,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Výchozí prohlížeč";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Výchozí poloha přepínače na nových kartách.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Poloha přepínače";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Naposledy použité";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Hledat";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Mazání chatů Duck.ai";
 
@@ -3500,7 +3517,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animace tlačítka pro mazání";
 
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Stránky s ochranou";
 
@@ -3542,6 +3558,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Správa účtu";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Média";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Další od DuckDuckGo";
@@ -4635,12 +4654,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chceš importovat?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Povolit zvuk a video";
-"autoplay.mode.blockAll" = "Blokovat zvuk a video";
-"autoplay.mode.blockAudio" = "Blokovat zvuk";
-"settings.autoplay" = "Automatické přehrávání";
-"settings.autoplay.duck.player.link" = "Nastavení Duck Player";
-"settings.autoplay.footer" = "Nastavení automatického přehrávání se použije pouze na nově otevřené karty. Změny nelze použít na existující karty, leda po restartu aplikace. Chceš-li spravovat automatické přehrávání v Duck Player, přejdi na ";
-"settings.media.section" = "Média";

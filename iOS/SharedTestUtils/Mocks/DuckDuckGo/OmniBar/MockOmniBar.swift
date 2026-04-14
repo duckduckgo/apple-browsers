@@ -58,6 +58,7 @@ final class MockOmniBar: OmniBar {
     func removeTextSelection() { }
     func selectTextToEnd(_ offset: Int) { }
     func showOrScheduleCookiesManagedNotification(isCosmetic: Bool) { }
+    func showYouTubeAdBlockNotification() { }
     func showOrScheduleOnboardingPrivacyIconAnimation() { }
     func dismissOnboardingPrivacyIconAnimation() { }
     func startTrackersAnimation(_ privacyInfo: PrivacyDashboard.PrivacyInfo, forDaxDialog: Bool) { }

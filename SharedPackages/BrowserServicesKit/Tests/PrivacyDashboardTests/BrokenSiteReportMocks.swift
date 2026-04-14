@@ -277,6 +277,7 @@ struct BrokenSiteReportMocks {
                          privacyExperiments: "",
                          isPirEnabled: nil,
                          isForceDarkModeEnabled: nil,
+                         lastTabSuspension: nil,
                          pageLoadTiming: nil,
                          loadedWebExtensions: "embedded,adBlocking",
                          adBlockingExtensionScriptletsVersion: "2.0.0")

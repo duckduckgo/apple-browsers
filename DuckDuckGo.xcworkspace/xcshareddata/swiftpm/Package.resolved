@@ -34,7 +34,7 @@
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
         "branch" : "pr-releases/alavrenchuk/ntp-image-generation",
-        "revision" : "98e6ce711c2c3523b7ecb07b595737001d269322"
+        "revision" : "5cb155bc38030fc2ddf9a6fc3baa0e094a6b0c50"
       }
     },
     {

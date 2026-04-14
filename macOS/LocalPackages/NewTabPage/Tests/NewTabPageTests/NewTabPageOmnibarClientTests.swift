@@ -214,7 +214,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     func testSubmitChatIsForwardedToHandler() async throws {
         let expectation = expectation(description: "submitChatCalled")
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { chat, mode, toolChoice, modelId, images, target in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { chat, target, modelId, images, mode, toolChoice in
             XCTAssertEqual(chat, "Hello Chat")
             XCTAssertEqual(target, .newWindow)
             XCTAssertEqual(modelId, "gpt-4o-mini")
@@ -232,7 +232,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     func testSubmitChatForwardsModelIdToHandler() async throws {
         let expectation = expectation(description: "submitChatCalled")
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { chat, mode, toolChoice, modelId, images, target in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { chat, target, modelId, images, mode, toolChoice in
             XCTAssertEqual(chat, "Hello Chat")
             XCTAssertEqual(target, .sameTab)
             XCTAssertEqual(modelId, "gpt-4o-mini")

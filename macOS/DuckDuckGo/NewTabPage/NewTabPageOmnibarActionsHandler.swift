@@ -50,7 +50,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         // Check for the keyboard shortcut to open the chat
         if isShiftPressed() {
-            submitChat(term, mode: nil, toolChoice: nil, modelId: nil, images: nil, target: isCommandPressed() ? .newTab : .sameTab)
+            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil)
             return
         }
 
@@ -118,11 +118,11 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     }
 
     func submitChat(_ chat: String,
-                    mode: String?,
-                    toolChoice: [String]?,
+                    target: NewTabPage.NewTabPageDataModel.OpenTarget,
                     modelId: String?,
                     images: [NewTabPage.NewTabPageDataModel.SubmitChatImage]?,
-                    target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+                    mode: String?,
+                    toolChoice: [String]?) {
         firePixel(NewTabPagePixel.promptSubmitted)
 
         if let images, !images.isEmpty {

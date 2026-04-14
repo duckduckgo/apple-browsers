@@ -21,7 +21,7 @@ import NewTabPage
 final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     var submitSearchHandler: ((String, NewTabPageDataModel.OpenTarget) -> Void)?
     var openSuggestionHandler: ((NewTabPageDataModel.Suggestion, NewTabPageDataModel.OpenTarget) -> Void)?
-    var submitChatHandler: ((String, String?, [String]?, String?, [NewTabPageDataModel.SubmitChatImage]?, NewTabPageDataModel.OpenTarget) -> Void)?
+    var submitChatHandler: ((String, NewTabPageDataModel.OpenTarget, String?, [NewTabPageDataModel.SubmitChatImage]?, String?, [String]?) -> Void)?
     var openAiChatHandler: ((String, Bool, NewTabPageDataModel.OpenAiChatTrigger, NewTabPageDataModel.OpenTarget) -> Void)?
 
     @MainActor
@@ -36,12 +36,12 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
 
     @MainActor
     func submitChat(_ chat: String,
-                    mode: String?,
-                    toolChoice: [String]?,
+                    target: NewTabPageDataModel.OpenTarget,
                     modelId: String?,
                     images: [NewTabPageDataModel.SubmitChatImage]?,
-                    target: NewTabPageDataModel.OpenTarget) {
-        submitChatHandler?(chat, mode, toolChoice, modelId, images, target)
+                    mode: String?,
+                    toolChoice: [String]?) {
+        submitChatHandler?(chat, target, modelId, images, mode, toolChoice)
     }
 
     @MainActor

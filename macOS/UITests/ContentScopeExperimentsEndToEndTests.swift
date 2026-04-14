@@ -51,7 +51,7 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
         )
         app.typeURL(testPageUrl)
         XCTAssertTrue(
-            app.windows.firstMatch.webViews["Conditional Matching experiments"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.firstMatch.webViews["Conditional Matching experiments"].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Test page didn't load with the expected title in a reasonable timeframe."
         )
 

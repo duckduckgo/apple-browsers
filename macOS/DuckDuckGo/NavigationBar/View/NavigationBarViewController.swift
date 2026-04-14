@@ -32,6 +32,7 @@ import PrivacyConfig
 import Subscription
 import SubscriptionUI
 import VPN
+import WebExtensions
 
 final class NavigationBarViewController: NSViewController {
 
@@ -159,6 +160,7 @@ final class NavigationBarViewController: NSViewController {
 
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
     private let featureFlagger: FeatureFlagger
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding
     private let searchPreferences: SearchPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatCoordinator: AIChatCoordinating
@@ -227,6 +229,7 @@ final class NavigationBarViewController: NSViewController {
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+                       adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
                        searchPreferences: SearchPreferences,
                        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
                        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
@@ -264,6 +267,7 @@ final class NavigationBarViewController: NSViewController {
                 autofillPopoverPresenter: autofillPopoverPresenter,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
                 featureFlagger: featureFlagger,
+                adBlockingAvailability: adBlockingAvailability,
                 searchPreferences: searchPreferences,
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 themeManager: themeManager,
@@ -299,6 +303,7 @@ final class NavigationBarViewController: NSViewController {
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
+        adBlockingAvailability: AdBlockingAvailabilityProviding,
         searchPreferences: SearchPreferences,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         themeManager: ThemeManaging,
@@ -354,6 +359,7 @@ final class NavigationBarViewController: NSViewController {
         self.fireproofDomains = fireproofDomains
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
         self.featureFlagger = featureFlagger
+        self.adBlockingAvailability = adBlockingAvailability
         self.searchPreferences = searchPreferences
         self.themeManager = themeManager
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -434,7 +440,9 @@ final class NavigationBarViewController: NSViewController {
                                                                       accessibilityPreferences: accessibilityPreferences,
                                                                       onboardingPixelReporter: onboardingPixelReporter,
                                                                       aiChatMenuConfig: aiChatMenuConfig,
-                                                                      aiChatCoordinator: aiChatCoordinator) else {
+                                                                      aiChatCoordinator: aiChatCoordinator,
+                                                                      featureFlagger: featureFlagger,
+                                                                      adBlockingAvailability: adBlockingAvailability) else {
             fatalError("NavigationBarViewController: Failed to init AddressBarViewController")
         }
 

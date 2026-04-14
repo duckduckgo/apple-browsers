@@ -36,6 +36,9 @@ public extension OnboardingTheme {
         let accentPrimary = Color(0x2F95EE)
         let bubbleBorder = Color(0xCBEAFF)
 
+        let ctaButtonBackground = Color(0xDE5833)
+        let ctaButtonPressed = Color(0xBC4726)
+
         let colorPalette = ColorPalette(
             background: .white,
             bubbleBorder: bubbleBorder,
@@ -46,8 +49,12 @@ public extension OnboardingTheme {
             optionsListBorderColor: accentPrimary,
             optionsListIconColor: accentPrimary,
             optionsListTextColor: accentPrimary,
-            primaryButtonBackgroundColor: Color(designSystemColor: .buttonsPrimaryDefault),
-            primaryButtonTextColor: Color(designSystemColor: .buttonsPrimaryText),
+            primaryButtonBackgroundColor: ctaButtonBackground,
+            primaryButtonPressedColor: ctaButtonPressed,
+            primaryButtonTextColor: .white,
+            secondaryButtonBackgroundColor: Color(designSystemColor: .buttonsPrimaryDefault),
+            secondaryButtonPressedColor: Color(designSystemColor: .buttonsPrimaryPressed),
+            secondaryButtonTextColor: Color(designSystemColor: .buttonsPrimaryText),
             backgroundAccent: accentPrimary
         )
 
@@ -121,7 +128,14 @@ public extension OnboardingTheme {
             linearBodyTextAlignment: .center,
             primaryButtonStyle: OnboardingButtonStyle(
                 id: .primary,
-                style: AnyButtonStyle(OnboardingPrimaryButtonStyle())
+                style: AnyButtonStyle(
+                    OnboardingRebranding.OnboardingStyles.CTAButtonStyle(
+                        backgroundColor: ctaButtonBackground,
+                        pressedBackgroundColor: ctaButtonPressed,
+                        foregroundColor: .white,
+                        font: typography.contextual.body
+                    )
+                )
             ),
             dismissButtonStyle: OnboardingButtonStyle(
                 id: .dismiss,

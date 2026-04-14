@@ -24,7 +24,9 @@ import Onboarding
 extension OnboardingRebranding {
 
     struct OnboardingSearchDoneDialog: View {
-        let title = UserText.ContextualOnboarding.onboardingFirstSearchDoneTitle
+        @Environment(\.onboardingTheme) private var theme
+
+        let title = NSAttributedString(string: UserText.ContextualOnboarding.onboardingFirstSearchDoneTitle)
         let message = NSAttributedString(string: UserText.ContextualOnboarding.onboardingFirstSearchDoneMessage)
         let cta = UserText.ContextualOnboarding.onboardingGotItButton
 
@@ -36,32 +38,33 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         var body: some View {
-            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
+            OnboardingBubbleView.withDismissButton(
+                tailPosition: .leading(offset: 0.3, direction: .top),
+                onDismiss: onManualDismiss
+            ) {
                 VStack {
                     if showNextScreen {
                         OnboardingTrySiteDialogContent(viewModel: viewModel)
                     } else {
-                        Onboarding.ContextualDaxDialogContent(
+                        OnboardingRebranding.ContextualDaxDialogContent(
                             orientation: .horizontalStack(alignment: .center),
                             title: title,
-                            titleFont: OnboardingDialogsContants.titleFont,
-                            message: message,
-                            messageFont: OnboardingDialogsContants.messageFont,
-                            customActionView: AnyView(
-                                OnboardingPrimaryCTAButton(title: cta) {
-                                    gotItAction()
-                                    withAnimation {
-                                        if shouldFollowUp {
-                                            showNextScreen = true
-                                        }
+                            message: message
+                        ) {
+                            Button(cta) {
+                                gotItAction()
+                                withAnimation {
+                                    if shouldFollowUp {
+                                        showNextScreen = true
                                     }
                                 }
-                            )
-                        )
+                            }
+                            .buttonStyle(theme.primaryButtonStyle.style)
+                        }
                     }
                 }
             }
-            .padding()
+            .padding(.horizontal)
         }
     }
 

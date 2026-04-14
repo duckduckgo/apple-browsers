@@ -50,8 +50,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         // Check for the keyboard shortcut to open the chat
         if isShiftPressed() {
-            let target: NewTabPage.NewTabPageDataModel.OpenTarget = isCommandPressed() ? .newTab : .sameTab
-            submitChat(term, mode: nil, toolChoice: nil, modelId: nil, images: nil, target: target)
+            submitChat(term, mode: nil, toolChoice: nil, modelId: nil, images: nil, target: isCommandPressed() ? .newTab : .sameTab)
             return
         }
 

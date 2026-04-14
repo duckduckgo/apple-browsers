@@ -76,8 +76,7 @@ final class PermissionModelTests: XCTestCase {
         model = PermissionModel(webView: webView,
                                 permissionManager: permissionManagerMock,
                                 geolocationService: geolocationServiceMock,
-                                systemPermissionManager: systemPermissionManagerMock,
-                                featureFlagger: featureFlaggerMock)
+                                systemPermissionManager: systemPermissionManagerMock)
 
         AVCaptureDeviceMock.authorizationStatuses = nil
     }

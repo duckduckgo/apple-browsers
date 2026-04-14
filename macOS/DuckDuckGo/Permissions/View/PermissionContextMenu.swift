@@ -170,7 +170,7 @@ final class PermissionContextMenu: NSMenu {
         // only show one persistence option per permission type
         let reduced = permissions.reduce(into: [:], { $0[$1.key] = $1.value })
         for (permission, state) in reduced {
-            guard permission.canPersistGrantedDecision(featureFlagger: featureFlagger) || permission.canPersistDeniedDecision(featureFlagger: featureFlagger) else { continue }
+            guard permission.canPersistGrantedDecision || permission.canPersistDeniedDecision else { continue }
             if case .disabled = state { continue }
 
             addSeparator(if: numberOfItems > 0)
@@ -188,11 +188,11 @@ final class PermissionContextMenu: NSMenu {
             let isNotifyChecked = (permission == .popups && hasTemporaryPopupAllowance) ? false : (persistedValue == .ask)
             addItem(.alwaysAsk(permission, on: domain, target: self, isChecked: isNotifyChecked))
 
-            if permission.canPersistGrantedDecision(featureFlagger: featureFlagger) {
+            if permission.canPersistGrantedDecision {
                 addItem(.alwaysAllow(permission, on: domain, target: self, isChecked: persistedValue == .allow))
             }
 
-            if permission.canPersistDeniedDecision(featureFlagger: featureFlagger) {
+            if permission.canPersistDeniedDecision {
                 addItem(.alwaysDeny(permission, on: domain, target: self, isChecked: persistedValue == .deny))
             }
         }

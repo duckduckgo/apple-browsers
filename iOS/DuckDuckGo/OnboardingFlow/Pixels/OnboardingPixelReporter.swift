@@ -178,8 +178,6 @@ enum DuckAIQueryExperimentPromptSource: String {
     case option3
 }
 
-
-
 // MARK: - OnboardingPixelReporter + Intro
 
 extension OnboardingPixelReporter: OnboardingIntroPixelReporting {

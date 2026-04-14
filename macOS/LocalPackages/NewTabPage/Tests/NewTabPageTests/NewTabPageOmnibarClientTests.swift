@@ -220,12 +220,12 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
             XCTAssertEqual(modelId, "gpt-4o-mini")
             XCTAssertEqual(images?.count, 1)
             XCTAssertEqual(toolChoice, ["WebSearch"])
-            XCTAssertNil(mode)
+            XCTAssertEqual(mode, "image-generation")
             expectation.fulfill()
         }
 
         let image = NewTabPageDataModel.SubmitChatImage(data: "base64data", format: "png")
-        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hello Chat", target: .newWindow, modelId: "gpt-4o-mini", images: [image], toolChoice: ["WebSearch"])
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hello Chat", target: .newWindow, modelId: "gpt-4o-mini", images: [image], mode: "image-generation", toolChoice: ["WebSearch"])
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
         await fulfillment(of: [expectation], timeout: 1)
     }

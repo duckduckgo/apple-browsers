@@ -214,10 +214,11 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     func testSubmitChatIsForwardedToHandler() async throws {
         let expectation = expectation(description: "submitChatCalled")
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { chat, mode, toolChoice, images, target in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { chat, mode, toolChoice, modelId, images, target in
             XCTAssertEqual(chat, "Hello Chat")
             XCTAssertNil(mode)
             XCTAssertEqual(toolChoice, ["WebSearch"])
+            XCTAssertNil(modelId)
             XCTAssertNil(images)
             XCTAssertEqual(target, .newWindow)
             expectation.fulfill()

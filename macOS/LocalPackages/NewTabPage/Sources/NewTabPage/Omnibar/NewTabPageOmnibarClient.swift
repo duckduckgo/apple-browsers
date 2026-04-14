@@ -179,6 +179,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         await actionHandler.submitChat(action.chat,
                                        mode: action.mode,
                                        toolChoice: action.toolChoice,
+                                       modelId: action.modelId,
                                        images: action.images,
                                        target: action.target)
         return nil

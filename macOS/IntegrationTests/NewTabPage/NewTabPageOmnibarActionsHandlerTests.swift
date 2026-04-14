@@ -101,7 +101,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnSameTab_ThenAIChatOpens() {
         let target: NewTabPageDataModel.OpenTarget = .sameTab
 
-        handler.submitChat("duckduckgo", mode: nil, toolChoice: nil, images: nil, target: target)
+        handler.submitChat("duckduckgo", mode: nil, toolChoice: nil, modelId: nil, images: nil, target: target)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 1)
@@ -111,7 +111,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnNewTab_ThenNewTabOpensWithAIChat() {
         let target: NewTabPageDataModel.OpenTarget = .newTab
 
-        handler.submitChat("duckduckgo", mode: nil, toolChoice: nil, images: nil, target: target)
+        handler.submitChat("duckduckgo", mode: nil, toolChoice: nil, modelId: nil, images: nil, target: target)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)
@@ -119,7 +119,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
 
     @MainActor
     func testWhenSubmitAIChatWithWebSearchToolChoice_ThenPromptIncludesToolChoice() throws {
-        handler.submitChat("duckduckgo", mode: nil, toolChoice: ["WebSearch"], images: nil, target: .sameTab)
+        handler.submitChat("duckduckgo", mode: nil, toolChoice: ["WebSearch"], modelId: nil, images: nil, target: .sameTab)
 
         guard case .query(let query) = try XCTUnwrap(promptHandler.consumeData()?.tool) else {
             XCTFail("Expected query prompt")

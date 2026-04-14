@@ -28,6 +28,7 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
     func submitChat(_ chat: String,
                     mode: String?,
                     toolChoice: [String]?,
+                    modelId: String?,
                     images: [NewTabPageDataModel.SubmitChatImage]?,
                     target: NewTabPageDataModel.OpenTarget)
 

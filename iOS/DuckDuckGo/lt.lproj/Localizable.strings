@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Automatiškai paleisti vaizdo įrašus";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Atidaro vaizdo įrašus privačiu kino teatro režimu, kad tai, ką žiūri, nedarytų įtakos tavo „YouTube“ srautui.";
+"duckplayer.settings.enable-footer" = "Atidaro vaizdo įrašus kino teatro režimu, kad tai, ką žiūri, nedarytų įtakos tavo „YouTube“ srautui.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Įjungti „Duck Player“";

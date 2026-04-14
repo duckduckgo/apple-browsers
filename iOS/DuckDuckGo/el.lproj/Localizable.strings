@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Αυτόματη αναπαραγωγή βίντεο";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Ανοίγει βίντεο σε λειτουργία ιδιωτικού κινηματογράφου, η οποία εμποδίζει το περιεχόμενο που παρακολουθείτε να επηρεάσει τη ροή σας στο YouTube.";
+"duckplayer.settings.enable-footer" = "Ανοίγει βίντεο σε λειτουργία κινηματογράφου, η οποία εμποδίζει το περιεχόμενο που παρακολουθείτε να επηρεάσει τη ροή σας στο YouTube.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Ενεργοποίηση του Duck Player";

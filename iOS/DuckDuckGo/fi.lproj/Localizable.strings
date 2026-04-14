@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Automaattisesti toistettavat videot";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Avaa videot yksityisessä teatteritilassa, jolloin katsomasi sisältö ei vaikuta YouTube-syötteeseesi.";
+"duckplayer.settings.enable-footer" = "Avaa videot teatteritilassa, jolloin katsomasi sisältö ei vaikuta YouTube-syötteeseesi.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Ota Duck Player käyttöön";

@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Vidéos en lecture automatique";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Ouvre les vidéos en mode « Salle de projection privée », ce qui empêche ce que vous regardez d'influencer votre fil d'actualité YouTube.";
+"duckplayer.settings.enable-footer" = "Ouvre les vidéos en mode « Salle de projection », ce qui empêche ce que vous regardez d'influencer votre fil d'actualité YouTube.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Activer Duck Player";

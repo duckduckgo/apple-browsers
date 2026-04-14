@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "自動再生動画";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "動画をプライベートシアターモードで開くことで、視聴内容がYouTubeのフィードに影響するのを防ぎます。";
+"duckplayer.settings.enable-footer" = "動画をシアターモードで開くことで、視聴内容がYouTubeのフィードに影響するのを防ぎます。";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Duck Playerを有効にする";

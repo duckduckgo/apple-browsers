@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Videók automatikus lejátszása";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Privát mozis módban nyitja meg a videókat, így a nézett tartalom nem befolyásolja a YouTube-hírfolyamodat.";
+"duckplayer.settings.enable-footer" = "Mozis módban nyitja meg a videókat, így a nézett tartalom nem befolyásolja a YouTube-hírfolyamodat.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Duck Player engedélyezése";

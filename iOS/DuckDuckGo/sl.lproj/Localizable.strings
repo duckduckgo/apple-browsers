@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Samodejno predvajanje videoposnetkov";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Videoposnetke odpre v načinu zasebnega kina, ki preprečuje, da bi vsebina, ki jo gledate, vplivala na vaša priporočila YouTube.";
+"duckplayer.settings.enable-footer" = "Odpre videoposnetke v kinematografskem načinu, ki preprečuje, da bi vsebina, ki jo gledate, vplivala na vaš vir na YouTubu.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Omogoči predvajalnik Duck Player";

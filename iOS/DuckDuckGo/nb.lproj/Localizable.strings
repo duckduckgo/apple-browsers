@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Automatisk avspilling av videoer";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Åpner videoer i en privat kinomodus som hindrer at det du ser på, har innflytelse på YouTube-feeden din.";
+"duckplayer.settings.enable-footer" = "Åpner videoer i en kinomodus som hindrer at det du ser på, påvirker YouTube-feeden din.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Aktiver Duck Player";

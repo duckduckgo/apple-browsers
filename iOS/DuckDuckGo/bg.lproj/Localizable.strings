@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Автоматично възпроизвеждане на видео";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Отваря видеоклипове в режим на частен киносалон, който предотвратява влиянието на гледаното от теб съдържание върху емисията ти в YouTube.";
+"duckplayer.settings.enable-footer" = "Отваря видеоклипове в режим на киносалон, който предотвратява влиянието на гледаното от теб съдържание върху емисията ти в YouTube.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Активирай Duck Player";

@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Automaatne videote esitamine";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Avab videod privaatses kinorežiimis, mis takistab YouTube'i voo mõjutamist vaadatava sisu poolt.";
+"duckplayer.settings.enable-footer" = "Avab videod kinorežiimis, mis takistab vaadataval sisul sinu YouTube'i voogu mõjutamast.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Luba Duck Player";

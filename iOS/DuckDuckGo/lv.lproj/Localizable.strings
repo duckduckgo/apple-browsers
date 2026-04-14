@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Automātiski atskaņot video";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Opens videos in a private theater mode that prevents what you watch from influencing your YouTube feed.";
+"duckplayer.settings.enable-footer" = "Atver videoklipus kino režīmā, kas neļauj tam, ko tu skaties, ietekmēt tavu YouTube plūsmu.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Iespējot Duck Player";
@@ -2705,7 +2705,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "YouTube Ad Block On";
+"omnibar.notification.youtube-ad-block-on" = "YouTube reklāmu bloķēšana ieslēgta";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Sapratu";

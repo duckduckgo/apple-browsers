@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Automatyczne odtwarzanie filmów";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Otwiera filmy w prywatnym trybie kinowym, dzięki czemu oglądane treści nie wpływają na Twój kanał na YouTube.";
+"duckplayer.settings.enable-footer" = "Otwiera filmy w trybie kinowym, dzięki czemu oglądane treści nie wpływają na Twój kanał na YouTube.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Włącz Duck Player";

@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Riproduzione automatica video";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Apre i video in una modalità cinema privata che impedisce a ciò che guardi di influenzare il tuo feed di YouTube.";
+"duckplayer.settings.enable-footer" = "Apre i video in una modalità cinema che impedisce a ciò che guardi di influenzare il tuo feed di YouTube.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Abilita Duck Player";

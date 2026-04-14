@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Automatické prehrávanie videí";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Otvára videá v režime súkromného kina, ktorý zabraňuje tomu, aby sledované položky ovplyvňovali tvoj YouTube kanál.";
+"duckplayer.settings.enable-footer" = "Otvára videá v režime prehrávania so súkromím, ktorý zabraňuje tomu, aby sledované položky ovplyvňovali tvoj YouTube kanál.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Povoliť Duck Player";

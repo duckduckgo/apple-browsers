@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Automatska reprodukcija videozapisa";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Otvara videozapise u načinu rada privatnog kina koji sprječava da ono što gledaš utječe na tvoj YouTube feed.";
+"duckplayer.settings.enable-footer" = "Otvara videozapise u načinu rada kina koji sprječava da ono što gledaš utječe na tvoj YouTube feed.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Omogući Duck Player";

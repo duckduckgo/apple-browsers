@@ -1631,7 +1631,7 @@
 "duckplayer.settings.autoplay.label" = "Автовоспроизведение видео";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Открывает видео в режиме «личного кинотеатра»: ваши просмотры не влияют на ленту рекомендаций YouTube.";
+"duckplayer.settings.enable-footer" = "Открывает видео в режиме кинотеатра: ваши просмотры не влияют на ленту рекомендаций YouTube.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Включить Duck Player";

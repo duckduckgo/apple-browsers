@@ -161,7 +161,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         let query = "hello world"
 
         // When
-        let url = handler.buildQueryURL(query: query, autoSend: false, tools: nil)
+        let url = handler.buildQueryURL(query: query, autoSend: false, flowType: .default, tools: nil)
 
         // Then
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
@@ -178,7 +178,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         let autoSend = true
 
         // When
-        let url = handler.buildQueryURL(query: "test", autoSend: autoSend, tools: nil)
+        let url = handler.buildQueryURL(query: "test", autoSend: autoSend, flowType: .default, tools: nil)
 
         // Then
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
@@ -190,12 +190,30 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(autoSendItem?.value, AIChatURLParameters.autoSubmitPromptQueryValue)
     }
 
+    func testBuildQueryURLWithOnboardingFlow() throws {
+        // Given
+        let flowType: AIChatOnboardingFlowType = .mobileAppOnboarding
+
+        // When
+        let url = handler.buildQueryURL(query: "test", autoSend: false, flowType: flowType, tools: nil)
+
+        // Then
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            XCTFail("Invalid URL components")
+            return
+        }
+
+        let flowItem = components.queryItems?.first { $0.name == AIChatURLParameters.flowQueryName }
+        XCTAssertEqual(flowItem?.value, AIChatURLParameters.mobileAppOnboardingFlowQueryValue)
+        XCTAssertEqual(components.host, mockSettings.aiChatURL.host)
+    }
+
     func testBuildQueryURLWithTools() throws {
         // Given
         let tools: [AIChatRAGTool] = [.webSearch, .newsSearch]
 
         // When
-        let url = handler.buildQueryURL(query: "test", autoSend: false, tools: tools)
+        let url = handler.buildQueryURL(query: "test", autoSend: false, flowType: .default, tools: tools)
 
         // Then
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
@@ -214,7 +232,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         let emptyQuery = ""
 
         // When
-        let url = handler.buildQueryURL(query: emptyQuery, autoSend: false, tools: nil)
+        let url = handler.buildQueryURL(query: emptyQuery, autoSend: false, flowType: .default, tools: nil)
 
         // Then
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
@@ -231,7 +249,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         let nilQuery: String? = nil
 
         // When
-        let url = handler.buildQueryURL(query: nilQuery, autoSend: false, tools: nil)
+        let url = handler.buildQueryURL(query: nilQuery, autoSend: false, flowType: .default, tools: nil)
 
         // Then
         XCTAssertEqual(url, mockSettings.aiChatURL)
@@ -243,8 +261,8 @@ final class AIChatContentHandlerTests: XCTestCase {
         let secondQuery = "second"
 
         // When
-        let url1 = handler.buildQueryURL(query: firstQuery, autoSend: false, tools: nil)
-        let url2 = handler.buildQueryURL(query: secondQuery, autoSend: false, tools: nil)
+        let url1 = handler.buildQueryURL(query: firstQuery, autoSend: false, flowType: .default, tools: nil)
+        let url2 = handler.buildQueryURL(query: secondQuery, autoSend: false, flowType: .default, tools: nil)
 
         // Then - first URL contains first query
         guard let components1 = URLComponents(url: url1, resolvingAgainstBaseURL: false) else {
@@ -640,6 +658,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    func responseReceived(params: Any, message: any UserScriptMessage) async -> (any Encodable)? { nil }
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
 }

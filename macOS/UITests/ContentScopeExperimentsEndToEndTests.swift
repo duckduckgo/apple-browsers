@@ -23,7 +23,6 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
     func testContentScopeExperiments() throws {
         let app = XCUIApplication.setUp()
         app.openNewTab()
-        skipOnboarding(app)
 
         // Step 1: Load custom remote config
         let menuBarsQuery = app.menuBars
@@ -63,12 +62,4 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
         XCTAssertTrue(suiteStatusValue.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Test Suite Status Value not pass")
     }
 
-    private func skipOnboarding(_ app: XCUIApplication) {
-        let skipOnboardingMenuItem = app.menuItems["MainMenu.skipOnboarding"]
-        XCTAssertTrue(
-            skipOnboardingMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Skip onboarding menu item didn't become available in a reasonable timeframe."
-        )
-        skipOnboardingMenuItem.click()
-    }
 }

@@ -300,8 +300,7 @@ final class AppURLsTests: XCTestCase {
 
     func testExternalDependencyURLsNotChanged() {
         XCTAssertEqual(URL.surrogates.absoluteString, "https://staticcdn.duckduckgo.com/surrogates.txt")
-        // TODO: Revert this when privacy-configuration PR #4630 is merged.
-        // XCTAssertEqual(URL.privacyConfig.absoluteString, "https://staticcdn.duckduckgo.com/trackerblocking/config/v4/ios-config.json")
+        XCTAssertEqual(URL.privacyConfig.absoluteString, "https://staticcdn.duckduckgo.com/trackerblocking/config/v4/ios-config.json")
         XCTAssertEqual(URL.trackerDataSet.absoluteString, "https://staticcdn.duckduckgo.com/trackerblocking/v5/current/ios-tds.json")
         XCTAssertEqual(URL.bloomFilter.absoluteString, "https://staticcdn.duckduckgo.com/https/https-mobile-v2-bloom.bin")
         XCTAssertEqual(URL.bloomFilterSpec.absoluteString, "https://staticcdn.duckduckgo.com/https/https-mobile-v2-bloom-spec.json")

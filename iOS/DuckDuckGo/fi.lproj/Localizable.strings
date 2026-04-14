@@ -109,7 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Välilehdet ja tiedot tyhjennetty";
 
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Avaa taustalla";
 
@@ -944,6 +943,15 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Päivitetäänkö käyttäjätunnus?";
 
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Salli ääni ja video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Estä ääni ja video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Estä ääni";
+
 /* No comment provided by engineer. */
 "Available Products" = "Saatavilla olevat tuotteet";
 
@@ -1235,8 +1243,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Mukautettu URL-osoite: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Tuo kirjanmerkkitiedosto...";
 
@@ -1495,6 +1501,12 @@
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Yhteenveto tästä sivusta";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Lisää Duck.ai valvontakeskukseen";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Lisää Duck.ai-widget aloitusnäyttöön";
+
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Näytä Duck.ai-painikkeet ja -linkit DuckDuckGo-hakutuloksissa.";
 
@@ -1503,12 +1515,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Esitä jatkokysymyksiä";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Lisää Duck.ai valvontakeskukseen";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Lisää Duck.ai-widget aloitusnäyttöön";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Selaimen pikakuvakkeet";
@@ -1534,9 +1540,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "DuckDuckGo iOS:lle";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Pikavalinnat";
 
@@ -1554,6 +1557,9 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Keskustele Duck.ai:n kanssa Sirin avulla!";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "DuckDuckGo iOS:lle";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Lisää DuckDuckGo-tilauksesi tähän laitteeseen";
@@ -1630,11 +1636,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Duck Playerissa avatut videot toistetaan automaattisesti. Poista tämä käytöstä, jos haluat toistaa Duck Playerissa avatut videot manuaalisesti.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Toista videot automaattisesti";
+/* Label for the autoplay toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Automaattisesti toistettavat videot";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Avaa videot yksityisessä teatteritilassa, jolloin katsomasi sisältö ei vaikuta YouTube-syötteeseesi.";
+"duckplayer.settings.enable-footer" = "Avaa videot teatteritilassa, jolloin katsomasi sisältö ei vaikuta YouTube-syötteeseesi.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Ota Duck Player käyttöön";
@@ -2666,8 +2672,6 @@
 "No active subscriptions" = "Ei aktiivisia tilauksia";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Olemassa olevaa tilausta ei löytynyt";
 
 /* No comment provided by engineer. */
@@ -2709,8 +2713,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "App Storen versioissa tämä näyttö näkyy vain, jos olet kirjautunut sisään sisäisenä käyttäjänä osoitteen **use-login.duckduckgo.com** kautta.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "YouTube-mainosten esto käytössä";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Selvä";
@@ -2897,9 +2901,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Kieltäytyminen...";
-
-/* No comment provided by engineer. */
-"Override" = "Ohitus";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "En voi käyttää tilaajille tarkoitettuja Duck.ai-malleja.";
@@ -3351,8 +3352,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Tyhjennä";
 
-
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Sulje kaikki avoimet välilehdet";
 
@@ -3413,16 +3412,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Poista tiedot automaattisesti";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automaattinen toisto";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Duck Player -asetukset";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Automaattisen toiston asetukset koskevat vain uusia avattuja välilehtiä. Muutoksia ei voida ottaa käyttöön aiemmilla välilehdillä, ellei sovellusta käynnistetä uudelleen. Voit hallita automaattista toistoa Duck Playerissa kohdassa ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Selainpalaute";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button poistaa myös Duck.ai-historian, mukaan lukien kiinnitetyt keskustelut.";
 
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Poista selaustiedot";
-
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Viimeistele asennuksesi";
@@ -3442,8 +3448,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Mukauta";
 
-
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datan tyhjentäminen";
 
@@ -3453,10 +3457,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Oletusselain";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Oletusarvoinen vaihtopainikkeen asento uusilla välilehdillä.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Vaihtopainikkeen asento";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Viimeksi käytetty";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "[Haku]";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Poista Duck.ai-keskustelut";
 
@@ -3502,7 +3517,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Liekki-painikkeen animaatio";
 
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproof-sivustot";
 
@@ -3544,6 +3558,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Tilin hallinta";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Media";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Lisää DuckDuckGolta";
@@ -4637,12 +4654,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Salli ääni ja video";
-"autoplay.mode.blockAll" = "Estä ääni ja video";
-"autoplay.mode.blockAudio" = "Estä ääni";
-"settings.autoplay" = "Automaattinen toisto";
-"settings.autoplay.duck.player.link" = "Duck Player -asetukset";
-"settings.autoplay.footer" = "Automaattisen toiston asetukset koskevat vain uusia avattuja välilehtiä. Muutoksia ei voida ottaa käyttöön aiemmilla välilehdillä, ellei sovellusta käynnistetä uudelleen. Voit hallita automaattista toistoa Duck Playerissa kohdassa ";
-"settings.media.section" = "Media";

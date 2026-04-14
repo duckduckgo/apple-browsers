@@ -133,7 +133,9 @@ protocol TabDelegate: AnyObject {
     func tab(_ tab: TabViewController,
              didRequestPresentingTrackerAnimation privacyInfo: PrivacyInfo,
              isCollapsing: Bool)
-    
+
+    func tabDidRequestPresentingYouTubeAdBlockAnimation(tab: TabViewController)
+
     func tabDidRequestShowingMenuHighlighter(tab: TabViewController)
     
     func tab(_ tab: TabViewController, didRequestPresentingAlert alert: UIAlertController)

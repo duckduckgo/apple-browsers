@@ -109,7 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Έγινε εκκαθάριση καρτελών και δεδομένων";
 
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Άνοιγμα στο παρασκήνιο";
 
@@ -944,6 +943,15 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Ενημέρωση ονόματος χρήστη;";
 
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Να επιτρέπεται ο ήχος και το βίντεο";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Αποκλεισμός ήχου και βίντεο";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Αποκλεισμός ήχου";
+
 /* No comment provided by engineer. */
 "Available Products" = "Διαθέσιμα προϊόντα";
 
@@ -1235,8 +1243,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Προσαρμοσμένη διεύθυνση URL: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Εισαγωγή αρχείου σελιδοδεικτών...";
 
@@ -1495,6 +1501,12 @@
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Συνοψίστε αυτήν τη σελίδα";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Προσθήκη Duck.ai στο Κέντρο ελέγχου";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Προσθήκη μικροεφαρμογής Duck.ai στην Αρχική οθόνη";
+
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Εμφάνιση κουμπιών και συνδέσμων του Duck.ai στα αποτελέσματα αναζήτησης του DuckDuckGo.";
 
@@ -1503,12 +1515,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Κάντε συμπληρωματικές ερωτήσεις";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Προσθήκη Duck.ai στο Κέντρο ελέγχου";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Προσθήκη μικροεφαρμογής Duck.ai στην Αρχική οθόνη";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Συντομεύσεις προγράμματος περιήγησης";
@@ -1534,9 +1540,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "DuckDuckGo για iOS";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Συντομευσεις";
 
@@ -1554,6 +1557,9 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Συνομιλήστε με το Duck.ai χρησιμοποιώντας το Siri!";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "DuckDuckGo για iOS";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Προσθέστε τη συνδρομή DuckDuckGo σε αυτήν τη συσκευή";
@@ -1630,11 +1636,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Τα βίντεο που ανοίγονται στο Duck Player θα ξεκινούν αυτόματα την αναπαραγωγή. Απενεργοποιήστε αυτή την επιλογή αν θέλετε να ξεκινάτε μη αυτόματα την αναπαραγωγή των βίντεο που ανοίγονται στο Duck Player.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Βίντεο με αυτόματη αναπαραγωγή";
+/* Label for the autoplay toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Αυτόματη αναπαραγωγή βίντεο";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Ανοίγει βίντεο σε λειτουργία ιδιωτικού κινηματογράφου, η οποία εμποδίζει το περιεχόμενο που παρακολουθείτε να επηρεάσει τη ροή σας στο YouTube.";
+"duckplayer.settings.enable-footer" = "Ανοίγει βίντεο σε λειτουργία κινηματογράφου, η οποία εμποδίζει το περιεχόμενο που παρακολουθείτε να επηρεάσει τη ροή σας στο YouTube.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Ενεργοποίηση του Duck Player";
@@ -1653,6 +1659,7 @@
 
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "Μάθετε περισσότερα";
+
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "Ανοίξτε το Duck Player σε νέα καρτέλα";
 
@@ -1664,6 +1671,7 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "Αποτελέσματα DuckDuckGo Search";
+
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "Κλείστε όλες τις καρτέλες για να τεθεί σε ισχύ η ρύθμιση αυτή.";
 
@@ -2664,8 +2672,6 @@
 "No active subscriptions" = "Δεν υπάρχουν ενεργές συνδρομές";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Δεν βρέθηκε υπάρχουσα συνδρομή";
 
 /* No comment provided by engineer. */
@@ -2707,8 +2713,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "Στις δομές του App Store, αυτή η οθόνη θα εμφανίζεται μόνο εάν είστε συνδεδεμένοι ως εσωτερικός χρήστης μέσω του **use-login.duckduckgo.com**.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "Αποκλεισμός διαφημίσεων YouTube ενεργός";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Το κατάλαβα";
@@ -2895,9 +2901,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Εξαίρεση...";
-
-/* No comment provided by engineer. */
-"Override" = "Παράκαμψη";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Δεν είναι δυνατή η πρόσβαση στα μοντέλα Duck.ai μόνο για συνδρομητές";
@@ -3349,8 +3352,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Διαγραφή";
 
-
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Κλείσιμο όλων των ανοιχτών καρτελών";
 
@@ -3411,16 +3412,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Αυτόματη διαγραφή δεδομένων";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Αυτόματη αναπαραγωγή";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Ρυθμίσεις Duck Player";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Οι ρυθμίσεις αυτόματης αναπαραγωγής θα ισχύουν μόνο για καρτέλες που ανοίχτηκαν πρόσφατα. Οι αλλαγές δεν μπορούν να εφαρμοστούν σε υπάρχουσες καρτέλες, εκτός εάν γίνει επανεκκίνηση της εφαρμογής. Για να διαχειριστείτε την αυτόματη αναπαραγωγή στο Duck Player, μεταβείτε στις ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Σχόλια για το πρόγραμμα περιήγησης";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Το Fire Button θα διαγράψει επίσης το ιστορικό του Duck.ai, συμπεριλαμβανομένων των καρφιτσωμένων συνομιλιών.";
 
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Εκκαθάριση δεδομένων περιήγησης";
-
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Ολοκληρώστε την εγκατάστασή σας";
@@ -3440,8 +3448,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Προσαρμογή";
 
-
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Διαγραφή δεδομένων";
 
@@ -3451,10 +3457,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Προεπιλεγμένο πρόγραμμα περιήγησης";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Προεπιλεγμένη θέση εναλλαγής σε νέες καρτέλες.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Θέση εναλλαγής";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Τελευταία χρήση";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Αναζήτηση";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Διαγραφή συνομιλιών Duck.ai";
 
@@ -3500,7 +3517,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Κινούμενο κουμπί φωτιάς";
 
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Ασφαλείς ιστότοποι";
 
@@ -3542,6 +3558,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Διαχείριση λογαριασμού";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Μέσα";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Περισσότερα από το DuckDuckGo";
@@ -4635,12 +4654,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Να επιτρέπεται ο ήχος και το βίντεο";
-"autoplay.mode.blockAll" = "Αποκλεισμός ήχου και βίντεο";
-"autoplay.mode.blockAudio" = "Αποκλεισμός ήχου";
-"settings.autoplay" = "Αυτόματη αναπαραγωγή";
-"settings.autoplay.duck.player.link" = "Ρυθμίσεις Duck Player";
-"settings.autoplay.footer" = "Οι ρυθμίσεις αυτόματης αναπαραγωγής θα ισχύουν μόνο για καρτέλες που ανοίχτηκαν πρόσφατα. Οι αλλαγές δεν μπορούν να εφαρμοστούν σε υπάρχουσες καρτέλες, εκτός εάν γίνει επανεκκίνηση της εφαρμογής. Για να διαχειριστείτε την αυτόματη αναπαραγωγή στο Duck Player, μεταβείτε στις ";
-"settings.media.section" = "Μέσα";

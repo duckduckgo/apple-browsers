@@ -109,7 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Kartice i podaci su obrisani";
 
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otvori u pozadini";
 
@@ -944,6 +943,15 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Želiš li ažurirati korisničko ime?";
 
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Omogući zvuk i video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Blokiraj zvuk i video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Blokiraj zvuk";
+
 /* No comment provided by engineer. */
 "Available Products" = "Dostupni proizvodi";
 
@@ -1235,8 +1243,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Prilagođeni URL: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Uvezi datoteku knjižnih oznaka...";
 
@@ -1495,6 +1501,12 @@
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Sažmi ovu stranicu";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Dodaj Duck.ai u kontrolni centar";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Dodaj Duck.ai widget na početni zaslon";
+
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Prikaži Duck.ai gumbe i poveznice u rezultatima pretraživanja s DuckDuckGoom.";
 
@@ -1503,12 +1515,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Postavljaj naknadna pitanja";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Dodaj Duck.ai u kontrolni centar";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Dodaj Duck.ai widget na početni zaslon";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Prečaci preglednika";
@@ -1534,9 +1540,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "DuckDuckGo za iOS";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Prečaci";
 
@@ -1554,6 +1557,9 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Razgovaraj s Duck.ai koristeći Siri!";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "DuckDuckGo za iOS";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Dodaj svoju pretplatu na DuckDuckGo na ovaj uređaj";
@@ -1630,11 +1636,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videozapisi otvoreni u Duck Playeru automatski će započeti reprodukciju. Isključi ovo ako želiš ručno pokrenuti reprodukciju videozapisa otvorenih u Duck Playeru.";
 
-/* Label for the auto-play toggle in Duck Player settings */
+/* Label for the autoplay toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatska reprodukcija videozapisa";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Otvara videozapise u načinu rada privatnog kina koji sprječava da ono što gledaš utječe na tvoj YouTube feed.";
+"duckplayer.settings.enable-footer" = "Otvara videozapise u načinu rada kina koji sprječava da ono što gledaš utječe na tvoj YouTube feed.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Omogući Duck Player";
@@ -2666,8 +2672,6 @@
 "No active subscriptions" = "Nema aktivnih pretplata";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Nema postojeće pretplate";
 
 /* No comment provided by engineer. */
@@ -2709,8 +2713,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "Na verzijama App Storea, ovaj će se zaslon prikazati samo ako si prijavljen kao interni korisnik putem **use-login.duckduckgo.com**.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "Blokiranje YouTube oglasa je uključeno";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Shvatio/la sam";
@@ -2897,9 +2901,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Odjava...";
-
-/* No comment provided by engineer. */
-"Override" = "Nadjačaj";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nije moguće pristupiti modelima Duck.ai koji su dostupni samo pretplatnicima";
@@ -3351,8 +3352,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Izbriši";
 
-
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Zatvori sve otvorene kartice";
 
@@ -3413,16 +3412,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Automatski izbrisati podatke";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automatsko pokretanje";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Postavke Duck Playera";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Postavke automatske reprodukcije primjenjivat će se samo na novootvorene kartice. Izmjene se ne mogu primijeniti na postojeće kartice osim ako se aplikacija ne pokrene ponovno. Za upravljanje automatskom reprodukcijom u Duck Playeru, idi na ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Povratne informacije preglednika";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button će također izbrisati povijest Duck.ai, uključujući prikvačene razgovore.";
 
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Izbriši podatke o pregledavanju";
-
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Dovrši postavljanje";
@@ -3442,8 +3448,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Prilagodba";
 
-
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Brisanje podataka";
 
@@ -3453,10 +3457,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Zadani preglednik";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Zadani položaj preklopnika na novim karticama.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Položaj preklopnika";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Posljednje korišteno";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Traži";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Izbriši Duck.ai čavrljanja";
 
@@ -3502,7 +3517,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animacija gumba Vatre";
 
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Zaštićene mrežne lokacije (Fireproof)";
 
@@ -3544,6 +3558,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Upravljanje računom";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Mediji";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Više od DuckDuckGoa";
@@ -4637,12 +4654,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Što želiš uvesti?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Omogući zvuk i video";
-"autoplay.mode.blockAll" = "Blokiraj zvuk i video";
-"autoplay.mode.blockAudio" = "Blokiraj zvuk";
-"settings.autoplay" = "Automatsko pokretanje";
-"settings.autoplay.duck.player.link" = "Postavke Duck Playera";
-"settings.autoplay.footer" = "Postavke automatske reprodukcije primjenjivat će se samo na novootvorene kartice. Izmjene se ne mogu primijeniti na postojeće kartice osim ako se aplikacija ne pokrene ponovno. Za upravljanje automatskom reprodukcijom u Duck Playeru, idi na ";
-"settings.media.section" = "Mediji";

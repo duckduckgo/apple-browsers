@@ -109,7 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Vahekaardid ja andmed kustutatud";
 
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Ava taustal";
 
@@ -944,6 +943,15 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Kas värskendada kasutajanime?";
 
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Luba heli ja video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Blokeeri heli ja video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Blokeeri heli";
+
 /* No comment provided by engineer. */
 "Available Products" = "Saadaolevad tooted";
 
@@ -1235,8 +1243,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Kohandatud URL: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Impordi järjehoidjate fail...";
 
@@ -1495,6 +1501,12 @@
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Loo lehekülje kokkuvõte";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Lisa Duck.ai juhtimiskeskusesse";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Lisa Duck.ai vidin avalehele";
+
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Kuva Duck.ai nupud ja lingid DuckDuckGo otsingutulemustes.";
 
@@ -1503,12 +1515,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Küsi lisaküsimusi";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Lisa Duck.ai juhtimiskeskusesse";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Lisa Duck.ai vidin avalehele";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Brauseri otseteed";
@@ -1534,9 +1540,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "DuckDuckGo iOS-ile";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Otseteed";
 
@@ -1554,6 +1557,9 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Vestle Duck.ai-ga Siri abil!";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "DuckDuckGo iOS-ile";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Lisa sellesse seadmesse oma DuckDuckGo tellimus";
@@ -1630,11 +1636,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Duck Playeris avatud videote taasesitus algab automaatselt. Lülitage see välja, kui soovite Duck Playeris avatud videote taasesitust käsitsi alustada.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Videote automaatne esitamine";
+/* Label for the autoplay toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Automaatne videote esitamine";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Avab videod privaatses kinorežiimis, mis takistab YouTube'i voo mõjutamist vaadatava sisu poolt.";
+"duckplayer.settings.enable-footer" = "Avab videod kinorežiimis, mis takistab vaadataval sisul sinu YouTube'i voogu mõjutamast.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Luba Duck Player";
@@ -2666,8 +2672,6 @@
 "No active subscriptions" = "Aktiivseid tellimusi ei ole";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Olemasolevat tellimust ei leitud";
 
 /* No comment provided by engineer. */
@@ -2709,8 +2713,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "App Store'i versioonides kuvatakse see kuva ainult siis, kui oled sisse logitud sisekasutajana aadressi **use-login.duckduckgo.com** kaudu.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "YouTube’i reklaamiblokeerija on sees";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Sain aru";
@@ -2897,9 +2901,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Loobumine...";
-
-/* No comment provided by engineer. */
-"Override" = "Tühista";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Ei pääse ainult tellijatele mõeldud Duck.ai mudelitele ligi";
@@ -3351,8 +3352,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Tühjenda";
 
-
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Sule kõik avatud vahekaardid";
 
@@ -3413,16 +3412,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Andmete automaatne kustutamine";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automaatne esitamine";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Duck Playeri seaded";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Automaatse esitamise seaded kehtivad ainult äsjaavatud vahelehtedele. Muudatusi ei saa olemasolevatele vahekaartidele rakendada enne rakenduse taaskäivitamist. Duck Playeris automaatse esitamise haldamiseks valige suvand ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Brauseri tagasiside";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button kustutab ka Duck.ai ajaloo, sealhulgas kinnitatud vestlused.";
 
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Kustuta sirvimisandmed";
-
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Vii seadistamine lõpule";
@@ -3442,8 +3448,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Kohanda";
 
-
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Andmete kustutamine";
 
@@ -3453,10 +3457,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Vaikebrauser";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Lüliti vaikeasend uutel vahekaartidel.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Lüliti asend";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Viimati kasutatud";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Otsi";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Kustuta Duck.ai vestlused";
 
@@ -3502,7 +3517,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Tulenupu animatsioon";
 
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Tulekindlad saidid";
 
@@ -3544,6 +3558,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Halda kontot";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Meedia";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Veel DuckDuckGo'lt";
@@ -4637,12 +4654,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mida soovite importida?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Luba heli ja video";
-"autoplay.mode.blockAll" = "Blokeeri heli ja video";
-"autoplay.mode.blockAudio" = "Blokeeri heli";
-"settings.autoplay" = "Automaatne esitamine";
-"settings.autoplay.duck.player.link" = "Duck Playeri seaded";
-"settings.autoplay.footer" = "Automaatse esitamise seaded kehtivad ainult äsjaavatud vahelehtedele. Muudatusi ei saa olemasolevatele vahekaartidele rakendada enne rakenduse taaskäivitamist. Duck Playeris automaatse esitamise haldamiseks valige suvand ";
-"settings.media.section" = "Meedia";

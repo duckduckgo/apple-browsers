@@ -51,6 +51,7 @@ public final class ScriptletManager: ScriptletProviding {
     private let fetcher: ScriptletFetching
     private let validator: ScriptletValidating
     private let store: ScriptletStoring
+    private let pixelFiring: WebExtensionPixelFiring
     private let isProduction: Bool
 
     @Published private var availabilities: [DuckDuckGoWebExtensionType: ScriptletAvailability] = [:]
@@ -64,12 +65,14 @@ public final class ScriptletManager: ScriptletProviding {
         fetcher: ScriptletFetching,
         validator: ScriptletValidating,
         store: ScriptletStoring,
+        pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
         isProduction: Bool = true
     ) {
         self.configProvider = configProvider
         self.fetcher = fetcher
         self.validator = validator
         self.store = store
+        self.pixelFiring = pixelFiring
         self.isProduction = isProduction
     }
 
@@ -195,6 +198,7 @@ public final class ScriptletManager: ScriptletProviding {
                 Logger.webExtensions.info("[Scriptlets] Signature validation passed for '\(extensionType.rawValue)' (\(fetched.count) scriptlet(s))")
             } catch {
                 if isProduction {
+                    pixelFiring.fire(.scriptletValidationError(type: extensionType, error: error))
                     throw error
                 }
                 Logger.webExtensions.warning("[Scriptlets] Validation failed for '\(extensionType.rawValue)' (non-production, continuing): \(error)")
@@ -203,9 +207,11 @@ public final class ScriptletManager: ScriptletProviding {
             let scriptlets = try store.save(fetched, version: manifest.version, for: extensionType)
 
             availabilities[extensionType] = .available(scriptlets)
+            pixelFiring.fire(.scriptletFetchSuccess(type: extensionType, version: manifest.version, count: scriptlets.count))
             Logger.webExtensions.info("[Scriptlets] Updated to v\(manifest.version) with \(scriptlets.count) scriptlet(s) for '\(extensionType.rawValue)'")
         } catch {
             Logger.webExtensions.error("[Scriptlets] Failed to fetch/update scriptlets for '\(extensionType.rawValue)': \(error)")
+            pixelFiring.fire(.scriptletFetchError(type: extensionType, error: error))
             if let existing = existingScriptlets {
                 availabilities[extensionType] = .available(existing)
             } else {

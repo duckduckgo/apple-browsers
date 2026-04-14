@@ -109,7 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Faner og data ryddet";
 
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Åbn i baggrunden";
 
@@ -944,6 +943,15 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Opdater brugernavn?";
 
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Tillad lyd og video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Bloker lyd og video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Bloker lyd";
+
 /* No comment provided by engineer. */
 "Available Products" = "Tilgængelige produkter";
 
@@ -1235,8 +1243,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Tilpasset URL: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importer bogmærkefil...";
 
@@ -1495,6 +1501,12 @@
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Sammenfat denne side";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Tilføj Duck.ai til Kontrolcenter";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Tilføj Duck.ai-widget til startskærmen";
+
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Vis Duck.ai-knapper og -links i DuckDuckGo-søgeresultater.";
 
@@ -1503,12 +1515,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Stil opfølgende spørgsmål";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Tilføj Duck.ai til Kontrolcenter";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Tilføj Duck.ai-widget til startskærmen";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Browsergenveje";
@@ -1534,9 +1540,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "DuckDuckGo til iOS";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Genveje";
 
@@ -1554,6 +1557,9 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Tal med Duck.ai ved hjælp af Siri!";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "DuckDuckGo til iOS";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Tilføj dit DuckDuckGo-abonnement til denne enhed";
@@ -1630,11 +1636,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videoer, der åbnes i Duck Player, vil automatisk begynde at afspille. Slå dette fra, hvis du manuelt vil starte afspilning af videoer, der åbnes i Duck Player.";
 
-/* Label for the auto-play toggle in Duck Player settings */
+/* Label for the autoplay toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatisk afspilning af videoer";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Åbner videoer i en privat biograftilstand, så det, du ser, ikke påvirker dit YouTube-feed.";
+"duckplayer.settings.enable-footer" = "Åbner videoer i biograftilstand, så det, du ser, ikke påvirker dit YouTube-feed.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Slå Duck Player til";
@@ -1653,6 +1659,7 @@
 
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "Mere info";
+
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "Åbn Duck Player i en ny fane";
 
@@ -1664,6 +1671,7 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "DuckDuckGo Search-resultater";
+
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "Luk alle faner for, at denne indstilling kan træde i kraft.";
 
@@ -2664,8 +2672,6 @@
 "No active subscriptions" = "Ingen aktive abonnementer";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Intet eksisterende abonnement blev fundet";
 
 /* No comment provided by engineer. */
@@ -2707,8 +2713,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "I App Store-versioner vises denne skærm kun, hvis du er logget ind som intern bruger via **use-login.duckduckgo.com**.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "Blokering af YouTube-annoncer slået til";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Forstået";
@@ -2895,9 +2901,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Fravælgelse...";
-
-/* No comment provided by engineer. */
-"Override" = "Tilsidesætte";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Kan ikke tilgå Duck.ai-modellerne kun for abonnenter.";
@@ -3349,8 +3352,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Ryd";
 
-
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Luk alle åbne faner";
 
@@ -3411,16 +3412,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Automatisk sletning af data";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automatisk afspilning";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Indstillinger for Duck Player";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Indstillinger for automatisk afspilning gælder kun for nyligt åbnede faner. Ændringer kan ikke anvendes på eksisterende faner, medmindre programmet genstartes. For at administrere automatisk afspilning i Duck Player skal du gå til ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browserfeedback";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button sletter også Duck.ai-historik, inklusive fastgjorte chats.";
 
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Ryd browserdata";
-
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Færdiggør opsætningen";
@@ -3440,8 +3448,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Tilpas";
 
-
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datarydning";
 
@@ -3451,10 +3457,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardbrowser";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Standardposition for faneskift på nye faner.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Kontaktens position";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Sidst brugt";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Søgning";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Slet Duck.ai-chats";
 
@@ -3500,7 +3517,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Ildknap-animation";
 
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproof websteder";
 
@@ -3542,6 +3558,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Administrer konto";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Medier";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Mere fra DuckDuckGo";
@@ -4635,12 +4654,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hvad vil du importere?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Tillad lyd og video";
-"autoplay.mode.blockAll" = "Bloker lyd og video";
-"autoplay.mode.blockAudio" = "Bloker lyd";
-"settings.autoplay" = "Automatisk afspilning";
-"settings.autoplay.duck.player.link" = "Indstillinger for Duck Player";
-"settings.autoplay.footer" = "Indstillinger for automatisk afspilning gælder kun for nyligt åbnede faner. Ændringer kan ikke anvendes på eksisterende faner, medmindre programmet genstartes. For at administrere automatisk afspilning i Duck Player skal du gå til ";
-"settings.media.section" = "Medier";

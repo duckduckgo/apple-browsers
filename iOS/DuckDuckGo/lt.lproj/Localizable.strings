@@ -109,7 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Skirtukai ir duomenys išvalyti";
 
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Atidaryti fone";
 
@@ -944,6 +943,15 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Atnaujinti naudotojo vardą?";
 
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Leisti garsą ir vaizdą";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Blokuoti garsą ir vaizdą";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Blokuoti garsą";
+
 /* No comment provided by engineer. */
 "Available Products" = "Prieinami produktai";
 
@@ -1235,8 +1243,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Pasirinktinis URL: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importuoti žymės failą...";
 
@@ -1495,6 +1501,12 @@
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Apibendrinti šį puslapį";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Pridėti „Duck.ai“ į valdymo centrą";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Pridėti „Duck.ai“ valdiklį pagrindiniame ekrane";
+
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Rodyti „Duck.ai“ mygtukus ir nuorodas „DuckDuckGo“ paieškos rezultatuose.";
 
@@ -1503,12 +1515,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Užduokite papildomus klausimus";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Pridėti „Duck.ai“ į valdymo centrą";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Pridėti „Duck.ai“ valdiklį pagrindiniame ekrane";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Naršyklės šaukiniai";
@@ -1534,9 +1540,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "„iOS“ skirta „DuckDuckGo“";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Šaukiniai";
 
@@ -1554,6 +1557,9 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Kalbėkite su „Duck.ai“ naudodami „Siri“!";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "„iOS“ skirta „DuckDuckGo“";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Pridėkite savo „DuckDuckGo“ prenumeratą prie šio įrenginio";
@@ -1630,11 +1636,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Vaizdo įrašai, atidaryti „Duck Player“, bus automatiškai paleidžiami. Išjunk šią funkciją, jei nori rankiniu būdu paleisti „Duck Player“ atidarytų vaizdo įrašų atkūrimą.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Automatiškai paleidžiami vaizdo įrašai";
+/* Label for the autoplay toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Automatiškai paleisti vaizdo įrašus";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Atidaro vaizdo įrašus privačiu kino teatro režimu, kad tai, ką žiūri, nedarytų įtakos tavo „YouTube“ srautui.";
+"duckplayer.settings.enable-footer" = "Atidaro vaizdo įrašus kino teatro režimu, kad tai, ką žiūri, nedarytų įtakos tavo „YouTube“ srautui.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Įjungti „Duck Player“";
@@ -2666,8 +2672,6 @@
 "No active subscriptions" = "Nėra aktyvių prenumeratų";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Nerasta jokių esamų prenumeratų";
 
 /* No comment provided by engineer. */
@@ -2709,8 +2713,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "„App Store“ versijose šis langas bus rodomas tik jei per **use-login.duckduckgo.com** prisijungsi kaip vidinis naudotojas.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "„YouTube“ reklamų blokavimas įjungtas";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Supratau";
@@ -2897,9 +2901,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Atsisakoma...";
-
-/* No comment provided by engineer. */
-"Override" = "Perrašyti";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nepavyksta pasiekti tik prenumeratoriams skirtų „Duck.ai“ modelių.";
@@ -3351,8 +3352,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Valyti";
 
-
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Uždaryti visus atidarytus skirtukus";
 
@@ -3413,16 +3412,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Automatiškai ištrinti duomenis";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automatinis paleidimas";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "„Duck Player“ nuostatos";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Automatinio paleidimo nuostatos galios tik naujai atvertoms kortelėms. Pakeitimų negalima pritaikyti esamoms kortelėms iš naujo nepaleidus programos. Jei nori valdyti automatinį paleidimą „Duck Player“ programoje, eik į ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Naršyklės atsiliepimai";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "„Fire Button“ taip pat ištrins „Duck.ai“ istoriją, įskaitant prisegtus pokalbius.";
 
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Išvalyti naršymo duomenis";
-
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Užbaik savo sąranką";
@@ -3442,8 +3448,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Tinkinti";
 
-
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Duomenų valymas";
 
@@ -3453,10 +3457,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Numatytoji naršyklė";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Numatytoji perjungiklio padėtis naujose kortelėse.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Perjungiklio padėtis";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Paskutinį kartą naudota";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Paieška";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Ištrinti „Duck.ai“ pokalbius";
 
@@ -3502,7 +3517,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Mygtuko „Fire“ animacija";
 
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Apsaugoti svetaines";
 
@@ -3544,6 +3558,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Tvarkyti paskyrą";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Medija";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Daugiau iš „DuckDuckGo“";
@@ -4637,12 +4654,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ką nori importuoti?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Leisti garsą ir vaizdą";
-"autoplay.mode.blockAll" = "Blokuoti garsą ir vaizdą";
-"autoplay.mode.blockAudio" = "Blokuoti garsą";
-"settings.autoplay" = "Automatinis paleidimas";
-"settings.autoplay.duck.player.link" = "„Duck Player“ nuostatos";
-"settings.autoplay.footer" = "Automatinio paleidimo nuostatos galios tik naujai atvertoms kortelėms. Pakeitimų negalima pritaikyti esamoms kortelėms iš naujo nepaleidus programos. Jei nori valdyti automatinį paleidimą „Duck Player“ programoje, eik į ";
-"settings.media.section" = "Medija";

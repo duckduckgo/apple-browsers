@@ -109,7 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Wyczyszczono karty i dane";
 
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otwórz w tle";
 
@@ -944,6 +943,15 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Zaktualizować nazwę użytkownika?";
 
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Zezwalaj na dźwięk i wideo";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Blokuj dźwięk i wideo";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Blokuj dźwięk";
+
 /* No comment provided by engineer. */
 "Available Products" = "Dostępne produkty";
 
@@ -1235,8 +1243,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Niestandardowy adres URL: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importuj plik zakładek...";
 
@@ -1495,6 +1501,12 @@
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Podsumuj tę stronę";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Dodaj Duck.ai do Centrum Sterowania";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Dodaj widżet Duck.ai do ekranu głównego";
+
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Pokaż przyciski i linki Duck.ai w wynikach wyszukiwania DuckDuckGo.";
 
@@ -1503,12 +1515,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Zadawaj pytania uzupełniające";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Dodaj Duck.ai do Centrum Sterowania";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Dodaj widżet Duck.ai do ekranu głównego";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Skróty przeglądarki";
@@ -1534,9 +1540,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "DuckDuckGo dla systemu iOS";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Skróty";
 
@@ -1554,6 +1557,9 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Porozmawiaj z Duck.ai używając Siri!";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "DuckDuckGo dla systemu iOS";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Dodaj subskrypcję DuckDuckGo do tego urządzenia";
@@ -1630,11 +1636,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Duck Player będzie automatycznie rozpoczynał odtwarzanie otwieranych w nim filmów. Wyłącz tę opcję, jeśli chcesz ręcznie rozpoczynać odtwarzanie filmów otwieranych w odtwarzaczu Duck Player.";
 
-/* Label for the auto-play toggle in Duck Player settings */
+/* Label for the autoplay toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatyczne odtwarzanie filmów";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Otwiera filmy w prywatnym trybie kinowym, dzięki czemu to, co oglądasz, nie wpływa na Twój kanał na YouTube.";
+"duckplayer.settings.enable-footer" = "Otwiera filmy w trybie kinowym, dzięki czemu oglądane treści nie wpływają na Twój kanał na YouTube.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Włącz Duck Player";
@@ -2666,8 +2672,6 @@
 "No active subscriptions" = "Brak aktywnych subskrypcji";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Nie znaleziono istniejącej subskrypcji";
 
 /* No comment provided by engineer. */
@@ -2709,8 +2713,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "W kompilacjach z App Store ten ekran pojawi się tylko wtedy, gdy zalogujesz się jako użytkownik wewnętrzny przez **use-login.duckduckgo.com**.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "Blokowanie reklam YouTube włączone";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Rozumiem";
@@ -2897,9 +2901,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Rezygnacja...";
-
-/* No comment provided by engineer. */
-"Override" = "Nadpisz";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nie można uzyskać dostępu do modeli Duck.ai dostępnych wyłącznie dla subskrybentów";
@@ -3351,8 +3352,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Wyczyść";
 
-
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Zamknij wszystkie otwarte karty";
 
@@ -3413,16 +3412,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Automatyczne usuwanie danych";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automatyczne odtwarzanie";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Ustawienia odtwarzacza Duck Player";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Ustawienia automatycznego odtwarzania będą miały zastosowanie tylko do nowo otwartych kart. Zmiany nie mogą zostać zastosowane do istniejących kart, chyba że aplikacja zostanie ponownie uruchomiona. Aby zarządzać autoodtwarzaniem w Duck Player, przejdź do ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Opinia o przeglądarce";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Przycisk Fire Button usunie także historię Duck.ai, w tym przypięte czaty.";
 
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Wyczyść dane przeglądania";
-
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Dokończ swoją konfigurację";
@@ -3442,8 +3448,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Spersonalizuj";
 
-
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Czyszczenie danych";
 
@@ -3453,10 +3457,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Domyślna przeglądarka";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Domyślna pozycja przełącznika na nowych kartach.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Pozycja przełącznika";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Ostatnie użycie";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Szukaj";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Usuń czaty Duck.ai";
 
@@ -3502,7 +3517,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animacja przycisku ognia";
 
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Zabezpieczone witryny internetowe";
 
@@ -3544,6 +3558,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Zarządzaj kontem";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Multimedia";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Więcej możliwości DuckDuckGo";
@@ -4637,12 +4654,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chcesz importować?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Zezwalaj na dźwięk i wideo";
-"autoplay.mode.blockAll" = "Blokuj dźwięk i wideo";
-"autoplay.mode.blockAudio" = "Blokuj dźwięk";
-"settings.autoplay" = "Automatyczne odtwarzanie";
-"settings.autoplay.duck.player.link" = "Ustawienia odtwarzacza Duck Player";
-"settings.autoplay.footer" = "Ustawienia automatycznego odtwarzania będą miały zastosowanie tylko do nowo otwartych kart. Zmiany nie mogą zostać zastosowane do istniejących kart, chyba że aplikacja zostanie ponownie uruchomiona. Aby zarządzać autoodtwarzaniem w Duck Player, przejdź do ";
-"settings.media.section" = "Multimedia";

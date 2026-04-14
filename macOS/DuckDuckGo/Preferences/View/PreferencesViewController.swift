@@ -26,6 +26,7 @@ import VPN
 import AIChat
 import PrivacyConfig
 import Subscription
+import WebExtensions
 
 final class PreferencesViewController: NSViewController {
 
@@ -63,7 +64,8 @@ final class PreferencesViewController: NSViewController {
         youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences,
         subscriptionManager: any SubscriptionManager,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
-        pinningManager: PinningManager
+        pinningManager: PinningManager,
+        adBlockingAvailability: AdBlockingAvailabilityProviding
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -89,7 +91,8 @@ final class PreferencesViewController: NSViewController {
                                         accessibilityPreferences: accessibilityPreferences,
                                         duckPlayerPreferences: duckPlayerPreferences,
                                         youTubeAdBlockingPreferences: youTubeAdBlockingPreferences,
-                                        winBackOfferVisibilityManager: winBackOfferVisibilityManager)
+                                        winBackOfferVisibilityManager: winBackOfferVisibilityManager,
+                                        adBlockingAvailability: adBlockingAvailability)
         super.init(nibName: nil, bundle: nil)
     }
 

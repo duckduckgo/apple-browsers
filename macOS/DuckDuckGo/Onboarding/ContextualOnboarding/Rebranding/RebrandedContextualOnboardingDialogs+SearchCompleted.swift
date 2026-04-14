@@ -42,29 +42,26 @@ extension OnboardingRebranding {
                 tailPosition: .leading(offset: 0.3, direction: .top),
                 onDismiss: onManualDismiss
             ) {
-                VStack {
-                    if showNextScreen {
-                        OnboardingTrySiteDialogContent(viewModel: viewModel)
-                    } else {
-                        OnboardingRebranding.ContextualDaxDialogContent(
-                            orientation: .horizontalStack(alignment: .center),
-                            title: title,
-                            message: message
-                        ) {
-                            Button(cta) {
-                                gotItAction()
-                                withAnimation {
-                                    if shouldFollowUp {
-                                        showNextScreen = true
-                                    }
+                if showNextScreen {
+                    OnboardingTrySiteDialogContent(viewModel: viewModel)
+                } else {
+                    OnboardingRebranding.ContextualDaxDialogContent(
+                        orientation: .horizontalStack(alignment: .center),
+                        title: title,
+                        message: message
+                    ) {
+                        Button(cta) {
+                            gotItAction()
+                            withAnimation {
+                                if shouldFollowUp {
+                                    showNextScreen = true
                                 }
                             }
-                            .buttonStyle(theme.primaryButtonStyle.style)
                         }
+                        .buttonStyle(theme.primaryButtonStyle.style)
                     }
                 }
             }
-            .padding(.horizontal)
         }
     }
 

@@ -45,7 +45,6 @@ extension OnboardingRebranding {
                     )
                 }
             }
-            .padding(.horizontal)
         }
     }
 

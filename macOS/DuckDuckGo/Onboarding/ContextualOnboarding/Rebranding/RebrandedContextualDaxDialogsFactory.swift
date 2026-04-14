@@ -21,9 +21,11 @@ import SwiftUI
 import Onboarding
 
 struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
-    private enum TrySearchMetrics {
-        static let panelHeight: CGFloat = 208
-        static let illustrationOffsetY: CGFloat = 50
+    private enum ContextualPanelMetrics {
+        static let trySearchPanelHeight: CGFloat = 170
+        static let trySearchIllustrationOffsetY: CGFloat = 50
+        static let searchDonePanelHeight: CGFloat = 180
+        static let searchDoneIllustrationOffsetY: CGFloat = -40
     }
 
     private let onboardingPixelReporter: OnboardingPixelReporting
@@ -63,17 +65,37 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         switch type {
         case .tryASearch:
             viewWithBackground = AnyView(
-                ZStack(alignment: .bottomTrailing) {
-                    OnboardingTheme.macOSRebranding2026.colorPalette.background
-
-                    OnboardingRebrandingImages.Contextual.tryASearchBackground
-                        .offset(y: TrySearchMetrics.illustrationOffsetY)
-
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
                     centeredView
-                        .padding(.horizontal)
-                        .frame(maxHeight: .infinity)
+                    Spacer(minLength: 0)
                 }
-                .frame(height: TrySearchMetrics.panelHeight)
+                .frame(height: ContextualPanelMetrics.trySearchPanelHeight)
+                .background(
+                    ZStack(alignment: .bottomTrailing) {
+                        OnboardingTheme.macOSRebranding2026.colorPalette.background
+                        OnboardingRebrandingImages.Contextual.tryASearchBackground
+                            .offset(y: ContextualPanelMetrics.trySearchIllustrationOffsetY)
+                    }
+                )
+                .clipped()
+                .applyOnboardingTheme(.macOSRebranding2026)
+            )
+        case .searchDone:
+            viewWithBackground = AnyView(
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    centeredView
+                    Spacer(minLength: 0)
+                }
+                .frame(height: ContextualPanelMetrics.searchDonePanelHeight)
+                .background(
+                    ZStack(alignment: .bottomTrailing) {
+                        OnboardingTheme.macOSRebranding2026.colorPalette.background
+                        OnboardingRebrandingImages.Contextual.searchDoneBackground
+                            .offset(y: ContextualPanelMetrics.searchDoneIllustrationOffsetY)
+                    }
+                )
                 .clipped()
                 .applyOnboardingTheme(.macOSRebranding2026)
             )

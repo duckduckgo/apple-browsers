@@ -28,6 +28,7 @@ public extension OnboardingRebranding.OnboardingStyles {
         private let verticalPadding: CGFloat
         private let horizontalPadding: CGFloat
         private let cornerRadius: CGFloat
+        private let minWidth: CGFloat
         private let minHeight: CGFloat
 
         public init(
@@ -35,10 +36,11 @@ public extension OnboardingRebranding.OnboardingStyles {
             pressedBackgroundColor: Color,
             foregroundColor: Color,
             font: Font,
-            verticalPadding: CGFloat = 6,
-            horizontalPadding: CGFloat = 20,
-            cornerRadius: CGFloat = 999,
-            minHeight: CGFloat = 28
+            verticalPadding: CGFloat = 8,
+            horizontalPadding: CGFloat = 24,
+            cornerRadius: CGFloat = 100,
+            minWidth: CGFloat = 174,
+            minHeight: CGFloat = 32
         ) {
             self.backgroundColor = backgroundColor
             self.pressedBackgroundColor = pressedBackgroundColor
@@ -47,6 +49,7 @@ public extension OnboardingRebranding.OnboardingStyles {
             self.verticalPadding = verticalPadding
             self.horizontalPadding = horizontalPadding
             self.cornerRadius = cornerRadius
+            self.minWidth = minWidth
             self.minHeight = minHeight
         }
 
@@ -60,6 +63,7 @@ public extension OnboardingRebranding.OnboardingStyles {
                 verticalPadding: verticalPadding,
                 horizontalPadding: horizontalPadding,
                 cornerRadius: cornerRadius,
+                minWidth: minWidth,
                 minHeight: minHeight
             )
         }
@@ -73,6 +77,7 @@ public extension OnboardingRebranding.OnboardingStyles {
             let verticalPadding: CGFloat
             let horizontalPadding: CGFloat
             let cornerRadius: CGFloat
+            let minWidth: CGFloat
             let minHeight: CGFloat
 
             @State private var isHovered = false
@@ -83,7 +88,7 @@ public extension OnboardingRebranding.OnboardingStyles {
                     .foregroundColor(foregroundColor)
                     .padding(.vertical, verticalPadding)
                     .padding(.horizontal, horizontalPadding)
-                    .frame(minHeight: minHeight)
+                    .frame(minWidth: minWidth, minHeight: minHeight)
                     .background(resolvedBackgroundColor)
                     .cornerRadius(cornerRadius)
                     .onHover { hovering in

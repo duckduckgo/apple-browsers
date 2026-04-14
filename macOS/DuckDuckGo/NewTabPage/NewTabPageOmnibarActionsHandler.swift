@@ -130,9 +130,9 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             PixelKit.fire(AIChatPixel.aiChatNtpSubmitWithImage(imageCount: images.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
 
-        if mode == "image-generation" {
+        if mode == AIChatNativePrompt.imageGenerationMode {
             PixelKit.fire(AIChatPixel.aiChatNtpImageGenerationSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
-        } else if toolChoice?.contains("WebSearch") == true {
+        } else if toolChoice?.contains(AIChatRAGTool.webSearch.rawValue) == true {
             PixelKit.fire(AIChatPixel.aiChatNtpWebSearchSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
 

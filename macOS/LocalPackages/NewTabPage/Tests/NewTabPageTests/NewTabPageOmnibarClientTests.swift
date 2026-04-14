@@ -233,4 +233,26 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
         await fulfillment(of: [expectation], timeout: 1)
     }
+
+    func testSubmitChatForwardsModelIdToHandler() async throws {
+        let expectation = expectation(description: "submitChatCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { chat, mode, toolChoice, modelId, images, target in
+            XCTAssertEqual(chat, "Hello Chat")
+            XCTAssertEqual(modelId, "gpt-4o-mini")
+            XCTAssertNil(mode)
+            XCTAssertNil(toolChoice)
+            XCTAssertNil(images)
+            XCTAssertEqual(target, .sameTab)
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hello Chat",
+                                                          target: .sameTab,
+                                                          mode: nil,
+                                                          toolChoice: nil,
+                                                          modelId: "gpt-4o-mini",
+                                                          images: nil)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
 }

@@ -430,6 +430,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables image generation mode on the New Tab Page omnibar
     case ntpImageGeneration
 
+    /// Enables web search mode on the New Tab Page omnibar
     case ntpWebSearch
 
     /// Enables support for adding multiple page contexts to a single chat session

@@ -327,8 +327,8 @@ final class AddressBarButtonsViewController: NSViewController {
           aiChatCoordinator: AIChatCoordinating,
           aiChatSettings: AIChatPreferencesStorage,
           themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
-          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-          adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability) {
+          featureFlagger: FeatureFlagger,
+          adBlockingAvailability: AdBlockingAvailabilityProviding) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.accessibilityPreferences = accessibilityPreferences

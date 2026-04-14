@@ -108,6 +108,8 @@ public struct BrokenSiteReport {
     let breakageData: String?
     let isForceDarkModeEnabled: Bool?
     let autoplayBlockingMode: String?
+    let loadedWebExtensions: String?
+    let adBlockingExtensionScriptletsVersion: String?
 #if os(iOS)
     let siteType: SiteType
     let atb: String
@@ -148,7 +150,9 @@ public struct BrokenSiteReport {
         isForceDarkModeEnabled: Bool?,
         autoplayBlockingMode: String? = nil,
         pageLoadTiming: WKPageLoadTiming?,
-        breakageData: String? = nil
+        breakageData: String? = nil,
+        loadedWebExtensions: String? = nil,
+        adBlockingExtensionScriptletsVersion: String? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -181,6 +185,8 @@ public struct BrokenSiteReport {
         self.autoplayBlockingMode = autoplayBlockingMode
         self.pageLoadTiming = pageLoadTiming
         self.breakageData = breakageData
+        self.loadedWebExtensions = loadedWebExtensions
+        self.adBlockingExtensionScriptletsVersion = adBlockingExtensionScriptletsVersion
     }
 #endif
 
@@ -221,7 +227,9 @@ public struct BrokenSiteReport {
         autoplayBlockingMode: String? = nil,
         isAfterSuppressedXSafariRedirect: Bool = false,
         pageLoadTiming: WKPageLoadTiming? = nil,
-        breakageData: String? = nil
+        breakageData: String? = nil,
+        loadedWebExtensions: String? = nil,
+        adBlockingExtensionScriptletsVersion: String? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -259,6 +267,8 @@ public struct BrokenSiteReport {
         self.autoplayBlockingMode = autoplayBlockingMode
         self.isAfterSuppressedXSafariRedirect = isAfterSuppressedXSafariRedirect
         self.breakageData = breakageData
+        self.loadedWebExtensions = loadedWebExtensions
+        self.adBlockingExtensionScriptletsVersion = adBlockingExtensionScriptletsVersion
     }
 #endif
 
@@ -352,6 +362,11 @@ public struct BrokenSiteReport {
 
         if let breakageData {
             result["breakageData"] = breakageData
+        }
+
+        if let loadedWebExtensions {
+            result["loadedWebExtensions"] = loadedWebExtensions
+            result["adBlockingExtensionScriptletsVersion"] = adBlockingExtensionScriptletsVersion ?? "nil"
         }
 
         return result

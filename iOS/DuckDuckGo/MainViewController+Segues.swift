@@ -149,7 +149,7 @@ extension MainViewController {
                                                         entryPoint: entryPoint,
                                                         privacyConfigurationManager: self.privacyConfigurationManager,
                                                         contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                                        breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo())
+                                                        breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo(webExtensionManager: webExtensionManager))
 
         currentTab?.privacyDashboard = controller
 

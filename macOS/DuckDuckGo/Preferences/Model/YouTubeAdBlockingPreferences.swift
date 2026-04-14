@@ -34,6 +34,7 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
     static let youTubeAdBlockingEnabledDidChangeNotification = Notification.Name("youTubeAdBlockingEnabledDidChange")
 
     private var settings: any KeyedStoring<YouTubeAdBlockingSettings>
+    private let pixelFiring: PixelFiring?
     private var cancellables = Set<AnyCancellable>()
 
     @Published
@@ -41,6 +42,9 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
         didSet {
             guard youTubeAdBlockingEnabled != oldValue else { return }
             settings.youTubeAdBlockingEnabled = youTubeAdBlockingEnabled
+            pixelFiring?.fire(
+                youTubeAdBlockingEnabled ? WebExtensionPixel.adBlockingExtensionEnabled : WebExtensionPixel.adBlockingExtensionDisabled,
+                frequency: .dailyAndCount)
             NotificationCenter.default.post(name: Self.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
         }
     }
@@ -98,9 +102,11 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
     }
 
     init(settings: (any KeyedStoring<YouTubeAdBlockingSettings>)? = nil,
-         duckPlayerPreferences: DuckPlayerPreferences? = nil) {
+         duckPlayerPreferences: DuckPlayerPreferences? = nil,
+         pixelFiring: PixelFiring? = nil) {
         self.settings = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
         self.duckPlayerPreferences = duckPlayerPreferences ?? DuckPlayerPreferences()
+        self.pixelFiring = pixelFiring
         youTubeAdBlockingEnabled = self.settings.youTubeAdBlockingEnabled ?? false
 
         self.duckPlayerPreferences.objectWillChange

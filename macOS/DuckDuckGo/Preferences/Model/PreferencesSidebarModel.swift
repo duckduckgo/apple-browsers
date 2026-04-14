@@ -190,7 +190,7 @@ final class PreferencesSidebarModel: ObservableObject {
         duckPlayerPreferences: DuckPlayerPreferences,
         youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
-        adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability
+        adBlockingAvailability: AdBlockingAvailabilityProviding
     ) {
         let loadSections = { currentSubscriptionFeatures in
             return PreferencesSection.defaultSections(

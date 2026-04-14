@@ -86,8 +86,8 @@ struct SettingsYouTubeAdBlockingView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onAppear {
-            DailyPixel.fireDailyAndCount(pixel: .duckPlayerSettingsOpen,
-                                         withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .duckPlayer))
+            DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingSettingsOpen,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
         }
     }
 }

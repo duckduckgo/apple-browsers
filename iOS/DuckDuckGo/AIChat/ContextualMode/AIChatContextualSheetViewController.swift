@@ -500,8 +500,11 @@ private extension AIChatContextualSheetViewController {
             let viewModel = await AIChatRecentChatsPopupViewModel.fetch(using: suggestionsReader)
             guard view.window != nil, !isBeingDismissed else { return }
 
-            // If we think there's an active chat but no suggestions exist, the chat was deleted externally
-            if viewModel?.suggestions.isEmpty ?? true, sessionState.hasActiveChat, sessionState.contextualChatURL != nil {
+            // If we have an active chat, check if it still exists in the suggestions
+            if sessionState.hasActiveChat,
+               let activeChatID = sessionState.contextualChatURL?.duckAIChatID,
+               let suggestions = viewModel?.suggestions,
+               !suggestions.contains(where: { $0.chatId == activeChatID }) {
                 Logger.aiChat.debug("[SheetVC] Active chat no longer exists, resetting to new chat")
                 delegate?.aiChatContextualSheetViewControllerDidRequestNewChat(self)
             }

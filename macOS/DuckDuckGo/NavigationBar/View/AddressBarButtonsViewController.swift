@@ -750,69 +750,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateLegacyPermissionButtons() {
-        // Prevent crash if Combine subscriptions outlive view lifecycle
-        guard isViewLoaded else { return }
-        guard let tabViewModel else { return }
-
-        guard !featureFlagger.isFeatureOn(.newPermissionView) else {
-            permissionButtons.isShown = false
-            return
-        }
-
-        // Show permission buttons when there's a requested permission on NTP even if address bar is focused,
-        // since NTP has the address bar focused by default
-        let hasRequestedPermission = tabViewModel.usedPermissions.values.contains(where: { $0.isRequested })
-        let shouldShowWhileFocused = (tabViewModel.tab.content == .newtab) && hasRequestedPermission
-
-        permissionButtons.isShown = (shouldShowWhileFocused || !isTextFieldEditorFirstResponder)
-        && !tabViewModel.isShowingErrorPage
-        defer {
-            showOrHidePermissionPopoverIfNeeded()
-        }
-
-        geolocationButton.buttonState = tabViewModel.usedPermissions.geolocation
-
-        let (camera, microphone) = PermissionState?.combineCamera(tabViewModel.usedPermissions.camera,
-                                                                  withMicrophone: tabViewModel.usedPermissions.microphone)
-        cameraButton.buttonState = camera
-        microphoneButton.buttonState = microphone
-
-        // Show pop-up button when there's a blocked pop-up (permission is requested)
-        if tabViewModel.usedPermissions.popups?.isRequested == true {
-            popupsButton.buttonState = tabViewModel.usedPermissions.popups
-        } else if featureFlagger.isFeatureOn(.popupBlocking) {
-            let pageInitiatedPopupOpened = tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false
-            // Keep button visible (as .inactive) when a page-initiated pop-up was allowed or opened by the current page (always allowed)
-            popupsButton.buttonState = pageInitiatedPopupOpened ? .inactive : tabViewModel.usedPermissions.popups // .inactive or nil
-        } else {
-            popupsButton.buttonState = nil
-        }
-        externalSchemeButton.buttonState = tabViewModel.usedPermissions.externalScheme
-        let title = String(format: UserText.permissionExternalSchemeOpenFormat, tabViewModel.usedPermissions.first(where: { $0.key.isExternalScheme })?.key.localizedDescription ?? "")
-        externalSchemeButton.setAccessibilityTitle(title)
-
-        notificationButton?.buttonState = tabViewModel.usedPermissions.notification
-        notificationButton?.setAccessibilityTitle(UserText.permissionNotification)
-    }
-
-    private func showOrHidePermissionPopoverIfNeeded() {
-        guard let tabViewModel else { return }
-
-        for permission in tabViewModel.usedPermissions.keys {
-            guard case .requested(let query) = tabViewModel.usedPermissions[permission] else { continue }
-            let permissionAuthorizationPopover = permissionAuthorizationPopoverCreatingIfNeeded()
-            guard !permissionAuthorizationPopover.isShown else {
-                if permissionAuthorizationPopover.viewController.query === query { return }
-                permissionAuthorizationPopover.close()
-                return
-            }
-            openPermissionAuthorizationPopover(for: query)
-            return
-        }
-        if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
-            permissionAuthorizationPopover.close()
-        }
-
+        permissionButtons.isShown = false
     }
 
     private func updateAllPermissionButtons() {
@@ -829,11 +767,6 @@ final class AddressBarButtonsViewController: NSViewController {
         // Prevent crash if Combine subscriptions outlive view lifecycle
         guard isViewLoaded else { return }
         guard let tabViewModel else { return }
-
-        guard featureFlagger.isFeatureOn(.newPermissionView) else {
-            permissionCenterButton.isShown = false
-            return
-        }
 
         // Only update icon if no authorization popover is currently shown
         // (icon updates during active popover are handled by openPermissionAuthorizationPopover)
@@ -861,7 +794,6 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updatePermissionCenterButtonIcon(forRequestedPermission permissionType: PermissionType? = nil) {
-        guard featureFlagger.isFeatureOn(.newPermissionView) else { return }
         permissionCenterButton.image = permissionType?.icon ?? DesignSystemImages.Glyphs.Size16.permissions
     }
 
@@ -1714,7 +1646,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     func openPermissionAuthorizationPopover(for query: PermissionAuthorizationQuery) {
-        let button: AddressBarButton
+        let button = permissionCenterButton
 
         lazy var popover: NSPopover = {
             let popover = self.permissionAuthorizationPopoverCreatingIfNeeded()
@@ -1722,43 +1654,15 @@ final class AddressBarButtonsViewController: NSViewController {
             return popover
         }()
 
-        if featureFlagger.isFeatureOn(.newPermissionView) {
-            button = permissionCenterButton
-            // Update button icon to match the permission being requested
-            updatePermissionCenterButtonIcon(forRequestedPermission: query.permissions.first)
-            if query.permissions.first?.isPopups == true {
-                guard !query.wasShownOnce else { return }
-                popover = popupBlockedPopoverCreatingIfNeeded()
-            }
-            if query.permissions.first?.isExternalScheme == true {
-                query.shouldShowAlwaysAllowCheckbox = true
-                query.shouldShowCancelInsteadOfDeny = true
-            }
-        } else {
-            if query.permissions.contains(.camera)
-                || (query.permissions.contains(.microphone) && microphoneButton.isHidden && cameraButton.isShown) {
-                button = cameraButton
-            } else {
-                assert(query.permissions.count == 1)
-                switch query.permissions.first {
-                case .microphone:
-                    button = microphoneButton
-                case .geolocation:
-                    button = geolocationButton
-                case .popups:
-                    guard !query.wasShownOnce else { return }
-                    button = popupsButton
-                    popover = popupBlockedPopoverCreatingIfNeeded()
-                case .externalScheme:
-                    button = externalSchemeButton
-                    query.shouldShowAlwaysAllowCheckbox = true
-                    query.shouldShowCancelInsteadOfDeny = true
-                default:
-                    assertionFailure("Unexpected permissions")
-                    query.handleDecision(grant: false)
-                    return
-                }
-            }
+        // Update button icon to match the permission being requested
+        updatePermissionCenterButtonIcon(forRequestedPermission: query.permissions.first)
+        if query.permissions.first?.isPopups == true {
+            guard !query.wasShownOnce else { return }
+            popover = popupBlockedPopoverCreatingIfNeeded()
+        }
+        if query.permissions.first?.isExternalScheme == true {
+            query.shouldShowAlwaysAllowCheckbox = true
+            query.shouldShowCancelInsteadOfDeny = true
         }
         guard button.isVisible else { return }
 
@@ -1899,7 +1803,6 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @IBAction func permissionCenterButtonAction(_ sender: Any) {
-        guard featureFlagger.isFeatureOn(.newPermissionView) else { return }
         guard let tabViewModel else { return }
 
         // Don't open permission center while authorization or popup blocked dialog is presented

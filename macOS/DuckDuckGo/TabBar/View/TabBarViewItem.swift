@@ -1187,15 +1187,10 @@ final class TabBarViewItem: NSCollectionViewItem {
     // MARK: - Active Permission Icons in Favicon
 
     private var isShowingActivePermissionIcon: Bool {
-        featureFlagger.isFeatureOn(.newPermissionView) && !activePermissionTypes.isEmpty
+        !activePermissionTypes.isEmpty
     }
 
     private func updateActivePermissionIcons() {
-        guard featureFlagger.isFeatureOn(.newPermissionView) else {
-            stopActivePermissionIconTimer()
-            return
-        }
-
         // Collect all active permissions (camera, microphone, geolocation)
         var activeTypes: [PermissionType] = []
         if usedPermissions.camera.isActive {

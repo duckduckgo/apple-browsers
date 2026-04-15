@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 import DuckUI
+import Lottie
 
 struct SafariExportInterstitialView: View {
 
@@ -87,12 +88,10 @@ struct SafariExportInterstitialView: View {
         }
 
         var body: some View {
-            LottieView(
-                lottieFile: lottieFileName,
-                loopMode: .mode(.repeat(1.0)),
-                isAnimating: $isAnimating
-            )
-            .frame(width: 200, height: 200)
+            Lottie.LottieView(animation: .named(lottieFileName))
+                .playing(loopMode: .playOnce)
+                .frame(width: 300, height: 200)
+                .scaledToFit()
         }
     }
 }

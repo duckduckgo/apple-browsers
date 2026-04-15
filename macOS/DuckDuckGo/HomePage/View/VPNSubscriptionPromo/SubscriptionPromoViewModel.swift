@@ -79,6 +79,12 @@ struct SubscriptionPromoUserDefaultsPersistor: SubscriptionPromoPersisting {
     }
 }
 
+enum TabPromoState {
+    case notEvaluated
+    case evaluated(shouldShowPromo: Bool)
+    case dismissed
+}
+
 @MainActor
 final class SubscriptionPromoViewModel: ObservableObject {
 
@@ -92,8 +98,16 @@ final class SubscriptionPromoViewModel: ObservableObject {
     private let pixelFiring: PixelFiring?
     private var persistor: SubscriptionPromoPersisting
     private let locale: Locale
-    @Published private(set) var shouldShowPromo: Bool = false
+
+    @Published private(set) var shouldShowPromo: Bool = false {
+        didSet {
+            guard oldValue != shouldShowPromo else { return }
+            promoDelegate?.updateVisibility(shouldShowPromo)
+        }
+    }
     @Published private(set) var isEligibleForFreeTrial: Bool = false
+
+    private weak var promoDelegate: FireWindowSubscriptionPromoDelegate?
 
     var onButtonAction: (() -> Void)?
     var onPromoEvaluated: ((Bool) -> Void)?
@@ -103,18 +117,18 @@ final class SubscriptionPromoViewModel: ObservableObject {
          featureFlagger: FeatureFlagger,
          pixelFiring: PixelFiring? = PixelKit.shared,
          persistor: SubscriptionPromoPersisting? = nil,
-         locale: Locale = .current) {
+         locale: Locale = .current,
+         promoDelegate: FireWindowSubscriptionPromoDelegate? = nil) {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.persistor = persistor ?? SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
         self.locale = locale
+        self.promoDelegate = promoDelegate
     }
 
-    enum TabPromoState {
-        case notEvaluated
-        case evaluated(shouldShowPromo: Bool)
-        case dismissed
+    deinit {
+        promoDelegate?.updateVisibility(false)
     }
 
     func updateForTab(_ state: TabPromoState) {
@@ -149,7 +163,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
     /// - US locale only
     /// - Non-subscriber only
     /// - Fire Tab visited >= 3 times
-    /// - Not dismissed or CTA actioned within the 28-day cooldown
+    /// - Not dismissed or CTA actioned within the 28-day cooldown (fallback when PromoQueue is off; PromoService handles this via `resultWhenHidden` when on)
     /// - Not shown more than 4 times in any given 28-day rolling window
     private func evaluatePromoVisibility() {
         shouldShowPromo = false
@@ -159,7 +173,9 @@ final class SubscriptionPromoViewModel: ObservableObject {
         guard isUSLocale else { return }
         guard !subscriptionManager.isSubscriptionPresent() else { return }
         guard persistor.fireTabVisitCount >= Self.requiredVisitCount else { return }
-        guard !isDismissedWithinCooldown else { return }
+        if promoDelegate == nil {
+            guard !isDismissedWithinCooldown else { return }
+        }
         guard !hasReachedDisplayLimit else { return }
 
         isEligibleForFreeTrial = subscriptionManager.isUserEligibleForFreeTrial()

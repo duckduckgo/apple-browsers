@@ -106,7 +106,6 @@ extension SubscriptionPromoDebugMenu: NSMenuDelegate {
         let isDismissed = isDismissedWithinCooldown
         let daysSinceLastDismissed = daysSinceLastDismissed.map { "\($0)" } ?? "N/A"
         menu.item(withTag: 3)?.title = "👀 Dismissed: \(isDismissed) (days since: \(daysSinceLastDismissed))"
-
     }
 
     private var daysSinceLastDismissed: Int? {

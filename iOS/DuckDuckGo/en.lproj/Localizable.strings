@@ -1196,10 +1196,10 @@
 "data.import.detail.passwords.title" = "Import from Passwords";
 
 /* Description on the Safari import detail screen */
-"data.import.detail.safari.description" = "First, export your passwords from Safari, then come back here to upload the file.";
+"data.import.detail.safari.description" = "First, export your passwords and bookmarks from Safari, then come back here to upload the file.";
 
 /* Primary button on the Safari import detail screen to start the export flow */
-"data.import.detail.safari.export-button" = "Export Safari Passwords";
+"data.import.detail.safari.export-button" = "Export from Safari";
 
 /* Navigation title for the Safari import detail screen */
 "data.import.detail.safari.title" = "Import from Safari";

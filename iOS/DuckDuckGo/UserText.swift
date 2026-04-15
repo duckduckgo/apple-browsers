@@ -2439,8 +2439,8 @@ public struct UserText {
     public static let importDetailPasswordsStep3 = NSLocalizedString("data.import.detail.passwords.step3", value: "Select **DuckDuckGo** as Destination", comment: "Step 3 instruction for importing from the Passwords app")
 
     public static let importDetailSafariTitle = NSLocalizedString("data.import.detail.safari.title", value: "Import from Safari", comment: "Navigation title for the Safari import detail screen")
-    public static let importDetailSafariDescription = NSLocalizedString("data.import.detail.safari.description", value: "First, export your passwords from Safari, then come back here to upload the file.", comment: "Description on the Safari import detail screen")
-    public static let importDetailSafariExportButton = NSLocalizedString("data.import.detail.safari.export-button", value: "Export Safari Passwords", comment: "Primary button on the Safari import detail screen to start the export flow")
+    public static let importDetailSafariDescription = NSLocalizedString("data.import.detail.safari.description", value: "First, export your passwords and bookmarks from Safari, then come back here to upload the file.", comment: "Description on the Safari import detail screen")
+    public static let importDetailSafariExportButton = NSLocalizedString("data.import.detail.safari.export-button", value: "Export from Safari", comment: "Primary button on the Safari import detail screen to start the export flow")
 
     public static let importDetailChromeTitle = NSLocalizedString("data.import.detail.chrome.title", value: "Import from Chrome", comment: "Navigation title for the Chrome import detail screen")
     public static let importDetailChromeDescription = NSLocalizedString("data.import.detail.chrome.description", value: "Open Chrome, then go to Password Manager and follow the steps below:", comment: "Description on the Chrome import detail screen")

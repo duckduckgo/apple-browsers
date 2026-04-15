@@ -680,6 +680,25 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         return dataImportViewController
     }
 
+    private func makeBookmarksSafariImportViewController() -> ImportSourceDetailViewController {
+        let fileUploadCoordinator = DataImportFileUploadCoordinator(
+            bookmarksDatabase: bookmarksDatabase,
+            favoritesDisplayMode: appSettings.favoritesDisplayMode,
+            syncService: syncService,
+            keyValueStore: keyValueStore,
+            importScreen: .bookmarks
+        )
+
+        return ImportSourceDetailViewController(
+            source: .safari,
+            syncService: syncService,
+            fileUploadCoordinator: fileUploadCoordinator
+        ) { [weak self] in
+            self?.viewModel.reloadData()
+            self?.navigationController?.popViewController(animated: false)
+        }
+    }
+
     private func segueToDataImport() {
         finishEditing()
 
@@ -688,10 +707,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         case .legacy(let importScreen):
             destinationViewController = makeDataImportViewController(importScreen: importScreen)
         case .hub:
-            destinationViewController = DataImportHubViewController(syncService: syncService,
-                                                                    keyValueStore: keyValueStore,
-                                                                    bookmarksDatabase: bookmarksDatabase,
-                                                                    favoritesDisplayMode: appSettings.favoritesDisplayMode)
+            destinationViewController = makeBookmarksSafariImportViewController()
         }
         navigationController?.setToolbarHidden(true, animated: true)
         navigationController?.pushViewController(destinationViewController, animated: true)

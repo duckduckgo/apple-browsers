@@ -101,7 +101,7 @@ final class BrowserTabViewController: NSViewController {
     private let accessibilityPreferences: AccessibilityPreferences
     private let duckPlayer: DuckPlayer
     private let subscriptionManager: any SubscriptionManager
-    private let subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
+    private weak var subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let pinningManager: PinningManager
     private let adBlockingAvailability: AdBlockingAvailabilityProviding

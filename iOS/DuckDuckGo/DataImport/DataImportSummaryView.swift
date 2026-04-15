@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import UIKit
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
@@ -66,6 +67,7 @@ struct DataImportSummaryView: View {
                         VStack(spacing: 28) {
                             if let passwordsSummary = viewModel.passwordsSummary {
                                 StatsContainer(
+                                    dataType: .passwords,
                                     successString: UserText.dataImportSummaryPasswordsSuccess,
                                     successCount: passwordsSummary.successful,
                                     failureCount: passwordsSummary.failed,
@@ -75,6 +77,7 @@ struct DataImportSummaryView: View {
                             
                             if let bookmarksSummary = viewModel.bookmarksSummary {
                                 StatsContainer(
+                                    dataType: .bookmarks,
                                     successString: UserText.dataImportSummaryBookmarksSuccess,
                                     successCount: bookmarksSummary.successful,
                                     failureCount: bookmarksSummary.failed,
@@ -84,6 +87,7 @@ struct DataImportSummaryView: View {
                             
                             if let creditCardsSummary = viewModel.creditCardsSummary {
                                 StatsContainer(
+                                    dataType: .creditCards,
                                     successString: UserText.dataImportSummaryCreditCardsSuccess,
                                     successCount: creditCardsSummary.successful,
                                     failureCount: creditCardsSummary.failed,
@@ -231,18 +235,18 @@ struct DataImportSummaryView: View {
             }
 
             VStack(spacing: 12) {
-                StatRow(isSuccess: true,
+                StatRow(icon: .success(DataImport.DataType.passwords.summarySuccessIcon),
                         label: UserText.dataImportSummaryPasswordsSuccess,
                         count: passwordsSuccessCount,
                         showSeparator: true)
 
-                StatRow(isSuccess: true,
+                StatRow(icon: .success(DataImport.DataType.bookmarks.summarySuccessIcon),
                         label: UserText.dataImportSummaryBookmarksSuccess,
                         count: bookmarksSuccessCount,
                         showSeparator: creditCardsSuccessCount != nil ? true : false)
 
                 if let creditCardsSuccessCount = creditCardsSuccessCount {
-                    StatRow(isSuccess: true,
+                    StatRow(icon: .success(DataImport.DataType.creditCards.summarySuccessIcon),
                             label: UserText.dataImportSummaryCreditCardsSuccess,
                             count: creditCardsSuccessCount,
                             showSeparator: false)
@@ -255,6 +259,7 @@ struct DataImportSummaryView: View {
     }
 
     private struct StatsContainer: View {
+        var dataType: DataImport.DataType
         var successString: String
         var successCount: Int
         var failureCount: Int
@@ -262,20 +267,20 @@ struct DataImportSummaryView: View {
 
         var body: some View {
             VStack(spacing: 12) {
-                StatRow(isSuccess: true,
+                StatRow(icon: .success(dataType.summarySuccessIcon),
                         label: successString,
                         count: successCount,
                         showSeparator: failureCount != 0 || duplicatesCount != 0)
 
                 if failureCount > 0 {
-                    StatRow(isSuccess: false,
+                    StatRow(icon: .failure,
                             label: UserText.dataImportSummaryFailed,
                             count: failureCount,
                             showSeparator: duplicatesCount != 0)
                 }
 
                 if duplicatesCount > 0 {
-                    StatRow(isSuccess: false,
+                    StatRow(icon: .failure,
                             label: UserText.dataImportSummaryDuplicates,
                             count: duplicatesCount,
                             showSeparator: false)
@@ -288,7 +293,12 @@ struct DataImportSummaryView: View {
     }
 
     private struct StatRow: View {
-        let isSuccess: Bool
+        enum Icon {
+            case success(UIImage)
+            case failure
+        }
+
+        let icon: Icon
         let label: String
         let count: Int
         let showSeparator: Bool
@@ -297,13 +307,10 @@ struct DataImportSummaryView: View {
             VStack(spacing: 0) {
                 HStack {
                     HStack(spacing: 12) {
-                        if isSuccess {
-                            Image(uiImage: DesignSystemImages.Glyphs.Size24.checkRecolorable).renderingMode(.template)
-                                .resizable()
-                                .frame(width: 21, height: 21)
-                                .foregroundStyle(Color(designSystemColor: .alertGreen))
-                                .padding(.leading, 2)
-                        } else {
+                        switch icon {
+                        case .success(let successIcon):
+                            Image(uiImage: successIcon)
+                        case .failure:
                             Image(uiImage: DesignSystemImages.Glyphs.Size24.crossRecolorable)
                         }
                         Text(label)
@@ -482,6 +489,20 @@ struct DataImportSummaryView: View {
                     .background(configuration.isPressed ? Color(designSystemColor: .buttonsPrimaryPressed) : Color(designSystemColor: .buttonsPrimaryDefault))
                     .cornerRadius(Metrics.buttonCornerRadius)
             }
+        }
+    }
+}
+
+private extension DataImport.DataType {
+
+    var summarySuccessIcon: UIImage {
+        switch self {
+        case .bookmarks:
+            return DesignSystemImages.Color.Size24.bookmarkCheck
+        case .passwords:
+            return DesignSystemImages.Color.Size24.keyCheck
+        case .creditCards:
+            return DesignSystemImages.Color.Size24.creditCardCheck
         }
     }
 }

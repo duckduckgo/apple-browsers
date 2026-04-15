@@ -189,9 +189,9 @@ private extension DataImportFileUploadCoordinator {
     }
 
     func presentDataTypePicker(for viewModel: DataImportViewModel, contents: ImportArchiveContents) {
-        let dataTypes = viewModel.importDataTypes(for: contents)
+        let importPreview = viewModel.importDataTypes(for: contents)
 
-        guard !dataTypes.isEmpty else {
+        guard !importPreview.isEmpty else {
             DispatchQueue.main.async { [weak self] in
                 viewModel.isLoading = false
                 self?.presentFileErrorSheet(.noDataInZip)
@@ -199,8 +199,16 @@ private extension DataImportFileUploadCoordinator {
             return
         }
 
+        // Safari export already scopes the zip to selected data types, so
+        // the new Import from Safari flow should skip the in-app type picker.
+        if currentImportSource == .safari {
+            let selectedDataTypes = importPreview.map(\.type)
+            viewModel.importZipArchive(from: contents, for: selectedDataTypes)
+            return
+        }
+
         let zipContentSelectionViewController = ZipContentSelectionViewController(
-            dataTypes,
+            importPreview,
             importScreen: viewModel.state.importScreen
         ) { selectedDataTypes in
             viewModel.importZipArchive(from: contents, for: selectedDataTypes)

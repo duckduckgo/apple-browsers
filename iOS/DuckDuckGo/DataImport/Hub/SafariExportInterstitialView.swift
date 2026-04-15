@@ -27,8 +27,8 @@ struct SafariExportInterstitialView: View {
     var onOpenSettingsToExport: (() -> Void)?
     var onCancel: (() -> Void)?
     var onContentHeightChange: ((CGFloat) -> Void)?
-
-    @State private var isAnimating = false
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     var body: some View {
         VStack(spacing: 0) {
@@ -41,10 +41,10 @@ struct SafariExportInterstitialView: View {
             .padding(.horizontal, 16)
             .padding(.top, 16)
 
-            ExportAnimationView(isAnimating: $isAnimating)
+            ExportAnimationView()
 
             Text(UserText.safariExportInterstitialTip)
-                .daxTitle2()
+                .daxTitle1()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .lineLimit(nil)
@@ -60,8 +60,9 @@ struct SafariExportInterstitialView: View {
                 Text(UserText.safariExportInterstitialButton)
             }
             .buttonStyle(PrimaryButtonStyle())
-            .padding(.horizontal, 16)
-            .padding(.bottom, 12)
+            .frame(maxWidth: shouldUseExpandedButtonLayout ? 360 : .infinity)
+            .padding(.horizontal, shouldUseExpandedButtonLayout ? 32 : 16)
+            .padding(.bottom, shouldUseExpandedButtonLayout ? 32 : 12)
 
         }
         .fixedSize(horizontal: false, vertical: true)
@@ -72,15 +73,13 @@ struct SafariExportInterstitialView: View {
             return Color.clear
         })
         .background(Color(designSystemColor: .background))
-        .onFirstAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                isAnimating = true
-            }
-        }
+    }
+
+    private var shouldUseExpandedButtonLayout: Bool {
+        !(horizontalSizeClass == .compact && verticalSizeClass == .regular)
     }
 
     private struct ExportAnimationView: View {
-        @Binding var isAnimating: Bool
         @Environment(\.colorScheme) private var colorScheme
 
         private var lottieFileName: String {

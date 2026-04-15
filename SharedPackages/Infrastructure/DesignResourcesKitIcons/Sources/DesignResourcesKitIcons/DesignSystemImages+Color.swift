@@ -232,9 +232,10 @@ public extension DesignSystemImages {
         public enum Size96 {
             public static var announcement: DesignSystemImage { .init(resource: .announcement96) }
             public static var extensionChrome: DesignSystemImage { .init(resource: .extensionChrome96) }
-            public static var extensionPasswords: DesignSystemImage { .init(resource: .passwordsApp96) }
             public static var extensionSafari: DesignSystemImage { .init(resource: .extensionSafari96) }
             public static var fireTab: DesignSystemImage { .init(resource: .fireTabColor96) }
+            public static var passwordsAppFeature: DesignSystemImage { .init(resource: .passwordsAppFeature96) }
+            public static var passwordsKeychainFeature: DesignSystemImage { .init(resource: .passwordsKeychainFeature96) }
             public static var syncPasswordsDesktop: DesignSystemImage { .init(resource: .syncPasswordsDesktop96) }
         }
 

@@ -98,7 +98,6 @@ struct DataImportSummaryView: View {
                     .padding(.top, 28)
                 }
             }
-            .frame(maxWidth: 360)
             
             
             Spacer()
@@ -153,7 +152,7 @@ struct DataImportSummaryView: View {
             case .passwordsPromo:
                 ContinueImportCard(
                     title: UserText.dataImportSummaryPasswordsPromoTitle,
-                    icon: Image(uiImage: DesignSystemImages.Color.Size96.extensionPasswords),
+                    icon: Image(uiImage: DesignSystemImages.Color.Size96.passwordsKeychainFeature),
                     dismissButtonTitle: UserText.dataImportSummaryPromoDismissAction,
                     continueButtonTitle: UserText.dataImportSummaryPromoContinueAction,
                     onDismissTapped: { viewModel.dismiss() },
@@ -177,7 +176,6 @@ struct DataImportSummaryView: View {
                 dismissButton
             }
         }
-        .frame(maxWidth: 360)
         .padding(.top, 16)
         .padding(.bottom, 36)
     }
@@ -189,6 +187,7 @@ struct DataImportSummaryView: View {
             Text(UserText.dataImportSummaryDone)
         }
         .buttonStyle(PrimaryButtonStyle())
+        .frame(maxWidth: 360)
     }
 
     private func footerMessage(body: String) -> some View {
@@ -250,7 +249,7 @@ struct DataImportSummaryView: View {
                 }
             }
             .padding(.vertical, 12)
-            .background(Color(designSystemColor: .panel))
+            .background(Color(designSystemColor: .surface))
             .cornerRadius(10)
         }
     }
@@ -283,7 +282,7 @@ struct DataImportSummaryView: View {
                 }
             }
             .padding(.vertical, 12)
-            .background(Color(designSystemColor: .panel))
+            .background(Color(designSystemColor: .surface))
             .cornerRadius(10)
         }
     }
@@ -381,7 +380,7 @@ struct DataImportSummaryView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 24)
-                    .fill(Color(designSystemColor: .panel))
+                    .fill(Color(designSystemColor: .surface))
             )
         }
 
@@ -458,7 +457,7 @@ struct DataImportSummaryView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 24)
-                    .fill(Color(designSystemColor: .panel))
+                    .fill(Color(designSystemColor: .surface))
             )
         }
         

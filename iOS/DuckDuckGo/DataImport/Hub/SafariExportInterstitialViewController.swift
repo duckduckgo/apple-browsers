@@ -19,6 +19,7 @@
 
 import UIKit
 import SwiftUI
+import DesignResourcesKit
 
 final class SafariExportInterstitialViewController: UIViewController {
 
@@ -27,6 +28,7 @@ final class SafariExportInterstitialViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = UIColor(designSystemColor: .background)
         setupView()
     }
 
@@ -50,7 +52,8 @@ final class SafariExportInterstitialViewController: UIViewController {
             }
         )
         let hostingController = UIHostingController(rootView: interstitialView)
-        hostingController.view.backgroundColor = .clear
+        hostingController.view.backgroundColor = UIColor(designSystemColor: .background)
+        hostingController.view.isOpaque = true
         installChildViewController(hostingController)
     }
 

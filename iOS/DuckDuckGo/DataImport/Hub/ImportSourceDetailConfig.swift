@@ -89,7 +89,7 @@ enum ImportPasswordSource: CaseIterable, Identifiable {
     var detailIcon: Image {
         switch self {
         case .passwordsApp:
-            return Image(uiImage: DesignSystemImages.Color.Size96.extensionPasswords)
+            return Image(uiImage: DesignSystemImages.Color.Size96.passwordsAppFeature)
         case .safari:
             return Image(uiImage: DesignSystemImages.Color.Size96.extensionSafari)
         case .chrome:

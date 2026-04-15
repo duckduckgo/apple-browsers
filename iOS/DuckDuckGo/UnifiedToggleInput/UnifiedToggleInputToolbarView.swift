@@ -17,11 +17,12 @@
 //  limitations under the License.
 //
 
+import AIChat
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
 
-/// Horizontal toolbar with AI tool buttons: image, [spacer], model picker chip, submit.
+/// Horizontal toolbar with leading action buttons, a trailing model or selected-tool chip, and submit controls.
 final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Constants
@@ -30,19 +31,20 @@ final class UnifiedToggleInputToolbarView: UIView {
         static let verticalPadding: CGFloat = 8
         static let horizontalPadding: CGFloat = 8
         static let toolButtonSize: CGFloat = 40
+        static let selectedToolIconSize: CGFloat = 24
+        static let selectedToolClearButtonSize: CGFloat = 24
+        static let leftGroupSpacing: CGFloat = 4
         static let rightGroupSpacing: CGFloat = 8
-        static let chipHeight: CGFloat = 32
-        static let chipCornerRadius: CGFloat = 16
-        static let chipHorizontalPadding: CGFloat = 12
+        static let chipHeight: CGFloat = 40
+        static let chipCornerRadius: CGFloat = 20
+        static let chipHorizontalPadding: CGFloat = 16
         static let chipSpacing: CGFloat = 4
-        static let chipFontSize: CGFloat = 13
     }
 
     // MARK: - Callbacks
 
-    var onCustomizeResponsesTapped: (() -> Void)?
     var onAttachTapped: (() -> Void)?
-    var onModelPickerTapped: (() -> Void)?
+    var onSelectedToolClearTapped: (() -> Void)?
     var onSubmitTapped: (() -> Void)?
     var onVoiceTapped: (() -> Void)?
     var onStopGeneratingTapped: (() -> Void)?
@@ -69,6 +71,10 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateModelChipConfiguration() }
     }
 
+    var selectedTool: AIChatRAGTool? {
+        didSet { updateChipVisibility() }
+    }
+
     var modelPickerMenu: UIMenu? {
         get { modelChipButton.menu }
         set {
@@ -77,9 +83,25 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
+    var toolsMenu: UIMenu? {
+        get { toolsButton.menu }
+        set {
+            toolsButton.menu = newValue
+            toolsButton.showsMenuAsPrimaryAction = (newValue != nil)
+        }
+    }
+
     var isModelChipHidden: Bool {
-        get { modelChipButton.isHidden }
-        set { modelChipButton.isHidden = newValue }
+        get { modelChipExplicitlyHidden }
+        set {
+            modelChipExplicitlyHidden = newValue
+            updateChipVisibility()
+        }
+    }
+
+    var isToolsButtonHidden: Bool {
+        get { toolsButton.isHidden }
+        set { toolsButton.isHidden = newValue }
     }
 
     var isImageButtonHidden: Bool {
@@ -92,17 +114,14 @@ final class UnifiedToggleInputToolbarView: UIView {
         set { imageButton.isEnabled = newValue }
     }
 
-    var isCustomizeResponsesButtonHidden: Bool {
-        get { customizeResponsesButton.isHidden }
-        set { customizeResponsesButton.isHidden = newValue }
-    }
+    private var modelChipExplicitlyHidden = false
 
     // MARK: - UI Components
 
-    private lazy var customizeResponsesButton: UIButton = makeToolButton(
+    private lazy var toolsButton: UIButton = makeToolButton(
         image: DesignSystemImages.Glyphs.Size24.options,
-        accessibilityLabel: UserText.aiChatToolbarCustomizeResponsesButtonAccessibilityLabel,
-        action: #selector(customizeResponsesTapped)
+        accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel,
+        action: nil
     )
 
     private(set) lazy var imageButton: UIButton = makeToolButton(
@@ -129,7 +148,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         config.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
             var updated = attributes
-            updated.font = .systemFont(ofSize: Constants.chipFontSize, weight: .regular)
+            updated.font = .daxSubheadRegular()
             return updated
         }
         config.background.strokeColor = UIColor(designSystemColor: .lines)
@@ -144,6 +163,57 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.heightAnchor.constraint(equalToConstant: Constants.chipHeight).isActive = true
 
         return button
+    }()
+
+    private lazy var selectedToolIconView: UIImageView = {
+        let imageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.globe)
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.tintColor = UIColor(designSystemColor: .textPrimary)
+        imageView.contentMode = .scaleAspectFit
+        NSLayoutConstraint.activate([
+            imageView.widthAnchor.constraint(equalToConstant: Constants.selectedToolIconSize),
+            imageView.heightAnchor.constraint(equalToConstant: Constants.selectedToolIconSize),
+        ])
+        return imageView
+    }()
+
+    private lazy var selectedToolClearButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setImage(DesignSystemImages.Glyphs.Size16.close, for: .normal)
+        button.tintColor = UIColor(designSystemColor: .textPrimary)
+        button.accessibilityLabel = UserText.aiChatToolbarClearSelectedToolAccessibilityLabel
+        button.addTarget(self, action: #selector(selectedToolClearTapped), for: .primaryActionTriggered)
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: Constants.selectedToolClearButtonSize),
+            button.heightAnchor.constraint(equalToConstant: Constants.selectedToolClearButtonSize),
+        ])
+        return button
+    }()
+
+    private lazy var selectedToolChipView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.layer.cornerRadius = Constants.chipCornerRadius
+        view.isHidden = true
+
+        let stackView = UIStackView(arrangedSubviews: [selectedToolIconView, selectedToolClearButton])
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .horizontal
+        stackView.alignment = .center
+        stackView.spacing = Constants.chipSpacing
+        view.addSubview(stackView)
+
+        NSLayoutConstraint.activate([
+            view.heightAnchor.constraint(equalToConstant: Constants.chipHeight),
+            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.chipHorizontalPadding),
+            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.chipHorizontalPadding),
+            stackView.topAnchor.constraint(equalTo: view.topAnchor),
+            stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+
+        return view
     }()
 
     private lazy var submitButton: UIButton = {
@@ -173,9 +243,9 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.layer.cornerRadius = 14
         button.clipsToBounds = true
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityLabel = UserText.aiChatToolbarStopGeneratingButtonAccessibilityLabel
         button.setContentHuggingPriority(.required, for: .horizontal)
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
-        button.accessibilityLabel = "Stop generating"
         button.accessibilityIdentifier = "AIChat.Toolbar.Button.StopGenerating"
         button.addTarget(self, action: #selector(stopGeneratingTapped), for: .touchUpInside)
         button.isHidden = true
@@ -196,13 +266,14 @@ final class UnifiedToggleInputToolbarView: UIView {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+}
 
-    // MARK: - Setup
+private extension UnifiedToggleInputToolbarView {
 
     private func setupUI() {
-        let leftGroup = UIStackView(arrangedSubviews: [customizeResponsesButton, imageButton])
+        let leftGroup = UIStackView(arrangedSubviews: [imageButton, toolsButton, selectedToolChipView])
         leftGroup.axis = .horizontal
-        leftGroup.spacing = 0
+        leftGroup.spacing = Constants.leftGroupSpacing
         leftGroup.alignment = .center
         leftGroup.translatesAutoresizingMaskIntoConstraints = false
 
@@ -228,20 +299,35 @@ final class UnifiedToggleInputToolbarView: UIView {
         NSLayoutConstraint.activate([
             outerStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             outerStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
-            outerStack.centerYAnchor.constraint(equalTo: centerYAnchor),
+            outerStack.topAnchor.constraint(equalTo: topAnchor, constant: Constants.verticalPadding),
+            outerStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.verticalPadding),
             modelChipButton.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.45)
         ])
 
+        updateChipVisibility()
         updateSubmitButtonState()
     }
 
-    private func makeToolButton(image: DesignSystemImage, accessibilityLabel: String, action: Selector) -> UIButton {
-        let button = UIButton(type: .system)
-        button.setImage(image, for: .normal)
-        button.tintColor = UIColor(designSystemColor: .iconsSecondary)
+    func makeToolButton(image: DesignSystemImage, accessibilityLabel: String, action: Selector?) -> UIButton {
+        let button: UIButton
+        if #available(iOS 26, *) {
+            var configuration = UIButton.Configuration.plain()
+            configuration.image = image
+            configuration.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
+            configuration.contentInsets = .zero
+            button = UIButton(configuration: configuration)
+        } else {
+            let legacyButton = UIButton(type: .system)
+            legacyButton.setImage(image, for: .normal)
+            legacyButton.tintColor = UIColor(designSystemColor: .textPrimary)
+            legacyButton.backgroundColor = .clear
+            button = legacyButton
+        }
         button.translatesAutoresizingMaskIntoConstraints = false
         button.accessibilityLabel = accessibilityLabel
-        button.addTarget(self, action: action, for: .touchUpInside)
+        if let action {
+            button.addTarget(self, action: action, for: .primaryActionTriggered)
+        }
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
             button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
@@ -253,11 +339,17 @@ final class UnifiedToggleInputToolbarView: UIView {
         modelChipButton.configuration?.title = modelName
     }
 
-    private func updateSubmitButtonState() {
+    private func updateChipVisibility() {
+        modelChipButton.isHidden = modelChipExplicitlyHidden
+        selectedToolChipView.isHidden = (selectedTool == nil)
+        selectedToolChipView.accessibilityLabel = selectedTool == .webSearch ? UserText.aiChatToolbarWebSearchToolTitle : nil
+    }
+
+    func updateSubmitButtonState() {
         updateSubmitButtonAppearance()
     }
 
-    private func updateSubmitButtonAppearance() {
+    func updateSubmitButtonAppearance() {
         let showVoice = isAIVoiceChatActive && !isSubmitEnabled
         let icon = showVoice ? DesignSystemImages.Glyphs.Size24.voice : DesignSystemImages.Glyphs.Size24.arrowUp
         submitButton.setImage(icon, for: .normal)
@@ -270,9 +362,7 @@ final class UnifiedToggleInputToolbarView: UIView {
             : UIColor(designSystemColor: .iconsSecondary)
     }
 
-    // MARK: - Actions
-
-    private func updateGeneratingVisibility() {
+    func updateGeneratingVisibility() {
         if isGenerating {
             submitButton.isHidden = true
             stopButton.isHidden = false
@@ -282,9 +372,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
-    @objc private func customizeResponsesTapped() { onCustomizeResponsesTapped?() }
     @objc private func attachTapped() { onAttachTapped?() }
-    @objc private func modelPickerTapped() { onModelPickerTapped?() }
+    @objc private func selectedToolClearTapped() { onSelectedToolClearTapped?() }
     @objc private func submitTapped() {
         if isAIVoiceChatActive && !isSubmitEnabled {
             onVoiceTapped?()

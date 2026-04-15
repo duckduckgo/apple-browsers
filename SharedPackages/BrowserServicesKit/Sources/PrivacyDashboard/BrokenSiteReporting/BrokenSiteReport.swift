@@ -108,12 +108,17 @@ public struct BrokenSiteReport {
     let breakageData: String?
     let isForceDarkModeEnabled: Bool?
     let autoplayBlockingMode: String?
+    let loadedWebExtensions: String?
+    let adBlockingExtensionScriptletsVersion: String?
 #if os(iOS)
     let siteType: SiteType
-    let atb: String
     let model: String
     let variant: String
     let isAfterSuppressedXSafariRedirect: Bool
+#endif
+
+#if os(macOS)
+    let lastTabSuspension: String?
 #endif
 
 #if os(macOS)
@@ -146,9 +151,12 @@ public struct BrokenSiteReport {
         privacyExperiments: String,
         isPirEnabled: Bool?,
         isForceDarkModeEnabled: Bool?,
+        lastTabSuspension: String?,
         autoplayBlockingMode: String? = nil,
         pageLoadTiming: WKPageLoadTiming?,
-        breakageData: String? = nil
+        breakageData: String? = nil,
+        loadedWebExtensions: String? = nil,
+        adBlockingExtensionScriptletsVersion: String? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -178,9 +186,12 @@ public struct BrokenSiteReport {
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
         self.isForceDarkModeEnabled = isForceDarkModeEnabled
+        self.lastTabSuspension = lastTabSuspension
         self.autoplayBlockingMode = autoplayBlockingMode
         self.pageLoadTiming = pageLoadTiming
         self.breakageData = breakageData
+        self.loadedWebExtensions = loadedWebExtensions
+        self.adBlockingExtensionScriptletsVersion = adBlockingExtensionScriptletsVersion
     }
 #endif
 
@@ -202,7 +213,6 @@ public struct BrokenSiteReport {
         protectionsState: Bool,
         reportFlow: Source,
         siteType: SiteType,
-        atb: String,
         model: String,
         errors: [Error]?,
         httpStatusCodes: [Int]?,
@@ -221,7 +231,9 @@ public struct BrokenSiteReport {
         autoplayBlockingMode: String? = nil,
         isAfterSuppressedXSafariRedirect: Bool = false,
         pageLoadTiming: WKPageLoadTiming? = nil,
-        breakageData: String? = nil
+        breakageData: String? = nil,
+        loadedWebExtensions: String? = nil,
+        adBlockingExtensionScriptletsVersion: String? = nil
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -239,7 +251,6 @@ public struct BrokenSiteReport {
         self.urlParametersRemoved = urlParametersRemoved
         self.reportFlow = reportFlow
         self.siteType = siteType
-        self.atb = atb
         self.model = model
         self.errors = errors
         self.httpStatusCodes = httpStatusCodes
@@ -259,6 +270,8 @@ public struct BrokenSiteReport {
         self.autoplayBlockingMode = autoplayBlockingMode
         self.isAfterSuppressedXSafariRedirect = isAfterSuppressedXSafariRedirect
         self.breakageData = breakageData
+        self.loadedWebExtensions = loadedWebExtensions
+        self.adBlockingExtensionScriptletsVersion = adBlockingExtensionScriptletsVersion
     }
 #endif
 
@@ -342,7 +355,6 @@ public struct BrokenSiteReport {
         }
 #if os(iOS)
         result["siteType"] = siteType.rawValue
-        result["atb"] = atb
         result["model"] = model
         result["variant"] = variant
         if isAfterSuppressedXSafariRedirect {
@@ -350,8 +362,19 @@ public struct BrokenSiteReport {
         }
 #endif
 
+#if os(macOS)
+        if let lastTabSuspension {
+            result["lastTabSuspension"] = lastTabSuspension
+        }
+#endif
+
         if let breakageData {
             result["breakageData"] = breakageData
+        }
+
+        if let loadedWebExtensions {
+            result["loadedWebExtensions"] = loadedWebExtensions
+            result["adBlockingExtensionScriptletsVersion"] = adBlockingExtensionScriptletsVersion ?? "nil"
         }
 
         return result

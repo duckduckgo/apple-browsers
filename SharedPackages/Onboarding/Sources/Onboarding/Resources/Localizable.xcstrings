@@ -505,6 +505,168 @@
         }
       }
     },
+    "onboarding.highlights.browsers.features.duckAI.title" : {
+      "comment" : "Message to highlight browser capability of chatting with ChatGPT without sharing data with third parties",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Използвайте ChatGPT поверително с вграден Duck.ai"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Používej ChatGPT diskrétně s integrovaným Duck.ai"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brug ChatGPT privat med indbygget Duck.ai"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nutze ChatGPT privat mit integriertem Duck.ai"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Χρησιμοποιήστε το ChatGPT ιδιωτικά με ενσωματωμένο το Duck.ai"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use ChatGPT privately with Duck.ai built in"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa ChatGPT de forma privada con Duck.ai integrado"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kasuta ChatGPT-d privaatselt sisseehitatud Duck.ai abil"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Käytä ChatGPT:tä yksityisesti sisäänrakennetulla Duck.ai:lla"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilisez ChatGPT en toute confidentialité grâce à l'intégration de Duck.ai"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koristi ChatGPT privatno s ugrađenim Duck.ai-jem"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Használd a ChatGPT-t privát módon a beépített Duck.ai segítségével"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilizza ChatGPT in privato con Duck.ai integrato"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.aiが組み込まれた状態でChatGPTをプライベートに使用"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Naudok „ChatGPT“ privačiai su integruotu „Duck.ai“."
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Izmanto ChatGPT privāti ar iebūvēto Duck.ai"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bruk ChatGPT privat med innebygd Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gebruik ChatGPT privé met Duck.ai ingebouwd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Używaj ChatGPT prywatnie z wbudowanym Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilizar o ChatGPT em privado com Duck.ai incorporado"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folosește ChatGPT în privat cu Duck.ai încorporat"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Встроенный Duck.ai и приватные беседы с ChatGPT"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Používaj ChatGPT súkromne s integrovaným Duck.ai."
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zasebno uporabljajte ChatGPT z vgrajenim Duck.ai"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Använd ChatGPT privat med Duck.ai inbyggt"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai entegrasyonu ile ChatGPT'yi özel olarak kullanın."
+          }
+        }
+      }
+    },
     "onboarding.highlights.browsers.features.duckplayer.title" : {
       "comment" : "Message to highlight browser capability of watching YouTube videos without targeted ads",
       "extractionState" : "extracted_with_value",

@@ -38,10 +38,7 @@ extension OnboardingRebranding {
 
         var body: some View {
             ScrollView(.vertical, showsIndicators: false) {
-                OnboardingBubbleView.withDismissButton(
-                    tailPosition: nil,
-                    onDismiss: onManualDismiss
-                ) {
+                OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
                     VStack {
                         OnboardingRebrandingImages.Contextual.promoShield
                             .resizable()

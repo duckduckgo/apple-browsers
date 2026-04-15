@@ -82,7 +82,7 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
     @discardableResult
     func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel?, burnerMode: BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> NSWindow? {
         let call = OpenWindowCall(
-            contents: tabCollectionViewModel?.tabs.map(\.content),
+            contents: tabCollectionViewModel?.tabCollection.tabs.map(\.content),
             burnerMode: burnerMode,
             droppingPoint: droppingPoint,
             contentSize: contentSize,

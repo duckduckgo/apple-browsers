@@ -18,6 +18,7 @@
 
 import Foundation
 import SwiftUI
+import UIComponents
 
 struct AddExcludedDomainButtonsView: View {
     private let viewState: ViewState

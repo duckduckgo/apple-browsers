@@ -120,13 +120,13 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
                 let tab = existingTab as? Tab,
                 let sourceViewModel = windowControllersManager.windowController(for: tab)?
                     .mainViewController.tabCollectionViewModel,
-                let currentIndex = sourceViewModel.tabCollection.tabs.firstIndex(of: tab)
+                let currentIndex = sourceViewModel.tabCollection.firstIndex(of: tab)
             else {
                 assertionFailure("Failed to find tab collection view model for \(existingTab)")
                 continue
             }
 
-            sourceViewModel.moveTab(at: currentIndex, to: targetViewModel, at: targetViewModel.tabs.count)
+            sourceViewModel.moveTab(at: currentIndex, to: targetViewModel, at: targetViewModel.tabCollection.tabs.count)
         }
     }
 

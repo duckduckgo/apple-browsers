@@ -386,12 +386,21 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     }
 
     @MainActor
-    func runOptOut(scanResult: DebugScanResult) {
+    func runOptOut(scanResult: DebugScanResult, jsonString: String) {
+        // Re-decode broker from current JSON editor content so edits take effect without re-scanning
+        let dataBroker: DataBroker
+        if let data = jsonString.data(using: .utf8),
+           let decoded = try? JSONDecoder().decode(DataBroker.self, from: data) {
+            dataBroker = decoded
+        } else {
+            dataBroker = scanResult.dataBroker
+        }
+
         isProgressActive = true
         progressText = "Starting opt-out..."
         addOptOutStartedEvent(for: scanResult)
         let brokerProfileQueryData = BrokerProfileQueryData(
-            dataBroker: scanResult.dataBroker,
+            dataBroker: dataBroker,
             profileQuery: scanResult.profileQuery,
             scanJobData: ScanJobData(
                 brokerId: DebugHelper.stableId(for: scanResult.dataBroker),

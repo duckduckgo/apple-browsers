@@ -35,6 +35,7 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
         clearSharedPinnedTabs()
     }
 
+    @MainActor
     private func clearSharedPinnedTabs() {
         while !Application.appDelegate.pinnedTabsManager.isEmpty {
             _=Application.appDelegate.pinnedTabsManager.unpinTab(at: 0, published: false, firePixel: false)

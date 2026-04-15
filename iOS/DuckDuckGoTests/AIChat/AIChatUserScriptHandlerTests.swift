@@ -173,6 +173,52 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         await fulfillment(of: [expectation])
     }
 
+    func testResponseReceivedPostsNotification() async {
+        // Given
+        let expectation = expectation(forNotification: .aiChatResponseReceived, object: nil)
+        let message = MockUserScriptMessage(name: "test", body: [:])
+
+        // When
+        let result = await aiChatUserScriptHandler.responseReceived(params: [:], message: message)
+
+        // Then
+        XCTAssertNil(result)
+        await fulfillment(of: [expectation])
+    }
+
+    func testResponseReceivedPostsPayloadInUserInfo() async {
+        // Given
+        let payload: [String: Any] = ["messageId": "123", "text": "hello"]
+        let expectation = expectation(forNotification: .aiChatResponseReceived, object: nil) { notification in
+            let userInfo = notification.userInfo
+            return userInfo?["messageId"] as? String == "123"
+                && userInfo?["text"] as? String == "hello"
+        }
+        let message = MockUserScriptMessage(name: "test", body: payload)
+
+        // When
+        let result = await aiChatUserScriptHandler.responseReceived(params: payload, message: message)
+
+        // Then
+        XCTAssertNil(result)
+        await fulfillment(of: [expectation])
+    }
+
+    func testResponseReceivedPostsNilUserInfoWhenParamsAreNotDictionary() async {
+        // Given
+        let expectation = expectation(forNotification: .aiChatResponseReceived, object: nil) { notification in
+            notification.userInfo == nil
+        }
+        let message = MockUserScriptMessage(name: "test", body: "not-a-dictionary")
+
+        // When
+        let result = await aiChatUserScriptHandler.responseReceived(params: "not-a-dictionary", message: message)
+
+        // Then
+        XCTAssertNil(result)
+        await fulfillment(of: [expectation])
+    }
+
     // MARK: - Sync
 
     func testGetSyncStatusPassesFeatureFlagToSyncHandler() {

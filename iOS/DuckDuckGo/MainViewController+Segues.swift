@@ -184,12 +184,7 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let storyboard = UIStoryboard(name: "Downloads", bundle: nil)
-        guard let controller = storyboard.instantiateInitialViewController() else {
-            assertionFailure()
-            return
-        }
-        present(controller, animated: true)
+        present(DownloadsListHostingController(), animated: true)
     }
 
     func segueToTabSwitcher() async {

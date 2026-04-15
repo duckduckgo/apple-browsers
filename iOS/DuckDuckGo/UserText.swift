@@ -2453,7 +2453,8 @@ public struct UserText {
 
     // MARK: Safari Export Interstitial
 
-    public static let safariExportInterstitialTip = NSLocalizedString("data.import.safari.interstitial.tip", value: "Remember to click\n\"Export to Files\"", comment: "Tip text on the Safari export interstitial reminding users to click Export to Files")
+    public static let safariExportInterstitialTip = NSLocalizedString("data.import.safari.interstitial.tip", value: "Remember to tap\n\"Export to Files\"", comment: "Tip text on the Safari export interstitial reminding users to click Export to Files")
+    public static let safariExportInterstitialNoCompatibleBrowsersMessage = NSLocalizedString("data.import.safari.interstitial.no-compatible-browsers-message", value: "When you see the \"No Compatible Web Browsers\" message.", comment: "Supporting text on the Safari export interstitial that indicates when to proceed")
     public static let safariExportInterstitialButton = NSLocalizedString("data.import.safari.interstitial.button", value: "Open Settings to Export", comment: "Button on the Safari export interstitial that triggers the system import sheet")
 
     public static let fileImportErrorCorruptTitle = NSLocalizedString("data.import.file-error.corrupt.title", value: "File may be corrupt", comment: "Title on the error sheet shown when an imported file cannot be read")

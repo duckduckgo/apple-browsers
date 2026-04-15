@@ -50,9 +50,19 @@ struct SafariExportInterstitialView: View {
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
                 .layoutPriority(1)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 16)
                 .padding(.top, 16)
-                .padding(.bottom, 24)
+                .padding(.bottom, 8)
+
+            Text(UserText.safariExportInterstitialNoCompatibleBrowsersMessage)
+                .daxBodyRegular()
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .multilineTextAlignment(.center)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
 
             Button {
                 onOpenSettingsToExport?()

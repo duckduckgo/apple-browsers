@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import UIKit
 import DesignResourcesKit
 import DuckUI
 import Lottie
@@ -86,7 +87,11 @@ struct SafariExportInterstitialView: View {
     }
 
     private var shouldUseExpandedButtonLayout: Bool {
-        !(horizontalSizeClass == .compact && verticalSizeClass == .regular)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return true
+        }
+
+        return !(horizontalSizeClass == .compact && verticalSizeClass == .regular)
     }
 
     private struct ExportAnimationView: View {

@@ -85,13 +85,15 @@ enum TabPromoState {
     case dismissed
 }
 
-@MainActor
-final class SubscriptionPromoViewModel: ObservableObject {
-
+enum SubscriptionPromoConstants {
     static let requiredVisitCount = 3
     static let dismissCooldownDays = 28
     static let maxDisplaysPerTimeWindow = 4
-    private static let displayWindowDays = 28
+    static let displayWindowDays = 28
+}
+
+@MainActor
+final class SubscriptionPromoViewModel: ObservableObject {
 
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
@@ -166,21 +168,21 @@ final class SubscriptionPromoViewModel: ObservableObject {
     /// - Not dismissed or CTA actioned within the 28-day cooldown (fallback when PromoQueue is off; PromoService handles this via `resultWhenHidden` when on)
     /// - Not shown more than 4 times in any given 28-day rolling window
     private func evaluatePromoVisibility() {
-        shouldShowPromo = false
-        defer { onPromoEvaluated?(shouldShowPromo) }
+        var shouldShow = false
+        defer {
+            shouldShowPromo = shouldShow
+            onPromoEvaluated?(shouldShow)
+        }
 
         guard featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) else { return }
         guard isUSLocale else { return }
         guard !subscriptionManager.isSubscriptionPresent() else { return }
-        guard persistor.fireTabVisitCount >= Self.requiredVisitCount else { return }
-        if promoDelegate == nil {
-            guard !isDismissedWithinCooldown else { return }
-        }
-        guard !hasReachedDisplayLimit else { return }
+        guard persistor.fireTabVisitCount >= SubscriptionPromoConstants.requiredVisitCount else { return }
+        guard !isDismissedWithinCooldown else { return }
+        guard recordDisplayIfAllowed() else { return }
 
         isEligibleForFreeTrial = subscriptionManager.isUserEligibleForFreeTrial()
-        recordPromoDisplay()
-        shouldShowPromo = true
+        shouldShow = true
 
         pixelFiring?.fire(SubscriptionPromoPixel.promoDisplayed(isEligibleForFreeTrial: isEligibleForFreeTrial))
         pixelFiring?.fire(SubscriptionPromoPixel.promoViewed(isEligibleForFreeTrial: isEligibleForFreeTrial))
@@ -196,28 +198,22 @@ final class SubscriptionPromoViewModel: ObservableObject {
         return regionCode == "US"
     }
 
-    private var hasReachedDisplayLimit: Bool {
-        guard let windowStart = persistor.promoDisplayWindowStart else {
-            return false
-        }
-        let daysSinceWindowStart = Calendar.current.numberOfDaysBetween(windowStart, and: Date()) ?? 0
-        if daysSinceWindowStart >= Self.displayWindowDays {
-            return false
-        }
-        return persistor.promoDisplayCount >= Self.maxDisplaysPerTimeWindow
-    }
-
-    private func recordPromoDisplay() {
+    /// Checks the rolling window display limit. If allowed, records the display and returns `true`.
+    /// Returns `false` when the limit has been reached within the current window.
+    private func recordDisplayIfAllowed() -> Bool {
         if let windowStart = persistor.promoDisplayWindowStart {
             let daysSinceWindowStart = Calendar.current.numberOfDaysBetween(windowStart, and: Date()) ?? 0
-            if daysSinceWindowStart >= Self.displayWindowDays {
+            if daysSinceWindowStart >= SubscriptionPromoConstants.displayWindowDays {
                 persistor.promoDisplayCount = 0
                 persistor.promoDisplayWindowStart = Date()
+            } else if persistor.promoDisplayCount >= SubscriptionPromoConstants.maxDisplaysPerTimeWindow {
+                return false
             }
         } else {
             persistor.promoDisplayWindowStart = Date()
         }
         persistor.promoDisplayCount += 1
+        return true
     }
 
     private var isDismissedWithinCooldown: Bool {
@@ -225,6 +221,6 @@ final class SubscriptionPromoViewModel: ObservableObject {
             return false
         }
         let daysSinceDismissal = Calendar.current.numberOfDaysBetween(dismissedDate, and: Date()) ?? 0
-        return daysSinceDismissal < Self.dismissCooldownDays
+        return daysSinceDismissal < SubscriptionPromoConstants.dismissCooldownDays
     }
 }

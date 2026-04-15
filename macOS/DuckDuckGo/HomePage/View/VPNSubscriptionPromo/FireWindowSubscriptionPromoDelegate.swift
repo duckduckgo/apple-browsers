@@ -29,8 +29,7 @@ final class FireWindowSubscriptionPromoDelegate: ExternalPromoDelegate {
     var isVisible: Bool { visibilitySubject.value }
     var isVisiblePublisher: AnyPublisher<Bool, Never> { visibilitySubject.eraseToAnyPublisher() }
 
-    /// 28-day cooldown after the promo is hidden (dismiss or CTA).
-    var resultWhenHidden: PromoResult { .ignored(cooldown: .days(28)) }
+    var resultWhenHidden: PromoResult { .ignored(cooldown: .days(SubscriptionPromoConstants.dismissCooldownDays)) }
 
     func updateVisibility(_ isVisible: Bool) {
         guard isVisible != visibilitySubject.value else { return }

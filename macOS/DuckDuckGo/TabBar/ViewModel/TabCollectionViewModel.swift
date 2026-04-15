@@ -443,7 +443,7 @@ final class TabCollectionViewModel: NSObject {
             NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
             if isBurner, NSApp.delegateTyped.featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) {
                 var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
-                if persistor.fireTabVisitCount < SubscriptionPromoViewModel.requiredVisitCount {
+                if persistor.fireTabVisitCount < SubscriptionPromoConstants.requiredVisitCount {
                     persistor.fireTabVisitCount += 1
                 }
             }

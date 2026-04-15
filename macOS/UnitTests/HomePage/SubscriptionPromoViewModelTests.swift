@@ -109,7 +109,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         XCTAssertTrue(sut.shouldShowPromo)
     }
 
-    func testWhenPromoQueueOn_ThenCooldownCheckSkipped() {
+    func testWhenPromoQueueOn_ThenCooldownStillEnforced() {
         let delegate = FireWindowSubscriptionPromoDelegate()
         persistor.fireTabVisitCount = 3
         persistor.promoDismissedDate = Date()
@@ -117,7 +117,7 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
 
         sut.updateForTab(.notEvaluated)
 
-        XCTAssertTrue(sut.shouldShowPromo, "PromoQueue handles cooldown, ViewModel should not block")
+        XCTAssertFalse(sut.shouldShowPromo, "ViewModel always enforces cooldown since PromoQueue cooldown does not gate external promos")
     }
 
     // MARK: - Display Limit (4 times per 28-day rolling window)

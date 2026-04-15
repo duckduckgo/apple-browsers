@@ -36,15 +36,15 @@ final class BurnerHomePageViewController: NSViewController {
 
     init(appearancePreferences: AppearancePreferences? = nil,
          themeManager: ThemeManager? = nil,
-         subscriptionManager: (any SubscriptionManager)? = nil,
-         featureFlagger: FeatureFlagger? = nil,
-         promoDelegate: FireWindowSubscriptionPromoDelegate? = nil) {
+         subscriptionManager: any SubscriptionManager,
+         featureFlagger: FeatureFlagger,
+         promoDelegate: FireWindowSubscriptionPromoDelegate?) {
         self.appearancePreferences = appearancePreferences ?? NSApp.delegateTyped.appearancePreferences
         self.themeManager = themeManager ?? NSApp.delegateTyped.themeManager
         self.subscriptionPromoViewModel = SubscriptionPromoViewModel(
-            subscriptionManager: subscriptionManager ?? NSApp.delegateTyped.subscriptionManager,
-            featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger,
-            promoDelegate: promoDelegate ?? NSApp.delegateTyped.subscriptionPromoDelegate
+            subscriptionManager: subscriptionManager,
+            featureFlagger: featureFlagger,
+            promoDelegate: promoDelegate
         )
 
         super.init(nibName: nil, bundle: nil)

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Common
 import Foundation
 
 final class SubscriptionPromoDebugMenu: NSMenuItem {
@@ -97,11 +98,11 @@ final class SubscriptionPromoDebugMenu: NSMenuItem {
 extension SubscriptionPromoDebugMenu: NSMenuDelegate {
 
     func menuWillOpen(_ menu: NSMenu) {
-        let visitCount = min(persistor.fireTabVisitCount, SubscriptionPromoViewModel.requiredVisitCount)
-        menu.item(withTag: 1)?.title = "👀 Fire Tab Visit Count: \(visitCount)/\(SubscriptionPromoViewModel.requiredVisitCount)"
+        let visitCount = min(persistor.fireTabVisitCount, SubscriptionPromoConstants.requiredVisitCount)
+        menu.item(withTag: 1)?.title = "👀 Fire Tab Visit Count: \(visitCount)/\(SubscriptionPromoConstants.requiredVisitCount)"
 
         let displayCount = persistor.promoDisplayCount
-        menu.item(withTag: 2)?.title = "👀 Promo Display Count: \(displayCount)/\(SubscriptionPromoViewModel.maxDisplaysPerTimeWindow)"
+        menu.item(withTag: 2)?.title = "👀 Promo Display Count: \(displayCount)/\(SubscriptionPromoConstants.maxDisplaysPerTimeWindow)"
 
         let isDismissed = isDismissedWithinCooldown
         let daysSinceLastDismissed = daysSinceLastDismissed.map { "\($0)" } ?? "N/A"
@@ -112,13 +113,13 @@ extension SubscriptionPromoDebugMenu: NSMenuDelegate {
         guard let dismissedDate = persistor.promoDismissedDate else {
             return nil
         }
-        return Calendar.current.dateComponents([.day], from: dismissedDate, to: Date()).day ?? 0
+        return Calendar.current.numberOfDaysBetween(dismissedDate, and: Date()) ?? 0
     }
 
     private var isDismissedWithinCooldown: Bool {
         guard let days = daysSinceLastDismissed else {
             return false
         }
-        return days < SubscriptionPromoViewModel.dismissCooldownDays
+        return days < SubscriptionPromoConstants.dismissCooldownDays
     }
 }

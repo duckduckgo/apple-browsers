@@ -21,7 +21,7 @@ import SwiftUI
 
 struct BurnerHomePageView: View {
 
-    static let targetWidth: CGFloat = 504
+    static let targetWidth: CGFloat = 508
     static let height: CGFloat = 273
     static let totalHeight: CGFloat = height + 2 * Const.verticalPadding
 
@@ -60,36 +60,33 @@ struct BurnerHomePageView: View {
                         VStack(spacing: Const.searchBoxVerticalSpacing) {
                             Spacer(minLength: Const.verticalPadding)
 
-                            Group {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.homeFavoritesGhost, style: StrokeStyle(lineWidth: 1.0))
-                                        .background(Color(designSystemColor: .surfaceTertiary))
-                                        .cornerRadius(12)
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.homeFavoritesGhost, style: StrokeStyle(lineWidth: 1.0))
+                                    .background(Color(designSystemColor: .surfaceTertiary))
+                                    .cornerRadius(12)
 
-                                    VStack(alignment: .leading, spacing: 16) {
-                                        HStack {
-                                            Image(.updatedBurnerWindowHome)
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fit)
-                                                .frame(width: 64, height: 48)
-                                                .padding(.leading, -15)
-                                                .padding(.top, -5)
+                                VStack(alignment: .leading, spacing: 16) {
+                                    HStack {
+                                        Image(.updatedBurnerWindowHome)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 64, height: 48)
+                                            .padding(.leading, -15)
+                                            .padding(.top, -5)
 
-                                            Text(UserText.burnerWindowHeader)
-                                                .font(.system(size: 22, weight: .bold))
-                                                .foregroundColor(Color(designSystemColor: .textPrimary))
-                                                .padding(.leading, -6)
-                                        }
-
-                                        FeaturesBox()
-                                            .padding(.top, 10)
+                                        Text(UserText.burnerWindowHeader)
+                                            .font(.system(size: 22, weight: .bold))
+                                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                                            .padding(.leading, -6)
                                     }
-                                    .padding(.horizontal, 40)
+
+                                    FeaturesBox()
+                                        .padding(.top, 10)
                                 }
-                                .frame(height: Self.height)
+                                .padding(.horizontal, 40)
                             }
-                            .frame(width: Self.targetWidth)
+                            .frame(width: Self.targetWidth, height: Self.height)
 
                             Spacer(minLength: Const.verticalPadding)
                         }
@@ -107,47 +104,31 @@ struct FeaturesBox: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Image(.burnerWindowIcon1)
-                    .resizable()
-                    .frame(width: 16, height: 16)
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                Text(UserText.burnerHomepageDescription1)
-                    .font(.system(size: 13))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-
-            }
-
-            HStack {
-                Image(.burnerWindowIcon2)
-                    .resizable()
-                    .frame(width: 16, height: 16)
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                Text(UserText.burnerHomepageDescription2)
-                    .font(.system(size: 13))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-            }
-
-            HStack {
-                Image(.burnerWindowIcon3)
-                    .resizable()
-                    .frame(width: 16, height: 16)
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                Text(UserText.burnerHomepageDescription3)
-                    .font(.system(size: 13))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-            }
+            FeatureRow(icon: .burnerWindowIcon1, text: UserText.burnerHomepageDescription1)
+            FeatureRow(icon: .burnerWindowIcon2, text: UserText.burnerHomepageDescription2)
+            FeatureRow(icon: .burnerWindowIcon3, text: UserText.burnerHomepageDescription3)
 
             Divider()
 
+            FeatureRow(icon: .burnerWindowIcon4, text: UserText.burnerHomepageDescription4, iconOpacity: 0.6, iconTopPadding: -20)
+        }
+    }
+
+    private struct FeatureRow: View {
+        let icon: ImageResource
+        let text: String
+        var iconOpacity: Double = 1.0
+        var iconTopPadding: CGFloat = 0
+
+        var body: some View {
             HStack {
-                Image(.burnerWindowIcon4)
+                Image(icon)
                     .resizable()
                     .frame(width: 16, height: 16)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .opacity(0.6)
-                    .padding(.top, -20)
-                Text(UserText.burnerHomepageDescription4)
+                    .opacity(iconOpacity)
+                    .padding(.top, iconTopPadding)
+                Text(text)
                     .font(.system(size: 13))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
             }

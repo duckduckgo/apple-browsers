@@ -101,6 +101,7 @@ final class BrowserTabViewController: NSViewController {
     private let accessibilityPreferences: AccessibilityPreferences
     private let duckPlayer: DuckPlayer
     private let subscriptionManager: any SubscriptionManager
+    private let subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let pinningManager: PinningManager
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
@@ -177,6 +178,7 @@ final class BrowserTabViewController: NSViewController {
          accessibilityPreferences: AccessibilityPreferences,
          duckPlayer: DuckPlayer,
          subscriptionManager: any SubscriptionManager = NSApp.delegateTyped.subscriptionManager,
+         subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate? = NSApp.delegateTyped.subscriptionPromoDelegate,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          pinningManager: PinningManager,
          adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
@@ -205,6 +207,7 @@ final class BrowserTabViewController: NSViewController {
         self.accessibilityPreferences = accessibilityPreferences
         self.duckPlayer = duckPlayer
         self.subscriptionManager = subscriptionManager
+        self.subscriptionPromoDelegate = subscriptionPromoDelegate
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.pinningManager = pinningManager
         self.adBlockingAvailability = adBlockingAvailability
@@ -1222,7 +1225,11 @@ final class BrowserTabViewController: NSViewController {
     var burnerHomePageViewController: BurnerHomePageViewController?
     private func burnerHomePageViewControllerCreatingIfNeeded() -> BurnerHomePageViewController {
         return burnerHomePageViewController ?? {
-            let burnerHomePageViewController = BurnerHomePageViewController()
+            let burnerHomePageViewController = BurnerHomePageViewController(
+                subscriptionManager: subscriptionManager,
+                featureFlagger: featureFlagger,
+                promoDelegate: subscriptionPromoDelegate
+            )
             burnerHomePageViewController.openSubscriptionPage = { [weak self] in
                 self?.openSubscriptionPurchasePage()
             }

@@ -20,37 +20,22 @@ import Foundation
 
 final class SubscriptionPromoTabExtension: TabExtension {
 
-    private(set) var hasEvaluated = false
-    private(set) var shouldShowPromo = false
-    private(set) var forceDismissed = false
+    private(set) var promoState: TabPromoState = .notEvaluated
 
     func markEvaluated(shouldShowPromo: Bool) {
-        hasEvaluated = true
-        self.shouldShowPromo = shouldShowPromo
+        promoState = .evaluated(shouldShowPromo: shouldShowPromo)
     }
 
     func markForceDismissed() {
-        forceDismissed = true
+        promoState = .dismissed
     }
 }
 
 protocol SubscriptionPromoTabProtocol: AnyObject {
-    var hasEvaluated: Bool { get }
-    var shouldShowPromo: Bool { get }
-    var forceDismissed: Bool { get }
+    var promoState: TabPromoState { get }
 
     func markEvaluated(shouldShowPromo: Bool)
     func markForceDismissed()
-
-    var promoState: TabPromoState { get }
-}
-
-extension SubscriptionPromoTabProtocol {
-    var promoState: TabPromoState {
-        if forceDismissed { return .dismissed }
-        if hasEvaluated { return .evaluated(shouldShowPromo: shouldShowPromo) }
-        return .notEvaluated
-    }
 }
 
 extension SubscriptionPromoTabExtension: SubscriptionPromoTabProtocol {

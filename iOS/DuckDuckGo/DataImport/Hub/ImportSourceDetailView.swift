@@ -29,21 +29,33 @@ struct ImportSourceDetailView: View {
     var onUploadFile: (() -> Void)?
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                card
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-
-                if let bottomSection = source.bottomSection {
-                    bottomSectionView(bottomSection)
-                        .padding(.top, 16)
-                        .padding(.horizontal, 16)
-                }
-            }
-            .padding(.bottom, 24)
+        if #available(iOS 17.0, *) {
+            detailList
+                .contentMargins(.top, 8)
+        } else {
+            detailList
         }
-        .background(Color(designSystemColor: .background))
+    }
+
+    private var detailList: some View {
+        List {
+            Section {
+                card
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .listRowSeparator(.hidden)
+            }
+            .listRowBackground(Color(designSystemColor: .surface))
+
+            if let bottomSection = source.bottomSection {
+                Section {
+                    bottomSectionView(bottomSection)
+                } header: {
+                    Text(UserText.importDetailDoneExportingHeader)
+                }
+                .listRowBackground(Color(designSystemColor: .surface))
+            }
+        }
+        .applyInsetGroupedListStyle()
     }
 
     private var card: some View {
@@ -69,15 +81,11 @@ struct ImportSourceDetailView: View {
 
             if let buttonTitle = source.primaryButtonTitle {
                 primaryButton(title: buttonTitle)
-                    .padding(.vertical, 24)
-                    .padding(.horizontal, 16)
+                    .padding(.top, 24)
+                    .padding([.horizontal, .bottom], 16)
             }
         }
         .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(designSystemColor: .surface))
-        )
     }
 
     private var stepsView: some View {
@@ -106,7 +114,6 @@ struct ImportSourceDetailView: View {
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
             }
-
             Spacer()
         }
         .padding(.vertical, 4)
@@ -126,32 +133,18 @@ struct ImportSourceDetailView: View {
     private func bottomSectionView(_ section: ImportPasswordSource.BottomSection) -> some View {
         switch section {
         case .uploadFile:
-            VStack(alignment: .leading, spacing: 8) {
-                Text(UserText.importDetailDoneExportingHeader)
-                    .daxFootnoteRegular()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .textCase(.uppercase)
-                    .padding(.leading, 4)
-
-                Button {
-                    onUploadFile?()
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(uiImage: DesignSystemImages.Glyphs.Size24.uploadFile)
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                        Text(UserText.importDetailUploadFileRow)
-                            .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                        Spacer()
-                        SettingsCellComponents.chevron
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
+            Button {
+                onUploadFile?()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.uploadFile)
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                    Text(UserText.importDetailUploadFileRow)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                    Spacer()
+                    SettingsCellComponents.chevron
                 }
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color(designSystemColor: .surface))
-                )
             }
         }
     }

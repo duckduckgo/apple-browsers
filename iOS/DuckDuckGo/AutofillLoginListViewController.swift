@@ -377,6 +377,10 @@ final class AutofillLoginListViewController: UIViewController {
     }
 
     @objc private func appDidBecomeActiveCallback() {
+        // New hub import flow requires app switching to source apps (e.g. Chrome/Safari).
+        // Avoid intrusive re-auth while user remains in that flow.
+        guard !isInNewImportFlow else { return }
+
         // AutofillLoginDetailsViewController will handle calling authenticate() if it is the top view controller
         guard navigationController?.topViewController is AutofillLoginDetailsViewController else {
             authenticate()
@@ -385,7 +389,17 @@ final class AutofillLoginListViewController: UIViewController {
     }
 
     @objc private func appWillResignActiveCallback() {
+        // Keep the import flow uninterrupted when users background to export data.
+        guard !isInNewImportFlow else { return }
         viewModel.lockUI()
+    }
+
+    private var isInNewImportFlow: Bool {
+        guard let navigationController else { return false }
+
+        return navigationController.viewControllers.contains { viewController in
+            viewController is DataImportHubViewController || viewController is ImportSourceDetailViewController
+        }
     }
 
     @objc private func authenticatorInvalidateContext() {

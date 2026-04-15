@@ -2352,7 +2352,7 @@ public struct UserText {
 
             public static let fireOnboardingTitle = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.fire.title",
-                value: "That’s duck.ai!",
+                value: "That’s Duck.ai!",
                 comment: "Experiment-only fire onboarding title shown after the first Duck.ai response."
             )
             public static let fireOnboardingMessage = NotLocalizedString(

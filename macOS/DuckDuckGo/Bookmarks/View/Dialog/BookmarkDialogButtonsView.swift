@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DesignResourcesKit
+import SwiftUI
+import UIComponents
 
 struct BookmarkDialogButtonsView: View {
     private let viewState: ViewState

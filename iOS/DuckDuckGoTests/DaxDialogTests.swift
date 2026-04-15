@@ -576,7 +576,7 @@ final class DaxDialog: XCTestCase {
 
         // THEN
         XCTAssertEqual(result1?.type, .siteIsMajorTracker)
-        XCTAssertEqual(result2?.type, .fire)
+        XCTAssertEqual(result2?.type, .fire(.standard))
         XCTAssertEqual(result2, result3)
     }
 
@@ -594,7 +594,7 @@ final class DaxDialog: XCTestCase {
 
         // THEN
         XCTAssertEqual(result1?.type, .siteIsMajorTracker)
-        XCTAssertEqual(result2?.type, .fire)
+        XCTAssertEqual(result2?.type, .fire(.standard))
         XCTAssertEqual(result3?.type, .afterSearch)
     }
 
@@ -614,7 +614,7 @@ final class DaxDialog: XCTestCase {
 
         // THEN
         XCTAssertEqual(result1?.type, .siteIsMajorTracker)
-        XCTAssertEqual(result2?.type, .fire)
+        XCTAssertEqual(result2?.type, .fire(.standard))
         XCTAssertEqual(result3?.type, .afterSearch)
         XCTAssertEqual(result4?.type, .final)
     }

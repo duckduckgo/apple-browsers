@@ -95,6 +95,7 @@ public extension DesignSystemImages {
             public static var addToHome: DesignSystemImage { .init(resource: .addToHome16) }
             public static var addToTaskbar: DesignSystemImage { .init(resource: .addToTaskbar16) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat16) }
+            public static var aiChatOnboarding: DesignSystemImage { .init(resource: .aiChatOnboarding16) }
             public static var aiChatAdd: DesignSystemImage { .init(resource: .aiChatAdd16) }
             public static var aiChatGradientColor: DesignSystemImage { .init(resource: .aiChatGradientColor16) }
             public static var aiChatHistory: DesignSystemImage { .init(resource: .aiChatHistory16) }
@@ -208,6 +209,7 @@ public extension DesignSystemImages {
             public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid16) }
             public static var jump: DesignSystemImage { .init(resource: .jump16) }
             public static var jumpRecolorable: DesignSystemImage { .init(resource: .jumpRecolorable16) }
+            public static var keyboard: DesignSystemImage { .init(resource: .keyboard16) }
             public static var keyLogin: DesignSystemImage { .init(resource: .keyLogin16) }
             public static var linkRecolorable: DesignSystemImage { .init(resource: .linkRecolorable16) }
             public static var lock: DesignSystemImage { .init(resource: .lock16) }

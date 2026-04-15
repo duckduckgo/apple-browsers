@@ -29,6 +29,7 @@ import DesignResourcesKit
 /// including fonts, colors, and backgrounds.
 public struct ImageSegmentedPickerConfiguration {
     public var font: Font
+    public var itemContentSpacing: CGFloat
     public var selectedTextColor: Color
     public var unselectedTextColor: Color
     public var backgroundColor: Color
@@ -50,6 +51,7 @@ public struct ImageSegmentedPickerConfiguration {
     ///   - innerHorizontalPadding: The horizontal padding between the outer edge and the pill. Defaults to 2.
     public init(
         font: Font = .system(size: 14, weight: .medium), /// Color not specified in the design system
+        itemContentSpacing: CGFloat = 6,
         selectedTextColor: Color = .init(designSystemColor: .textPrimary),
         unselectedTextColor: Color = .init(designSystemColor: .textPrimary),
         backgroundColor: Color = .init(designSystemColor: .backdrop),
@@ -59,6 +61,7 @@ public struct ImageSegmentedPickerConfiguration {
         innerHorizontalPadding: CGFloat = 2
     ) {
         self.font = font
+        self.itemContentSpacing = itemContentSpacing
         self.selectedTextColor = selectedTextColor
         self.unselectedTextColor = unselectedTextColor
         self.backgroundColor = backgroundColor
@@ -273,7 +276,7 @@ private struct CustomPickerButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 6) {
+            HStack(spacing: configuration.itemContentSpacing) {
                 (isSelected ? item.selectedCustomView : item.unselectedCustomView)
                     .font(configuration.font)
                     .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)

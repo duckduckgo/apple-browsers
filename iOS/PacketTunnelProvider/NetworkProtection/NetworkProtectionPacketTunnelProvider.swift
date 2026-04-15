@@ -46,7 +46,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
     // MARK: - PacketTunnelProvider.Event reporting
 
-    private static var packetTunnelProviderEvents: EventMapping<PacketTunnelProvider.Event> = .init { event, _, _, _ in
+    private static func packetTunnelProviderEvents(loopDetector: ConnectionFailureLoopDetector) -> EventMapping<PacketTunnelProvider.Event> { .init { event, _, _, _ in
         let defaults = UserDefaults.networkProtectionGroupDefaults
 
         switch event {
@@ -111,6 +111,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
             switch attempt {
             case .connecting:
+                if loopDetector.connectionLoopDetected { return }
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnableAttemptConnecting,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                              includedParameters: [.appVersion])
@@ -122,6 +123,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                              includedParameters: [.appVersion])
             case .failure:
+                if loopDetector.connectionLoopDetected { return }
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnableAttemptFailure,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                              includedParameters: [.appVersion])
@@ -213,6 +215,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
             switch step {
             case .begin:
+                if loopDetector.connectionLoopDetected { return }
                 persistentPixel.fireDailyAndCount(
                     pixel: .networkProtectionTunnelStartAttempt,
                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
@@ -220,6 +223,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                     withAdditionalParameters: [:],
                     includedParameters: [.appVersion]) { _ in }
             case .failure(let error):
+                if loopDetector.connectionLoopDetected { return }
                 persistentPixel.fireDailyAndCount(
                     pixel: .networkProtectionTunnelStartFailure,
                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
@@ -370,6 +374,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             }
         case .tunnelStartOnDemandWithoutAccessToken:
             Logger.networkProtection.error("🔴 Starting tunnel without an auth token")
+            if loopDetector.connectionLoopDetected { return }
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
         case .adapterEndTemporaryShutdownStateAttemptFailure(let error):
@@ -378,8 +383,15 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess)
         case .adapterEndTemporaryShutdownStateRecoveryFailure(let error):
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure, error: error)
+        case .connectionFailureLoopDetected(let error):
+            persistentPixel.fireDailyAndCount(
+                pixel: .networkProtectionConnectionFailureLoopDetected,
+                pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                error: error,
+                withAdditionalParameters: [:],
+                includedParameters: [.appVersion]) { _ in }
         }
-    }
+    } }
 
     // MARK: - Error Reporting
 
@@ -520,6 +532,18 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             experimentManager: nil
         )
 
+        let netPGroupID = "\(Global.groupIdPrefix).netp"
+        let vpnContainerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: netPGroupID)
+
+        let loopDetectorStore = vpnContainerURL.map {
+            Self.makeUnprotectedFileStore(containerURL: $0, name: "vpn-loop-detector", fallback: UserDefaults.networkProtectionGroupDefaults)
+        } ?? UserDefaults.networkProtectionGroupDefaults
+
+        let loopDetector = ConnectionFailureLoopDetector(
+            store: loopDetectorStore,
+            isFeatureEnabled: featureFlagger.isFeatureOn(.vpnConnectionFailureLoopDetection)
+        )
+
         self.wideEvent = WideEvent(useMockRequests: {
 #if DEBUG || REVIEW || ALPHA
             true
@@ -625,11 +649,12 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    keychainType: .dataProtection(.unspecified),
                    tokenHandlerProvider: tokenHandler,
                    debugEvents: Self.networkProtectionDebugEvents(controllerErrorStore: errorStore),
-                   providerEvents: Self.packetTunnelProviderEvents,
+                   providerEvents: Self.packetTunnelProviderEvents(loopDetector: loopDetector),
                    settings: settings,
                    defaults: .networkProtectionGroupDefaults,
                    wideEvent: wideEvent,
-                   entitlementCheck: entitlementsCheck)
+                   entitlementCheck: entitlementsCheck,
+                   loopDetector: loopDetector)
         startMonitoringMemoryPressureEvents()
         observeServerChanges()
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
@@ -670,6 +695,17 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             UserDefaults.networkProtectionGroupDefaults.set(location, forKey: NetworkProtectionUserDefaultKeys.lastSelectedServerCity)
         }
         .store(in: &cancellables)
+    }
+
+    private static func makeUnprotectedFileStore(containerURL: URL, name: String, fallback: ThrowingKeyValueStoring) -> ThrowingKeyValueStoring {
+        guard let fileStore = try? KeyValueFileStore(
+            location: containerURL,
+            name: name,
+            writeOptions: [.atomic, .noFileProtection]
+        ) else {
+            return fallback
+        }
+        return fileStore
     }
 
     private static func setupPixelKit(vpnFileStoreDirectory: URL?) {

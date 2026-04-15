@@ -149,7 +149,7 @@ extension MainViewController {
                                                         entryPoint: entryPoint,
                                                         privacyConfigurationManager: self.privacyConfigurationManager,
                                                         contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                                        breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo())
+                                                        breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo(webExtensionManager: webExtensionManager))
 
         currentTab?.privacyDashboard = controller
 
@@ -457,7 +457,8 @@ extension MainViewController {
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
                                                   whatsNewCoordinator: whatsNewCoordinator,
-                                                  darkReaderFeatureSettings: darkReaderFeatureSettings)
+                                                  darkReaderFeatureSettings: darkReaderFeatureSettings,
+                                                  adBlockingAvailability: adBlockingAvailability)
 
         settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)

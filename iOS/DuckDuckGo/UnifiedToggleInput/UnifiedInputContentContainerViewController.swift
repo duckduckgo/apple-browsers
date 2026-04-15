@@ -107,6 +107,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
+    private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     // MARK: - Manager Components
 
@@ -133,13 +134,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         aiChatSettings: AIChatSettingsProvider = AIChatSettings()) {
+         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.switchBarHandler = switchBarHandler
         self.daxLogoManager = DaxLogoManager()
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -418,6 +421,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         manager.titleLayoutConfiguration = .unifiedInput
         swipeContainerManager.installChatHistory(using: manager)
         manager.subscribeToTextChanges(switchBarHandler.currentTextPublisher)
+        manager.onFetchCompleted = { [weak self] _, _ in
+            guard let self else { return }
+            self.updateDaxVisibility()
+        }
         aiChatHistoryManager = manager
         manager.hasSuggestionsPublisher
             .receive(on: DispatchQueue.main)
@@ -436,7 +443,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         if switchBarHandler.isFireTab {
             suggestionsReader = NilSuggestionsReader()
         } else {
-            let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
+            let reader = SuggestionsReader(
+                featureFlagger: featureFlagger,
+                privacyConfig: privacyConfigurationManager,
+                nativeStorageHandler: duckAiNativeStorageHandler,
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+            )
             let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
             suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
         }
@@ -570,21 +582,18 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             return
         }
         let shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
+        let isShowingTray = suggestionTrayManager?.isShowingSuggestionTray ?? false
         let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
         let isShowingChatHistory = aiChatHistoryManager?.hasSuggestions == true
         let isChatHistoryPending = aiChatHistoryManager != nil
             && aiChatHistoryManager?.hasCompletedInitialFetch != true
             && switchBarHandler.currentToggleState == .aiChat
-        let isURLFallbackShowingContent = isShowingURLFallback && (suggestionTrayManager?.isShowingSuggestionTray ?? false)
+        let isURLFallbackShowingContent = isShowingURLFallback && isShowingTray
 
-        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
-        let isAIDaxVisible: Bool
-        if switchBarHandler.isUsingFadeOutAnimation {
-            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isChatHistoryPending && !isURLFallbackShowingContent && !shouldDisplaySuggestionTray
-        } else {
-            isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isChatHistoryPending && !isURLFallbackShowingContent
-        }
+        let hasContent = (shouldDisplaySuggestionTray && isShowingTray) || isHorizontallyCompactLayoutEnabled
+        let isHomeDaxVisible = !hasContent && !shouldDisplayFavoritesOverlay
+        let isAIDaxVisible = !hasContent && !isShowingChatHistory && !isChatHistoryPending && !isURLFallbackShowingContent
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
         updateSectionTitle()

@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "Find-Search-16.svg",
+      "filename" : "App-DuckDuckGo-24.svg",
       "idiom" : "universal"
     }
   ],
@@ -10,6 +10,6 @@
     "version" : 1
   },
   "properties" : {
-    "template-rendering-intent" : "template"
+    "preserves-vector-representation" : true
   }
 }

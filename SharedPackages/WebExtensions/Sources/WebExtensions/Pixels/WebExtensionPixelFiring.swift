@@ -33,6 +33,12 @@ public enum WebExtensionPixelEvent {
     case embeddedInstalled(type: DuckDuckGoWebExtensionType)
     case embeddedUpgraded(type: DuckDuckGoWebExtensionType, fromVersion: String?, toVersion: String?)
     case embeddedInstallError(type: DuckDuckGoWebExtensionType, error: Error)
+
+    case scriptletFetchSuccess(type: DuckDuckGoWebExtensionType, version: String, count: Int)
+    case scriptletFetchError(type: DuckDuckGoWebExtensionType, error: Error)
+    case scriptletValidationError(type: DuckDuckGoWebExtensionType, error: Error)
+    case scriptletInstalled(type: DuckDuckGoWebExtensionType, version: String)
+    case scriptletInstallError(type: DuckDuckGoWebExtensionType, error: Error)
 }
 
 /// Protocol for firing web extension pixels.

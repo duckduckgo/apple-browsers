@@ -32,13 +32,15 @@ public extension NewTabPageDataModel {
         public let shortName: String
         public let isEnabled: Bool
         public let supportsImageUpload: Bool
+        public let supportedTools: [String]
 
-        public init(id: String, name: String, shortName: String, isEnabled: Bool, supportsImageUpload: Bool) {
+        public init(id: String, name: String, shortName: String, isEnabled: Bool, supportsImageUpload: Bool, supportedTools: [String]) {
             self.id = id
             self.name = name
             self.shortName = shortName
             self.isEnabled = isEnabled
             self.supportsImageUpload = supportsImageUpload
+            self.supportedTools = supportedTools
         }
     }
 

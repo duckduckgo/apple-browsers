@@ -1,5 +1,6 @@
 var quickMode = %QUICK_MODE%;
 var diagnosticsText = '%DIAGNOSTICS%';
+var screenshotBase64 = '%SCREENSHOT_BASE64%';
 
 function openDropdown(label) {
     const dropdown = document.querySelector(`[aria-label^="${label}"]`);
@@ -103,6 +104,19 @@ function hideFormQuestion(labelText) {
     }
 }
 
+function addEmailFieldPadding() {
+    var emailLabel = Array.from(document.querySelectorAll('label'))
+        .find(function(l) {
+            var text = l.textContent.trim().toLowerCase();
+            return text.startsWith('your email') || text.startsWith('email');
+        });
+    if (!emailLabel) return;
+    var emailRow = emailLabel.closest('.WorkRequestsFieldRow');
+    if (emailRow) {
+        emailRow.style.marginTop = '16px';
+    }
+}
+
 function hideIrrelevantFields() {
     const fieldsToHide = [
         'Which product area or team',
@@ -117,8 +131,10 @@ function hideIrrelevantFields() {
     ];
     fieldsToHide.forEach(hideFormQuestion);
 
+    addEmailFieldPadding();
     moveSubmitButtonUnderDescription();
     injectDiagnosticsSection();
+    injectScreenshotSection();
     hookSubmitForDiagnostics();
 
     var hider = document.getElementById('ddg-form-hider');
@@ -232,6 +248,70 @@ function injectDiagnosticsSection() {
     details.appendChild(pre);
 
     section.appendChild(details);
+
+    anchor.parentNode.insertBefore(section, anchor.nextSibling);
+}
+
+function injectScreenshotSection() {
+    if (!screenshotBase64 || screenshotBase64 === '') return;
+
+    var anchor = document.getElementById('ddg-diagnostics-section') || document.getElementById('ddg-submit-clone');
+    if (!anchor) return;
+
+    var section = document.createElement('div');
+    section.id = 'ddg-screenshot-section';
+    section.style.cssText = 'margin: 12px 24px 0; padding: 0;';
+
+    var headerRow = document.createElement('div');
+    headerRow.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.id = 'ddg-include-screenshot';
+    cb.checked = false;
+    headerRow.appendChild(cb);
+
+    var cbLabel = document.createElement('label');
+    cbLabel.setAttribute('for', 'ddg-include-screenshot');
+    cbLabel.textContent = 'Include screenshot';
+    cbLabel.style.cssText = 'font-size: 14px; cursor: pointer;';
+    headerRow.appendChild(cbLabel);
+
+    section.appendChild(headerRow);
+
+    var warning = document.createElement('div');
+    warning.style.cssText = 'font-size: 12px; color: #856404; background: #fff3cd; padding: 6px 10px; border-radius: 4px; margin: 6px 0 8px; display: none;';
+    warning.textContent = '\u26A0 This screenshot may contain private information. Please review carefully before including it.';
+    section.appendChild(warning);
+
+    cb.addEventListener('change', function() {
+        warning.style.display = cb.checked ? '' : 'none';
+    });
+
+    var img = document.createElement('img');
+    img.src = 'data:image/png;base64,' + screenshotBase64;
+    img.style.cssText = 'max-width: 100%; max-height: 150px; margin-top: 6px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;';
+    img.title = 'Click to enlarge';
+
+    img.addEventListener('click', function() {
+        var overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:16px;box-sizing:border-box;';
+
+        var closeBtn = document.createElement('button');
+        closeBtn.textContent = '\u2715 Close';
+        closeBtn.style.cssText = 'position:absolute;top:12px;right:16px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;font-size:14px;padding:6px 14px;border-radius:6px;cursor:pointer;';
+        closeBtn.addEventListener('click', function() { overlay.remove(); });
+        overlay.appendChild(closeBtn);
+
+        var bigImg = document.createElement('img');
+        bigImg.src = img.src;
+        bigImg.style.cssText = 'max-width:100%;max-height:calc(100% - 40px);object-fit:contain;border-radius:4px;';
+        overlay.appendChild(bigImg);
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+        document.body.appendChild(overlay);
+    });
+
+    section.appendChild(img);
 
     anchor.parentNode.insertBefore(section, anchor.nextSibling);
 }

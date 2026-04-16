@@ -77,6 +77,10 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet private var backgroundColorView: MouseOverView!
     @IBOutlet private var backgroundBaseColorView: ColorView!
 
+    private var feedbackButton: MouseOverButton?
+    private var feedbackButtonSpacer: NSView?
+    private var feedbackTipController: QuickFeedbackTipController?
+    private var internalUserCancellable: AnyCancellable?
     private var fireWindowBackgroundView: NSImageView?
     @IBOutlet private var goBackButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet private var goBackButtonHeightConstraint: NSLayoutConstraint!
@@ -1984,14 +1988,29 @@ extension NavigationBarViewController: NSMenuDelegate {
     /// .
     // MARK: - Quick Feedback Button
 
-    private var feedbackButton: MouseOverButton?
-    private var feedbackTipController: QuickFeedbackTipController?
-
     private func setupQuickFeedbackButton() {
         guard !isInPopUpWindow else { return }
 
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
-        guard internalUserDecider.isInternalUser else { return }
+
+        if internalUserDecider.isInternalUser {
+            addQuickFeedbackButton()
+        }
+
+        internalUserCancellable = internalUserDecider.isInternalUserPublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isInternal in
+                if isInternal {
+                    self?.addQuickFeedbackButton()
+                } else {
+                    self?.removeQuickFeedbackButton()
+                }
+            }
+    }
+
+    private func addQuickFeedbackButton() {
+        guard feedbackButton == nil else { return }
 
         let button = MouseOverButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -2003,7 +2022,7 @@ extension NavigationBarViewController: NSMenuDelegate {
         button.target = self
         button.action = #selector(quickFeedbackButtonClicked)
 
-        if let icon = NSImage(named: "Feedback-Color-16") {
+        if let icon = NSImage(named: "Send-Feedback-Color") {
             button.image = icon
         } else {
             button.image = NSImage(systemSymbolName: "bubble.left.fill", accessibilityDescription: "Feedback")
@@ -2023,6 +2042,7 @@ extension NavigationBarViewController: NSMenuDelegate {
         menuButtons.insertArrangedSubview(spacer, at: 1)
 
         feedbackButton = button
+        feedbackButtonSpacer = spacer
 
         let tipController = QuickFeedbackTipController()
         feedbackTipController = tipController
@@ -2031,6 +2051,15 @@ extension NavigationBarViewController: NSMenuDelegate {
             guard let button else { return }
             tipController?.scheduleIfNeeded(anchoredTo: button)
         }
+    }
+
+    private func removeQuickFeedbackButton() {
+        feedbackTipController?.dismissTip()
+        feedbackTipController = nil
+        feedbackButton?.removeFromSuperview()
+        feedbackButton = nil
+        feedbackButtonSpacer?.removeFromSuperview()
+        feedbackButtonSpacer = nil
     }
 
     @objc private func quickFeedbackButtonClicked(_ sender: Any?) {

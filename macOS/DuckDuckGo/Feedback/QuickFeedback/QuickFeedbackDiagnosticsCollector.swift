@@ -65,7 +65,13 @@ final class QuickFeedbackDiagnosticsCollector {
 
     private func gpuSummary() -> String {
         var iterator: io_iterator_t = 0
-        let result = IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("IOPCIDevice"), &iterator)
+        let port: mach_port_t
+        if #available(macOS 12.0, *) {
+            port = kIOMainPortDefault
+        } else {
+            port = kIOMasterPortDefault
+        }
+        let result = IOServiceGetMatchingServices(port, IOServiceMatching("IOPCIDevice"), &iterator)
         guard result == KERN_SUCCESS else { return "unknown" }
         defer { IOObjectRelease(iterator) }
 

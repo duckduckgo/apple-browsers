@@ -51,6 +51,7 @@ final class InternalFeedbackFormUserScript: NSObject, UserScript {
                 "%APP_VERSION%": "\(appVersionModel.versionLabelShort) (\(appVersionModel.distributionLabel))",
                 "%QUICK_MODE%": quickMode ? "true" : "false",
                 "%DIAGNOSTICS%": diagnostics,
+                "%SCREENSHOT_BASE64%": "",
             ])
             super.init()
         } catch {

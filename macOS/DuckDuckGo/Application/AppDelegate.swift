@@ -129,7 +129,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var promoService: PromoService?
     var privacyDashboardWindow: NSWindow?
 
-    private(set) lazy var quickFeedbackService: QuickFeedbackService = {
+    @MainActor private(set) lazy var quickFeedbackService: QuickFeedbackService = {
         let diagnosticsCollector = QuickFeedbackDiagnosticsCollector(
             tabCountProvider: windowControllersManager
         )

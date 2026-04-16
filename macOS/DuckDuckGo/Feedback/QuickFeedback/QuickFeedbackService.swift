@@ -19,13 +19,13 @@
 import AppKit
 import Combine
 import Common
+import os.log
 import WebKit
 
 @MainActor
 final class QuickFeedbackService: NSObject {
 
     private var windowController: QuickFeedbackWindowController?
-    private var formLoaded = false
     private var screenshotData: Data?
     private let diagnosticsCollector: QuickFeedbackDiagnosticsCollector
 
@@ -40,6 +40,13 @@ final class QuickFeedbackService: NSObject {
         s.id = 'ddg-form-hider';
         s.textContent = '.WorkRequestsSection { opacity: 0; }';
         (document.head || document.documentElement).appendChild(s);
+
+        setTimeout(function() {
+            var h = document.getElementById('ddg-form-hider');
+            if (h && h.textContent.indexOf('opacity: 0') !== -1) {
+                h.textContent = '.WorkRequestsSection { opacity: 1; }';
+            }
+        }, 8000);
 
         var origAdd = EventTarget.prototype.addEventListener;
         EventTarget.prototype.addEventListener = function(type, fn, opts) {
@@ -57,7 +64,7 @@ final class QuickFeedbackService: NSObject {
         firePublisher: AnyPublisher<Fire.BurningData?, Never>
     ) {
         self.diagnosticsCollector = diagnosticsCollector
-        self.dataStore = WKWebsiteDataStore.nonPersistent()
+        self.dataStore = .default()
 
         super.init()
 
@@ -74,7 +81,6 @@ final class QuickFeedbackService: NSObject {
         captureScreenshot(from: window)
 
         if let existing = windowController {
-            formLoaded = false
             existing.window?.makeKeyAndOrderFront(nil)
             navigateToForm()
             return
@@ -84,7 +90,6 @@ final class QuickFeedbackService: NSObject {
         windowController = controller
 
         controller.window?.makeKeyAndOrderFront(nil)
-        formLoaded = false
         navigateToForm()
     }
 
@@ -124,12 +129,10 @@ final class QuickFeedbackService: NSObject {
     private func forceClosePopup() {
         windowController?.window?.close()
         windowController = nil
-        formLoaded = false
         screenshotData = nil
     }
 
     private func signOut() {
-        formLoaded = false
         windowController?.setSignOutVisible(false)
 
         dataStore.fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { [weak self] records in
@@ -165,80 +168,6 @@ final class QuickFeedbackService: NSObject {
         screenshotData = bitmapRep.representation(using: .png, properties: [:])
     }
 
-    private func injectScreenshot() {
-        guard let data = screenshotData, let webView = windowController?.webView else { return }
-
-        let base64 = data.base64EncodedString()
-        let js = """
-        (function() {
-            var anchor = document.getElementById('ddg-diagnostics-section') || document.getElementById('ddg-submit-clone');
-            if (!anchor) return;
-
-            var section = document.createElement('div');
-            section.id = 'ddg-screenshot-section';
-            section.style.cssText = 'margin: 12px 24px 0; padding: 0;';
-
-            var headerRow = document.createElement('div');
-            headerRow.style.cssText = 'display: flex; align-items: center; gap: 8px;';
-
-            var cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.id = 'ddg-include-screenshot';
-            cb.checked = false;
-            headerRow.appendChild(cb);
-
-            var cbLabel = document.createElement('label');
-            cbLabel.setAttribute('for', 'ddg-include-screenshot');
-            cbLabel.textContent = 'Include screenshot';
-            cbLabel.style.cssText = 'font-size: 14px; cursor: pointer;';
-            headerRow.appendChild(cbLabel);
-
-            section.appendChild(headerRow);
-
-            var warning = document.createElement('div');
-            warning.style.cssText = 'font-size: 12px; color: #856404; background: #fff3cd; padding: 6px 10px; border-radius: 4px; margin: 6px 0 8px; display: none;';
-            warning.textContent = '\u{26A0} This screenshot may contain private information. Please review carefully before including it.';
-            section.appendChild(warning);
-
-            cb.addEventListener('change', function() {
-                warning.style.display = cb.checked ? '' : 'none';
-            });
-
-            var img = document.createElement('img');
-            img.src = 'data:image/png;base64,\(base64)';
-            img.style.cssText = 'max-width: 100%; max-height: 150px; margin-top: 6px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;';
-            img.title = 'Click to enlarge';
-
-            img.addEventListener('click', function() {
-                var overlay = document.createElement('div');
-                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:16px;box-sizing:border-box;';
-
-                var closeBtn = document.createElement('button');
-                closeBtn.textContent = '\u{2715} Close';
-                closeBtn.style.cssText = 'position:absolute;top:12px;right:16px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;font-size:14px;padding:6px 14px;border-radius:6px;cursor:pointer;';
-                closeBtn.addEventListener('click', function() { overlay.remove(); });
-                overlay.appendChild(closeBtn);
-
-                var bigImg = document.createElement('img');
-                bigImg.src = img.src;
-                bigImg.style.cssText = 'max-width:100%;max-height:calc(100% - 40px);object-fit:contain;border-radius:4px;';
-                overlay.appendChild(bigImg);
-                overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
-                document.body.appendChild(overlay);
-            });
-
-            section.appendChild(img);
-
-            anchor.parentNode.insertBefore(section, anchor.nextSibling);
-        })();
-        """
-        webView.evaluateJavaScript(js) { _, error in
-            if let error {
-                Logger.general.error("Quick feedback screenshot injection failed: \(error.localizedDescription)")
-            }
-        }
-    }
-
     // MARK: - JS Injection
 
     private func injectQuickModeScript() {
@@ -260,17 +189,19 @@ final class QuickFeedbackService: NSObject {
             return
         }
 
+        let screenshotBase64 = screenshotData?.base64EncodedString() ?? ""
+
         let script = template
             .replacingOccurrences(of: "%OS_VERSION%", with: osVersionString)
             .replacingOccurrences(of: "%APP_VERSION%", with: "\(appVersionModel.versionLabelShort) (\(appVersionModel.distributionLabel))")
             .replacingOccurrences(of: "%QUICK_MODE%", with: "true")
             .replacingOccurrences(of: "%DIAGNOSTICS%", with: diagnostics)
+            .replacingOccurrences(of: "%SCREENSHOT_BASE64%", with: screenshotBase64)
 
-        webView.evaluateJavaScript(script) { [weak self] _, error in
+        webView.evaluateJavaScript(script) { _, error in
             if let error {
                 Logger.general.error("Quick feedback JS evaluation failed: \(error.localizedDescription)")
             }
-            self?.injectScreenshot()
         }
     }
 }
@@ -285,20 +216,10 @@ extension QuickFeedbackService: WKNavigationDelegate {
         let isAsanaForm = url.host == Self.asanaFormHost
 
         if !isAsanaForm {
-            formLoaded = false
             windowController?.setSignOutVisible(false)
             return
         }
 
-        guard !formLoaded else {
-            // Post-submit redirect: hide the popup (keep WebView warm for reuse)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-                self?.hidePopup()
-            }
-            return
-        }
-
-        formLoaded = true
         windowController?.setSignOutVisible(true)
         injectQuickModeScript()
     }

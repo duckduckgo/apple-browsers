@@ -134,6 +134,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         false
     }
 
+    var isFreemiumPIREnabled: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpFreemiumPIR)
+    }
+
     init(appDependencies: DependencyProvider) {
         self.appDependencies = appDependencies
     }

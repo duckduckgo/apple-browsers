@@ -23,6 +23,7 @@ enum OmniBarNotificationType {
     case cookiePopupManaged
     case cookiePopupHidden
     case trackersBlocked(count: Int)
+    case youTubeAdBlockOn
 }
 
 final class OmniBarNotificationAnimator: NSObject {

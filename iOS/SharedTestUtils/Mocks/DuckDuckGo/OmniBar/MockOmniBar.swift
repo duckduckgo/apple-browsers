@@ -58,6 +58,7 @@ final class MockOmniBar: OmniBar {
     func removeTextSelection() { }
     func selectTextToEnd(_ offset: Int) { }
     func showOrScheduleCookiesManagedNotification(isCosmetic: Bool) { }
+    func showYouTubeAdBlockNotification() { }
     func showOrScheduleOnboardingPrivacyIconAnimation() { }
     func dismissOnboardingPrivacyIconAnimation() { }
     func startTrackersAnimation(_ privacyInfo: PrivacyDashboard.PrivacyInfo, forDaxDialog: Bool) { }
@@ -126,6 +127,7 @@ final class MockOmniBar: OmniBar {
         var onClearButtonPressed: (() -> Void)?
         var onPrivacyIconPressed: (() -> Void)?
         var onMenuButtonPressed: (() -> Void)?
+        var onMenuButtonLongPressed: (() -> Void)?
         var onTrackersViewPressed: (() -> Void)?
         var onSettingsButtonPressed: (() -> Void)?
         var onCancelPressed: (() -> Void)?
@@ -137,7 +139,7 @@ final class MockOmniBar: OmniBar {
         var onDismissPressed: (() -> Void)?
         var onFirePressed: (() -> Void)?
         var onPasswordsPressed: (() -> Void)?
-        var onSettingsLongPress: (() -> Void)?
+        var onSettingsButtonLongPressed: (() -> Void)?
         var onCustomizableButtonPressed: (() -> Void)?
         var onAIChatLeftButtonPressed: (() -> Void)?
         var onAIChatBrandingPressed: (() -> Void)?

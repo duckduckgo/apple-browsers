@@ -146,6 +146,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private let toggleModeStorage: ToggleModeStoring
     private let fireModePromotionEligibility: FireModePromotionCoordinating?
+    private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -189,9 +190,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          voiceSearchHelper: VoiceSearchHelperProtocol,
          launchSourceManager: LaunchSourceManaging,
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
          fireModePromotionEligibility: FireModePromotionCoordinating? = nil
     ) {
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.tabsModelProvider = tabsModelProvider
         self.previewsSource = previewsSource
         self.interactionStateSource = interactionStateSource
@@ -319,7 +322,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               privacyStats: privacyStats,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               darkReaderFeatureSettings: darkReaderFeatureSettings,
-                                                              autoplaySettings: autoplaySettings)
+                                                              autoplaySettings: autoplaySettings,
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -430,7 +434,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               privacyStats: privacyStats,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               darkReaderFeatureSettings: darkReaderFeatureSettings,
-                                                              autoplaySettings: autoplaySettings)
+                                                              autoplaySettings: autoplaySettings,
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,

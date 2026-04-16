@@ -65,6 +65,7 @@ final class TabSuspensionService {
     private let keyValueStore: ThrowingKeyValueStoring
     private let windowControllersManager: WindowControllersManagerProtocol
     private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let memoryUsageMonitor: MemoryUsageMonitoring
     private let pixelFiring: PixelFiring?
     private let notificationCenter: NotificationCenter
@@ -84,12 +85,21 @@ final class TabSuspensionService {
     }
 
     private var minimumInactiveInterval: TimeInterval {
-        useShortInactiveInterval ? Self.debugMinimumInactiveInterval : Self.defaultMinimumInactiveInterval
+        if useShortInactiveInterval {
+            return Self.debugMinimumInactiveInterval
+        }
+        if let settingsJSON = privacyConfigurationManager.privacyConfig.settings(for: TabSuspensionSubfeature.memoryPressureTrigger),
+           let jsonData = settingsJSON.data(using: .utf8),
+           let settings = try? JSONDecoder().decode(MemoryPressureTriggerSettings.self, from: jsonData) {
+            return settings.tabInactivityPeriod
+        }
+        return Self.defaultMinimumInactiveInterval
     }
 
     init(
         windowControllersManager: WindowControllersManagerProtocol,
         featureFlagger: FeatureFlagger,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
         memoryUsageMonitor: MemoryUsageMonitoring,
         pixelFiring: PixelFiring?,
         keyValueStore: ThrowingKeyValueStoring,
@@ -98,6 +108,7 @@ final class TabSuspensionService {
     ) {
         self.windowControllersManager = windowControllersManager
         self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.memoryUsageMonitor = memoryUsageMonitor
         self.pixelFiring = pixelFiring
         self.keyValueStore = keyValueStore
@@ -165,4 +176,8 @@ final class TabSuspensionService {
             )
         }
     }
+}
+
+private struct MemoryPressureTriggerSettings: Decodable {
+    let tabInactivityPeriod: TimeInterval
 }

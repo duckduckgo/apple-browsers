@@ -30,6 +30,7 @@ import PixelKit
 import PreferencesUI_macOS
 import PrivacyConfig
 import SubscriptionUI
+import WebExtensions
 import os.log
 
 protocol AIFeaturesStatusProviding: AnyObject {
@@ -188,14 +189,15 @@ final class PreferencesSidebarModel: ObservableObject {
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
         youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences,
-        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
+        adBlockingAvailability: AdBlockingAvailabilityProviding
     ) {
         let loadSections = { currentSubscriptionFeatures in
             return PreferencesSection.defaultSections(
                 includingDuckPlayer: includeDuckPlayer,
                 includingSync: syncService.featureFlags.contains(.userInterface),
                 includingAIChat: includeAIChat,
-                includingYouTubeAdBlocking: featureFlagger.isFeatureOn(.adBlockingExtension),
+                includingYouTubeAdBlocking: adBlockingAvailability.isFeatureAvailable,
                 subscriptionState: currentSubscriptionFeatures
             )
         }

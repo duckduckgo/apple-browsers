@@ -77,7 +77,8 @@ final class RootViewV2Tests: XCTestCase {
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: sharedDuckPlayerPreferences,
             youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences(duckPlayerPreferences: sharedDuckPlayerPreferences),
-            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            adBlockingAvailability: AdBlockingAvailability(featureFlagger: featureFlagger, isEnabledByUserProvider: { false })
         )
         subscriptionManager = SubscriptionManagerMock()
         subscriptionUIHandler = SubscriptionUIHandlerMock( didPerformActionCallback: { _ in })

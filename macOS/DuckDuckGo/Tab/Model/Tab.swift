@@ -426,6 +426,12 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             .sink { [weak self] theme in
                 self?.refreshErrorHTMLIfNeeded(themeName: theme.name)
             }
+
+        videoPlaybackCancellable = extensions.autoplayPolicy?.videoPlaybackDetectedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isVideoPlaying in
+                self?.refreshDisplaysAutoplayPolicy(isVideoPlaying: isVideoPlaying)
+            }
     }
 
 #if DEBUG
@@ -563,6 +569,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     }
 
     @Published private(set) var audioStateTest: WebView.AudioState = .unmuted(isPlayingAudio: false)
+    @Published private(set) var mustDisplayAutoplayPolicy: Bool = false
 
     // MARK: - Tab Suspension
 
@@ -1166,6 +1173,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     private var emailDidSignOutCancellable: AnyCancellable?
     private var faviconCancellable: AnyCancellable?
     private var tabCrashRecoveryCancellable: AnyCancellable?
+    private var videoPlaybackCancellable: AnyCancellable?
 
     private func setupWebView(shouldLoadInBackground: Bool) {
         webView.navigationDelegate = navigationDelegate
@@ -1276,14 +1284,18 @@ extension Tab {
 
 // MARK: - Autoplay
 
-extension Tab {
+private extension Tab {
 
-    var mustDisplayAutoplayPolicy: Bool {
-        guard featureFlagger.isFeatureOn(.autoplayPolicy), let targetURL = content.urlForWebView else {
-            return false
+    func refreshDisplaysAutoplayPolicy(isVideoPlaying: Bool) {
+        let isFeatureEnabled = featureFlagger.isFeatureOn(.autoplayPolicy)
+        let isHttpOrHttps = content.urlForWebView?.isHttpOrHttps == true
+        let displaysAutoplayPolicy = isFeatureEnabled && isHttpOrHttps && isVideoPlaying
+
+        guard displaysAutoplayPolicy != mustDisplayAutoplayPolicy else {
+            return
         }
 
-        return targetURL.isHttp || targetURL.isHttps
+        mustDisplayAutoplayPolicy = displaysAutoplayPolicy
     }
 }
 

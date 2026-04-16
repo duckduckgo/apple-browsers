@@ -374,7 +374,7 @@ struct DataBrokerRunCustomJSONView: View {
             HStack(spacing: 12) {
                 Button("Opt-out Selected") {
                     if let selectedResult {
-                        viewModel.runOptOut(scanResult: selectedResult)
+                        viewModel.runOptOut(scanResult: selectedResult, jsonString: jsonText)
                     }
                 }
                 .disabled(selectedResult == nil)

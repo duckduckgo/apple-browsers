@@ -22,6 +22,7 @@ import DesignResourcesKitIcons
 import PixelKit
 import PrivacyConfig
 import SwiftUI
+import UIComponents
 import UniformTypeIdentifiers
 
 @MainActor

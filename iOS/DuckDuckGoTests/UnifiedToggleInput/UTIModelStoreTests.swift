@@ -112,6 +112,22 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertFalse(sut.selectedModelSupportsImageUpload)
     }
 
+    // MARK: - selectedModelSupports(tool:)
+
+    func test_selectedModelSupportsTool_whenSelectedModelSupportsWebSearch_returnsTrue() {
+        preferences.selectedModelId = "gpt-5"
+        sut.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+
+        XCTAssertTrue(sut.selectedModelSupports(tool: .webSearch))
+    }
+
+    func test_selectedModelSupportsTool_whenSelectedModelDoesNotSupportWebSearch_returnsFalse() {
+        preferences.selectedModelId = "gpt-5"
+        sut.models = [makeModel(id: "gpt-5", access: true)]
+
+        XCTAssertFalse(sut.selectedModelSupports(tool: .webSearch))
+    }
+
     // MARK: - clearStaleModelSelectionIfNeeded
 
     func test_clearStale_whenSelectedModelNoLongerInList_clearsPreferences() {
@@ -179,8 +195,8 @@ final class UTIModelStoreTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false) -> AIChatModel {
-        AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload, entityHasAccess: access)
+    private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false, supportedTools: [AIChatRAGTool] = []) -> AIChatModel {
+        AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload, supportedTools: supportedTools, entityHasAccess: access)
     }
 }
 

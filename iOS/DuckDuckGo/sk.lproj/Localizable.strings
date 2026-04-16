@@ -209,6 +209,15 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Urobiť fotografiu";
 
+/* Title for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.title" = "Prispôsobiť odpovede";
+
+/* Subtitle for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.subtitle" = "Nájsť aktuálne informácie";
+
+/* Title for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.title" = "Webové vyhľadávanie";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Existujúce záložky sa nebudú duplikovať.";
 
@@ -2755,8 +2764,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Preskočiť";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Dobrý deň.\n\nSte pripravení na rýchlejší prehliadač, ktorý vás ochráni?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Dobrý deň.\n\nSi pripravený/-á na rýchlejší prehliadač, ktorý ťa chráni a umožňuje ti rozhodnúť sa, kedy a ako používať umelú inteligenciu?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Ďalšie";
@@ -2770,11 +2779,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Nastavenia > Funkcie AI.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Chceš jednoduchší prístup k súkromnému AI chatu?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Prepínať medzi\nvyhľadávaním a Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Poďme na to!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Len vyhľadávanie";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Chceš mať jednoduchý prístup k súkromnému AI chatu v adresnom riadku?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Začnime!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Bol/-a som tu už predtým";
@@ -2801,7 +2816,7 @@
 "onboarding.rebranding.first-search-done.title" = "To je DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ste pripravení na rýchlejší prehliadač, ktorý vás ochráni?";
+"onboarding.rebranding.intro.message" = "Si pripravený/-á na rýchlejší prehliadač, ktorý ťa chráni a umožňuje ti rozhodnúť sa, kedy a ako používať umelú inteligenciu?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Dobrý deň.";
@@ -3270,12 +3285,6 @@
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Nová karta";
-
-/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_and_duckai" = "Vyhľadávanie & Duck.ai";
-
-/* Title for the 'Search Only' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_only" = "Len vyhľadávanie";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Skús novú možnosť prepínania medzi vyhľadávaním a Duck.ai v adresnom riadku.";

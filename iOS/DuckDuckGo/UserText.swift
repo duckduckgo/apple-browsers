@@ -1242,6 +1242,9 @@ public struct UserText {
     public static let simplifiedSyncTurnOffTitle = NotLocalizedString("sync.simplified.turn.off.title", value: "Turn Off Sync & Backup?", comment: "Alert title when turning off sync")
     public static let simplifiedSyncTurnOffMessage = NotLocalizedString("sync.simplified.turn.off.message", value: "Your bookmarks and passwords on this device won't be affected.", comment: "Alert message when turning off sync")
     public static let simplifiedSyncTurnOffAction = NotLocalizedString("sync.simplified.turn.off.action", value: "Turn Off", comment: "Alert button to confirm turning off sync")
+    public static let simplifiedCodeCopiedToast = NotLocalizedString("sync.simplified.code.copied.toast", value: "Code copied", comment: "Toast message shown after copying sync code to clipboard")
+    public static let simplifiedRecoveryCodeCopiedToast = NotLocalizedString("sync.simplified.recovery.code.copied.toast", value: "Recovery code copied", comment: "Toast message shown after copying recovery code to clipboard from settings")
+    public static let simplifiedSyncSetupFailedToast = NotLocalizedString("sync.simplified.setup.failed.toast", value: "Couldn't enable Sync & Backup", comment: "Toast message shown when sync setup fails")
 
     // MARK: Sync Errors
     static let syncLimitExceededTitle = NSLocalizedString("prefrences.sync.limit-exceeded-title", value: "Sync Paused", comment: "Title for sync limits exceeded warning")
@@ -2034,8 +2037,14 @@ public struct UserText {
     // MARK: - AI Chat
     public static let aiChatToolbarSearchButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.search.button.accessibility.label", value: "Search web", comment: "Accessibility label for the search/globe button in the Duck.ai native input toolbar")
     public static let aiChatToolbarCustomizeResponsesButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.customizeResponses.button.accessibility.label", value: "Customize Responses", comment: "Accessibility label for the customize responses button in the Duck.ai native input toolbar")
+    public static let aiChatToolbarCustomizeResponsesMenuTitle = NSLocalizedString("aichat.toolbar.tools.customizeResponses.title", value: "Customize Responses", comment: "Title for the customize responses action in the unified input tools menu")
+    public static let aiChatToolbarToolsButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.tools.button.accessibility.label", value: "Tools", comment: "Accessibility label for the tools button in the unified input toolbar")
+    public static let aiChatToolbarClearSelectedToolAccessibilityLabel = NotLocalizedString("aichat.toolbar.tools.clear.button.accessibility.label", value: "Clear selected tool", comment: "Accessibility label for the button that clears the selected Duck.ai tool in unified input")
     public static let aiChatToolbarAttachButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.attach.button.accessibility.label", value: "Attach image", comment: "Accessibility label for the image/attach button in the Duck.ai native input toolbar")
     public static let aiChatToolbarSubmitButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.submit.button.accessibility.label", value: "Submit", comment: "Accessibility label for the submit button in the Duck.ai native input toolbar")
+    public static let aiChatToolbarStopGeneratingButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.stop.button.accessibility.label", value: "Stop generating", comment: "Accessibility label for the stop generating button in the Duck.ai native input toolbar")
+    public static let aiChatToolbarWebSearchToolTitle = NSLocalizedString("aichat.toolbar.tools.websearch.title", value: "Web Search", comment: "Title for the web search tool in the unified input tools menu")
+    public static let aiChatToolbarWebSearchToolSubtitle = NSLocalizedString("aichat.toolbar.tools.websearch.subtitle", value: "Find current information", comment: "Subtitle for the web search tool in the unified input tools menu")
 
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")
@@ -2172,9 +2181,6 @@ public struct UserText {
         comment: "Footer under the AI picker, descriptive sentence without link"
     )
 
-    // MARK: - AI Features Picker
-    public static let settingsAIPickerSearchOnly = NSLocalizedString("settings.ai.experimental.picker.search_only", value: "Search Only", comment: "Title for the 'Search Only' option in the AI experimental picker")
-
     // MARK: - New Address Bar Picker
     public static let newAddressBarPickerTitle = NSLocalizedString("new.address.bar.picker.title", value: "Address bar option", comment: "Title for the new address bar picker modal")
     public static let newAddressBarPickerHeadline = NSLocalizedString("new.address.bar.picker.subheadline.private", value: "Want easier access to private AI chat?", comment: "Headline for the new address bar picker modal")
@@ -2183,7 +2189,6 @@ public struct UserText {
     public static let newAddressBarPickerConfirm = NSLocalizedString("new.address.bar.picker.confirm", value: "Confirm", comment: "Confirm button for the new address bar picker")
     public static let newAddressBarPickerNotNow = NSLocalizedString("new.address.bar.picker.not.now", value: "Not Now", comment: "Not now button for the new address bar picker")
     public static let newAddressBarPickerFooter = NSLocalizedString("new.address.bar.picker.footer", value: "Adjust in Settings > AI Features", comment: "Footer text for the new address bar picker")
-    public static let settingsAIPickerSearchAndDuckAI = NSLocalizedString("settings.ai.experimental.picker.search_and_duckai", value: "Search & Duck.ai", comment: "Title for the 'Search & Duck.ai' option in the AI experimental picker")
 
     // MARK: - Default Omnibar Mode Setting
     public static let settingsDefaultOmnibarModeHeader = NSLocalizedString("settings.default.omnibar.mode.header", value: "Toggle Position", comment: "Label for the default omnibar toggle position picker in AI Features settings")
@@ -2210,32 +2215,15 @@ public struct UserText {
                 public static var title: String {
                     NSLocalizedString("onboarding.rebranding.intro.title", value: "Hi there.", comment: "The title of the onboarding intro")
                 }
-                public static var message: String {
-                    if Locale.current.isEnglishLanguage {
-                        NotLocalizedString("onboarding.rebranding.intro.message.english-only", value: "Ready for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The message of the onboarding dialog popup")
-                    } else {
-                        NSLocalizedString("onboarding.rebranding.intro.message", value: "Ready for a faster browser that keeps you protected?", comment: "The message of the onboarding dialog popup")
-                    }
-                }
+                public static let message = NSLocalizedString("onboarding.rebranding.intro.message", value: "Ready for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The message of the onboarding dialog popup")
             }
         }
 
         public enum Intro {
-            public static var title: String {
-                if Locale.current.isEnglishLanguage {
-                    NotLocalizedString("onboarding.highlights.intro.title.english-only", value: "Hi there.\n\nReady for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The title of the onboarding dialog popup for English-language copy update")
-                } else {
-                    NSLocalizedString("onboarding.highlights.intro.title", value: "Hi there.\n\nReady for a faster browser that keeps you protected?", comment: "The title of the onboarding dialog popup")
-                }
-            }
+            public static let title = NSLocalizedString("onboarding.highlights.intro.title", value: "Hi there.\n\nReady for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The title of the onboarding dialog popup.")
 
-            public static var continueCTA: String {
-                if Locale.current.isEnglishLanguage {
-                    NotLocalizedString("onboarding.intro.cta.english-only", value: "Let’s get started!", comment: "Button to continue the onboarding process for English-language copy update")
-                } else {
-                    NSLocalizedString("onboarding.intro.cta", value: "Let’s do it!", comment: "Button to continue the onboarding process")
-                }
-            }
+            public static let continueCTA = NSLocalizedString("onboarding.intro.cta", value: "Let’s get started!", comment: "Button to continue the onboarding process.")
+
             public static let skipCTA = NSLocalizedString("onboarding.intro.cta.skip", value: "I’ve been here before", comment: "Button to skip the onboarding process")
 
             enum Debug {
@@ -2279,47 +2267,26 @@ public struct UserText {
         }
 
         enum SearchExperience {
-            public static var title: String {
-                if Locale.current.isEnglishLanguage {
-                    NotLocalizedString(
-                        "onboarding.highlights.searchExperience.title.english-only",
-                        value: "Want easy access to private AI chat in the address bar?",
-                        comment: "The title of the onboarding dialog popup to select the preferred search experience for English-language copy update."
-                    )
-                } else {
-                    NSLocalizedString(
-                        "onboarding.highlights.searchExperience.title",
-                        value: "Want easy access to private AI chat?",
-                        comment: "The title of the onboarding dialog popup to select the preferred search experience."
-                    )
-                }
-            }
+            public static let title = NSLocalizedString(
+                "onboarding.highlights.searchExperience.title",
+                value: "Want easy access to private AI chat in the address bar?",
+                comment: "The title of the onboarding dialog popup to select the preferred search experience."
+            )
+
             public static let footer = NSLocalizedString("onboarding.highlights.searchExperience.footer", value: "AI features are private and optional. You can make changes in Settings > AI Features.", comment: "The footer disclaimer text for the search experience onboarding screen.")
             public static let cta = NSLocalizedString("onboarding.highlights.searchExperience.cta", value: "Next", comment: "The title of the CTA to progress to the next onboarding screen.")
 
-            public static var searchOnlyOption: String {
-                if Locale.current.isEnglishLanguage {
-                    NotLocalizedString(
-                        "onboarding.highlights.searchExperience.searchOnly.english-only",
-                        value: "Search only",
-                        comment: "Title for the search-only option in onboarding picker for English-language copy update."
-                    )
-                } else {
-                    UserText.settingsAIPickerSearchOnly
-                }
-            }
+            public static let searchOnlyOption = NSLocalizedString(
+                "onboarding.highlights.searchExperience.searchOnly",
+                value: "Search only",
+                comment: "Title for the search-only option in onboarding picker."
+            )
 
-            public static var searchAndDuckAIOption: String {
-                if Locale.current.isEnglishLanguage {
-                    NotLocalizedString(
-                        "onboarding.highlights.searchExperience.searchAndDuckAI.english-only",
-                        value: "Toggle between\nSearch and Duck.ai",
-                        comment: "Title for the search and Duck.ai option in onboarding picker for English-language copy update."
-                    )
-                } else {
-                    UserText.settingsAIPickerSearchAndDuckAI
-                }
-            }
+            public static let searchAndDuckAIOption = NSLocalizedString(
+                "onboarding.highlights.searchExperience.searchAndDuckAI",
+                value: "Toggle between\nSearch and Duck.ai",
+                comment: "Title for the search and Duck.ai option in onboarding picker."
+            )
             
             static func footerAttributed() -> NSAttributedString {
                 let settingsPathBold = NSLocalizedString(

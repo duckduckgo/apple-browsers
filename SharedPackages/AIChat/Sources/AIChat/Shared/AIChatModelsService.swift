@@ -158,6 +158,7 @@ extension AIChatModel {
             provider: .from(id: remoteModel.id, providerString: remoteModel.provider),
             supportsImageUpload: remoteModel.supportsImageUpload,
             supportedImageFormats: remoteModel.supportsImageUpload ? Self.nativeSupportedImageFormats : [],
+            supportedTools: remoteModel.supportedTools.compactMap(AIChatRAGTool.init(rawValue:)),
             entityHasAccess: hasAccess,
             accessTier: remoteModel.accessTier
         )

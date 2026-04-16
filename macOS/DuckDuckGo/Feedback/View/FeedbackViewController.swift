@@ -353,7 +353,7 @@ extension FeedbackViewController: NSTextViewDelegate {
 
 }
 
-extension URL {
+fileprivate extension URL {
 
     func trimmingQueryItemsAndFragment() -> URL? {
         var components = URLComponents(url: self, resolvingAgainstBaseURL: true)

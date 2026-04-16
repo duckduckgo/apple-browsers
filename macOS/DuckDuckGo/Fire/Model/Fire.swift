@@ -333,7 +333,8 @@ final class Fire: FireProtocol {
         self.aiChatHistoryCleaner = aIChatHistoryCleaner ?? AIChatHistoryCleaner(featureFlagger: NSApp.delegateTyped.featureFlagger,
                                                                                  aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
                                                                                  featureDiscovery: DefaultFeatureDiscovery(),
-                                                                                 privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager)
+                                                                                 privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                                                                 nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler)
         self.dataClearingPixelsReporter = dataClearingPixelsReporter
         self.dataClearingWideEventService = dataClearingWideEventService
         self.tabCleanupPreparer = tabCleanupPreparer

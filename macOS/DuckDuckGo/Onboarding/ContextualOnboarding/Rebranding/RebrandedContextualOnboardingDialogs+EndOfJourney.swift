@@ -24,35 +24,38 @@ import Onboarding
 extension OnboardingRebranding {
 
     struct OnboardingEndOfJourneyDialog: View {
-        let title = UserText.ContextualOnboarding.onboardingFinalScreenTitle
-        let message = NSAttributedString(string: UserText.ContextualOnboarding.onboardingFinalScreenMessage)
-        let cta = UserText.ContextualOnboarding.onboardingFinalScreenButton
-
         let highFiveAction: () -> Void
         let onManualDismiss: () -> Void
 
         var body: some View {
-            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
+            OnboardingBubbleView.withDismissButton(
+                tailPosition: .leading(offset: 0.3, direction: .top),
+                onDismiss: onManualDismiss
+            ) {
                 OnboardingEndOfJourneyDialogContent(highFiveAction: highFiveAction)
             }
         }
     }
 
     struct OnboardingEndOfJourneyDialogContent: View {
-        let title = UserText.ContextualOnboarding.onboardingFinalScreenTitle
+        @Environment(\.onboardingTheme) private var theme
+
+        let title = NSAttributedString(string: UserText.ContextualOnboarding.onboardingFinalScreenTitle)
         let message = NSAttributedString(string: UserText.ContextualOnboarding.onboardingFinalScreenMessage)
         let cta = UserText.ContextualOnboarding.onboardingFinalScreenButton
         let highFiveAction: () -> Void
 
         var body: some View {
-            Onboarding.ContextualDaxDialogContent(
+            OnboardingRebranding.ContextualDaxDialogContent(
                 orientation: .horizontalStack(alignment: .center),
                 title: title,
-                titleFont: OnboardingDialogsContants.titleFont,
-                message: message,
-                messageFont: OnboardingDialogsContants.messageFont,
-                customActionView: AnyView(OnboardingPrimaryCTAButton(title: cta, action: highFiveAction))
-            )
+                message: message
+            ) {
+                Button(cta) {
+                    highFiveAction()
+                }
+                .buttonStyle(theme.primaryButtonStyle.style)
+            }
         }
     }
 

@@ -29,18 +29,22 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         var body: some View {
-            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
+            OnboardingBubbleView.withDismissButton(
+                tailPosition: .leading(offset: 0.3, direction: .top),
+                onDismiss: onManualDismiss
+            ) {
                 if showNextScreen {
                     OnboardingEndOfJourneyDialogContent(highFiveAction: viewModel.highFive)
                 } else {
                     OnboardingFireDialogContent(viewModel: viewModel)
                 }
             }
-            .padding()
         }
     }
 
     struct OnboardingFireDialogContent: View {
+        @Environment(\.onboardingTheme) private var theme
+
         static let firstString = String(format: UserText.ContextualOnboarding.onboardingTryFireButtonTitle, UserText.ContextualOnboarding.onboardingTryFireButtonMessage)
         private let attributedMessage = NSMutableAttributedString.attributedString(
             from: Self.firstString,
@@ -51,24 +55,16 @@ extension OnboardingRebranding {
         )
 
         let viewModel: OnboardingFireButtonDialogViewModel
-        @State private var showNextScreen: Bool = false
 
         var body: some View {
-            if showNextScreen {
-                OnboardingEndOfJourneyDialogContent(highFiveAction: viewModel.highFive)
-            } else {
-                Onboarding.ContextualDaxDialogContent(
-                    orientation: .horizontalStack(alignment: .center),
-                    message: attributedMessage,
-                    messageFont: OnboardingDialogsContants.titleFontNotBold,
-                    customActionView: AnyView(actionView))
-            }
-        }
-
-        @ViewBuilder
-        private var actionView: some View {
-            VStack {
-                OnboardingPrimaryCTAButton(title: UserText.ContextualOnboarding.onboardingTryFireButtonButton, action: viewModel.tryFireButton)
+            OnboardingRebranding.ContextualDaxDialogContent(
+                orientation: .horizontalStack(alignment: .center),
+                message: attributedMessage
+            ) {
+                Button(UserText.ContextualOnboarding.onboardingTryFireButtonButton) {
+                    viewModel.tryFireButton()
+                }
+                .buttonStyle(theme.primaryButtonStyle.style)
             }
         }
     }

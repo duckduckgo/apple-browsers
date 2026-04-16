@@ -24,6 +24,8 @@ import Onboarding
 extension OnboardingRebranding {
 
     struct OnboardingTrackersBlockedDialog: View {
+        @Environment(\.onboardingTheme) private var theme
+
         let cta = UserText.ContextualOnboarding.onboardingGotItButton
 
         @State private var showNextScreen: Bool = false
@@ -35,30 +37,29 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         var body: some View {
-            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
-                VStack {
-                    if showNextScreen {
-                        OnboardingFireDialogContent(viewModel: viewModel)
-                    } else {
-                        Onboarding.ContextualDaxDialogContent(
-                            orientation: .horizontalStack(alignment: .center),
-                            message: message,
-                            messageFont: OnboardingDialogsContants.messageFont,
-                            customActionView: AnyView(
-                                OnboardingPrimaryCTAButton(title: cta) {
-                                    blockedTrackersCTAAction()
-                                    if shouldFollowUp {
-                                        withAnimation {
-                                            showNextScreen = true
-                                        }
-                                    }
+            OnboardingBubbleView.withDismissButton(
+                tailPosition: .leading(offset: 0.3, direction: .top),
+                onDismiss: onManualDismiss
+            ) {
+                if showNextScreen {
+                    OnboardingFireDialogContent(viewModel: viewModel)
+                } else {
+                    OnboardingRebranding.ContextualDaxDialogContent(
+                        orientation: .horizontalStack(alignment: .center),
+                        message: message
+                    ) {
+                        Button(cta) {
+                            blockedTrackersCTAAction()
+                            if shouldFollowUp {
+                                withAnimation {
+                                    showNextScreen = true
                                 }
-                            )
-                        )
+                            }
+                        }
+                        .buttonStyle(theme.primaryButtonStyle.style)
                     }
                 }
             }
-            .padding()
         }
     }
 

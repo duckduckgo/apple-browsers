@@ -22,10 +22,15 @@ import Onboarding
 
 struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     private enum ContextualPanelMetrics {
-        static let trySearchPanelHeight: CGFloat = 170
+        static let trySearchPanelHeight: CGFloat = 164
         static let trySearchIllustrationOffsetY: CGFloat = 50
         static let searchDonePanelHeight: CGFloat = 180
         static let searchDoneIllustrationOffsetY: CGFloat = -40
+        static let trySitePanelHeight: CGFloat = 170
+        static let trySiteIllustrationOffsetY: CGFloat = 50
+        static let trackersPanelHeight: CGFloat = 170
+        static let firePanelHeight: CGFloat = 170
+        static let highFivePanelHeight: CGFloat = 170
     }
 
     private let onboardingPixelReporter: OnboardingPixelReporting
@@ -60,51 +65,86 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                 .frame(maxWidth: 640.0)
             Spacer()
         }
+        .padding(.top, 16)
+        .padding(.bottom, 24)
 
         let viewWithBackground: AnyView
         switch type {
         case .tryASearch:
             viewWithBackground = AnyView(
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0)
+                ZStack(alignment: .topLeading) {
+                    OnboardingTheme.macOSRebranding2026.colorPalette.background
+                        .overlay(
+                            OnboardingRebrandingImages.Contextual.tryASearchBackground
+                                .offset(y: 96),
+                            alignment: .bottomTrailing
+                        )
                     centeredView
-                    Spacer(minLength: 0)
                 }
-                .frame(height: ContextualPanelMetrics.trySearchPanelHeight)
-                .background(
-                    ZStack(alignment: .bottomTrailing) {
-                        OnboardingTheme.macOSRebranding2026.colorPalette.background
-                        OnboardingRebrandingImages.Contextual.tryASearchBackground
-                            .offset(y: ContextualPanelMetrics.trySearchIllustrationOffsetY)
-                    }
-                )
                 .clipped()
                 .applyOnboardingTheme(.macOSRebranding2026)
             )
         case .searchDone:
             viewWithBackground = AnyView(
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    centeredView
-                    Spacer(minLength: 0)
-                }
-                .frame(height: ContextualPanelMetrics.searchDonePanelHeight)
-                .background(
+                ZStack(alignment: .topLeading) {
                     ZStack(alignment: .bottomTrailing) {
                         OnboardingTheme.macOSRebranding2026.colorPalette.background
                         OnboardingRebrandingImages.Contextual.searchDoneBackground
                             .offset(y: ContextualPanelMetrics.searchDoneIllustrationOffsetY)
                     }
-                )
+                    .frame(height: ContextualPanelMetrics.searchDonePanelHeight)
+
+                    centeredView
+                }
+                .frame(height: ContextualPanelMetrics.searchDonePanelHeight)
                 .clipped()
                 .applyOnboardingTheme(.macOSRebranding2026)
             )
-        default:
+        case .tryASite:
             viewWithBackground = AnyView(
-                centeredView
-                    .padding()
-                    .background(OnboardingGradient())
-                    .applyOnboardingTheme(.macOSRebranding2026)
+                ZStack(alignment: .topLeading) {
+                    ZStack(alignment: .bottomTrailing) {
+                        OnboardingTheme.macOSRebranding2026.colorPalette.background
+                        OnboardingRebrandingImages.Contextual.tryASiteBackground
+                            .offset(y: ContextualPanelMetrics.trySiteIllustrationOffsetY)
+                    }
+                    .frame(height: ContextualPanelMetrics.trySitePanelHeight)
+
+                    centeredView
+                }
+                .frame(height: ContextualPanelMetrics.trySitePanelHeight)
+                .clipped()
+                .applyOnboardingTheme(.macOSRebranding2026)
+            )
+        case .trackers:
+            viewWithBackground = AnyView(
+                ZStack(alignment: .topLeading) {
+                    OnboardingGradient()
+                    centeredView
+                }
+                .frame(height: ContextualPanelMetrics.trackersPanelHeight)
+                .clipped()
+                .applyOnboardingTheme(.macOSRebranding2026)
+            )
+        case .tryFireButton:
+            viewWithBackground = AnyView(
+                ZStack(alignment: .topLeading) {
+                    OnboardingGradient()
+                    centeredView
+                }
+                .frame(height: ContextualPanelMetrics.firePanelHeight)
+                .clipped()
+                .applyOnboardingTheme(.macOSRebranding2026)
+            )
+        case .highFive:
+            viewWithBackground = AnyView(
+                ZStack(alignment: .topLeading) {
+                    OnboardingGradient()
+                    centeredView
+                }
+                .frame(height: ContextualPanelMetrics.highFivePanelHeight)
+                .clipped()
+                .applyOnboardingTheme(.macOSRebranding2026)
             )
         }
 

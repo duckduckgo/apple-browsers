@@ -49,6 +49,8 @@ public extension OnboardingTheme {
             optionsListBorderColor: accentPrimary,
             optionsListIconColor: accentPrimary,
             optionsListTextColor: accentPrimary,
+            optionsListHoverColor: Color(red: 0x72/255.0, green: 0x95/255.0, blue: 0xF6/255.0).opacity(0.2),
+            optionsListPressedColor: Color(red: 0x72/255.0, green: 0x95/255.0, blue: 0xF6/255.0).opacity(0.3),
             primaryButtonBackgroundColor: ctaButtonBackground,
             primaryButtonPressedColor: ctaButtonPressed,
             primaryButtonTextColor: .white,
@@ -69,7 +71,7 @@ public extension OnboardingTheme {
             borderWidth: 1,
             borderInset: 0.5,
             iconSize: CGSize(width: 16, height: 16),
-            itemMinHeight: 28,
+            itemMinHeight: 32,
             verticalPadding: 6,
             horizontalPadding: 12
         )

@@ -28,27 +28,31 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         var body: some View {
-            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
+            OnboardingBubbleView.withDismissButton(
+                tailPosition: .leading(offset: 0.3, direction: .top),
+                onDismiss: onManualDismiss
+            ) {
                 OnboardingTrySiteDialogContent(viewModel: viewModel)
             }
         }
     }
 
     struct OnboardingTrySiteDialogContent: View {
-        let title = UserText.ContextualOnboarding.onboardingTryASiteTitle
+        let title = NSAttributedString(string: UserText.ContextualOnboarding.onboardingTryASiteTitle)
         let message = NSAttributedString(string: UserText.ContextualOnboarding.onboardingTryASiteMessage)
         let viewModel: OnboardingSiteSuggestionsViewModel
 
         var body: some View {
-            Onboarding.ContextualDaxDialogContent(
+            OnboardingRebranding.ContextualDaxDialogContent(
                 orientation: .horizontalStack(alignment: .top),
                 title: title,
-                titleFont: OnboardingDialogsContants.titleFont,
-                message: message,
-                messageFont: OnboardingDialogsContants.messageFont,
-                list: viewModel.itemsList,
-                listAction: viewModel.listItemPressed
-            )
+                message: message
+            ) {
+                OnboardingRebranding.ContextualOnboardingListView(
+                    list: viewModel.itemsList,
+                    action: viewModel.listItemPressed
+                )
+            }
         }
     }
 

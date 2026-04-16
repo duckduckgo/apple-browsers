@@ -19,7 +19,7 @@
 import AVFoundation
 import Combine
 import CommonObjCExtensions
-import FeatureFlags
+
 import Foundation
 import OSLog
 import PrivacyConfig
@@ -36,7 +36,6 @@ final class PermissionModelTests: XCTestCase {
     var geolocationServiceMock: GeolocationServiceMock!
     var geolocationProviderMock: GeolocationProviderMock!
     var systemPermissionManagerMock: SystemPermissionManagerMock!
-    var featureFlaggerMock: MockFeatureFlagger!
     static var processPool: WKProcessPool!
     var webView: WebViewMock!
     var model: PermissionModel!
@@ -65,7 +64,6 @@ final class PermissionModelTests: XCTestCase {
         permissionManagerMock = PermissionManagerMock()
         geolocationServiceMock = GeolocationServiceMock()
         systemPermissionManagerMock = SystemPermissionManagerMock()
-        featureFlaggerMock = MockFeatureFlagger()
 
         let configuration = WKWebViewConfiguration(processPool: Self.processPool)
         webView = WebViewMock(frame: NSRect(x: 0, y: 0, width: 50, height: 50), configuration: configuration)
@@ -87,7 +85,6 @@ final class PermissionModelTests: XCTestCase {
         permissionManagerMock = nil
         geolocationServiceMock = nil
         systemPermissionManagerMock = nil
-        featureFlaggerMock = nil
         pixelKit = nil
         geolocationProviderMock = nil
         model = nil
@@ -1320,12 +1317,9 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertFalse(model.isPermissionGranted(.notification, forDomain: domain))
     }
 
-    // MARK: - System Permission Disabled Tests (New Permission View)
+    // MARK: - System Permission Disabled Tests
 
-    func testWhenNewPermissionViewEnabledAndSystemPermissionDeniedThenQueryIsShown() {
-        // Enable new permission view feature flag
-        featureFlaggerMock.featuresStub[FeatureFlag.newPermissionView.rawValue] = true
-
+    func testWhenSystemPermissionDeniedThenQueryIsShown() {
         // Set system permission as denied
         systemPermissionManagerMock.authorizationStates[.geolocation] = .denied
 
@@ -1351,10 +1345,7 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertEqual(model.permissions.geolocation, .requested(model.authorizationQuery!))
     }
 
-    func testWhenNewPermissionViewEnabledAndSystemPermissionRestrictedThenQueryIsShown() {
-        // Enable new permission view feature flag
-        featureFlaggerMock.featuresStub[FeatureFlag.newPermissionView.rawValue] = true
-
+    func testWhenSystemPermissionRestrictedThenQueryIsShown() {
         // Set system permission as restricted
         systemPermissionManagerMock.authorizationStates[.geolocation] = .restricted
 
@@ -1378,10 +1369,7 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertNotNil(model.authorizationQuery)
     }
 
-    func testWhenNewPermissionViewEnabledAndSystemPermissionDisabledSystemWideThenQueryIsShown() {
-        // Enable new permission view feature flag
-        featureFlaggerMock.featuresStub[FeatureFlag.newPermissionView.rawValue] = true
-
+    func testWhenSystemPermissionDisabledSystemWideThenQueryIsShown() {
         // Set system permission as system disabled (Location Services off)
         systemPermissionManagerMock.authorizationStates[.geolocation] = .systemDisabled
 
@@ -1405,10 +1393,7 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertNotNil(model.authorizationQuery)
     }
 
-    func testWhenNewPermissionViewEnabledAndSystemPermissionAuthorizedThenStoredPermissionIsUsed() {
-        // Enable new permission view feature flag
-        featureFlaggerMock.featuresStub[FeatureFlag.newPermissionView.rawValue] = true
-
+    func testWhenSystemPermissionAuthorizedThenStoredPermissionIsUsed() {
         // Set system permission as authorized
         systemPermissionManagerMock.authorizationStates[.geolocation] = .authorized
 
@@ -1444,10 +1429,7 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertFalse(queryShown)
     }
 
-    func testWhenNewPermissionViewEnabledAndSystemPermissionDeniedThenStoredAllowDeniesAndShowsInfoPopover() {
-        // Enable new permission view feature flag
-        featureFlaggerMock.featuresStub[FeatureFlag.newPermissionView.rawValue] = true
-
+    func testWhenSystemPermissionDeniedThenStoredAllowDeniesAndShowsInfoPopover() {
         // Set system permission as denied
         systemPermissionManagerMock.authorizationStates[.geolocation] = .denied
 
@@ -1486,10 +1468,7 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertEqual(receivedPermissionType, .geolocation)
     }
 
-    func testWhenNewPermissionViewEnabledAndSystemPermissionDeniedButUserSetNeverAllowThenDenyDirectly() {
-        // Enable new permission view feature flag
-        featureFlaggerMock.featuresStub[FeatureFlag.newPermissionView.rawValue] = true
-
+    func testWhenSystemPermissionDeniedButUserSetNeverAllowThenDenyDirectly() {
         // Set system permission as denied
         systemPermissionManagerMock.authorizationStates[.geolocation] = .denied
 

@@ -18,23 +18,18 @@
 
 import Foundation
 import Combine
-import FeatureFlags
 import PrivacyDashboard
-import PrivacyConfig
 import AppKit
 
 typealias PrivacyDashboardPermissionAuthorizationState = [(permission: PermissionType, state: PermissionAuthorizationState)]
 
 final class PrivacyDashboardPermissionHandler {
 
-    init(permissionManager: PermissionManagerProtocol,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+    init(permissionManager: PermissionManagerProtocol) {
         self.permissionManager = permissionManager
-        self.featureFlagger = featureFlagger
     }
 
     private let permissionManager: PermissionManagerProtocol
-    private let featureFlagger: FeatureFlagger
     private weak var tabViewModel: TabViewModel?
     private var onPermissionChange: (([AllowedPermission]) -> Void)?
     private var cancellables = Set<AnyCancellable>()

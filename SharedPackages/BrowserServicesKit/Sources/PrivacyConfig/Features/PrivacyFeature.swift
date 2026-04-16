@@ -86,7 +86,6 @@ public enum PrivacyFeature: String {
     case duckAiChatHistory
     case serp
     case popupBlocking
-    case combinedPermissionView
     case pageContext
     case webExtensions
     case forceDarkModeOnWebsites

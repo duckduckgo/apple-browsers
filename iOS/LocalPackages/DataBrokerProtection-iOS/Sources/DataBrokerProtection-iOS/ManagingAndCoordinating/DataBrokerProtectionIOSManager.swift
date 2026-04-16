@@ -170,7 +170,7 @@ public final class DataBrokerProtectionIOSManager {
     private let maxBackgroundTaskWaitTime: TimeInterval
     private let minBackgroundTaskWaitTime: TimeInterval
     private let feedbackViewCreator: () -> (any View)
-    private let featureFlagger: DBPFeatureFlagging
+    private let featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging
     private let settings: DataBrokerProtectionSettings
     private let subscriptionManager: DataBrokerProtectionSubscriptionManaging
     private let wideEventSweeper: DBPWideEventSweeper?
@@ -267,7 +267,7 @@ public final class DataBrokerProtectionIOSManager {
          maxBackgroundTaskWaitTime: TimeInterval = Constants.defaultMaxBackgroundTaskWaitTime,
          minBackgroundTaskWaitTime: TimeInterval = Constants.defaultMinBackgroundTaskWaitTime,
          feedbackViewCreator: @escaping () -> (any View),
-         featureFlagger: DBPFeatureFlagging,
+         featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging,
          settings: DataBrokerProtectionSettings,
          subscriptionManager: DataBrokerProtectionSubscriptionManaging,
          wideEvent: WideEventManaging?,

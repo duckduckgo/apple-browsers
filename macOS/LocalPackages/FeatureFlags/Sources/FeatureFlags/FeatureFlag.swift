@@ -92,8 +92,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1206873150423133/task/1213344522599586
     case dbpWebViewUserAgent
 
-    case dbpFreemiumPIR
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382557
     case syncSetupBarcodeIsUrlBased
 
@@ -444,8 +442,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization)), category: .dbp)
         case .dbpWebViewUserAgent:
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.webViewUserAgent)), category: .dbp)
-        case .dbpFreemiumPIR:
-            Config(source: .remoteReleasable(.subfeature(DBPSubfeature.freemiumPIR)), category: .dbp)
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased)), category: .sync)
         case .exchangeKeysToSyncWithAnotherDevice:

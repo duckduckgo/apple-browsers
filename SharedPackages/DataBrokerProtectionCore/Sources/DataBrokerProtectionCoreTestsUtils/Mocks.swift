@@ -1977,7 +1977,7 @@ public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJob
     }
 }
 
-public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
+public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     public let isRemoteBrokerDeliveryFeatureOn: Bool
     public let isEmailConfirmationDecouplingFeatureOn: Bool
     public let isForegroundRunningOnAppActiveFeatureOn: Bool

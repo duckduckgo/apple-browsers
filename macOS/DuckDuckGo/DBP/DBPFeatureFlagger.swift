@@ -57,10 +57,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
     }
 
-    var isFreemiumPIREnabled: Bool {
-        featureFlagger.isFeatureOn(.dbpFreemiumPIR)
-    }
-
     var isWideEventPOSTEndpointOn: Bool {
         featureFlagger.isFeatureOn(.wideEventPostEndpoint)
     }

@@ -283,14 +283,20 @@ jobs:
       - name: Run tests
         id: run-unit-tests-ios
         run: |
+          if [[ "${{ needs.should-run-checks.outputs.strict_mode }}" == "true" ]]; then
+            RETRY_FLAGS="-test-iterations 3"
+            echo "Strict mode enabled: running tests with $RETRY_FLAGS"
+          else
+            RETRY_FLAGS="-test-iterations 3 -retry-tests-on-failure"
+          fi
+
           set -o pipefail && xcodebuild test \
             -scheme BrowserServicesKit \
             -destination '${{ steps.select-simulator.outputs.destination }}' \
             -derivedDataPath DerivedData \
             -skipPackagePluginValidation \
             -skipMacroValidation \
-            -test-iterations 3 \
-            -retry-tests-on-failure \
+            $RETRY_FLAGS \
             CODE_SIGNING_ALLOWED=NO \
             | tee -a ios-build-log.txt \
             | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml

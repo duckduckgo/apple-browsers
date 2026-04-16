@@ -139,7 +139,7 @@ final class PadOmnibarToggleView: UIView {
         selectedLeadingConstraint.constant = isSearchSelected ? Metrics.selectedLeadingLeft : Metrics.selectedLeadingRight
 
         searchButton.setImage(isSearchSelected
-                              ? DesignSystemImages.Glyphs.Size16.findSearchGradientColor
+                              ? DesignSystemImages.Color.Size16.searchFindToggle
                               : DesignSystemImages.Glyphs.Size16.findSearch,
                               for: .normal)
         aiChatButton.setImage(isSearchSelected

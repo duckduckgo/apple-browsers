@@ -51,7 +51,7 @@ extension ApplicationBuildType {
     ///
     /// - `"canary"` — internal users (logged in via the internal user flow)
     /// - `"dev"` — alpha or review builds that are not internal users
-    /// - `nil` — production builds (channel parameter is omitted)
+    /// - `nil` — non-internal users on production builds (channel parameter is omitted)
     func channelName(isInternalUser: Bool) -> String? {
         if isInternalUser { return "canary" }
         if isAlphaBuild || isReviewBuild { return "dev" }

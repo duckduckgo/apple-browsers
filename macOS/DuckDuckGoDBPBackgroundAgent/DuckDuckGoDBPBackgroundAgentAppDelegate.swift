@@ -24,6 +24,7 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import BrowserServicesKit
 import PixelKit
+import PrivacyConfig
 import Networking
 import Subscription
 import os.log
@@ -37,8 +38,8 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
     override init() {
         Logger.dbpBackgroundAgent.log("🟢 Starting: \(NSRunningApplication.current.processIdentifier, privacy: .public)")
         let appConfigDefaults = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .appConfiguration))
-        let isInternalUser = appConfigDefaults?.bool(forKey: "isInternalUser") == true
-        let channel = StandardApplicationBuildType().channelName(isInternalUser: isInternalUser)
+        let internalUserDecider = DefaultInternalUserDecider(store: appConfigDefaults ?? .standard)
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: internalUserDecider.isInternalUser)
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),

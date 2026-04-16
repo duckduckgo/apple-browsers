@@ -24,6 +24,7 @@ import NetworkExtension
 import NetworkProtectionProxy
 import os.log
 import PixelKit
+import PrivacyConfig
 
 final class MacTransparentProxyProvider: TransparentProxyProvider {
 
@@ -56,9 +57,8 @@ final class MacTransparentProxyProvider: TransparentProxyProvider {
             loadSettingsFromProviderConfiguration: loadSettingsFromStartupOptions)
 
 #if !NETP_SYSTEM_EXTENSION
-        let appConfigDefaults = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .appConfiguration))
-        let isInternalUser = appConfigDefaults?.bool(forKey: "isInternalUser") == true
-        let channel = StandardApplicationBuildType().channelName(isInternalUser: isInternalUser)
+        let internalUserDecider = DefaultInternalUserDecider(store: UserDefaults.appConfiguration)
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: internalUserDecider.isInternalUser)
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: "vpnProxyExtension",

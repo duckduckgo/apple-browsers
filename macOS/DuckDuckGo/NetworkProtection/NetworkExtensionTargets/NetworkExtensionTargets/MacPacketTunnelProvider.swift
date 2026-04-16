@@ -23,6 +23,7 @@ import NetworkExtension
 import Networking
 import os.log
 import PixelKit
+import PrivacyConfig
 import Subscription
 import VPN
 import WireGuard
@@ -685,9 +686,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         source = "vpnAppExtension"
 #endif
 
-        let appConfigDefaults = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .appConfiguration))
-        let isInternalUser = appConfigDefaults?.bool(forKey: "isInternalUser") == true
-        let channel = StandardApplicationBuildType().channelName(isInternalUser: isInternalUser)
+        let internalUserDecider = DefaultInternalUserDecider(store: UserDefaults.appConfiguration)
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: internalUserDecider.isInternalUser)
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),

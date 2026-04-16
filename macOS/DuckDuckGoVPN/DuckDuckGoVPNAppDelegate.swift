@@ -79,7 +79,8 @@ final class DuckDuckGoVPNApplication: NSApplication {
     @MainActor
     private func setupPixelKit() {
         let pixelSource = AppVersion.isAppStoreBuild ? "vpnAgentAppStore" : "vpnAgent"
-        let channel = StandardApplicationBuildType().channelName(isInternalUser: UserDefaults.appConfiguration.isInternalUser)
+        let internalUserDecider = DefaultInternalUserDecider(store: UserDefaults.appConfiguration)
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: internalUserDecider.isInternalUser)
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),

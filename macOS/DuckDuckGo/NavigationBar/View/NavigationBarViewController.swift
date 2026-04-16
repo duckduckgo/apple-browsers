@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import DesignResourcesKitIcons
 import Freemium
 import History
 import NetworkProtectionIPC
@@ -2022,12 +2023,9 @@ extension NavigationBarViewController: NSMenuDelegate {
         button.target = self
         button.action = #selector(quickFeedbackButtonClicked)
 
-        if let icon = NSImage(named: "Send-Feedback-Color") {
-            button.image = icon
-        } else {
-            button.image = NSImage(systemSymbolName: "bubble.left.fill", accessibilityDescription: "Feedback")
-            button.contentTintColor = .systemYellow
-        }
+        let icon = DesignSystemImages.Color.Size16.feedback
+        icon.isTemplate = false
+        button.image = icon
 
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: 28),

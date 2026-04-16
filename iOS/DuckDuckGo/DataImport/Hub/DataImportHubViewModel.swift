@@ -22,13 +22,11 @@ import SwiftUI
 
 final class DataImportHubViewModel: ObservableObject {
 
-    enum Action {
-        case importPasswords
-        case importBookmarksFromSafari
-        case uploadExportedFile
-    }
+    let sections = ImportPasswordSource.Section.allCases
 
-    func select(_ action: Action) {
-        // First stacked PR: intentionally no-op for now
+    var onSourceSelected: ((ImportPasswordSource) -> Void)?
+
+    func select(_ source: ImportPasswordSource) {
+        onSourceSelected?(source)
     }
 }

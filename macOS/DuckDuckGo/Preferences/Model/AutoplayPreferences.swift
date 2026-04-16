@@ -22,8 +22,8 @@ import PixelKit
 import WebKit
 
 enum AutoplayBlockingMode: String, CaseIterable, CustomStringConvertible {
-    case blockAudio
     case allowAll
+    case blockAudio
     case blockAll
 
     var description: String {

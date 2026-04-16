@@ -170,5 +170,136 @@
         "triggers": ["exception"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_web_extension_ad_blocking_enabled": {
+        "description": "Fires when the user enables YouTube ad blocking in settings.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_web_extension_ad_blocking_disabled": {
+        "description": "Fires when the user disables YouTube ad blocking in settings.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_web_extension_scriptlet_fetch_success": {
+        "description": "Fires when scriptlets are successfully fetched from the server and saved to cache.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "extension_type",
+                "type": "string",
+                "description": "The web extension type the scriptlets belong to (e.g. com.duckduckgo.content-blocker-extension)"
+            },
+            {
+                "key": "version",
+                "type": "string",
+                "description": "The version of the fetched scriptlets"
+            },
+            {
+                "key": "count",
+                "type": "string",
+                "description": "The number of scriptlet files fetched"
+            }
+        ]
+    },
+    "m_mac_web_extension_scriptlet_fetch_error": {
+        "description": "Fires when fetching or saving scriptlets fails (network error, empty response, storage failure).",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "extension_type",
+                "type": "string",
+                "description": "The web extension type the scriptlets belong to"
+            }
+        ]
+    },
+    "m_mac_web_extension_scriptlet_validation_error": {
+        "description": "Fires when scriptlet signature validation fails in production, blocking the update.",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "extension_type",
+                "type": "string",
+                "description": "The web extension type the scriptlets belong to"
+            }
+        ]
+    },
+    "m_mac_web_extension_scriptlet_installed": {
+        "description": "Fires when scriptlets are successfully installed into a web extension directory.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "extension_type",
+                "type": "string",
+                "description": "The web extension type the scriptlets were installed for"
+            },
+            {
+                "key": "version",
+                "type": "string",
+                "description": "The version of the installed scriptlets"
+            }
+        ]
+    },
+    "m_mac_web_extension_scriptlet_install_error": {
+        "description": "Fires when installing scriptlets into a web extension directory fails.",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "extension_type",
+                "type": "string",
+                "description": "The web extension type the scriptlets were being installed for"
+            }
+        ]
+    },
+    "m_mac_web_extension_daily_ad_blocking_state": {
+        "description": "Fires once daily to report whether YouTube ad blocking is currently enabled (feature flag on and user opted in).",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "is_enabled",
+                "type": "string",
+                "description": "Whether ad blocking is currently enabled (true/false)"
+            }
+        ]
     }
 }

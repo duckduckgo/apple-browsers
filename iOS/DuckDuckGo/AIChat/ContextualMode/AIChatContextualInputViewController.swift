@@ -252,7 +252,9 @@ private extension AIChatContextualInputViewController {
 
     func configureNativeInput() {
         nativeInputViewController.delegate = self
-        nativeInputViewController.placeholder = UserText.searchInputFieldPlaceholderDuckAI
+        nativeInputViewController.placeholder = isContextualSheetImprovementsEnabled
+            ? UserText.searchInputFieldPlaceholderDuckAIV2
+            : UserText.searchInputFieldPlaceholderDuckAI
     }
 
     func configureQuickActions() {

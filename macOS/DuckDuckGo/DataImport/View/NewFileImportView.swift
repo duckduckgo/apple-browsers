@@ -23,6 +23,7 @@ import os.log
 import BrowserServicesKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import UIComponents
 
 @NewInstructionsView.InstructionsBuilder
 func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> [NewInstructionsView.InstructionsItem] {
@@ -588,17 +589,13 @@ struct NewInstructionsView: View {
         case view(AnyView)
     }
     // Text item view ViewModel - joined in a line using Text(string).bold().italic() + Text(image).. seq
-    enum TextItem {
-        case image(NSImage)
-        case text(text: String, isBold: Bool, isItalic: Bool)
-    }
     // Possible NewInstructionsView line components:
     // - lineNumber (number in a circle)
     // - textItems: Text(string).bold().italic() + Text(image).. seq
     // - view: Choose File Button
     enum NewInstructionsViewItem {
         case lineNumber(Int)
-        case textItems([TextItem])
+        case textItems([InlineTextItem])
         case view(AnyView)
     }
 
@@ -644,7 +641,7 @@ struct NewInstructionsView: View {
             for (lineIdx, line) in formatLines.enumerated() {
                 // collect view items placed in line
                 var resultLine = [NewInstructionsViewItem]()
-                func appendTextItem(_ textItem: TextItem) {
+                func appendTextItem(_ textItem: InlineTextItem) {
                     // text item should be appended to an ongoing textItem sequence if present
                     if case .textItems(var items) = resultLine.last {
                         items.append(textItem)
@@ -665,13 +662,13 @@ struct NewInstructionsView: View {
 
                     // text literal [optionally with markdown attributes]
                     case .text(let text, bold: let bold, italic: let italic):
-                        appendTextItem(.text(text: text, isBold: bold, isItalic: italic))
+                        appendTextItem(.text(text, isBold: bold, isItalic: italic))
 
                     // %s string argument
                     case .string(let argIndex, bold: let bold, italic: let italic):
                         switch args[safe: argIndex] {
                         case .string(let str):
-                            appendTextItem(.text(text: str, isBold: bold, isItalic: italic))
+                            appendTextItem(.text(str, isBold: bold, isItalic: italic))
                         case .none:
                             assertionFailure("String argument missing at index \(argIndex) in line \(lineIdx + 1):\n“\(fline(lineIdx))”.\nArgs:\n\(args)")
                         case .image(let obj as Any), .view(let obj as Any):
@@ -683,7 +680,7 @@ struct NewInstructionsView: View {
                     case .object(let argIndex):
                         switch args[safe: argIndex] {
                         case .image(let image):
-                            appendTextItem(.image(image))
+                            appendTextItem(.image(image.withBaselineOffset(-3)))
                         case .view(let view):
                             resultLine.append(.view(view))
                         case .none:
@@ -772,43 +769,6 @@ struct NewInstructionsView: View {
                     }
                 }
             }
-        }
-    }
-
-}
-
-private extension Text {
-
-    init(_ textPart: NewInstructionsView.TextItem) {
-        switch textPart {
-        case .image(let image):
-            self.init(Image(nsImage: image))
-            self = self
-                .baselineOffset(-3)
-
-        case .text(let text, let isBold, let isItalic):
-            self.init(text)
-            if isBold {
-                self = self.bold()
-            }
-            if isItalic {
-                self = self.italic()
-            }
-        }
-    }
-
-    init(_ textParts: [NewInstructionsView.TextItem]) {
-        guard !textParts.isEmpty else {
-            assertionFailure("Empty TextParts")
-            self.init("")
-            return
-        }
-        self.init(textParts[0])
-
-        guard textParts.count > 1 else { return }
-        for textPart in textParts[1...] {
-            // swiftlint:disable:next shorthand_operator
-            self = self + Text(textPart)
         }
     }
 

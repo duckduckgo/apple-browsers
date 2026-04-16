@@ -446,10 +446,11 @@ extension MainViewFactory {
 
         let toolbar = coordinator.toolbar!
         coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
+        coordinator.constraints.toolbarHeightConstraint = toolbar.constrainAttribute(.height, to: 49)
         NSLayoutConstraint.activate([
             toolbar.constrainView(superview, by: .width, constant: toolbarWidthMod),
             toolbar.constrainView(superview, by: .centerX),
-            toolbar.constrainAttribute(.height, to: 49),
+            coordinator.constraints.toolbarHeightConstraint,
             coordinator.constraints.toolbarBottom,
         ])
     }

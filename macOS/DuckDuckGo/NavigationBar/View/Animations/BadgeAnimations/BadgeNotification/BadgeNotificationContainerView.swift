@@ -25,6 +25,7 @@ final class BadgeNotificationContainerView: NSView, NotificationBarViewAnimated 
     let isCosmetic: Bool
     let customText: String?
     let useShieldIcon: Bool
+    let useVideoPlayerIcon: Bool
     let trackerCount: Int
     let textGenerator: ((Int) -> String)?
 
@@ -39,6 +40,7 @@ final class BadgeNotificationContainerView: NSView, NotificationBarViewAnimated 
             badgeAnimationModel: badgeAnimationModel,
             customText: customText,
             useShieldIcon: useShieldIcon,
+            useVideoPlayerIcon: useVideoPlayerIcon,
             trackerCount: trackerCount,
             textGenerator: textGenerator
         ))
@@ -50,11 +52,13 @@ final class BadgeNotificationContainerView: NSView, NotificationBarViewAnimated 
          isCosmetic: Bool = false,
          customText: String? = nil,
          useShieldIcon: Bool = false,
+         useVideoPlayerIcon: Bool = false,
          trackerCount: Int = 0,
          textGenerator: ((Int) -> String)? = nil) {
         self.isCosmetic = isCosmetic
         self.customText = customText
         self.useShieldIcon = useShieldIcon
+        self.useVideoPlayerIcon = useVideoPlayerIcon
         self.trackerCount = trackerCount
         self.textGenerator = textGenerator
         super.init(frame: frameRect)

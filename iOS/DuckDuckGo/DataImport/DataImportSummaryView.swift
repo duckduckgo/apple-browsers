@@ -30,96 +30,144 @@ struct DataImportSummaryView: View {
     @ObservedObject var viewModel: DataImportSummaryViewModel
 
     @State private var isAnimating = false
-    
+
     init(viewModel: DataImportSummaryViewModel) {
         self.viewModel = viewModel
     }
 
     var body: some View {
-        VStack {
-            VStack(spacing: 0) {
-                AnimationView(isAnimating: $isAnimating)
-                
-                Text(UserText.dataImportSummaryTitle)
-                    .daxTitle1()
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 8)
-                
-                if viewModel.isAllSuccessful() {
-                    SuccessContainer(
-                        shouldShowPasswordsFileDeletionHint: viewModel.shouldShowPasswordsFileDeletionHint,
-                        passwordsSuccessCount: viewModel.passwordsSummary?.successful ?? 0,
-                        bookmarksSuccessCount: viewModel.bookmarksSummary?.successful ?? 0,
-                        creditCardsSuccessCount: viewModel.creditCardsSummary?.successful
-                    )
-                } else {
-                    if viewModel.shouldShowPasswordsFileDeletionHint {
-                        Text(UserText.dataImportSummaryPasswordsSubtitle)
-                            .daxSubheadRegular()
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                            .padding(.horizontal)
-                            .padding(.top, 8)
-                    }
-                    
-                    ScrollView {
-                        
-                        VStack(spacing: 28) {
-                            if let passwordsSummary = viewModel.passwordsSummary {
-                                StatsContainer(
-                                    dataType: .passwords,
-                                    successString: UserText.dataImportSummaryPasswordsSuccess,
-                                    successCount: passwordsSummary.successful,
-                                    failureCount: passwordsSummary.failed,
-                                    duplicatesCount: passwordsSummary.duplicate
-                                )
-                            }
-                            
-                            if let bookmarksSummary = viewModel.bookmarksSummary {
-                                StatsContainer(
-                                    dataType: .bookmarks,
-                                    successString: UserText.dataImportSummaryBookmarksSuccess,
-                                    successCount: bookmarksSummary.successful,
-                                    failureCount: bookmarksSummary.failed,
-                                    duplicatesCount: bookmarksSummary.duplicate
-                                )
-                            }
-                            
-                            if let creditCardsSummary = viewModel.creditCardsSummary {
-                                StatsContainer(
-                                    dataType: .creditCards,
-                                    successString: UserText.dataImportSummaryCreditCardsSuccess,
-                                    successCount: creditCardsSummary.successful,
-                                    failureCount: creditCardsSummary.failed,
-                                    duplicatesCount: creditCardsSummary.duplicate
-                                )
-                            }
-                        }
-                        .padding(.trailing, 16) // Used to position scroll indicator outside of content area
-                        
-                    }
-                    .padding(.trailing, -16)
-                    .padding(.top, 28)
-                }
-            }
-            
-            
-            Spacer()
-            
+        ZStack(alignment: .bottom) {
+            summaryList
+
             footer
-            
+                .padding(.horizontal, 24)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ignoresSafeArea()
-        .padding(.horizontal, 24)
-        .background(Rectangle()
-            .foregroundColor(Color(designSystemColor: .surfaceTertiary))
-            .ignoresSafeArea())
+        .background(
+            Rectangle()
+                .foregroundColor(Color(designSystemColor: .surfaceTertiary))
+                .ignoresSafeArea()
+        )
         .onFirstAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 isAnimating = true
             }
         }
+    }
+
+    private var summaryList: some View {
+        List {
+            summaryHeader
+                .removeGroupedListStyleInsets()
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+
+            if viewModel.isAllSuccessful() {
+                allSuccessSection
+            } else {
+                if let passwordsSummary = viewModel.passwordsSummary {
+                    summarySection(
+                        dataType: .passwords,
+                        successString: UserText.dataImportSummaryPasswordsSuccess,
+                        summary: passwordsSummary
+                    )
+                }
+
+                if let bookmarksSummary = viewModel.bookmarksSummary {
+                    summarySection(
+                        dataType: .bookmarks,
+                        successString: UserText.dataImportSummaryBookmarksSuccess,
+                        summary: bookmarksSummary
+                    )
+                }
+
+                if let creditCardsSummary = viewModel.creditCardsSummary {
+                    summarySection(
+                        dataType: .creditCards,
+                        successString: UserText.dataImportSummaryCreditCardsSuccess,
+                        summary: creditCardsSummary
+                    )
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .hideScrollContentBackground()
+    }
+
+    private var summaryHeader: some View {
+        VStack(spacing: 0) {
+            AnimationView(isAnimating: $isAnimating)
+
+            Text(UserText.dataImportSummaryTitle)
+                .daxTitle1()
+                .multilineTextAlignment(.center)
+                .padding(.top, 8)
+
+            if viewModel.shouldShowPasswordsFileDeletionHint {
+                Text(UserText.dataImportSummaryPasswordsSubtitle)
+                    .daxSubheadRegular()
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .padding(.top, 8)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
+    }
+
+    private var allSuccessSection: some View {
+        Section {
+            SummaryListRow(
+                icon: .success(DataImport.DataType.passwords.summarySuccessIcon),
+                label: UserText.dataImportSummaryPasswordsSuccess,
+                count: viewModel.passwordsSummary?.successful ?? 0
+            )
+
+            SummaryListRow(
+                icon: .success(DataImport.DataType.bookmarks.summarySuccessIcon),
+                label: UserText.dataImportSummaryBookmarksSuccess,
+                count: viewModel.bookmarksSummary?.successful ?? 0
+            )
+
+            if let creditCardsSummary = viewModel.creditCardsSummary {
+                SummaryListRow(
+                    icon: .success(DataImport.DataType.creditCards.summarySuccessIcon),
+                    label: UserText.dataImportSummaryCreditCardsSuccess,
+                    count: creditCardsSummary.successful
+                )
+            }
+        }
+        .listRowBackground(Color(designSystemColor: .surface))
+    }
+
+    private func summarySection(dataType: DataImport.DataType,
+                                successString: String,
+                                summary: DataImport.DataTypeSummary) -> some View {
+        Section {
+            SummaryListRow(
+                icon: .success(dataType.summarySuccessIcon),
+                label: successString,
+                count: summary.successful
+            )
+
+            if summary.failed > 0 {
+                SummaryListRow(
+                    icon: .failure,
+                    label: UserText.dataImportSummaryFailed,
+                    count: summary.failed
+                )
+            }
+
+            if summary.duplicate > 0 {
+                SummaryListRow(
+                    icon: .failure,
+                    label: UserText.dataImportSummaryDuplicates,
+                    count: summary.duplicate
+                )
+            }
+        }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     private func syncButton(title: String) -> some View {
@@ -183,7 +231,7 @@ struct DataImportSummaryView: View {
         .padding(.top, 16)
         .padding(.bottom, 36)
     }
-    
+
     private var dismissButton: some View {
         Button {
             viewModel.dismiss()
@@ -212,87 +260,11 @@ struct DataImportSummaryView: View {
                 isAnimating: $isAnimating
             )
             .frame(width: 200, height: 128)
-            .padding(.top, 64)
+            .padding(.top, 48)
         }
     }
 
-
-    private struct SuccessContainer: View {
-        var shouldShowPasswordsFileDeletionHint: Bool
-        var passwordsSuccessCount: Int
-        var bookmarksSuccessCount: Int
-        var creditCardsSuccessCount: Int?
-
-        var body: some View {
-            if shouldShowPasswordsFileDeletionHint {
-                Text(UserText.dataImportSummaryPasswordsSubtitle)
-                    .daxSubheadRegular()
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                    .padding(.bottom, 28)
-            }
-
-            VStack(spacing: 12) {
-                StatRow(icon: .success(DataImport.DataType.passwords.summarySuccessIcon),
-                        label: UserText.dataImportSummaryPasswordsSuccess,
-                        count: passwordsSuccessCount,
-                        showSeparator: true)
-
-                StatRow(icon: .success(DataImport.DataType.bookmarks.summarySuccessIcon),
-                        label: UserText.dataImportSummaryBookmarksSuccess,
-                        count: bookmarksSuccessCount,
-                        showSeparator: creditCardsSuccessCount != nil ? true : false)
-
-                if let creditCardsSuccessCount = creditCardsSuccessCount {
-                    StatRow(icon: .success(DataImport.DataType.creditCards.summarySuccessIcon),
-                            label: UserText.dataImportSummaryCreditCardsSuccess,
-                            count: creditCardsSuccessCount,
-                            showSeparator: false)
-                }
-            }
-            .padding(.vertical, 12)
-            .background(Color(designSystemColor: .surface))
-            .cornerRadius(10)
-        }
-    }
-
-    private struct StatsContainer: View {
-        var dataType: DataImport.DataType
-        var successString: String
-        var successCount: Int
-        var failureCount: Int
-        var duplicatesCount: Int
-
-        var body: some View {
-            VStack(spacing: 12) {
-                StatRow(icon: .success(dataType.summarySuccessIcon),
-                        label: successString,
-                        count: successCount,
-                        showSeparator: failureCount != 0 || duplicatesCount != 0)
-
-                if failureCount > 0 {
-                    StatRow(icon: .failure,
-                            label: UserText.dataImportSummaryFailed,
-                            count: failureCount,
-                            showSeparator: duplicatesCount != 0)
-                }
-
-                if duplicatesCount > 0 {
-                    StatRow(icon: .failure,
-                            label: UserText.dataImportSummaryDuplicates,
-                            count: duplicatesCount,
-                            showSeparator: false)
-                }
-            }
-            .padding(.vertical, 12)
-            .background(Color(designSystemColor: .surface))
-            .cornerRadius(10)
-        }
-    }
-
-    private struct StatRow: View {
+    private struct SummaryListRow: View {
         enum Icon {
             case success(UIImage)
             case failure
@@ -301,42 +273,31 @@ struct DataImportSummaryView: View {
         let icon: Icon
         let label: String
         let count: Int
-        let showSeparator: Bool
 
         var body: some View {
-            VStack(spacing: 0) {
-                HStack {
-                    HStack(spacing: 12) {
-                        switch icon {
-                        case .success(let successIcon):
-                            Image(uiImage: successIcon)
-                        case .failure:
-                            Image(uiImage: DesignSystemImages.Glyphs.Size24.crossRecolorable)
-                        }
-                        Text(label)
-                            .daxBodyRegular()
-                            .foregroundStyle(Color(designSystemColor: .textPrimary))
+            HStack {
+                HStack(spacing: 12) {
+                    switch icon {
+                    case .success(let successIcon):
+                        Image(uiImage: successIcon)
+                    case .failure:
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.crossRecolorable)
                     }
-                    Spacer()
-                    Text("\(count)")
+
+                    Text(label)
                         .daxBodyRegular()
-                        .foregroundStyle(Color(designSystemColor: .textSecondary))
-
+                        .foregroundStyle(Color(designSystemColor: .textPrimary))
                 }
-                .padding(.horizontal, 16)
 
-                if showSeparator {
-                    Divider()
-                        .padding(.top, 12)
-                        .padding(.leading, 54)
-                        .padding(.trailing, 0)
-                        .foregroundStyle(Color(designSystemColor: .lines))
-                }
+                Spacer()
+
+                Text("\(count)")
+                    .daxBodyRegular()
+                    .foregroundStyle(Color(designSystemColor: .textSecondary))
             }
-
         }
     }
-    
+
     private struct ContinueImportCard: View {
         let title: String
         let icon: Image

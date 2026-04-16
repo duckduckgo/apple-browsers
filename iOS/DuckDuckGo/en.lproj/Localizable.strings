@@ -1291,9 +1291,6 @@
 /* Button on the Safari export interstitial that triggers the system import sheet */
 "data.import.safari.interstitial.button" = "Open Settings to Export";
 
-/* Supporting text on the Safari export interstitial that indicates when to proceed */
-"data.import.safari.interstitial.no-compatible-browsers-message" = "When you see the \"No Compatible Web Browsers\" message.";
-
 /* Tip text on the Safari export interstitial reminding users to click Export to Files */
 "data.import.safari.interstitial.tip" = "Remember to tap\n\"Export to Files\"";
 

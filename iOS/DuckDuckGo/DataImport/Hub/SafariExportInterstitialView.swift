@@ -53,16 +53,6 @@ struct SafariExportInterstitialView: View {
                 .layoutPriority(1)
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
-                .padding(.bottom, 8)
-
-            Text(UserText.safariExportInterstitialNoCompatibleBrowsersMessage)
-                .daxBodyRegular()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .multilineTextAlignment(.center)
-                .lineLimit(nil)
-                .fixedSize(horizontal: false, vertical: true)
-                .layoutPriority(1)
-                .padding(.horizontal, 16)
                 .padding(.bottom, 16)
 
             Button {
@@ -86,7 +76,8 @@ struct SafariExportInterstitialView: View {
         .background(Color(designSystemColor: .background))
     }
 
-    private var shouldUseExpandedButtonLayout: Bool {
+    private var
+    shouldUseExpandedButtonLayout: Bool {
         if UIDevice.current.userInterfaceIdiom == .pad {
             return true
         }
@@ -96,6 +87,7 @@ struct SafariExportInterstitialView: View {
 
     private struct ExportAnimationView: View {
         @Environment(\.colorScheme) private var colorScheme
+        @State private var isAnimating = false
 
         private var lottieFileName: String {
             colorScheme == .dark ? "export-passwords-dark-optimised" : "export-passwords-light-optimised"
@@ -103,9 +95,14 @@ struct SafariExportInterstitialView: View {
 
         var body: some View {
             Lottie.LottieView(animation: .named(lottieFileName))
-                .playing(loopMode: .playOnce)
+                .playbackMode(isAnimating ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)) : .paused(at: .progress(0)))
                 .frame(width: 300, height: 200)
                 .scaledToFit()
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    isAnimating = true
+                }
+            }
         }
     }
 }

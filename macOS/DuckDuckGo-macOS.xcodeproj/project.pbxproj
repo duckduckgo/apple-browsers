@@ -1072,6 +1072,11 @@
 		372D15ED2D00FA1A00A11576 /* AppearancePreferences+NewTabPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372D15EB2D00FA1400A11576 /* AppearancePreferences+NewTabPage.swift */; };
 		372D43D72DF2573A00A3A10D /* MockFireproofDomains.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372D43D52DF2573600A3A10D /* MockFireproofDomains.swift */; };
 		372D43D92DF2573A00A3A10D /* MockFireproofDomains.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372D43D52DF2573600A3A10D /* MockFireproofDomains.swift */; };
+		372E9DC42F92107D0002DD06 /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 372E9DC32F92107D0002DD06 /* PrivacyConfig */; };
+		372E9DC62F9210820002DD06 /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 372E9DC52F9210820002DD06 /* PrivacyConfig */; };
+		372E9DC82F9210920002DD06 /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 372E9DC72F9210920002DD06 /* PrivacyConfig */; };
+		372E9DCA2F9210980002DD06 /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 372E9DC92F9210980002DD06 /* PrivacyConfig */; };
+		372E9DCC2F92109D0002DD06 /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 372E9DCB2F92109D0002DD06 /* PrivacyConfig */; };
 		3730F20F2D2E725D00239F96 /* NewTabPageCustomizationProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3730F20E2D2E725A00239F96 /* NewTabPageCustomizationProviderTests.swift */; };
 		3730F2102D2E725D00239F96 /* NewTabPageCustomizationProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3730F20E2D2E725A00239F96 /* NewTabPageCustomizationProviderTests.swift */; };
 		373114B62DEF0EDD0010C256 /* MockHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373114B52DEF0EDB0010C256 /* MockHistoryStore.swift */; };
@@ -7008,6 +7013,7 @@
 				7BBE2B7B2B61663C00697445 /* NetworkProtectionProxy in Frameworks */,
 				4B25375B2A11BE7300610219 /* NetworkExtension.framework in Frameworks */,
 				4B9EE3862D76CC1A00DDC75C /* Common in Frameworks */,
+				372E9DCA2F9210980002DD06 /* PrivacyConfig in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7076,6 +7082,7 @@
 				9D9DE5772C63AA1600D20B15 /* AppKitExtensions in Frameworks */,
 				7BC26CAE2DFC11EB00E52480 /* VPN in Frameworks */,
 				4B4D603F2A0B290200BCD287 /* NetworkExtension.framework in Frameworks */,
+				372E9DC82F9210920002DD06 /* PrivacyConfig in Frameworks */,
 				4B9EE3762D76CBD000DDC75C /* Common in Frameworks */,
 				4B9EE37A2D76CBE100DDC75C /* Networking in Frameworks */,
 				4B9EE3782D76CBD600DDC75C /* Configuration in Frameworks */,
@@ -7106,6 +7113,7 @@
 				7BC3E4502D6DF658009787CD /* AppKitExtensions in Frameworks */,
 				7BC3E4642D6DF6B2009787CD /* Subscription in Frameworks */,
 				7BC3E4542D6DF664009787CD /* Common in Frameworks */,
+				372E9DCC2F92109D0002DD06 /* PrivacyConfig in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7153,6 +7161,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4B9EE3BC2D76CD3900DDC75C /* Networking in Frameworks */,
+				372E9DC42F92107D0002DD06 /* PrivacyConfig in Frameworks */,
 				4B9EE3C02D76CD3900DDC75C /* Subscription in Frameworks */,
 				9DB9800E2D96AD3400B174B3 /* DataBrokerProtectionCore in Frameworks */,
 				4B9EE3BA2D76CD3900DDC75C /* Configuration in Frameworks */,
@@ -7169,6 +7178,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4B9EE3C42D76CD7100DDC75C /* Networking in Frameworks */,
+				372E9DC62F9210820002DD06 /* PrivacyConfig in Frameworks */,
 				4B9EE3C82D76CD7100DDC75C /* Subscription in Frameworks */,
 				9DB980102D96AD3900B174B3 /* DataBrokerProtectionCore in Frameworks */,
 				4B9EE3C22D76CD7100DDC75C /* Configuration in Frameworks */,
@@ -13209,6 +13219,7 @@
 				4B9EE3912D76CC4C00DDC75C /* Subscription */,
 				7BC26CA72DFC105400E52480 /* VPN */,
 				7BC15A1B2E1917D6000062C8 /* VPNNotifications */,
+				372E9DC92F9210980002DD06 /* PrivacyConfig */,
 			);
 			productName = NetworkProtectionSystemExtension;
 			productReference = 4B25375A2A11BE7300610219 /* com.duckduckgo.macos.vpn.network-extension.debug.systemextension */;
@@ -13312,6 +13323,7 @@
 				4B9EE37F2D76CBF400DDC75C /* PixelKit */,
 				7B0450802DFBE88F0000A210 /* VPNNotifications */,
 				7BC26CAD2DFC11EB00E52480 /* VPN */,
+				372E9DC72F9210920002DD06 /* PrivacyConfig */,
 			);
 			productName = NetworkProtectionAppExtension;
 			productReference = 4B4D603D2A0B290200BCD287 /* NetworkProtectionAppExtension.appex */;
@@ -13360,6 +13372,7 @@
 				7BC3E4652D6DF6B8009787CD /* WireGuard */,
 				7BC26CAF2DFC11F300E52480 /* VPN */,
 				7B6413512E1922FC0035D14D /* VPNNotifications */,
+				372E9DCB2F92109D0002DD06 /* PrivacyConfig */,
 			);
 			productName = DuckDuckGoVPNSysexAppStore;
 			productReference = 7B2E365F2D6DEFBB00A08CB7 /* com.duckduckgo.mobile.ios.vpn.agent.network-extension.debug.systemextension */;
@@ -13466,6 +13479,7 @@
 				4B9EE3BF2D76CD3900DDC75C /* Subscription */,
 				9DB9800D2D96AD3400B174B3 /* DataBrokerProtectionCore */,
 				9DB980172D96AFF400B174B3 /* DataBrokerProtection-macOS */,
+				372E9DC32F92107D0002DD06 /* PrivacyConfig */,
 			);
 			productName = DuckDuckGoAgent;
 			productReference = 9D9AE8D12AAA39A70026E7DC /* DuckDuckGo Personal Information Removal.app */;
@@ -13495,6 +13509,7 @@
 				4B9EE3C72D76CD7100DDC75C /* Subscription */,
 				9DB9800F2D96AD3900B174B3 /* DataBrokerProtectionCore */,
 				9DB980192D96AFF900B174B3 /* DataBrokerProtection-macOS */,
+				372E9DC52F9210820002DD06 /* PrivacyConfig */,
 			);
 			productName = DuckDuckGoAgent;
 			productReference = 9D9AE8F22AAA39D30026E7DC /* DuckDuckGo Personal Information Removal App Store.app */;
@@ -20067,6 +20082,26 @@
 		371BBC582D00C897008FA0C7 /* NewTabPage */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NewTabPage;
+		};
+		372E9DC32F92107D0002DD06 /* PrivacyConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfig;
+		};
+		372E9DC52F9210820002DD06 /* PrivacyConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfig;
+		};
+		372E9DC72F9210920002DD06 /* PrivacyConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfig;
+		};
+		372E9DC92F9210980002DD06 /* PrivacyConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfig;
+		};
+		372E9DCB2F92109D0002DD06 /* PrivacyConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PrivacyConfig;
 		};
 		374EFDEA2D01A1D800B30939 /* Utilities */ = {
 			isa = XCSwiftPackageProductDependency;

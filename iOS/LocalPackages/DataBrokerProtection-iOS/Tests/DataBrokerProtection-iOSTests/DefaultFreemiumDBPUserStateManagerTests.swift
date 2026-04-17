@@ -90,4 +90,21 @@ final class DefaultFreemiumDBPUserStateManagerTests: XCTestCase {
         let sut = makeSUT()
         XCTAssertEqual(sut.upgradeToSubscriptionTimestamp, date)
     }
+
+    // MARK: - resetAllState
+
+    func test_resetAllState_clearsEveryKey() {
+        userDefaults.set(true, forKey: "ios.browser.freemium.dbp.did.activate")
+        userDefaults.set(Date(), forKey: "ios.browser.freemium.dbp.first.profile.saved.timestamp")
+        userDefaults.set("matchesFound", forKey: "ios.browser.freemium.dbp.first.scan.result")
+        userDefaults.set(Date(), forKey: "ios.browser.freemium.dbp.upgrade.to.subscription.timestamp")
+
+        let sut = makeSUT()
+        sut.resetAllState()
+
+        XCTAssertFalse(sut.didActivate)
+        XCTAssertNil(sut.firstProfileSavedTimestamp)
+        XCTAssertNil(sut.firstScanResult)
+        XCTAssertNil(sut.upgradeToSubscriptionTimestamp)
+    }
 }

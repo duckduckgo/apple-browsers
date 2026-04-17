@@ -73,6 +73,11 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
     }
 
     public func resetAllState() {
-        fatalError("Not implemented")
+        lock.lock()
+        defer { lock.unlock() }
+        userDefaults.removeObject(forKey: Keys.didActivate)
+        userDefaults.removeObject(forKey: Keys.firstProfileSavedTimestamp)
+        userDefaults.removeObject(forKey: Keys.firstScanResult)
+        userDefaults.removeObject(forKey: Keys.upgradeToSubscriptionTimestamp)
     }
 }

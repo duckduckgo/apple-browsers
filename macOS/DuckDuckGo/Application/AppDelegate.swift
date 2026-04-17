@@ -472,8 +472,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             didCrashDuringCrashHandlersSetUp.wrappedValue = false
         }
 
+        do {
+            let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
+            fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
+        } catch {
+            Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
+            fileStore = EncryptedFileStore()
+        }
+
+        let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
+        internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
+
         if AppVersion.runType.requiresEnvironment {
-            Self.configurePixelKit()
+            Self.configurePixelKit(isInternalUser: internalUserDecider.isInternalUser)
         }
 
         do {
@@ -486,18 +497,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fatalError("Could not prepare key value store: \(error.localizedDescription)")
         }
 
-        do {
-            let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
-            fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
-        } catch {
-            Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
-            fileStore = EncryptedFileStore()
-        }
-
         bookmarkDatabase = BookmarkDatabase()
-
-        let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
-        internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
 
         if AppVersion.runType.requiresEnvironment {
             let commonDatabase = Database()
@@ -1969,17 +1969,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - PixelKit
 
-    static func configurePixelKit() {
-        Self.setUpPixelKit(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild))
+    static func configurePixelKit(isInternalUser: Bool) {
+        Self.setUpPixelKit(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
+                           isInternalUser: isInternalUser)
     }
 
-    private static func setUpPixelKit(dryRun: Bool) {
+    private static func setUpPixelKit(dryRun: Bool, isInternalUser: Bool) {
         let source = NSApp.isSandboxed ? "browser-appstore" : "browser-dmg"
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: isInternalUser)
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: dryRun,
                        appVersion: AppVersion.shared.versionNumber,
                        source: source,
+                       channel: channel,
                        defaultHeaders: [:],
                        defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 

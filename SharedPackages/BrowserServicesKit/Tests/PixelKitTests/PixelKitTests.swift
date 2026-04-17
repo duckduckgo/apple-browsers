@@ -528,6 +528,59 @@ final class PixelKitTests: XCTestCase {
         timeMachine.travel(by: .weekOfYear, value: 1)
         XCTAssertEqual(PixelKit.cohort(from: cohort, dateGenerator: timeMachine.now), "")
     }
+
+    func testWhenChannelIsSetThenPixelIncludesChannelParameter() {
+        let fireCallbackCalled = expectation(description: "Pixel fired")
+
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.0",
+                                channel: "canary",
+                                defaultHeaders: [:],
+                                defaults: userDefaults()) { _, _, parameters, _, _, completion in
+            fireCallbackCalled.fulfill()
+            XCTAssertEqual(parameters[PixelKit.Parameters.channel], "canary")
+            completion(true, nil)
+        }
+
+        pixelKit.fire(TestEventV2.testEvent)
+        wait(for: [fireCallbackCalled], timeout: 0.5)
+    }
+
+    func testWhenChannelIsNilThenPixelOmitsChannelParameter() {
+        let fireCallbackCalled = expectation(description: "Pixel fired")
+
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.0",
+                                defaultHeaders: [:],
+                                defaults: userDefaults()) { _, _, parameters, _, _, completion in
+            fireCallbackCalled.fulfill()
+            XCTAssertNil(parameters[PixelKit.Parameters.channel])
+            completion(true, nil)
+        }
+
+        pixelKit.fire(TestEventV2.testEvent)
+        wait(for: [fireCallbackCalled], timeout: 0.5)
+    }
+
+    func testWhenChannelIsSetThenItCoexistsWithOtherStandardParameters() {
+        let fireCallbackCalled = expectation(description: "Pixel fired")
+
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "2.0.0",
+                                source: "browser-dmg",
+                                channel: "canary",
+                                defaultHeaders: [:],
+                                defaults: userDefaults()) { _, _, parameters, _, _, completion in
+            fireCallbackCalled.fulfill()
+            XCTAssertEqual(parameters[PixelKit.Parameters.channel], "canary")
+            XCTAssertEqual(parameters[PixelKit.Parameters.appVersion], "2.0.0")
+            XCTAssertEqual(parameters[PixelKit.Parameters.pixelSource], "browser-dmg")
+            completion(true, nil)
+        }
+
+        pixelKit.fire(TestEventV2.testEvent)
+        wait(for: [fireCallbackCalled], timeout: 0.5)
+    }
 }
 
 private class TimeMachine {

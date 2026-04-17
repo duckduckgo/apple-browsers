@@ -923,6 +923,18 @@ private extension DataBrokerProtectionIOSManager {
 
 private extension DataBrokerProtectionIOSManager {
 
+    /// Shared completion-block logic for scan operations. Fires the existing
+    /// `.firstScanCompletedAndMatchesFound` event for the notification service and
+    /// records the first-scan outcome into freemium state. Called from both
+    /// `startImmediateScanOperations()` and `coordinatorIsReadyForScanOperations()`.
+    func handleScanCompletion() async {
+        let hasMatches = (try? database.hasMatches()) ?? false
+        if hasMatches {
+            eventsHandler.fire(.firstScanCompletedAndMatchesFound)
+        }
+        await freemiumDBPUserStateManager.recordFirstScanResultIfNeeded(hasMatches: hasMatches)
+    }
+
     @MainActor
     func startImmediateScanOperations() async {
         Logger.dataBrokerProtection.log("Starting immediate scan operations")
@@ -940,12 +952,12 @@ private extension DataBrokerProtectionIOSManager {
                 }
             }
         ) { [weak self] in
-            if let hasMatches = try? self?.database.hasMatches(), hasMatches {
-                self?.eventsHandler.fire(.firstScanCompletedAndMatchesFound)
-            }
-
-            DispatchQueue.main.async {
-                backgroundAssertion.release()
+            guard let self else { return }
+            Task {
+                await self.handleScanCompletion()
+                DispatchQueue.main.async {
+                    backgroundAssertion.release()
+                }
             }
         }
     }
@@ -1043,15 +1055,15 @@ extension DataBrokerProtectionIOSManager: DBPContinuedProcessingDelegate {
                 }
             }
         ) { [weak self] in
-            if let hasMatches = try? self?.database.hasMatches(), hasMatches {
-                self?.eventsHandler.fire(.firstScanCompletedAndMatchesFound)
-            }
-
-            DispatchQueue.main.async {
-                Task { [weak self] in
-                    await self?.continuedProcessingCoordinator.didEmit(event: .scanPhaseCompleted)
+            guard let self else { return }
+            Task {
+                await self.handleScanCompletion()
+                DispatchQueue.main.async {
+                    Task { [weak self] in
+                        await self?.continuedProcessingCoordinator.didEmit(event: .scanPhaseCompleted)
+                    }
+                    backgroundAssertion.release()
                 }
-                backgroundAssertion.release()
             }
         }
     }

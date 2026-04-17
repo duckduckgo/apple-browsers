@@ -58,15 +58,17 @@ public protocol FreemiumDBPUserStateManaging {
 
 /// No-op default used until the real FreemiumDBPUserStateManager is wired in.
 /// Reads return pre-freemium defaults; writes are dropped.
-struct DisabledFreemiumDBPUserStateManager: FreemiumDBPUserStateManaging {
-    var didActivate: Bool { false }
-    var firstProfileSavedTimestamp: Date? { nil }
-    var firstScanResult: FreemiumFirstScanResult? { nil }
-    var upgradeToSubscriptionTimestamp: Date? { nil }
+public struct DisabledFreemiumDBPUserStateManager: FreemiumDBPUserStateManaging {
+    public init() {}
 
-    func recordProfileSavedIfNeeded() async {}
-    func recordFirstScanResultIfNeeded(hasMatches: Bool) async {}
-    func recordSubscriptionUpgradeIfNeeded() async {}
+    public var didActivate: Bool { false }
+    public var firstProfileSavedTimestamp: Date? { nil }
+    public var firstScanResult: FreemiumFirstScanResult? { nil }
+    public var upgradeToSubscriptionTimestamp: Date? { nil }
 
-    func resetAllState() {}
+    public func recordProfileSavedIfNeeded() async {}
+    public func recordFirstScanResultIfNeeded(hasMatches: Bool) async {}
+    public func recordSubscriptionUpgradeIfNeeded() async {}
+
+    public func resetAllState() {}
 }

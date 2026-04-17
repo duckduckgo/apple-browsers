@@ -36,8 +36,8 @@ public extension OnboardingTheme {
         let accentPrimary = Color(0x2F95EE)
         let bubbleBorder = Color(0xCBEAFF)
 
-        let ctaButtonBackground = Color(0xDE5833)
-        let ctaButtonPressed = Color(0xBC4726)
+        let ctaButtonBackground = Color(0xF05F2B)
+        let ctaButtonPressed = Color(0xCC3B0A)
 
         let colorPalette = ColorPalette(
             background: .white,

@@ -61,7 +61,13 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
     // MARK: - Write-side methods (implemented in later tasks)
 
     public func recordProfileSavedIfNeeded() async {
-        fatalError("Not implemented")
+        guard await !isUserAuthenticated() else { return }
+        lock.lock()
+        defer { lock.unlock() }
+        userDefaults.set(true, forKey: Keys.didActivate)
+        if userDefaults.object(forKey: Keys.firstProfileSavedTimestamp) == nil {
+            userDefaults.set(Date(), forKey: Keys.firstProfileSavedTimestamp)
+        }
     }
 
     public func recordFirstScanResultIfNeeded(hasMatches: Bool) async {

@@ -107,4 +107,44 @@ final class DefaultFreemiumDBPUserStateManagerTests: XCTestCase {
         XCTAssertNil(sut.firstScanResult)
         XCTAssertNil(sut.upgradeToSubscriptionTimestamp)
     }
+
+    // MARK: - recordProfileSavedIfNeeded
+
+    func test_recordProfileSavedIfNeeded_unauthenticated_setsDidActivateAndTimestamp() async throws {
+        isAuthenticatedReturnValue = false
+        let sut = makeSUT()
+
+        let before = Date()
+        await sut.recordProfileSavedIfNeeded()
+        let after = Date()
+
+        XCTAssertTrue(sut.didActivate)
+        let timestamp = try XCTUnwrap(sut.firstProfileSavedTimestamp)
+        XCTAssertGreaterThanOrEqual(timestamp, before)
+        XCTAssertLessThanOrEqual(timestamp, after)
+    }
+
+    func test_recordProfileSavedIfNeeded_authenticated_writesNothing() async {
+        isAuthenticatedReturnValue = true
+        let sut = makeSUT()
+
+        await sut.recordProfileSavedIfNeeded()
+
+        XCTAssertFalse(sut.didActivate)
+        XCTAssertNil(sut.firstProfileSavedTimestamp)
+    }
+
+    func test_recordProfileSavedIfNeeded_secondCall_doesNotOverwriteTimestamp() async {
+        isAuthenticatedReturnValue = false
+        let sut = makeSUT()
+
+        await sut.recordProfileSavedIfNeeded()
+        let firstTimestamp = sut.firstProfileSavedTimestamp
+
+        try? await Task.sleep(nanoseconds: 10_000_000)
+        await sut.recordProfileSavedIfNeeded()
+
+        XCTAssertTrue(sut.didActivate)
+        XCTAssertEqual(sut.firstProfileSavedTimestamp, firstTimestamp)
+    }
 }

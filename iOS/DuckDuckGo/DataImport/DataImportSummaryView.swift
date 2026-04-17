@@ -36,7 +36,7 @@ struct DataImportSummaryView: View {
     }
 
     private var iPadFooterBottomPadding: CGFloat {
-        isPad ? 16 : 0
+        isPad ? 20 : 0
     }
 
     init(viewModel: DataImportSummaryViewModel) {
@@ -73,7 +73,7 @@ struct DataImportSummaryView: View {
 
     private var footerOverlay: some View {
         footer
-            .padding(.horizontal, 16)
+            .padding(.horizontal, isPad ? 20 : 16)
             .frame(maxWidth: .infinity, alignment: .center)
             .background(
                 Color(designSystemColor: .surfaceTertiary)

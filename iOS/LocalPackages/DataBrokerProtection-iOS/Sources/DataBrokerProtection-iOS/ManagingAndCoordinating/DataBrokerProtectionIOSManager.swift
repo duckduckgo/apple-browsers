@@ -928,7 +928,10 @@ private extension DataBrokerProtectionIOSManager {
     /// records the first-scan outcome into freemium state. Called from both
     /// `startImmediateScanOperations()` and `coordinatorIsReadyForScanOperations()`.
     func handleScanCompletion() async {
-        let hasMatches = (try? database.hasMatches()) ?? false
+        // A transient `database.hasMatches()` failure must not permanently record `.noMatches`:
+        // `firstScanResult` is first-write-wins, so a bogus result would stick forever. Skip the
+        // record on error and let a later successful scan capture the correct outcome.
+        guard let hasMatches = try? database.hasMatches() else { return }
         if hasMatches {
             eventsHandler.fire(.firstScanCompletedAndMatchesFound)
         }

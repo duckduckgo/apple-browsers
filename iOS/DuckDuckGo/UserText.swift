@@ -2155,12 +2155,13 @@ public struct UserText {
     public static let aiChatSettingsAllowFollowUpQuestionsDescription = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.description", value: "Show Duck.ai buttons and links in DuckDuckGo search results.", comment: "Description text explaining what the 'Ask Follow-up Questions' toggle does")
 
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask privately", comment: "Placeholder text for the duck.ai input field")
+    public static let searchInputFieldPlaceholderDuckAIV2 = NotLocalizedString("input.field.placeholder.duckai.v2", value: "Ask anything privately", comment: "Updated placeholder text for the duck.ai input field")
 
     public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Ask a follow-up question...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
 
     // MARK: - AI Chat Welcome Message
-    public static let aiChatWelcomeAskAnything = NotLocalizedString("duckai.welcome.ask.anything", value: "Ask Anything ", comment: "First part of the welcome message in Duck.ai contextual sheet, before the shield icon")
-    public static let aiChatWelcomePrivately = NotLocalizedString("duckai.welcome.privately", value: " privately", comment: "Second part of the welcome message in Duck.ai contextual sheet, after the shield icon, shown in green")
+    public static let aiChatWelcomeAskAnything = NotLocalizedString("duckai.welcome.ask.anything", value: "All chats are ", comment: "First part of the welcome message in Duck.ai contextual sheet, before the shield icon")
+    public static let aiChatWelcomePrivately = NotLocalizedString("duckai.welcome.privately", value: " private", comment: "Second part of the welcome message in Duck.ai contextual sheet, after the shield icon, shown in green")
 
     // MARK: - AI Chat Quick Actions
     public static let aiChatQuickActionAskAboutPage = NotLocalizedString("duckai.quick.action.ask.about.page", value: "Ask about page", comment: "Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content.")

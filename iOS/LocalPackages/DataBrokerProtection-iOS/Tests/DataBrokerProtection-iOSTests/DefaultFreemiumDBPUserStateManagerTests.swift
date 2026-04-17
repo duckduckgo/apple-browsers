@@ -213,4 +213,38 @@ final class DefaultFreemiumDBPUserStateManagerTests: XCTestCase {
         XCTAssertNotNil(sut.firstScanResult)
         XCTAssertTrue(sut.firstScanResult == .matchesFound || sut.firstScanResult == .noMatches)
     }
+
+    // MARK: - recordSubscriptionUpgradeIfNeeded
+
+    func test_recordSubscriptionUpgradeIfNeeded_didActivateFalse_doesNothing() async {
+        let sut = makeSUT()
+
+        await sut.recordSubscriptionUpgradeIfNeeded()
+
+        XCTAssertNil(sut.upgradeToSubscriptionTimestamp)
+    }
+
+    func test_recordSubscriptionUpgradeIfNeeded_didActivateTrue_noPriorTimestamp_setsTimestamp() async throws {
+        userDefaults.set(true, forKey: "ios.browser.freemium.dbp.did.activate")
+        let sut = makeSUT()
+
+        let before = Date()
+        await sut.recordSubscriptionUpgradeIfNeeded()
+        let after = Date()
+
+        let timestamp = try XCTUnwrap(sut.upgradeToSubscriptionTimestamp)
+        XCTAssertGreaterThanOrEqual(timestamp, before)
+        XCTAssertLessThanOrEqual(timestamp, after)
+    }
+
+    func test_recordSubscriptionUpgradeIfNeeded_priorTimestamp_doesNotOverwrite() async {
+        let priorDate = Date(timeIntervalSince1970: 1_600_000_000)
+        userDefaults.set(true, forKey: "ios.browser.freemium.dbp.did.activate")
+        userDefaults.set(priorDate, forKey: "ios.browser.freemium.dbp.upgrade.to.subscription.timestamp")
+        let sut = makeSUT()
+
+        await sut.recordSubscriptionUpgradeIfNeeded()
+
+        XCTAssertEqual(sut.upgradeToSubscriptionTimestamp, priorDate)
+    }
 }

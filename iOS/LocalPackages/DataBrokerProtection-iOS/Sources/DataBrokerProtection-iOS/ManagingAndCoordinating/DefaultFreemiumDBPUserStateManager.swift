@@ -80,7 +80,13 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
     }
 
     public func recordSubscriptionUpgradeIfNeeded() async {
-        fatalError("Not implemented")
+        // By contract, the caller drives this from a real purchase-success / transition
+        // signal, so we do NOT check isUserAuthenticated here. See spec §3.
+        lock.lock()
+        defer { lock.unlock() }
+        guard userDefaults.bool(forKey: Keys.didActivate) else { return }
+        guard userDefaults.object(forKey: Keys.upgradeToSubscriptionTimestamp) == nil else { return }
+        userDefaults.set(Date(), forKey: Keys.upgradeToSubscriptionTimestamp)
     }
 
     public func resetAllState() {

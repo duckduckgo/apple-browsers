@@ -147,4 +147,70 @@ final class DefaultFreemiumDBPUserStateManagerTests: XCTestCase {
         XCTAssertTrue(sut.didActivate)
         XCTAssertEqual(sut.firstProfileSavedTimestamp, firstTimestamp)
     }
+
+    // MARK: - recordFirstScanResultIfNeeded
+
+    func test_recordFirstScanResultIfNeeded_unauthenticated_hasMatchesTrue_setsMatchesFound() async {
+        isAuthenticatedReturnValue = false
+        let sut = makeSUT()
+
+        await sut.recordFirstScanResultIfNeeded(hasMatches: true)
+
+        XCTAssertEqual(sut.firstScanResult, .matchesFound)
+    }
+
+    func test_recordFirstScanResultIfNeeded_unauthenticated_hasMatchesFalse_setsNoMatches() async {
+        isAuthenticatedReturnValue = false
+        let sut = makeSUT()
+
+        await sut.recordFirstScanResultIfNeeded(hasMatches: false)
+
+        XCTAssertEqual(sut.firstScanResult, .noMatches)
+    }
+
+    func test_recordFirstScanResultIfNeeded_authenticated_writesNothing() async {
+        isAuthenticatedReturnValue = true
+        let sut = makeSUT()
+
+        await sut.recordFirstScanResultIfNeeded(hasMatches: true)
+
+        XCTAssertNil(sut.firstScanResult)
+    }
+
+    func test_recordFirstScanResultIfNeeded_priorNoMatches_withMatchesTrue_staysNoMatches() async {
+        isAuthenticatedReturnValue = false
+        let sut = makeSUT()
+
+        await sut.recordFirstScanResultIfNeeded(hasMatches: false)
+        await sut.recordFirstScanResultIfNeeded(hasMatches: true)
+
+        XCTAssertEqual(sut.firstScanResult, .noMatches)
+    }
+
+    func test_recordFirstScanResultIfNeeded_priorMatchesFound_withMatchesFalse_staysMatchesFound() async {
+        isAuthenticatedReturnValue = false
+        let sut = makeSUT()
+
+        await sut.recordFirstScanResultIfNeeded(hasMatches: true)
+        await sut.recordFirstScanResultIfNeeded(hasMatches: false)
+
+        XCTAssertEqual(sut.firstScanResult, .matchesFound)
+    }
+
+    func test_recordFirstScanResultIfNeeded_concurrentCalls_produceDeterministicSingleWrite() async {
+        isAuthenticatedReturnValue = false
+        let sut = makeSUT()
+
+        await withTaskGroup(of: Void.self) { group in
+            for i in 0..<50 {
+                let hasMatches = i % 2 == 0
+                group.addTask {
+                    await sut.recordFirstScanResultIfNeeded(hasMatches: hasMatches)
+                }
+            }
+        }
+
+        XCTAssertNotNil(sut.firstScanResult)
+        XCTAssertTrue(sut.firstScanResult == .matchesFound || sut.firstScanResult == .noMatches)
+    }
 }

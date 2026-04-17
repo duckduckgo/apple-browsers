@@ -71,7 +71,12 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
     }
 
     public func recordFirstScanResultIfNeeded(hasMatches: Bool) async {
-        fatalError("Not implemented")
+        guard await !isUserAuthenticated() else { return }
+        lock.lock()
+        defer { lock.unlock() }
+        guard userDefaults.string(forKey: Keys.firstScanResult) == nil else { return }
+        let value: FreemiumFirstScanResult = hasMatches ? .matchesFound : .noMatches
+        userDefaults.set(value.rawValue, forKey: Keys.firstScanResult)
     }
 
     public func recordSubscriptionUpgradeIfNeeded() async {

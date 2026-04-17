@@ -50,7 +50,14 @@ final class DBPService: NSObject {
                 authenticationManager: authManager,
                 pixelHandler: notificationPixelHandler
             )
-            let eventsHandler = BrokerProfileJobEventsHandler(userNotificationService: notificationService)
+            let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
+                userDefaults: .dbp,
+                isUserAuthenticated: { [authManager] in await authManager.isUserAuthenticated }
+            )
+            let eventsHandler = BrokerProfileJobEventsHandler(
+                userNotificationService: notificationService,
+                freemiumUserStateManager: freemiumDBPUserStateManager
+            )
 
             #if DEBUG
             let isWebViewInspectable = true
@@ -82,6 +89,7 @@ final class DBPService: NSObject {
                     return view
                 },
                 eventsHandler: eventsHandler,
+                freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                 isWebViewInspectable: isWebViewInspectable,
                 freeTrialConversionService: appDependencies.freeTrialConversionService)
         } else {

@@ -1983,10 +1983,6 @@ extension NavigationBarViewController: NSMenuDelegate {
                                               withDelegate: networkProtectionButtonModel)
     }
 
-    /// Sets up the VPN button.
-    ///
-    /// This method should be run just once during the lifecycle of this view.
-    /// .
     // MARK: - Quick Feedback Button
 
     private func setupQuickFeedbackButton() {

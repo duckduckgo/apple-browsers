@@ -25,6 +25,7 @@ final class QuickFeedbackWindowController: NSWindowController {
     let webView: WKWebView
     private let signOutBar = NSView()
     private let signOutButton = NSButton()
+    private var signOutBarHeightConstraint: NSLayoutConstraint!
 
     var onSignOutRequested: (() -> Void)?
 
@@ -56,6 +57,7 @@ final class QuickFeedbackWindowController: NSWindowController {
 
     func setSignOutVisible(_ visible: Bool) {
         signOutBar.isHidden = !visible
+        signOutBarHeightConstraint.constant = visible ? 28 : 0
     }
 
     private func setupContentView(in panel: NSPanel) {
@@ -86,11 +88,13 @@ final class QuickFeedbackWindowController: NSWindowController {
 
         panel.contentView = contentView
 
+        signOutBarHeightConstraint = signOutBar.heightAnchor.constraint(equalToConstant: 0)
+
         NSLayoutConstraint.activate([
             signOutBar.topAnchor.constraint(equalTo: contentView.topAnchor),
             signOutBar.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             signOutBar.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            signOutBar.heightAnchor.constraint(equalToConstant: 28),
+            signOutBarHeightConstraint,
 
             signOutButton.trailingAnchor.constraint(equalTo: signOutBar.trailingAnchor, constant: -8),
             signOutButton.centerYAnchor.constraint(equalTo: signOutBar.centerYAnchor),

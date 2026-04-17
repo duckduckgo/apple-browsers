@@ -33,6 +33,9 @@ final class QuickFeedbackService: NSObject {
     private var cancellables = Set<AnyCancellable>()
 
     private static let asanaFormHost = "form.asana.com"
+    private static let asanaCookieDomain = "asana.com"
+    private static let formSubmittedMessageName = "feedbackFormSubmitted"
+    private static let feedbackStoreIdentifier = UUID(uuidString: "D1A2B3C4-E5F6-7890-ABCD-EF1234567890")!
 
     private static let earlyInjectionScript = """
     (function() {
@@ -64,7 +67,15 @@ final class QuickFeedbackService: NSObject {
         firePublisher: AnyPublisher<Fire.BurningData?, Never>
     ) {
         self.diagnosticsCollector = diagnosticsCollector
-        self.dataStore = .default()
+        // macOS 14+ uses an isolated persistent store so Fire doesn't clear
+        // the Asana session. On older macOS (no forIdentifier API), we fall
+        // back to .default() where Fire will clear cookies. Acceptable since
+        // internal users on macOS < 14 are extremely rare.
+        if #available(macOS 14.0, *) {
+            self.dataStore = WKWebsiteDataStore(forIdentifier: Self.feedbackStoreIdentifier)
+        } else {
+            self.dataStore = .default()
+        }
 
         super.init()
 
@@ -90,7 +101,11 @@ final class QuickFeedbackService: NSObject {
         windowController = controller
 
         controller.window?.makeKeyAndOrderFront(nil)
-        navigateToForm()
+
+        Task {
+            await copyAsanaCookiesFromDefaultStore()
+            navigateToForm()
+        }
     }
 
     private func createWindowController() -> QuickFeedbackWindowController {
@@ -104,6 +119,7 @@ final class QuickFeedbackService: NSObject {
             forMainFrameOnly: true
         )
         config.userContentController.addUserScript(userScript)
+        config.userContentController.add(self, name: Self.formSubmittedMessageName)
 
         let controller = QuickFeedbackWindowController(webViewConfiguration: config)
         controller.webView.navigationDelegate = self
@@ -135,13 +151,23 @@ final class QuickFeedbackService: NSObject {
     private func signOut() {
         windowController?.setSignOutVisible(false)
 
-        dataStore.fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { [weak self] records in
-            let asanaRecords = records.filter { $0.displayName.contains("asana") }
-            self?.dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: asanaRecords) {
-                Task { @MainActor [weak self] in
-                    self?.navigateToForm()
-                }
+        dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.navigateToForm()
             }
+        }
+    }
+
+    // MARK: - Cookie Sync
+
+    private func copyAsanaCookiesFromDefaultStore() async {
+        guard dataStore !== WKWebsiteDataStore.default() else { return }
+
+        let defaultCookies = await WKWebsiteDataStore.default().httpCookieStore.allCookies()
+        let asanaCookies = defaultCookies.filter { $0.domain.hasSuffix(Self.asanaCookieDomain) }
+
+        for cookie in asanaCookies {
+            await dataStore.httpCookieStore.setCookie(cookie)
         }
     }
 
@@ -226,6 +252,19 @@ extension QuickFeedbackService: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         return .allow
+    }
+}
+
+// MARK: - WKScriptMessageHandler
+
+extension QuickFeedbackService: WKScriptMessageHandler {
+
+    nonisolated func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        Task { @MainActor [weak self] in
+            guard message.name == QuickFeedbackService.formSubmittedMessageName else { return }
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            self?.hidePopup()
+        }
     }
 }
 

@@ -396,6 +396,10 @@ function hookSubmitForDiagnostics() {
         if (screenshotCb && screenshotCb.checked) {
             attachScreenshotToForm();
         }
+
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.feedbackFormSubmitted) {
+            window.webkit.messageHandlers.feedbackFormSubmitted.postMessage(null);
+        }
     }, true);
 }
 

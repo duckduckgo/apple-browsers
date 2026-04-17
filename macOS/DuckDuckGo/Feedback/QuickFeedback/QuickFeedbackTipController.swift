@@ -35,13 +35,13 @@ final class QuickFeedbackTipController {
 
     #if DEBUG
     private static let showDelay: TimeInterval = 3
-    private static let preClickInterval: TimeInterval = 10
-    private static let postClickInterval: TimeInterval = 300
+    private static let preClickInterval: TimeInterval = 30
+    private static let postClickInterval: TimeInterval = 60
     private static let autoDismissDelay: TimeInterval = 5
     #else
     private static let showDelay: TimeInterval = 3
-    private static let preClickInterval: TimeInterval = 86400
-    private static let postClickInterval: TimeInterval = 604800
+    private static let preClickInterval: TimeInterval = 86400      // 24 hours
+    private static let postClickInterval: TimeInterval = 604800     // 7 days
     private static let autoDismissDelay: TimeInterval = 5
     #endif
 
@@ -78,16 +78,10 @@ final class QuickFeedbackTipController {
 
     private func shouldShow() -> Bool {
         let lastShown = defaults.double(forKey: Self.lastShownKey)
-
-        if lastShown == 0 {
-            // First ever session — seed the timestamp so the tip starts on the next session
-            defaults.set(Date().timeIntervalSince1970, forKey: Self.lastShownKey)
-            return false
-        }
+        guard lastShown > 0 else { return true }
 
         let hasClicked = defaults.bool(forKey: Self.buttonClickedKey)
         let interval = hasClicked ? Self.postClickInterval : Self.preClickInterval
-
         let elapsed = Date().timeIntervalSince1970 - lastShown
         return elapsed >= interval
     }
@@ -142,7 +136,7 @@ private final class QuickFeedbackTipViewController: NSViewController {
 
         let daxIcon = NSImageView()
         daxIcon.translatesAutoresizingMaskIntoConstraints = false
-        daxIcon.image = NSImage(named: "DaxLogo")
+        daxIcon.image = NSImage(named: "OnboardingDax")
         daxIcon.imageScaling = .scaleProportionallyDown
 
         let label = NSTextField(wrappingLabelWithString: message)

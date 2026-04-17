@@ -34,7 +34,6 @@ final class QuickFeedbackService: NSObject {
 
     private static let asanaFormHost = "form.asana.com"
     private static let asanaCookieDomain = "asana.com"
-    private static let formSubmittedMessageName = "feedbackFormSubmitted"
     private static let feedbackStoreIdentifier = UUID(uuidString: "D1A2B3C4-E5F6-7890-ABCD-EF1234567890")!
 
     private static let earlyInjectionScript = """
@@ -119,8 +118,6 @@ final class QuickFeedbackService: NSObject {
             forMainFrameOnly: true
         )
         config.userContentController.addUserScript(userScript)
-        config.userContentController.add(self, name: Self.formSubmittedMessageName)
-
         let controller = QuickFeedbackWindowController(webViewConfiguration: config)
         controller.webView.navigationDelegate = self
         controller.window?.delegate = self
@@ -267,17 +264,6 @@ extension QuickFeedbackService: WKNavigationDelegate {
 }
 
 // MARK: - WKScriptMessageHandler
-
-extension QuickFeedbackService: WKScriptMessageHandler {
-
-    nonisolated func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        Task { @MainActor [weak self] in
-            guard message.name == QuickFeedbackService.formSubmittedMessageName else { return }
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-            self?.hidePopup()
-        }
-    }
-}
 
 // MARK: - NSWindowDelegate
 

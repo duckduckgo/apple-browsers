@@ -380,9 +380,6 @@ function hookSubmitForDiagnostics() {
             attachScreenshotToForm();
         }
 
-        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.feedbackFormSubmitted) {
-            window.webkit.messageHandlers.feedbackFormSubmitted.postMessage(null);
-        }
     }, true);
 }
 

@@ -31,19 +31,24 @@ struct DataImportSummaryView: View {
 
     @State private var isAnimating = false
 
+    private var isPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+
+    private var iPadFooterBottomPadding: CGFloat {
+        isPad ? 16 : 0
+    }
+
     init(viewModel: DataImportSummaryViewModel) {
         self.viewModel = viewModel
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            summaryList
-
-            footer
-                .padding(.horizontal, 24)
+        adjustedSummaryList
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            footerOverlay
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .ignoresSafeArea()
         .background(
             Rectangle()
                 .foregroundColor(Color(designSystemColor: .surfaceTertiary))
@@ -54,6 +59,26 @@ struct DataImportSummaryView: View {
                 isAnimating = true
             }
         }
+    }
+
+    @ViewBuilder
+    private var adjustedSummaryList: some View {
+        if #available(iOS 17.0, *), isPad {
+            summaryList
+                .contentMargins(.top, 0)
+        } else {
+            summaryList
+        }
+    }
+
+    private var footerOverlay: some View {
+        footer
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .background(
+                Color(designSystemColor: .surfaceTertiary)
+                    .ignoresSafeArea(edges: .bottom)
+            )
     }
 
     private var summaryList: some View {
@@ -91,6 +116,7 @@ struct DataImportSummaryView: View {
                 }
             }
         }
+        .compactSectionSpacingIfAvailable()
         .listStyle(.insetGrouped)
         .hideScrollContentBackground()
     }
@@ -114,6 +140,7 @@ struct DataImportSummaryView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 16)
+        .padding(.bottom, 16)
     }
 
     private var allSuccessSection: some View {
@@ -229,7 +256,7 @@ struct DataImportSummaryView: View {
             }
         }
         .padding(.top, 16)
-        .padding(.bottom, 36)
+        .padding(.bottom, iPadFooterBottomPadding)
     }
 
     private var dismissButton: some View {
@@ -260,7 +287,6 @@ struct DataImportSummaryView: View {
                 isAnimating: $isAnimating
             )
             .frame(width: 200, height: 128)
-            .padding(.top, 48)
         }
     }
 
@@ -295,6 +321,7 @@ struct DataImportSummaryView: View {
                     .daxBodyRegular()
                     .foregroundStyle(Color(designSystemColor: .textSecondary))
             }
+            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
         }
     }
 
@@ -452,6 +479,7 @@ struct DataImportSummaryView: View {
             }
         }
     }
+
 }
 
 private extension DataImport.DataType {

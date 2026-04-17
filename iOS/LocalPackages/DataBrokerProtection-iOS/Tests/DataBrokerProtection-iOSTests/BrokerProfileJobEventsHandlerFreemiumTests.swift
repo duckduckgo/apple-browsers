@@ -88,7 +88,6 @@ final class BrokerProfileJobEventsHandlerFreemiumTests: XCTestCase {
         await fireAndAwait(.profileSaved)
         let firstTimestamp = stateManager.firstProfileSavedTimestamp
 
-        try? await Task.sleep(nanoseconds: 10_000_000)
         await fireAndAwait(.profileSaved)
 
         XCTAssertEqual(stateManager.firstProfileSavedTimestamp, firstTimestamp)

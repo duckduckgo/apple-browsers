@@ -23,10 +23,11 @@ import IOKit
 final class QuickFeedbackDiagnosticsCollector {
 
     private weak var tabCountProvider: TabCountProviding?
-    private let launchDate = Date()
+    private let launchDate: Date
 
-    init(tabCountProvider: TabCountProviding? = nil) {
+    init(tabCountProvider: TabCountProviding? = nil, launchDate: Date = Date()) {
         self.tabCountProvider = tabCountProvider
+        self.launchDate = launchDate
     }
 
     func collectDiagnostics() -> String {

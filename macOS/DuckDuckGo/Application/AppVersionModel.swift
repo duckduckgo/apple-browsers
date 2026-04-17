@@ -72,7 +72,7 @@ final class AppVersionModel {
         }
         return label
     }
-
+ 
     /// Distribution channel label (e.g. "App Store", "DMG", "DMG Alpha").
     var distributionLabel: String {
         var label = NSApp.isSandboxed ? "App Store" : "DMG"

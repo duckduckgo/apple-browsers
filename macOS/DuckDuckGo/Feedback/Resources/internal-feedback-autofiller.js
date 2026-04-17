@@ -425,11 +425,9 @@ function fillOutFormAfterNativeAppsSelected() {
         .catch(error => console.error('"Which platform?" label not found:', error));
 }
 
-function handleNativeAppsDropdown(autoSelect) {
+function handleNativeAppsDropdown() {
     openDropdown('Which product area or team does this feedback relate to?');
-    if (autoSelect) {
-        selectOption('Native Apps & Extensions');
-    }
+    selectOption('Native Apps & Extensions');
 
     const observer = new MutationObserver(() => {
         const selected = document.querySelector('[aria-label^="Which product area or team does this feedback relate to?"]');
@@ -443,5 +441,5 @@ function handleNativeAppsDropdown(autoSelect) {
 }
 
 waitForElement('h1', 'Internal Product Feedback Form')
-    .then(_ => handleNativeAppsDropdown(quickMode))
+    .then(_ => handleNativeAppsDropdown())
     .catch(_ => console.error('Internal Product Feedback Form is not loaded after 5s'));

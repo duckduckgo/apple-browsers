@@ -151,9 +151,20 @@ final class QuickFeedbackService: NSObject {
     private func signOut() {
         windowController?.setSignOutVisible(false)
 
-        dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) { [weak self] in
-            Task { @MainActor [weak self] in
-                self?.navigateToForm()
+        if dataStore === WKWebsiteDataStore.default() {
+            dataStore.fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { [weak self] records in
+                let asanaRecords = records.filter { $0.displayName.contains("asana") }
+                self?.dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: asanaRecords) {
+                    Task { @MainActor [weak self] in
+                        self?.navigateToForm()
+                    }
+                }
+            }
+        } else {
+            dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) { [weak self] in
+                Task { @MainActor [weak self] in
+                    self?.navigateToForm()
+                }
             }
         }
     }

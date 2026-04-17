@@ -1196,28 +1196,17 @@
                         <outlet property="bookmarkButtonHeightConstraint" destination="nLM-v6-jHW" id="0if-Ez-QqB"/>
                         <outlet property="bookmarkButtonWidthConstraint" destination="3ze-iM-E0b" id="t1B-0J-ET8"/>
                         <outlet property="buttonsContainer" destination="HEu-ro-RSA" id="5r4-Ag-NpA"/>
-                        <outlet property="cameraButton" destination="C2L-f9-L3r" id="xua-H5-hAx"/>
-                        <outlet property="cameraButtonHeightConstraint" destination="A7u-wU-pBb" id="0E3-ev-fmb"/>
                         <outlet property="cancelButton" destination="kRc-0m-oqe" id="iAr-0l-X5i"/>
                         <outlet property="cancelButtonHeightConstraint" destination="B6E-P0-EL6" id="T4M-Ck-MPY"/>
                         <outlet property="cancelButtonWidthConstraint" destination="8Ag-uG-RA7" id="JfF-9g-kQG"/>
-                        <outlet property="externalSchemeButton" destination="gGA-Yv-pnz" id="Eyj-ms-jcc"/>
-                        <outlet property="externalSchemeButtonHeightConstraint" destination="QiS-pG-2Ex" id="XPu-Oa-9kk"/>
-                        <outlet property="geolocationButton" destination="CN6-fJ-o2J" id="FP7-Od-wu8"/>
-                        <outlet property="geolocationButtonHeightConstraint" destination="y9v-oG-C5i" id="fS3-mc-fJV"/>
                         <outlet property="imageButton" destination="psi-hX-Kh9" id="gEt-yl-q9m"/>
                         <outlet property="imageButtonLeadingConstraint" destination="2X2-AK-TfF" id="udd-Cm-Gm0"/>
                         <outlet property="imageButtonWrapper" destination="3Iv-YW-zn2" id="rzK-lJ-auZ"/>
                         <outlet property="leadingAIChatDivider" destination="L8T-hS-NZz" id="1f9-tG-uDW"/>
-                        <outlet property="microphoneButton" destination="uao-nC-0co" id="UHu-oA-rTl"/>
-                        <outlet property="microphoneButtonHeightConstraint" destination="0aM-UZ-dCe" id="Kgq-0q-iNz"/>
                         <outlet property="notificationAnimationView" destination="1qw-sL-vFK" id="b5X-px-pwG"/>
-                        <outlet property="permissionButtonHeightConstraint" destination="I0h-6q-AY4" id="BbX-2y-p3L"/>
                         <outlet property="permissionButtons" destination="8UU-A8-1nD" id="gYJ-VW-MEG"/>
                         <outlet property="permissionCenterButton" destination="7f7-ob-zog" id="gbs-S4-xCe"/>
                         <outlet property="permissionCenterButtonWidthConstraint" destination="vbX-0P-lVk" id="dzi-E4-ax7"/>
-                        <outlet property="popupsButton" destination="qqY-h9-UQ7" id="1QY-I6-oNC"/>
-                        <outlet property="popupsButtonHeightConstraint" destination="Lys-Hh-cYc" id="aif-wm-FWV"/>
                         <outlet property="privacyDashboardButton" destination="nOW-iY-XmO" id="r0A-EO-srN"/>
                         <outlet property="privacyShieldButtonHeightConstraint" destination="NcD-Mf-Vae" id="Ssh-nD-Yv5"/>
                         <outlet property="privacyShieldButtonWidthConstraint" destination="Hf1-nK-Kb4" id="uss-0B-3pT"/>

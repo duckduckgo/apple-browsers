@@ -153,56 +153,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var privacyShieldButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var imageButtonLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var zoomButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var geolocationButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var microphoneButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var cameraButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var popupsButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var externalSchemeButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var permissionButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet private weak var permissionButtons: NSView!
-    @IBOutlet weak var cameraButton: PermissionButton! {
-        didSet {
-            cameraButton.isHidden = true
-            cameraButton.target = self
-            cameraButton.action = #selector(cameraButtonAction(_:))
-        }
-    }
-    @IBOutlet weak var microphoneButton: PermissionButton! {
-        didSet {
-            microphoneButton.isHidden = true
-            microphoneButton.target = self
-            microphoneButton.action = #selector(microphoneButtonAction(_:))
-        }
-    }
-    @IBOutlet weak var geolocationButton: PermissionButton! {
-        didSet {
-            geolocationButton.isHidden = true
-            geolocationButton.target = self
-            geolocationButton.action = #selector(geolocationButtonAction(_:))
-        }
-    }
-    @IBOutlet weak var popupsButton: PermissionButton! {
-        didSet {
-            popupsButton.isHidden = true
-            popupsButton.target = self
-            popupsButton.action = #selector(popupsButtonAction(_:))
-        }
-    }
-    @IBOutlet weak var externalSchemeButton: PermissionButton! {
-        didSet {
-            externalSchemeButton.isHidden = true
-            externalSchemeButton.target = self
-            externalSchemeButton.action = #selector(externalSchemeButtonAction(_:))
-        }
-    }
-    @IBOutlet weak var notificationButton: PermissionButton? {
-        didSet {
-            notificationButton?.isHidden = true
-            notificationButton?.target = self
-            notificationButton?.action = #selector(notificationButtonAction(_:))
-        }
-    }
-    @IBOutlet weak var notificationButtonHeightConstraint: NSLayoutConstraint?
 
     /// Width of the left buttons container (Privacy Dashboard button, Permissions buttons…)
     /// Used to adjust the Passive Address Bar leading constraint
@@ -388,11 +339,6 @@ final class AddressBarButtonsViewController: NSViewController {
     private func setupButtons() {
         if isInPopUpWindow {
             privacyDashboardButton.position = .free
-            cameraButton.position = .free
-            geolocationButton.position = .free
-            popupsButton.position = .free
-            microphoneButton.position = .free
-            externalSchemeButton.position = .free
             bookmarkButton.isHidden = true
             trailingButtonsContainer.isHidden = true
             trailingButtonsBackground.isHidden = true
@@ -405,22 +351,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
         (imageButton.cell as? NSButtonCell)?.highlightsBy = NSCell.StyleMask(rawValue: 0)
         imageButton.setAccessibilityIdentifier("AddressBarButtonsViewController.imageButton")
-
-        cameraButton.sendAction(on: .leftMouseDown)
-        cameraButton.setAccessibilityIdentifier("AddressBarButtonsViewController.cameraButton")
-        cameraButton.setAccessibilityTitle(UserText.permissionCamera)
-        microphoneButton.sendAction(on: .leftMouseDown)
-        microphoneButton.setAccessibilityIdentifier("AddressBarButtonsViewController.microphoneButton")
-        microphoneButton.setAccessibilityTitle(UserText.permissionMicrophone)
-        geolocationButton.sendAction(on: .leftMouseDown)
-        geolocationButton.setAccessibilityIdentifier("AddressBarButtonsViewController.geolocationButton")
-        geolocationButton.setAccessibilityTitle(UserText.permissionGeolocation)
-        popupsButton.sendAction(on: .leftMouseDown)
-        popupsButton.setAccessibilityTitle(UserText.permissionPopups)
-        popupsButton.setAccessibilityIdentifier("AddressBarButtonsViewController.popupsButton")
-        externalSchemeButton.sendAction(on: .leftMouseDown)
-        // externalSchemeButton.accessibilityTitle is set in `updatePermissionButtons`
-        externalSchemeButton.setAccessibilityIdentifier("AddressBarButtonsViewController.externalSchemeButton")
 
         privacyDashboardButton.setAccessibilityRole(.button)
         privacyDashboardButton.setAccessibilityElement(true)
@@ -710,7 +640,6 @@ final class AddressBarButtonsViewController: NSViewController {
     // update Separator on Privacy Entry Point and other buttons appearance change
     private func subscribeToButtonsVisibility() {
         privacyDashboardButton.publisher(for: \.isHidden).asVoid()
-            .merge(with: permissionButtons.publisher(for: \.frame).asVoid())
             .merge(with: zoomButton.publisher(for: \.isHidden).asVoid())
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
@@ -1025,9 +954,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateSeparator() {
-        separator.isShown = privacyDashboardButton.isVisible && (
-            (permissionButtons.subviews.contains(where: { $0.isVisible })) || zoomButton.isVisible
-        )
+        separator.isShown = privacyDashboardButton.isVisible && zoomButton.isVisible
     }
 
     // MARK: - AI Chat Action Helpers
@@ -1130,7 +1057,6 @@ final class AddressBarButtonsViewController: NSViewController {
         askAIChatButton.setCornerRadius(cornerRadius)
         bookmarkButton.setCornerRadius(cornerRadius)
         cancelButton.setCornerRadius(cornerRadius)
-        permissionButtons.setCornerRadius(cornerRadius)
         zoomButton.setCornerRadius(cornerRadius)
         privacyDashboardButton.setCornerRadius(cornerRadius)
         permissionCenterButton.setCornerRadius(cornerRadius)
@@ -1150,23 +1076,10 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyShieldButtonWidthConstraint.constant = addressBarButtonSize
         privacyShieldButtonHeightConstraint.constant = addressBarButtonSize
         zoomButtonHeightConstraint.constant = addressBarButtonSize
-        geolocationButtonHeightConstraint.constant = addressBarButtonSize
-        microphoneButtonHeightConstraint.constant = addressBarButtonSize
-        cameraButtonHeightConstraint.constant = addressBarButtonSize
-        popupsButtonHeightConstraint.constant = addressBarButtonSize
-        externalSchemeButtonHeightConstraint.constant = addressBarButtonSize
-        permissionButtonHeightConstraint.constant = addressBarButtonSize
         permissionCenterButtonWidthConstraint.constant = addressBarButtonSize
     }
 
     private func setupButtonIcons() {
-        let addressBarButtonsIconsProvider = theme.iconsProvider.addressBarButtonsIconsProvider
-
-        geolocationButton.activeImage = addressBarButtonsIconsProvider.locationSolid
-        geolocationButton.disabledImage = addressBarButtonsIconsProvider.locationIcon
-        geolocationButton.defaultImage = addressBarButtonsIconsProvider.locationIcon
-        externalSchemeButton.defaultImage = addressBarButtonsIconsProvider.externalSchemeIcon
-        popupsButton.defaultImage = addressBarButtonsIconsProvider.popupsIcon
         updatePermissionCenterButtonIcon()
     }
 
@@ -1884,144 +1797,6 @@ final class AddressBarButtonsViewController: NSViewController {
         popover.show(positionedBelow: permissionCenterButton.bounds.insetFromLineOfDeath(flipped: permissionCenterButton.isFlipped), in: permissionCenterButton)
     }
 
-    @IBAction func cameraButtonAction(_ sender: NSButton) {
-        guard let tabViewModel else {
-            assertionFailure("No selectedTabViewModel")
-            return
-        }
-        if case .requested(let query) = tabViewModel.usedPermissions.camera {
-            openPermissionAuthorizationPopover(for: query)
-            return
-        }
-
-        var permissions = Permissions()
-        permissions.camera = tabViewModel.usedPermissions.camera
-        if microphoneButton.isHidden {
-            permissions.microphone = tabViewModel.usedPermissions.microphone
-        }
-
-        let url = tabViewModel.tab.content.urlForWebView ?? .empty
-        let domain = url.isFileURL ? .localhost : (url.host ?? "")
-
-        PermissionContextMenu(permissionManager: permissionManager, permissions: permissions.map { ($0, $1) }, domain: domain, delegate: self, featureFlagger: featureFlagger)
-            .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
-    }
-
-    @IBAction func microphoneButtonAction(_ sender: NSButton) {
-        guard let tabViewModel,
-              let state = tabViewModel.usedPermissions.microphone
-        else {
-            Logger.general.error("Selected tab view model is nil or no microphone state")
-            return
-        }
-        if case .requested(let query) = state {
-            openPermissionAuthorizationPopover(for: query)
-            return
-        }
-
-        let url = tabViewModel.tab.content.urlForWebView ?? .empty
-        let domain = url.isFileURL ? .localhost : (url.host ?? "")
-
-        PermissionContextMenu(permissionManager: permissionManager, permissions: [(.microphone, state)], domain: domain, delegate: self, featureFlagger: featureFlagger)
-            .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
-    }
-
-    @IBAction func geolocationButtonAction(_ sender: NSButton) {
-        guard let tabViewModel,
-              let state = tabViewModel.usedPermissions.geolocation
-        else {
-            Logger.general.error("Selected tab view model is nil or no geolocation state")
-            return
-        }
-        if case .requested(let query) = state {
-            openPermissionAuthorizationPopover(for: query)
-            return
-        }
-
-        let url = tabViewModel.tab.content.urlForWebView ?? .empty
-        let domain = url.isFileURL ? .localhost : (url.host ?? "")
-
-        PermissionContextMenu(permissionManager: permissionManager, permissions: [(.geolocation, state)], domain: domain, delegate: self, featureFlagger: featureFlagger)
-            .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
-    }
-
-    @IBAction func popupsButtonAction(_ sender: NSButton) {
-        guard let tabViewModel else {
-            Logger.general.error("Selected tab view model is nil or has no pop-up state")
-            return
-        }
-        guard let state = tabViewModel.usedPermissions.popups ?? {
-            // If popup blocking is enabled and a page-initiated popup was opened for the current page,
-            // return .inactive state for the pop-up button
-            if featureFlagger.isFeatureOn(.popupBlocking),
-               tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false { return .inactive } else { return nil }
-        }() else {
-            return
-        }
-
-        let permissions: [(PermissionType, PermissionState)]
-        let domain: String
-        if case .requested(let query) = state {
-            domain = query.domain
-            permissions = tabViewModel.tab.permissions.authorizationQueries.reduce(into: .init()) {
-                guard $1.permissions.contains(.popups) else { return }
-                $0.append( (.popups, .requested($1)) )
-            }
-        } else {
-            let url = tabViewModel.tab.content.urlForWebView ?? .empty
-            domain = url.isFileURL ? .localhost : (url.host ?? "")
-            permissions = [(.popups, state)]
-        }
-        PermissionContextMenu(permissionManager: permissionManager,
-                              permissions: permissions,
-                              domain: domain,
-                              delegate: self,
-                              featureFlagger: featureFlagger,
-                              hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false)
-        .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
-    }
-
-    @IBAction func externalSchemeButtonAction(_ sender: NSButton) {
-        guard let tabViewModel,
-              let (permissionType, state) = tabViewModel.usedPermissions.first(where: { $0.key.isExternalScheme })
-        else {
-            Logger.general.error("Selected tab view model is nil or no externalScheme state")
-            return
-        }
-
-        let permissions: [(PermissionType, PermissionState)]
-        if case .requested(let query) = state {
-            query.wasShownOnce = false
-            openPermissionAuthorizationPopover(for: query)
-            return
-        }
-
-        permissions = [(permissionType, state)]
-        let url = tabViewModel.tab.content.urlForWebView ?? .empty
-        let domain = url.isFileURL ? .localhost : (url.host ?? "")
-
-        PermissionContextMenu(permissionManager: permissionManager, permissions: permissions, domain: domain, delegate: self, featureFlagger: featureFlagger)
-            .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
-    }
-
-    @IBAction func notificationButtonAction(_ sender: NSButton) {
-        guard let tabViewModel,
-              let state = tabViewModel.usedPermissions.notification
-        else {
-            Logger.general.error("Selected tab view model is nil or no notification state")
-            return
-        }
-        if case .requested(let query) = state {
-            openPermissionAuthorizationPopover(for: query)
-            return
-        }
-
-        let url = tabViewModel.tab.content.urlForWebView ?? .empty
-        let domain = url.isFileURL ? .localhost : (url.host ?? "")
-
-        PermissionContextMenu(permissionManager: permissionManager, permissions: [(.notification, state)], domain: domain, delegate: self, featureFlagger: featureFlagger)
-            .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
-    }
 
     // MARK: - Notification Animation
 
@@ -2487,9 +2262,6 @@ extension AddressBarButtonsViewController: ThemeUpdateListening {
         let colorsProvider = theme.colorsProvider
 
         bookmarkButton.normalTintColor = colorsProvider.iconsColor
-        geolocationButton.normalTintColor = colorsProvider.iconsColor
-        cameraButton.normalTintColor = colorsProvider.iconsColor
-        microphoneButton.normalTintColor = colorsProvider.iconsColor
     }
 }
 

@@ -35,23 +35,6 @@ function setInputValue(input, value) {
     input.dispatchEvent(inputEvent);
 }
 
-function setTextareaValue(labelText, value) {
-    const label = Array.from(document.querySelectorAll('label'))
-        .find(l => l.textContent.trim().startsWith(labelText));
-    if (!label) return;
-    const row = label.closest('.WorkRequestsFieldRow');
-    if (!row) return;
-    const textarea = row.querySelector('textarea');
-    if (!textarea) return;
-
-    const setter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype,
-        'value'
-    ).set;
-    setter.call(textarea, value);
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-}
-
 function setInputAfterLabel(tag, labelText, value) {
     const xpath = `//${tag}[contains(text(), '${labelText}')]/following::input[@type='text'][1]`;
     const result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);

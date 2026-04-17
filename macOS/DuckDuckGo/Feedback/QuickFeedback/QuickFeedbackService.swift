@@ -143,7 +143,7 @@ final class QuickFeedbackService: NSObject {
     }
 
     private func forceClosePopup() {
-        windowController?.window?.close()
+        windowController?.window?.orderOut(nil)
         windowController = nil
         screenshotData = nil
     }

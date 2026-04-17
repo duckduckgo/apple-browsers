@@ -850,8 +850,12 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public func updateRemovedDate(for extractedProfileId: Int64, with date: Date?) throws {
     }
 
+    public var hasMatchesToReturn = false
+    public var hasMatchesError: Error?
+
     public func hasMatches() throws -> Bool {
-        false
+        if let error = hasMatchesError { throw error }
+        return hasMatchesToReturn
     }
 
     public func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker] {
@@ -1283,8 +1287,12 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         optOutToReturn
     }
 
+    public var hasMatchesToReturn = false
+    public var hasMatchesError: Error?
+
     public func hasMatches() throws -> Bool {
-        false
+        if let error = hasMatchesError { throw error }
+        return hasMatchesToReturn
     }
 
     public func matchRemovedByUser(_ matchID: Int64) throws {

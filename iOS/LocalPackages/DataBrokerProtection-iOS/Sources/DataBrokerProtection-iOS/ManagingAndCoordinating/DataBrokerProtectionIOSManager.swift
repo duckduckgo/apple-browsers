@@ -935,6 +935,10 @@ private extension DataBrokerProtectionIOSManager {
         await freemiumDBPUserStateManager.recordFirstScanResultIfNeeded(hasMatches: hasMatches)
     }
 
+}
+
+extension DataBrokerProtectionIOSManager {
+
     @MainActor
     func startImmediateScanOperations() async {
         Logger.dataBrokerProtection.log("Starting immediate scan operations")

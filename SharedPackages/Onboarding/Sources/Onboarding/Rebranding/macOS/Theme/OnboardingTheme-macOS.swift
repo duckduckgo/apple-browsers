@@ -50,7 +50,7 @@ public extension OnboardingTheme {
             optionsListIconColor: accentPrimary,
             optionsListTextColor: accentPrimary,
             optionsListHoverColor: Color(red: 0x72/255.0, green: 0x95/255.0, blue: 0xF6/255.0).opacity(0.2),
-            optionsListPressedColor: Color(red: 0x72/255.0, green: 0x95/255.0, blue: 0xF6/255.0).opacity(0.3),
+            optionsListPressedColor: Color(red: 0x72/255.0, green: 0x95/255.0, blue: 0xF6/255.0).opacity(0.2),
             primaryButtonBackgroundColor: ctaButtonBackground,
             primaryButtonPressedColor: ctaButtonPressed,
             primaryButtonTextColor: .white,

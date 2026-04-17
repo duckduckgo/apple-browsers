@@ -17,6 +17,12 @@
 //  limitations under the License.
 //
 
+/// The outcome of a freemium user's first scan. Stored as a raw string in UserDefaults.
+public enum FreemiumFirstScanResult: String, Codable {
+    case noMatches
+    case matchesFound
+}
+
 /// Minimal interface for freemium user state needed by the iOS PIR manager.
 /// The full implementation is provided by `FreemiumDBPUserStateManager`.
 public protocol FreemiumDBPUserStateManaging {

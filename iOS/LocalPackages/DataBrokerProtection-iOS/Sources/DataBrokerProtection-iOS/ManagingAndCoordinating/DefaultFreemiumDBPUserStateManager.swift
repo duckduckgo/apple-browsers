@@ -58,10 +58,27 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
         return userDefaults.object(forKey: Keys.upgradeToSubscriptionTimestamp) as? Date
     }
 
-    // MARK: - Write-side methods (implemented in later tasks)
+    // MARK: - Write-side methods
 
     public func recordProfileSavedIfNeeded() async {
         guard await !isUserAuthenticated() else { return }
+        persistProfileSaved()
+    }
+
+    public func recordFirstScanResultIfNeeded(hasMatches: Bool) async {
+        guard await !isUserAuthenticated() else { return }
+        persistFirstScanResultIfAbsent(hasMatches: hasMatches)
+    }
+
+    public func recordSubscriptionUpgradeIfNeeded() async {
+        // By contract, the caller drives this from a real purchase-success / transition
+        // signal, so we do NOT check isUserAuthenticated here. See spec §3.
+        persistSubscriptionUpgradeIfEligible()
+    }
+
+    // MARK: - Private synchronous helpers
+
+    private func persistProfileSaved() {
         lock.lock()
         defer { lock.unlock() }
         userDefaults.set(true, forKey: Keys.didActivate)
@@ -70,8 +87,7 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
         }
     }
 
-    public func recordFirstScanResultIfNeeded(hasMatches: Bool) async {
-        guard await !isUserAuthenticated() else { return }
+    private func persistFirstScanResultIfAbsent(hasMatches: Bool) {
         lock.lock()
         defer { lock.unlock() }
         guard userDefaults.string(forKey: Keys.firstScanResult) == nil else { return }
@@ -79,9 +95,7 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
         userDefaults.set(value.rawValue, forKey: Keys.firstScanResult)
     }
 
-    public func recordSubscriptionUpgradeIfNeeded() async {
-        // By contract, the caller drives this from a real purchase-success / transition
-        // signal, so we do NOT check isUserAuthenticated here. See spec §3.
+    private func persistSubscriptionUpgradeIfEligible() {
         lock.lock()
         defer { lock.unlock() }
         guard userDefaults.bool(forKey: Keys.didActivate) else { return }

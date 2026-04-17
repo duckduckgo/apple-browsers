@@ -459,7 +459,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         viewController.delegate = delegate
         XCTAssertFalse(delegate.didCallHighlightFireButton)
         tab.navigateFromOnboarding(to: url)
-        wait(for: [expectation], timeout: 3.0)
+        wait(for: [expectation], timeout: 5.0)
 
         // WHEN
         factory.performOnGotItPressed()

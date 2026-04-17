@@ -17,14 +17,13 @@
 //
 
 import Cocoa
-import FeatureFlags
 import SwiftUI
 
 final class PermissionAuthorizationPopover: NSPopover {
 
     @nonobjc private var didShow: Bool = false
 
-    init(featureFlagger: FeatureFlagger) {
+    override init() {
         super.init()
 
         behavior = .applicationDefined

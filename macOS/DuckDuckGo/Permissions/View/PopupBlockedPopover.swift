@@ -17,12 +17,11 @@
 //
 
 import Cocoa
-import FeatureFlags
 import SwiftUI
 
 final class PopupBlockedPopover: NSPopover {
 
-    init(featureFlagger: FeatureFlagger) {
+    override init() {
         super.init()
 
         behavior = .applicationDefined

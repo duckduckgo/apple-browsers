@@ -123,9 +123,9 @@ final class MockContinuedProcessingCoordinatorDelegate: DBPContinuedProcessingDe
 
 final class MockFreemiumDBPUserStateManager: FreemiumDBPUserStateManaging {
     var didActivate: Bool = false
-    var firstProfileSavedTimestamp: Date? = nil
-    var firstScanResult: FreemiumFirstScanResult? = nil
-    var upgradeToSubscriptionTimestamp: Date? = nil
+    var firstProfileSavedTimestamp: Date?
+    var firstScanResult: FreemiumFirstScanResult?
+    var upgradeToSubscriptionTimestamp: Date?
 
     // Test controls
     var recordProfileSavedIfNeededCallCount = 0

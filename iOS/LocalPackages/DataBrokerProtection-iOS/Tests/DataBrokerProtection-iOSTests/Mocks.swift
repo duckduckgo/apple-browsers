@@ -123,6 +123,35 @@ final class MockContinuedProcessingCoordinatorDelegate: DBPContinuedProcessingDe
 
 final class MockFreemiumDBPUserStateManager: FreemiumDBPUserStateManaging {
     var didActivate: Bool = false
+    var firstProfileSavedTimestamp: Date? = nil
+    var firstScanResult: FreemiumFirstScanResult? = nil
+    var upgradeToSubscriptionTimestamp: Date? = nil
+
+    // Test controls
+    var recordProfileSavedIfNeededCallCount = 0
+    var recordFirstScanResultIfNeededCalls: [Bool] = []
+    var recordSubscriptionUpgradeIfNeededCallCount = 0
+    var resetAllStateCallCount = 0
+
+    func recordProfileSavedIfNeeded() async {
+        recordProfileSavedIfNeededCallCount += 1
+    }
+
+    func recordFirstScanResultIfNeeded(hasMatches: Bool) async {
+        recordFirstScanResultIfNeededCalls.append(hasMatches)
+    }
+
+    func recordSubscriptionUpgradeIfNeeded() async {
+        recordSubscriptionUpgradeIfNeededCallCount += 1
+    }
+
+    func resetAllState() {
+        resetAllStateCallCount += 1
+        didActivate = false
+        firstProfileSavedTimestamp = nil
+        firstScanResult = nil
+        upgradeToSubscriptionTimestamp = nil
+    }
 }
 
 final class MockBGTask: DBPIOSInterface.BGTaskHandling {

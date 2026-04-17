@@ -44,3 +44,17 @@ struct StandardApplicationBuildType: ApplicationBuildType {
     let isAlphaBuild: Bool = Bundle.main.bundleIdentifier?.contains(".alpha") ?? false
 
 }
+
+extension ApplicationBuildType {
+
+    /// Returns the pixel channel name based on internal-user status and build type.
+    ///
+    /// - `"canary"` — internal users (logged in via the internal user flow)
+    /// - `"dev"` — alpha or review builds that are not internal users
+    /// - `nil` — non-internal users on production builds (channel parameter is omitted)
+    func channelName(isInternalUser: Bool) -> String? {
+        if isInternalUser { return "canary" }
+        if isAlphaBuild || isReviewBuild { return "dev" }
+        return nil
+    }
+}

@@ -125,7 +125,7 @@ private struct AddressBarPositionButtonStyle: ButtonStyle {
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
             .padding()
-            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: AddressBarPositionPickerMetrics.maxHeight)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: AddressBarPositionPickerMetrics.maxHeight, maxHeight: AddressBarPositionPickerMetrics.maxHeight)
             .background(backgroundColor(isSelected: isSelected, isPressed: configuration.isPressed))
             .cornerRadius(AddressBarPositionPickerMetrics.cornerRadius)
             .contentShape(Rectangle())

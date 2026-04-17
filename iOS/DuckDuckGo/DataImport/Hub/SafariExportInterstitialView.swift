@@ -87,7 +87,7 @@ struct SafariExportInterstitialView: View {
 
     private struct ExportAnimationView: View {
         @Environment(\.colorScheme) private var colorScheme
-        @State private var isAnimating = false
+        @StateObject private var loopCoordinator = AnimationLoopCoordinator()
 
         private var lottieFileName: String {
             colorScheme == .dark ? "export-passwords-dark-optimised" : "export-passwords-light-optimised"
@@ -95,13 +95,86 @@ struct SafariExportInterstitialView: View {
 
         var body: some View {
             Lottie.LottieView(animation: .named(lottieFileName))
-                .playbackMode(isAnimating ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)) : .paused(at: .progress(0)))
+                .configure { animationView in
+                    loopCoordinator.attach(animationView: animationView)
+                }
                 .frame(width: 300, height: 200)
                 .scaledToFit()
                 .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    isAnimating = true
+                    loopCoordinator.start(initialDelay: Constants.initialDelay,
+                                          pauseBetweenLoops: Constants.pauseBetweenLoops)
                 }
+                .onDisappear {
+                    loopCoordinator.stop()
+                }
+                .onChange(of: lottieFileName) { _ in
+                    loopCoordinator.restart(initialDelay: Constants.initialDelay)
+                }
+        }
+
+        private enum Constants {
+            static let initialDelay: TimeInterval = 1.0
+            static let pauseBetweenLoops: TimeInterval = 1.0
+        }
+
+        private final class AnimationLoopCoordinator: ObservableObject {
+            private weak var animationView: LottieAnimationView?
+            private var pendingWorkItem: DispatchWorkItem?
+            private var pauseBetweenLoops: TimeInterval = 1.0
+            private var isRunning = false
+
+            func attach(animationView: LottieAnimationView) {
+                self.animationView = animationView
+                animationView.stop()
+                animationView.currentProgress = 0
+
+                if isRunning {
+                    scheduleNextPlay(after: 0)
+                }
+            }
+
+            func start(initialDelay: TimeInterval, pauseBetweenLoops: TimeInterval) {
+                self.pauseBetweenLoops = pauseBetweenLoops
+                isRunning = true
+                scheduleNextPlay(after: initialDelay)
+            }
+
+            func restart(initialDelay: TimeInterval) {
+                guard isRunning else { return }
+                scheduleNextPlay(after: initialDelay)
+            }
+
+            func stop() {
+                isRunning = false
+                pendingWorkItem?.cancel()
+                pendingWorkItem = nil
+                animationView?.stop()
+                animationView?.currentProgress = 0
+            }
+
+            private func scheduleNextPlay(after delay: TimeInterval) {
+                pendingWorkItem?.cancel()
+
+                let workItem = DispatchWorkItem { [weak self] in
+                    guard let self,
+                          self.isRunning,
+                          let animationView = self.animationView else {
+                        return
+                    }
+
+                    animationView.play(fromProgress: 0, toProgress: 1, loopMode: .playOnce) { [weak self] completed in
+                        guard let self,
+                              completed,
+                              self.isRunning else {
+                            return
+                        }
+
+                        self.scheduleNextPlay(after: self.pauseBetweenLoops)
+                    }
+                }
+
+                pendingWorkItem = workItem
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
             }
         }
     }

@@ -288,6 +288,7 @@ final class AppDependencyProvider: DependencyProvider {
                                                                               wideEvent: wideEvent,
                                                                               freeTrialConversionService: freeTrialConversionService
         )
+
     }
 
 }

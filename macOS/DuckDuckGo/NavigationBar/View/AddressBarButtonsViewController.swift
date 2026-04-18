@@ -30,6 +30,7 @@ import AIChat
 import UIComponents
 import DesignResourcesKitIcons
 import SwiftUI
+import WebExtensions
 
 // MARK: - Toggle Interaction Tracking
 
@@ -75,6 +76,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private let accessibilityPreferences: AccessibilityPreferences
     private let tabsPreferences: TabsPreferences
     private let featureFlagger: FeatureFlagger
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let permissionManager: PermissionManagerProtocol
 
@@ -253,6 +255,7 @@ final class AddressBarButtonsViewController: NSViewController {
         didSet {
             if isMouseOverNavigationBar != oldValue {
                 updateBookmarkButtonVisibility()
+                updatePermissionCenterButton()
             }
         }
     }
@@ -270,9 +273,11 @@ final class AddressBarButtonsViewController: NSViewController {
     private var zoomLevelCancellable: AnyCancellable?
     private var permissionsCancellables = Set<AnyCancellable>()
     private var trackerAnimationTriggerCancellable: AnyCancellable?
+    private var youtubeAdBlockAnimationTriggerCancellable: AnyCancellable?
     private var privacyEntryPointIconUpdateCancellable: AnyCancellable?
     private var tabRemovalCancellables = Set<AnyCancellable>()
     private var aiChatChromeSidebarFeatureFlagCancellable: AnyCancellable?
+    private var videoPlaybackCancellable: AnyCancellable?
 
     private struct TrackerAnimationDomainState {
         var lastVisitedDomain: String?
@@ -323,7 +328,8 @@ final class AddressBarButtonsViewController: NSViewController {
           aiChatCoordinator: AIChatCoordinating,
           aiChatSettings: AIChatPreferencesStorage,
           themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
-          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+          featureFlagger: FeatureFlagger,
+          adBlockingAvailability: AdBlockingAvailabilityProviding) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.accessibilityPreferences = accessibilityPreferences
@@ -337,6 +343,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.aiChatSettings = aiChatSettings
         self.themeManager = themeManager
         self.featureFlagger = featureFlagger
+        self.adBlockingAvailability = adBlockingAvailability
         self.privacyConfigurationManager = privacyConfigurationManager
         self.permissionManager = permissionManager
         super.init(coder: coder)
@@ -524,11 +531,16 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     func showBadgeNotification(_ type: NavigationBarBadgeAnimationView.AnimationType) {
+        if case .youTubeAdBlockOn = type {
+            guard adBlockingAvailability.isEnabled else { return }
+            buttonsBadgeAnimator.cancelPendingAnimations()
+        }
+
         let priority: NavigationBarBadgeAnimator.AnimationPriority
         switch type {
         case .trackersBlocked:
             priority = .high
-        case .cookiePopupManaged, .cookiePopupHidden:
+        case .cookiePopupManaged, .cookiePopupHidden, .youTubeAdBlockOn:
             priority = .low
         }
 
@@ -543,6 +555,10 @@ final class AddressBarButtonsViewController: NSViewController {
             buttonsContainer: buttonsContainer,
             notificationBadgeContainer: notificationAnimationView
         )
+    }
+
+    func shouldSuppressForAdBlocking(url: URL) -> Bool {
+        adBlockingAvailability.shouldShowAnimation(for: url)
     }
 
     /// Shows a tracker notification with the count of trackers blocked
@@ -602,6 +618,7 @@ final class AddressBarButtonsViewController: NSViewController {
             subscribeToUrl()
             subscribeToPermissions()
             subscribeToPrivacyEntryPointIconUpdateTrigger()
+            subscribeToVideoPlayback()
 
             updatePrivacyEntryPointIcon()
             updateAIChatButtonState()
@@ -646,6 +663,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 updatePrivacyEntryPointIcon()
                 configureAIChatButton()
                 subscribeToTrackerAnimationTrigger()
+                subscribeToYouTubeAdBlockAnimationTrigger()
             }
     }
 
@@ -653,6 +671,13 @@ final class AddressBarButtonsViewController: NSViewController {
         trackerAnimationTriggerCancellable = tabViewModel?.trackersAnimationTriggerPublisher
             .sink { [weak self] _ in
                 self?.animateTrackers()
+            }
+    }
+
+    private func subscribeToYouTubeAdBlockAnimationTrigger() {
+        youtubeAdBlockAnimationTriggerCancellable = tabViewModel?.youtubeAdBlockAnimationTriggerPublisher
+            .sink { [weak self] _ in
+                self?.showBadgeNotification(.youTubeAdBlockOn)
             }
     }
 
@@ -685,6 +710,14 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyEntryPointIconUpdateCancellable = tabViewModel?.privacyEntryPointIconUpdateTrigger
             .sink { [weak self] _ in
                 self?.updatePrivacyEntryPointIcon()
+            }
+    }
+
+    private func subscribeToVideoPlayback() {
+        videoPlaybackCancellable = tabViewModel?.tab.$mustDisplayAutoplayPolicy
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updatePermissionCenterButton()
             }
     }
 
@@ -838,7 +871,10 @@ final class AddressBarButtonsViewController: NSViewController {
         let domain = tabViewModel.tab.content.urlForWebView?.host ?? ""
         let hasAnyPersistedPermissions = permissionManager.hasAnyPermissionPersisted(forDomain: domain)
 
+        let isPermissionCenterPopoverShown = permissionCenterPopover?.isShown == true
+
         permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
+            isPermissionCenterPopoverShown: isPermissionCenterPopoverShown,
             isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
             hasAnyPersistedPermissions: hasAnyPersistedPermissions
         )
@@ -1915,6 +1951,7 @@ final class AddressBarButtonsViewController: NSViewController {
             usedPermissionsPublisher: tabViewModel.$usedPermissions.eraseToAnyPublisher(),
             popupQueries: popupQueries,
             permissionManager: permissionManager,
+            autoplayPreferences: NSApp.delegateTyped.autoplayPreferences,
             featureFlagger: featureFlagger,
             removePermission: { [weak tabViewModel] permissionType in
                 tabViewModel?.tab.permissions.remove(permissionType)
@@ -1949,6 +1986,7 @@ final class AddressBarButtonsViewController: NSViewController {
             },
             hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
             pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false,
+            displaysAutoplayPolicy: tabViewModel.tab.mustDisplayAutoplayPolicy,
             permissionsNeedReload: tabViewModel.permissionsNeedReload
         )
 
@@ -2349,6 +2387,13 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func animateTrackers() {
         guard privacyDashboardButton.isShown, let tabViewModel else { return }
+
+        if case .url(let url, _, _) = tabViewModel.tab.content,
+           adBlockingAvailability.shouldShowAnimation(for: url) {
+            updatePrivacyEntryPointIcon()
+            updateAllPermissionButtons()
+            return
+        }
 
         // Show tracker notification only once per eTLD+1 per domain visit
         if let trackerInfo = tabViewModel.tab.privacyInfo?.trackerInfo,
@@ -2835,6 +2880,7 @@ extension TabViewModel {
 
     @MainActor
     func shouldShowPermissionCenterButton(
+        isPermissionCenterPopoverShown: Bool,
         isTextFieldEditorFirstResponder: Bool,
         hasAnyPersistedPermissions: Bool
     ) -> Bool {
@@ -2844,10 +2890,14 @@ extension TabViewModel {
         let shouldShowWhileFocused = (tab.content == .newtab) && hasRequestedPermission
         let isAnyPermissionPresent = !usedPermissions.values.isEmpty
         let pageInitiatedPopupOpened = tab.popupHandling?.pageInitiatedPopupOpened ?? false
+        let mustDisplayAutoplayPolicy = tab.mustDisplayAutoplayPolicy
 
         // Also show when a page-initiated popup was auto-allowed (due to "Always Allow" setting)
         // so user can access permission center to change the decision
-        return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions)))
+        return (shouldShowWhileFocused
+            || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions))
+            || (!isTextFieldEditorFirstResponder && mustDisplayAutoplayPolicy)
+            || (!isTextFieldEditorFirstResponder && isPermissionCenterPopoverShown))
         && !isShowingErrorPage
     }
 

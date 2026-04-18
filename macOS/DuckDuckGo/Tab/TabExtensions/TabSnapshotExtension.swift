@@ -36,6 +36,14 @@ final class TabSnapshotExtension {
     // Flag is true if the extension restored the snapshot from storage
     @MainActor private var didRestoreSnapshot = false
 
+    /// Controls whether snapshot is cleared on deinit.
+    ///
+    /// A tab that is being suspended is replaced with a new instance of `Tab`
+    /// that reuses the same UUID, in which case the "old" Tab instance needs
+    /// to be instructed not to clear its snapshot on deinit, by setting this
+    /// property to `false`.
+    var shouldClearSnapshotOnDeinit = true
+
     private weak var webView: WebView?
     private var tabContent: Tab.TabContent?
     private var cancellables = Set<AnyCancellable>()
@@ -79,7 +87,9 @@ final class TabSnapshotExtension {
 
         webView = nil
 
-        store.clearSnapshot(tabID: identifier)
+        if shouldClearSnapshotOnDeinit {
+            store.clearSnapshot(tabID: identifier)
+        }
     }
 
     @MainActor
@@ -279,6 +289,7 @@ protocol TabSnapshotExtensionProtocol: AnyObject, NavigationResponder {
 
     var snapshot: NSImage? { get }
     var identifier: UUID { get }
+    var shouldClearSnapshotOnDeinit: Bool { get set }
 
     func setIdentifier(_ identifier: UUID)
     func renderWebViewSnapshot() async

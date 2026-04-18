@@ -29,6 +29,11 @@ import Combine
 @MainActor
 final class TabManagerTests: XCTestCase {
 
+    override func tearDown() {
+        UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
+        super.tearDown()
+    }
+
     func testWhenClosingOnlyOpenTabThenASingleEmptyTabIsAdded() async throws {
 
         let tabsModel = TabsModel(desktop: false)
@@ -132,28 +137,21 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(viewModel.tab.uid, tab.uid)
     }
 
-    func testWhenFireModeFlagIsDisabledThenCurrentBrowsingModeRevertsToNormal() throws {
+    func testWhenFireModeResolvedAtLaunchThenMidSessionFlagChangeDoesNotAffectBrowsingMode() throws {
         let tabsModel = TabsModel(desktop: false)
         let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.fireMode]
         let manager = try makeManager(tabsModel, featureFlagger: flagger)
 
-        // Fire mode enabled
-        flagger.enabledFeatureFlags = [.fireMode]
-        
-        // Default value is normal
-        XCTAssertEqual(manager.currentBrowsingMode, .normal)
-        
-        // Setting mode with flag enabled
         manager.setBrowsingMode(.fire)
-
-        // Mode updated
         XCTAssertEqual(manager.currentBrowsingMode, .fire)
 
-        // Disabling fire mode
+        // Simulate the feature flag source changing mid-session;
+        // the resolved value in UserDefaults should remain unchanged.
         flagger.enabledFeatureFlags = []
-        
-        // Mode reverts back to normal
-        XCTAssertEqual(manager.currentBrowsingMode, .normal)
+
+        XCTAssertEqual(manager.currentBrowsingMode, .fire,
+                       "Browsing mode should remain .fire because the capability was resolved at launch")
     }
 
     // MARK: - Fire Mode Zero Tabs
@@ -274,11 +272,12 @@ final class TabManagerTests: XCTestCase {
                      historyManager: MockHistoryManager = MockHistoryManager(),
                      featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
                      launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager()) throws -> TabManager {
+        FireModeCapability.resolve(using: featureFlagger)
         let tabsPersistence = TabsModelPersistence(normalStore: MockKeyValueFileStore(),
                                                    fireStore: MockKeyValueFileStore(),
                                                    legacyStore: MockKeyValueStore())
         let fireModel = fireModel ?? TabsModel(tabs: [], desktop: false, mode: .fire)
-        let modelProvider = TabsModelProvider(normalTabsModel: model, fireModeTabsModel: fireModel, persistence: tabsPersistence, featureFlagger: featureFlagger)
+        let modelProvider = TabsModelProvider(normalTabsModel: model, fireModeTabsModel: fireModel, persistence: tabsPersistence)
         return TabManager(tabsModelProvider: modelProvider,
                           previewsSource: previewsSource,
                           interactionStateSource: TabInteractionStateDiskSource(),

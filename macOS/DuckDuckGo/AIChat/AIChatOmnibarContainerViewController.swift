@@ -63,7 +63,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let attachmentsLeadingInset: CGFloat = 13
         static let attachmentsBottomSpacing: CGFloat = 16
         static let attachmentsRowHeight: CGFloat = AIChatImageAttachmentThumbnailView.totalHeight
-        static let maxAttachments: Int = 3
+        static let attachmentsErrorHeight: CGFloat = 18
+        static let attachmentsDisplayCap: Int = AIChatImageAttachmentsContainerView.maxAttachments + 1
         static let suggestionsBottomPadding: CGFloat = 4
     }
 
@@ -73,8 +74,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let containerView = HitTestableContainerView()
     private let submitButton = MouseOverButton()
     private let imageUploadButton = AIChatOmnibarToolButton()
+    private let toolsButton = AIChatOmnibarToolButton()
+    private let imageGenActiveButton = AIChatOmnibarToolButton()
+    private let webSearchActiveButton = AIChatOmnibarToolButton()
     private let modelPickerButton = AIChatModelPickerButton()
     private let attachmentsContainerView = AIChatImageAttachmentsContainerView()
+
+    private let attachmentsErrorLabel: NSTextField = {
+        let label = NSTextField(labelWithString: UserText.aiChatAttachmentsLimitError)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 11)
+        label.textColor = .systemRed
+        label.isHidden = true
+        return label
+    }()
 
     /// Suggestions view - always in hierarchy, height is 0 when no suggestions
     private let suggestionsView = AIChatSuggestionsView()
@@ -97,9 +110,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var modelsCancellable: AnyCancellable?
     private var windowFrameObserver: AnyCancellable?
     private var viewBoundsObserver: AnyCancellable?
+    private var imageGenModeCancellable: AnyCancellable?
+    private var toolsLeadingToUploadButton: NSLayoutConstraint?
+    private var toolsLeadingToContainer: NSLayoutConstraint?
     private lazy var historyCleaner: HistoryCleaning = HistoryCleaner(
         featureFlagger: NSApp.delegateTyped.featureFlagger,
-        privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager
+        privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
+        nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
+        featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: NSApp.delegateTyped.featureFlagger)
     )
 
     /// Current suggestions height - cached to avoid recalculation
@@ -113,11 +131,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     // MARK: - Tab Navigation Callbacks
 
-    /// Called when the image upload button receives a Tab key press. Wire this to advance focus.
-    var onImageUploadButtonTabPressed: (() -> Void)?
+    /// Called when a tool button receives a Tab key press. Wire this to advance focus to the next visible button.
+    var onToolButtonTabPressed: (() -> Void)?
 
-    /// Called when the model picker button receives a Tab key press. Wire this to advance focus.
-    var onModelPickerButtonTabPressed: (() -> Void)?
+    /// Ordered list of focusable tool buttons. Tab cycles through visible/enabled buttons in this order.
+    private var focusableToolButtons: [AIChatOmnibarToolButton] {
+        [imageUploadButton, toolsButton, imageGenActiveButton, webSearchActiveButton]
+    }
 
     var isImageUploadButtonAvailableForFocus: Bool {
         !imageUploadButton.isHidden && imageUploadButton.isEnabled
@@ -127,19 +147,50 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         !modelPickerButton.isHidden
     }
 
-    func makeImageUploadButtonFirstResponder() {
-        view.window?.makeFirstResponder(imageUploadButton)
+    /// Returns the first visible and enabled tool button available for focus.
+    func firstAvailableToolButtonForFocus() -> AIChatOmnibarToolButton? {
+        focusableToolButtons.first { !$0.isHidden && $0.isEnabled }
+    }
+
+    func makeFirstAvailableToolButtonFirstResponder() {
+        if let button = firstAvailableToolButtonForFocus() {
+            view.window?.makeFirstResponder(button)
+        }
     }
 
     func makeModelPickerButtonFirstResponder() {
         view.window?.makeFirstResponder(modelPickerButton)
     }
 
+    /// Advances focus to the next tool button after the given one, or to model picker, or back to text view.
+    private func advanceFocusAfter(_ button: AIChatOmnibarToolButton) {
+        let buttons = focusableToolButtons
+        guard let index = buttons.firstIndex(of: button) else {
+            onToolButtonTabPressed?()
+            return
+        }
+        // Find next visible button after current
+        for nextButton in buttons[(index + 1)...] where !nextButton.isHidden && nextButton.isEnabled {
+            view.window?.makeFirstResponder(nextButton)
+            return
+        }
+        // No more tool buttons — try model picker, then text view
+        if isModelPickerButtonAvailableForFocus {
+            makeModelPickerButtonFirstResponder()
+        } else {
+            onToolButtonTabPressed?()
+        }
+    }
+
     /// Extra height needed beyond text and suggestions for dynamic content like attachments.
     /// This must be added to the container height calculation by the parent.
     var additionalContentHeight: CGFloat {
-        if omnibarController.isOmnibarToolsEnabled && !attachmentsContainerView.attachments.isEmpty {
-            return Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing
+        if (omnibarController.isOmnibarToolsEnabled || !imageUploadButton.isHidden) && !attachmentsContainerView.isHidden && !attachmentsContainerView.attachments.isEmpty {
+            var height = Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing
+            if attachmentsContainerView.hasExcessAttachments {
+                height += Constants.attachmentsErrorHeight
+            }
+            return height
         }
         return 0
     }
@@ -152,13 +203,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // Add bottom padding when there are suggestions
             height += Constants.suggestionsBottomPadding
         }
-        if omnibarController.isOmnibarToolsEnabled {
+        if omnibarController.isOmnibarToolsEnabled || !imageUploadButton.isHidden {
             // Add tool buttons area: button size + spacing above suggestions
             height += Constants.toolButtonSize + Constants.toolButtonBottomInset
 
-            // Add attachments area when there are attachments
-            if !attachmentsContainerView.attachments.isEmpty {
+            // Add attachments area when there are visible attachments
+            if !attachmentsContainerView.isHidden && !attachmentsContainerView.attachments.isEmpty {
                 height += Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing
+                if attachmentsContainerView.hasExcessAttachments {
+                    height += Constants.attachmentsErrorHeight
+                }
             }
         }
         return height
@@ -186,6 +240,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         subscribeToThemeChanges()
         subscribeToTextChanges()
         subscribeToToolsVisibilityChanges()
+        subscribeToImageGenModeChanges()
         setupAttachmentsProvider()
         subscribeToModelUpdates()
         applyThemeStyle()
@@ -227,9 +282,21 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             }
     }
 
+    private func subscribeToImageGenModeChanges() {
+        imageGenModeCancellable = omnibarController.$activeToolMode
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.updateToolButtonsVisibility(isEnabled: self.omnibarController.isOmnibarToolsEnabled)
+                self.updateImageUploadVisibility(supportsImageUpload: self.omnibarController.selectedModelSupportsImageUpload)
+            }
+    }
+
     private func updateSubmitButtonState(for text: String) {
         let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        applySubmitButtonAppearance(enabled: hasText)
+        let canSendImages = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
+        let hasBlockingExcess = canSendImages && attachmentsContainerView.hasExcessAttachments
+        applySubmitButtonAppearance(enabled: hasText && !hasBlockingExcess)
     }
 
     private func applySubmitButtonAppearance(enabled: Bool) {
@@ -248,22 +315,90 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
     }
 
+    // MARK: - Tool Button Visibility
+
+    private var shouldShowToolsButton: Bool {
+        omnibarController.isOmnibarToolsEnabled
+            && (omnibarController.isImageGenerationEnabled || omnibarController.isWebSearchEnabled)
+    }
+
+    private var shouldShowImageUpload: Bool {
+        omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
+    }
+
+    private var shouldShowAttachments: Bool {
+        shouldShowImageUpload
+    }
+
+    private var shouldShowModelPicker: Bool {
+        guard !omnibarController.isImageGenerationMode else { return false }
+        let hasContent = !omnibarController.models.isEmpty || omnibarController.cachedModelShortName != nil
+        return omnibarController.isOmnibarToolsEnabled && hasContent
+    }
+
     private func updateToolButtonsVisibility(isEnabled: Bool) {
-        imageUploadButton.isHidden = !isEnabled
-        if isEnabled {
-            imageUploadButton.isHidden = !omnibarController.selectedModelSupportsImageUpload
-            imageUploadButton.isEnabled = !attachmentsContainerView.isFull
-            let hasContent = !omnibarController.models.isEmpty || omnibarController.cachedModelShortName != nil
-            modelPickerButton.isHidden = !hasContent
-        } else {
-            modelPickerButton.isHidden = true
-        }
-        attachmentsContainerView.isHidden = !isEnabled
-        if !isEnabled {
+        toolsButton.isHidden = !shouldShowToolsButton
+        imageGenActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isImageGenerationMode
+        webSearchActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isWebSearchMode
+        imageUploadButton.isHidden = !shouldShowAttachments || !shouldShowImageUpload
+        imageUploadButton.isEnabled = !attachmentsContainerView.isFull
+        modelPickerButton.isHidden = !shouldShowModelPicker
+        toolsButton.label = omnibarController.activeToolMode != nil ? nil : UserText.aiChatToolsButtonLabel
+
+        attachmentsContainerView.isHidden = !shouldShowAttachments
+        if !shouldShowAttachments {
             attachmentsHeightConstraint?.constant = 0
         }
-        // Notify that passthrough height needs recalculation since tools area changed
+
+        updateToolsLeadingConstraint()
+        updateToolModeUI()
         onPassthroughHeightNeedsUpdate?()
+    }
+
+    /// Switches the tools button's leading constraint between chaining after the upload button
+    /// and pinning to the container edge. Deactivates first to avoid conflicts.
+    private func updateToolsLeadingConstraint() {
+        let uploadVisible = !imageUploadButton.isHidden
+        if uploadVisible {
+            toolsLeadingToContainer?.isActive = false
+            toolsLeadingToUploadButton?.isActive = true
+        } else {
+            toolsLeadingToUploadButton?.isActive = false
+            toolsLeadingToContainer?.isActive = true
+        }
+    }
+
+    private func updateToolModeUI() {
+        let isImageGenMode = omnibarController.isImageGenerationMode
+        let isWebSearchMode = omnibarController.isWebSearchMode
+
+        // Active pill styling for image gen
+        imageGenActiveButton.activeBackgroundColor = isImageGenMode
+            ? NSColor(designSystemColor: .controlsFillPrimary)
+            : nil
+        imageGenActiveButton.activeHoverBackgroundColor = isImageGenMode
+            ? NSColor(designSystemColor: .controlsFillSecondary)
+            : nil
+        imageGenActiveButton.activePressedBackgroundColor = isImageGenMode
+            ? NSColor(designSystemColor: .controlsFillTertiary)
+            : nil
+
+        // Active pill styling for web search
+        webSearchActiveButton.activeBackgroundColor = isWebSearchMode
+            ? NSColor(designSystemColor: .controlsFillPrimary)
+            : nil
+        webSearchActiveButton.activeHoverBackgroundColor = isWebSearchMode
+            ? NSColor(designSystemColor: .controlsFillSecondary)
+            : nil
+        webSearchActiveButton.activePressedBackgroundColor = isWebSearchMode
+            ? NSColor(designSystemColor: .controlsFillTertiary)
+            : nil
+
+        // Hide suggestions in image gen mode or when attachments are present
+        let suppress = shouldSuppressSuggestions
+        suggestionsView.isHidden = suppress
+        suggestionsHeight = -1
+        updateSuggestionsHeight(suppress ? 0 : lastKnownSuggestionsHeight)
     }
 
     private func applyTopClipMask() {
@@ -314,11 +449,46 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         imageUploadButton.translatesAutoresizingMaskIntoConstraints = false
         imageUploadButton.target = self
         imageUploadButton.action = #selector(imageUploadButtonClicked)
-        imageUploadButton.image = DesignSystemImages.Glyphs.Size16.image
+        imageUploadButton.image = DesignSystemImages.Glyphs.Size16.attach
         imageUploadButton.toolTip = UserText.aiChatImageUploadButtonTooltip
         imageUploadButton.setAccessibilityLabel(UserText.aiChatImageUploadButtonTooltip)
-        imageUploadButton.onTabPressed = { [weak self] in self?.onImageUploadButtonTabPressed?() }
+        imageUploadButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.imageUploadButton) }
         containerView.addSubview(imageUploadButton)
+
+        toolsButton.translatesAutoresizingMaskIntoConstraints = false
+        toolsButton.target = self
+        toolsButton.action = #selector(toolsButtonClicked)
+        toolsButton.image = DesignSystemImages.Glyphs.Size16.options
+        toolsButton.keepIconLeadingAligned = true
+        toolsButton.label = UserText.aiChatToolsButtonLabel
+        toolsButton.toolTip = UserText.aiChatToolsButtonLabel
+        toolsButton.setAccessibilityLabel(UserText.aiChatToolsButtonLabel)
+        toolsButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.toolsButton) }
+        containerView.addSubview(toolsButton)
+
+        imageGenActiveButton.translatesAutoresizingMaskIntoConstraints = false
+        imageGenActiveButton.target = self
+        imageGenActiveButton.action = #selector(imageGenActiveButtonClicked)
+        imageGenActiveButton.image = DesignSystemImages.Glyphs.Size16.image
+        imageGenActiveButton.label = UserText.aiChatImageGenButtonLabel
+        imageGenActiveButton.trailingImage = DesignSystemImages.Glyphs.Size12.closeSmall
+        imageGenActiveButton.toolTip = UserText.aiChatImageGenDeactivateTooltip
+        imageGenActiveButton.setAccessibilityLabel(UserText.aiChatImageGenDeactivateTooltip)
+        imageGenActiveButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.imageGenActiveButton) }
+        imageGenActiveButton.isHidden = true
+        containerView.addSubview(imageGenActiveButton)
+
+        webSearchActiveButton.translatesAutoresizingMaskIntoConstraints = false
+        webSearchActiveButton.target = self
+        webSearchActiveButton.action = #selector(webSearchActiveButtonClicked)
+        webSearchActiveButton.image = DesignSystemImages.Glyphs.Size16.globe
+        webSearchActiveButton.label = UserText.aiChatWebSearchButtonLabel
+        webSearchActiveButton.trailingImage = DesignSystemImages.Glyphs.Size12.closeSmall
+        webSearchActiveButton.toolTip = UserText.aiChatWebSearchDeactivateTooltip
+        webSearchActiveButton.setAccessibilityLabel(UserText.aiChatWebSearchDeactivateTooltip)
+        webSearchActiveButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.webSearchActiveButton) }
+        webSearchActiveButton.isHidden = true
+        containerView.addSubview(webSearchActiveButton)
 
         modelPickerButton.translatesAutoresizingMaskIntoConstraints = false
         modelPickerButton.target = self
@@ -326,7 +496,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.modelName = persistedModelShortName
         modelPickerButton.toolTip = UserText.aiChatModelPickerButtonTooltip
         modelPickerButton.setAccessibilityLabel(UserText.aiChatModelPickerButtonTooltip)
-        modelPickerButton.onTabPressed = { [weak self] in self?.onModelPickerButtonTabPressed?() }
+        modelPickerButton.onTabPressed = { [weak self] in self?.onToolButtonTabPressed?() }
         containerView.addSubview(modelPickerButton)
 
         attachmentsContainerView.translatesAutoresizingMaskIntoConstraints = false
@@ -340,6 +510,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             self?.resizeTasks.removeValue(forKey: id)
         }
         containerView.addSubview(attachmentsContainerView)
+        containerView.addSubview(attachmentsErrorLabel)
 
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -365,11 +536,25 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             modelPickerButton.heightAnchor.constraint(equalToConstant: Constants.modelPickerHeight),
 
             imageUploadButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset),
-            imageUploadButton.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+            imageUploadButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
             imageUploadButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+
+            toolsButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
+            toolsButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+
+            imageGenActiveButton.leadingAnchor.constraint(equalTo: toolsButton.trailingAnchor, constant: Constants.toolButtonSpacing),
+            imageGenActiveButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
+            imageGenActiveButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+
+            webSearchActiveButton.leadingAnchor.constraint(equalTo: toolsButton.trailingAnchor, constant: Constants.toolButtonSpacing),
+            webSearchActiveButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
+            webSearchActiveButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
 
             attachmentsContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.attachmentsLeadingInset),
             attachmentsContainerView.bottomAnchor.constraint(equalTo: imageUploadButton.topAnchor),
+
+            attachmentsErrorLabel.leadingAnchor.constraint(equalTo: attachmentsContainerView.leadingAnchor),
+            attachmentsErrorLabel.bottomAnchor.constraint(equalTo: attachmentsContainerView.topAnchor, constant: -2),
         ])
 
         // Attachments container height: 0 when empty, expands when attachments are added
@@ -403,9 +588,18 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             submitButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.submitButtonBottomInset),
 
             // Tool buttons sit above suggestions
+            toolsButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
+            imageGenActiveButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
+            webSearchActiveButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
             imageUploadButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
             modelPickerButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset)
         ])
+
+        // Tools button chains after image upload button, or aligns to container when upload is hidden
+        toolsLeadingToUploadButton = toolsButton.leadingAnchor.constraint(equalTo: imageUploadButton.trailingAnchor, constant: Constants.toolButtonSpacing)
+        toolsLeadingToContainer = toolsButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset)
+        toolsLeadingToUploadButton?.isActive = true
+        toolsLeadingToContainer?.isActive = false
 
         // Handle suggestion clicks
         suggestionsView.onSuggestionClicked = { [weak self] suggestion in
@@ -450,21 +644,40 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             }
         }
 
+        suggestionsView.onViewAllChatsClicked = { [weak self] in
+            self?.omnibarController.viewAllChats()
+        }
+
         // Bind to view model with height change callback
         suggestionsView.bind(to: omnibarController.suggestionsViewModel) { [weak self] newHeight in
             self?.updateSuggestionsHeight(newHeight)
         }
     }
 
-    private func updateSuggestionsHeight(_ newHeight: CGFloat) {
-        // Skip if height hasn't changed
-        guard newHeight != suggestionsHeight else { return }
+    /// The last known suggestions height before image gen mode suppressed it.
+    private var lastKnownSuggestionsHeight: CGFloat = 0
 
-        suggestionsHeight = newHeight
-        suggestionsHeightConstraint?.constant = newHeight
+    private var shouldSuppressSuggestions: Bool {
+        omnibarController.isImageGenerationMode || !attachmentsContainerView.attachments.isEmpty
+    }
+
+    private func updateSuggestionsHeight(_ newHeight: CGFloat) {
+        // Track the real height even when suppressed
+        if !shouldSuppressSuggestions {
+            lastKnownSuggestionsHeight = newHeight
+        }
+
+        // Suppress suggestions height when image generation mode is active or attachments present
+        let effectiveHeight = shouldSuppressSuggestions ? 0 : newHeight
+
+        // Skip if height hasn't changed
+        guard effectiveHeight != suggestionsHeight else { return }
+
+        suggestionsHeight = effectiveHeight
+        suggestionsHeightConstraint?.constant = effectiveHeight
 
         // Notify about height change for container resize
-        onSuggestionsHeightChanged?(newHeight)
+        onSuggestionsHeightChanged?(effectiveHeight)
     }
 
     /// Starts event monitoring. Call this when the view controller becomes visible.
@@ -528,18 +741,99 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.submit()
     }
 
+    @objc private func toolsButtonClicked() {
+        let menu = buildToolsMenu()
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: -5), in: toolsButton)
+    }
+
+    @objc private func imageGenActiveButtonClicked() {
+        PixelKit.fire(AIChatPixel.aiChatAddressBarImageGenerationDeactivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        omnibarController.toggleImageGenerationMode()
+    }
+
+    @objc private func webSearchActiveButtonClicked() {
+        PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchDeactivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        omnibarController.toggleWebSearchMode()
+    }
+
+    private func buildToolsMenu() -> NSMenu {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+
+        if omnibarController.isImageGenerationEnabled {
+            let createImageItem = NSMenuItem()
+            createImageItem.attributedTitle = toolsMenuItemAttributedTitle(
+                title: UserText.aiChatImageGenButtonLabel,
+                subtitle: UserText.aiChatImageGenToolSubtitle
+            )
+            createImageItem.image = DesignSystemImages.Glyphs.Size16.image
+            createImageItem.target = self
+            createImageItem.action = #selector(toolsMenuCreateImageClicked)
+            if omnibarController.isImageGenerationMode {
+                createImageItem.state = .on
+            }
+            menu.addItem(createImageItem)
+        }
+
+        if omnibarController.isWebSearchEnabled {
+            let webSearchItem = NSMenuItem()
+            webSearchItem.attributedTitle = toolsMenuItemAttributedTitle(
+                title: UserText.aiChatWebSearchButtonLabel,
+                subtitle: UserText.aiChatWebSearchToolSubtitle
+            )
+            webSearchItem.image = DesignSystemImages.Glyphs.Size16.globe
+            webSearchItem.target = self
+            webSearchItem.action = #selector(toolsMenuWebSearchClicked)
+            if omnibarController.isWebSearchMode {
+                webSearchItem.state = .on
+            }
+            menu.addItem(webSearchItem)
+        }
+
+        return menu
+    }
+
+    private func toolsMenuItemAttributedTitle(title: String, subtitle: String) -> NSAttributedString {
+        let result = NSMutableAttributedString()
+        result.append(NSAttributedString(string: title, attributes: [
+            .font: NSFont.systemFont(ofSize: 13, weight: .regular)
+        ]))
+        result.append(NSAttributedString(string: "\n", attributes: [
+            .font: NSFont.systemFont(ofSize: 4)
+        ]))
+        result.append(NSAttributedString(string: subtitle, attributes: [
+            .font: NSFont.systemFont(ofSize: 11),
+            .foregroundColor: NSColor.secondaryLabelColor
+        ]))
+        return result
+    }
+
+    @objc private func toolsMenuCreateImageClicked() {
+        if !omnibarController.isImageGenerationMode {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarImageGenerationActivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        }
+        omnibarController.toggleImageGenerationMode()
+    }
+
+    @objc private func toolsMenuWebSearchClicked() {
+        if !omnibarController.isWebSearchMode {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchActivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        }
+        omnibarController.toggleWebSearchMode()
+    }
+
     @objc private func imageUploadButtonClicked() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
+        panel.allowsMultipleSelection = true
         panel.allowedContentTypes = allowedContentTypes(for: omnibarController.selectedModelImageFormats)
 
         guard let window = view.window else { return }
         panel.beginSheetModal(for: window) { [weak self] response in
             guard let self, response == .OK else { return }
-            let remaining = Constants.maxAttachments - self.attachmentsContainerView.attachments.count
-            for url in panel.urls.prefix(remaining) {
+            let remaining = Constants.attachmentsDisplayCap - self.attachmentsContainerView.attachments.count
+            for url in panel.urls.prefix(max(remaining, 0)) {
                 self.addImageAttachment(from: url)
             }
         }
@@ -548,6 +842,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func allowedContentTypes(for formats: [String]) -> [UTType] {
         let types = formats.compactMap { UTType(filenameExtension: $0.lowercased()) }
         return types.isEmpty ? [.jpeg, .png, .webP] : types
+    }
+
+    /// Attempts to add an image attachment from a drag-and-drop operation.
+    /// - Returns: `true` if the image was accepted, `false` if attachments are full.
+    func addImageAttachmentFromDrop(_ url: URL) -> Bool {
+        guard attachmentsContainerView.attachments.count < Constants.attachmentsDisplayCap else { return false }
+        addImageAttachment(from: url)
+        return true
     }
 
     private func addImageAttachment(from url: URL) {
@@ -621,14 +923,33 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func updateAttachmentsLayout() {
         let hasAttachments = !attachmentsContainerView.attachments.isEmpty
+        let hasExcess = attachmentsContainerView.hasExcessAttachments
+        let isFull = attachmentsContainerView.isFull
+
+        omnibarController.hasImageAttachments = hasAttachments
+
         attachmentsHeightConstraint?.constant = hasAttachments
             ? Constants.attachmentsRowHeight + Constants.attachmentsBottomSpacing
             : 0
 
-        // Disable the upload button when at max attachments
+        attachmentsErrorLabel.isHidden = !hasExcess
+
+        // Disable the upload button when at max attachments and update tooltip
         if omnibarController.isOmnibarToolsEnabled {
-            imageUploadButton.isEnabled = !attachmentsContainerView.isFull
+            imageUploadButton.isEnabled = !isFull
+            imageUploadButton.toolTip = isFull
+                ? UserText.aiChatAttachmentsLimitError
+                : UserText.aiChatImageUploadButtonTooltip
         }
+
+        // Disable submit when too many images
+        updateSubmitButtonState(for: omnibarController.currentText)
+
+        // Suppress or restore suggestions based on attachments presence
+        let suppress = shouldSuppressSuggestions
+        suggestionsView.isHidden = suppress
+        suggestionsHeight = -1
+        updateSuggestionsHeight(suppress ? 0 : lastKnownSuggestionsHeight)
 
         onPassthroughHeightNeedsUpdate?()
     }
@@ -655,13 +976,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func subscribeToModelUpdates() {
         modelsCancellable = omnibarController.$models
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] models in
+            .sink { [weak self] _ in
                 guard let self else { return }
-                // Show or hide the picker depending on whether models are available
-                if omnibarController.isOmnibarToolsEnabled {
-                    let hasContent = !models.isEmpty || omnibarController.cachedModelShortName != nil
-                    modelPickerButton.isHidden = !hasContent
-                }
+                modelPickerButton.isHidden = !shouldShowModelPicker
                 // Refresh button label once models arrive
                 modelPickerButton.modelName = persistedModelShortName
                 // Refresh image upload visibility with updated supportsImageUpload
@@ -673,63 +990,28 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        if omnibarController.hasActiveSubscription {
-            populateSubscribedModelPickerMenu(menu)
-        } else {
-            populateFreeModelPickerMenu(menu)
+        let sections = AIChatModelSectionBuilder.buildSections(
+            models: omnibarController.models,
+            hasActiveSubscription: omnibarController.hasActiveSubscription,
+            advancedSectionHeader: UserText.aiChatModelPickerAdvancedSectionHeader,
+            basicSectionHeader: UserText.aiChatModelPickerBasicModelsSectionHeader
+        )
+
+        for (index, section) in sections.enumerated() {
+            if index > 0 {
+                menu.addItem(.separator())
+            }
+            if let header = section.header {
+                let headerItem = NSMenuItem(title: header, action: nil, keyEquivalent: "")
+                headerItem.isEnabled = false
+                menu.addItem(headerItem)
+            }
+            for model in section.items {
+                menu.addItem(menuItem(for: model))
+            }
         }
 
         return menu
-    }
-
-    /// Free user layout: accessible models first, then "Advanced Models" section with disabled premium models.
-    private func populateFreeModelPickerMenu(_ menu: NSMenu) {
-        let accessible = omnibarController.models.filter { $0.entityHasAccess }
-        let premium = omnibarController.models.filter { !$0.entityHasAccess }
-
-        for model in accessible {
-            menu.addItem(menuItem(for: model))
-        }
-
-        if !premium.isEmpty {
-            menu.addItem(.separator())
-
-            let header = NSMenuItem(title: UserText.aiChatModelPickerAdvancedSectionHeader, action: nil, keyEquivalent: "")
-            header.isEnabled = false
-            menu.addItem(header)
-
-            for model in premium {
-                menu.addItem(menuItem(for: model))
-            }
-        }
-    }
-
-    /// Subscribed user layout: "Advanced Models" section first, then "Basic Models" section with free-tier models.
-    private func populateSubscribedModelPickerMenu(_ menu: NSMenu) {
-        let basic = omnibarController.models.filter { $0.accessTier.contains(AIChatUserTier.free.rawValue) }
-        let advanced = omnibarController.models.filter { !$0.accessTier.contains(AIChatUserTier.free.rawValue) }
-
-        if !advanced.isEmpty {
-            let header = NSMenuItem(title: UserText.aiChatModelPickerAdvancedModelsSectionHeader, action: nil, keyEquivalent: "")
-            header.isEnabled = false
-            menu.addItem(header)
-
-            for model in advanced {
-                menu.addItem(menuItem(for: model))
-            }
-        }
-
-        if !basic.isEmpty {
-            menu.addItem(.separator())
-
-            let header = NSMenuItem(title: UserText.aiChatModelPickerBasicModelsSectionHeader, action: nil, keyEquivalent: "")
-            header.isEnabled = false
-            menu.addItem(header)
-
-            for model in basic {
-                menu.addItem(menuItem(for: model))
-            }
-        }
     }
 
     private func menuItem(for model: AIChatModel) -> NSMenuItem {
@@ -755,10 +1037,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func updateImageUploadVisibility(supportsImageUpload: Bool) {
         guard omnibarController.isOmnibarToolsEnabled else { return }
 
-        if !supportsImageUpload {
-            clearAttachments()
+        let showUpload = supportsImageUpload || omnibarController.isImageGenerationMode
+        imageUploadButton.isHidden = !showUpload
+        attachmentsContainerView.isHidden = !showUpload
+        if !showUpload {
+            attachmentsHeightConstraint?.constant = 0
+            attachmentsErrorLabel.isHidden = true
+        } else {
+            updateAttachmentsLayout()
         }
-        imageUploadButton.isHidden = !supportsImageUpload
+
+        updateSubmitButtonState(for: omnibarController.currentText)
+        updateToolsLeadingConstraint()
+        onPassthroughHeightNeedsUpdate?()
     }
 
     private func applyTheme(theme: ThemeStyleProviding) {
@@ -778,7 +1069,18 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         applySubmitButtonAppearance(enabled: !omnibarController.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
         let toolButtonTintColor = NSColor(designSystemColor: .textPrimary)
+        toolsButton.tintColor = toolButtonTintColor
+        toolsButton.hoverBackgroundColor = .buttonMouseOver
+        toolsButton.pressedBackgroundColor = .buttonMouseDown
+        imageGenActiveButton.tintColor = toolButtonTintColor
+        imageGenActiveButton.hoverBackgroundColor = .buttonMouseOver
+        imageGenActiveButton.pressedBackgroundColor = .buttonMouseDown
+        webSearchActiveButton.tintColor = toolButtonTintColor
+        webSearchActiveButton.hoverBackgroundColor = .buttonMouseOver
+        webSearchActiveButton.pressedBackgroundColor = .buttonMouseDown
         imageUploadButton.tintColor = toolButtonTintColor
+        imageUploadButton.hoverBackgroundColor = .buttonMouseOver
+        imageUploadButton.pressedBackgroundColor = .buttonMouseDown
         modelPickerButton.tintColor = toolButtonTintColor
 
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius

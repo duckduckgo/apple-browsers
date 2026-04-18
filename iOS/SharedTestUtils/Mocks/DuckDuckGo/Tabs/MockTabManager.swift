@@ -101,7 +101,17 @@ class MockTabManager: TabManaging {
         closeTabAndNavigateToHomepageCalledWith = tab
         closeTabAndNavigateToHomepageClearTabHistory = clearTabHistory
     }
-    
+
+    private(set) var closeTabAndOpenNewChatCalled = false
+    private(set) var closeTabAndOpenNewChatCalledWith: Tab?
+    private(set) var closeTabAndOpenNewChatClearTabHistory: Bool?
+
+    func closeTabAndOpenNewChat(_ tab: Tab, clearTabHistory: Bool) {
+        closeTabAndOpenNewChatCalled = true
+        closeTabAndOpenNewChatCalledWith = tab
+        closeTabAndOpenNewChatClearTabHistory = clearTabHistory
+    }
+
     private(set) var setBrowsingModeCalled = false
     private(set) var setBrowsingModeCalledWith: BrowsingMode?
     

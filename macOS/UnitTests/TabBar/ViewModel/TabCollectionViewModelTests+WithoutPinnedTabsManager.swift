@@ -46,8 +46,8 @@ extension TabCollectionViewModelTests {
     func test_WithoutPinnedTabsManager_WhenTabViewModelIsCalledThenAppropriateTabViewModelIsReturned() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
 
-        XCTAssertEqual(tabCollectionViewModel.tabViewModel(at: 0)?.tab,
-                       tabCollectionViewModel.tabCollection.tabs[0])
+        XCTAssertEqual(tabCollectionViewModel.tabs[0],
+                       tabCollectionViewModel.tabViewModel(at: 0).map { .loaded($0.tab) })
     }
 
     @MainActor
@@ -65,7 +65,7 @@ extension TabCollectionViewModelTests {
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection())
 
         XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1)
-        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs[0].content, .newtab)
+        XCTAssertEqual(tabCollectionViewModel.tabs[0].content, .newtab)
     }
 
     // MARK: - Select
@@ -369,25 +369,25 @@ extension TabCollectionViewModelTests {
     @MainActor
     func test_WithoutPinnedTabsManager_WhenSelectedTabIsRemovedThenNextItemWithLowerIndexIsSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let firstTab = tabCollectionViewModel.tabCollection.tabs[0]
+        let firstTab = tabCollectionViewModel.tabs[0]
 
         tabCollectionViewModel.appendNewTab()
         tabCollectionViewModel.remove(at: .unpinned(1))
 
-        XCTAssertEqual(firstTab, tabCollectionViewModel.selectedTabViewModel?.tab)
+        XCTAssertEqual(firstTab, tabCollectionViewModel.selectedTabViewModel.map { .loaded($0.tab) })
     }
 
     @MainActor
     func test_WithoutPinnedTabsManager_WhenAllOtherTabsAreRemovedThenRemainedIsAlsoSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let firstTab = tabCollectionViewModel.tabCollection.tabs[0]
+        let firstTab = tabCollectionViewModel.tabs[0]
 
         tabCollectionViewModel.appendNewTab()
         tabCollectionViewModel.appendNewTab()
 
         tabCollectionViewModel.removeAllTabs(except: 0)
 
-        XCTAssertEqual(firstTab, tabCollectionViewModel.selectedTabViewModel?.tab)
+        XCTAssertEqual(firstTab, tabCollectionViewModel.selectedTabViewModel.map { .loaded($0.tab) })
     }
 
     @MainActor
@@ -417,7 +417,7 @@ extension TabCollectionViewModelTests {
     @MainActor
     func test_WithoutPinnedTabsManager_WhenChildTabIsInsertedAndRemoved_ThenOtherChildIsSelectedBackIfPresent() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let parentTab = tabCollectionViewModel.tabCollection.tabs[0]
+        guard case .loaded(let parentTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
         let childTab1 = Tab(parentTab: parentTab)
         tabCollectionViewModel.append(tab: childTab1, selected: false)
         let childTab2 = Tab(parentTab: parentTab)
@@ -431,7 +431,7 @@ extension TabCollectionViewModelTests {
     @MainActor
     func test_WithoutPinnedTabsManager_WhenChildTabOnLeftHasTheSameParentAndTabOnRightDont_ThenTabOnLeftIsSelectedAfterRemoval() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let parentTab = tabCollectionViewModel.tabCollection.tabs[0]
+        guard case .loaded(let parentTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
         let childTab1 = Tab(parentTab: parentTab)
         tabCollectionViewModel.append(tab: childTab1, selected: false)
         let childTab2 = Tab(parentTab: parentTab)
@@ -455,7 +455,7 @@ extension TabCollectionViewModelTests {
 
         _ = tabCollectionViewModel.removeSelected()
 
-        XCTAssertFalse(tabCollectionViewModel.tabCollection.tabs.contains(selectedTab!))
+        XCTAssertFalse(tabCollectionViewModel.tabCollection.contains(tab: selectedTab!))
     }
 
     // MARK: - Duplicate

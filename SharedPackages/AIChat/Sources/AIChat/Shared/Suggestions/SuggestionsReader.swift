@@ -80,18 +80,39 @@ public final class SuggestionsReader: SuggestionsReading {
 
     private let featureFlagger: FeatureFlagger
     private let privacyConfig: PrivacyConfigurationManaging
+    private let nativeStorageHandler: DuckAiNativeStorageHandling?
+    private let localReader: LocalSuggestionsReader?
+    private let featureFlagProvider: AIChatFeatureFlagProviding?
 
     // MARK: - Initialization
 
-    public init(featureFlagger: FeatureFlagger, privacyConfig: PrivacyConfigurationManaging) {
+    /// Creates a suggestions reader that can fetch from native local storage or a headless webview.
+    /// When `nativeStorageHandler` and `featureFlagProvider` are provided and the feature flag is enabled,
+    /// suggestions are read directly from the local database. Otherwise the webview path is used.
+    public init(
+        featureFlagger: FeatureFlagger,
+        privacyConfig: PrivacyConfigurationManaging,
+        nativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+        featureFlagProvider: AIChatFeatureFlagProviding? = nil
+    ) {
         self.featureFlagger = featureFlagger
         self.privacyConfig = privacyConfig
+        self.nativeStorageHandler = nativeStorageHandler
+        self.localReader = nativeStorageHandler.map { LocalSuggestionsReader(storageHandler: $0) }
+        self.featureFlagProvider = featureFlagProvider
     }
 
     // MARK: - Public API
 
     @MainActor
     public func fetchSuggestions(query: String?, maxChats: Int) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
+        // Use local storage when the flag is enabled, the handler is available, and migration is done
+        if let featureFlagProvider, featureFlagProvider.isNativeDataAccessEnabled(),
+           let nativeStorageHandler, (try? nativeStorageHandler.isMigrationDone()) == true,
+           let localReader {
+            return await localReader.fetchSuggestions(query: query, maxChats: maxChats)
+        }
+
         // Prevent re-entrant setup
         if isSettingUp {
             return .failure(ReaderError.webViewNotInitialized)

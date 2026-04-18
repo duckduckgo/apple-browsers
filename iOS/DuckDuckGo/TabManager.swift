@@ -48,6 +48,7 @@ protocol TabManaging {
     func controller(for tab: Tab) -> TabViewController?
     /// Closes the tab and navigates to homepage reusing an existing homepage or creating a new one
     @MainActor func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool)
+    @MainActor func closeTabAndOpenNewChat(_ tab: Tab, clearTabHistory: Bool)
     @MainActor func setBrowsingMode(_ mode: BrowsingMode)
 }
 
@@ -78,7 +79,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     private let tabsModelProvider: TabsModelProviding
     private var fireModeCapability: FireModeCapable {
-        FireModeCapability.create(using: featureFlagger)
+        FireModeCapability.create()
     }
     private var _currentBrowsingMode: BrowsingMode = .normal
     var currentBrowsingMode: BrowsingMode {
@@ -144,6 +145,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let launchSourceManager: LaunchSourceManaging
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private let toggleModeStorage: ToggleModeStoring
+    private let fireModePromotionEligibility: FireModePromotionCoordinating?
+    private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -187,8 +190,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          voiceSearchHelper: VoiceSearchHelperProtocol,
          launchSourceManager: LaunchSourceManaging,
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
-         toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
+         fireModePromotionEligibility: FireModePromotionCoordinating? = nil
     ) {
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.tabsModelProvider = tabsModelProvider
         self.previewsSource = previewsSource
         self.interactionStateSource = interactionStateSource
@@ -224,6 +230,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.launchSourceManager = launchSourceManager
         self.toggleModeStorage = toggleModeStorage
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
+        self.fireModePromotionEligibility = fireModePromotionEligibility
         registerForNotifications()
     }
 
@@ -245,6 +252,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
         _currentBrowsingMode = mode
         fireModeDelegate?.tabManagerDidChangeBrowsingMode(mode)
+        if mode == .fire {
+            fireModePromotionEligibility?.markFireModeVisited()
+        }
         // TODO: - Fire pixel
     }
 
@@ -312,7 +322,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               privacyStats: privacyStats,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               darkReaderFeatureSettings: darkReaderFeatureSettings,
-                                                              autoplaySettings: autoplaySettings)
+                                                              autoplaySettings: autoplaySettings,
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -423,7 +434,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               privacyStats: privacyStats,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               darkReaderFeatureSettings: darkReaderFeatureSettings,
-                                                              autoplaySettings: autoplaySettings)
+                                                              autoplaySettings: autoplaySettings,
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,
@@ -476,10 +488,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     @discardableResult
-    func select(_ tab: Tab, forcingMode: Bool = false, dismissCurrent: Bool = true, in tabsModel: TabsModelManaging? = nil) -> TabViewController? {
-        if forcingMode {
-            setBrowsingMode(tab.mode)
-        }
+    func select(_ tab: Tab, dismissCurrent: Bool = true, in tabsModel: TabsModelManaging? = nil) -> TabViewController? {
+        setBrowsingMode(tab.mode)
         let model = tabsModel ?? currentTabsModel
         if dismissCurrent {
             current()?.dismiss()
@@ -627,6 +637,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         // Close the tab and create or reuse an empty tab
         delegate?.tabDidRequestClose(tab,
                                      behavior: .createOrReuseEmptyTab,
+                                     clearTabHistory: clearTabHistory)
+    }
+    
+    @MainActor
+    func closeTabAndOpenNewChat(_ tab: Tab, clearTabHistory: Bool) {
+        // Close the tab and create or reuse an empty tab
+        delegate?.tabDidRequestClose(tab,
+                                     behavior: .createNewChat,
                                      clearTabHistory: clearTabHistory)
     }
 

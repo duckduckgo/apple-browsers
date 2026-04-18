@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 
 final class OmniBarNotificationViewModel: ObservableObject {
 
@@ -38,6 +39,7 @@ final class OmniBarNotificationViewModel: ObservableObject {
     }
 
     let animationName: String
+    let staticIconImage: UIImage?
     let eventCount: Int
     private let textGenerator: ((Int) -> String)?
 
@@ -45,8 +47,9 @@ final class OmniBarNotificationViewModel: ObservableObject {
     @Published var isOpen: Bool = false
     @Published var isAnimating: Bool = false
 
-    init(text: String, animationName: String, eventCount: Int = 0, textGenerator: ((Int) -> String)? = nil) {
+    init(text: String, animationName: String, staticIconImage: UIImage? = nil, eventCount: Int = 0, textGenerator: ((Int) -> String)? = nil) {
         self.animationName = animationName
+        self.staticIconImage = staticIconImage
         self.eventCount = eventCount
         self.textGenerator = textGenerator
 

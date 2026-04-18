@@ -133,6 +133,8 @@ extension PermissionType {
             return "notification"
         case .externalScheme:
             return "external_scheme"
+        case .autoplayPolicy:
+            return "autoplay_policy"
         }
     }
 }

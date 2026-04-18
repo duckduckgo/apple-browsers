@@ -156,6 +156,10 @@ class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
         self.onDismiss = onCompletion
         return EmptyView()
     }
+
+    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
+        AnyView(EmptyView())
+    }
 }
 
 

@@ -198,6 +198,23 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    func test_setToggleState_sameState_doesNotPublishChange() {
+        sut.setToggleState(.search)
+
+        let expectation = expectation(description: "toggleStatePublisher does not fire")
+        expectation.isInverted = true
+        sut.toggleStatePublisher
+            .dropFirst()
+            .sink { _ in
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.setToggleState(.search)
+
+        waitForExpectations(timeout: 0.1)
+    }
+
     // MARK: - isVoiceSearchEnabled
 
     func test_setVoiceEnabled_withEmptyText_updatesButtonStateToVoiceOnly() {

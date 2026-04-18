@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import ContentBlocking
 import PrivacyConfig
 import Core
@@ -28,6 +29,7 @@ final class ContentBlockingService {
     public let common: ContentBlocking
     public let updating: ContentBlockingUpdating
     public let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+    public let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     init(appSettings: AppSettings,
          contentBlocking: ContentBlocking,
@@ -36,8 +38,10 @@ final class ContentBlockingService {
          contentScopeExperimentsManager: ContentScopeExperimentsManaging,
          internalUserDecider: InternalUserDecider,
          syncErrorHandler: SyncErrorHandler,
-         webExtensionAvailability: WebExtensionAvailabilityProviding? = nil) {
+         webExtensionAvailability: WebExtensionAvailabilityProviding? = nil,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
 
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         common = contentBlocking
 
         userScriptsDependencies = DefaultScriptSourceProvider.Dependencies(appSettings: appSettings,
@@ -50,6 +54,7 @@ final class ContentBlockingService {
                                                                            syncErrorHandler: syncErrorHandler,
                                                                            webExtensionAvailability: webExtensionAvailability)
 
-        updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies)
+        updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies,
+                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler)
     }
 }

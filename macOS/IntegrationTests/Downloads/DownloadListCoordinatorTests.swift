@@ -127,7 +127,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
                                                   pixelFiring: nil,
                                                   historyProvider: MockHistoryViewDataProvider())
             let mainViewController = MainViewController(
-                tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: []), burnerMode: .init(isBurner: true)),
+                tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(), burnerMode: .init(isBurner: true)),
                 autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
                 aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()),
                 fireCoordinator: fireCoordinator
@@ -245,8 +245,8 @@ final class DownloadListCoordinatorTests: XCTestCase {
     func testWhenDownloadAddedThenDownloadItemIsPublished() async {
         setUpCoordinator()
 
-        let destURL = fm.temporaryDirectory.appendingPathComponent("test file.pdf")
-        let tempURL = fm.temporaryDirectory.appendingPathComponent("test file.duckload")
+        let destURL = self.destURL!
+        let tempURL = self.tempURL!
         let download = WKDownloadMock(url: .duckDuckGo)
         let task = WebKitDownloadTask(download: download, destination: .preset(destURL), fireWindowSession: nil)
 

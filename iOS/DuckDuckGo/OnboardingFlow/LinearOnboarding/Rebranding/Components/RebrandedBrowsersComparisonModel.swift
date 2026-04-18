@@ -89,28 +89,12 @@ struct RebrandedBrowsersComparisonModel {
     }
 
     static var features: [Feature] {
-        features(locale: .current)
-    }
-
-    // English users see an AI chat row in position 2 and the erase-data row removed,
-    // matching the logic in BrowsersComparisonModel.
-    static func features(locale: Locale) -> [Feature] {
-        if locale.languageCode?.lowercased() == "en" {
-            return [
-                Feature(type: .privateSearch, safariAvailability: .unavailable, ddgAvailability: .available),
-                Feature(type: .privateAIChat, safariAvailability: .unavailable, ddgAvailability: .available),
-                Feature(type: .blockTrackers, safariAvailability: .partial, ddgAvailability: .available),
-                Feature(type: .blockCookies, safariAvailability: .unavailable, ddgAvailability: .available),
-                Feature(type: .blockAds, safariAvailability: .unavailable, ddgAvailability: .available),
-            ]
-        }
-
         return [
             Feature(type: .privateSearch, safariAvailability: .unavailable, ddgAvailability: .available),
+            Feature(type: .privateAIChat, safariAvailability: .unavailable, ddgAvailability: .available),
             Feature(type: .blockTrackers, safariAvailability: .partial, ddgAvailability: .available),
             Feature(type: .blockCookies, safariAvailability: .unavailable, ddgAvailability: .available),
             Feature(type: .blockAds, safariAvailability: .unavailable, ddgAvailability: .available),
-            Feature(type: .eraseData, safariAvailability: .unavailable, ddgAvailability: .available),
         ]
     }
 }

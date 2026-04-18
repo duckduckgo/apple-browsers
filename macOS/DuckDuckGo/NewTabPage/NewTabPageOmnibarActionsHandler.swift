@@ -50,7 +50,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         // Check for the keyboard shortcut to open the chat
         if isShiftPressed() {
-            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab)
+            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil)
             return
         }
 
@@ -117,12 +117,12 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
     }
 
-    func submitChat(_ chat: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+    func submitChat(_ chat: String, target: NewTabPage.NewTabPageDataModel.OpenTarget, modelId: String?, images: [NewTabPage.NewTabPageDataModel.SubmitChatImage]?) {
         firePixel(NewTabPagePixel.promptSubmitted)
 
-        let nativePrompt = AIChatNativePrompt.queryPrompt(chat, autoSubmit: true)
-
-        promptHandler.setData(nativePrompt)
+        if let images, !images.isEmpty {
+            PixelKit.fire(AIChatPixel.aiChatNtpSubmitWithImage(imageCount: images.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
+        }
 
         let tabOpener = AIChatTabOpener(
             promptHandler: promptHandler,
@@ -136,6 +136,12 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
 
         tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)
+
+        // Re-set prompt after tab opener to include images and model selection
+        // (tab opener overwrites with a plain query)
+        let nativeImages = images?.map { AIChatNativePrompt.NativePromptImage(data: $0.data, format: $0.format) }
+        let nativePrompt = AIChatNativePrompt.queryPrompt(chat, autoSubmit: true, images: nativeImages, modelId: modelId)
+        promptHandler.setData(nativePrompt)
     }
 
     @MainActor
@@ -160,6 +166,22 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
 
         tabOpener.openAIChatTab(with: .existingChat(chatId: chatId), behavior: behavior)
+    }
+
+    func viewAllAiChats(target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+        PixelKit.fire(AIChatPixel.aiChatNtpViewAllChatsClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
+
+        let tabOpener = AIChatTabOpener(
+            promptHandler: promptHandler,
+            aiChatTabManaging: windowControllersManager
+        )
+
+        var behavior = linkOpenBehavior(for: target, using: tabsPreferences)
+        if isCommandPressed() {
+            behavior = .newTab(selected: isShiftPressed())
+        }
+
+        tabOpener.openNewAIChat(in: behavior)
     }
 
     private func linkOpenBehavior(for target: NewTabPageDataModel.OpenTarget, using tabsPreferences: TabsPreferences) -> LinkOpenBehavior {

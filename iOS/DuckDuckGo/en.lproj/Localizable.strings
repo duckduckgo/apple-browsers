@@ -178,6 +178,15 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Take a Photo";
 
+/* Title for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.title" = "Customize Responses";
+
+/* Subtitle for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.subtitle" = "Find current information";
+
+/* Title for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.title" = "Web Search";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Existing bookmarks will not be duplicated.";
 
@@ -1535,7 +1544,7 @@
 "duckplayer.settings.autoplay.label" = "Autoplay Videos";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Opens videos in a private theatre mode that prevents what you watch from influencing your YouTube feed.";
+"duckplayer.settings.enable-footer" = "Opens videos in theater mode that prevents what you watch from influencing your YouTube feed.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Enable Duck Player";
@@ -2512,6 +2521,9 @@ https://duckduckgo.com/mac";
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "YouTube Ad Block On";
+
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Got It";
 
@@ -2566,8 +2578,8 @@ https://duckduckgo.com/mac";
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Skip";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Hi there.\n\nReady for a faster browser that keeps you protected?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Hi there.\n\nReady for a faster browser that protects you and lets you decide when and how to use AI?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Next";
@@ -2581,11 +2593,17 @@ https://duckduckgo.com/mac";
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Settings > AI Features.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Want easy access to private AI chat?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Toggle between\nSearch and Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Let’s do it!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Search only";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Want easy access to private AI chat in the address bar?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Let’s get started!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "I’ve been here before";
@@ -2612,7 +2630,7 @@ https://duckduckgo.com/mac";
 "onboarding.rebranding.first-search-done.title" = "That’s DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ready for a faster browser that keeps you protected?";
+"onboarding.rebranding.intro.message" = "Ready for a faster browser that protects you and lets you decide when and how to use AI?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hi there.";
@@ -3033,12 +3051,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "New Tab";
-
-/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_and_duckai" = "Search & Duck.ai";
-
-/* Title for the 'Search Only' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_only" = "Search Only";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Try the new option to toggle between search and Duck.ai in the Address Bar.";

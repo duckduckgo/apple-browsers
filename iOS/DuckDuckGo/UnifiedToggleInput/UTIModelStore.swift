@@ -64,6 +64,11 @@ final class UTIModelStore {
         return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? false
     }
 
+    func selectedModelSupports(tool: AIChatRAGTool) -> Bool {
+        guard !models.isEmpty else { return false }
+        return models.first(where: { $0.id == persistedModelId })?.supportsTool(tool) ?? false
+    }
+
     private var firstAccessibleModelId: String? {
         models.first(where: { $0.entityHasAccess })?.id
     }
@@ -102,6 +107,7 @@ final class UTIModelStore {
                     provider: .from(id: remote.id, providerString: remote.provider),
                     supportsImageUpload: remote.supportsImageUpload,
                     supportedImageFormats: remote.supportsImageUpload ? ["png", "jpeg", "webp"] : [],
+                    supportedTools: remote.supportedTools.compactMap(AIChatRAGTool.init(rawValue:)),
                     entityHasAccess: remote.entityHasAccess,
                     accessTier: remote.accessTier
                 )

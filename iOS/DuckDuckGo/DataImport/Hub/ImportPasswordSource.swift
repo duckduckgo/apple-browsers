@@ -21,9 +21,9 @@ import SwiftUI
 import DesignResourcesKitIcons
 
 enum ImportPasswordSource: CaseIterable, Identifiable {
-    case passwordsApp
     case safari
     case chrome
+    case passwordsApp
     case syncFromDuckDuckGo
 
     var id: String {

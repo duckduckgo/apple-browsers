@@ -353,8 +353,10 @@ struct DataImportSummaryView: View {
                         Text(dismissButtonTitle)
                             .daxButton()
                             .foregroundStyle(Color(designSystemColor: .textPrimary))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: Metrics.buttonHeight)
+                            .lineLimit(nil)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, minHeight: Metrics.buttonHeight)
                     }
                     .buttonStyle(SecondaryButtonStyle())
 
@@ -364,8 +366,10 @@ struct DataImportSummaryView: View {
                         Text(continueButtonTitle)
                             .daxButton()
                             .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: Metrics.buttonHeight)
+                            .lineLimit(nil)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, minHeight: Metrics.buttonHeight)
                     }
                     .buttonStyle(PrimaryButtonStyle())
                 }

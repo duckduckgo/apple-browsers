@@ -1,0 +1,29 @@
+{
+    "m_mac_tab_suspension": {
+        "description": "Sent after tab suspension completes in response to a trigger event. Reports the number of tabs suspended and estimated memory reclaimed.",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "trigger",
+                "type": "string",
+                "enum": ["critical_memory_pressure"],
+                "description": "What triggered the tab suspension"
+            },
+            {
+                "key": "tabs_suspended",
+                "type": "number",
+                "enum": [0, 1, 2, 4, 7, 11, 21, 51],
+                "description": "Number of tabs suspended, bucketed"
+            },
+            {
+                "key": "memory_reclaimed_mb",
+                "type": "number",
+                "enum": [0, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536],
+                "description": "Estimated memory reclaimed in MB, bucketed"
+            }
+        ]
+    }
+}

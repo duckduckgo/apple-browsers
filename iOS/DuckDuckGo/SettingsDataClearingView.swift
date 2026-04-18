@@ -41,13 +41,11 @@ struct SettingsDataClearingView: View {
     var body: some View {
         List {
             // Header section
-            if viewModel.newUIEnabled {
-                let description = SettingsDescription(image: DesignSystemImages.Color.Size128.fire,
-                                                      title: UserText.dataClearing,
-                                                      status: nil,
-                                                      explanation: UserText.settingsDataClearingDescription)
-                SettingsDescriptionView(content: description)
-            }
+            let description = SettingsDescription(image: DesignSystemImages.Color.Size128.fire,
+                                                  title: UserText.dataClearing,
+                                                  status: nil,
+                                                  explanation: UserText.settingsDataClearingDescription)
+            SettingsDescriptionView(content: description)
 
             Section {
                 // Fire Button Animation
@@ -56,7 +54,7 @@ struct SettingsDataClearingView: View {
                                         selectedOption: viewModel.fireButtonAnimationBinding)
             }
             
-            if viewModel.showAIChatsToggle && viewModel.newUIEnabled {
+            if viewModel.showAIChatsToggle {
                 aiChatsToggleSection
             }
 
@@ -75,10 +73,6 @@ struct SettingsDataClearingView: View {
                                   disclosureIndicator: true,
                                   isButton: true)
             }
-
-            if viewModel.showAIChatsToggle && !viewModel.newUIEnabled {
-                aiChatsToggleSection
-            }
                 
             Section {
                 SettingsCellView(action: {
@@ -96,10 +90,6 @@ struct SettingsDataClearingView: View {
                         self.clearButtonFrame = newFrame
                 }
                 .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
-            } footer: {
-                if !viewModel.newUIEnabled {
-                    Text(viewModel.footnoteText)
-                }
             }
         }
         .applySettingsListModifiers(title: UserText.dataClearing,

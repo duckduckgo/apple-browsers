@@ -82,8 +82,10 @@ final class MainCoordinator {
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var isSyncingEmbeddedExtensions = false
     private var darkReaderCancellables = Set<AnyCancellable>()
+    private var youTubeAdBlockingCancellable: AnyCancellable?
     private var webExtensionLoadTask: Task<Void, Never>?
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
+    private let keyValueStore: ThrowingKeyValueStoring
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -120,19 +122,24 @@ final class MainCoordinator {
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.keyValueStore = keyValueStore
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
                                                                       privacyConfigurationManager: privacyConfigurationManager)
         self.modalPromptCoordinationService = modalPromptCoordinationService
         self.wideEvent = wideEvent
         self.voiceSessionStateManager = VoiceSessionStateManager()
         self.voiceShortcutFeature = DuckAIVoiceShortcutFeature(featureFlagger: featureFlagger)
+        FireModeCapability.resolve(using: featureFlagger)
+        let fireModeCapability = FireModeCapability.create()
+        let fireModePromotionsCoordinator = FireModePromotionsCoordinator(fireModeCapability: fireModeCapability)
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
+                                                          fireModePromotionEligibility: fireModePromotionsCoordinator,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
-        let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence, featureFlagger: featureFlagger)
+        let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
         let historyManager = try Self.makeHistoryManager(tabsModel: tabsModelProvider.aggregateTabsModel)
         reportingService.subscriptionDataReporter.injectTabsModel(tabsModelProvider.aggregateTabsModel)
         let daxDialogsFactory = ContextualDaxDialogsProvider(featureFlagger: featureFlagger,
@@ -185,7 +192,9 @@ final class MainCoordinator {
                                 voiceSearchHelper: voiceSearchHelper,
                                 launchSourceManager: launchSourceManager,
                                 darkReaderFeatureSettings: darkReaderFeatureSettings,
-                                toggleModeStorage: toggleModeStorage)
+                                duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
+                                toggleModeStorage: toggleModeStorage,
+                                fireModePromotionEligibility: fireModePromotionsCoordinator)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -201,6 +210,7 @@ final class MainCoordinator {
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         privacyStats: privacyStats,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner,
+                                        duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                         wideEvent: wideEvent)
         let syncAutoRestoreHandler = SyncAutoRestoreHandler(
             decisionManager: syncAutoRestoreDecisionManager,
@@ -221,6 +231,7 @@ final class MainCoordinator {
                                         syncDataProviders: syncService.syncDataProviders,
                                         userScriptsDependencies: contentBlockingService.userScriptsDependencies,
                                         contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
+                                        duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
                                         tabManager: tabManager,
@@ -260,7 +271,8 @@ final class MainCoordinator {
                                         privacyStats: privacyStats,
                                         whatsNewRepository: whatsNewRepository,
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
-                                        toggleModeStorage: toggleModeStorage)
+                                        toggleModeStorage: toggleModeStorage,
+                                        fireModePromotionEligibility: fireModePromotionsCoordinator)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
@@ -306,10 +318,27 @@ final class MainCoordinator {
             .removeDuplicates()
             .eraseToAnyPublisher()
 
+        let adBlockingExtensionPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.adBlockingExtension)
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+
+        youTubeAdBlockingCancellable = NotificationCenter.default
+            .publisher(for: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification)
+            .sink { [weak self] _ in
+                guard #available(iOS 18.4, *) else { return }
+                Task { @MainActor in
+                    await self?.syncEmbeddedExtensions()
+                }
+            }
+
         webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
             featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
+            adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
             onFeatureFlagEnabled: { [weak self] in
                 self?.initializeWebExtensions()
             },
@@ -317,6 +346,9 @@ final class MainCoordinator {
                 self?.clearWebExtensionReferences()
             },
             onEmbeddedExtensionFlagEnabled: { [weak self] in
+                await self?.syncEmbeddedExtensions()
+            },
+            onAdBlockingExtensionFlagEnabled: { [weak self] in
                 await self?.syncEmbeddedExtensions()
             }
         )
@@ -385,6 +417,7 @@ final class MainCoordinator {
             privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
             apiService: DefaultAPIService(),
             baseDirectory: scriptletsDirectory,
+            pixelFiring: iOSWebExtensionPixelFiring(),
             isProduction: !isDebugBuild
         )
     }
@@ -403,6 +436,9 @@ final class MainCoordinator {
         }
         if darkReaderFeatureSettings.isForceDarkModeEnabled == true {
             enabledTypes.insert(.darkReader)
+        }
+        if controller.adBlockingAvailability.isEnabled {
+            enabledTypes.insert(.adBlockingExtension)
         }
         await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
     }
@@ -433,7 +469,6 @@ final class MainCoordinator {
 
     private static func prepareTabsModel(previewsSource: TabPreviewsSource = DefaultTabPreviewsSource(),
                                          tabsPersistence: TabsModelPersisting,
-                                         featureFlagger: FeatureFlagger,
                                          appSettings: AppSettings = AppDependencyProvider.shared.appSettings) throws -> TabsModelProviding {
         let isPadDevice = UIDevice.current.userInterfaceIdiom == .pad
         let normalModel: TabsModel
@@ -454,8 +489,7 @@ final class MainCoordinator {
         }
         return TabsModelProvider(normalTabsModel: normalModel,
                                  fireModeTabsModel: fireModel,
-                                 persistence: tabsPersistence,
-                                 featureFlagger: featureFlagger)
+                                 persistence: tabsPersistence)
     }
 
     private static func makeTextZoomCoordinatorProvider() -> TextZoomCoordinatorProvider {
@@ -504,6 +538,8 @@ final class MainCoordinator {
         controller.showBars()
         controller.onForeground()
 
+        fireDailyAdBlockingPixel()
+
         if #available(iOS 18.4, *) {
             webExtensionEventsCoordinator?.didFocusWindow()
         }
@@ -518,6 +554,14 @@ final class MainCoordinator {
 
     private func resetAppStartTime() {
         controller.appDidFinishLaunchingStartTime = nil
+    }
+
+    private func fireDailyAdBlockingPixel() {
+        let isEnabled = controller.adBlockingAvailability.isEnabled
+        DailyPixel.fire(
+            pixel: .webExtensionDailyAdBlockingState,
+            withAdditionalParameters: ["is_enabled": isEnabled ? "true" : "false"]
+        )
     }
 
 }

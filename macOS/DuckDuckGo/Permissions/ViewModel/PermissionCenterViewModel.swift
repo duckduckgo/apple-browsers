@@ -139,6 +139,30 @@ enum PopupDecision: Hashable {
 
 }
 
+/// Autoplay decision options for the Permission Center dropdown
+enum AutoplayDecision: Hashable {
+    case allowAll
+    case audioMuted
+    case blockAll
+
+    init(_ blockingMode: AutoplayBlockingMode) {
+        switch blockingMode {
+        case .allowAll: self = .allowAll
+        case .blockAudio: self = .audioMuted
+        case .blockAll: self = .blockAll
+        }
+    }
+
+    var permissionDecision: PersistedPermissionDecision {
+        /// # Note: Autoplay Policy has 3x states. We explicitly remap `ask` > `allowWithSound`
+        switch self {
+        case .allowAll: return .allow
+        case .audioMuted: return .ask
+        case .blockAll: return .deny
+        }
+    }
+}
+
 /// ViewModel for the Permission Center popover
 final class PermissionCenterViewModel: ObservableObject {
 
@@ -153,6 +177,7 @@ final class PermissionCenterViewModel: ObservableObject {
 
     private let permissionManager: PermissionManagerProtocol
     private let systemPermissionManager: SystemPermissionManagerProtocol
+    private let autoplayPreferences: AutoplayPreferences
     private let featureFlagger: FeatureFlagger
     private var usedPermissions: Permissions
     private let usedPermissionsPublisher: AnyPublisher<Permissions, Never>?
@@ -180,12 +205,16 @@ final class PermissionCenterViewModel: ObservableObject {
     /// Whether a page-initiated popup was opened (auto-allowed due to "Always Allow" setting)
     private let pageInitiatedPopupOpened: Bool
 
+    /// Whether the Autoplay Policy permission must be inserted(or not)
+    private let displaysAutoplayPolicy: Bool
+
     init(
         domain: String,
         usedPermissions: Permissions,
         usedPermissionsPublisher: AnyPublisher<Permissions, Never>? = nil,
         popupQueries: [PermissionAuthorizationQuery] = [],
         permissionManager: PermissionManagerProtocol,
+        autoplayPreferences: AutoplayPreferences,
         featureFlagger: FeatureFlagger,
         removePermission: @escaping (PermissionType) -> Void,
         dismissPopover: @escaping () -> Void,
@@ -198,6 +227,7 @@ final class PermissionCenterViewModel: ObservableObject {
         setPermissionsNeedReload: (() -> Void)? = nil,
         hasTemporaryPopupAllowance: Bool = false,
         pageInitiatedPopupOpened: Bool = false,
+        displaysAutoplayPolicy: Bool = false,
         permissionsNeedReload: Bool = false,
         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()
     ) {
@@ -206,6 +236,7 @@ final class PermissionCenterViewModel: ObservableObject {
         self.usedPermissionsPublisher = usedPermissionsPublisher
         self.popupQueries = popupQueries
         self.permissionManager = permissionManager
+        self.autoplayPreferences = autoplayPreferences
         self.featureFlagger = featureFlagger
         self.removePermissionFromTab = removePermission
         self.dismissPopover = dismissPopover
@@ -218,6 +249,7 @@ final class PermissionCenterViewModel: ObservableObject {
         self.setPermissionsNeedReload = setPermissionsNeedReload
         self.hasTemporaryPopupAllowance = hasTemporaryPopupAllowance
         self.pageInitiatedPopupOpened = pageInitiatedPopupOpened
+        self.displaysAutoplayPolicy = displaysAutoplayPolicy
         self.systemPermissionManager = systemPermissionManager
         self.showReloadBanner = permissionsNeedReload
 
@@ -350,6 +382,43 @@ final class PermissionCenterViewModel: ObservableObject {
         }
     }
 
+    /// Updates the autoplay decision for the current domain
+    func setAutoplayDecision(_ autoplayDecision: AutoplayDecision) {
+        let updatedDecision = autoplayDecision.permissionDecision
+        let previousDecision = permissionManager.permission(forDomain: domain, permissionType: .autoplayPolicy)
+        let wasAlreadyPersisted = permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: .autoplayPolicy)
+
+        guard previousDecision != updatedDecision || !wasAlreadyPersisted else { return }
+
+        permissionManager.setPermission(updatedDecision, forDomain: domain, permissionType: .autoplayPolicy)
+
+        // Update the item's decision in the list
+        if let index = permissionItems.firstIndex(where: { $0.permissionType == .autoplayPolicy }) {
+            permissionItems[index].decision = updatedDecision
+        }
+
+        markReloadNeeded()
+    }
+
+    /// Returns the current autoplay decision based on whether a per-site override is persisted
+    func currentAutoplayDecision() -> AutoplayDecision {
+        guard permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: .autoplayPolicy) else {
+            return AutoplayDecision(autoplayPreferences.autoplayBlockingMode)
+        }
+
+        let decision = permissionManager.permission(forDomain: domain, permissionType: .autoplayPolicy)
+        switch decision {
+        case .allow: return .allowAll
+        case .ask: return .audioMuted
+        case .deny: return .blockAll
+        }
+    }
+
+    /// Indicates if there is an Autoplay Policy set for the current domain
+    func allowsAutoplayPolicyRemoval() -> Bool {
+        permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: .autoplayPolicy)
+    }
+
     /// Opens a specific blocked popup
     func openBlockedPopup(_ popup: BlockedPopup) {
         openPopup?(popup.query)
@@ -422,6 +491,13 @@ final class PermissionCenterViewModel: ObservableObject {
            !otherPermissions.contains(.popups),
            !removedPermissions.contains(.popups) {
             otherPermissions.append(.popups)
+        }
+
+        // Always include autoplay policy when feature flag is on
+        if displaysAutoplayPolicy,
+           !otherPermissions.contains(.autoplayPolicy),
+           !removedPermissions.contains(.autoplayPolicy) {
+            otherPermissions.append(.autoplayPolicy)
         }
 
         return (externalSchemePermissions, otherPermissions)

@@ -62,14 +62,18 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
          featureDiscovery: FeatureDiscovery,
          notificationCenter: NotificationCenter = .default,
          pixelKit: PixelKit? = PixelKit.shared,
-         privacyConfig: PrivacyConfigurationManaging) {
+         privacyConfig: PrivacyConfigurationManaging,
+         nativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.featureFlagger = featureFlagger
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.notificationCenter = notificationCenter
         self.pixelKit = pixelKit
         aiChatWasUsedBefore = featureDiscovery.wasUsedBefore(.aiChat)
 
-        self.historyCleaner = HistoryCleaner(featureFlagger: featureFlagger, privacyConfig: privacyConfig)
+        self.historyCleaner = HistoryCleaner(featureFlagger: featureFlagger,
+                                            privacyConfig: privacyConfig,
+                                            nativeStorageHandler: nativeStorageHandler,
+                                            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
         self.dataClearingPixelsReporter = .init(pixelFiring: self.pixelKit)
         subscribeToChanges()
     }

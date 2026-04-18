@@ -1405,7 +1405,7 @@ extension MainViewController {
     }
 
     @objc func bookmarkAllOpenTabs(_ sender: Any) {
-        let websitesInfo = tabCollectionViewModel.tabs.compactMap(WebsiteInfo.init)
+        let websitesInfo = tabCollectionViewModel.tabCollection.tabs.compactMap(WebsiteInfo.init)
         BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo, bookmarkManager: bookmarkManager).show()
     }
 
@@ -1592,12 +1592,32 @@ extension MainViewController {
 
     // MARK: - Debug
 
+    private static let debugTabURLs: [URL] = [
+        .duckDuckGo,
+        URL(string: "https://www.apple.com")!,
+        URL(string: "https://www.microsoft.com")!,
+        URL(string: "https://www.google.com")!,
+        URL(string: "https://www.nasa.gov")!,
+        URL(string: "https://github.com/")!,
+    ]
+
     @objc func addDebugTabs(_ sender: AnyObject) {
         let numberOfTabs = sender.representedObject as? Int ?? 1
-        (1...numberOfTabs).forEach { _ in
-            let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui))
-            tabCollectionViewModel.append(tab: tab)
+        let urls = Self.debugTabURLs
+        (0..<numberOfTabs).forEach { i in
+            let url = urls[i % urls.count]
+            let unloaded = UnloadedTab(content: .url(url, credential: nil, source: .ui),
+                                         title: url.host ?? url.absoluteString,
+                                         burnerMode: tabCollectionViewModel.burnerMode)
+            tabCollectionViewModel.tabCollection.append(tab: .unloaded(unloaded))
         }
+        // Notify the delegate so the collection view reloads before we select
+        tabCollectionViewModel.delegate?.tabCollectionViewModelDidMultipleChanges(tabCollectionViewModel)
+        let lastIndex = tabCollectionViewModel.tabs.count - 1
+        tabCollectionViewModel.select(at: .unpinned(lastIndex))
+
+        // Trigger background materialization of unloaded tabs
+        tabCollectionViewModel.setUpLazyLoadingIfNeeded(force: true)
     }
 
     @objc func debugShiftCardImpression(_ sender: Any?) {

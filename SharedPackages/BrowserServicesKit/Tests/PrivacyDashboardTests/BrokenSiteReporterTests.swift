@@ -90,4 +90,32 @@ final class BrokenSiteReporterTests: XCTestCase {
         try reporter.report(BrokenSiteReportMocks.report, reportMode: .regular)
         waitForExpectations(timeout: 3)
     }
+
+    func testWhenWebExtensionFieldsProvidedThenTheyAreIncluded() throws {
+        let keyValueStore = MockKeyValueStore()
+        let expectation = expectation(description: "Pixel sent")
+
+        let reporter = BrokenSiteReporter(pixelHandler: { parameters in
+            XCTAssertEqual(parameters["loadedWebExtensions"], "embedded,adBlocking")
+            XCTAssertEqual(parameters["adBlockingExtensionScriptletsVersion"], "2.0.0")
+            expectation.fulfill()
+        }, keyValueStoring: keyValueStore)
+
+        try reporter.report(BrokenSiteReportMocks.reportWithWebExtensions, reportMode: .regular)
+        waitForExpectations(timeout: 3)
+    }
+
+    func testWhenWebExtensionFieldsAbsentThenTheyAreNotIncluded() throws {
+        let keyValueStore = MockKeyValueStore()
+        let expectation = expectation(description: "Pixel sent")
+
+        let reporter = BrokenSiteReporter(pixelHandler: { parameters in
+            XCTAssertNil(parameters["loadedWebExtensions"])
+            XCTAssertNil(parameters["adBlockingExtensionScriptletsVersion"])
+            expectation.fulfill()
+        }, keyValueStoring: keyValueStore)
+
+        try reporter.report(BrokenSiteReportMocks.report, reportMode: .regular)
+        waitForExpectations(timeout: 3)
+    }
 }

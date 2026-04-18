@@ -1,0 +1,100 @@
+{
+    "m_mac_aichat_open_duck_ai_main_menu": {
+        "description": "Fired when user taps Open Duck.ai from the main menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_new_chat_main_menu": {
+        "description": "Fired when user opens a new Duck.ai chat from the main menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_new_voice_chat_main_menu": {
+        "description": "Fired when user opens a new Duck.ai voice chat from the main menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_new_image_chat_main_menu": {
+        "description": "Fired when user opens a new Duck.ai image chat from the main menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_recent_chat_selected_main_menu": {
+        "description": "Fired when user selects a recent Duck.ai chat from the main menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_delete_all_chats_main_menu": {
+        "description": "Fired when user confirms Delete All Chats from the main menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_open_duck_ai_more_options_menu": {
+        "description": "Fired when user taps Open Duck.ai from the more options menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_new_chat_more_options_menu": {
+        "description": "Fired when user opens a new Duck.ai chat from the more options menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_new_voice_chat_more_options_menu": {
+        "description": "Fired when user opens a new Duck.ai voice chat from the more options menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_new_image_chat_more_options_menu": {
+        "description": "Fired when user opens a new Duck.ai image chat from the more options menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_recent_chat_selected_more_options_menu": {
+        "description": "Fired when user selects a recent Duck.ai chat from the more options menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_delete_all_chats_more_options_menu": {
+        "description": "Fired when user confirms Delete All Chats from the more options menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_view_all_chats_main_menu": {
+        "description": "Fired when user taps View All Chats... from the main menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_view_all_chats_more_options_menu": {
+        "description": "Fired when user taps View All Chats... from the more options menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

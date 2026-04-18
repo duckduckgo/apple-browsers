@@ -141,5 +141,54 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_view_all_chats_clicked": {
+        "description": "Fired when user taps 'View all chats' from the native address bar omnibar",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_addressbar_image_generation_activated": {
+        "description": "Fired when user selects the Create Image tool to enter image generation mode",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_addressbar_image_generation_deactivated": {
+        "description": "Fired when user dismisses the image generation chip (X button)",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_addressbar_image_generation_submitted": {
+        "description": "Fired when user submits a prompt while image generation mode is active",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_addressbar_web_search_activated": {
+        "description": "Fired when user selects the Web Search tool to enter web search mode",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_addressbar_web_search_deactivated": {
+        "description": "Fired when user dismisses the web search chip (X button)",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_addressbar_web_search_submitted": {
+        "description": "Fired when user submits a prompt while web search mode is active",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

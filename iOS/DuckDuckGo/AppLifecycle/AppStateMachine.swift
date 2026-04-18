@@ -160,6 +160,10 @@ final class AppStateMachine {
     /// if the app is backgrounded before user authentication (iOS 18.0+).
     private(set) var actionToHandle: AppAction?
 
+    /// Identity of the last window passed via `willConnectToWindow`, used to detect whether
+    /// consecutive scene connections reuse the same window or receive a new one.
+    private var lastConnectedWindowIdentifier: ObjectIdentifier?
+
     private let terminatingStateFactory: TerminatingStateFactory
 
     init(initialState: AppState, terminatingStateFactory: TerminatingStateFactory = DefaultTerminatingStateFactory()) {
@@ -210,6 +214,7 @@ final class AppStateMachine {
     private func respond(to event: AppEvent, in launching: LaunchingHandling) {
         switch event {
         case .willConnectToWindow(let window):
+            storeWindowIdentifier(window)
             let connected = launching.makeConnectedState(window: window, actionToHandle: actionToHandle)
             currentState = .connected(connected)
         default:
@@ -236,6 +241,11 @@ final class AppStateMachine {
             // However, we only transition to Foreground after didBecomeActive, since both events occur in sequence.
             // We may revisit this if any UI glitches appear, as some work could potentially happen earlier in willEnterForeground.
             break
+        case .willConnectToWindow(let window):
+            let windowChanged = lastConnectedWindowIdentifier != ObjectIdentifier(window)
+            storeWindowIdentifier(window)
+            DailyPixel.fireDailyAndCount(pixel: .sceneWillConnectToWindowCalledInConnectedState,
+                                         withAdditionalParameters: [PixelParameters.windowChanged: String(windowChanged)])
         default:
             handleUnexpectedEvent(event, for: .connected(connected))
         }
@@ -253,6 +263,7 @@ final class AppStateMachine {
         case .willResignActive:
             foreground.willLeave()
         case .willConnectToWindow(let window): // Please remove once we stop supporting iOS 16
+            storeWindowIdentifier(window)
             currentState = .connected(foreground.makeConnectedState(window: window, actionToHandle: actionToHandle))
         default:
             handleUnexpectedEvent(event, for: .foreground(foreground))
@@ -273,6 +284,7 @@ final class AppStateMachine {
         case .willEnterForeground:
             background.willLeave()
         case .willConnectToWindow(let window): // Please remove once we stop supporting iOS 16
+            storeWindowIdentifier(window)
             currentState = .connected(background.makeConnectedState(window: window, actionToHandle: actionToHandle))
         default:
             handleUnexpectedEvent(event, for: .background(background))
@@ -289,6 +301,10 @@ final class AppStateMachine {
         if case .willConnectToWindow(let window) = event {
             terminating.alertAndTerminate(window: window)
         }
+    }
+
+    private func storeWindowIdentifier(_ window: UIWindow) {
+        lastConnectedWindowIdentifier = ObjectIdentifier(window)
     }
 
     private func handleUnexpectedEvent(_ event: AppEvent, for state: AppState) {

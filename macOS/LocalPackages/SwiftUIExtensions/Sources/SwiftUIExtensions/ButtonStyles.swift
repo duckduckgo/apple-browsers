@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import Foundation
 import SwiftUI
-import DesignResourcesKit
+import UIComponents
 
 public struct StandardButtonStyle: ButtonStyle {
     public let fontSize: CGFloat

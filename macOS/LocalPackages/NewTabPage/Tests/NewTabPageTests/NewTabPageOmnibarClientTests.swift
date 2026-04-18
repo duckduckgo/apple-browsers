@@ -65,11 +65,18 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     @MainActor
     func testSetConfigUpdatesModeAndSettings() async throws {
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true, showCustomizePopover: true, enableRecentAiChats: nil)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true, showCustomizePopover: true, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, selectedModelId: nil, aiModelSections: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
         XCTAssertEqual(configProvider.mode, .ai)
         XCTAssertEqual(configProvider.isAIChatShortcutEnabled, false)
         XCTAssertEqual(configProvider.isAIChatSettingVisible, true)
+    }
+
+    @MainActor
+    func testWhenSetConfigWithSelectedModelIdThenModelIdIsPersisted() async throws {
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+        XCTAssertEqual(configProvider.selectedModelId, "gpt-4o-mini")
     }
 
     // MARK: - getSuggestions
@@ -205,13 +212,16 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     func testSubmitChatIsForwardedToHandler() async throws {
         let expectation = expectation(description: "submitChatCalled")
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { chat, target in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { chat, target, modelId, images in
             XCTAssertEqual(chat, "Hello Chat")
             XCTAssertEqual(target, .newWindow)
+            XCTAssertEqual(modelId, "gpt-4o-mini")
+            XCTAssertEqual(images?.count, 1)
             expectation.fulfill()
         }
 
-        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hello Chat", target: .newWindow)
+        let image = NewTabPageDataModel.SubmitChatImage(data: "base64data", format: "png")
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hello Chat", target: .newWindow, modelId: "gpt-4o-mini", images: [image])
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
         await fulfillment(of: [expectation], timeout: 1)
     }

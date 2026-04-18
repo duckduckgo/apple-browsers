@@ -158,6 +158,73 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         XCTAssertNil(result.chats.first?.lastEdit)
     }
 
+    // MARK: - hasExcessChats
+
+    @MainActor
+    func testFetchSuggestions_passesMaxCountPlusOneToReader() async {
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
+        suggestionsReader.maxHistoryCount = 5
+
+        _ = await provider.aiChats(query: nil)
+
+        XCTAssertEqual(suggestionsReader.receivedMaxChats, 6)
+    }
+
+    @MainActor
+    func testWhenTotalFetchedExceedsMaxCount_hasExcessChatsPublishesTrue() async {
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
+        suggestionsReader.maxHistoryCount = 2
+        suggestionsReader.recentChats = [
+            .make(chatId: "1", title: "A"),
+            .make(chatId: "2", title: "B"),
+            .make(chatId: "3", title: "C")
+        ]
+
+        var lastValue: Bool?
+        let cancellable = provider.hasExcessChatsPublisher.sink { lastValue = $0 }
+        _ = await provider.aiChats(query: nil)
+
+        XCTAssertEqual(lastValue, true)
+        cancellable.cancel()
+    }
+
+    @MainActor
+    func testWhenTotalFetchedEqualsMaxCount_hasExcessChatsPublishesFalse() async {
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
+        suggestionsReader.maxHistoryCount = 2
+        suggestionsReader.recentChats = [
+            .make(chatId: "1", title: "A"),
+            .make(chatId: "2", title: "B")
+        ]
+
+        var lastValue: Bool?
+        let cancellable = provider.hasExcessChatsPublisher.sink { lastValue = $0 }
+        _ = await provider.aiChats(query: nil)
+
+        XCTAssertEqual(lastValue, false)
+        cancellable.cancel()
+    }
+
+    @MainActor
+    func testWhenFeatureFlagOff_hasExcessChatsPublishesFalse() async {
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": false]
+        suggestionsReader.maxHistoryCount = 2
+        suggestionsReader.recentChats = [
+            .make(chatId: "1", title: "A"),
+            .make(chatId: "2", title: "B"),
+            .make(chatId: "3", title: "C")
+        ]
+
+        var lastValue: Bool?
+        let cancellable = provider.hasExcessChatsPublisher.sink { lastValue = $0 }
+        _ = await provider.aiChats(query: nil)
+
+        XCTAssertEqual(lastValue, false)
+        cancellable.cancel()
+    }
+
+    // MARK: - Mapping
+
     @MainActor
     func testPinnedFlagIsMappedCorrectly() async {
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
@@ -180,9 +247,11 @@ private final class MockAIChatSuggestionsReader: AIChatSuggestionsReading {
     var pinnedChats: [AIChatSuggestion] = []
     var recentChats: [AIChatSuggestion] = []
     var receivedQuery: String?
+    var receivedMaxChats: Int?
 
-    func fetchSuggestions(query: String?) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
+    func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
         receivedQuery = query
+        receivedMaxChats = maxChats
         return (pinned: pinnedChats, recent: recentChats)
     }
 
@@ -203,6 +272,10 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
 
     var showCustomizePopover: Bool = false
     var isAIChatRecentChatsEnabled: Bool = true
+    var showViewAllAiChats: Bool = false
+    var showViewAllAiChatsPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    var isAIChatToolsEnabled: Bool = false
+    var selectedModelId: String?
 }
 
 private extension AIChatSuggestion {

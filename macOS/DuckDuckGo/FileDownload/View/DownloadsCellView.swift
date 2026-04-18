@@ -137,6 +137,11 @@ final class DownloadsCellView: NSTableCellView {
         titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         titleLabel.setContentHuggingPriority(.defaultHigh, for: .vertical)
         titleLabel.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
+        if let titleCell = titleLabel.cell as? NSTextFieldCell {
+            titleCell.wraps = false
+            titleCell.usesSingleLineMode = true
+            titleCell.lineBreakMode = .byTruncatingMiddle
+        }
 
         detailLabel.translatesAutoresizingMaskIntoConstraints = false
         detailLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -335,7 +340,7 @@ final class DownloadsCellView: NSTableCellView {
             updateButtons(for: state, animated: false)
         }
 
-        var attributes: [NSAttributedString.Key: Any]?
+        var attributes: [NSAttributedString.Key: Any] = [:]
         switch state {
         case .downloading(let progress, _):
             subscribe(to: progress)
@@ -355,6 +360,12 @@ final class DownloadsCellView: NSTableCellView {
         case .failed(let error):
             updateDownloadFailed(with: .downloadFailed(error))
         }
+
+        // Enforce middle truncation in the attributed paragraph style to avoid AppKit
+        // falling back to clipping/tail behavior when drawing attributed text.
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineBreakMode = .byTruncatingMiddle
+        attributes[.paragraphStyle] = paragraphStyle
 
         titleLabel.attributedStringValue = NSAttributedString(string: filename, attributes: attributes)
         titleLabel.toolTip = filename

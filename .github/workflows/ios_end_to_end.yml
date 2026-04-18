@@ -64,13 +64,21 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.2"
+        preferred-versions: "26.4"
+
+    - name: Restore Xcode Compilation Cache
+      uses: actions/cache/restore@v4
+      with:
+        path: iOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-ios-e2e
+        restore-keys: |
+          xcode-compilation-cache-ios-e2e-
 
     - name: Build for tests
       run: |
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
-        
+
         set -o pipefail && xcodebuild \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
@@ -78,7 +86,26 @@ jobs:
           -skipPackagePluginValidation \
           -skipMacroValidation \
           ONLY_ACTIVE_ARCH=NO \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
         | tee xcodebuild.log
+
+    - name: Compute Compilation Cache hash
+      if: github.ref == 'refs/heads/main'
+      id: compilation-cache-hash
+      run: |
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v4
+      with:
+        path: iOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-ios-e2e-${{ steps.compilation-cache-hash.outputs.hash }}
 
     - name: Report job duration
       continue-on-error: true

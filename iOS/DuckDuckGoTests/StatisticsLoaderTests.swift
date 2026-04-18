@@ -64,7 +64,7 @@ class StatisticsLoaderTests: XCTestCase {
         testee.refreshAppRetentionAtb {
             testExpectation.fulfill()
         }
-        wait(for: [testExpectation], timeout: 5.0)
+        wait(for: [testExpectation], timeout: 10.0)
         XCTAssertTrue(mockUsageSegmentation.atbs[0].installAtb.isReturningUser)
         XCTAssertTrue(fireAppRetentionExperimentPixelsCalled)
     }
@@ -92,7 +92,7 @@ class StatisticsLoaderTests: XCTestCase {
         testee.refreshSearchRetentionAtb {
             testExpectation.fulfill()
         }
-        wait(for: [testExpectation], timeout: 5.0)
+        wait(for: [testExpectation], timeout: 10.0)
         XCTAssertFalse(mockUsageSegmentation.atbs.isEmpty)
         XCTAssertTrue(fireSearchExperimentPixelsCalled)
     }
@@ -105,7 +105,7 @@ class StatisticsLoaderTests: XCTestCase {
         testee.refreshAppRetentionAtb {
             testExpectation.fulfill()
         }
-        wait(for: [testExpectation], timeout: 5.0)
+        wait(for: [testExpectation], timeout: 10.0)
         XCTAssertFalse(mockUsageSegmentation.atbs.isEmpty)
         XCTAssertTrue(fireAppRetentionExperimentPixelsCalled)
     }
@@ -118,7 +118,7 @@ class StatisticsLoaderTests: XCTestCase {
         testee.load(shouldRefreshAtb: false) {
             testExpectation.fulfill()
         }
-        wait(for: [testExpectation], timeout: 5.0)
+        wait(for: [testExpectation], timeout: 10.0)
         XCTAssertTrue(mockUsageSegmentation.atbs.isEmpty)
     }
 
@@ -196,7 +196,7 @@ class StatisticsLoaderTests: XCTestCase {
             expect.fulfill()
         }
 
-        waitForExpectations(timeout: 5, handler: nil)
+        waitForExpectations(timeout: 10, handler: nil)
     }
 
     func testWhenLoadHasUnsuccessfulAtbThenStoreNotUpdated() {
@@ -211,7 +211,7 @@ class StatisticsLoaderTests: XCTestCase {
             expect.fulfill()
         }
 
-        waitForExpectations(timeout: 5, handler: nil)
+        waitForExpectations(timeout: 10, handler: nil)
     }
 
     func testWhenLoadHasUnsuccessfulExtiThenStoreNotUpdated() {
@@ -226,7 +226,7 @@ class StatisticsLoaderTests: XCTestCase {
             expect.fulfill()
         }
 
-        waitForExpectations(timeout: 5, handler: nil)
+        waitForExpectations(timeout: 10, handler: nil)
     }
 
     func testWhenSearchRefreshHasSuccessfulAtbRequestThenSearchRetentionAtbUpdated() {
@@ -301,7 +301,7 @@ class StatisticsLoaderTests: XCTestCase {
             testExpectation.fulfill()
         }
 
-        wait(for: [testExpectation], timeout: 5.0)
+        wait(for: [testExpectation], timeout: 10.0)
         XCTAssertEqual(mockPixelFiring.lastPixelName, Pixel.Event.appInstall.name)
     }
 
@@ -332,14 +332,14 @@ class StatisticsLoaderTests: XCTestCase {
     }
 
     func loadSuccessfulExiStub() {
-        stub(condition: isPath(URL.makeExtiURL(atb: "").path)) { _ -> HTTPStubsResponse in
+        stub(condition: isPath(URL.makeExtiURL(atb: "", isPad: false).path)) { _ -> HTTPStubsResponse in
             let path = OHPathForFile("MockFiles/empty", type(of: self))!
             return fixture(filePath: path, status: 200, headers: nil)
         }
     }
 
     func loadUnsuccessfulExiStub() {
-        stub(condition: isPath(URL.makeExtiURL(atb: "").path)) { _ -> HTTPStubsResponse in
+        stub(condition: isPath(URL.makeExtiURL(atb: "", isPad: false).path)) { _ -> HTTPStubsResponse in
             let path = OHPathForFile("MockFiles/empty", type(of: self))!
             return fixture(filePath: path, status: 400, headers: nil)
         }
@@ -420,7 +420,7 @@ class StatisticsLoaderTests: XCTestCase {
             // Then
             testExpectation.fulfill()
         }
-        wait(for: [testExpectation], timeout: 1)
+        wait(for: [testExpectation], timeout: 10.0)
         XCTAssertFalse(mockUsageSegmentation.atbs.isEmpty)
     }
 

@@ -20,8 +20,10 @@
 import Combine
 
 final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
+
     var shouldDisplayNewTabPageShortcut = false
     var shouldDisplayApplicationMenuShortcut = false
+    var shouldDisplayMoreOptionsMenuShortcut = false
     var shouldDisplayAddressBarShortcut = false
     var shouldDisplayAnyAIChatFeature = false
     var shouldOpenAIChatInSidebar = false

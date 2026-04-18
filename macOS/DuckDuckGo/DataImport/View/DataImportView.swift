@@ -17,13 +17,13 @@
 //
 
 import AppKit
-import SwiftUI
 import BrowserServicesKit
+import DesignResourcesKitIcons
 import PixelKit
 import PrivacyConfig
-import DesignResourcesKitIcons
+import SwiftUI
+import UIComponents
 import UniformTypeIdentifiers
-import SwiftUIExtensions
 
 @MainActor
 struct DataImportView: ModalView {

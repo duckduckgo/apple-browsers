@@ -141,4 +141,14 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
         XCTAssertEqual(firedPixels, ["new-tab-page_aichat_recent_chat_selected_keyboard"])
     }
 
+    // MARK: - viewAllAiChats
+
+    @MainActor
+    func testViewAllAiChats_opensNewAIChatTab() {
+        handler.viewAllAiChats(target: .sameTab)
+
+        XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
+        XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)
+    }
+
  }

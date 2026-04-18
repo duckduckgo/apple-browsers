@@ -153,7 +153,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         let tabs = state?.windows.flatMap { $0.model.tabCollection.tabs } ?? []
         let perWindowPinnedTabs = state?.windows.flatMap { $0.pinnedTabs?.tabs ?? [] } ?? []
         let applicationPinnedTabs = state?.applicationPinnedTabs?.tabs ?? []
-        let stateSnapshotIds = (tabs + perWindowPinnedTabs + applicationPinnedTabs).compactMap { $0.tabSnapshotIdentifier }
+        let stateSnapshotIds = (tabs + perWindowPinnedTabs + applicationPinnedTabs).compactMap(\.tabSnapshotIdentifier)
         Task {
             await tabSnapshotCleanupService.cleanStoredSnapshots(except: Set(stateSnapshotIds))
         }

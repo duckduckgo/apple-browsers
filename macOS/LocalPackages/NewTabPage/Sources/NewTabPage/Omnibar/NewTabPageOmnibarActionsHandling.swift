@@ -25,9 +25,12 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
     func openSuggestion(_ suggestion: NewTabPageDataModel.Suggestion, target: NewTabPageDataModel.OpenTarget)
 
     @MainActor
-    func submitChat(_ chat: String, target: NewTabPageDataModel.OpenTarget)
+    func submitChat(_ chat: String, target: NewTabPageDataModel.OpenTarget, modelId: String?, images: [NewTabPageDataModel.SubmitChatImage]?)
 
     @MainActor
     func openAiChat(_ chatId: String, isPinned: Bool, trigger: NewTabPageDataModel.OpenAiChatTrigger, target: NewTabPageDataModel.OpenTarget)
+
+    @MainActor
+    func viewAllAiChats(target: NewTabPageDataModel.OpenTarget)
 
 }

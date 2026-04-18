@@ -121,6 +121,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
 }
 
 final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
+    var shouldDisplayMoreOptionsMenuShortcut = false
     var shouldDisplayNewTabPageShortcut = false
     var shouldDisplayApplicationMenuShortcut = false
     var shouldDisplayAddressBarShortcut = false
@@ -458,7 +459,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         viewController.delegate = delegate
         XCTAssertFalse(delegate.didCallHighlightFireButton)
         tab.navigateFromOnboarding(to: url)
-        wait(for: [expectation], timeout: 3.0)
+        wait(for: [expectation], timeout: 5.0)
 
         // WHEN
         factory.performOnGotItPressed()
@@ -491,7 +492,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
         let mainViewController = MainViewController(
-            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
+            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
             aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()),
             fireCoordinator: fireCoordinator

@@ -57,6 +57,7 @@ let package = Package(
             dependencies: [
                 "HistoryView",
                 "Utilities",
+                .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
             ]
         ),
     ]

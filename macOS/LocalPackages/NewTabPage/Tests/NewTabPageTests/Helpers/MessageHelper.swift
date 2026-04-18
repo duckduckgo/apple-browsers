@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKitTestsUtils
 import NewTabPage
+import WebKit
 import XCTest
 
 final class MessageHelper<MessageName: RawRepresentable> where MessageName.RawValue == String {
@@ -28,18 +30,18 @@ final class MessageHelper<MessageName: RawRepresentable> where MessageName.RawVa
 
     func handleMessage<Response: Encodable>(named methodName: MessageName, parameters: Any = [], file: StaticString = #file, line: UInt = #line) async throws -> Response {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: methodName.rawValue), file: file, line: line)
-        let response = try await handler(Self.asJSON(parameters), .init())
+        let response = try await handler(Self.asJSON(parameters), WKScriptMessage.mock())
         return try XCTUnwrap(response as? Response, file: file, line: line)
     }
 
     func handleMessageIgnoringResponse(named methodName: MessageName, parameters: Any = [], file: StaticString = #file, line: UInt = #line) async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: methodName.rawValue), file: file, line: line)
-        _ = try await handler(Self.asJSON(parameters), .init())
+        _ = try await handler(Self.asJSON(parameters), WKScriptMessage.mock())
     }
 
     func handleMessageExpectingNilResponse(named methodName: MessageName, parameters: Any = [], file: StaticString = #file, line: UInt = #line) async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: methodName.rawValue), file: file, line: line)
-        let response = try await handler(Self.asJSON(parameters), .init())
+        let response = try await handler(Self.asJSON(parameters), WKScriptMessage.mock())
         XCTAssertNil(response, file: file, line: line)
     }
 

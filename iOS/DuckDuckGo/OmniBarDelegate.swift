@@ -135,6 +135,7 @@ protocol OmniBarDelegate: AnyObject {
     func onDuckAIVoiceModeRequested()
 
     // MARK: - Fire Mode
+    func onFireModeRequested()
     func isCurrentTabFireTab() -> Bool
 }
 

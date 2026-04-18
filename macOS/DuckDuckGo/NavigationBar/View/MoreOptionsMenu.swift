@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppUpdaterShared
 import BrowserServicesKit
 import Cocoa
@@ -95,6 +96,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let vpnFeatureGatekeeper: VPNFeatureGatekeeper
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+    private let aiChatSuggestionsReader: AIChatSuggestionsReading
     private let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
     private let isFireWindowDefault: Bool
 
@@ -132,6 +134,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
+         aiChatSuggestionsReader: AIChatSuggestionsReading = NSApp.delegateTyped.aiChatSuggestionsReader,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          isFireWindowDefault: Bool = NSApp.delegateTyped.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
          syncDeviceButtonModel: SyncDeviceButtonModel = SyncDeviceButtonModel(),
@@ -158,6 +161,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.notificationCenter = notificationCenter
         self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
+        self.aiChatSuggestionsReader = aiChatSuggestionsReader
         self.featureFlagger = featureFlagger
         self.freeTrialBadgePersistor = freeTrialBadgePersistor
         self.moreOptionsMenuIconsProvider = themeManager.theme.iconsProvider.moreOptionsMenuIconsProvider
@@ -539,8 +543,9 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             addItem(burnerWindowItem)
         }
 
-        // New Duck.ai Chat
-        if aiChatMenuConfiguration.shouldDisplayApplicationMenuShortcut {
+        // New Duck.ai Chat — shown only when the full Duck.ai submenu (more options FF) is off
+        if aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature &&
+            !aiChatMenuConfiguration.shouldDisplayMoreOptionsMenuShortcut {
             let aiChatItem = NSMenuItem(title: UserText.newAIChatMenuItem,
                                         action: #selector(newAiChat(_:)),
                                         target: self)
@@ -554,7 +559,27 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     @MainActor
+    private func makeAIChatMenu() -> AIChatMenu {
+        let actions = AIChatMenu.Actions.makeDefault(
+            remoteSettings: AIChatRemoteSettings(),
+            tabOpener: NSApp.delegateTyped.aiChatTabOpener,
+            historyCleaner: NSApp.delegateTyped.aiChatHistoryCleaner,
+            windowControllersManager: Application.appDelegate.windowControllersManager
+        )
+        return AIChatMenu(suggestionsReader: aiChatSuggestionsReader, actions: actions, maxChatItems: 8, origin: .moreOptionsMenu)
+    }
+
+    @MainActor
     private func addUtilityItems() {
+        if aiChatMenuConfiguration.shouldDisplayMoreOptionsMenuShortcut {
+            let aiChatItem = NSMenuItem(title: "Duck.ai", action: #selector(newAiChat), keyEquivalent: "n")
+            aiChatItem.keyEquivalentModifierMask = [.command, .option]
+            aiChatItem.image = DesignSystemImages.Glyphs.Size16.duckAi
+            aiChatItem.target = self
+            aiChatItem.submenu = makeAIChatMenu()
+            addItem(aiChatItem)
+        }
+
         let bookmarksSubMenu = BookmarksSubMenu(targetting: self,
                                                 tabCollectionViewModel: tabCollectionViewModel,
                                                 bookmarkManager: bookmarkManager,

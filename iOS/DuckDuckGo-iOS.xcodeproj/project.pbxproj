@@ -1945,6 +1945,8 @@
 		D1A0B0112F92000100A1B001 /* DataImportEntryPointHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0B0012F92000100A1B001 /* DataImportEntryPointHandlerTests.swift */; };
 		D1A0B0122F92000100A1B001 /* DataImportUserActivityHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0B0022F92000100A1B001 /* DataImportUserActivityHandlerTests.swift */; };
 		D1A0B0132F92000100A1B001 /* ImportPasswordSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0B0032F92000100A1B001 /* ImportPasswordSourceTests.swift */; };
+		D1A0B0142F92000100A1B001 /* CredentialExchangeImportHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0B0042F92000100A1B001 /* CredentialExchangeImportHandlerTests.swift */; };
+		D1A0B0152F92000100A1B001 /* DataImportMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0B0052F92000100A1B001 /* DataImportMocks.swift */; };
 		C1C90FFD2F102E3F006EBA73 /* PageContextUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C90FFC2F102E3F006EBA73 /* PageContextUserScript.swift */; };
 		C1CAAA6A2CF8BABF00C37EE6 /* CredentialProviderActivatedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CAAA692CF8BABF00C37EE6 /* CredentialProviderActivatedView.swift */; };
 		C1CAAA712CF8BC0B00C37EE6 /* UIViewControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CAAA702CF8BC0B00C37EE6 /* UIViewControllerExtension.swift */; };
@@ -4495,6 +4497,8 @@
 		D1A0B0012F92000100A1B001 /* DataImportEntryPointHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportEntryPointHandlerTests.swift; sourceTree = "<group>"; };
 		D1A0B0022F92000100A1B001 /* DataImportUserActivityHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportUserActivityHandlerTests.swift; sourceTree = "<group>"; };
 		D1A0B0032F92000100A1B001 /* ImportPasswordSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordSourceTests.swift; sourceTree = "<group>"; };
+		D1A0B0042F92000100A1B001 /* CredentialExchangeImportHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialExchangeImportHandlerTests.swift; sourceTree = "<group>"; };
+		D1A0B0052F92000100A1B001 /* DataImportMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportMocks.swift; sourceTree = "<group>"; };
 		C1C90FFC2F102E3F006EBA73 /* PageContextUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageContextUserScript.swift; sourceTree = "<group>"; };
 		C1CAAA672CF8B74200C37EE6 /* AutofillCredentialProviderAlpha.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AutofillCredentialProviderAlpha.entitlements; sourceTree = "<group>"; };
 		C1CAAA692CF8BABF00C37EE6 /* CredentialProviderActivatedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialProviderActivatedView.swift; sourceTree = "<group>"; };
@@ -5945,6 +5949,7 @@
 				362E3EBF2E7184DE00E4C762 /* Web */,
 				362E3EBE2E7184D800E4C762 /* Statistics */,
 				362E3EBD2E7184CC00E4C762 /* Utilities */,
+				D1A0B0052F92000100A1B001 /* DataImportMocks.swift */,
 				98E564322DE8B63E00E6E75F /* HistoryMocks.swift */,
 			);
 			path = Core;
@@ -9269,6 +9274,7 @@
 				D1A0B0012F92000100A1B001 /* DataImportEntryPointHandlerTests.swift */,
 				D1A0B0022F92000100A1B001 /* DataImportUserActivityHandlerTests.swift */,
 				D1A0B0032F92000100A1B001 /* ImportPasswordSourceTests.swift */,
+				D1A0B0042F92000100A1B001 /* CredentialExchangeImportHandlerTests.swift */,
 			);
 			path = DataImport;
 			sourceTree = "<group>";
@@ -13191,9 +13197,11 @@
 				BBF1BDF32EA6333000358243 /* MockWinBackOfferService.swift in Sources */,
 				C1C725B82D63810D00361B81 /* ImportArchiveReaderTests.swift in Sources */,
 				C1C725BA2D63810D00361B81 /* DataImportManagerTests.swift in Sources */,
+				D1A0B0152F92000100A1B001 /* DataImportMocks.swift in Sources */,
 				D1A0B0112F92000100A1B001 /* DataImportEntryPointHandlerTests.swift in Sources */,
 				D1A0B0122F92000100A1B001 /* DataImportUserActivityHandlerTests.swift in Sources */,
 				D1A0B0132F92000100A1B001 /* ImportPasswordSourceTests.swift in Sources */,
+				D1A0B0142F92000100A1B001 /* CredentialExchangeImportHandlerTests.swift in Sources */,
 				C13EEA1E2D64CFCA001D5DC3 /* DataImportViewModelTests.swift in Sources */,
 				9F7634BE2EA8633300804550 /* PromptCooldownIntervalProviderTests.swift in Sources */,
 				9FAB4B762E98C70B00D8298A /* HomeMessageViewModelTests.swift in Sources */,

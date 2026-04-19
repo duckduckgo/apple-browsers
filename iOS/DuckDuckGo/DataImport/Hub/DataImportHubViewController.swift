@@ -84,7 +84,6 @@ final class DataImportHubViewController: UIViewController {
         if source.hasDetailScreen {
             let detailVC = ImportSourceDetailViewController(
                 source: source,
-                syncService: syncService,
                 fileUploadCoordinator: fileUploadCoordinator
             ) { [weak self] in
                 self?.didCallOnCancelled = true

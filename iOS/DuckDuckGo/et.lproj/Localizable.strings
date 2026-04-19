@@ -209,6 +209,15 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Tee foto";
 
+/* Title for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.title" = "Kohanda vastuseid";
+
+/* Subtitle for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.subtitle" = "Praeguse teabe leidmine";
+
+/* Title for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.title" = "Veebiotsing";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Olemasolevaid järjehoidjaid ei dubleerita.";
 
@@ -2757,8 +2766,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Jäta vahele";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Tere!\n\nKas oled valmis kasutama kiiremat brauserit, mis hoiab sind kaitstud?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Tere!\n\nKas oled valmis kiiremaks brauseriks, mis sind kaitseb ja laseb sul otsustada, millal ja kuidas tehisintellekti kasutada?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Järgmine";
@@ -2772,11 +2781,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Seaded > Tehisintellekti funktsioonid.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Kas soovite lihtsat juurdepääsu privaatsele AI-vestlusele?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Lülita \n Otsingu ja Duck.ai vahel";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Teeme ära!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Ainult otsi";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Kas soovid aadressiribal hõlpsat juurdepääsu privaatsele tehisintellekti vestlusele?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Alustame!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Olen siin varem olnud";
@@ -2803,7 +2818,7 @@
 "onboarding.rebranding.first-search-done.title" = "See on DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Kas oled valmis kasutama kiiremat brauserit, mis hoiab sind kaitstud?";
+"onboarding.rebranding.intro.message" = "Kas oled valmis kiiremaks brauseriks, mis sind kaitseb ja laseb sul otsustada, millal ja kuidas tehisintellekti kasutada?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Tere!";
@@ -3272,12 +3287,6 @@
 
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Uus vaheleht";
-
-/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_and_duckai" = "Otsi ja Duck.ai";
-
-/* Title for the 'Search Only' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_only" = "Ainult otsi";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Proovi uut valikut lülituda otsingu ja Duck.ai vahel aadressiribal.";

@@ -1,5 +1,5 @@
 //
-//  ImportSourceDetailConfig.swift
+//  ImportPasswordSource.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -21,9 +21,9 @@ import SwiftUI
 import DesignResourcesKitIcons
 
 enum ImportPasswordSource: CaseIterable, Identifiable {
-    case passwordsApp
     case safari
     case chrome
+    case passwordsApp
     case syncFromDuckDuckGo
 
     var id: String {

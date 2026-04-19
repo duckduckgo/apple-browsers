@@ -32,6 +32,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case submitChat = "omnibar_submitChat"
         case getAiChats = "omnibar_getAiChats"
         case openAiChat = "omnibar_openAiChat"
+        case viewAllAIChats = "omnibar_viewAllAIChats"
     }
 
     private let configProvider: NewTabPageOmnibarConfigProviding
@@ -53,10 +54,11 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         self.actionHandler = actionHandler
         super.init()
 
-        Publishers.Merge3(
+        Publishers.Merge4(
             configProvider.isAIChatShortcutEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.isAIChatSettingVisiblePublisher.map { _ in () }.eraseToAnyPublisher(),
-            configProvider.modePublisher.map { _ in () }.eraseToAnyPublisher()
+            configProvider.modePublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.showViewAllAiChatsPublisher.map { _ in () }.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in
@@ -84,7 +86,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.openSuggestion.rawValue: { [weak self] in try await self?.openSuggestion(params: $0, original: $1) },
             MessageName.submitChat.rawValue: { [weak self] in try await self?.submitChat(params: $0, original: $1) },
             MessageName.getAiChats.rawValue: { [weak self] in try await self?.getAiChats(params: $0, original: $1) },
-            MessageName.openAiChat.rawValue: { [weak self] in try await self?.openAiChat(params: $0, original: $1) }
+            MessageName.openAiChat.rawValue: { [weak self] in try await self?.openAiChat(params: $0, original: $1) },
+            MessageName.viewAllAIChats.rawValue: { [weak self] in try await self?.viewAllAIChats(params: $0, original: $1) }
         ])
     }
 
@@ -97,6 +100,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             showAiSetting: configProvider.isAIChatSettingVisible,
             showCustomizePopover: configProvider.showCustomizePopover,
             enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled,
+            showViewAllAiChats: configProvider.showViewAllAiChats,
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
             selectedModelId: configProvider.selectedModelId,
             aiModelSections: aiModelSections
@@ -133,6 +137,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             showAiSetting: configProvider.isAIChatSettingVisible,
             showCustomizePopover: configProvider.showCustomizePopover,
             enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled,
+            showViewAllAiChats: configProvider.showViewAllAiChats,
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
             selectedModelId: configProvider.selectedModelId,
             aiModelSections: modelsProvider?.lastFetchedSections
@@ -183,6 +188,14 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             return nil
         }
         await actionHandler.openAiChat(action.chatId, isPinned: action.isPinned ?? false, trigger: action.trigger ?? .mouse, target: action.target)
+        return nil
+    }
+
+    private func viewAllAIChats(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.ViewAllAiChatsAction = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        await actionHandler.viewAllAiChats(target: action.target)
         return nil
     }
 

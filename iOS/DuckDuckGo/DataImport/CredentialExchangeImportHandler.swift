@@ -66,7 +66,7 @@ final class CredentialExchangeImportHandler {
     }
 
     @available(iOS 26, *)
-    private func importedLoginCredentials(from credentialData: ASExportedCredentialData) -> [ImportedLoginCredential] {
+    func importedLoginCredentials(from credentialData: ASExportedCredentialData) -> [ImportedLoginCredential] {
         var importedLogins: [ImportedLoginCredential] = []
 
         for account in credentialData.accounts {

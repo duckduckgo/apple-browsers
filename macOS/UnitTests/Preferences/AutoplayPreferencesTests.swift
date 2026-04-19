@@ -22,6 +22,7 @@ import WebKit
 
 final class AutoplayPreferencesPersistorMock: AutoplayPreferencesPersistor {
     var autoplayBlockingModeRawValue: String
+    var seededDomains: [String] = []
     init(autoplayBlockingModeRawValue: String) {
         self.autoplayBlockingModeRawValue = autoplayBlockingModeRawValue
     }

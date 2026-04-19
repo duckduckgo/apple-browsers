@@ -285,7 +285,17 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?) {
-        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, images: images, modelId: modelId)
+        submitPrompt(prompt, images: images, modelId: modelId, tools: nil)
+    }
+
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?, tools: [AIChatRAGTool]?) {
+        let promptPayload = AIChatNativePrompt.queryPrompt(
+            prompt,
+            autoSubmit: true,
+            toolChoice: tools?.map(\.rawValue),
+            images: images,
+            modelId: modelId
+        )
         push(.submitPrompt(promptPayload))
     }
 

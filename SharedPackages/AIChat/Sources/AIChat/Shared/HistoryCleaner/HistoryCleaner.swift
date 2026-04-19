@@ -37,29 +37,81 @@ public final class HistoryCleaner: HistoryCleaning {
     private let websiteDataStore: WKWebsiteDataStore
     private var contentScopeUserScript: ContentScopeUserScript?
     private var aiChatDataClearingUserScript: AIChatDataClearingUserScript?
+    private let nativeStorageHandler: DuckAiNativeStorageHandling?
+    private let featureFlagProvider: AIChatFeatureFlagProviding?
 
+    /// Creates a history cleaner that can clear data via native storage or a headless webview.
+    /// When `nativeStorageHandler` and `featureFlagProvider` are provided and the feature flag is enabled
+    /// with migration done, chats and files are deleted directly from local storage.
+    /// Otherwise the webview path is used.
     public init(featureFlagger: FeatureFlagger,
                 privacyConfig: PrivacyConfigurationManaging,
-                websiteDataStore: WKWebsiteDataStore? = nil) {
+                websiteDataStore: WKWebsiteDataStore? = nil,
+                nativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                featureFlagProvider: AIChatFeatureFlagProviding? = nil) {
         self.featureFlagger = featureFlagger
         self.privacyConfig = privacyConfig
         self.websiteDataStore = websiteDataStore ?? .default()
+        self.nativeStorageHandler = nativeStorageHandler
+        self.featureFlagProvider = featureFlagProvider
     }
 
-    /// Launches a headless web view to clear Duck.ai chat history with a C-S-S feature.
+    /// Clears all Duck.ai chat history (chats and files, not settings).
     @MainActor
     public func cleanAIChatHistory() async -> Result<Void, Error> {
-        await performDelete(chatID: nil)
+        if let result = clearLocalStorageIfAvailable(chatID: nil) {
+            return result
+        }
+        return await performWebViewDelete(chatID: nil)
     }
 
-    /// Launches a headless web view to clear a single Duck.ai chat with a C-S-S feature.
+    /// Deletes a single Duck.ai chat.
     @MainActor
     public func deleteAIChat(chatID: String) async -> Result<Void, Error> {
-        await performDelete(chatID: chatID)
+        if let result = clearLocalStorageIfAvailable(chatID: chatID) {
+            return result
+        }
+        return await performWebViewDelete(chatID: chatID)
     }
 
+    // MARK: - Local Storage Path
+
+    private func clearLocalStorageIfAvailable(chatID: String?) -> Result<Void, Error>? {
+        guard let featureFlagProvider, featureFlagProvider.isNativeDataAccessEnabled(),
+              let nativeStorageHandler, (try? nativeStorageHandler.isMigrationDone()) == true else {
+            return nil
+        }
+
+        do {
+            if let chatID {
+                Logger.aiChat.debug("HistoryCleaner: deleting chat \(chatID) from localStorage")
+                let files = try nativeStorageHandler.listFiles().filter { $0.chatId == chatID }
+                for file in files {
+                    try nativeStorageHandler.deleteFile(uuid: file.uuid)
+                }
+                try nativeStorageHandler.deleteChat(chatId: chatID)
+            } else {
+                Logger.aiChat.debug("HistoryCleaner: deleting all chats from localStorage")
+                try nativeStorageHandler.deleteAllFiles()
+                try nativeStorageHandler.deleteAllChats()
+            }
+            return .success(())
+        } catch {
+            Logger.aiChat.error("HistoryCleaner: Failed to clear local storage: \(error.localizedDescription)")
+            return .failure(error)
+        }
+    }
+
+    // MARK: - WebView Path
+
     @MainActor
-    private func performDelete(chatID: String?) async -> Result<Void, Error> {
+    private func performWebViewDelete(chatID: String?) async -> Result<Void, Error> {
+        if let chatID {
+            Logger.aiChat.debug("HistoryCleaner: deleting chat \(chatID) from webView")
+        } else {
+            Logger.aiChat.debug("HistoryCleaner: deleting all chats from webView")
+        }
+
         guard webView == nil else {
             return .failure(HistoryCleanerError.operationInProgress)
         }

@@ -30,13 +30,27 @@ struct DataImportSummaryView: View {
     @ObservedObject var viewModel: DataImportSummaryViewModel
 
     @State private var isAnimating = false
+    @State private var summaryViewWidth: CGFloat = 0
+    @State private var summaryRowWidth: CGFloat = 0
 
     private var isPad: Bool {
         UIDevice.current.userInterfaceIdiom == .pad
     }
 
-    private var iPadFooterBottomPadding: CGFloat {
-        isPad ? 20 : 0
+    private var summaryRowHorizontalInset: CGFloat {
+        guard summaryViewWidth > 0, summaryRowWidth > 0 else {
+            return 16
+        }
+
+        return max(0, (summaryViewWidth - summaryRowWidth) / 2)
+    }
+
+    private var summaryRowWidthChangeHandler: (CGFloat) -> Void {
+        { width in
+            updateMeasuredWidth(width, currentWidth: summaryRowWidth) { nextWidth in
+                summaryRowWidth = nextWidth
+            }
+        }
     }
 
     init(viewModel: DataImportSummaryViewModel) {
@@ -59,6 +73,14 @@ struct DataImportSummaryView: View {
                 isAnimating = true
             }
         }
+        .background(GeometryReader { proxy -> Color in
+            DispatchQueue.main.async {
+                updateMeasuredWidth(proxy.size.width, currentWidth: summaryViewWidth) { nextWidth in
+                    summaryViewWidth = nextWidth
+                }
+            }
+            return Color.clear
+        })
     }
 
     @ViewBuilder
@@ -73,7 +95,7 @@ struct DataImportSummaryView: View {
 
     private var footerOverlay: some View {
         footer
-            .padding(.horizontal, isPad ? 20 : 16)
+            .frame(width: summaryRowWidth > 0 ? summaryRowWidth : nil)
             .frame(maxWidth: .infinity, alignment: .center)
             .background(
                 Color(designSystemColor: .surfaceTertiary)
@@ -148,24 +170,26 @@ struct DataImportSummaryView: View {
             SummaryListRow(
                 icon: .success(DataImport.DataType.passwords.summarySuccessIcon),
                 label: UserText.dataImportSummaryPasswordsSuccess,
-                count: viewModel.passwordsSummary?.successful ?? 0
+                count: viewModel.passwordsSummary?.successful ?? 0,
+                onFrameChange: summaryRowWidthChangeHandler
             )
 
             SummaryListRow(
                 icon: .success(DataImport.DataType.bookmarks.summarySuccessIcon),
                 label: UserText.dataImportSummaryBookmarksSuccess,
-                count: viewModel.bookmarksSummary?.successful ?? 0
+                count: viewModel.bookmarksSummary?.successful ?? 0,
+                onFrameChange: summaryRowWidthChangeHandler
             )
 
             if let creditCardsSummary = viewModel.creditCardsSummary {
                 SummaryListRow(
                     icon: .success(DataImport.DataType.creditCards.summarySuccessIcon),
                     label: UserText.dataImportSummaryCreditCardsSuccess,
-                    count: creditCardsSummary.successful
+                    count: creditCardsSummary.successful,
+                    onFrameChange: summaryRowWidthChangeHandler
                 )
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     private func summarySection(dataType: DataImport.DataType,
@@ -175,14 +199,16 @@ struct DataImportSummaryView: View {
             SummaryListRow(
                 icon: .success(dataType.summarySuccessIcon),
                 label: successString,
-                count: summary.successful
+                count: summary.successful,
+                onFrameChange: summaryRowWidthChangeHandler
             )
 
             if summary.failed > 0 {
                 SummaryListRow(
                     icon: .failure,
                     label: UserText.dataImportSummaryFailed,
-                    count: summary.failed
+                    count: summary.failed,
+                    onFrameChange: summaryRowWidthChangeHandler
                 )
             }
 
@@ -190,11 +216,11 @@ struct DataImportSummaryView: View {
                 SummaryListRow(
                     icon: .failure,
                     label: UserText.dataImportSummaryDuplicates,
-                    count: summary.duplicate
+                    count: summary.duplicate,
+                    onFrameChange: summaryRowWidthChangeHandler
                 )
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     private func syncButton(title: String) -> some View {
@@ -255,8 +281,19 @@ struct DataImportSummaryView: View {
                 dismissButton
             }
         }
+        .frame(maxWidth: .infinity, alignment: .center)
         .padding(.top, 16)
-        .padding(.bottom, iPadFooterBottomPadding)
+        .padding(.bottom, isPad ? summaryRowHorizontalInset : 0)
+    }
+
+    private func updateMeasuredWidth(_ width: CGFloat,
+                                     currentWidth: CGFloat,
+                                     setWidth: (CGFloat) -> Void) {
+        let nextWidth = max(0, width)
+
+        guard nextWidth > 0 else { return }
+        guard abs(nextWidth - currentWidth) > 0.5 else { return }
+        setWidth(nextWidth)
     }
 
     private var dismissButton: some View {
@@ -299,6 +336,7 @@ struct DataImportSummaryView: View {
         let icon: Icon
         let label: String
         let count: Int
+        let onFrameChange: ((CGFloat) -> Void)?
 
         var body: some View {
             HStack {
@@ -321,7 +359,15 @@ struct DataImportSummaryView: View {
                     .daxBodyRegular()
                     .foregroundStyle(Color(designSystemColor: .textSecondary))
             }
-            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+            .listRowBackground(
+                Color(designSystemColor: .surface)
+                    .background(GeometryReader { proxy -> Color in
+                        DispatchQueue.main.async {
+                            onFrameChange?(proxy.size.width)
+                        }
+                        return Color.clear
+                    })
+            )
         }
     }
 
@@ -377,6 +423,7 @@ struct DataImportSummaryView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
             }
+            .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 24)
                     .fill(Color(designSystemColor: .surface))
@@ -454,6 +501,7 @@ struct DataImportSummaryView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
             }
+            .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 24)
                     .fill(Color(designSystemColor: .surface))

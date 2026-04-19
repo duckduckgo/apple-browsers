@@ -145,12 +145,13 @@ final class PermissionModelTests: XCTestCase {
                                            .camera: .inactive])
     }
 
-    func testWhenLocationIsDeactivatedThenStateChangesToInactive() {
+    func testWhenLocationIsDeactivatedThenStateStaysActive() {
         geolocationServiceMock.authorizationStatus = .authorized
         geolocationProviderMock.isActive = true
         geolocationProviderMock.isActive = false
 
-        XCTAssertEqual(model.permissions, [.geolocation: .inactive])
+        // Geolocation stays .active once granted/used (for permission center visibility)
+        XCTAssertEqual(model.permissions, [.geolocation: .active])
     }
 
     func testWhenPermissionIsQueriedThenQueryIsPublished() {
@@ -340,7 +341,8 @@ final class PermissionModelTests: XCTestCase {
         withExtendedLifetime(c) {
             waitForExpectations(timeout: 1)
         }
-        XCTAssertEqual(model.permissions, [:])
+        // After navigation reset, geolocation transitions to .reloading (awaiting deactivation)
+        XCTAssertEqual(model.permissions, [.geolocation: .reloading])
     }
 
     func testWhenExternalSchemePermissionQueryIsResetThenItTriggersDecisionHandler() {
@@ -471,7 +473,7 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertEqual(model.permissions, [:])
     }
 
-    func testWhenSystemLocationIsDisabledAndLocationQueriedThenStateIsDisabled() {
+    func testWhenSystemLocationIsDisabledAndLocationQueriedThenQueryIsShownForTwoStepFlow() {
         geolocationServiceMock.authorizationStatus = .denied
 
         // Wait for authorizationQuery to be set by async Task
@@ -495,7 +497,9 @@ final class PermissionModelTests: XCTestCase {
         }
 
         wait(for: [queryExpectation], timeout: 1)
-        XCTAssertEqual(model.permissions, [.geolocation: .disabled(systemWide: false)])
+        // The two-step authorization dialog handles system permission state,
+        // so geolocation stays in .requested state (not immediately .disabled)
+        XCTAssertEqual(model.permissions, [.geolocation: .requested(model.authorizationQuery!)])
 
         e = expectation(description: "permission granted")
         geolocationServiceMock.authorizationStatus = .authorizedAlways

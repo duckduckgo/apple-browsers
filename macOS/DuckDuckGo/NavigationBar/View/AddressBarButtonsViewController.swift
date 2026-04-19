@@ -1797,7 +1797,6 @@ final class AddressBarButtonsViewController: NSViewController {
         popover.show(positionedBelow: permissionCenterButton.bounds.insetFromLineOfDeath(flipped: permissionCenterButton.isFlipped), in: permissionCenterButton)
     }
 
-
     // MARK: - Notification Animation
 
     private var animationViewCache = [String: LottieAnimationView]()

@@ -202,6 +202,63 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         XCTAssertNotNil(wideEvent.lastCompletedData?.latencyMsBucketed)
         XCTAssertLessThanOrEqual(wideEvent.lastCompletedData?.latencyMsBucketed ?? -1, 10_000)
     }
+
+    func testInFlightTrigger_isDropped() async {
+        let http = SlowMockHTTPClient(delaySeconds: 1)
+        let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressIP: "1.2.3.4",
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent,
+            contextName: "Test-Context"
+        )
+
+        async let first: Void = service.runCheck(trigger: .tunnelStart)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        await service.runCheck(trigger: .periodic)
+        _ = await first
+
+        XCTAssertEqual(wideEvent.startedFlows.count, 1)
+    }
+
+    func testCooldown_rejectsFollowUp() async {
+        let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let config = LeakCheckConfiguration(
+            host: "leakcheck.netp.duckduckgo.com",
+            httpPort: 80, httpsPort: 443, stunPort: 3478,
+            httpTimeout: 10, stunTimeout: 5,
+            periodicInterval: 60 * 60,
+            cooldown: 60,
+            tunnelStartDelay: 0
+        )
+        let service = VPNLeakCheckService(
+            configuration: config,
+            egressIP: "1.2.3.4",
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent,
+            contextName: "Test-Context"
+        )
+
+        await service.runCheck(trigger: .tunnelStart)
+        await service.runCheck(trigger: .reassert)
+
+        XCTAssertEqual(wideEvent.startedFlows.count, 1)
+    }
+}
+
+final class SlowMockHTTPClient: LeakCheckHTTPClient, @unchecked Sendable {
+    let delaySeconds: TimeInterval
+    init(delaySeconds: TimeInterval) { self.delaySeconds = delaySeconds }
+    func fetchIP(host: String, port: UInt16, scheme: LeakCheckScheme, ipVersion: IPVersion, timeout: TimeInterval) async throws -> String {
+        try await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
+        return "1.2.3.4"
+    }
 }
 
 // MARK: - Mocks

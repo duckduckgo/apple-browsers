@@ -30,6 +30,7 @@ public actor VPNLeakCheckService {
 
     private var currentCheck: Task<Void, Never>?
     private var lastCompletionDate: Date?
+    private var periodicTask: Task<Void, Never>?
 
     public init(
         configuration: LeakCheckConfiguration = .default,
@@ -47,6 +48,17 @@ public actor VPNLeakCheckService {
         self.contextName = contextName
     }
 
+    public func start() {
+        schedulePeriodic()
+    }
+
+    public func stop() {
+        periodicTask?.cancel()
+        periodicTask = nil
+        currentCheck?.cancel()
+        currentCheck = nil
+    }
+
     public func runCheck(trigger: LeakCheckTrigger) async {
         guard currentCheck == nil else { return }
         if let last = lastCompletionDate, Date().timeIntervalSince(last) < configuration.cooldown {
@@ -61,6 +73,10 @@ public actor VPNLeakCheckService {
         defer {
             currentCheck = nil
             lastCompletionDate = Date()
+        }
+
+        if trigger != .periodic {
+            schedulePeriodic()
         }
 
         let data = VPNIPLeakCheckWideEventData(
@@ -187,6 +203,18 @@ public actor VPNLeakCheckService {
         let ms = Int(seconds * 1000)
         let rounded = ((ms + 500) / 1000) * 1000
         return min(rounded, 10_000)
+    }
+
+    private func schedulePeriodic() {
+        periodicTask?.cancel()
+        let interval = configuration.periodicInterval
+        periodicTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+                if Task.isCancelled { return }
+                await self?.runCheck(trigger: .periodic)
+            }
+        }
     }
 
     private func determineStatus(data: VPNIPLeakCheckWideEventData) -> WideEventStatus {

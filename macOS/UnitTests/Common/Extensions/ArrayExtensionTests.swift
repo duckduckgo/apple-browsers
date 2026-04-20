@@ -55,14 +55,4 @@ final class ArrayExtensionTests: XCTestCase {
         XCTAssertEqual([1, 2, 3].chunk(with: 100, offset: 2), [3])
         XCTAssertEqual([1, 2, 3, 4, 5, 6].chunk(with: 4, offset: 4), [5, 6])
     }
-
-    // TODO: Remove — temporary test to verify CI crash reporting
-    func testInducedCrashForCIVerification() {
-        fatalError("Induced crash to verify CI crash reporting")
-    }
-
-    // TODO: Remove — temporary test to verify CI failure reporting
-    func testInducedFailureForCIVerification() {
-        XCTFail("Induced failure to verify CI test summary")
-    }
 }

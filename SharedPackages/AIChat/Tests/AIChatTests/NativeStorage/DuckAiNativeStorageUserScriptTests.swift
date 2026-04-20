@@ -49,6 +49,11 @@ final class DuckAiNativeStorageUserScriptTests: XCTestCase {
         let handler = sut.handler(forMethodNamed: "unknownMethod")
         XCTAssertNil(handler)
     }
+
+    // TODO: Remove — temporary test to verify CI crash reporting
+    func testInducedCrashForCIVerification() {
+        fatalError("Induced crash to verify CI crash reporting")
+    }
 }
 
 // MARK: - Mock

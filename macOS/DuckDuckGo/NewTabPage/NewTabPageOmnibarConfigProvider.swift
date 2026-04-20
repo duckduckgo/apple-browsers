@@ -209,6 +209,15 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         selectedModelIdSubject.eraseToAnyPublisher()
     }
 
+    var selectedModelShortName: String? {
+        get {
+            aiChatPreferencesPersistor.selectedModelShortName
+        }
+        set {
+            aiChatPreferencesPersistor.selectedModelShortName = newValue
+        }
+    }
+
     var showCustomizePopover: Bool {
         get {
             // We no longer present the tooltip

@@ -57,4 +57,6 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     var selectedModelIdPublisher: AnyPublisher<String?, Never> {
         $selectedModelId.dropFirst().eraseToAnyPublisher()
     }
+
+    var selectedModelShortName: String?
 }

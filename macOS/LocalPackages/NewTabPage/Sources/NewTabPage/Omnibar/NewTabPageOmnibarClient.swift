@@ -120,6 +120,12 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         }
         if let selectedModelId = config.selectedModelId {
             configProvider.selectedModelId = selectedModelId
+            // Cache the short name so the native omnibar can render the correct label before
+            // its own models fetch completes — otherwise it briefly shows the previous pick.
+            configProvider.selectedModelShortName = modelsProvider?.lastFetchedSections?
+                .flatMap(\.items)
+                .first(where: { $0.id == selectedModelId })?
+                .shortName
         }
         return nil
     }

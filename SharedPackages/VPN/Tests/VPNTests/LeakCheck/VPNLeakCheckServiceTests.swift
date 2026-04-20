@@ -91,6 +91,59 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         XCTAssertEqual(data.ipv6LeakIPType, .public)
     }
 
+    func testIPv6PostConnectionError_recordedAsError() async {
+        let http = MockLeakCheckHTTPClient(
+            ipv4: "1.2.3.4",
+            ipv6Error: LeakCheckHTTPResponseParser.ParseError.nonSuccessStatus(500)
+        )
+        let stun = MockLeakCheckSTUNClient(
+            ipv4: "1.2.3.4",
+            ipv6Error: URLError(.cannotFindHost)
+        )
+        let wideEvent = MockWideEventManager()
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressIP: "1.2.3.4",
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent,
+            contextName: "Test-Context"
+        )
+
+        await service.runCheck(trigger: .tunnelStart)
+
+        let data = try! XCTUnwrap(wideEvent.lastCompletedData)
+        XCTAssertEqual(data.ipv6Http?.status, .error)
+        XCTAssertEqual(data.ipv6Https?.status, .error)
+        XCTAssertEqual(data.ipv6Stun?.status, .success)
+    }
+
+    func testIPv6TimeoutError_mapsToSuccess() async {
+        let http = MockLeakCheckHTTPClient(
+            ipv4: "1.2.3.4",
+            ipv6Error: URLError(.timedOut)
+        )
+        let stun = MockLeakCheckSTUNClient(
+            ipv4: "1.2.3.4",
+            ipv6Error: URLError(.timedOut)
+        )
+        let wideEvent = MockWideEventManager()
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressIP: "1.2.3.4",
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent,
+            contextName: "Test-Context"
+        )
+
+        await service.runCheck(trigger: .tunnelStart)
+
+        let data = try! XCTUnwrap(wideEvent.lastCompletedData)
+        XCTAssertEqual(data.ipv6Http?.status, .success)
+        XCTAssertEqual(data.ipv6Https?.status, .success)
+    }
+
     func testIPv6ConnectionError_mapsToSuccess() async {
         let http = MockLeakCheckHTTPClient(
             ipv4: "1.2.3.4",
@@ -320,6 +373,26 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertGreaterThan(wideEvent.discardedCount, 0)
+    }
+
+    func testRunCheckAfterStop_isNoOp() async {
+        let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressIP: "1.2.3.4",
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent,
+            contextName: "Test-Context"
+        )
+
+        await service.stop()
+        await service.runCheck(trigger: .tunnelStart)
+
+        XCTAssertEqual(wideEvent.startedFlows.count, 0)
+        XCTAssertNil(wideEvent.lastCompletedData)
     }
 
     func testCompletePendingFlows_completesWithInterruptedReason() {

@@ -22,7 +22,6 @@ import NewTabPage
 import AIChat
 import Common
 import Combine
-import SharedTestUtilities
 
 final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
 
@@ -32,7 +31,6 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     private var tabsPreferences: TabsPreferences!
     private var tab: Tab!
     private var window: NSWindow!
-    private var schemeHandler: TestSchemeHandler!
 
     private var firedPixels: [String] = []
 
@@ -40,7 +38,6 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     override func setUp() {
         autoreleasepool {
             firedPixels = []
-            schemeHandler = TestSchemeHandler()
             promptHandler = AIChatPromptHandler.shared
             windowControllersManager = Application.appDelegate.windowControllersManager
             tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager)
@@ -52,7 +49,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
                 isCommandPressed: { false },
                 firePixel: { [weak self] event in self?.firedPixels.append(event.name) }
             )
-            tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
+            tab = Tab(content: .newtab)
             window = WindowsManager.openNewWindow(with: tab)!
         }
     }
@@ -66,7 +63,6 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
             tab = nil
             window?.close()
             window = nil
-            schemeHandler = nil
         }
     }
 

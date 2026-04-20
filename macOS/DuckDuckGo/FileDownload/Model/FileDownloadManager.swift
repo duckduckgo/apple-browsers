@@ -230,7 +230,15 @@ extension FileDownloadManager: WebKitDownloadTaskDelegate {
         do {
             url = try fm.withNonExistentUrl(for: url, incrementingIndexIfExistsUpTo: 10000) { url in
                 // the file will be overwritten in the WebKitDownloadTask
-                try fm.createFile(atPath: url.path, contents: nil) ? url : { throw CocoaError(.fileWriteFileExists) }()
+                guard fm.createFile(atPath: url.path, contents: nil) else {
+                    // Distinguish TOCTOU race (file appeared between fileExists check and createFile → retry with next name)
+                    // from a real failure (disk full, read-only fs, unavailable volume, etc. → break out immediately).
+                    if fm.fileExists(atPath: url.path) {
+                        throw CocoaError(.fileWriteFileExists)
+                    }
+                    throw CocoaError(.fileWriteNoPermission, userInfo: [NSFilePathErrorKey: url.path])
+                }
+                return url
             }
         } catch {
             pixelAssertionFailure("Failed to create file in the Downloads folder")

@@ -57,6 +57,8 @@ final class FileDownloadManagerTests: XCTestCase {
 
     override func tearDown() {
         FileManager.restoreUrlsForIn()
+        FileManager.restoreCreateFile()
+        customAssertionFailure = nil
         self.chooseDestination = nil
         self.fileIconFlyAnimationOriginalRect = nil
         preferences.alwaysRequestDownloadLocation = false
@@ -287,6 +289,95 @@ final class FileDownloadManagerTests: XCTestCase {
         waitForExpectations(timeout: 5)
     }
 
+    // Regression test: when createFile fails for a real reason (disk full, read-only fs, unavailable volume),
+    // the download should fail immediately — not loop 10001 times trying every possible filename variation.
+    @MainActor
+    func testWhenFileCreationFailsWithPersistentErrorThenDownloadIsCancelledImmediately() {
+        let downloadsURL = fm.temporaryDirectory
+        preferences.selectedDownloadLocation = downloadsURL
+
+        // Make createFile always return false without actually creating the file.
+        // This simulates a disk-full / permissions error that isWritableFile didn't catch.
+        var createFileCallCount = 0
+        FileManager.swizzleCreateFile { _ in
+            createFileCallCount += 1
+            return false
+        }
+
+        // pixelAssertionFailure → assertionFailure → customAssertionFailure: capture instead of crashing.
+        var assertionMessage: String?
+        customAssertionFailure = { message, _, _ in assertionMessage = message() }
+
+        let download = WKDownloadMock(url: .duckDuckGo)
+        dm.add(download, fireWindowSession: nil, delegate: self, destination: .auto)
+
+        self.chooseDestination = { _, _, _ in
+            XCTFail("Unexpected chooseDestination call — download should have failed, not prompted")
+        }
+
+        let e = expectation(description: "WKDownload callback called")
+        download.delegate?.download(download.asWKDownload(), decideDestinationUsing: response, suggestedFilename: "file.pdf") { url in
+            XCTAssertNil(url, "Download should be cancelled when file creation fails")
+            e.fulfill()
+        }
+
+        waitForExpectations(timeout: 5)
+
+        XCTAssertEqual(assertionMessage, "Failed to create file in the Downloads folder", "Pixel should fire once")
+        // With the fix: loop breaks on the first failure (1 call to createFile).
+        // Without the fix: loop would run 10001 times before failing.
+        XCTAssertEqual(createFileCallCount, 1, "createFile should be called only once — fail fast, not loop 10001 times")
+    }
+
+    // When createFile returns false but the file actually appeared on disk (TOCTOU race condition),
+    // the download manager should retry with the next available filename rather than aborting.
+    @MainActor
+    func testWhenFileCreationFailsDueToRaceConditionThenRetriesWithNextAvailableName() {
+        let downloadsURL = fm.temporaryDirectory
+        preferences.selectedDownloadLocation = downloadsURL
+
+        let racedPath = downloadsURL.appendingPathComponent("file.pdf").path
+        // Simulate race: createFile returns false for "file.pdf" but the file was actually written
+        // by another process right between the fileExists check and createFile call.
+        // Use Data().write(to:) to create the file without going through (swizzled) createFile.
+        // For all other paths, mimic real createFile behavior via Data().write(to:).
+        FileManager.swizzleCreateFile { path in
+            let url = URL(fileURLWithPath: path)
+            if path == racedPath {
+                try? Data().write(to: url)  // file appears but createFile "loses the race"
+                return false
+            }
+            do {
+                try Data().write(to: url)
+                return true
+            } catch {
+                return false
+            }
+        }
+        defer {
+            try? FileManager.default.removeItem(atPath: racedPath)
+            try? FileManager.default.removeItem(at: downloadsURL.appendingPathComponent("file 2.pdf"))
+        }
+
+        let download = WKDownloadMock(url: .duckDuckGo)
+        dm.add(download, fireWindowSession: nil, delegate: self, destination: .auto)
+
+        self.chooseDestination = { _, _, _ in
+            XCTFail("Unexpected chooseDestination call")
+        }
+
+        let e = expectation(description: "WKDownload callback called")
+        download.delegate?.download(download.asWKDownload(), decideDestinationUsing: response, suggestedFilename: "file.pdf") { url in
+            XCTAssertNotNil(url, "Download should succeed by retrying with a different name")
+            // withNonExistentUrl double-increments the index after a caught TOCTOU error (index 0 → 2),
+            // so "file 1.pdf" is skipped and "file 2.pdf" is the next attempt.
+            XCTAssertEqual(url?.lastPathComponent, "file 2.pdf", "Should pick the next available filename after the race")
+            e.fulfill()
+        }
+
+        waitForExpectations(timeout: 5)
+    }
+
     @MainActor
     func testWhenDefaultDownloadsLocationIsNotWritableThenDownloadLocationIsRequested() {
         preferences.selectedDownloadLocation = nil
@@ -345,6 +436,46 @@ final class TestWorkspace: NSWorkspace {
 }
 
 private extension FileManager {
+    private static var createFileHandler: ((String) -> Bool)?
+    private static let createFileLock = NSLock()
+    private static var isCreateFileSwizzled = false
+    private static let originalCreateFile = {
+        class_getInstanceMethod(FileManager.self, #selector(FileManager.createFile(atPath:contents:attributes:)))!
+    }()
+    private static let swizzledCreateFile = {
+        class_getInstanceMethod(FileManager.self, #selector(FileManager.swizzled_createFile(atPath:contents:attributes:)))!
+    }()
+
+    static func swizzleCreateFile(with handler: @escaping (String) -> Bool) {
+        createFileLock.lock()
+        defer { createFileLock.unlock() }
+        if !isCreateFileSwizzled {
+            isCreateFileSwizzled = true
+            method_exchangeImplementations(originalCreateFile, swizzledCreateFile)
+        }
+        createFileHandler = handler
+    }
+
+    static func restoreCreateFile() {
+        createFileLock.lock()
+        defer { createFileLock.unlock() }
+        if isCreateFileSwizzled {
+            isCreateFileSwizzled = false
+            method_exchangeImplementations(originalCreateFile, swizzledCreateFile)
+        }
+        createFileHandler = nil
+    }
+
+    @objc dynamic func swizzled_createFile(atPath path: String, contents: Data?, attributes: [FileAttributeKey: Any]?) -> Bool {
+        Self.createFileLock.lock()
+        let handler = Self.createFileHandler
+        Self.createFileLock.unlock()
+        guard let handler else {
+            return self.swizzled_createFile(atPath: path, contents: contents, attributes: attributes) // calls original (exchanged)
+        }
+        return handler(path)
+    }
+
     private static var urlsForIn: ((SearchPathDirectory, SearchPathDomainMask) -> [URL])?
     private static let lock = NSLock()
     private static var isSwizzled = false

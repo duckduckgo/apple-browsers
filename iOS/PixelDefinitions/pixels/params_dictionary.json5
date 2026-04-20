@@ -305,5 +305,27 @@
         "key": "free_trial",
         "type": "boolean",
         "description": "Whether the user is eligible for a free trial"
+    },
+    "origin": {
+        "key": "origin",
+        "type": "string",
+        "description": "Attribution origin identifier indicating the entry point that led to the action",
+        "enum": [
+            "funnel_onboarding_ios",
+            "funnel_skippedonboarding_ios",
+            "funnel_appsettings_ios",
+            "funnel_appmenu_ios",
+            "funnel_applaunch_ios_winback",
+            "funnel_appsettings_ios_winback",
+            "funnel_canceldowngrade_ios",
+            "funnel_purchaseoffer_ios",
+            "funnel_prepurchasecheck_ios"
+        ]
+    },
+    "locale": {
+        "key": "locale",
+        "type": "string",
+        "description": "User locale",
+        "examples": ["en-US", "hu-HU"]
     }
 }

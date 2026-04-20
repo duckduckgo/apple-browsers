@@ -366,16 +366,8 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
-            {
-                "key": "origin",
-                "type": "string",
-                "description": "Attribution origin identifier"
-            },
-            {
-                "key": "locale",
-                "type": "string",
-                "description": "User locale"
-            },
+            "origin",
+            "locale",
             "freeTrial"
         ]
     },

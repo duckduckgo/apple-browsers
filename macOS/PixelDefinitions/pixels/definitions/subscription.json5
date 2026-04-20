@@ -282,42 +282,14 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            {
-                "key": "origin",
-                "type": "string",
-                "description": "Attribution origin identifier"
-            },
-            {
-                "key": "locale",
-                "type": "string",
-                "description": "User locale"
-            },
-            "freeTrial"
-        ]
+        "parameters": ["appVersion", "pixelSource", "origin", "locale", "freeTrial"]
     },
     "m_mac_direct_subscribe": {
         "description": "Fired when a subscription purchase is completed successfully on direct distribution. Used for attribution tracking.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            {
-                "key": "origin",
-                "type": "string",
-                "description": "Attribution origin identifier"
-            },
-            {
-                "key": "locale",
-                "type": "string",
-                "description": "User locale"
-            },
-            "freeTrial"
-        ]
+        "parameters": ["appVersion", "pixelSource", "origin", "locale", "freeTrial"]
     },
 
     "m_mac_store_privacy-pro_app_subscription-purchase_failure": {

@@ -293,5 +293,29 @@
         "key": "free_trial",
         "type": "boolean",
         "description": "Whether the subscription was purchased via a free trial"
+    },
+    "origin": {
+        "key": "origin",
+        "type": "string",
+        "description": "Attribution origin identifier indicating the entry point that led to the action",
+        "enum": [
+            "funnel_appsettings_macos",
+            "funnel_appmenu_macos",
+            "funnel_freescan_macos",
+            "funnel_toolbar_macos",
+            "funnel_applaunch_macos_winback",
+            "funnel_appmenu_macos_winback",
+            "funnel_appsettings_macos_winback",
+            "funnel_newtab_macos_winback",
+            "funnel_onboarding_macOS__nextstepscard",
+            "funnel_purchaseoffer_macos",
+            "funnel_prepurchasecheck_macos"
+        ]
+    },
+    "locale": {
+        "key": "locale",
+        "type": "string",
+        "description": "User locale",
+        "examples": ["en-US", "hu-HU"]
     }
 }

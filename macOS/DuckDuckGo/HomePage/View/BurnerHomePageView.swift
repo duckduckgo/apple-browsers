@@ -80,8 +80,7 @@ struct BurnerHomePageView: View {
                     }
                 }
                 .padding(.vertical, Const.verticalPadding)
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: geometry.size.height)
+                .frame(maxWidth: .infinity, minHeight: geometry.size.height)
             }
             .background(backgroundColor)
         }

@@ -295,6 +295,16 @@
             "dbpAttemptId",
             "dbpAttemptDuration",
             {
+                "key": "error_category",
+                "description": "High-level error classification",
+                "type": "string"
+            },
+            {
+                "key": "error_details",
+                "description": "Error description supplied by the failing stage",
+                "type": "string"
+            },
+            {
                 "key": "stage",
                 "description": "The stage where the failure occurred",
                 "type": "string"
@@ -636,7 +646,7 @@
                 "key": "error_code",
                 "description": "Backend item error code",
                 "type": "string",
-                "enum": ["server_error", "extraction_error", "request_error"]
+                "enum": ["server_error", "extraction_error", "request_error", "unknown"]
             }
         ]
     },
@@ -1012,7 +1022,7 @@
         "description": "Fired when a scan or opt-out action fails while processing a data broker.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",

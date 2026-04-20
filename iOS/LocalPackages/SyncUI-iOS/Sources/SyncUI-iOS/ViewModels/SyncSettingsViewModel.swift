@@ -36,7 +36,7 @@ public enum SyncAnotherDevicePromptState: Int {
     public var dismissButtonTitle: String {
         switch self {
         case .notYetShown:
-            return UserText.simplifiedSyncAnotherDeviceRemind
+            return UserText.simplifiedSyncAnotherDeviceNotNow
         case .remindedOnce, .dismissed:
             return UserText.simplifiedSyncAnotherDeviceNoThanks
         }

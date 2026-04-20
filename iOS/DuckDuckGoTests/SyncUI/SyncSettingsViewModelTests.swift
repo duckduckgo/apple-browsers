@@ -565,7 +565,7 @@ final class SyncSettingsViewModelTests: XCTestCase {
 
         delegate.simplifiedSyncAnotherDevicePromptState = .notYetShown
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
-        XCTAssertEqual(sut.simplifiedSyncAnotherDevicePromptDismissButtonTitle, UserText.simplifiedSyncAnotherDeviceRemind)
+        XCTAssertEqual(sut.simplifiedSyncAnotherDevicePromptDismissButtonTitle, UserText.simplifiedSyncAnotherDeviceNotNow)
 
         delegate.simplifiedSyncAnotherDevicePromptState = .remindedOnce
         XCTAssertEqual(sut.simplifiedSyncAnotherDevicePromptDismissButtonTitle, UserText.simplifiedSyncAnotherDeviceNoThanks)

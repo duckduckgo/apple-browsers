@@ -108,6 +108,10 @@ Only check expiry dates on definitions that are added or modified in the PR, not
 
 Wide events in `iOS/PixelDefinitions/wide_events/definitions/*.json5` use a different schema from regular pixels. They have `meta`, `feature`, and `feature.data` sections instead of `suffixes` and `parameters`. Validating wide event schema correctness is out of scope for automated review — leave wide event definitions to human reviewers. Only flag if a wide event is added in Swift but has no definition file at all.
 
+### Validating changes to package.resolved files
+
+If there are changes in `iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved` or `macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved` then only flag these if there are actual differences in the versions compared to the content of `DuckDuckGo.xcworkspace/xcshareddata/swiftpm/Package.resolved` which is our source of truth.
+
 ### What NOT to Flag
 
 - Changes to `TEMPLATE.json5` files (these are scaffolds with intentionally placeholder values).
@@ -115,3 +119,4 @@ Wide events in `iOS/PixelDefinitions/wide_events/definitions/*.json5` use a diff
 - Minor ordering differences in the `parameters` array.
 - Existing definitions in files touched by the PR that were not themselves modified.
 - Schema validation issues that CI tooling (`npm run validate-pixel-defs`) already covers.
+

@@ -232,7 +232,6 @@ struct UserAgent {
                       isDesktop: Bool,
                       deviceVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion,
                       privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig) -> String {
-
         guard privacyConfig.isEnabled(featureKey: .customUserAgent) else { return oldLogic(forUrl: url,
                                                                                            isDesktop: isDesktop,
                                                                                            privacyConfig: privacyConfig) }

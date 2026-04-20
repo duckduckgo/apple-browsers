@@ -376,6 +376,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Allows to present Search Experience choice screen during onboarding
     case onboardingSearchExperience
 
+    /// Enables Duck.ai query experiment during onboarding
+    case onboardingDuckAIQueryExperiment
+
     /// Enables the omnibar toggle for AI Chat
     case omnibarToggle
 
@@ -467,7 +470,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case omnibarWebSearch
 
     /// Enables querying AI Chat data directly from local storage instead of via webview
-    case localStorageManipulation
+    case nativeDataAccess
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -513,6 +516,10 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Risky Domain Protection for VPN
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case riskyDomainsProtection
+
+    /// Connection failure loop detection for VPN
+    /// https://app.asana.com/1/137249556945/project/1207603085593419/task/1213755794484487?focus=true
+    case connectionFailureLoopDetection
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {
@@ -585,6 +592,11 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature { .htmlHistoryPage }
     case isLaunched
+}
+
+public enum TabSuspensionSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .tabSuspension }
+    case memoryPressureTrigger
 }
 
 public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {

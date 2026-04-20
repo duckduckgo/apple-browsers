@@ -122,6 +122,39 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                 pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                 error: error
             )
+        case .scriptletFetchSuccess(let type, let version, let count):
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionScriptletFetchSuccess,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                withAdditionalParameters: ["extension_type": type.rawValue, "version": version, "count": "\(count)"]
+            )
+        case .scriptletFetchError(let type, let error):
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionScriptletFetchError,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                error: error,
+                withAdditionalParameters: ["extension_type": type.rawValue]
+            )
+        case .scriptletValidationError(let type, let error):
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionScriptletValidationError,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                error: error,
+                withAdditionalParameters: ["extension_type": type.rawValue]
+            )
+        case .scriptletInstalled(let type, let version):
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionScriptletInstalled,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                withAdditionalParameters: ["extension_type": type.rawValue, "version": version]
+            )
+        case .scriptletInstallError(let type, let error):
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionScriptletInstallError,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                error: error,
+                withAdditionalParameters: ["extension_type": type.rawValue]
+            )
         }
     }
 }

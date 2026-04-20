@@ -168,6 +168,8 @@ public struct DefaultLeakCheckHTTPClient: LeakCheckHTTPClient {
                     )
                 case .failed(let error):
                     resume(.failure(error))
+                case .waiting(let error):
+                    resume(.failure(error))
                 case .cancelled:
                     resume(.failure(CancellationError()))
                 default:

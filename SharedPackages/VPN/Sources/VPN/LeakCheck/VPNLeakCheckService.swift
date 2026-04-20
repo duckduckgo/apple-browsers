@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Network
 import PixelKit
 
 public actor VPNLeakCheckService {
@@ -31,6 +32,7 @@ public actor VPNLeakCheckService {
     private var currentCheck: Task<Void, Never>?
     private var lastCompletionDate: Date?
     private var periodicTask: Task<Void, Never>?
+    private var isStopped = false
 
     public init(
         configuration: LeakCheckConfiguration = .default,
@@ -53,6 +55,7 @@ public actor VPNLeakCheckService {
     }
 
     public func stop() {
+        isStopped = true
         periodicTask?.cancel()
         periodicTask = nil
         if let task = currentCheck {
@@ -80,6 +83,7 @@ public actor VPNLeakCheckService {
     }
 
     public func runCheck(trigger: LeakCheckTrigger) async {
+        guard !isStopped else { return }
         guard currentCheck == nil else { return }
         if let last = lastCompletionDate, Date().timeIntervalSince(last) < configuration.cooldown {
             return
@@ -211,9 +215,47 @@ public actor VPNLeakCheckService {
         switch result {
         case .success:
             return .leak
-        case .failure:
-            return .success
+        case .failure(let error):
+            return isExpectedIPv6ConnectionFailure(error) ? .success : .error(error)
         }
+    }
+
+    private func isExpectedIPv6ConnectionFailure(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+
+        if let nwError = error as? NWError {
+            switch nwError {
+            case .posix(let code):
+                switch code {
+                case .EHOSTUNREACH, .ENETUNREACH, .ECONNREFUSED, .ETIMEDOUT, .EADDRNOTAVAIL, .ENOTCONN:
+                    return true
+                default:
+                    return false
+                }
+            case .dns:
+                return true
+            case .tls:
+                return false
+            @unknown default:
+                return false
+            }
+        }
+
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .cannotFindHost,
+                 .cannotConnectToHost,
+                 .timedOut,
+                 .networkConnectionLost,
+                 .notConnectedToInternet,
+                 .dnsLookupFailed:
+                return true
+            default:
+                return false
+            }
+        }
+
+        return false
     }
 
     private func firstLeakedIP(from results: [Result<String, Error>]) -> String? {

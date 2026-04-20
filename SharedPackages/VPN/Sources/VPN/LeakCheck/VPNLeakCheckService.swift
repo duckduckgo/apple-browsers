@@ -28,6 +28,9 @@ public actor VPNLeakCheckService {
     private let wideEvent: WideEventManaging
     private let contextName: String
 
+    private var currentCheck: Task<Void, Never>?
+    private var lastCompletionDate: Date?
+
     public init(
         configuration: LeakCheckConfiguration = .default,
         egressIP: String,
@@ -45,6 +48,21 @@ public actor VPNLeakCheckService {
     }
 
     public func runCheck(trigger: LeakCheckTrigger) async {
+        guard currentCheck == nil else { return }
+        if let last = lastCompletionDate, Date().timeIntervalSince(last) < configuration.cooldown {
+            return
+        }
+        let task = Task { await executeCheck(trigger: trigger) }
+        currentCheck = task
+        await task.value
+    }
+
+    private func executeCheck(trigger: LeakCheckTrigger) async {
+        defer {
+            currentCheck = nil
+            lastCompletionDate = Date()
+        }
+
         let data = VPNIPLeakCheckWideEventData(
             trigger: trigger,
             contextData: WideEventContextData(name: contextName)

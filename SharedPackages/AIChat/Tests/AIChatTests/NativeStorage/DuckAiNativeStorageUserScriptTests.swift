@@ -59,14 +59,14 @@ final class DuckAiNativeStorageUserScriptTests: XCTestCase {
 
     func testWhenMarkMigrationDoneWithValidKeyThenFiresStartedAndDonePixels() async throws {
         let handler = try XCTUnwrap(sut.handler(forMethodNamed: "markMigrationDone"))
-        _ = try await handler(["key": "chats"], WKScriptMessage())
+        _ = try await handler(["key": "chats"], MockUserScriptMessage())
         XCTAssertTrue(mockPixelFiring.firedEvents.contains { if case .migrationStarted = $0 { return true }; return false })
         XCTAssertTrue(mockPixelFiring.firedEvents.contains { if case .migrationDone(let k) = $0, k == "chats" { return true }; return false })
     }
 
     func testWhenMarkMigrationDoneWithMissingKeyThenFiresStartedAndBlankKeyPixels() async throws {
         let handler = try XCTUnwrap(sut.handler(forMethodNamed: "markMigrationDone"))
-        _ = try await handler([String: Any](), WKScriptMessage())
+        _ = try await handler([String: Any](), MockUserScriptMessage())
         XCTAssertTrue(mockPixelFiring.firedEvents.contains { if case .migrationStarted = $0 { return true }; return false })
         XCTAssertTrue(mockPixelFiring.firedEvents.contains { if case .migrationDoneBlankKey = $0 { return true }; return false })
         XCTAssertFalse(mockPixelFiring.firedEvents.contains { if case .migrationDone = $0 { return true }; return false })
@@ -75,16 +75,26 @@ final class DuckAiNativeStorageUserScriptTests: XCTestCase {
     func testWhenIsMigrationDoneReturnsTrueThenFiresAlreadyDonePixel() async throws {
         mockHandler.stubbedIsMigrationDone = true
         let handler = try XCTUnwrap(sut.handler(forMethodNamed: "isMigrationDone"))
-        _ = try await handler(["key": "chats"], WKScriptMessage())
+        _ = try await handler(["key": "chats"], MockUserScriptMessage())
         XCTAssertTrue(mockPixelFiring.firedEvents.contains { if case .migrationAlreadyDone = $0 { return true }; return false })
     }
 
     func testWhenIsMigrationDoneReturnsFalseThenDoesNotFireAlreadyDonePixel() async throws {
         mockHandler.stubbedIsMigrationDone = false
         let handler = try XCTUnwrap(sut.handler(forMethodNamed: "isMigrationDone"))
-        _ = try await handler(["key": "chats"], WKScriptMessage())
+        _ = try await handler(["key": "chats"], MockUserScriptMessage())
         XCTAssertFalse(mockPixelFiring.firedEvents.contains { if case .migrationAlreadyDone = $0 { return true }; return false })
     }
+}
+
+// MARK: - UserScriptMessage mock
+
+private struct MockUserScriptMessage: UserScriptMessage {
+    var messageName: String = ""
+    var messageBody: Any = [:]
+    var messageHost: String = ""
+    var messageWebView: WKWebView?
+    var isMainFrame: Bool = true
 }
 
 // MARK: - Test helpers

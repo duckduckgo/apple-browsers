@@ -96,7 +96,9 @@ public actor VPNLeakCheckService {
     private func executeCheck(trigger: LeakCheckTrigger) async {
         defer {
             currentCheck = nil
-            lastCompletionDate = Date()
+            if !Task.isCancelled {
+                lastCompletionDate = Date()
+            }
         }
 
         if trigger != .periodic {
@@ -109,24 +111,25 @@ public actor VPNLeakCheckService {
         )
         wideEvent.startFlow(data)
 
+        let egressIPSnapshot = egressIP
         let startDate = Date()
         let results = await probeAll()
 
-        data.ipv4Http = classifyIPv4(results.ipv4Http)
-        data.ipv4Https = classifyIPv4(results.ipv4Https)
-        data.ipv4Stun = classifyIPv4(results.ipv4Stun)
+        data.ipv4Http = classifyIPv4(results.ipv4Http, egressIP: egressIPSnapshot)
+        data.ipv4Https = classifyIPv4(results.ipv4Https, egressIP: egressIPSnapshot)
+        data.ipv4Stun = classifyIPv4(results.ipv4Stun, egressIP: egressIPSnapshot)
         data.ipv6Http = classifyIPv6(results.ipv6Http)
         data.ipv6Https = classifyIPv6(results.ipv6Https)
         data.ipv6Stun = classifyIPv6(results.ipv6Stun)
 
         let ipv4Probes: [LeakCheckPerTestResult?] = [data.ipv4Http, data.ipv4Https, data.ipv4Stun]
         if ipv4Probes.contains(where: { $0?.status == .leak }),
-           let leakedIP = firstLeakedIP(from: [results.ipv4Http, results.ipv4Https, results.ipv4Stun]) {
+           let leakedIP = firstLeakedIP(from: [results.ipv4Http, results.ipv4Https, results.ipv4Stun], egressIP: egressIPSnapshot) {
             data.ipv4LeakIPType = IPAddressClassifier.classify(leakedIP)
         }
         let ipv6Probes: [LeakCheckPerTestResult?] = [data.ipv6Http, data.ipv6Https, data.ipv6Stun]
         if ipv6Probes.contains(where: { $0?.status == .leak }),
-           let leakedIP = firstLeakedIP(from: [results.ipv6Http, results.ipv6Https, results.ipv6Stun]) {
+           let leakedIP = firstLeakedIP(from: [results.ipv6Http, results.ipv6Https, results.ipv6Stun], egressIP: egressIPSnapshot) {
             data.ipv6LeakIPType = IPAddressClassifier.classify(leakedIP)
         }
 
@@ -202,7 +205,7 @@ public actor VPNLeakCheckService {
         do { return .success(try await operation()) } catch { return .failure(error) }
     }
 
-    private func classifyIPv4(_ result: Result<String, Error>) -> LeakCheckPerTestResult {
+    private func classifyIPv4(_ result: Result<String, Error>, egressIP: String) -> LeakCheckPerTestResult {
         switch result {
         case .success(let ip):
             return ip == egressIP ? .success : .leak
@@ -258,7 +261,7 @@ public actor VPNLeakCheckService {
         return false
     }
 
-    private func firstLeakedIP(from results: [Result<String, Error>]) -> String? {
+    private func firstLeakedIP(from results: [Result<String, Error>], egressIP: String) -> String? {
         for result in results {
             if case .success(let ip) = result, ip != egressIP { return ip }
         }

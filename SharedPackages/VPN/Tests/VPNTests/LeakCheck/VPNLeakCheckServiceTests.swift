@@ -336,6 +336,28 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         XCTAssertEqual(wideEvent.startedFlows.count, 1)
     }
 
+    func testUpdateEgressIP_duringInflightCheck_usesSnapshot() async {
+        let http = SlowMockHTTPClient(delaySeconds: 0.3, returnIP: "1.2.3.4")
+        let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressIP: "1.2.3.4",
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent,
+            contextName: "Test-Context"
+        )
+
+        async let checkTask: Void = service.runCheck(trigger: .tunnelStart)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        await service.updateEgressIP("5.6.7.8")
+        _ = await checkTask
+
+        XCTAssertEqual(wideEvent.lastCompletedData?.ipv4Http?.status, .success)
+        XCTAssertEqual(wideEvent.lastCompletedData?.ipv4Https?.status, .success)
+    }
+
     func testUpdateEgressIP_changesComparison() async {
         let http = MockLeakCheckHTTPClient(ipv4: "5.6.7.8", ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "5.6.7.8", ipv6Error: URLError(.cannotFindHost))
@@ -451,10 +473,15 @@ final class MockWideEventManagerWithPending: WideEventManaging, @unchecked Senda
 
 final class SlowMockHTTPClient: LeakCheckHTTPClient, @unchecked Sendable {
     let delaySeconds: TimeInterval
-    init(delaySeconds: TimeInterval) { self.delaySeconds = delaySeconds }
+    let returnIP: String
+    init(delaySeconds: TimeInterval, returnIP: String = "1.2.3.4") {
+        self.delaySeconds = delaySeconds
+        self.returnIP = returnIP
+    }
     func fetchIP(host: String, port: UInt16, scheme: LeakCheckScheme, ipVersion: IPVersion, timeout: TimeInterval) async throws -> String {
         try await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
-        return "1.2.3.4"
+        if ipVersion == .v6 { throw URLError(.cannotFindHost) }
+        return returnIP
     }
 }
 

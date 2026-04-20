@@ -122,30 +122,25 @@ public struct DefaultLeakCheckHTTPClient: LeakCheckHTTPClient {
 
     private static func perform(connection: NWConnection, request: String) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
-            var buffer = Data()
-            var didResume = false
-            func resume(_ result: Result<String, Error>) {
-                guard !didResume else { return }
-                didResume = true
-                continuation.resume(with: result)
-            }
+            let state = HTTPReceiveState(continuation)
 
             func receiveLoop() {
                 connection.receive(minimumIncompleteLength: 1, maximumLength: 64 * 1024) { data, _, isComplete, error in
                     if let error = error {
-                        resume(.failure(error))
+                        state.resume(.failure(error))
                         return
                     }
-                    if let data = data { buffer.append(data) }
+                    if let data = data { state.append(data) }
                     if isComplete {
+                        let buffer = state.currentBuffer()
                         guard let raw = String(data: buffer, encoding: .utf8) else {
-                            resume(.failure(URLError(.cannotDecodeContentData)))
+                            state.resume(.failure(URLError(.cannotDecodeContentData)))
                             return
                         }
                         do {
-                            resume(.success(try LeakCheckHTTPResponseParser.parse(raw)))
+                            state.resume(.success(try LeakCheckHTTPResponseParser.parse(raw)))
                         } catch {
-                            resume(.failure(error))
+                            state.resume(.failure(error))
                         }
                         return
                     }
@@ -153,30 +148,60 @@ public struct DefaultLeakCheckHTTPClient: LeakCheckHTTPClient {
                 }
             }
 
-            connection.stateUpdateHandler = { state in
-                switch state {
+            connection.stateUpdateHandler = { nwState in
+                switch nwState {
                 case .ready:
                     connection.send(
                         content: request.data(using: .utf8),
                         completion: .contentProcessed { sendError in
                             if let sendError = sendError {
-                                resume(.failure(sendError))
+                                state.resume(.failure(sendError))
                                 return
                             }
                             receiveLoop()
                         }
                     )
                 case .failed(let error):
-                    resume(.failure(error))
+                    state.resume(.failure(error))
                 case .waiting(let error):
-                    resume(.failure(error))
+                    state.resume(.failure(error))
                 case .cancelled:
-                    resume(.failure(CancellationError()))
+                    state.resume(.failure(CancellationError()))
                 default:
                     break
                 }
             }
             connection.start(queue: .global(qos: .utility))
         }
+    }
+}
+
+private final class HTTPReceiveState: @unchecked Sendable {
+    private let lock = NSLock()
+    private var buffer = Data()
+    private var continuation: CheckedContinuation<String, Error>?
+
+    init(_ continuation: CheckedContinuation<String, Error>) {
+        self.continuation = continuation
+    }
+
+    func append(_ data: Data) {
+        lock.lock()
+        buffer.append(data)
+        lock.unlock()
+    }
+
+    func currentBuffer() -> Data {
+        lock.lock()
+        defer { lock.unlock() }
+        return buffer
+    }
+
+    func resume(_ result: Result<String, Error>) {
+        lock.lock()
+        let pending = continuation
+        continuation = nil
+        lock.unlock()
+        pending?.resume(with: result)
     }
 }

@@ -76,49 +76,61 @@ public struct DefaultLeakCheckSTUNClient: LeakCheckSTUNClient {
         transactionID: Data
     ) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
-            var didResume = false
-            func resume(_ result: Result<String, Error>) {
-                guard !didResume else { return }
-                didResume = true
-                continuation.resume(with: result)
-            }
+            let state = STUNContinuationState(continuation)
 
-            connection.stateUpdateHandler = { state in
-                switch state {
+            connection.stateUpdateHandler = { nwState in
+                switch nwState {
                 case .ready:
                     connection.send(content: request, completion: .contentProcessed { sendError in
                         if let sendError = sendError {
-                            resume(.failure(sendError))
+                            state.resume(.failure(sendError))
                             return
                         }
                         connection.receiveMessage { data, _, _, recvError in
                             if let recvError = recvError {
-                                resume(.failure(recvError))
+                                state.resume(.failure(recvError))
                                 return
                             }
                             guard let data = data else {
-                                resume(.failure(URLError(.badServerResponse)))
+                                state.resume(.failure(URLError(.badServerResponse)))
                                 return
                             }
                             do {
                                 let ip = try STUNMessage.extractMappedAddress(from: data, transactionID: transactionID)
-                                resume(.success(ip))
+                                state.resume(.success(ip))
                             } catch {
-                                resume(.failure(error))
+                                state.resume(.failure(error))
                             }
                         }
                     })
                 case .failed(let error):
-                    resume(.failure(error))
+                    state.resume(.failure(error))
                 case .waiting(let error):
-                    resume(.failure(error))
+                    state.resume(.failure(error))
                 case .cancelled:
-                    resume(.failure(CancellationError()))
+                    state.resume(.failure(CancellationError()))
                 default:
                     break
                 }
             }
             connection.start(queue: .global(qos: .utility))
         }
+    }
+}
+
+private final class STUNContinuationState: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<String, Error>?
+
+    init(_ continuation: CheckedContinuation<String, Error>) {
+        self.continuation = continuation
+    }
+
+    func resume(_ result: Result<String, Error>) {
+        lock.lock()
+        let pending = continuation
+        continuation = nil
+        lock.unlock()
+        pending?.resume(with: result)
     }
 }

@@ -258,9 +258,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let hasEscapeHatch = escapeHatchModel != nil
         let isBottomBar = !isUsingTopBarPosition
 
-        // Suggestion tray: only needs inset in bottom bar to clear the dismiss button.
-        let suggestionInset: CGFloat = (hasEscapeHatch && isBottomBar) ? Metrics.escapeHatchDismissButtonInset : 0
-        suggestionTrayManager?.setAdditionalTopInset(suggestionInset)
+        let suggestionInsetBase: CGFloat = (hasEscapeHatch && isBottomBar) ? Metrics.escapeHatchDismissButtonInset : 0
+
+        let trayTopBarPullUp: CGFloat = (hasEscapeHatch && !isBottomBar) ? Metrics.escapeHatchTopBarTrayPullUp : 0
+        suggestionTrayManager?.setAdditionalTopInset(suggestionInsetBase + trayTopBarPullUp)
 
         // Chat history: compensate for built-in table header padding that the NTP doesn't have.
         guard hasEscapeHatch else {
@@ -270,7 +271,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         let compensation = isBottomBar ? Metrics.chatHistoryBottomBarCompensation : 0
         let emptyListBoost: CGFloat = (!chatHasSuggestions && !isBottomBar) ? Metrics.escapeHatchEmptyListBoost : 0
-        let chatInset = suggestionInset - compensation + emptyListBoost
+        let chatInset = suggestionInsetBase - compensation + emptyListBoost
         aiChatHistoryManager?.setAdditionalTopInset(chatInset)
     }
 
@@ -691,10 +692,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let backgroundColor = UIColor(designSystemColor: .panel)
         static let contentTopInset: CGFloat = 10
         static let escapeHatchDismissButtonInset: CGFloat = 44
-        static let chatHistoryBottomBarCompensation: CGFloat = 8
+        static let chatHistoryBottomBarCompensation: CGFloat = 1
         static let escapeHatchLogoOffset: CGFloat = 120
         // Vertically centers the escape hatch card when the chat history list is empty (no recent chats)
-        static let escapeHatchEmptyListBoost: CGFloat = 150
+        static let escapeHatchEmptyListBoost: CGFloat = 165
+        // Pulls the suggestion tray (NTP/Favorites) upward in UTI top bar to tighten gap between UTI input and hatch.
+        static let escapeHatchTopBarTrayPullUp: CGFloat = -10
     }
 }
 

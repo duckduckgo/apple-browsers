@@ -36,8 +36,11 @@ final class AIChatHistoryListViewController: UIViewController {
         static let iconTextSpacing: CGFloat = 12
         static let cellHeight: CGFloat = 44
         static let horizontalInset: CGFloat = 16
-        static let topContentInset: CGFloat = -20
-        static let escapeHatchTopPadding: CGFloat = 16
+        static let topContentInset: CGFloat = -20 //
+        // Separate paddings because Recent Chats (UITableView/UIKit) and Favorites (NewTabPage/SwiftUI)
+        // have different layout systems; hatch needs per-state tuning to align with each tab visually.
+        static let escapeHatchTopPaddingNoTitle: CGFloat = 16
+        static let escapeHatchTopPaddingWithTitle: CGFloat = 6
         static let escapeHatchHeaderHeight: CGFloat = 72
         static let escapeHatchBottomPadding: CGFloat = 16
         static let escapeHatchTopContentInset: CGFloat = 8
@@ -212,7 +215,8 @@ final class AIChatHistoryListViewController: UIViewController {
             let minimumTrailing = hosting.view.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -Constants.horizontalInset)
             minimumTrailing.priority = .required - 1
 
-            let topOffset = totalHeight + Constants.escapeHatchTopPadding
+            let escapeHatchTopPadding = hasTitleContent ? Constants.escapeHatchTopPaddingWithTitle : Constants.escapeHatchTopPaddingNoTitle
+            let topOffset = totalHeight + escapeHatchTopPadding
             NSLayoutConstraint.activate([
                 hosting.view.centerXAnchor.constraint(equalTo: container.centerXAnchor),
                 hosting.view.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
@@ -223,7 +227,7 @@ final class AIChatHistoryListViewController: UIViewController {
                 hosting.view.heightAnchor.constraint(equalToConstant: Constants.escapeHatchHeaderHeight),
             ])
 
-            totalHeight += Constants.escapeHatchTopPadding + Constants.escapeHatchHeaderHeight + Constants.escapeHatchBottomPadding
+            totalHeight += escapeHatchTopPadding + Constants.escapeHatchHeaderHeight + Constants.escapeHatchBottomPadding
         }
 
         if hasTitleContent {

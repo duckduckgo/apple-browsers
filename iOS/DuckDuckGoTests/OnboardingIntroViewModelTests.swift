@@ -18,6 +18,7 @@
 //
 
 import Core
+import Persistence
 import PersistenceTestingUtils
 import PrivacyConfig
 import SetDefaultBrowserTestSupport

@@ -135,9 +135,9 @@ final class SubscriptionPromoViewModel: ObservableObject {
         self.dateProvider = dateProvider
         self.promoDelegate = promoDelegate
 
-        if featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) {
+        // if featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) {
             checkPurchaseEligibility()
-        }
+        // }
     }
 
     deinit {

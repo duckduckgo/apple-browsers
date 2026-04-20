@@ -42,11 +42,6 @@ public enum BrowsingMode: Int, CaseIterable {
 
 extension Tab {
     var pixelParamValue: String {
-        switch fireTab {
-        case true:
-            return "fire"
-        case false:
-            return "normal"
-        }
+        return mode.pixelParamValue
     }
 }

@@ -25,5 +25,7 @@
 	<string>$(NETP_APP_GROUP)</string>
 	<key>DBP_BACKGROUND_AGENT_BUNDLE_ID</key>
 	<string>$(DBP_BACKGROUND_AGENT_BUNDLE_ID)</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>DuckDuckGo doesn't need access to the local network. Please select Don't Allow.</string>
 </dict>
 </plist>

@@ -284,6 +284,7 @@
         "suffixes": [],
         "parameters": [
             "appVersion",
+            "pixelSource",
             "origin",
             "locale",
             {
@@ -300,6 +301,7 @@
         "suffixes": [],
         "parameters": [
             "appVersion",
+            "pixelSource",
             "origin",
             "locale",
             {

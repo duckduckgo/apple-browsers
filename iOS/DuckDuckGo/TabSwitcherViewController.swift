@@ -179,6 +179,7 @@ class TabSwitcherViewController: UIViewController {
     private var pickerSelectionCancellable: AnyCancellable?
     private var fireTabsTipTask: Task<Void, Never>?
     var fireModePromotionsCoordinator: FireModePromotionCoordinating?
+    var shouldForceShowFireTabsTip = false
     private var fireModeCapability: FireModeCapable {
         FireModeCapability.create()
     }
@@ -287,6 +288,14 @@ class TabSwitcherViewController: UIViewController {
         fireTabsTipTask?.cancel()
 
         let tip = FireTabsTip()
+
+        if shouldForceShowFireTabsTip {
+            shouldForceShowFireTabsTip = false
+            let popoverController = TipUIPopoverViewController(tip, sourceItem: sourceView)
+            popoverController.popoverPresentationController?.permittedArrowDirections = [.up, .down]
+            present(popoverController, animated: true)
+            return
+        }
 
         if fireModePromotionsCoordinator?.isTabSwitcherTipExpired == true {
             tip.invalidate(reason: .displayCountExceeded)

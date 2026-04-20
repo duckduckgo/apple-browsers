@@ -277,6 +277,39 @@
         "parameters": ["appVersion", "pixelSource"]
     },
 
+    "m_mac_store_subscribe": {
+        "description": "Fired when a subscription purchase is completed successfully on App Store distribution. Used for attribution tracking.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "origin",
+            "locale",
+            {
+                "key": "free_trial",
+                "type": "boolean",
+                "description": "Whether the subscription was purchased via a free trial"
+            }
+        ]
+    },
+    "m_mac_direct_subscribe": {
+        "description": "Fired when a subscription purchase is completed successfully on direct distribution. Used for attribution tracking.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "origin",
+            "locale",
+            {
+                "key": "free_trial",
+                "type": "boolean",
+                "description": "Whether the subscription was purchased via a free trial"
+            }
+        ]
+    },
+
     "m_mac_store_privacy-pro_app_subscription-purchase_failure": {
         "description": "The error encountered when an App Store subscription purchase fails",
         "owners": ["federicocappelli"],

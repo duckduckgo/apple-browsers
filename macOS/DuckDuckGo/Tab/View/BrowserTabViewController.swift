@@ -1225,10 +1225,17 @@ final class BrowserTabViewController: NSViewController {
     var burnerHomePageViewController: BurnerHomePageViewController?
     private func burnerHomePageViewControllerCreatingIfNeeded() -> BurnerHomePageViewController {
         return burnerHomePageViewController ?? {
+            var dateProvider: () -> Date = Date.init
+            let buildType = StandardApplicationBuildType()
+            if buildType.isDebugBuild || buildType.isReviewBuild {
+                let debugStore = SubscriptionPromoDebugStore(keyValueStore: UserDefaults.standard)
+                dateProvider = { debugStore.simulatedTodayDate }
+            }
             let burnerHomePageViewController = BurnerHomePageViewController(
                 subscriptionManager: subscriptionManager,
                 featureFlagger: featureFlagger,
-                promoDelegate: subscriptionPromoDelegate
+                promoDelegate: subscriptionPromoDelegate,
+                dateProvider: dateProvider
             )
             burnerHomePageViewController.openSubscriptionPage = { [weak self] in
                 self?.openSubscriptionPurchasePage()

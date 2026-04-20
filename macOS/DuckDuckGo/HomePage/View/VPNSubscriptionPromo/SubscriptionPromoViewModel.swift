@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Common
 import FeatureFlags
 import Foundation
@@ -100,6 +101,10 @@ final class SubscriptionPromoViewModel: ObservableObject {
     private let pixelFiring: PixelFiring?
     private var persistor: SubscriptionPromoPersisting
     private let locale: Locale
+    private let dateProvider: () -> Date
+
+    private let canUserPurchaseSubject = CurrentValueSubject<Bool, Never>(false)
+    private var cancellables = Set<AnyCancellable>()
 
     @Published private(set) var shouldShowPromo: Bool = false {
         didSet {
@@ -120,13 +125,19 @@ final class SubscriptionPromoViewModel: ObservableObject {
          pixelFiring: PixelFiring? = PixelKit.shared,
          persistor: SubscriptionPromoPersisting? = nil,
          locale: Locale = .current,
+         dateProvider: @escaping () -> Date = Date.init,
          promoDelegate: FireWindowSubscriptionPromoDelegate? = nil) {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.persistor = persistor ?? SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
         self.locale = locale
+        self.dateProvider = dateProvider
         self.promoDelegate = promoDelegate
+
+        if featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) {
+            checkPurchaseEligibility()
+        }
     }
 
     deinit {
@@ -143,25 +154,40 @@ final class SubscriptionPromoViewModel: ObservableObject {
                 pixelFiring?.fire(SubscriptionPromoPixel.promoViewed(isEligibleForFreeTrial: isEligibleForFreeTrial))
             }
         case .notEvaluated:
+            guard canUserPurchaseSubject.value else { return }
             evaluatePromoVisibility()
         }
     }
 
     func dismiss() {
         pixelFiring?.fire(SubscriptionPromoPixel.promoDismissed(isEligibleForFreeTrial: isEligibleForFreeTrial))
-        persistor.promoDismissedDate = Date()
+        persistor.promoDismissedDate = dateProvider()
         shouldShowPromo = false
         onPromoDismissed?()
     }
 
     func onPromoButtonTapped() {
         pixelFiring?.fire(SubscriptionPromoPixel.promoCtaActioned(isEligibleForFreeTrial: isEligibleForFreeTrial))
-        persistor.promoDismissedDate = Date()
+        persistor.promoDismissedDate = dateProvider()
         onButtonAction?()
     }
 
-    /// Display conditions:
-    /// - Feature flag enabled (remote releasable)
+    private func checkPurchaseEligibility() {
+        switch subscriptionManager.currentEnvironment.purchasePlatform {
+        case .appStore:
+            canUserPurchaseSubject.send(subscriptionManager.hasAppStoreProductsAvailable)
+            subscriptionManager.hasAppStoreProductsAvailablePublisher
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] canPurchase in
+                    self?.canUserPurchaseSubject.send(canPurchase)
+                }
+                .store(in: &cancellables)
+        case .stripe:
+            canUserPurchaseSubject.send(true)
+        }
+    }
+
+    /// Display conditions (feature flag and purchase eligibility are checked before evaluation in `updateForTab`):
     /// - US locale only
     /// - Non-subscriber only
     /// - Fire Tab visited >= 3 times
@@ -174,7 +200,6 @@ final class SubscriptionPromoViewModel: ObservableObject {
             onPromoEvaluated?(shouldShow)
         }
 
-        guard featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) else { return }
         guard isUSLocale else { return }
         guard !subscriptionManager.isSubscriptionPresent() else { return }
         guard persistor.fireTabVisitCount >= SubscriptionPromoConstants.requiredVisitCount else { return }
@@ -201,16 +226,17 @@ final class SubscriptionPromoViewModel: ObservableObject {
     /// Checks the rolling window display limit. If allowed, records the display and returns `true`.
     /// Returns `false` when the limit has been reached within the current window.
     private func recordDisplayIfAllowed() -> Bool {
+        let now = dateProvider()
         if let windowStart = persistor.promoDisplayWindowStart {
-            let daysSinceWindowStart = Calendar.current.numberOfDaysBetween(windowStart, and: Date()) ?? 0
+            let daysSinceWindowStart = Calendar.current.numberOfDaysBetween(windowStart, and: now) ?? 0
             if daysSinceWindowStart >= SubscriptionPromoConstants.displayWindowDays {
                 persistor.promoDisplayCount = 0
-                persistor.promoDisplayWindowStart = Date()
+                persistor.promoDisplayWindowStart = now
             } else if persistor.promoDisplayCount >= SubscriptionPromoConstants.maxDisplaysPerTimeWindow {
                 return false
             }
         } else {
-            persistor.promoDisplayWindowStart = Date()
+            persistor.promoDisplayWindowStart = now
         }
         persistor.promoDisplayCount += 1
         return true
@@ -220,7 +246,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
         guard let dismissedDate = persistor.promoDismissedDate else {
             return false
         }
-        let daysSinceDismissal = Calendar.current.numberOfDaysBetween(dismissedDate, and: Date()) ?? 0
+        let daysSinceDismissal = Calendar.current.numberOfDaysBetween(dismissedDate, and: dateProvider()) ?? 0
         return daysSinceDismissal < SubscriptionPromoConstants.dismissCooldownDays
     }
 }

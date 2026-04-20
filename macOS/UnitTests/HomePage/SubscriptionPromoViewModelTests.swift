@@ -316,13 +316,94 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         XCTAssertFalse(sut.shouldShowPromo)
     }
 
+    // MARK: - Date Provider
+
+    func testWhenDateProviderOverridesPastCooldown_ThenShowsPromo() {
+        persistor.fireTabVisitCount = 3
+        persistor.promoDismissedDate = Date()
+        let futureDate = Calendar.current.date(byAdding: .day, value: 29, to: Date())!
+        sut = makeSUT(dateProvider: { futureDate })
+
+        sut.updateForTab(.notEvaluated)
+
+        XCTAssertTrue(sut.shouldShowPromo)
+    }
+
+    func testWhenDateProviderWithinCooldown_ThenDoesNotShowPromo() {
+        persistor.fireTabVisitCount = 3
+        persistor.promoDismissedDate = Date()
+        let nearFutureDate = Calendar.current.date(byAdding: .day, value: 10, to: Date())!
+        sut = makeSUT(dateProvider: { nearFutureDate })
+
+        sut.updateForTab(.notEvaluated)
+
+        XCTAssertFalse(sut.shouldShowPromo)
+    }
+
+    func testWhenDateProviderOverridesExpiredDisplayWindow_ThenResetsCount() {
+        persistor.fireTabVisitCount = 3
+        persistor.promoDisplayCount = 4
+        persistor.promoDisplayWindowStart = Date()
+        let futureDate = Calendar.current.date(byAdding: .day, value: 29, to: Date())!
+        sut = makeSUT(dateProvider: { futureDate })
+
+        sut.updateForTab(.notEvaluated)
+
+        XCTAssertTrue(sut.shouldShowPromo)
+        XCTAssertEqual(persistor.promoDisplayCount, 1)
+    }
+
+    // MARK: - Purchase Eligibility
+
+    func testWhenAppStoreProductsNotAvailable_ThenDoesNotShowPromo() {
+        persistor.fireTabVisitCount = 3
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        sut = makeSUT(purchasePlatform: .appStore)
+
+        sut.updateForTab(.notEvaluated)
+
+        XCTAssertFalse(sut.shouldShowPromo)
+    }
+
+    func testWhenAppStoreProductsAvailable_ThenShowsPromoAfterPublisher() {
+        persistor.fireTabVisitCount = 3
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        sut = makeSUT(purchasePlatform: .appStore)
+
+        sut.updateForTab(.notEvaluated)
+        XCTAssertFalse(sut.shouldShowPromo, "Promo waits for purchase eligibility")
+
+        subscriptionManager.hasAppStoreProductsAvailable = true
+
+        let expectation = expectation(description: "Publisher delivers value")
+        DispatchQueue.main.async { expectation.fulfill() }
+        wait(for: [expectation], timeout: 1.0)
+
+        sut.updateForTab(.notEvaluated)
+        XCTAssertTrue(sut.shouldShowPromo)
+    }
+
+    func testWhenPlatformIsStripe_ThenPurchaseAlwaysEligible() {
+        persistor.fireTabVisitCount = 3
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        sut = makeSUT(purchasePlatform: .stripe)
+
+        sut.updateForTab(.notEvaluated)
+
+        XCTAssertTrue(sut.shouldShowPromo)
+    }
+
     private func makeSUT(locale: Locale = Locale(identifier: "en_US"),
+                         purchasePlatform: SubscriptionEnvironment.PurchasePlatform = .stripe,
+                         dateProvider: @escaping () -> Date = Date.init,
                          promoDelegate: FireWindowSubscriptionPromoDelegate? = nil) -> SubscriptionPromoViewModel {
-        SubscriptionPromoViewModel(
+        subscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: purchasePlatform)
+        return SubscriptionPromoViewModel(
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
             persistor: persistor,
             locale: locale,
+            dateProvider: dateProvider,
             promoDelegate: promoDelegate
         )
     }

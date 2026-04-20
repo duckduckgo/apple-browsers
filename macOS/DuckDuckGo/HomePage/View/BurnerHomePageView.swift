@@ -23,16 +23,13 @@ struct BurnerHomePageView: View {
 
     static let targetWidth: CGFloat = 508
     static let height: CGFloat = 273
-    static let totalHeight: CGFloat = height + 2 * Const.verticalPadding
 
     enum Const {
         static let verticalPadding = 40.0
-        static let searchBoxVerticalSpacing = 24.0
-        static let promoTopPadding = 24.0
+        static let contentGap = 20.0
     }
 
     @ObservedObject var promoViewModel: SubscriptionPromoViewModel
-    @State private var promoCardHeight: CGFloat = 0
 
     @EnvironmentObject var model: AppearancePreferences
     @EnvironmentObject var themeManager: ThemeManager
@@ -43,57 +40,48 @@ struct BurnerHomePageView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            ZStack {
-                ScrollView {
-                    VStack(spacing: 0) {
-                        if promoViewModel.shouldShowPromo {
-                            SubscriptionPromoView(
-                                actionType: promoViewModel.isEligibleForFreeTrial ? .tryForFree : .learnMore,
-                                promoCardWidth: Self.targetWidth,
-                                onButtonTap: { promoViewModel.onPromoButtonTapped() },
-                                onClose: { promoViewModel.dismiss() }
-                            )
-                            .padding(.top, Const.promoTopPadding)
-                            .readSize { promoCardHeight = $0.height }
-                        }
+            ScrollView {
+                VStack(spacing: Const.contentGap) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.homeFavoritesGhost, style: StrokeStyle(lineWidth: 1.0))
+                            .background(Color(designSystemColor: .surfaceTertiary))
+                            .cornerRadius(12)
 
-                        VStack(spacing: Const.searchBoxVerticalSpacing) {
-                            Spacer(minLength: Const.verticalPadding)
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                Image(.updatedBurnerWindowHome)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 64, height: 48)
+                                    .padding(.leading, -15)
+                                    .padding(.top, -5)
 
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.homeFavoritesGhost, style: StrokeStyle(lineWidth: 1.0))
-                                    .background(Color(designSystemColor: .surfaceTertiary))
-                                    .cornerRadius(12)
-
-                                VStack(alignment: .leading, spacing: 16) {
-                                    HStack {
-                                        Image(.updatedBurnerWindowHome)
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(width: 64, height: 48)
-                                            .padding(.leading, -15)
-                                            .padding(.top, -5)
-
-                                        Text(UserText.burnerWindowHeader)
-                                            .font(.system(size: 22, weight: .bold))
-                                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                                            .padding(.leading, -6)
-                                    }
-
-                                    FeaturesBox()
-                                        .padding(.top, 10)
-                                }
-                                .padding(.horizontal, 40)
+                                Text(UserText.burnerWindowHeader)
+                                    .font(.system(size: 22, weight: .bold))
+                                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                                    .padding(.leading, -6)
                             }
-                            .frame(width: Self.targetWidth, height: Self.height)
 
-                            Spacer(minLength: Const.verticalPadding)
+                            FeaturesBox()
+                                .padding(.top, 10)
                         }
-                        .frame(maxWidth: .infinity)
-                        .frame(minHeight: max(geometry.size.height - (promoViewModel.shouldShowPromo ? promoCardHeight : 0), Self.totalHeight))
+                        .padding(.horizontal, 40)
+                    }
+                    .frame(width: Self.targetWidth, height: Self.height)
+
+                    if promoViewModel.shouldShowPromo {
+                        SubscriptionPromoView(
+                            actionType: promoViewModel.isEligibleForFreeTrial ? .tryForFree : .learnMore,
+                            promoCardWidth: Self.targetWidth,
+                            onButtonTap: { promoViewModel.onPromoButtonTapped() },
+                            onClose: { promoViewModel.dismiss() }
+                        )
                     }
                 }
+                .padding(.vertical, Const.verticalPadding)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: geometry.size.height)
             }
             .background(backgroundColor)
         }

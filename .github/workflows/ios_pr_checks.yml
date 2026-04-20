@@ -230,6 +230,7 @@ jobs:
       uses: mikepenz/action-junit-report@v3
       with:
         report_paths: iOS/unittests.xml
+        check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
 
     - name: Update Asana with failed unit tests
       if: always() && steps.run-unit-tests.outcome == 'failure'

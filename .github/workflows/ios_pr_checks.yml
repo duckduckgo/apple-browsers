@@ -176,12 +176,20 @@ jobs:
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 
+        if [[ "${{ needs.should-run-checks.outputs.strict_mode }}" == "true" ]]; then
+          STRICT_FLAGS="-test-iterations 3"
+          echo "Strict mode enabled: running tests with $STRICT_FLAGS"
+        else
+          STRICT_FLAGS=""
+        fi
+
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          $STRICT_FLAGS \
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           | tee xcodebuild.log \

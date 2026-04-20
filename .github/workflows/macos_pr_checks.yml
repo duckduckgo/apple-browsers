@@ -263,6 +263,13 @@ jobs:
         echo "Runner ${RUNNER_NAME} (${RUNNER_TRACKING_ID})"
         export OS_ACTIVITY_MODE=debug
 
+        if [[ "${{ needs.should-run-checks.outputs.strict_mode }}" == "true" ]]; then
+          STRICT_FLAGS="-test-iterations 3"
+          echo "Strict mode enabled: running tests with $STRICT_FLAGS"
+        else
+          STRICT_FLAGS=""
+        fi
+
         set -o pipefail && xcodebuild test \
           -scheme "${{ matrix.scheme }}" \
           -derivedDataPath "DerivedData" \
@@ -275,6 +282,7 @@ jobs:
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           "-skip-testing:${{ matrix.integration-tests-target }}" \
+          $STRICT_FLAGS \
           | tee ${{ matrix.flavor }}-unittests-xcodebuild.log \
           | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
           | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-unittests.xml \
@@ -283,6 +291,13 @@ jobs:
     - name: Run integration tests
       id: run-integration-tests
       run: |
+        if [[ "${{ needs.should-run-checks.outputs.strict_mode }}" == "true" ]]; then
+          RETRY_FLAGS="-test-iterations 3"
+          echo "Strict mode enabled: running tests with $RETRY_FLAGS"
+        else
+          RETRY_FLAGS="-retry-tests-on-failure"
+        fi
+
         set -o pipefail && xcodebuild test \
           -scheme "${{ matrix.scheme }}" \
           -derivedDataPath "DerivedData" \
@@ -295,7 +310,7 @@ jobs:
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           "-only-testing:${{ matrix.integration-tests-target }}" \
-          -retry-tests-on-failure \
+          $RETRY_FLAGS \
           | tee ${{ matrix.flavor }}-integrationtests-xcodebuild.log \
           | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
           | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-integrationtests.xml \

@@ -25,16 +25,25 @@ on:
         required: false
         type: string
         default: 'Run PR Checks'
+      strict_checks_label:
+        description: 'Label name that enables strict test mode (no retries, 3 iterations)'
+        required: false
+        type: string
+        default: 'strict pr checks'
     outputs:
       should_run:
         description: 'Whether CI checks should run (true/false)'
         value: ${{ jobs.check.outputs.should_run }}
+      strict_mode:
+        description: 'Whether strict test mode is enabled (true/false)'
+        value: ${{ jobs.check.outputs.strict_mode }}
 
 jobs:
   check:
     runs-on: ubuntu-latest
     outputs:
       should_run: ${{ steps.check.outputs.should_run }}
+      strict_mode: ${{ steps.check.outputs.strict_mode }}
     steps:
       - name: Evaluate run conditions
         id: check
@@ -58,4 +67,17 @@ jobs:
               echo "should_run=false" >> $GITHUB_OUTPUT
               echo "Draft PR without '${{ inputs.run_checks_label }}' label, skipping checks"
             fi
+          fi
+
+          # Check for strict mode label
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            labels='${{ toJson(github.event.pull_request.labels) }}'
+            if echo "$labels" | jq -e --arg label "${{ inputs.strict_checks_label }}" '.[] | select(.name == $label)' > /dev/null 2>&1; then
+              echo "strict_mode=true" >> $GITHUB_OUTPUT
+              echo "PR has '${{ inputs.strict_checks_label }}' label, enabling strict mode"
+            else
+              echo "strict_mode=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "strict_mode=false" >> $GITHUB_OUTPUT
           fi

@@ -40,4 +40,53 @@ final class STUNMessageTests: XCTestCase {
         let b = STUNMessage.bindingRequest()
         XCTAssertNotEqual(Array(a[8..<20]), Array(b[8..<20]))
     }
+
+    func testDecodeBindingResponse_IPv4() throws {
+        let transactionID = Data(repeating: 0x11, count: 12)
+        var response = Data([0x01, 0x01, 0x00, 0x0C])
+        response.append(contentsOf: STUNMessage.magicCookieBytes)
+        response.append(transactionID)
+        response.append(contentsOf: [0x00, 0x20, 0x00, 0x08])
+        response.append(contentsOf: [0x00, 0x01])
+        response.append(contentsOf: [0x33, 0x26])
+        let xoredAddress: [UInt8] = [
+            UInt8(0x08) ^ UInt8(0x21),
+            UInt8(0x08) ^ UInt8(0x12),
+            UInt8(0x08) ^ UInt8(0xA4),
+            UInt8(0x08) ^ UInt8(0x42)
+        ]
+        response.append(contentsOf: xoredAddress)
+
+        let ip = try STUNMessage.extractMappedAddress(from: response, transactionID: transactionID)
+        XCTAssertEqual(ip, "8.8.8.8")
+    }
+
+    func testDecodeBindingResponse_IPv6() throws {
+        let transactionID = Data([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C])
+        var response = Data([0x01, 0x01, 0x00, 0x18])
+        response.append(contentsOf: STUNMessage.magicCookieBytes)
+        response.append(transactionID)
+        response.append(contentsOf: [0x00, 0x20, 0x00, 0x14])
+        response.append(contentsOf: [0x00, 0x02])
+        response.append(contentsOf: [0x00, 0x00])
+        let plain: [UInt8] = [0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x01]
+        let xorKey: [UInt8] = STUNMessage.magicCookieBytes + Array(transactionID)
+        let xored = zip(plain, xorKey).map { $0 ^ $1 }
+        response.append(contentsOf: xored)
+
+        let ip = try STUNMessage.extractMappedAddress(from: response, transactionID: transactionID)
+        XCTAssertEqual(ip, "2001:db8::1")
+    }
+
+    func testDecodeBindingResponse_Malformed_ShortHeader() {
+        let short = Data(repeating: 0, count: 10)
+        XCTAssertThrowsError(try STUNMessage.extractMappedAddress(from: short, transactionID: Data(count: 12)))
+    }
+
+    func testDecodeBindingResponse_MissingAttribute() {
+        var response = Data([0x01, 0x01, 0x00, 0x00])
+        response.append(contentsOf: STUNMessage.magicCookieBytes)
+        response.append(Data(count: 12))
+        XCTAssertThrowsError(try STUNMessage.extractMappedAddress(from: response, transactionID: Data(count: 12)))
+    }
 }

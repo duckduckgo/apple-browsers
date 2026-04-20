@@ -52,3 +52,75 @@ enum STUNMessage {
         return Data(bytes)
     }
 }
+
+extension STUNMessage {
+
+    enum DecodeError: Error, Equatable {
+        case headerTooShort
+        case wrongMessageType
+        case transactionIDMismatch
+        case attributeNotFound
+        case malformedAttribute
+        case unsupportedFamily
+    }
+
+    static func extractMappedAddress(from data: Data, transactionID: Data) throws -> String {
+        guard data.count >= 20 else { throw DecodeError.headerTooShort }
+        let bytes = [UInt8](data)
+
+        let messageType = (UInt16(bytes[0]) << 8) | UInt16(bytes[1])
+        guard messageType == bindingResponseType else { throw DecodeError.wrongMessageType }
+
+        guard Array(data[8..<20]) == [UInt8](transactionID) else {
+            throw DecodeError.transactionIDMismatch
+        }
+
+        let bodyLength = (Int(bytes[2]) << 8) | Int(bytes[3])
+        guard data.count >= 20 + bodyLength else { throw DecodeError.malformedAttribute }
+
+        var cursor = 20
+        while cursor + 4 <= 20 + bodyLength {
+            let attrType = (UInt16(bytes[cursor]) << 8) | UInt16(bytes[cursor + 1])
+            let attrLen = (Int(bytes[cursor + 2]) << 8) | Int(bytes[cursor + 3])
+            let valueStart = cursor + 4
+            guard valueStart + attrLen <= 20 + bodyLength else {
+                throw DecodeError.malformedAttribute
+            }
+            if attrType == xorMappedAddressAttribute {
+                return try decodeXORMappedAddress(
+                    bytes: Array(bytes[valueStart..<valueStart + attrLen]),
+                    transactionID: [UInt8](transactionID)
+                )
+            }
+            let padded = (attrLen + 3) & ~3
+            cursor = valueStart + padded
+        }
+        throw DecodeError.attributeNotFound
+    }
+
+    private static func decodeXORMappedAddress(bytes: [UInt8], transactionID: [UInt8]) throws -> String {
+        guard bytes.count >= 4 else { throw DecodeError.malformedAttribute }
+        guard let family = Family(rawValue: bytes[1]) else { throw DecodeError.unsupportedFamily }
+
+        switch family {
+        case .ipv4:
+            guard bytes.count == 8 else { throw DecodeError.malformedAttribute }
+            let xorBytes = [UInt8](bytes[4..<8])
+            let plain = zip(xorBytes, magicCookieBytes).map { $0 ^ $1 }
+            return plain.map { String($0) }.joined(separator: ".")
+        case .ipv6:
+            guard bytes.count == 20 else { throw DecodeError.malformedAttribute }
+            let xorBytes = [UInt8](bytes[4..<20])
+            let key = magicCookieBytes + transactionID
+            let plain = zip(xorBytes, key).map { $0 ^ $1 }
+            return formatIPv6(Data(plain))
+        }
+    }
+
+    private static func formatIPv6(_ data: Data) -> String {
+        guard let address = IPv6Address(data) else {
+            return data.map { String(format: "%02x", $0) }.joined()
+        }
+        return address.debugDescription
+    }
+}

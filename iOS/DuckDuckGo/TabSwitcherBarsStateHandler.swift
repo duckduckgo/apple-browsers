@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Core
 import BrowserServicesKit
 import DesignResourcesKitIcons
 
@@ -57,6 +58,8 @@ protocol TabSwitcherBarsStateHandling {
     var isBottomBarHidden: Bool { get }
 
     var onPlusButtonTapped: (() -> Void)? { get set }
+    var onNewFireTabTapped: (() -> Void)? { get set }
+    var onNewNormalTabTapped: (() -> Void)? { get set }
     var onFireButtonTapped: (() -> Void)? { get set }
     var onDoneButtonTapped: (() -> Void)? { get set }
     var onEditButtonTapped: (() -> UIMenu?)? { get set }
@@ -71,6 +74,8 @@ protocol TabSwitcherBarsStateHandling {
 
     func configureButtonActions(tabsStyle: TabSwitcherViewController.TabsStyle,
                                 canShowSelectionMenu: Bool)
+
+    func configurePlusButtonLongPressMenu(isFireModeEnabled: Bool)
 
 }
 
@@ -125,6 +130,8 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     private(set) var isFirstUpdate = true
 
     var onPlusButtonTapped: (() -> Void)?
+    var onNewFireTabTapped: (() -> Void)?
+    var onNewNormalTabTapped: (() -> Void)?
     var onFireButtonTapped: (() -> Void)?
     var onDoneButtonTapped: (() -> Void)?
     var onEditButtonTapped: (() -> UIMenu?)?
@@ -172,6 +179,38 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
             button.isEnabled = canShowSelectionMenu
         }
 
+    }
+
+    func configurePlusButtonLongPressMenu(isFireModeEnabled: Bool) {
+        guard let button = plusButton.customView as? BrowserChromeButton else { return }
+        guard isFireModeEnabled else {
+            button.menu = nil
+            return
+        }
+
+        button.menu = UIMenu(children: [
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                Pixel.fire(pixel: .tabLongPressMenuDisplayed, withAdditionalParameters: [
+                    PixelParameters.source: "tab_switcher"
+                ])
+                completion([
+                    UIAction(title: UserText.actionNewFireTab,
+                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
+                                 Pixel.fire(pixel: .tabLongPressMenuNewFireTab, withAdditionalParameters: [
+                                     PixelParameters.source: "tab_switcher"
+                                 ])
+                                 self?.onNewFireTabTapped?()
+                             },
+                    UIAction(title: UserText.actionNewTab,
+                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
+                                 Pixel.fire(pixel: .tabLongPressMenuNewNormalTab, withAdditionalParameters: [
+                                     PixelParameters.source: "tab_switcher"
+                                 ])
+                                 self?.onNewNormalTabTapped?()
+                             }
+                ])
+            }
+        ])
     }
 
     private func configureButtons() {

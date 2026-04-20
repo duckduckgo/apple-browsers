@@ -4758,7 +4758,14 @@ extension MainViewController: TabSwitcherDelegate {
         themeColorManager.updateThemeColor()
     }
 
-    
+    func tabSwitcherDidRequestNewFireTab(tabSwitcher: TabSwitcherViewController) {
+        newFireTabLongPressMenuAction()
+    }
+
+    func tabSwitcherDidRequestNewNormalTab(tabSwitcher: TabSwitcherViewController) {
+        newNormalTabLongPressMenuAction()
+    }
+
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL) {
         guard let bookmark = self.menuBookmarksViewModel.bookmark(for: url) else { return }
         tabSwitcher.dismiss(animated: true) {

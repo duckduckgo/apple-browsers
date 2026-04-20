@@ -129,7 +129,13 @@ class TabSwitcherViewController: UIViewController {
 
     let tabSwitcherSettings: TabSwitcherSettings
     var isProcessingUpdates = false
-    private var canUpdateCollection = true
+
+    private var canUpdateCollection = true {
+        didSet {
+            normalPageController?.canUpdateCollection = canUpdateCollection
+            firePageController?.canUpdateCollection = canUpdateCollection
+        }
+    }
 
     let favicons: FaviconManaging
 
@@ -465,6 +471,16 @@ class TabSwitcherViewController: UIViewController {
             self?.addNewTab()
         }
 
+        barsHandler.onNewFireTabTapped = { [weak self] in
+            self?.addNewFireTab()
+        }
+
+        barsHandler.onNewNormalTabTapped = { [weak self] in
+            self?.addNewNormalTab()
+        }
+
+        barsHandler.configurePlusButtonLongPressMenu(isFireModeEnabled: fireModeCapability.isFireModeEnabled)
+
         barsHandler.onFireButtonTapped = { [weak self] in
             self?.burn(sender: self!.barsHandler.fireButton)
         }
@@ -615,6 +631,22 @@ class TabSwitcherViewController: UIViewController {
         // to present on top of MainVC instead of TabSwitcher.
         // If these calls are switched it'll be immediately dismissed along with this controller.
         delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
+    }
+
+    func addNewFireTab() {
+        guard !isProcessingUpdates else { return }
+        canUpdateCollection = false
+
+        dismissIfPossible(forceDismissOnEmpty: true)
+        delegate.tabSwitcherDidRequestNewFireTab(tabSwitcher: self)
+    }
+
+    func addNewNormalTab() {
+        guard !isProcessingUpdates else { return }
+        canUpdateCollection = false
+
+        dismissIfPossible(forceDismissOnEmpty: true)
+        delegate.tabSwitcherDidRequestNewNormalTab(tabSwitcher: self)
     }
     
     func addNewAIChatTab() {

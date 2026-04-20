@@ -98,7 +98,17 @@ struct LogFilter {
                    entry.subsystem.lowercased().contains(searchString) ||
                    entry.category.lowercased().contains(searchString)
         }
-        
+
+        return true
+    }
+
+    func matchesPreset(_ entry: FormattedLogEntry) -> Bool {
+        if let subsystem = subsystemFilter, !subsystem.isEmpty {
+            guard entry.subsystem.lowercased().contains(subsystem.lowercased()) else { return false }
+        }
+        if let category = categoryFilter, !category.isEmpty {
+            guard entry.category.lowercased().contains(category.lowercased()) else { return false }
+        }
         return true
     }
     
@@ -110,6 +120,16 @@ struct LogFilter {
         filterEmptySubsystems: true,
         filterAppleLogs: true
     )
+
+    static let pixelFilter = LogFilter(
+        subsystemFilter: "Pixel",
+        categoryFilter: nil,
+        levelFilter: nil,
+        searchText: nil,
+        filterEmptySubsystems: false,
+        filterAppleLogs: false
+    )
+
 }
 
 extension OSLogEntryLog.Level {

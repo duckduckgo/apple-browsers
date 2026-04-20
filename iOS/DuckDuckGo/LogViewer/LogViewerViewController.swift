@@ -77,6 +77,14 @@ final class LogViewerViewController: UIViewController {
         return button
     }()
     
+    private lazy var presetSegmentedControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: ["All", "Pixels"])
+        control.translatesAutoresizingMaskIntoConstraints = false
+        control.selectedSegmentIndex = 0
+        control.addTarget(self, action: #selector(presetChanged(_:)), for: .valueChanged)
+        return control
+    }()
+
     private lazy var loadingSpinner: UIActivityIndicatorView = {
         let spinner = UIActivityIndicatorView(style: .medium)
         spinner.translatesAutoresizingMaskIntoConstraints = false
@@ -87,6 +95,7 @@ final class LogViewerViewController: UIViewController {
     
     private let dataSource = LogViewerDataSource()
     private var filteredEntries: [FormattedLogEntry] = []
+    private var activePreset: LogFilter?
     private var isLoading = false
     private let dependencies: DebugScreen.Dependencies
     
@@ -113,15 +122,20 @@ final class LogViewerViewController: UIViewController {
         definesPresentationContext = true
         navigationItem.rightBarButtonItems = [exportButton, filterButton, refreshButton]
 
+        view.addSubview(presetSegmentedControl)
         view.addSubview(tableView)
         view.addSubview(loadingSpinner)
-        
+
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            presetSegmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            presetSegmentedControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            presetSegmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+
+            tableView.topAnchor.constraint(equalTo: presetSegmentedControl.bottomAnchor, constant: 8),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
+
             loadingSpinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingSpinner.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
@@ -129,6 +143,11 @@ final class LogViewerViewController: UIViewController {
         dataSource.refresh()
     }
     
+    @objc private func presetChanged(_ sender: UISegmentedControl) {
+        activePreset = sender.selectedSegmentIndex == 1 ? .pixelFilter : nil
+        applySearchFilter()
+    }
+
     @objc private func refreshButtonTapped() {
         guard !isLoading else { return }
         dataSource.refresh()
@@ -175,7 +194,13 @@ final class LogViewerViewController: UIViewController {
     
     private func applySearchFilter() {
         let searchText = searchController.searchBar.text
-        
+
+        var entries = dataSource.logEntries
+
+        if let preset = activePreset {
+            entries = entries.filter { preset.matchesPreset($0) }
+        }
+
         if let searchText = searchText, !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let searchFilter = LogFilter(
                 subsystemFilter: dataSource.currentFilter.subsystemFilter,
@@ -185,12 +210,11 @@ final class LogViewerViewController: UIViewController {
                 filterEmptySubsystems: dataSource.currentFilter.filterEmptySubsystems,
                 filterAppleLogs: dataSource.currentFilter.filterAppleLogs
             )
-            
-            filteredEntries = dataSource.logEntries.filter { searchFilter.matches($0) }
+            filteredEntries = entries.filter { searchFilter.matches($0) }
         } else {
-            filteredEntries = dataSource.logEntries
+            filteredEntries = entries
         }
-        
+
         tableView.reloadData()
         scrollToBottom()
     }
@@ -277,6 +301,8 @@ extension LogViewerViewController: UISearchResultsUpdating {
 
 extension LogViewerViewController: LogFilterViewControllerDelegate {
     func logFilterViewController(_ controller: LogFilterViewController, didUpdateFilter filter: LogFilter) {
+        presetSegmentedControl.selectedSegmentIndex = 0
+        activePreset = nil
         dataSource.updateFilter(filter)
         controller.dismiss(animated: true)
     }

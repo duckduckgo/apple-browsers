@@ -18,31 +18,31 @@
 
 import Foundation
 
-public enum LeakCheckTrigger: String, CaseIterable {
+public enum LeakCheckTrigger: String, Codable, CaseIterable {
     case tunnelStart = "tunnel_start"
     case reassert
     case periodic
 }
 
-public enum IPVersion: String, CaseIterable {
+public enum IPVersion: String, Codable, CaseIterable {
     case v4 = "ipv4"
     case v6 = "ipv6"
 }
 
-public enum LeakCheckScheme: String {
+public enum LeakCheckScheme: String, Codable {
     case http
     case https
 }
 
-public enum LeakCheckProbe: String, CaseIterable {
+public enum LeakCheckProbe: String, Codable, CaseIterable {
     case http
     case https
     case stun
 }
 
-public struct LeakCheckPerTestResult: Equatable {
+public struct LeakCheckPerTestResult: Codable, Equatable {
 
-    public enum Status: String {
+    public enum Status: String, Codable {
         case success
         case leak
         case error

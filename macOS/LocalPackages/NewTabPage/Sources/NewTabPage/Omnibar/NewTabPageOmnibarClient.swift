@@ -54,11 +54,12 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         self.actionHandler = actionHandler
         super.init()
 
-        Publishers.Merge4(
+        Publishers.MergeMany(
             configProvider.isAIChatShortcutEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.isAIChatSettingVisiblePublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.modePublisher.map { _ in () }.eraseToAnyPublisher(),
-            configProvider.showViewAllAiChatsPublisher.map { _ in () }.eraseToAnyPublisher()
+            configProvider.showViewAllAiChatsPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.selectedModelIdPublisher.map { _ in () }.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in

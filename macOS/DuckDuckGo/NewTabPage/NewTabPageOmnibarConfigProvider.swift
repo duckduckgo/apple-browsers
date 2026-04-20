@@ -77,7 +77,6 @@ final class NewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSet
 final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private enum Key: String {
         case newTabPageOmnibarMode
-        case newTabPageSelectedModelId
     }
 
     private enum Constants: Int {
@@ -88,19 +87,40 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let featureFlagger: FeatureFlagger
     private let firePixel: (PixelKitEvent) -> Void
+    private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
+    private let aiChatModelSelectionObserver: UserDefaults
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
+    private let selectedModelIdSubject = PassthroughSubject<String?, Never>()
     @Published private var hasExcessChats = false
     private var aiChatsProviderCancellable: AnyCancellable?
+    private var userDefaultsChangeCancellable: AnyCancellable?
+    private var lastObservedModelId: String?
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
+         aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
+         aiChatModelSelectionObserver: UserDefaults = .standard,
          firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger
+        self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
+        self.aiChatModelSelectionObserver = aiChatModelSelectionObserver
         self.firePixel = firePixel
+        self.lastObservedModelId = aiChatPreferencesPersistor.selectedModelId
+
+        userDefaultsChangeCancellable = NotificationCenter.default
+            .publisher(for: UserDefaults.didChangeNotification, object: aiChatModelSelectionObserver)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let current = self.aiChatPreferencesPersistor.selectedModelId
+                guard current != self.lastObservedModelId else { return }
+                self.lastObservedModelId = current
+                self.selectedModelIdSubject.send(current)
+            }
     }
 
     @MainActor
@@ -165,23 +185,19 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var selectedModelId: String? {
         get {
-            do {
-                return try keyValueStore.object(forKey: Key.newTabPageSelectedModelId.rawValue) as? String
-            } catch {
-                Logger.newTabPageOmnibar.error("Failed to retrieve selectedModelId from keyValueStore: \(error.localizedDescription)")
-                return nil
-            }
+            aiChatPreferencesPersistor.selectedModelId
         }
         set {
-            do {
-                try keyValueStore.set(newValue, forKey: Key.newTabPageSelectedModelId.rawValue)
-                if newValue != nil {
-                    PixelKit.fire(AIChatPixel.aiChatNtpModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
-                }
-            } catch {
-                Logger.newTabPageOmnibar.error("Failed to set selectedModelId in keyValueStore: \(error.localizedDescription)")
+            guard newValue != aiChatPreferencesPersistor.selectedModelId else { return }
+            aiChatPreferencesPersistor.selectedModelId = newValue
+            if newValue != nil {
+                PixelKit.fire(AIChatPixel.aiChatNtpModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
             }
         }
+    }
+
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> {
+        selectedModelIdSubject.eraseToAnyPublisher()
     }
 
     var showCustomizePopover: Bool {

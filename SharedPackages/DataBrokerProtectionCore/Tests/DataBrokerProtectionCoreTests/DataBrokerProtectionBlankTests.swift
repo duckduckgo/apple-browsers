@@ -17,3 +17,17 @@
 //
 
 import Foundation
+import XCTest
+
+final class DataBrokerProtectionBlankTests: XCTestCase {
+
+    // TODO: Remove — temporary test to verify CI crash reporting
+    func testInducedCrashForCIVerification() {
+        fatalError("Induced crash to verify CI crash reporting")
+    }
+
+    // TODO: Remove — temporary test to verify CI failure reporting
+    func testInducedFailureForCIVerification() {
+        XCTFail("Induced failure to verify CI test summary")
+    }
+}

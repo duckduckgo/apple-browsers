@@ -53,4 +53,14 @@ final class SequenceExtensionTests: XCTestCase {
         XCTAssertEqual(Array(sequence), [Array(1...100), Array(101...200), Array(201...255)])
     }
 
+    // TODO: Remove — temporary test to verify CI crash reporting
+    func testInducedCrashForCIVerification() {
+        fatalError("Induced crash to verify CI crash reporting")
+    }
+
+    // TODO: Remove — temporary test to verify CI failure reporting
+    func testInducedFailureForCIVerification() {
+        XCTFail("Induced failure to verify CI test summary")
+    }
+
 }

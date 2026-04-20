@@ -321,14 +321,14 @@ jobs:
             SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
           retention-days: 7
 
-      - name: Report crashes from xcresult
+      - name: Report test results from xcresult
         if: always() && steps.run-unit-tests-ios.outcome == 'failure'
         run: |
           xcresult=$(ls -dt DerivedData/Logs/Test/*.xcresult 2>/dev/null | head -n 1)
           if [[ -z "$xcresult" ]]; then
             exit 0
           fi
-          ${{ github.workspace }}/scripts/report-xcresult-crashes.sh "$xcresult"
+          ${{ github.workspace }}/scripts/report-xcresult-summary.sh "$xcresult"
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4

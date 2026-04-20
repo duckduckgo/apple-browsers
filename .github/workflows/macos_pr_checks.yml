@@ -356,12 +356,12 @@ jobs:
         path: macOS/${{ matrix.flavor }}*.xml
         retention-days: 7
 
-    - name: Report crashes from xcresult
+    - name: Report test results from xcresult
       if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')
       run: |
         for xcresult in ${{ matrix.flavor }}-unittests.xcresult ${{ matrix.flavor }}-integrationtests.xcresult; do
           if [[ -d "$xcresult" ]]; then
-            ${{ github.workspace }}/scripts/report-xcresult-crashes.sh "$xcresult"
+            ${{ github.workspace }}/scripts/report-xcresult-summary.sh "$xcresult"
           fi
         done
 

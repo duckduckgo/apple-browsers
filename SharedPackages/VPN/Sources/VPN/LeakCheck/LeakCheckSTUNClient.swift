@@ -1,0 +1,122 @@
+//
+//  LeakCheckSTUNClient.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import Network
+
+public protocol LeakCheckSTUNClient: Sendable {
+    func sendBindingRequest(
+        host: String,
+        port: UInt16,
+        ipVersion: IPVersion,
+        timeout: TimeInterval
+    ) async throws -> String
+}
+
+public struct DefaultLeakCheckSTUNClient: LeakCheckSTUNClient {
+
+    public init() {}
+
+    public func sendBindingRequest(
+        host: String,
+        port: UInt16,
+        ipVersion: IPVersion,
+        timeout: TimeInterval
+    ) async throws -> String {
+        let transactionID = STUNMessage.randomTransactionID()
+        let request = STUNMessage.bindingRequest(transactionID: transactionID)
+
+        let parameters = NWParameters.udp
+        if let ipOptions = parameters.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options {
+            switch ipVersion {
+            case .v4: ipOptions.version = .v4
+            case .v6: ipOptions.version = .v6
+            }
+        }
+
+        let endpoint = NWEndpoint.hostPort(host: .init(host), port: .init(integerLiteral: port))
+        let connection = NWConnection(to: endpoint, using: parameters)
+
+        defer { connection.cancel() }
+
+        return try await withThrowingTaskGroup(of: String.self) { group in
+            group.addTask {
+                try await Self.perform(connection: connection, request: request, transactionID: transactionID)
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                throw URLError(.timedOut)
+            }
+            guard let first = try await group.next() else {
+                throw URLError(.badServerResponse)
+            }
+            group.cancelAll()
+            return first
+        }
+    }
+
+    private static func perform(
+        connection: NWConnection,
+        request: Data,
+        transactionID: Data
+    ) async throws -> String {
+        try await withCheckedThrowingContinuation { continuation in
+            var didResume = false
+            func resume(_ result: Result<String, Error>) {
+                guard !didResume else { return }
+                didResume = true
+                continuation.resume(with: result)
+            }
+
+            connection.stateUpdateHandler = { state in
+                switch state {
+                case .ready:
+                    connection.send(content: request, completion: .contentProcessed { sendError in
+                        if let sendError = sendError {
+                            resume(.failure(sendError))
+                            return
+                        }
+                        connection.receiveMessage { data, _, _, recvError in
+                            if let recvError = recvError {
+                                resume(.failure(recvError))
+                                return
+                            }
+                            guard let data = data else {
+                                resume(.failure(URLError(.badServerResponse)))
+                                return
+                            }
+                            do {
+                                let ip = try STUNMessage.extractMappedAddress(from: data, transactionID: transactionID)
+                                resume(.success(ip))
+                            } catch {
+                                resume(.failure(error))
+                            }
+                        }
+                    })
+                case .failed(let error):
+                    resume(.failure(error))
+                case .cancelled:
+                    resume(.failure(CancellationError()))
+                default:
+                    break
+                }
+            }
+            connection.start(queue: .global(qos: .utility))
+        }
+    }
+}

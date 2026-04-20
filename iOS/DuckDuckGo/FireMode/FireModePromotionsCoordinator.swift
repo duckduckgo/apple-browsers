@@ -139,23 +139,10 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
 
     // MARK: - Menu Promotion
 
-    /// Shows the menu promotion when:
-    /// - Fire mode feature flag is enabled
-    /// - User has NOT visited fire mode themselves
-    /// - User has not engaged with the menu promotion
-    /// - Promotion has been shown fewer than 5 times
-    /// - Promotion has not expired (14 days since first shown)
+    /// Menu promotion is always disabled for now
+    /// Code is left in case we want to use it in the future. Should be removed around 1 month after fire mode is released.
     var isMenuPromotionEligible: Bool {
-        guard fireModeCapability.isFireModeEnabled else { return false }
-        guard !hasVisitedFireMode else { return false }
-        guard !menuPromotionEngaged else { return false }
-        guard menuPromotionShownCount < Self.menuMaxOpenCount else { return false }
-
-        if let firstShown = menuPromotionFirstShownDate {
-            guard Date().timeIntervalSince(firstShown) < Self.menuExpirationInterval else { return false }
-        }
-
-        return true
+        return false
     }
 
     func markMenuPromotionShown() {

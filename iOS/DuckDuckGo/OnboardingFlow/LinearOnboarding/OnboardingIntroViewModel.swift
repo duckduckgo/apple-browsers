@@ -360,22 +360,41 @@ private extension OnboardingIntroViewModel {
     }
 
     func restorePendingOnboardingStepIfNeeded() {
-        guard duckAIOnboardingResumeStepStore.resumeStep == .duckAIQueryExperimentSelection else {
-            return
-        }
-        guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
-            DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
-            return
-        }
+        guard let resumeStep = duckAIOnboardingResumeStepStore.resumeStep else { return }
 
-        if !introSteps.contains(.duckAIQueryExperimentSelection) {
-            if let searchExperienceIndex = introSteps.firstIndex(of: .searchExperienceSelection) {
-                introSteps.insert(.duckAIQueryExperimentSelection, at: searchExperienceIndex + 1)
-            } else {
-                introSteps.append(.duckAIQueryExperimentSelection)
+        switch resumeStep {
+        case .duckAIQueryExperimentSelection:
+            guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
+                DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
+                return
             }
+            if !introSteps.contains(.duckAIQueryExperimentSelection) {
+                if let searchExperienceIndex = introSteps.firstIndex(of: .searchExperienceSelection) {
+                    introSteps.insert(.duckAIQueryExperimentSelection, at: searchExperienceIndex + 1)
+                } else {
+                    introSteps.append(.duckAIQueryExperimentSelection)
+                }
+            }
+            currentIntroStep = .duckAIQueryExperimentSelection
+
+        case .browserComparison where introSteps.contains(.browserComparison):
+            currentIntroStep = .browserComparison
+        case .addToDockPromo where introSteps.contains(.addToDockPromo):
+            currentIntroStep = .addToDockPromo
+        case .appIconSelection where introSteps.contains(.appIconSelection):
+            currentIntroStep = .appIconSelection
+        case .addressBarPositionSelection where introSteps.contains(.addressBarPositionSelection):
+            currentIntroStep = .addressBarPositionSelection
+        case .searchExperienceSelection where introSteps.contains(.searchExperienceSelection):
+            currentIntroStep = .searchExperienceSelection
+
+        case .duckAIAnswerStep:
+            break // handled separately by restorePendingDuckAIAnswerStepIfNeeded in MainViewController
+
+        default:
+            // Stored step is not available in the current flow — clear and start from the beginning.
+            DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
         }
-        currentIntroStep = .duckAIQueryExperimentSelection
     }
 
     func persistPendingOnboardingStep(for step: OnboardingIntroStep) {
@@ -383,7 +402,17 @@ private extension OnboardingIntroViewModel {
         case .duckAIQueryExperimentSelection:
             duckAIOnboardingResumeStepStore.resumeExperimentPrompt = nil
             duckAIOnboardingResumeStepStore.resumeStep = .duckAIQueryExperimentSelection
-        default:
+        case .browserComparison:
+            duckAIOnboardingResumeStepStore.resumeStep = .browserComparison
+        case .addToDockPromo:
+            duckAIOnboardingResumeStepStore.resumeStep = .addToDockPromo
+        case .appIconSelection:
+            duckAIOnboardingResumeStepStore.resumeStep = .appIconSelection
+        case .addressBarPositionSelection:
+            duckAIOnboardingResumeStepStore.resumeStep = .addressBarPositionSelection
+        case .searchExperienceSelection:
+            duckAIOnboardingResumeStepStore.resumeStep = .searchExperienceSelection
+        case .introDialog:
             break
         }
     }

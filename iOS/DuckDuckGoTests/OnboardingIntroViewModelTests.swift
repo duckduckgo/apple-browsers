@@ -1008,13 +1008,122 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
 }
 
+// MARK: - Onboarding resume step persistence and restoration
+
+extension OnboardingIntroViewModelTests {
+
+    // MARK: Persist
+
+    func testWhenAdvancingToBrowserComparisonThenResumeStepIsPersisted() {
+        let store = MockKeyValueStore()
+        let sut = makeSUT(resumeStepStore: store.keyedStoring())
+        sut.onAppear()
+        sut.startOnboardingAction()
+        XCTAssertEqual(store.keyedStoring().resumeStep, .browserComparison)
+    }
+
+    func testWhenAdvancingToAddToDockPromoThenResumeStepIsPersisted() {
+        let store = MockKeyValueStore()
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .browserComparison, resumeStepStore: store.keyedStoring())
+        sut.onAppear()
+        sut.setDefaultBrowserAction()
+        XCTAssertEqual(store.keyedStoring().resumeStep, .addToDockPromo)
+    }
+
+    func testWhenAdvancingToAppIconSelectionThenResumeStepIsPersisted() {
+        let store = MockKeyValueStore()
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .addToDockPromo, resumeStepStore: store.keyedStoring())
+        sut.onAppear()
+        sut.addToDockContinueAction(isShowingAddToDockTutorial: false)
+        XCTAssertEqual(store.keyedStoring().resumeStep, .appIconSelection)
+    }
+
+    func testWhenAdvancingToAddressBarPositionSelectionThenResumeStepIsPersisted() {
+        let store = MockKeyValueStore()
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .appIconSelection, resumeStepStore: store.keyedStoring())
+        sut.onAppear()
+        sut.appIconPickerContinueAction()
+        XCTAssertEqual(store.keyedStoring().resumeStep, .addressBarPositionSelection)
+    }
+
+    func testWhenAdvancingToSearchExperienceSelectionThenResumeStepIsPersisted() {
+        let store = MockKeyValueStore()
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection, resumeStepStore: store.keyedStoring())
+        sut.onAppear()
+        sut.selectAddressBarPositionAction()
+        XCTAssertEqual(store.keyedStoring().resumeStep, .searchExperienceSelection)
+    }
+
+    // MARK: Restore
+
+    func testWhenResumeStepIsBrowserComparisonThenOnAppearShowsBrowserComparison() {
+        let store = MockKeyValueStore()
+        store.keyedStoring().resumeStep = .browserComparison
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(resumeStepStore: store.keyedStoring())
+        sut.onAppear()
+        XCTAssertEqual(sut.state.intro?.type, .browsersComparisonDialog)
+    }
+
+    func testWhenResumeStepIsAddToDockPromoThenOnAppearShowsAddToDock() {
+        let store = MockKeyValueStore()
+        store.keyedStoring().resumeStep = .addToDockPromo
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(resumeStepStore: store.keyedStoring())
+        sut.onAppear()
+        XCTAssertEqual(sut.state.intro?.type, .addToDockPromoDialog)
+    }
+
+    func testWhenResumeStepIsAppIconSelectionThenOnAppearShowsAppIconPicker() {
+        let store = MockKeyValueStore()
+        store.keyedStoring().resumeStep = .appIconSelection
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(resumeStepStore: store.keyedStoring())
+        sut.onAppear()
+        XCTAssertEqual(sut.state.intro?.type, .chooseAppIconDialog)
+    }
+
+    func testWhenResumeStepIsAddressBarPositionSelectionThenOnAppearShowsAddressBarPicker() {
+        let store = MockKeyValueStore()
+        store.keyedStoring().resumeStep = .addressBarPositionSelection
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(resumeStepStore: store.keyedStoring())
+        sut.onAppear()
+        XCTAssertEqual(sut.state.intro?.type, .chooseAddressBarPositionDialog)
+    }
+
+    func testWhenResumeStepIsSearchExperienceSelectionThenOnAppearShowsSearchExperience() {
+        let store = MockKeyValueStore()
+        store.keyedStoring().resumeStep = .searchExperienceSelection
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        let sut = makeSUT(resumeStepStore: store.keyedStoring())
+        sut.onAppear()
+        XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog)
+    }
+
+    func testWhenResumeStepIsNotInCurrentFlowThenStoreIsClearedAndOnboardingStartsFromBeginning() {
+        // searchExperienceSelection is not in the iPhone flow without search experience
+        let store = MockKeyValueStore()
+        store.keyedStoring().resumeStep = .searchExperienceSelection
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        _ = makeSUT(resumeStepStore: store.keyedStoring())
+        XCTAssertNil(store.keyedStoring().resumeStep)
+    }
+
+}
+
 extension OnboardingIntroViewModelTests {
 
     func makeSUT(
         currentOnboardingStep: OnboardingIntroStep = .introDialog(isReturningUser: false),
         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider(),
         restorePromptHandler: OnboardingRestorePromptHandling = MockRestorePromptHandler(),
-        featureFlagger: FeatureFlagger = MockFeatureFlagger()
+        featureFlagger: FeatureFlagger = MockFeatureFlagger(),
+        resumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil
     ) -> OnboardingIntroViewModel {
         OnboardingIntroViewModel(
             defaultBrowserManager: defaultBrowserManagerMock,
@@ -1029,7 +1138,7 @@ extension OnboardingIntroViewModelTests {
             featureFlagger: featureFlagger,
             restorePromptHandler: restorePromptHandler,
             tutorialSettings: tutorialSettingsMock,
-            duckAIOnboardingResumeStepStore: MockKeyValueStore().keyedStoring()
+            duckAIOnboardingResumeStepStore: resumeStepStore ?? MockKeyValueStore().keyedStoring()
         )
     }
 }

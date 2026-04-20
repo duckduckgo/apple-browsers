@@ -23,8 +23,18 @@ import UIKit
 
 // MARK: - Duck.ai Query Experiment — resume step
 
-/// Persisted checkpoint allowing the experiment onboarding flow to resume after an app relaunch.
+/// Persisted checkpoint allowing the onboarding flow to resume after an app relaunch.
 enum OnboardingResumeStep: String {
+    /// User reached the browser comparison screen.
+    case browserComparison
+    /// User reached the add-to-dock promo screen.
+    case addToDockPromo
+    /// User reached the app icon picker screen.
+    case appIconSelection
+    /// User reached the address bar position picker screen.
+    case addressBarPositionSelection
+    /// User reached the search-experience (duck.ai vs. search) selection screen.
+    case searchExperienceSelection
     /// User reached the Duck.ai / search selection screen but has not yet submitted a query.
     case duckAIQueryExperimentSelection
     /// User submitted a Duck.ai query and is waiting for the Fire onboarding dialog.

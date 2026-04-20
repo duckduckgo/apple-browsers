@@ -58,14 +58,17 @@ struct StartupOnboardingDecision {
          tutorialSettings: TutorialSettings,
          resumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil) {
         let resumeStepStore: any KeyedStoring<DuckAIOnboardingStoringKeys> = if let resumeStepStore { resumeStepStore } else { UserDefaults.app.keyedStoring() }
-        if resumeStepStore.resumeStep == .duckAIQueryExperimentSelection {
+        switch resumeStepStore.resumeStep {
+        case .browserComparison, .addToDockPromo, .appIconSelection,
+             .addressBarPositionSelection, .searchExperienceSelection,
+             .duckAIQueryExperimentSelection:
             shouldShowOnboarding = true
             return
-        }
-
-        if resumeStepStore.resumeStep == .duckAIAnswerStep {
+        case .duckAIAnswerStep:
             shouldShowOnboarding = false
             return
+        case .none:
+            break
         }
 
         switch onboardingStatus {

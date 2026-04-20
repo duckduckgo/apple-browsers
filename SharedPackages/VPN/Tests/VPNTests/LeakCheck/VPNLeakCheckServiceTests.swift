@@ -224,6 +224,38 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         XCTAssertEqual(wideEvent.startedFlows.count, 1)
     }
 
+    func testPeriodicTimer_firesAfterInterval() async throws {
+        let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let config = LeakCheckConfiguration(
+            host: "leakcheck.netp.duckduckgo.com",
+            httpPort: 80, httpsPort: 443, stunPort: 3478,
+            httpTimeout: 10, stunTimeout: 5,
+            periodicInterval: 0.2,
+            cooldown: 0,
+            tunnelStartDelay: 0
+        )
+        let service = VPNLeakCheckService(
+            configuration: config,
+            egressIP: "1.2.3.4",
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent,
+            contextName: "Test-Context"
+        )
+
+        await service.start()
+        try await Task.sleep(nanoseconds: 700_000_000)
+        await service.stop()
+
+        XCTAssertGreaterThanOrEqual(wideEvent.startedFlows.count, 2)
+        for case let data as VPNIPLeakCheckWideEventData in wideEvent.startedFlows where data.trigger == .periodic {
+            return
+        }
+        XCTFail("no periodic-triggered flow observed")
+    }
+
     func testCooldown_rejectsFollowUp() async {
         let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))

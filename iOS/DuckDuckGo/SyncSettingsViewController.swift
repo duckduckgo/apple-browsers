@@ -87,7 +87,6 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     }
 
     var cancellables = Set<AnyCancellable>()
-    private var devicePromptCancellable: AnyCancellable?
     let syncPausedStateManager: any SyncPausedStateManaging
     let viewModel: SyncSettingsViewModel
 
@@ -322,21 +321,6 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         ])
 
         startPairingIfNecessary()
-        observeDevicesForPromptCheck()
-    }
-
-    /// Subscribes to $devices, waits for the first non-empty value, and checks whether to show the "sync another device" prompt.
-    /// This is so that we wait until the device list is loaded before deciding whether to display the prompt.
-    /// Only subscribes if sync is already enabled.
-    private func observeDevicesForPromptCheck() {
-        guard isSyncEnabled else { return }
-        guard devicePromptCancellable == nil else { return }
-        devicePromptCancellable = viewModel.$devices
-            .drop(while: { $0.isEmpty })
-            .prefix(1)
-            .sink { [weak self] _ in
-                self?.viewModel.checkAndShowSyncWithAnotherDevicePrompt()
-            }
     }
 
     func updateOptions() {

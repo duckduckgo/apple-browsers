@@ -194,12 +194,6 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         return true
     }
 
-    var simplifiedSyncAnotherDevicePromptState: SyncAnotherDevicePromptState { .dismissed }
-
-    func simplifiedSyncAnotherDevicePromptWasDismissed() {
-        monitor.incrementCalls(function: #function.cleaningFunctionName())
-    }
-
     func showRecoveryCodeEntry() {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }

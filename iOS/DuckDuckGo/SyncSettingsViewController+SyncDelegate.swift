@@ -721,7 +721,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                         Pixel.fire(pixel: .syncDisabled)
                         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self.syncPausedStateManager.syncDidTurnOff()
-                        self.resetSimplifiedSyncAnotherDevicePromptState()
                         continuation.resume(returning: true)
                     } catch {
                         await self.handleError(SyncErrorMessage.unableToTurnSyncOff, error: error, event: .syncLogoutError)
@@ -752,7 +751,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self?.viewModel.isSyncEnabled = false
                         self?.syncPausedStateManager.syncDidTurnOff()
-                        self?.resetSimplifiedSyncAnotherDevicePromptState()
                         continuation.resume(returning: true)
                     } catch {
                         await self?.handleError(SyncErrorMessage.unableToDeleteData, error: error, event: .syncDeleteAccountError)
@@ -838,24 +836,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 // MARK: - Simplified Sync
 
 extension SyncSettingsViewController {
-    var simplifiedSyncAnotherDevicePromptState: SyncAnotherDevicePromptState {
-        let rawValue = syncSettingsStore.object(forKey: SyncAnotherDevicePromptState.storageKey) as? Int ?? 0
-        return SyncAnotherDevicePromptState(rawValue: rawValue) ?? .dismissed
-    }
-
     func simplifiedCopyRecoveryCode() {
         UIPasteboard.general.string = recoveryCode
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         ActionMessageView.present(message: UserText.simplifiedRecoveryCodeCopiedToast)
-    }
-
-    func simplifiedSyncAnotherDevicePromptWasDismissed() {
-        let next = simplifiedSyncAnotherDevicePromptState.next
-        syncSettingsStore.set(next.rawValue, forKey: SyncAnotherDevicePromptState.storageKey)
-    }
-
-    private func resetSimplifiedSyncAnotherDevicePromptState() {
-        syncSettingsStore.set(SyncAnotherDevicePromptState.notYetShown.rawValue, forKey: SyncAnotherDevicePromptState.storageKey)
     }
 }
 

@@ -21,32 +21,6 @@ import Foundation
 import UIKit
 import Combine
 
-/// Used to track the status of whether or not we've shown the Sync Another Device prompt
-/// to the user, whether it's been dismissed, and whether we need to show it again.
-///
-public enum SyncAnotherDevicePromptState: Int {
-    case notYetShown = 0
-    case remindedOnce = 1
-    case dismissed = 2
-
-    public static let storageKey = "sync.simplified.sync-another-device-prompt.state"
-
-    public var shouldShow: Bool { self != .dismissed }
-
-    public var dismissButtonTitle: String {
-        switch self {
-        case .notYetShown:
-            return UserText.simplifiedSyncAnotherDeviceNotNow
-        case .remindedOnce, .dismissed:
-            return UserText.simplifiedSyncAnotherDeviceNoThanks
-        }
-    }
-
-    public var next: SyncAnotherDevicePromptState {
-        SyncAnotherDevicePromptState(rawValue: rawValue + 1) ?? .dismissed
-    }
-}
-
 public protocol SyncManagementViewModelDelegate: AnyObject {
 
     func authenticateUser() async throws
@@ -77,9 +51,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     // Simplified sync setup experiment
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
     func simplifiedConfirmAndDisableSync() async -> Bool
-    func simplifiedSyncAnotherDevicePromptWasDismissed()
     func simplifiedCopyRecoveryCode()
-    var simplifiedSyncAnotherDevicePromptState: SyncAnotherDevicePromptState { get }
 
     var syncBookmarksPausedTitle: String? { get }
     var syncCredentialsPausedTitle: String? { get }
@@ -421,24 +393,15 @@ public class SyncSettingsViewModel: ObservableObject {
         }
     }
 
-    public var simplifiedSyncAnotherDevicePromptDismissButtonTitle: String {
-        delegate?.simplifiedSyncAnotherDevicePromptState.dismissButtonTitle ?? UserText.simplifiedSyncAnotherDeviceNoThanks
-    }
-
     public func checkAndShowSyncWithAnotherDevicePrompt() {
         guard !isBusy else { return }
         guard isSyncEnabled else { return }
         guard devices.count == 1 else { return }
-        guard delegate?.simplifiedSyncAnotherDevicePromptState.shouldShow == true else { return }
         isSyncWithAnotherDevicePromptVisible = true
     }
 
     public func dismissSyncWithAnotherDevicePrompt() {
         isSyncWithAnotherDevicePromptVisible = false
-    }
-
-    public func syncWithAnotherDevicePromptDidDismiss() {
-        delegate?.simplifiedSyncAnotherDevicePromptWasDismissed()
     }
 
     public func copyCode() {

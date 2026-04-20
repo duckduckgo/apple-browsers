@@ -241,8 +241,7 @@ public struct UserText {
     // Simplified Sync Another Device Prompt
     static let simplifiedSyncAnotherDeviceTitle = NotLocalizedString("sync.simplified.another.device.title", bundle: Bundle.module, value: "Sync your data with another device?", comment: "Prompt title after enabling sync")
     static let simplifiedSyncAnotherDeviceBody = NotLocalizedString("sync.simplified.another.device.body", bundle: Bundle.module, value: "Your bookmarks, autofill data, and Duck.ai chats are securely backed up. Now keep them in sync with your computer or tablet.", comment: "Prompt body text after enabling sync")
-    static let simplifiedSyncAnotherDeviceNotNow = NotLocalizedString("sync.simplified.another.device.notnow", bundle: Bundle.module, value: "Not Now", comment: "Prompt secondary button on first show")
-    static let simplifiedSyncAnotherDeviceNoThanks = NotLocalizedString("sync.simplified.another.device.nothanks", bundle: Bundle.module, value: "No Thanks", comment: "Prompt secondary button on second show")
+    static let simplifiedSyncAnotherDeviceNotNow = NotLocalizedString("sync.simplified.another.device.notnow", bundle: Bundle.module, value: "Not Now", comment: "Prompt secondary button")
 
     // Simplified QR Scanning
     static let simplifiedScanTitle = NotLocalizedString("sync.simplified.scan-or-view-code.title", bundle: Bundle.module, value: "Sync Your Devices", comment: "Navigation title for simplified QR scanning screen")

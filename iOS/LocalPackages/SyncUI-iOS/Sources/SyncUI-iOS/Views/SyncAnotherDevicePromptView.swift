@@ -65,7 +65,7 @@ struct SyncAnotherDevicePromptView: View {
                 Button {
                     model.dismissSyncWithAnotherDevicePrompt()
                 } label: {
-                    Text(model.simplifiedSyncAnotherDevicePromptDismissButtonTitle)
+                    Text(UserText.simplifiedSyncAnotherDeviceNotNow)
                 }
                 .buttonStyle(GhostButtonStyle())
             }

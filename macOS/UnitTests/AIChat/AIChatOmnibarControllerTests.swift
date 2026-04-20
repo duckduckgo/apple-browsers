@@ -424,6 +424,110 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertTrue(controller.models.isEmpty)
     }
 
+    // MARK: - Reasoning Effort Tests
+
+    func testWhenReasoningEffortFeatureFlagEnabled_ThenIsReasoningEffortEnabledIsTrue() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+
+        // Then
+        XCTAssertTrue(controller.isReasoningEffortEnabled)
+    }
+
+    func testWhenReasoningEffortFeatureFlagDisabled_ThenIsReasoningEffortEnabledIsFalse() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = false
+
+        // Then
+        XCTAssertFalse(controller.isReasoningEffortEnabled)
+    }
+
+    func testWhenUpdateSelectedReasoningEffort_ThenValueIsPersistedToPreferences() {
+        // When
+        controller.updateSelectedReasoningEffort("low")
+
+        // Then
+        XCTAssertEqual(mockPreferences.selectedReasoningEffort, "low")
+    }
+
+    func testWhenReasoningEffortIsPersisted_ThenSelectedReasoningEffortReturnsPersistedValue() {
+        // Given
+        mockPreferences.selectedReasoningEffort = "medium"
+
+        // Then
+        XCTAssertEqual(controller.selectedReasoningEffort, "medium")
+    }
+
+    func testWhenUpdateSelectedReasoningEffortToNil_ThenPreferencesValueIsCleared() {
+        // Given
+        mockPreferences.selectedReasoningEffort = "low"
+
+        // When
+        controller.updateSelectedReasoningEffort(nil)
+
+        // Then
+        XCTAssertNil(mockPreferences.selectedReasoningEffort)
+    }
+
+    func testWhenCleanupCalled_ThenSelectedReasoningEffortIsPreserved() {
+        // Given
+        mockPreferences.selectedReasoningEffort = "medium"
+
+        // When
+        controller.cleanup()
+
+        // Then — persisted preference is not reset by cleanup
+        XCTAssertEqual(controller.selectedReasoningEffort, "medium")
+    }
+
+    func testWhenModelSupportsReasoningEfforts_ThenSelectedModelReasoningEffortsReturnsList() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "reasoning-model", entityHasAccess: true, supportedReasoningEffort: ["none", "low", "medium"])
+        ]
+        mockPreferences.selectedModelId = "reasoning-model"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertEqual(controller.selectedModelReasoningEfforts, ["none", "low", "medium"])
+    }
+
+    func testWhenModelDoesNotSupportReasoningEfforts_ThenSelectedModelReasoningEffortsIsEmpty() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "plain-model", entityHasAccess: true)
+        ]
+        mockPreferences.selectedModelId = "plain-model"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertTrue(controller.selectedModelReasoningEfforts.isEmpty)
+    }
+
+    func testWhenFeatureFlagEnabledAndEffortSelected_ThenEffectiveReasoningEffortReturnsSelection() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        mockPreferences.selectedReasoningEffort = "low"
+
+        // Then
+        XCTAssertEqual(controller.effectiveReasoningEffort, "low")
+    }
+
+    func testWhenFeatureFlagDisabled_ThenEffectiveReasoningEffortIsNilEvenIfSelected() {
+        // Given — user previously selected an effort while flag was on
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = false
+        mockPreferences.selectedReasoningEffort = "medium"
+
+        // Then — nothing is sent when the flag is off, even if a value is persisted
+        XCTAssertNil(controller.effectiveReasoningEffort)
+    }
+
     // MARK: - Helpers
 
     /// Creates a remote model for testing. Access is resolved locally from `accessTier`
@@ -432,7 +536,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     private func makeRemoteModel(
         id: String,
         supportsImageUpload: Bool = false,
-        entityHasAccess: Bool = true
+        entityHasAccess: Bool = true,
+        supportedReasoningEffort: [String] = []
     ) -> AIChatRemoteModel {
         AIChatRemoteModel(
             id: id,
@@ -442,6 +547,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             entityHasAccess: entityHasAccess,
             supportsImageUpload: supportsImageUpload,
             supportedTools: [],
+            supportedReasoningEffort: supportedReasoningEffort,
             accessTier: entityHasAccess ? ["free"] : ["plus", "pro"]
         )
     }
@@ -488,6 +594,7 @@ private class AIChatMockSearchPreferencesPersistor: SearchPreferencesPersistor {
 private class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
     var selectedModelId: String?
     var selectedModelShortName: String?
+    var selectedReasoningEffort: String?
 }
 
 // MARK: - Mock Models Service

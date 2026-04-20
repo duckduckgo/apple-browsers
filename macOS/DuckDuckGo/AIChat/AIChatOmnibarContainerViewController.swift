@@ -77,6 +77,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let toolsButton = AIChatOmnibarToolButton()
     private let imageGenActiveButton = AIChatOmnibarToolButton()
     private let webSearchActiveButton = AIChatOmnibarToolButton()
+    private let reasoningPickerButton = AIChatOmnibarToolButton()
     private let modelPickerButton = AIChatModelPickerButton()
     private let attachmentsContainerView = AIChatImageAttachmentsContainerView()
 
@@ -352,6 +353,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         updateToolsLeadingConstraint()
         updateToolModeUI()
+        updateReasoningPickerVisibility()
         onPassthroughHeightNeedsUpdate?()
     }
 
@@ -490,6 +492,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         webSearchActiveButton.isHidden = true
         containerView.addSubview(webSearchActiveButton)
 
+        reasoningPickerButton.translatesAutoresizingMaskIntoConstraints = false
+        reasoningPickerButton.target = self
+        reasoningPickerButton.action = #selector(reasoningPickerButtonClicked)
+        reasoningPickerButton.isHidden = true
+        containerView.addSubview(reasoningPickerButton)
+
         modelPickerButton.translatesAutoresizingMaskIntoConstraints = false
         modelPickerButton.target = self
         modelPickerButton.action = #selector(modelPickerButtonClicked)
@@ -534,6 +542,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             submitButton.heightAnchor.constraint(equalToConstant: Constants.submitButtonSize),
 
             modelPickerButton.heightAnchor.constraint(equalToConstant: Constants.modelPickerHeight),
+
+            reasoningPickerButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
+            reasoningPickerButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+            reasoningPickerButton.trailingAnchor.constraint(equalTo: modelPickerButton.leadingAnchor, constant: -Constants.toolButtonSpacing),
 
             imageUploadButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset),
             imageUploadButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
@@ -592,6 +604,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             imageGenActiveButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
             webSearchActiveButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
             imageUploadButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
+            reasoningPickerButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
             modelPickerButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset)
         ])
 
@@ -983,6 +996,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 modelPickerButton.modelName = persistedModelShortName
                 // Refresh image upload visibility with updated supportsImageUpload
                 updateImageUploadVisibility(supportsImageUpload: omnibarController.selectedModelSupportsImageUpload)
+                updateReasoningPickerVisibility()
             }
     }
 
@@ -1031,7 +1045,85 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.updateSelectedModel(model.id)
         modelPickerButton.modelName = model.shortName
         updateImageUploadVisibility(supportsImageUpload: model.supportsImageUpload)
+        updateReasoningPickerVisibility()
         PixelKit.fire(AIChatPixel.aiChatAddressBarModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+    }
+
+    // MARK: - Reasoning Picker
+
+    @objc private func reasoningPickerButtonClicked() {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+
+        let efforts = omnibarController.selectedModelReasoningEfforts
+        for effort in efforts {
+            let item = NSMenuItem(title: "", action: #selector(reasoningEffortSelected(_:)), keyEquivalent: "")
+            item.attributedTitle = toolsMenuItemAttributedTitle(
+                title: reasoningEffortDisplayName(effort),
+                subtitle: reasoningEffortSubtitle(effort)
+            )
+            item.target = self
+            item.representedObject = effort
+            item.image = reasoningEffortIcon(effort)
+            menu.addItem(item)
+        }
+
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: -5), in: reasoningPickerButton)
+    }
+
+    @objc private func reasoningEffortSelected(_ sender: NSMenuItem) {
+        guard let effort = sender.representedObject as? String else { return }
+        omnibarController.updateSelectedReasoningEffort(effort)
+        updateReasoningPickerAppearance(effort)
+    }
+
+    private func updateReasoningPickerVisibility() {
+        guard omnibarController.isReasoningEffortEnabled else {
+            reasoningPickerButton.isHidden = true
+            return
+        }
+        let efforts = omnibarController.selectedModelReasoningEfforts
+        reasoningPickerButton.isHidden = efforts.isEmpty || omnibarController.isImageGenerationMode
+        if !efforts.isEmpty {
+            let current = omnibarController.selectedReasoningEffort ?? efforts.first
+            if let current, !efforts.contains(current) {
+                // Current selection not available for new model — reset to default
+                omnibarController.updateSelectedReasoningEffort(efforts.first)
+            }
+            updateReasoningPickerAppearance(omnibarController.selectedReasoningEffort ?? efforts.first ?? "")
+        }
+    }
+
+    private func updateReasoningPickerAppearance(_ effort: String) {
+        reasoningPickerButton.label = reasoningEffortDisplayName(effort)
+        reasoningPickerButton.image = reasoningEffortIcon(effort)
+    }
+
+    private func reasoningEffortDisplayName(_ effort: String) -> String {
+        switch effort {
+        case "none", "minimal": return "Fast"
+        case "low": return "Reasoning"
+        case "medium": return "Extended Reasoning"
+        default: return effort.capitalized
+        }
+    }
+
+    private func reasoningEffortSubtitle(_ effort: String) -> String {
+        switch effort {
+        case "none", "minimal": return "Answers right away"
+        case "low": return "Takes a moment to respond"
+        case "medium": return "Researches before responding"
+        default: return ""
+        }
+    }
+
+    private func reasoningEffortIcon(_ effort: String) -> NSImage? {
+        switch effort {
+        case "none", "minimal": return NSImage(systemSymbolName: "bolt.fill", accessibilityDescription: "Fast")
+        case "low": return NSImage(systemSymbolName: "brain", accessibilityDescription: "Reasoning")
+        case "medium": return NSImage(systemSymbolName: "brain.head.profile", accessibilityDescription: "Extended Reasoning")
+        default: return nil
+        }
     }
 
     private func updateImageUploadVisibility(supportsImageUpload: Bool) {
@@ -1081,6 +1173,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         imageUploadButton.tintColor = toolButtonTintColor
         imageUploadButton.hoverBackgroundColor = .buttonMouseOver
         imageUploadButton.pressedBackgroundColor = .buttonMouseDown
+        reasoningPickerButton.tintColor = toolButtonTintColor
+        reasoningPickerButton.hoverBackgroundColor = .buttonMouseOver
+        reasoningPickerButton.pressedBackgroundColor = .buttonMouseDown
         modelPickerButton.tintColor = toolButtonTintColor
 
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius

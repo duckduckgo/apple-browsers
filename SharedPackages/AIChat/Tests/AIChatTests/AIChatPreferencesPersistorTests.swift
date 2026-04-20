@@ -83,4 +83,51 @@ final class AIChatPreferencesPersistorTests: XCTestCase {
         // Then
         XCTAssertEqual(secondPersistor.selectedModelId, "gpt-4o-mini")
     }
+
+    // MARK: - Selected Reasoning Effort
+
+    func testWhenNoReasoningEffortSelected_ThenSelectedReasoningEffortIsNil() {
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testWhenReasoningEffortIsSet_ThenItCanBeReadBack() {
+        // Given & When
+        persistor.selectedReasoningEffort = "low"
+
+        // Then
+        XCTAssertEqual(persistor.selectedReasoningEffort, "low")
+    }
+
+    func testWhenReasoningEffortIsOverwritten_ThenNewValueIsReturned() {
+        // Given
+        persistor.selectedReasoningEffort = "low"
+
+        // When
+        persistor.selectedReasoningEffort = "medium"
+
+        // Then
+        XCTAssertEqual(persistor.selectedReasoningEffort, "medium")
+    }
+
+    func testWhenReasoningEffortIsCleared_ThenItReturnsNil() {
+        // Given
+        persistor.selectedReasoningEffort = "low"
+
+        // When
+        persistor.selectedReasoningEffort = nil
+
+        // Then
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testWhenReasoningEffortIsPersisted_ThenItSurvivesNewPersistorInstance() {
+        // Given
+        persistor.selectedReasoningEffort = "medium"
+
+        // When — create new persistor backed by the same store
+        let secondPersistor = AIChatPreferencesPersistor(keyValueStore: userDefaults)
+
+        // Then
+        XCTAssertEqual(secondPersistor.selectedReasoningEffort, "medium")
+    }
 }

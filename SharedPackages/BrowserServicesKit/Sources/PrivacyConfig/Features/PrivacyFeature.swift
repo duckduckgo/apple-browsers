@@ -469,6 +469,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables web search tool in the Duck.ai omnibar
     case omnibarWebSearch
 
+    /// Enables the reasoning effort picker in the Duck.ai omnibar
+    case omnibarReasoningEffort
+
     /// Enables querying AI Chat data directly from local storage instead of via webview
     case nativeDataAccess
 }

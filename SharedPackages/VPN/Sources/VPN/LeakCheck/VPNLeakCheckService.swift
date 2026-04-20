@@ -18,6 +18,7 @@
 
 import Foundation
 import Network
+import os.log
 import PixelKit
 
 public actor VPNLeakCheckService {
@@ -51,10 +52,12 @@ public actor VPNLeakCheckService {
     }
 
     public func start() {
+        Logger.networkProtectionIPLeakCheck.log("🟢 Starting leak check service")
         schedulePeriodic()
     }
 
     public func stop() {
+        Logger.networkProtectionIPLeakCheck.log("🔴 Stopping leak check service")
         isStopped = true
         periodicTask?.cancel()
         periodicTask = nil
@@ -68,11 +71,15 @@ public actor VPNLeakCheckService {
     }
 
     public func updateEgressIP(_ newIP: String) {
+        Logger.networkProtectionIPLeakCheck.log("Updated egress IP reference")
         egressIP = newIP
     }
 
     public static func completeAllPendingFlows(wideEvent: WideEventManaging) {
         let pending = wideEvent.getAllFlowData(VPNIPLeakCheckWideEventData.self)
+        if !pending.isEmpty {
+            Logger.networkProtectionIPLeakCheck.log("Completing \(pending.count, privacy: .public) pending leak check flow(s) as interrupted")
+        }
         for data in pending {
             wideEvent.completeFlow(
                 data,
@@ -83,9 +90,16 @@ public actor VPNLeakCheckService {
     }
 
     public func runCheck(trigger: LeakCheckTrigger) async {
-        guard !isStopped else { return }
-        guard currentCheck == nil else { return }
+        guard !isStopped else {
+            Logger.networkProtectionIPLeakCheck.log("Skipping leak check — service stopped (trigger: \(trigger.rawValue, privacy: .public))")
+            return
+        }
+        guard currentCheck == nil else {
+            Logger.networkProtectionIPLeakCheck.log("Skipping leak check — already in flight (trigger: \(trigger.rawValue, privacy: .public))")
+            return
+        }
         if let last = lastCompletionDate, Date().timeIntervalSince(last) < configuration.cooldown {
+            Logger.networkProtectionIPLeakCheck.log("Skipping leak check — cooldown active (trigger: \(trigger.rawValue, privacy: .public))")
             return
         }
         let task = Task { await executeCheck(trigger: trigger) }
@@ -104,6 +118,8 @@ public actor VPNLeakCheckService {
         if trigger != .periodic {
             schedulePeriodic()
         }
+
+        Logger.networkProtectionIPLeakCheck.log("🟢 Starting leak check (trigger: \(trigger.rawValue, privacy: .public))")
 
         let data = VPNIPLeakCheckWideEventData(
             trigger: trigger,
@@ -141,10 +157,36 @@ public actor VPNLeakCheckService {
         }
 
         if Task.isCancelled {
+            Logger.networkProtectionIPLeakCheck.log("🔴 Leak check cancelled — discarding flow (trigger: \(trigger.rawValue, privacy: .public))")
             wideEvent.discardFlow(data)
             return
         }
+        Logger.networkProtectionIPLeakCheck.log(
+            "🟢 Leak check complete (trigger: \(trigger.rawValue, privacy: .public), status: \(Self.describeStatus(status), privacy: .public), latency: \(data.latencyMsBucketed ?? 0, privacy: .public)ms, \(Self.describeResults(data), privacy: .public))"
+        )
         wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
+    }
+
+    private static func describeStatus(_ status: WideEventStatus) -> String {
+        switch status {
+        case .success: return "SUCCESS"
+        case .failure: return "FAILURE"
+        case .cancelled: return "CANCELLED"
+        case .unknown(let reason): return "UNKNOWN(\(reason))"
+        }
+    }
+
+    private static func describeResults(_ data: VPNIPLeakCheckWideEventData) -> String {
+        func describe(_ result: LeakCheckPerTestResult?) -> String {
+            guard let result = result else { return "-" }
+            return result.status.rawValue
+        }
+        var parts: [String] = []
+        parts.append("ipv4: [http: \(describe(data.ipv4Http)), https: \(describe(data.ipv4Https)), stun: \(describe(data.ipv4Stun))]")
+        if let leak = data.ipv4LeakIPType { parts.append("ipv4_leak_type: \(leak.rawValue)") }
+        parts.append("ipv6: [http: \(describe(data.ipv6Http)), https: \(describe(data.ipv6Https)), stun: \(describe(data.ipv6Stun))]")
+        if let leak = data.ipv6LeakIPType { parts.append("ipv6_leak_type: \(leak.rawValue)") }
+        return parts.joined(separator: ", ")
     }
 
     private struct ProbeResults {

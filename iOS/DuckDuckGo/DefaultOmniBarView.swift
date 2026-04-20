@@ -591,7 +591,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaContainerView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
         searchAreaContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
 
-        searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
+        searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
         searchAreaContainerView.layer.cornerCurve = .continuous
 
@@ -707,7 +707,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeBackground)
             activeOutlineView.layer.borderColor = UIColor(singleUseColor: .fireModeAccent).cgColor
         } else {
-            searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
+            searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
             activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
         }
         let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified

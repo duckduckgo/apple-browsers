@@ -375,6 +375,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private var wideEvent: WideEventManaging
     private var connectionWideEventData: VPNConnectionWideEventData?
     private let connectionTunnelTimeoutInterval: TimeInterval = .minutes(15)
+    private var leakCheckService: VPNLeakCheckService?
 
     // MARK: - Connection Tester
 
@@ -949,6 +950,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         connectionStatus = .disconnecting
 
         await stopMonitors()
+        if let service = leakCheckService {
+            await service.stop()
+            leakCheckService = nil
+        }
         try await stopAdapter()
     }
 
@@ -1224,6 +1229,45 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         // and is being fixed, so we want to test the connection immediately.
         let testImmediately = startReason == .reconnected || startReason == .onDemand
         try await startMonitors(testImmediately: testImmediately)
+
+        await scheduleLeakCheck(for: startReason)
+    }
+
+    @MainActor
+    private func scheduleLeakCheck(for startReason: AdapterStartReason) async {
+        guard let egressIP = lastSelectedServerInfo?.ipv4?.debugDescription else {
+            return
+        }
+
+        switch startReason {
+        case .manual, .onDemand, .snoozeEnded:
+            if leakCheckService == nil {
+                let service = VPNLeakCheckService(
+                    configuration: .default,
+                    egressIP: egressIP,
+                    httpClient: DefaultLeakCheckHTTPClient(),
+                    stunClient: DefaultLeakCheckSTUNClient(),
+                    wideEvent: wideEvent,
+                    contextName: "vpn-ip-leak-check"
+                )
+                leakCheckService = service
+                await service.start()
+            }
+            let service = leakCheckService
+            let delay = LeakCheckConfiguration.default.tunnelStartDelay
+            Task {
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                await service?.runCheck(trigger: .tunnelStart)
+            }
+        case .reconnected:
+            await leakCheckService?.updateEgressIP(egressIP)
+            let service = leakCheckService
+            Task {
+                await service?.runCheck(trigger: .reassert)
+            }
+        case .wake:
+            break
+        }
     }
 
     // MARK: - Monitors
@@ -1670,6 +1714,7 @@ extension PacketTunnelProvider {
 
     func setupAndStartConnectionWideEvent(with startupMethod: StartupOptions.StartupMethod) {
         completeAllPendingVPNConnectionPixels()
+        VPNLeakCheckService.completeAllPendingFlows(wideEvent: wideEvent)
         // Already measured
         guard startupMethod != .manualByMainApp else { return }
         let data = VPNConnectionWideEventData(

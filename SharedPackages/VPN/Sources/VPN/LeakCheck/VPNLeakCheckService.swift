@@ -55,8 +55,28 @@ public actor VPNLeakCheckService {
     public func stop() {
         periodicTask?.cancel()
         periodicTask = nil
-        currentCheck?.cancel()
-        currentCheck = nil
+        if let task = currentCheck {
+            task.cancel()
+            currentCheck = nil
+            for data in wideEvent.getAllFlowData(VPNIPLeakCheckWideEventData.self) {
+                wideEvent.discardFlow(data)
+            }
+        }
+    }
+
+    public func updateEgressIP(_ newIP: String) {
+        egressIP = newIP
+    }
+
+    public static func completeAllPendingFlows(wideEvent: WideEventManaging) {
+        let pending = wideEvent.getAllFlowData(VPNIPLeakCheckWideEventData.self)
+        for data in pending {
+            wideEvent.completeFlow(
+                data,
+                status: .unknown(reason: "check_interrupted"),
+                onComplete: { _, _ in }
+            )
+        }
     }
 
     public func runCheck(trigger: LeakCheckTrigger) async {
@@ -113,6 +133,10 @@ public actor VPNLeakCheckService {
             data.statusReason = reason
         }
 
+        if Task.isCancelled {
+            wideEvent.discardFlow(data)
+            return
+        }
         wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
     }
 

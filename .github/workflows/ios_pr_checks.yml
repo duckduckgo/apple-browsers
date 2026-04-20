@@ -237,6 +237,7 @@ jobs:
 
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v3
+      if: always()
       with:
         report_paths: iOS/unittests.xml
         check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}

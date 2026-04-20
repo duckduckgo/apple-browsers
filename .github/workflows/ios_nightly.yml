@@ -103,6 +103,7 @@ jobs:
 
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v3
+      if: always()
       with:
         report_paths: iOS/unittests.xml
         check_retries: true

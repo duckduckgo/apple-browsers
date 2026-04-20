@@ -127,6 +127,7 @@ jobs:
       with:
         check_name: "Test Report: Shell Scripts"
         report_paths: 'bats-tests.xml'
+        detailed_summary: true
 
   tests:
     name: Test
@@ -374,6 +375,7 @@ jobs:
         check_name: "Test Report: ${{ matrix.flavor }}"
         report_paths: 'macOS/${{ matrix.flavor }}*.xml'
         check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+        detailed_summary: true
 
     - name: Update Asana with failed unit tests
       if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')

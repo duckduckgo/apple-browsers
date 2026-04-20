@@ -19,6 +19,7 @@
 
 import Core
 import Foundation
+import TipKit
 
 /// Injectable protocol for coordinating fire mode promotions.
 /// Tracks eligibility state and user interactions for promotion surfaces.
@@ -34,6 +35,9 @@ protocol FireModePromotionCoordinating {
     var isMenuPromotionEligible: Bool { get }
     func markMenuPromotionShown()
     func markMenuPromotionEngaged()
+
+    var isTabSwitcherTipExpired: Bool { get }
+    func markTabSwitcherTipShown()
 }
 
 /// Coordinates fire mode promotion eligibility and state.
@@ -48,11 +52,13 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
         static let menuPromotionFirstShownDate = "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate"
         static let menuPromotionShownCount = "com.duckduckgo.ios.firePromotion.menu.promotionShownCount"
         static let menuPromotionEngaged = "com.duckduckgo.ios.firePromotion.menu.engaged"
+        static let tabSwitcherTipFirstSeenDate = "com.duckduckgo.ios.firePromotion.tabSwitcherTip.firstSeenDate"
     }
 
     static let ntpExpirationInterval: TimeInterval = 3 * 24 * 60 * 60
     static let menuExpirationInterval: TimeInterval = 14 * 24 * 60 * 60
     static let menuMaxOpenCount = 5
+    static let tabSwitcherTipExpirationInterval: TimeInterval = 3 * 24 * 60 * 60
 
     private let fireModeCapability: FireModeCapable
     private let userDefaults: UserDefaults
@@ -72,7 +78,8 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
             Keys.isEngaged,
             Keys.menuPromotionFirstShownDate,
             Keys.menuPromotionShownCount,
-            Keys.menuPromotionEngaged
+            Keys.menuPromotionEngaged,
+            Keys.tabSwitcherTipFirstSeenDate
         ]
         for key in allKeys {
             userDefaults.removeObject(forKey: key)
@@ -87,6 +94,9 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
 
     func markFireModeVisited() {
         hasVisitedFireMode = true
+        if #available(iOS 17.0, *) {
+            FireTabsTip.hasVisitedFireMode = true
+        }
     }
 
     // MARK: - NTP Promotion
@@ -161,6 +171,21 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
         // TODO: fire menu promotion engaged pixel
     }
 
+    // MARK: - Tab Switcher Tip
+
+    /// The 3-day expiration is tracked here; view count and X-button dismissal
+    /// are handled by TipKit's `maxDisplayCount` and native invalidation.
+    var isTabSwitcherTipExpired: Bool {
+        guard let firstSeen = tabSwitcherTipFirstSeenDate else { return false }
+        return Date().timeIntervalSince(firstSeen) >= Self.tabSwitcherTipExpirationInterval
+    }
+
+    func markTabSwitcherTipShown() {
+        if tabSwitcherTipFirstSeenDate == nil {
+            tabSwitcherTipFirstSeenDate = Date()
+        }
+    }
+
     // MARK: - Private
 
     private var hasBurnedTabs: Bool {
@@ -201,5 +226,10 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
     private var menuPromotionEngaged: Bool {
         get { userDefaults.bool(forKey: Keys.menuPromotionEngaged) }
         set { userDefaults.set(newValue, forKey: Keys.menuPromotionEngaged) }
+    }
+
+    private var tabSwitcherTipFirstSeenDate: Date? {
+        get { userDefaults.object(forKey: Keys.tabSwitcherTipFirstSeenDate) as? Date }
+        set { userDefaults.set(newValue, forKey: Keys.tabSwitcherTipFirstSeenDate) }
     }
 }

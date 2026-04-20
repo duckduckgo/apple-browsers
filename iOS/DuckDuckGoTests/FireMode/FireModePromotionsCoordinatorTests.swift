@@ -221,6 +221,46 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(firstDate, secondDate)
     }
 
+    // MARK: - Tab Switcher Tip: Not Expired Initially
+
+    func testWhenTipNeverShownThenNotExpired() {
+        XCTAssertFalse(sut.isTabSwitcherTipExpired)
+    }
+
+    // MARK: - Tab Switcher Tip: markTabSwitcherTipShown
+
+    func testWhenMarkTabSwitcherTipShownCalledFirstTimeThenSetsFirstSeenDate() {
+        sut.markTabSwitcherTipShown()
+
+        let storedDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.tabSwitcherTip.firstSeenDate") as? Date
+        XCTAssertNotNil(storedDate)
+    }
+
+    func testWhenMarkTabSwitcherTipShownCalledMultipleTimesThenDoesNotOverwriteFirstSeenDate() {
+        sut.markTabSwitcherTipShown()
+        let firstDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.tabSwitcherTip.firstSeenDate") as? Date
+
+        sut.markTabSwitcherTipShown()
+        let secondDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.tabSwitcherTip.firstSeenDate") as? Date
+
+        XCTAssertEqual(firstDate, secondDate)
+    }
+
+    // MARK: - Tab Switcher Tip: Expiration
+
+    func testWhenTipShownWithinThreeDaysThenNotExpired() {
+        sut.markTabSwitcherTipShown()
+
+        XCTAssertFalse(sut.isTabSwitcherTipExpired)
+    }
+
+    func testWhenTipShownMoreThanThreeDaysAgoThenExpired() {
+        let fourDaysAgo = Date().addingTimeInterval(-4 * 24 * 60 * 60)
+        userDefaults.set(fourDaysAgo, forKey: "com.duckduckgo.ios.firePromotion.tabSwitcherTip.firstSeenDate")
+
+        XCTAssertTrue(sut.isTabSwitcherTipExpired)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT() -> FireModePromotionsCoordinator {

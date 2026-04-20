@@ -226,6 +226,15 @@ jobs:
           iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
 
+    - name: Report crashes from xcresult
+      if: always() && steps.run-unit-tests.outcome == 'failure'
+      run: |
+        xcresult=$(ls -dt DerivedData/Logs/Test/*.xcresult 2>/dev/null | head -n 1)
+        if [[ -z "$xcresult" ]]; then
+          exit 0
+        fi
+        ${{ github.workspace }}/scripts/report-xcresult-crashes.sh "$xcresult"
+
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v3
       with:

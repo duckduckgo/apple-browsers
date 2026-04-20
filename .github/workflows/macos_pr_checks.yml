@@ -356,6 +356,15 @@ jobs:
         path: macOS/${{ matrix.flavor }}*.xml
         retention-days: 7
 
+    - name: Report crashes from xcresult
+      if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')
+      run: |
+        for xcresult in ${{ matrix.flavor }}-unittests.xcresult ${{ matrix.flavor }}-integrationtests.xcresult; do
+          if [[ -d "$xcresult" ]]; then
+            ${{ github.workspace }}/scripts/report-xcresult-crashes.sh "$xcresult"
+          fi
+        done
+
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v4
       if: always() # always run even if the previous step fails

@@ -105,11 +105,6 @@ final class GeolocationProviderTests: XCTestCase {
 
         window.contentView = view
 
-        // Pre-warm the WebContent process. On CI, launching a new web process can be slow,
-        // causing geolocation subscription tests to time out when two webviews are used simultaneously.
-        // Loading about:blank here starts the process early so it's ready when the test needs it.
-        webView.load(URLRequest(url: URL(string: "about:blank")!))
-
         return webView
     }
 

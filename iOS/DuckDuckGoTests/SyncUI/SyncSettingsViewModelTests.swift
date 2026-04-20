@@ -495,6 +495,40 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertFalse(sut.isSyncWithAnotherDevicePromptVisible)
     }
 
+    func testWhenPromptAlreadyShownThenPromptIsNotVisible() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.hasShownSimplifiedSyncAnotherDevicePrompt = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        sut.isSyncEnabled = true
+        sut.devices = [.init(id: "1", name: "iPhone", type: "phone", isThisDevice: true)]
+
+        sut.checkAndShowSyncWithAnotherDevicePrompt()
+
+        XCTAssertFalse(sut.isSyncWithAnotherDevicePromptVisible)
+    }
+
+    func testWhenPromptShownThenHasShownFlagIsPersisted() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        sut.isSyncEnabled = true
+        sut.devices = [.init(id: "1", name: "iPhone", type: "phone", isThisDevice: true)]
+
+        sut.checkAndShowSyncWithAnotherDevicePrompt()
+
+        XCTAssertTrue(delegate.hasShownSimplifiedSyncAnotherDevicePrompt)
+    }
+
+    func testWhenGuardFailsThenHasShownFlagIsNotSet() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        sut.isSyncEnabled = false
+        sut.devices = [.init(id: "1", name: "iPhone", type: "phone", isThisDevice: true)]
+
+        sut.checkAndShowSyncWithAnotherDevicePrompt()
+
+        XCTAssertFalse(delegate.hasShownSimplifiedSyncAnotherDevicePrompt)
+    }
+
     private func makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler,
                          delegate: MockSyncSettingsViewModelDelegate? = nil) -> SyncSettingsViewModel {
         let model = SyncSettingsViewModel(
@@ -522,6 +556,7 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     var onShowRecoveringDataAutoRestore: (() -> Void)?
     var onShowRecoveryCodeEntry: (() -> Void)?
     var onAuthenticateUserFinished: (() -> Void)?
+    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool = false
 
     var syncBookmarksPausedTitle: String?
     var syncCredentialsPausedTitle: String?

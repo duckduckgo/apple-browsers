@@ -52,6 +52,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
     func simplifiedConfirmAndDisableSync() async -> Bool
     func simplifiedCopyRecoveryCode()
+    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool { get set }
 
     var syncBookmarksPausedTitle: String? { get }
     var syncCredentialsPausedTitle: String? { get }
@@ -397,7 +398,9 @@ public class SyncSettingsViewModel: ObservableObject {
         guard !isBusy else { return }
         guard isSyncEnabled else { return }
         guard devices.count == 1 else { return }
+        guard delegate?.hasShownSimplifiedSyncAnotherDevicePrompt == false else { return }
         isSyncWithAnotherDevicePromptVisible = true
+        delegate?.hasShownSimplifiedSyncAnotherDevicePrompt = true
     }
 
     public func dismissSyncWithAnotherDevicePrompt() {

@@ -841,6 +841,15 @@ extension SyncSettingsViewController {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         ActionMessageView.present(message: UserText.simplifiedRecoveryCodeCopiedToast)
     }
+
+    private enum SimplifiedSyncSettingsKey: String {
+        case hasShownSimplifiedSyncAnotherDevicePrompt = "sync.simplified.sync-another-device-prompt.shown"
+    }
+
+    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool {
+        get { syncSettingsStore.object(forKey: SimplifiedSyncSettingsKey.hasShownSimplifiedSyncAnotherDevicePrompt.rawValue) as? Bool ?? false }
+        set { syncSettingsStore.set(newValue, forKey: SimplifiedSyncSettingsKey.hasShownSimplifiedSyncAnotherDevicePrompt.rawValue) }
+    }
 }
 
 // MARK: - DismissibleHostingController

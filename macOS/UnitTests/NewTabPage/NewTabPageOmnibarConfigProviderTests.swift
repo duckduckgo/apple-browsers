@@ -255,12 +255,15 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     // MARK: - selectedModelId (shared with native omnibar)
 
+    private let legacyModelIdKey = "newTabPageSelectedModelId"
+
     private func makeProvider(
         persistor: AIChatPreferencesPersisting,
-        observer: UserDefaults
+        observer: UserDefaults,
+        keyValueStore: ThrowingKeyValueStoring? = nil
     ) throws -> NewTabPageOmnibarConfigProvider {
         NewTabPageOmnibarConfigProvider(
-            keyValueStore: try makeStore(),
+            keyValueStore: try keyValueStore ?? makeStore(),
             aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
             featureFlagger: MockFeatureFlagger(),
             aiChatPreferencesPersistor: persistor,
@@ -363,6 +366,55 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         cancellable.cancel()
 
         XCTAssertEqual(received, "claude-4")
+        XCTAssertEqual(persistor.selectedModelId, "claude-4")
+    }
+
+    // MARK: - legacy model id migration
+
+    func testMigration_copiesLegacyValueWhenSharedStoreIsEmpty() throws {
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+
+        _ = try makeProvider(persistor: persistor, observer: .standard, keyValueStore: store)
+
+        XCTAssertEqual(persistor.selectedModelId, "maverick")
+        XCTAssertNil(store.underlyingDict[legacyModelIdKey])
+    }
+
+    func testMigration_preservesSharedValueAndDropsLegacyKey() throws {
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "gpt-5"
+
+        _ = try makeProvider(persistor: persistor, observer: .standard, keyValueStore: store)
+
+        XCTAssertEqual(persistor.selectedModelId, "gpt-5")
+        XCTAssertNil(store.underlyingDict[legacyModelIdKey])
+    }
+
+    func testMigration_noOpWhenLegacyKeyAbsent() throws {
+        let store = try makeStore()
+        let persistor = MockAIChatPreferencesPersisting()
+
+        _ = try makeProvider(persistor: persistor, observer: .standard, keyValueStore: store)
+
+        XCTAssertNil(persistor.selectedModelId)
+        XCTAssertNil(store.underlyingDict[legacyModelIdKey])
+    }
+
+    func testMigration_runsOnlyOnce() throws {
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+
+        // First launch: migrates.
+        _ = try makeProvider(persistor: persistor, observer: .standard, keyValueStore: store)
+        XCTAssertEqual(persistor.selectedModelId, "maverick")
+
+        // Simulate the user picking a new model after migration.
+        persistor.selectedModelId = "claude-4"
+
+        // Second launch: legacy key is gone, so nothing is overwritten.
+        _ = try makeProvider(persistor: persistor, observer: .standard, keyValueStore: store)
         XCTAssertEqual(persistor.selectedModelId, "claude-4")
     }
 

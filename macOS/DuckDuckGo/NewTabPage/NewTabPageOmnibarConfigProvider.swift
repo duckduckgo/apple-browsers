@@ -79,6 +79,12 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         case newTabPageOmnibarMode
     }
 
+    private enum LegacyKey: String {
+        /// Previously-used per-NTP key. Migrated into `AIChatPreferencesPersisting.selectedModelId`
+        /// (shared with the native omnibar) on first init after the unification, then removed.
+        case newTabPageSelectedModelId
+    }
+
     private enum Constants: Int {
         case maxNumberOfPopoverPresentations = 5
     }
@@ -109,6 +115,9 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
         self.aiChatModelSelectionObserver = aiChatModelSelectionObserver
         self.firePixel = firePixel
+
+        Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &self.aiChatPreferencesPersistor)
+
         self.lastObservedModelId = aiChatPreferencesPersistor.selectedModelId
 
         userDefaultsChangeCancellable = NotificationCenter.default
@@ -232,6 +241,22 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
                 guard let self else { return }
                 self.hasExcessChats = hasExcess
             }
+    }
+
+    /// One-time migration: copy the old NTP-only model id into the shared `AIChatPreferencesPersisting`
+    /// store when the shared value is absent, then drop the legacy key so subsequent launches skip the work.
+    private static func migrateLegacySelectedModelIdIfNeeded(
+        from keyValueStore: ThrowingKeyValueStoring,
+        into persistor: inout AIChatPreferencesPersisting
+    ) {
+        let legacyKey = LegacyKey.newTabPageSelectedModelId.rawValue
+        guard let legacyValue = try? keyValueStore.object(forKey: legacyKey) as? String else {
+            return
+        }
+        if persistor.selectedModelId == nil {
+            persistor.selectedModelId = legacyValue
+        }
+        try? keyValueStore.removeObject(forKey: legacyKey)
     }
 
 }

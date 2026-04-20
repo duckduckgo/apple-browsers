@@ -277,7 +277,7 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var isAIChatToolsEnabled: Bool = false
     var selectedModelId: String?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> {Just(nil).eraseToAnyPublisher() }
-    var selectedModelShortName: String? = nil
+    var selectedModelShortName: String?
 }
 
 private extension AIChatSuggestion {

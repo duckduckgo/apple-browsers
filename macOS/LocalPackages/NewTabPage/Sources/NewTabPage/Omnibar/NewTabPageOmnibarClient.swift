@@ -119,13 +119,17 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.showCustomizePopover = showCustomizePopover
         }
         if let selectedModelId = config.selectedModelId {
+            // Only refresh the cached short name when the id actually changes. Echoing back the
+            // same id (e.g. on web launch) must not overwrite a valid cache with `nil` just
+            // because `lastFetchedSections` hasn't been populated yet on this side.
+            let didChangeModelId = configProvider.selectedModelId != selectedModelId
             configProvider.selectedModelId = selectedModelId
-            // Cache the short name so the native omnibar can render the correct label before
-            // its own models fetch completes — otherwise it briefly shows the previous pick.
-            configProvider.selectedModelShortName = modelsProvider?.lastFetchedSections?
-                .flatMap(\.items)
-                .first(where: { $0.id == selectedModelId })?
-                .shortName
+            if didChangeModelId {
+                configProvider.selectedModelShortName = modelsProvider?.lastFetchedSections?
+                    .flatMap(\.items)
+                    .first(where: { $0.id == selectedModelId })?
+                    .shortName
+            }
         }
         return nil
     }

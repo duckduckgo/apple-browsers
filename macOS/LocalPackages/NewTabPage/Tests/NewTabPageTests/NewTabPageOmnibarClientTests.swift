@@ -114,6 +114,22 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertNil(configProvider.selectedModelShortName)
     }
 
+    @MainActor
+    func testWhenSetConfigWithUnchangedModelIdAndEmptyLookupThenCachedShortNameIsPreserved() async throws {
+        // Given — id already stored with a cached short name, and models haven't been fetched yet
+        configProvider.selectedModelId = "gpt-4o-mini"
+        configProvider.selectedModelShortName = "G4m"
+        modelsProvider.lastFetchedSections = nil
+
+        // When — web echoes back the same id (typical on launch)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+
+        // Then — cached short name is preserved (not wiped by a failed lookup)
+        XCTAssertEqual(configProvider.selectedModelId, "gpt-4o-mini")
+        XCTAssertEqual(configProvider.selectedModelShortName, "G4m")
+    }
+
     // MARK: - getSuggestions
 
     func testGetSuggestionsReturnsSuggestionsFromProvider() async throws {

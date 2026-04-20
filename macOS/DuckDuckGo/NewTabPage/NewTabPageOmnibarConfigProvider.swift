@@ -254,6 +254,11 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     /// One-time migration: copy the old NTP-only model id into the shared `AIChatPreferencesPersisting`
     /// store when the shared value is absent, then drop the legacy key so subsequent launches skip the work.
+    ///
+    /// The legacy NTP store never cached a short name, so on the upgrade path we seed it with the
+    /// model id as a placeholder. This keeps the native omnibar's model picker visible on first
+    /// launch post-upgrade (the picker is hidden when both `models` and `selectedModelShortName`
+    /// are empty). The real short name replaces the placeholder once the models fetch completes.
     private static func migrateLegacySelectedModelIdIfNeeded(
         from keyValueStore: ThrowingKeyValueStoring,
         into persistor: inout AIChatPreferencesPersisting
@@ -264,6 +269,9 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         }
         if persistor.selectedModelId == nil {
             persistor.selectedModelId = legacyValue
+            if persistor.selectedModelShortName == nil {
+                persistor.selectedModelShortName = legacyValue
+            }
         }
         try? keyValueStore.removeObject(forKey: legacyKey)
     }

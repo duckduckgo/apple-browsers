@@ -381,6 +381,17 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertNil(store.underlyingDict[legacyModelIdKey])
     }
 
+    func testMigration_seedsShortNamePlaceholderWhenSharedStoreIsEmpty() throws {
+        // Legacy NTP store never cached a short name. Without a placeholder the native
+        // model picker is hidden on first launch post-upgrade until models fetch completes.
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+
+        _ = try makeProvider(persistor: persistor, observer: .standard, keyValueStore: store)
+
+        XCTAssertEqual(persistor.selectedModelShortName, "maverick")
+    }
+
     func testMigration_preservesSharedValueAndDropsLegacyKey() throws {
         let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
         let persistor = MockAIChatPreferencesPersisting()
@@ -390,6 +401,18 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
         XCTAssertEqual(persistor.selectedModelId, "gpt-5")
         XCTAssertNil(store.underlyingDict[legacyModelIdKey])
+    }
+
+    func testMigration_doesNotOverwriteExistingShortName() throws {
+        // Native omnibar users may already have a cached short name. Migration must not clobber it.
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "gpt-5"
+        persistor.selectedModelShortName = "GPT-5"
+
+        _ = try makeProvider(persistor: persistor, observer: .standard, keyValueStore: store)
+
+        XCTAssertEqual(persistor.selectedModelShortName, "GPT-5")
     }
 
     func testMigration_noOpWhenLegacyKeyAbsent() throws {

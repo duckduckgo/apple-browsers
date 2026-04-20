@@ -34,6 +34,8 @@ final class AutoplayPolicyTabExtension {
     private let autoplayPreferences: AutoplayPreferences
     private let featureFlagger: FeatureFlagger
     private let permissionManager: PermissionManagerProtocol
+    private let permissionSeeder: AutoplayPermissionSeeder
+
     private weak var telemetryUserScript: WebTelemetryUserScript?
     @Published private(set) var videoPlaybackDetected: Bool = false
     private var cancellables = Set<AnyCancellable>()
@@ -42,11 +44,18 @@ final class AutoplayPolicyTabExtension {
         autoplayPreferences: AutoplayPreferences,
         featureFlagger: FeatureFlagger,
         permissionManager: PermissionManagerProtocol,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        permissionSeeder: AutoplayPermissionSeeder? = nil,
         telemetryScriptPublisher: some Publisher<some WebTelemetryUserScriptProvider, Never>
     ) {
         self.autoplayPreferences = autoplayPreferences
         self.featureFlagger = featureFlagger
         self.permissionManager = permissionManager
+        self.permissionSeeder = permissionSeeder ?? AutoplayPermissionSeeder(
+            autoplayPreferences: autoplayPreferences,
+            permissionManager: permissionManager,
+            privacyConfigurationManager: privacyConfigurationManager
+        )
 
         telemetryScriptPublisher
             .sink { [weak self] scripts in
@@ -74,6 +83,9 @@ extension AutoplayPolicyTabExtension: NavigationResponder {
             return .next
         }
 
+        // By default we'll install an `.allow` policy (once) for a list of special domains (such as YouTube.com)
+        initializeSeededDomainIfNeeded(url: navigationAction.url)
+
         preferences.autoplayPolicy = loadAutoplayPolicy(url: navigationAction.url)
 
         return .next
@@ -84,6 +96,14 @@ private extension AutoplayPolicyTabExtension {
 
     func mustApplyAutoplayPolicy(url: URL) -> Bool {
         featureFlagger.isFeatureOn(.autoplayPolicy) && url.isHttpOrHttps
+    }
+
+    func initializeSeededDomainIfNeeded(url: URL) {
+        guard let domain = url.host?.lowercased() else {
+            return
+        }
+
+        permissionSeeder.seedIfNeeded(domain: domain)
     }
 
     func loadAutoplayPolicy(url: URL) -> _WKWebsiteAutoplayPolicy {

@@ -161,7 +161,7 @@ jobs:
           check_name: BSK Test Report (macOS)
           report_paths: SharedPackages/BrowserServicesKit/package-tests.xml
           require_tests: true
-          check_retries: true
+          check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
 
       - name: Update Asana with failed unit tests
         if: always() && steps.run-unit-tests.outcome == 'failure'
@@ -328,7 +328,7 @@ jobs:
           check_name: BSK Test Report (iOS)
           report_paths: SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
           require_tests: true
-          check_retries: true
+          check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
 
       - name: Update Asana with failed unit tests
         if: always() && steps.run-unit-tests-ios.outcome == 'failure'

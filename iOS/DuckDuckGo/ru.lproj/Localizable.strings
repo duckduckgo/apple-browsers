@@ -109,7 +109,6 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Вкладки и данные сброшены";
 
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Открыть в фоновом режиме";
 
@@ -213,6 +212,15 @@
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Сделать фото";
+
+/* Title for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.title" = "Настрой ответы";
+
+/* Subtitle for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.subtitle" = "Найдите актуальную информацию";
+
+/* Title for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.title" = "Веб-поиск";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Существующие закладки дублироваться не будут.";
@@ -940,6 +948,15 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Обновить имя пользователя?";
 
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Разрешить аудио и видео";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Блокировать аудио и видео";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Блокировать аудио";
+
 /* No comment provided by engineer. */
 "Available Products" = "Доступные продукты";
 
@@ -1231,8 +1248,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Пользовательский URL: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Импортировать файл с закладками...";
 
@@ -1491,6 +1506,12 @@
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Кратко изложи содержимое страницы";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Добавить Duck.ai в центр управления";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Добавить виджет Duck.ai на главный экран";
+
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Показывать кнопки и ссылки Duck.ai в результатах поиска DuckDuckGo.";
 
@@ -1499,12 +1520,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Дополнительные вопросы";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Добавить Duck.ai в центр управления";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Добавить виджет Duck.ai на главный экран";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Ярлыки для браузера";
@@ -1530,9 +1545,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "DuckDuckGo для iOS";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Ярлыки";
 
@@ -1550,6 +1562,9 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Запуск Duck.ai с помощью Siri";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "DuckDuckGo для iOS";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Добавьте подписку DuckDuckGo на это устройство";
@@ -1626,11 +1641,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Видеоролики, открываемые в Duck Player, будут проигрываться автоматически. Отключите эту настройку, если вы предпочитаете запускать воспроизведение вручную.";
 
-/* Label for the auto-play toggle in Duck Player settings */
+/* Label for the autoplay toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Автовоспроизведение видео";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Открывает видео в режиме «личного кинотеатра»: ваши просмотры не влияют на ленту рекомендаций YouTube.";
+"duckplayer.settings.enable-footer" = "Открывает видео в режиме кинотеатра: ваши просмотры не влияют на ленту рекомендаций YouTube.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Включить Duck Player";
@@ -2699,8 +2714,6 @@
 "No active subscriptions" = "Нет активных подписок";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Подписка не найдена";
 
 /* No comment provided by engineer. */
@@ -2742,8 +2755,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "В сборках для App Store экран отображается исключительно при входе через **use-login.duckduckgo.com** в режиме внутреннего пользователя.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "Блокировка рекламы на YouTube включена";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Понятно";
@@ -2799,8 +2812,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Пропустить";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Привет!\n\nБыстрый и надежный браузер заказывали?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Привет!\n\nКак насчет быстрого браузера, который защищает ваши данные и дает вам право решать, когда использовать ИИ?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Далее";
@@ -2814,11 +2827,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Настройки > Функции ИИ";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Нужен удобный доступ к приватному чату с ИИ?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Переключатель между \nобычным поиском и Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Поехали!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Только поиск";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Нужен доступ к приватным чатам с ИИ прямо из адресной строки?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Итак, начнем!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Мы уже это проходили";
@@ -2845,7 +2864,7 @@
 "onboarding.rebranding.first-search-done.title" = "Это — DuckDuckGo Search.";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Быстрый и надежный браузер заказывали?";
+"onboarding.rebranding.intro.message" = "Как насчет быстрого браузера, который защищает ваши данные и дает вам право решать, когда использовать ИИ?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Привет!";
@@ -2924,9 +2943,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Выполняется отказ...";
-
-/* No comment provided by engineer. */
-"Override" = "Переопределить";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Нет доступа к моделям Duck.ai, предоставляемым только по подписке";
@@ -3317,12 +3333,6 @@
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Новая вкладка";
 
-/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_and_duckai" = "Поиск и Duck.ai";
-
-/* Title for the 'Search Only' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_only" = "Только поиск";
-
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Новая функция! Теперь в адресной строке можно переключаться между обычным поиском и Duck.ai.";
 
@@ -3386,8 +3396,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Очистить";
 
-
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Закрыть все открытые вкладки.";
 
@@ -3448,16 +3456,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Автоматически удалять данные";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Автовоспроизведение";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Настройки Duck Player";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Настройки автовоспроизведения применятся только к новым вкладкам (к текущим — после перезапуска приложения). Управление автовоспроизведением в Duck Player: ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Отзыв о браузере";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Нажатие кнопки Fire Button также сотрет историю Duck.ai, включая закрепленные чаты.";
 
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Стереть данные браузера";
-
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Завершение настройки";
@@ -3477,8 +3492,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Собственная настройка";
 
-
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Очистка данных";
 
@@ -3488,10 +3501,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Браузер по умолчанию";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Стандартное положение переключателя на новых вкладках.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Положение переключателя";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Последнее использование";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Поиск";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Удалить чаты Duck.ai";
 
@@ -3537,7 +3561,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Aнимация кнопки «Огонь»";
 
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Огнеупорные сайты";
 
@@ -3579,6 +3602,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Управление учетной записью";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Медиа";
 
 /* Settings title for the 'More' section */
 "settings.more" = "DuckDuckGo также предлагает...";
@@ -4687,12 +4713,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Что будем импортировать?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Разрешить аудио и видео";
-"autoplay.mode.blockAll" = "Блокировать аудио и видео";
-"autoplay.mode.blockAudio" = "Блокировать аудио";
-"settings.autoplay" = "Автовоспроизведение";
-"settings.autoplay.duck.player.link" = "Настройки Duck Player";
-"settings.autoplay.footer" = "Настройки автовоспроизведения применятся только к новым вкладкам (к текущим — после перезапуска приложения). Управление автовоспроизведением в Duck Player: ";
-"settings.media.section" = "Медиа";

@@ -26,6 +26,7 @@ let package = Package(
     dependencies: [
         .package(path: "../DuckUI"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
+        .package(path: "../../../SharedPackages/UIComponents"),
         .package(path: "../MetricBuilder"),
         .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.2.1"),
     ],
@@ -40,6 +41,7 @@ let package = Package(
                 .product(name: "DuckUI", package: "DuckUI"),
                 .product(name: "MetricBuilder", package: "MetricBuilder"),
                 .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
+                .product(name: "UIComponents", package: "UIComponents"),
             ]
         ),
         .target(

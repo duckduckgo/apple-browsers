@@ -27,6 +27,7 @@ public enum ScriptletManagerFactory {
         privacyConfigManager: PrivacyConfigurationManaging,
         apiService: APIService,
         baseDirectory: URL,
+        pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
         isProduction: Bool = true,
         defaults: UserDefaults = .standard,
         installer: ScriptletInstalling = ScriptletInstaller()
@@ -52,6 +53,7 @@ public enum ScriptletManagerFactory {
             fetcher: fetcher,
             validator: validator,
             store: store,
+            pixelFiring: pixelFiring,
             isProduction: isProduction
         )
 
@@ -59,6 +61,7 @@ public enum ScriptletManagerFactory {
             provider: manager,
             installationTracker: store,
             installer: installer,
+            pixelFiring: pixelFiring,
             cacheRootDirectory: baseDirectory
         )
     }

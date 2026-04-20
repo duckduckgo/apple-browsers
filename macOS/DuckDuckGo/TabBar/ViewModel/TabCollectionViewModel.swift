@@ -24,6 +24,7 @@ import Foundation
 import History
 import os.log
 import PixelKit
+import PrivacyConfig
 import WebKit
 
 /**

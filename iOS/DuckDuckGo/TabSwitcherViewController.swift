@@ -244,8 +244,10 @@ class TabSwitcherViewController: UIViewController {
         titleBarView.standardAppearance = appearance
         titleBarView.scrollEdgeAppearance = appearance
 
-        let heightConstraint = titleBarView.heightAnchor.constraint(greaterThanOrEqualToConstant: 44)
-        heightConstraint.priority = .required - 1
+        let isBottomBar = appSettings.currentAddressBarPosition.isBottom
+        let barHeight: CGFloat = fireModeCapability.isFireModeEnabled ? (isBottomBar ? 72 : 60) : 44
+        let heightConstraint = titleBarView.heightAnchor.constraint(greaterThanOrEqualToConstant: barHeight)
+        heightConstraint.priority = .required
         heightConstraint.isActive = true
     }
     
@@ -253,7 +255,10 @@ class TabSwitcherViewController: UIViewController {
         guard fireModeCapability.isFireModeEnabled else {
             return
         }
-        let wrapper = TabSwitcherPickerWrapper(viewModel: pickerViewModel)
+        let isBottomBar = appSettings.currentAddressBarPosition.isBottom
+        let topPadding: CGFloat = isBottomBar ? 18 : 8
+        let bottomPadding: CGFloat = isBottomBar ? 6 : 8
+        let wrapper = TabSwitcherPickerWrapper(viewModel: pickerViewModel, topPadding: topPadding, bottomPadding: bottomPadding)
         let hostingController = UIHostingController(rootView: wrapper)
         hostingController.view.backgroundColor = .clear
         segmentedPickerHostingController = hostingController
@@ -261,7 +266,8 @@ class TabSwitcherViewController: UIViewController {
         addChild(hostingController)
         hostingController.didMove(toParent: self)
 
-        hostingController.view.frame = CGRect(x: 0, y: 0, width: Constants.modePickerWidth, height: 44)
+        let height: CGFloat = isBottomBar ? 68 : 60
+        hostingController.view.frame = CGRect(x: 0, y: 0, width: Constants.modePickerWidth, height: height)
         titleBarView.topItem?.titleView = hostingController.view
 
         pickerSelectionCancellable = pickerViewModel.$selectedItem
@@ -344,7 +350,7 @@ class TabSwitcherViewController: UIViewController {
         }
 
         // Changing this?  Best change MainView too
-        let topOffset = isiOS26 ? 4.0 : -6.0
+        let topOffset = isBottomBar && fireModeCapability.isFireModeEnabled ? 16 : (isiOS26 ? 4.0 : -6.0)
         let bottomOffset = 8.0
         let navHPadding = isiOS26 ? -6.0 : -2.0
         let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
@@ -915,10 +921,14 @@ extension TabSwitcherViewController: TabSwitcherPageDelegate {
 
 struct TabSwitcherPickerWrapper: View {
     @ObservedObject var viewModel: ImageSegmentedPickerViewModel
+    var topPadding: CGFloat = 0
+    var bottomPadding: CGFloat = 0
 
     var body: some View {
         ImageSegmentedPickerView(viewModel: viewModel)
             .frame(width: TabSwitcherViewController.Constants.modePickerWidth)
+            .padding(.top, topPadding)
+            .padding(.bottom, bottomPadding)
     }
 }
 

@@ -81,3 +81,15 @@ extension String {
         return URL(trimmedAddressBarString: self)
     }
 }
+
+// MARK: - Input Sanitization
+
+extension String {
+    /// Returns the string with `U+FFFC OBJECT REPLACEMENT CHARACTER` removed — the
+    /// placeholder iOS keyboard dictation inserts while listening, before committing
+    /// or cancelling the recognised text.
+    public var strippingDictationPlaceholder: String {
+        guard contains("\u{FFFC}") else { return self }
+        return replacingOccurrences(of: "\u{FFFC}", with: "")
+    }
+}

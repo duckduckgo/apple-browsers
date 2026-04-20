@@ -73,20 +73,17 @@
             {
                 "key": "tabs",
                 "description": "Whether tabs clearing is enabled",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "data",
                 "description": "Whether data clearing is enabled",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "chats",
                 "description": "Whether Duck.ai chats clearing is enabled",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             }
         ]
     },

@@ -3,49 +3,49 @@
 // per-key migration telemetry. The duck-ai_native-storage_* set tracks init,
 // migration lifecycle, and error events across Settings (Entries), Chats, and Files.
 {
-    "m_aichat_native_storage_migration_done_chats_unique": {
+    "m_duck-ai_native-storage_migration_done_chats_unique": {
         "description": "Fires once per install when Duck.ai migration from web to native storage completes for chats",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_aichat_native_storage_migration_done_chats_count": {
+    "m_duck-ai_native-storage_migration_done_chats_count": {
         "description": "Count of Duck.ai chats migration completion notifications from the web frontend",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_aichat_native_storage_migration_done_files_unique": {
+    "m_duck-ai_native-storage_migration_done_files_unique": {
         "description": "Fires once per install when Duck.ai migration from web to native storage completes for files",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_aichat_native_storage_migration_done_files_count": {
+    "m_duck-ai_native-storage_migration_done_files_count": {
         "description": "Count of Duck.ai files migration completion notifications from the web frontend",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_aichat_native_storage_migration_done_entries_unique": {
+    "m_duck-ai_native-storage_migration_done_entries_unique": {
         "description": "Fires once per install when Duck.ai migration from web to native storage completes for entries (general-purpose key-value store)",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_aichat_native_storage_migration_done_entries_count": {
+    "m_duck-ai_native-storage_migration_done_entries_count": {
         "description": "Count of Duck.ai entries migration completion notifications from the web frontend",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_aichat_native_storage_migration_done_blank_count": {
+    "m_duck-ai_native-storage_migration_done_blank_count": {
         "description": "Count of Duck.ai markMigrationDone messages received with a missing or blank key, indicating a protocol error from the frontend",
         "owners": ["Bunn"],
         "triggers": ["other"],

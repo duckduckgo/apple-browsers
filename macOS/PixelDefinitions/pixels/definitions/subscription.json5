@@ -285,13 +285,17 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            "origin",
-            "locale",
             {
-                "key": "free_trial",
-                "type": "boolean",
-                "description": "Whether the subscription was purchased via a free trial"
-            }
+                "key": "origin",
+                "type": "string",
+                "description": "Attribution origin identifier"
+            },
+            {
+                "key": "locale",
+                "type": "string",
+                "description": "User locale"
+            },
+            "freeTrial"
         ]
     },
     "m_mac_direct_subscribe": {
@@ -302,13 +306,17 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            "origin",
-            "locale",
             {
-                "key": "free_trial",
-                "type": "boolean",
-                "description": "Whether the subscription was purchased via a free trial"
-            }
+                "key": "origin",
+                "type": "string",
+                "description": "Attribution origin identifier"
+            },
+            {
+                "key": "locale",
+                "type": "string",
+                "description": "User locale"
+            },
+            "freeTrial"
         ]
     },
 

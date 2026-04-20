@@ -245,8 +245,8 @@ final class DownloadListCoordinatorTests: XCTestCase {
     func testWhenDownloadAddedThenDownloadItemIsPublished() async {
         setUpCoordinator()
 
-        let destURL = fm.temporaryDirectory.appendingPathComponent("test file.pdf")
-        let tempURL = fm.temporaryDirectory.appendingPathComponent("test file.duckload")
+        let destURL = self.destURL!
+        let tempURL = self.tempURL!
         let download = WKDownloadMock(url: .duckDuckGo)
         let task = WebKitDownloadTask(download: download, destination: .preset(destURL), fireWindowSession: nil)
 

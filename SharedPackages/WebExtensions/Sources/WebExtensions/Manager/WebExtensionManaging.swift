@@ -133,3 +133,24 @@ public struct ScriptletDebugInfo: Identifiable {
 
     public var id: String { extensionType.rawValue }
 }
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension WebExtensionManaging {
+
+    /// Returns a comma-separated string of short labels for all currently installed embedded extensions,
+    /// or `nil` if none are installed.
+    func loadedWebExtensionsString() -> String? {
+        let labels = DuckDuckGoWebExtensionType.allCases
+            .filter { installedEmbeddedExtension(for: $0) != nil }
+            .map(\.shortLabel)
+        return labels.isEmpty ? nil : labels.joined(separator: ",")
+    }
+
+    /// Returns the cached scriptlets version for the ad-blocking extension, or `nil` if unavailable.
+    @MainActor
+    func adBlockingScriptletsVersion() -> String? {
+        scriptletDebugInfo()
+            .first { $0.extensionType == .adBlockingExtension }?
+            .cachedVersion
+    }
+}

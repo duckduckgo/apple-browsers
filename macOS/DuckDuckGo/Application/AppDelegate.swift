@@ -102,6 +102,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let internalUserDecider: InternalUserDecider
     private var isInternalUserSharingCancellable: AnyCancellable?
     let featureFlagger: FeatureFlagger
+    private(set) lazy var adBlockingAvailability: AdBlockingAvailabilityProviding = AdBlockingAvailability(
+        featureFlagger: featureFlagger,
+        isEnabledByUserProvider: {
+            UserDefaults.standard.object(forKey: UserDefaultsKeys.youTubeAdBlockingEnabled.rawValue) as? Bool ?? false
+        }
+    )
     let visualizeFireSettingsDecider: VisualizeFireSettingsDecider
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let contentScopePreferences: ContentScopePreferences
@@ -390,6 +396,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var isSyncingEmbeddedExtensions = false
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings?
     private var darkReaderCancellables = Set<AnyCancellable>()
+    private var youTubeAdBlockingCancellable: AnyCancellable?
 
     /// Holder class that allows `WebExtensionAvailability` to be created before `super.init()`,
     /// while still providing access to `webExtensionManager` which is set on `self` after `super.init()`.
@@ -465,8 +472,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             didCrashDuringCrashHandlersSetUp.wrappedValue = false
         }
 
+        do {
+            let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
+            fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
+        } catch {
+            Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
+            fileStore = EncryptedFileStore()
+        }
+
+        let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
+        internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
+
         if AppVersion.runType.requiresEnvironment {
-            Self.configurePixelKit()
+            Self.configurePixelKit(isInternalUser: internalUserDecider.isInternalUser)
         }
 
         do {
@@ -479,18 +497,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fatalError("Could not prepare key value store: \(error.localizedDescription)")
         }
 
-        do {
-            let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
-            fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
-        } catch {
-            Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
-            fileStore = EncryptedFileStore()
-        }
-
         bookmarkDatabase = BookmarkDatabase()
-
-        let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
-        internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
 
         if AppVersion.runType.requiresEnvironment {
             let commonDatabase = Database()
@@ -1180,6 +1187,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         tabSuspensionService = TabSuspensionService(
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             memoryUsageMonitor: memoryUsageMonitor,
             pixelFiring: PixelKit.shared,
             keyValueStore: keyValueStore
@@ -1483,6 +1491,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyActiveUserPixels()
         fireDailyFireWindowConfigurationPixels()
         fireDailyAIChatEnabledPixel()
+        fireDailyAdBlockingPixel()
 
         fireAutoconsentDailyPixel()
         fireThemeDailyPixel()
@@ -1531,6 +1540,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fireDailyAIChatEnabledPixel() {
         PixelKit.fire(AIChatPixel.aiChatIsEnabled(isEnabled: aiChatPreferences.isAIFeaturesEnabled), frequency: .daily)
+    }
+
+    private func fireDailyAdBlockingPixel() {
+        PixelKit.fire(WebExtensionPixel.dailyAdBlockingState(isEnabled: adBlockingAvailability.isEnabled), frequency: .daily)
     }
 
     private func fireAutoconsentDailyPixel() {
@@ -1840,10 +1853,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .removeDuplicates()
             .eraseToAnyPublisher()
 
+        let adBlockingExtensionPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.adBlockingExtension)
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+
+        youTubeAdBlockingCancellable = NotificationCenter.default
+            .publisher(for: YouTubeAdBlockingPreferences.youTubeAdBlockingEnabledDidChangeNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.syncEmbeddedExtensions()
+                }
+            }
+
         webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
             featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
+            adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
             onFeatureFlagEnabled: { [weak self] in
                 await self?.initializeWebExtensions()
             },
@@ -1851,6 +1880,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.webExtensionManager = nil
             },
             onEmbeddedExtensionFlagEnabled: { [weak self] in
+                await self?.syncEmbeddedExtensions()
+            },
+            onAdBlockingExtensionFlagEnabled: { [weak self] in
                 await self?.syncEmbeddedExtensions()
             }
         )
@@ -1914,6 +1946,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if darkReaderFeatureSettings?.isForceDarkModeEnabled == true {
             enabledTypes.insert(.darkReader)
         }
+        if adBlockingAvailability.isEnabled {
+            enabledTypes.insert(.adBlockingExtension)
+        }
         await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
     }
 
@@ -1927,23 +1962,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             privacyConfigManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             apiService: DefaultAPIService(),
             baseDirectory: scriptletsDirectory,
+            pixelFiring: MacOSWebExtensionPixelFiring(),
             isProduction: !StandardApplicationBuildType().isDebugBuild
         )
     }
 
     // MARK: - PixelKit
 
-    static func configurePixelKit() {
-        Self.setUpPixelKit(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild))
+    static func configurePixelKit(isInternalUser: Bool) {
+        Self.setUpPixelKit(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
+                           isInternalUser: isInternalUser)
     }
 
-    private static func setUpPixelKit(dryRun: Bool) {
+    private static func setUpPixelKit(dryRun: Bool, isInternalUser: Bool) {
         let source = NSApp.isSandboxed ? "browser-appstore" : "browser-dmg"
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: isInternalUser)
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: dryRun,
                        appVersion: AppVersion.shared.versionNumber,
                        source: source,
+                       channel: channel,
                        defaultHeaders: [:],
                        defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 

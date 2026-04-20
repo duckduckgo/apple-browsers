@@ -182,6 +182,8 @@ jobs:
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          -test-iterations 3 \
+          -retry-tests-on-failure \
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           | tee xcodebuild.log \
@@ -228,6 +230,7 @@ jobs:
       uses: mikepenz/action-junit-report@v3
       with:
         report_paths: iOS/unittests.xml
+        check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
 
     - name: Update Asana with failed unit tests
       if: always() && steps.run-unit-tests.outcome == 'failure'

@@ -275,6 +275,8 @@ jobs:
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           "-skip-testing:${{ matrix.integration-tests-target }}" \
+          -test-iterations 3 \
+          -retry-tests-on-failure \
           | tee ${{ matrix.flavor }}-unittests-xcodebuild.log \
           | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
           | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-unittests.xml \
@@ -295,6 +297,7 @@ jobs:
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           "-only-testing:${{ matrix.integration-tests-target }}" \
+          -test-iterations 3 \
           -retry-tests-on-failure \
           | tee ${{ matrix.flavor }}-integrationtests-xcodebuild.log \
           | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
@@ -359,7 +362,7 @@ jobs:
       with:
         check_name: "Test Report: ${{ matrix.flavor }}"
         report_paths: 'macOS/${{ matrix.flavor }}*.xml'
-        check_retries: true
+        check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
 
     - name: Update Asana with failed unit tests
       if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')

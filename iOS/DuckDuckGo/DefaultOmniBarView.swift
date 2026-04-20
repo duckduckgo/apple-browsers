@@ -290,6 +290,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var onMenuButtonLongPressed: (() -> Void)?
     var onTrackersViewPressed: (() -> Void)?
     var onSettingsButtonPressed: (() -> Void)?
+    var onSettingsButtonLongPressed: (() -> Void)?
     var onCancelPressed: (() -> Void)?
     var onRefreshPressed: (() -> Void)?
     var onCustomizableButtonPressed: (() -> Void)?
@@ -695,6 +696,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(searchAreaPressed)))
 
         menuButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(menuButtonLongPress)))
+        settingsButtonView.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(settingsButtonLongPress)))
 
         aiChatLeftButton.addTarget(self, action: #selector(aiChatLeftButtonTap), for: .touchUpInside)
         aiChatSendButton.addTarget(self, action: #selector(aiChatSendButtonTap), for: .primaryActionTriggered)
@@ -875,6 +877,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         onSettingsButtonPressed?()
     }
 
+    @objc private func settingsButtonLongPress(_ sender: UILongPressGestureRecognizer) {
+        guard sender.state == .began else { return }
+        onSettingsButtonLongPressed?()
+    }
+
     @objc private func bookmarksButtonTap() {
         onBookmarksPressed?()
     }
@@ -887,7 +894,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         onMenuButtonPressed?()
     }
 
-    @objc private func menuButtonLongPress() {
+    @objc private func menuButtonLongPress(_ sender: UILongPressGestureRecognizer) {
+        guard sender.state == .began else { return }
         onMenuButtonLongPressed?()
     }
 

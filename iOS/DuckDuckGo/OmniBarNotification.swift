@@ -52,8 +52,16 @@ struct OmniBarNotification: View {
             LottieView(lottieFile: viewModel.animationName,
                        isAnimating: $isAnimatingCookie)
                        .frame(width: Constants.Size.animatedIcon.width, height: Constants.Size.animatedIcon.height)
+        } else if let staticIcon = viewModel.staticIconImage {
+            Image(uiImage: staticIcon)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: Constants.Size.staticIcon.width, height: Constants.Size.staticIcon.height)
+                .padding(.leading, 9)
+                .padding(.top, 7)
+                .padding(.bottom, 7)
+                .padding(.trailing, 9)
         } else {
-            // Static shield icon if no animation is provided
             Image("ShieldColor")
                 .resizable()
                 .aspectRatio(contentMode: .fit)

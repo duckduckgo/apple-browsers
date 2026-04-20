@@ -120,12 +120,12 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
 
     /// Anchors the popup card overlapping the header pill using screen coordinates.
     func anchorContentView(pillFrame: CGRect) {
-        let safeTop = view.safeAreaInsets.top
-        let cardTop = max(pillFrame.minY - Constants.cornerRadius, safeTop)
+        let cardTop = pillFrame.minY - Constants.cornerRadius
         let cardLeading = pillFrame.minX + Constants.popupLeadingOffset
 
         NSLayoutConstraint.activate([
             shadowContainer.topAnchor.constraint(equalTo: view.topAnchor, constant: cardTop),
+            shadowContainer.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor),
             shadowContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: cardLeading),
             shadowContainer.widthAnchor.constraint(equalToConstant: Constants.popupWidth),
         ])

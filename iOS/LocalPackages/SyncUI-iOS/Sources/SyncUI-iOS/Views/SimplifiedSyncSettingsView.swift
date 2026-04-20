@@ -394,7 +394,22 @@ extension SimplifiedSyncSettingsView {
                 ProgressView()
                     .frame(maxWidth: .infinity, alignment: .center)
             }
+
             devicesList
+
+            if model.isConnectingDevicesAvailable {
+                Button {
+                    model.scanQRCode()
+                } label: {
+                    HStack {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)
+                            .foregroundColor(Color(designSystemColor: .accent))
+                        Text(UserText.simplifiedSyncWithAnotherDeviceButton)
+                            .daxBodyRegular()
+                            .foregroundColor(Color(designSystemColor: .accent))
+                    }
+                }
+            }
         } header: {
             HStack {
                 Text(UserText.syncedDevicesSectionHeader)

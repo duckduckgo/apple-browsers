@@ -36,7 +36,7 @@ final class AIChatHistoryListViewController: UIViewController {
         static let iconTextSpacing: CGFloat = 12
         static let cellHeight: CGFloat = 44
         static let horizontalInset: CGFloat = 16
-        static let topContentInset: CGFloat = -20 //
+        static let topContentInset: CGFloat = -20
         // Separate paddings because Recent Chats (UITableView/UIKit) and Favorites (NewTabPage/SwiftUI)
         // have different layout systems; hatch needs per-state tuning to align with each tab visually.
         static let escapeHatchTopPaddingNoTitle: CGFloat = 16

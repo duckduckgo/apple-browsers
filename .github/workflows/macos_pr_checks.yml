@@ -348,6 +348,17 @@ jobs:
           fi
         fi
 
+    - name: Inject crashes into JUnit XML
+      if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')
+      run: |
+        for kind in unittests integrationtests; do
+          xcresult=${{ matrix.flavor }}-$kind.xcresult
+          junit=${{ matrix.flavor }}-$kind.xml
+          if [[ -d "$xcresult" && -f "$junit" ]]; then
+            ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py "$xcresult" "$junit"
+          fi
+        done
+
     - name: Upload JUnit XML as artifact
       uses: actions/upload-artifact@v4
       if: always()
@@ -355,15 +366,6 @@ jobs:
         name: macos-${{ matrix.flavor }}-unittests.xml
         path: macOS/${{ matrix.flavor }}*.xml
         retention-days: 7
-
-    - name: Report test results from xcresult
-      if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')
-      run: |
-        for xcresult in ${{ matrix.flavor }}-unittests.xcresult ${{ matrix.flavor }}-integrationtests.xcresult; do
-          if [[ -d "$xcresult" ]]; then
-            ${{ github.workspace }}/scripts/report-xcresult-summary.sh "$xcresult"
-          fi
-        done
 
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v4

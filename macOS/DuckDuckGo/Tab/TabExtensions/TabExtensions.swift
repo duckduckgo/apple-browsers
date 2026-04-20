@@ -209,7 +209,9 @@ extension TabExtensionsBuilder {
             AutoplayPolicyTabExtension(
                 autoplayPreferences: dependencies.autoplayPreferences,
                 featureFlagger: dependencies.featureFlagger,
-                permissionManager: dependencies.permissionManager
+                permissionManager: dependencies.permissionManager,
+                privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                telemetryScriptPublisher: userScripts.compactMap { $0 }
             )
         }
 
@@ -358,6 +360,7 @@ extension TabExtensionsBuilder {
                 featureFlagger: dependencies.featureFlagger,
                 aiChatSessionStore: dependencies.aiChatSessionStore,
                 privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                tld: dependencies.privacyFeatures.contentBlocking.tld,
                 isTabPinned: args.isTabPinned
             )
         }

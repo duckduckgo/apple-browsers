@@ -140,6 +140,9 @@ final class SyncPreferencesTests: XCTestCase {
         syncCredentialsAdapter = nil
         syncCreditCardsAdapter = nil
         syncIdentitiesAdapter = nil
+
+        UserDefaultsWrapper<Bool>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.syncIsEligibleForFaviconsFetcherOnboarding.rawValue)
+        UserDefaultsWrapper<Bool>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.syncIsFaviconsFetcherEnabled.rawValue)
     }
 
     private func setUpDatabase() {

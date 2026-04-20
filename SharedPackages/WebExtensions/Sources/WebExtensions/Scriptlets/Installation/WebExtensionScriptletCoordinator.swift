@@ -49,6 +49,7 @@ public final class WebExtensionScriptletCoordinator {
     private let scriptletProvider: ScriptletProviding
     private let installationTracker: ScriptletInstallationTracking
     private let installer: ScriptletInstalling
+    private let pixelFiring: WebExtensionPixelFiring
     private let cacheRootDirectory: URL
 
     public weak var installationPathResolver: (any WebExtensionInstallationPathResolving)?
@@ -61,12 +62,14 @@ public final class WebExtensionScriptletCoordinator {
         scriptletProvider: ScriptletProviding,
         installationTracker: ScriptletInstallationTracking,
         installer: ScriptletInstalling,
+        pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
         cacheRootDirectory: URL,
         installationPathResolver: any WebExtensionInstallationPathResolving
     ) {
         self.scriptletProvider = scriptletProvider
         self.installationTracker = installationTracker
         self.installer = installer
+        self.pixelFiring = pixelFiring
         self.cacheRootDirectory = cacheRootDirectory
         self.installationPathResolver = installationPathResolver
     }
@@ -157,10 +160,12 @@ public final class WebExtensionScriptletCoordinator {
             guard !Task.isCancelled, enabledTypes.contains(type) else { return }
 
             installationTracker.setInstalledVersion(version, for: type)
+            pixelFiring.fire(.scriptletInstalled(type: type, version: version))
             Logger.webExtensions.info("[Scriptlets] Installed v\(version) for '\(type.rawValue)'")
             try await installationPathResolver?.reloadExtension(for: type)
         } catch {
             Logger.webExtensions.error("[Scriptlets] Failed to install scriptlets for '\(type.rawValue)': \(error)")
+            pixelFiring.fire(.scriptletInstallError(type: type, error: error))
         }
     }
 }

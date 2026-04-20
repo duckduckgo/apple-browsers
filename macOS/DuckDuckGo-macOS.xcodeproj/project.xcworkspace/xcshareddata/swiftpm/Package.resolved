@@ -1,5 +1,5 @@
 {
-  "originHash" : "95948cfa9413b9c9674d256fadfa0a51f27fbb944872918bc4dd087d38527468",
+  "originHash" : "a3022eb55f869a486193f29c7aa22e6fdaab0839f67c68c143954f679332f292",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "fd16d76fd8b9a976d88bfb6cacc05ca8d19c91b6",
         "version" : "1.1.0"
+      }
+    },
+    {
+      "identity" : "content-scope-scripts",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
+      "state" : {
+        "revision" : "5c616fb4064c32fb1e5f7de96916ca9b89646f75",
+        "version" : "14.0.0"
       }
     },
     {

@@ -90,7 +90,12 @@ protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureSearchExperienceSelectionImpression()
     func measureChooseAIChat()
     func measureChooseSearchOnly()
+    func measureDuckAIQueryExperimentSelectionImpression()
+    func measureDuckAIQueryExperimentChooseSearchOnly()
+    func measureDuckAIQueryExperimentChooseAIChat()
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource)
 }
+
 
 protocol OnboardingCustomInteractionPixelReporting {
     func measureCustomSearch()
@@ -107,11 +112,14 @@ protocol OnboardingDaxDialogsReporting {
     func measureTryVisitSiteDialogDismissButtonTapped()
     func measureTrackersDialogDismissButtonTapped()
     func measureFireDialogDismissButtonTapped()
+    func measureDuckAIExperimentFireButtonCTAAction()
+    func measureDuckAIExperimentFinalDialogImpression()
     func measureEndOfJourneyDialogNewTabDismissButtonTapped()
     func measureEndOfJourneyDialogDismissButtonTapped()
     func measureSubscriptionDialogNewTabDismissButtonTapped()
     func measureEndOfJourneyDialogCTAAction()
 }
+
 
 protocol OnboardingAddToDockReporting {
     func measureAddToDockPromoImpression()
@@ -135,8 +143,6 @@ final class OnboardingPixelReporter {
     private let userDefaults: UserDefaults
     private let siteVisitedUserDefaultsKey = "com.duckduckgo.ios.site-visited"
 
-    private(set) var enqueuedPixels: [EnqueuedPixel] = []
-
     init(
         pixel: OnboardingPixelFiring.Type = Pixel.self,
         uniquePixel: OnboardingPixelFiring.Type = UniquePixel.self,
@@ -156,21 +162,6 @@ final class OnboardingPixelReporter {
     }
 
     private func fire(event: Pixel.Event, unique: Bool, additionalParameters: [String: String] = [:], includedParameters: [Pixel.QueryParameters] = [.appVersion]) {
-        
-        func enqueue(event: Pixel.Event, unique: Bool, additionalParameters: [String: String], includedParameters: [Pixel.QueryParameters]) {
-            enqueuedPixels.append(.init(event: event, unique: unique, additionalParameters: additionalParameters, includedParameters: includedParameters))
-        }
-
-        // If the Pixel needs the ATB and ATB is available, fire the Pixel immediately. Otherwise enqueue the pixel and process it once the ATB is available.
-        // If the Pixel does not need the ATB there's no need to wait for the ATB to become available.
-        if includedParameters.contains(.atb) && statisticsStore.atb == nil {
-            enqueue(event: event, unique: unique, additionalParameters: additionalParameters, includedParameters: includedParameters)
-        } else {
-            performFire(event: event, unique: unique, additionalParameters: additionalParameters, includedParameters: includedParameters)
-        }
-    }
-
-    private func performFire(event: Pixel.Event, unique: Bool, additionalParameters: [String: String], includedParameters: [Pixel.QueryParameters]) {
         if unique {
             uniquePixel.fire(pixel: event, withAdditionalParameters: additionalParameters, includedParameters: includedParameters)
         } else {
@@ -180,21 +171,58 @@ final class OnboardingPixelReporter {
 
 }
 
-// MARK: - Fire Enqueued Pixels
-
-extension OnboardingPixelReporter {
-
-    func fireEnqueuedPixelsIfNeeded() {
-        while !enqueuedPixels.isEmpty {
-            let event = enqueuedPixels.removeFirst()
-            performFire(event: event.event, unique: event.unique, additionalParameters: event.additionalParameters, includedParameters: event.includedParameters)
-        }
-    }
+enum DuckAIQueryExperimentPromptSource: String {
+    case custom
+    case option1
+    case option2
+    case option3
 }
 
 // MARK: - OnboardingPixelReporter + Intro
 
 extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
+    private enum DuckAIQueryExperimentMetric {
+        enum Name: String {
+            case search = "search_type"
+            case aiChat = "aichat_type"
+            case screenImpression = "screen-impression"
+            case ctaPressed = "cta-pressed"
+        }
+        enum ScreenImpressionValue: String {
+            case toggleScreen = "toggle-screen"
+            case fireDialog = "fire-dialog"
+            case finalDialog = "final-dialog"
+        }
+        enum CTAPressedValue: String {
+            case continuePressedSearch = "toggle-continue-pressed_search"
+            case continuePressedAI = "toggle-continue-pressed_ai"
+            case fireButtonPressed = "fire-button-pressed"
+        }
+        static let conversionWindowD0: ConversionWindow = 0...0
+        static let conversionWindowD7: ConversionWindow = 0...7
+    }
+
+    private func fireExperimentScreenImpressionPixel(value: DuckAIQueryExperimentMetric.ScreenImpressionValue) {
+        for window in [DuckAIQueryExperimentMetric.conversionWindowD0, DuckAIQueryExperimentMetric.conversionWindowD7] {
+            experimentPixel.fireExperimentPixel(
+                for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
+                metric: DuckAIQueryExperimentMetric.Name.screenImpression.rawValue,
+                conversionWindowDays: window,
+                value: value.rawValue
+            )
+        }
+    }
+
+    private func fireExperimentCTAPressedPixel(value: DuckAIQueryExperimentMetric.CTAPressedValue) {
+        for window in [DuckAIQueryExperimentMetric.conversionWindowD0, DuckAIQueryExperimentMetric.conversionWindowD7] {
+            experimentPixel.fireExperimentPixel(
+                for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
+                metric: DuckAIQueryExperimentMetric.Name.ctaPressed.rawValue,
+                conversionWindowDays: window,
+                value: value.rawValue
+            )
+        }
+    }
 
     func measureSkipOnboardingCTAAction() {
         fire(event: .onboardingIntroSkipOnboardingCTAPressed, unique: false)
@@ -259,6 +287,41 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     func measureChooseSearchOnly() {
         fire(event: .onboardingIntroSearchOnlySelected, unique: false)
     }
+
+    func measureDuckAIQueryExperimentSelectionImpression() {
+        fire(event: .onboardingIntroDuckAIExperimentToggleImpressionUnique, unique: true)
+        fireExperimentScreenImpressionPixel(value: .toggleScreen)
+    }
+
+    func measureDuckAIQueryExperimentChooseSearchOnly() {
+        fire(event: .onboardingIntroDuckAIExperimentToggleContinuePressedSearch, unique: false)
+        fireExperimentCTAPressedPixel(value: .continuePressedSearch)
+    }
+
+    func measureDuckAIQueryExperimentChooseAIChat() {
+        fire(event: .onboardingIntroDuckAIExperimentToggleContinuePressedAI, unique: false)
+        fireExperimentCTAPressedPixel(value: .continuePressedAI)
+    }
+
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
+        let metricName: DuckAIQueryExperimentMetric.Name
+        switch selection {
+        case .duckAI:
+            metricName = .aiChat
+        case .search:
+            metricName = .search
+        }
+
+        for window in [DuckAIQueryExperimentMetric.conversionWindowD0, DuckAIQueryExperimentMetric.conversionWindowD7] {
+            experimentPixel.fireExperimentPixel(
+                for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
+                metric: metricName.rawValue,
+                conversionWindowDays: window,
+                value: promptSource.rawValue
+            )
+        }
+    }
+
 }
 
 // MARK: - OnboardingPixelReporter + Custom Interaction
@@ -287,7 +350,7 @@ extension OnboardingPixelReporter: OnboardingCustomInteractionPixelReporting {
             PixelParameters.fromOnboarding: "true",
             PixelParameters.daysSinceInstall: String(daysSinceInstall ?? 0)
         ]
-        fire(event: .privacyDashboardFirstTimeOpenedUnique, unique: true, additionalParameters: additionalParameters, includedParameters: [.appVersion])
+        fire(event: .privacyDashboardFirstTimeOpenedUnique, unique: true, additionalParameters: additionalParameters)
     }
 
 }
@@ -298,6 +361,9 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
     
     func measureScreenImpression(event: Pixel.Event) {
         fire(event: event, unique: true)
+        if case .onboardingDuckAIExperimentFireDialogShownUnique = event {
+            fireExperimentScreenImpressionPixel(value: .fireDialog)
+        }
     }
 
     func measureTrySearchDialogNewTabDismissButtonTapped() {
@@ -322,6 +388,16 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
 
     func measureFireDialogDismissButtonTapped() {
         fire(event: .onboardingFireDialogDismissButtonTapped, unique: false)
+    }
+
+    func measureDuckAIExperimentFireButtonCTAAction() {
+        fire(event: .onboardingDuckAIExperimentFireButtonCTAPressed, unique: false)
+        fireExperimentCTAPressedPixel(value: .fireButtonPressed)
+    }
+
+    func measureDuckAIExperimentFinalDialogImpression() {
+        fire(event: .onboardingDuckAIExperimentFinalDialogShownUnique, unique: true)
+        fireExperimentScreenImpressionPixel(value: .finalDialog)
     }
 
     func measureEndOfJourneyDialogNewTabDismissButtonTapped() {
@@ -363,20 +439,3 @@ extension OnboardingPixelReporter: OnboardingAddToDockReporting {
     }
 
 }
-
-struct EnqueuedPixel {
-    let event: Pixel.Event
-    let unique: Bool
-    let additionalParameters: [String: String]
-    let includedParameters: [Pixel.QueryParameters]
-}
-
-#if canImport(XCTest) || DEBUG
-extension OnboardingPixelReporter {
-
-    func fireTestPixelWithATB(event: Pixel.Event) {
-        fire(event: event, unique: true, includedParameters: [.appVersion, .atb])
-    }
-
-}
-#endif

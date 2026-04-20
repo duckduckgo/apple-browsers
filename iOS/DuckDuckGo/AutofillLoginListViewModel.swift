@@ -404,7 +404,6 @@ class AutofillLoginListViewModel: ObservableObject {
                                       protectionsState: true,
                                       reportFlow: .appMenu,
                                       siteType: .mobile,
-                                      atb: "",
                                       model: "",
                                       errors: nil,
                                       httpStatusCodes: nil,

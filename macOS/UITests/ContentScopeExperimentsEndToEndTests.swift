@@ -24,12 +24,23 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
         let app = XCUIApplication.setUp()
         app.openNewTab()
 
-        // Step 1: Load custom remote config
-        let menuBarsQuery = app.menuBars
-        let internalUserMenuItem = menuBarsQuery.menuItems["Set Internal User State"]
-        if internalUserMenuItem.exists {
+        // Step 1: Enable internal user if needed
+        app.debugMenu.click()
+        let searchField = app.searchFields["Search debug menu..."]
+        searchField.click()
+        searchField.typeText("internal")
+        let internalUserMenuItem = app.menuItems["Set Internal User State"]
+        if internalUserMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
             internalUserMenuItem.click()
+            app.debugMenu.click()
         }
+        let activeSearchField = app.searchFields["Search debug menu..."]
+        activeSearchField.click()
+        activeSearchField.typeKey("a", modifierFlags: .command)
+        activeSearchField.typeKey(.delete, modifierFlags: [])
+        app.typeKey(.escape, modifierFlags: [])
+
+        // Step 2: Load custom remote config
         app.debugMenu.click()
         app.debugMenu.menuItems["Remote Configuration"].click()
         app.debugMenu.menuItems["Set custom configuration URL…"].click()
@@ -43,7 +54,7 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
         XCTAssertTrue(configUpdateComplete.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Custom config alert did not appear.")
         app.typeKey(.return, modifierFlags: [])
 
-        // Step 2: Load test page
+        // Step 3: Load test page
         let testPageUrl = URL(string: "https://privacy-test-pages.site/content-scope-scripts/infra/pages/conditional-matching-experiments.html")!
         XCTAssertTrue(
             app.addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -51,11 +62,11 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
         )
         app.typeURL(testPageUrl)
         XCTAssertTrue(
-            app.windows.firstMatch.webViews["Conditional Matching experiments"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.firstMatch.webViews["Conditional Matching experiments"].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Test page didn't load with the expected title in a reasonable timeframe."
         )
 
-        // Step 3: Check test passes
+        // Step 4: Check test passes
         let suiteStatusLabel = app.staticTexts["Test suite status: "]
         let suiteStatusValue = app.staticTexts["pass"]
         XCTAssertTrue(suiteStatusLabel.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Test Suite Status Label not found")

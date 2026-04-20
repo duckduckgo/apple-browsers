@@ -80,7 +80,7 @@ extension OnboardingRebranding.OnboardingView {
         private static func styledMessage() -> AttributedString {
             var attributed = AttributedString(UserText.Onboarding.Skip.message)
             if let range = attributed.range(of: fireButtonCopy) {
-                attributed[range].inlinePresentationIntent = .stronglyEmphasized
+                attributed[range].inlinePresentationIntent = .stronglyEmphasized // Bold
             }
             return attributed
         }

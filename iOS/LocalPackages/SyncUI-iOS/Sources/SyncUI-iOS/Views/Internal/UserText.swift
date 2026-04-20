@@ -236,17 +236,28 @@ public struct UserText {
 
     // Simplified Sync Toggle
     static let simplifiedSyncConnecting = NotLocalizedString("sync.simplified.connecting", bundle: Bundle.module, value: "Connecting...", comment: "Text shown next to toggle while sync is being set up")
-    static let simplifiedSyncEnabledToast = NotLocalizedString("sync.simplified.enabled.toast", bundle: Bundle.module, value: "Sync & Backup enabled", comment: "Toast message shown after sync is successfully enabled")
-    static let simplifiedSyncSetupFailedToast = NotLocalizedString("sync.simplified.setup.failed.toast", bundle: Bundle.module, value: "Failed to enable Sync & Backup", comment: "Toast message shown when sync setup fails")
-    static let simplifiedSyncTurnOffTitle = NotLocalizedString("sync.simplified.turn.off.title", bundle: Bundle.module, value: "Turn Off Sync & Backup?", comment: "Alert title when turning off sync")
-    static let simplifiedSyncTurnOffMessage = NotLocalizedString("sync.simplified.turn.off.message", bundle: Bundle.module, value: "Your bookmarks and passwords on this device won't be affected.", comment: "Alert message when turning off sync")
-    static let simplifiedSyncTurnOffAction = NotLocalizedString("sync.simplified.turn.off.action", bundle: Bundle.module, value: "Turn Off", comment: "Alert button to confirm turning off sync")
 
     // Simplified Sync Another Device Prompt
     static let simplifiedSyncAnotherDeviceTitle = NotLocalizedString("sync.simplified.another.device.title", bundle: Bundle.module, value: "Sync your data with another device?", comment: "Prompt title after enabling sync")
     static let simplifiedSyncAnotherDeviceBody = NotLocalizedString("sync.simplified.another.device.body", bundle: Bundle.module, value: "Your bookmarks, autofill data, and Duck.ai chats are securely backed up. Now keep them in sync with your computer or tablet.", comment: "Prompt body text after enabling sync")
     static let simplifiedSyncAnotherDeviceRemind = NotLocalizedString("sync.simplified.another.device.remind", bundle: Bundle.module, value: "Remind Me Later", comment: "Prompt secondary button on first show")
     static let simplifiedSyncAnotherDeviceNoThanks = NotLocalizedString("sync.simplified.another.device.nothanks", bundle: Bundle.module, value: "No Thanks", comment: "Prompt secondary button on second show")
+
+    // Simplified QR Scanning
+    static let simplifiedScanTitle = NotLocalizedString("sync.simplified.scan-or-view-code.title", bundle: Bundle.module, value: "Sync Your Devices", comment: "Navigation title for simplified QR scanning screen")
+    static let simplifiedScanTabScanQRCode = NotLocalizedString("sync.simplified.scan-or-view-code.tab.scan", bundle: Bundle.module, value: "Scan QR Code", comment: "Button title to show QR code scanner")
+    static let simplifiedScanTabViewCode = NotLocalizedString("sync.simplified.scan-or-view-code.tab.view.code", bundle: Bundle.module, value: "View Code", comment: "Button title to view your sync code")
+    static let simplifiedScanInstructions = NotLocalizedString("sync.simplified.scan-or-view-code.scan.instructions.line1", bundle: Bundle.module, value: "Open the DuckDuckGo app on your other device.", comment: "First line of QR code scanning instructions")
+    static let simplifiedScanInstructionsLine2 = NotLocalizedString("sync.simplified.scan-or-view-code.scan.instructions.line2", bundle: Bundle.module, value: "Find the QR code in Settings > Sync & Backup > Sync With Another Device.", comment: "Second line of QR code scanning instructions")
+    static let simplifiedScanCameraPrompt = NotLocalizedString("sync.simplified.scan-or-view-code.camera.prompt", bundle: Bundle.module, value: "Point Camera at QR to Scan", comment: "Floating prompt over QR code scanner preview")
+    static let simplifiedScanManuallyEnterCode = NotLocalizedString("sync.simplified.scan-or-view-code.manually.enter.code", bundle: Bundle.module, value: "Manually Enter Code", comment: "Button to navigate to manual sync code entry")
+    static let simplifiedViewCodeInstructions = NotLocalizedString("sync.simplified.scan-or-view-code.view.instructions", bundle: Bundle.module, value: "Scan or Paste this code on your other", comment: "Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name)")
+    static let simplifiedViewCodeAppName = NotLocalizedString("sync.simplified.scan-or-view-code.app.name", bundle: Bundle.module, value: "DuckDuckGo App", comment: "Part of instruction prompt referring to the DuckDuckGo app.")
+    static let simplifiedViewCodeShareButton = NotLocalizedString("sync.simplified.scan-or-view-code.share", bundle: Bundle.module, value: "Share Code", comment: "Title of button to share a sync code")
+    static let simplifiedConnectingTitle = NotLocalizedString("sync.simplified.scan-or-view-code.connecting.title", bundle: Bundle.module, value: "Keep DuckDuckGo open on both devices", comment: "Instruction shown during sync setup flow")
+    static let simplifiedConnectingStatus = NotLocalizedString("sync.simplified.scan-or-view-code.connecting.status", bundle: Bundle.module, value: "Connecting...", comment: "Status text when connecting devices to sync")
+    static let simplifiedPasteCodeInstructions = NotLocalizedString("sync.simplified.scan-or-view-code.paste.code.instructions", bundle: Bundle.module, value: "Go to **Settings > Sync & Backup > Sync With Another Device** and select **View Text Code** in the DuckDuckGo App on another synced device and paste the code here to sync this device.", comment: "Instructions on manual sync code entry screen. **bold** marks are rendered as bold text.")
+    static let simplifiedPasteCodeVerifying = NotLocalizedString("sync.simplified.scan-or-view-code.paste.code.verifying", bundle: Bundle.module, value: "Verifying code", comment: "Status text while verifying a pasted sync code")
 
     // Sync Get Other Devices
     static let syncGetOtherDevicesScreenTitle = NSLocalizedString("sync.get.other.devices.screen.title", bundle: Bundle.module, value: "Get DuckDuckGo", comment: "Title of screen with share links for users to download DuckDuckGo on other devices")

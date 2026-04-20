@@ -167,7 +167,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
                 attachPopoverTo: fireButton,
                 tabViewModel: tabManager.viewModelForCurrentTab(),
                 pixelSource: .browsing,
-                daxDialogsManager: daxDialogsManager,
+                fireContext: .default(daxDialogsManager: daxDialogsManager),
                 browsingMode: tabManager.currentBrowsingMode,
                 onConfirm: { [weak self] fireRequest in
                     guard let self = self else { return }

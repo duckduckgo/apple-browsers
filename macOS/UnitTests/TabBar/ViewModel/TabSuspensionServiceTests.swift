@@ -19,6 +19,7 @@
 import PersistenceTestingUtils
 import PixelKit
 import PrivacyConfig
+import PrivacyConfigTestsUtils
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -58,11 +59,15 @@ final class TabSuspensionServiceTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeSUT(tabCollectionViewModels: [TabCollectionViewModel]) -> TabSuspensionService {
+    private func makeSUT(
+        tabCollectionViewModels: [TabCollectionViewModel],
+        privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager()
+    ) -> TabSuspensionService {
         windowControllersManager = WindowControllersManagerMock(tabCollectionViewModels: tabCollectionViewModels)
         return TabSuspensionService(
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
+            privacyConfigurationManager: privacyConfigurationManager,
             memoryUsageMonitor: mockMemoryUsageMonitor,
             pixelFiring: mockPixelFiring,
             keyValueStore: InMemoryKeyValueStore(),

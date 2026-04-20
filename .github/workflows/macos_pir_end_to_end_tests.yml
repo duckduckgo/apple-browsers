@@ -154,13 +154,6 @@ jobs:
     - name: Run PIR e2e Tests
       id: run-tests
       run: |
-        if [[ "${{ needs.should-run-checks.outputs.strict_mode }}" == "true" ]]; then
-          RETRY_FLAGS="-test-iterations 3"
-          echo "Strict mode enabled: running tests with $RETRY_FLAGS"
-        else
-          RETRY_FLAGS="-retry-tests-on-failure -test-iterations 2"
-        fi
-
         launchctl setenv PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 '${{ secrets.PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 }}'
         set -o pipefail && xcodebuild test \
           -scheme "macOS PIR E2E Tests" \
@@ -170,7 +163,8 @@ jobs:
           ENABLE_TESTABILITY=true \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           "-only-testing:DBPE2ETests" \
-          $RETRY_FLAGS \
+          -test-iterations 3 \
+          -retry-tests-on-failure \
           | tee xcodebuild.log \
           | tee pir-e2e-tests.log
       env:
@@ -222,7 +216,7 @@ jobs:
       with:
         check_name: "Test Report ${{ matrix.runner }}"
         report_paths: macOS/pir-e2e-tests.xml
-        check_retries: true
+        check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
 
     - name: Collect PIR process logs
       if: failure() || cancelled()

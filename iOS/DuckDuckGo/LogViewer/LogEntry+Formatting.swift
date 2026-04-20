@@ -102,15 +102,6 @@ struct LogFilter {
         return true
     }
 
-    func matchesPreset(_ entry: FormattedLogEntry) -> Bool {
-        if let subsystem = subsystemFilter, !subsystem.isEmpty {
-            guard entry.subsystem.lowercased().contains(subsystem.lowercased()) else { return false }
-        }
-        if let category = categoryFilter, !category.isEmpty {
-            guard entry.category.lowercased().contains(category.lowercased()) else { return false }
-        }
-        return true
-    }
     
     static let allLogsFilter = LogFilter(
         subsystemFilter: nil,

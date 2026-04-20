@@ -503,7 +503,8 @@ final class PermissionModelTests: XCTestCase {
 
         e = expectation(description: "permission granted")
         geolocationServiceMock.authorizationStatus = .authorizedAlways
-        XCTAssertEqual(model.permissions, [.geolocation: .requested(model.authorizationQuery!)])
+        // System authorization granted triggers updatePermissions() which transitions from .requested to .inactive
+        XCTAssertEqual(model.permissions, [.geolocation: .inactive])
         model.authorizationQuery!.handleDecision(grant: true)
         withExtendedLifetime(c) {
             waitForExpectations(timeout: 1)

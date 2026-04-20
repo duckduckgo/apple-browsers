@@ -146,7 +146,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
     func testWhenDaysSinceInstallIsInRangeThenDParameterIsIncluded() throws {
         let pixelFiring = PixelKitMock()
         let currentDate = Date()
-        let pixelHandler = makeHandler(installDate: currentDate.daysAgo(28), currentDateProvider: { currentDate }, pixelFiring: pixelFiring)
+        let pixelHandler = makeHandler(installDateProvider: { currentDate.daysAgo(28) }, currentDateProvider: { currentDate }, pixelFiring: pixelFiring)
 
         pixelHandler.fire(.welcome(.shown))
 
@@ -157,7 +157,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
     func testWhenDaysSinceInstallIsOutOfRangeThenDParameterIsOmitted() throws {
         let pixelFiring = PixelKitMock()
         let currentDate = Date()
-        let pixelHandler = makeHandler(installDate: currentDate.daysAgo(29), currentDateProvider: { currentDate }, pixelFiring: pixelFiring)
+        let pixelHandler = makeHandler(installDateProvider: { currentDate.daysAgo(29) }, currentDateProvider: { currentDate }, pixelFiring: pixelFiring)
 
         pixelHandler.fire(.welcome(.shown))
 
@@ -168,24 +168,34 @@ final class OnboardingSharedPixelTests: XCTestCase {
     func testWhenDaysSinceInstallIsNegativeThenDParameterIsOmitted() throws {
         let pixelFiring = PixelKitMock()
         let currentDate = Date()
-        let pixelHandler = makeHandler(installDate: currentDate.daysAgo(-1), currentDateProvider: { currentDate }, pixelFiring: pixelFiring)
+        let pixelHandler = makeHandler(installDateProvider: { currentDate.daysAgo(-1) }, currentDateProvider: { currentDate }, pixelFiring: pixelFiring)
 
         pixelHandler.fire(.welcome(.shown))
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertNil(event.additionalParameters?["d"])
     }
+
+    func testAddToDockEventIncludesPixelSourceParameter() throws {
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        pixelHandler.fire(.addToDock(.clicked(.engage)))
+
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.pixel.standardParameters, [.pixelSource])
+    }
 }
 
 private extension OnboardingSharedPixelTests {
     func makeHandler(platform: OnboardingSharedPixelHandler.Platform = .macOS,
                      installType: OnboardingSharedPixelHandler.InstallType? = nil,
-                     installDate: Date? = nil,
+                     installDateProvider: @escaping () -> Date? = { nil },
                      currentDateProvider: @escaping () -> Date = { Date() },
                      pixelFiring: PixelFiring? = nil) -> OnboardingSharedPixelHandler {
         OnboardingSharedPixelHandler(platform: platform,
                                      installType: installType,
-                                     installDate: installDate,
+                                     installDateProvider: installDateProvider,
                                      currentDateProvider: currentDateProvider,
                                      pixelFiring: pixelFiring)
     }

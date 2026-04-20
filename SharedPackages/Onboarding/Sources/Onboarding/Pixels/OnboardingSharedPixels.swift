@@ -51,12 +51,12 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
 
     let platform: Platform
     let installType: InstallType?
-    let installDate: Date?
+    let installDateProvider: () -> Date?
     let currentDateProvider: () -> Date
     let pixelFiring: PixelFiring?
 
     var daysSinceInstall: Int? {
-        guard let installDate else { return nil }
+        guard let installDate = installDateProvider() else { return nil }
         return Calendar.current.numberOfDaysBetween(installDate, and: currentDateProvider())
     }
 
@@ -76,12 +76,12 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
 
     public init(platform: Platform,
                 installType: InstallType?,
-                installDate: Date?,
+                installDateProvider: @escaping () -> Date?,
                 currentDateProvider: @escaping () -> Date = { Date() },
                 pixelFiring: PixelFiring? = PixelKit.shared) {
         self.platform = platform
         self.installType = installType
-        self.installDate = installDate
+        self.installDateProvider = installDateProvider
         self.currentDateProvider = currentDateProvider
         self.pixelFiring = pixelFiring
     }
@@ -96,7 +96,7 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
 
 }
 
-public enum OnboardingSharedPixelEvent: PixelKitEvent {
+public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
     // Linear onboarding events
     case welcome(EngagementEvent)
     case setDefault(EngagementEvent)
@@ -114,7 +114,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent {
     case fireButton(EngagementEvent)
     case end(EngagementEvent)
 
-    public enum EngagementEvent {
+    public enum EngagementEvent: Equatable {
         public enum Value: String {
             case engage
             case dismiss
@@ -124,7 +124,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent {
         case clicked(Value)
     }
 
-    public enum SearchExperienceEvent {
+    public enum SearchExperienceEvent: Equatable {
         public enum Value: String {
             case searchOnly = "search_only"
             case searchPlusDuckAI = "search_plus_duckai"
@@ -134,7 +134,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent {
         case clicked(Value)
     }
 
-    public enum SuggestedOrCustomEvent {
+    public enum SuggestedOrCustomEvent: Equatable {
         public enum Value: String {
             case suggested
             case custom
@@ -145,7 +145,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent {
         case clicked(Value)
     }
 
-    public enum CustomizeEvent {
+    public enum CustomizeEvent: Equatable {
         public enum Value: String {
             case bookmarksBar = "bookmarks_bar"
             case restoreSession = "restore_session"
@@ -175,7 +175,14 @@ public extension OnboardingSharedPixelEvent {
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
-        nil
+        switch self {
+        case .addToDock:
+            // Include pixel source for Add to Dock step, to measure engagement in macOS App Store vs DMG versions.
+            // The DMG step adds the app to the Dock programmatically while the App Store step only shows instructions.
+            return [.pixelSource]
+        default:
+            return nil
+        }
     }
 
     var error: NSError? {

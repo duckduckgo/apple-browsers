@@ -97,6 +97,8 @@ class TabViewController: UIViewController {
         }
     }
     private var savedViewSettings: ViewSettings?
+    private var cachedMapper: TrackerProtectionEventMapper?
+    private var cachedMapperVendor: String?
 
     @IBOutlet var showBarsTapGestureRecogniser: UITapGestureRecognizer!
 
@@ -488,23 +490,6 @@ class TabViewController: UIViewController {
 
 
     let historyManager: HistoryManaging
-    private(set) lazy var adBlockingNavigationHandler: AdBlockingNavigationHandling = {
-        let youTubeAdBlockingStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
-        let availability = AdBlockingAvailability(
-            featureFlagger: featureFlagger,
-            isEnabledByUserProvider: {
-                (try? youTubeAdBlockingStorage.value(for: \.youTubeAdBlockingEnabled)) ?? false
-            }
-        )
-        return AdBlockingNavigationHandler(
-            availability: availability,
-            onShouldShowAdBlockingAnimation: { [weak self] in
-                guard let self else { return }
-                self.delegate?.tabDidRequestPresentingYouTubeAdBlockAnimation(tab: self)
-            }
-        )
-    }()
-
     private lazy var duckPlayerNavigationHandler: DuckPlayerNavigationHandling = {
         let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
                                     featureFlagger: AppDependencyProvider.shared.featureFlagger,
@@ -1136,9 +1121,7 @@ class TabViewController: UIViewController {
     
     func webViewUrlHasChanged(previousURL: URL? = nil, newURL: URL? = nil) {
         // Handle DuckPlayer Navigation URL changes
-        if let currentURL = newURL ?? webView.url,
-           shouldHandleUpdate(previousURL, newURL) {
-            adBlockingNavigationHandler.handleURLChange(previousURL: previousURL, newURL: currentURL)
+        if let currentURL = newURL ?? webView.url {
             _ = duckPlayerNavigationHandler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL, isNavigationError: lastError != nil)
         }
 
@@ -1185,20 +1168,7 @@ class TabViewController: UIViewController {
     }
 
     func presentExperimentContextualDaxFireDialog() {
-        contextualOnboardingLogic.setLastShownDialog(type: .fire(.duckAIOnboarding))
-        let fireSpec = DaxDialogs.BrowsingSpec.fireDuckAIOnboarding
-        contextualOnboardingPresenter.presentContextualOnboarding(for: fireSpec, in: self)
-    }
-
-    private func shouldHandleUpdate(_ previousURL: URL?, _ newURL: URL?) -> Bool {
-        guard let previousURL, let newURL,
-              previousURL.isYoutube,
-              newURL.isYoutube,
-              previousURL.youtubeVideoID == newURL.youtubeVideoID,
-              newURL.getParameter(named: "ra") != nil
-        else { return true }
-
-        return previousURL != newURL.removingParameters(named: ["ra"])
+        contextualOnboardingPresenter.presentContextualOnboarding(for: .fireDuckAIOnboarding, in: self)
     }
 
     private func checkForReloadOnError() {
@@ -1257,7 +1227,6 @@ class TabViewController: UIViewController {
         addressBarURLFilter.beginUserReload()
         updateContentMode()
         cachedRuntimeConfigurationForDomain = [:]
-        adBlockingNavigationHandler.handleReload()
         duckPlayerNavigationHandler.handleReload(webView: webView)
         delegate?.tabLoadingStateDidChange(tab: self)
         resetCreditCardPrompt()
@@ -1391,13 +1360,12 @@ class TabViewController: UIViewController {
 
     func showPrivacyDashboard() {
         Pixel.fire(pixel: .privacyDashboardOpened, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .privacyDashboard))
-        let webExtManager = (delegate as? MainViewController)?.webExtensionManager
         let controller = PrivacyDashboardViewController(
             privacyInfo: privacyInfo,
             entryPoint: .dashboard,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-            breakageAdditionalInfo: makeBreakageAdditionalInfo(webExtensionManager: webExtManager))
+            breakageAdditionalInfo: makeBreakageAdditionalInfo())
 
         guard let chromeDelegate = chromeDelegate else { return }
 
@@ -1548,16 +1516,19 @@ class TabViewController: UIViewController {
     }
 
     public func makeBreakageAdditionalInfo(webExtensionManager: WebExtensionManaging? = nil) -> PrivacyDashboardViewController.BreakageAdditionalInfo? {
-
+        
         guard let currentURL = url else {
             return nil
         }
 
-        var loadedWebExtensions: String?
-        var adBlockingScriptletsVersion: String?
+        let loadedWebExtensions: String?
+        let adBlockingExtensionScriptletsVersion: String?
         if #available(iOS 18.4, *), let webExtensionManager {
             loadedWebExtensions = webExtensionManager.loadedWebExtensionsString()
-            adBlockingScriptletsVersion = webExtensionManager.adBlockingScriptletsVersion()
+            adBlockingExtensionScriptletsVersion = webExtensionManager.adBlockingScriptletsVersion()
+        } else {
+            loadedWebExtensions = nil
+            adBlockingExtensionScriptletsVersion = nil
         }
 
         return PrivacyDashboardViewController.BreakageAdditionalInfo(currentURL: currentURL,
@@ -1575,7 +1546,7 @@ class TabViewController: UIViewController {
                                                                      autoplayBlockingMode: featureFlagger.isFeatureOn(.autoplayBlocking) ? autoplaySettings.currentAutoplayBlockingMode.rawValue : nil,
                                                                      isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL),
                                                                      loadedWebExtensions: loadedWebExtensions,
-                                                                     adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion)
+                                                                     adBlockingExtensionScriptletsVersion: adBlockingExtensionScriptletsVersion)
     }
 
     public func print() {
@@ -1861,7 +1832,6 @@ extension TabViewController: WKNavigationDelegate {
         adClickAttributionLogic.onDidFinishNavigation(host: webView.url?.host)
         hideProgressIndicator()
         onWebpageDidFinishLoading()
-        adBlockingNavigationHandler.handleURLChange(previousURL: nil, newURL: webView.url)
         extractDaxEasterEggLogoIfDuckDuckGoSearch(webView)
         instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
@@ -1950,7 +1920,7 @@ extension TabViewController: WKNavigationDelegate {
         daxDialogsDebouncer.debounce(for: 0.8) { [weak self] in
             self?.showDaxDialogOrStartTrackerNetworksAnimationIfNeeded()
         }
-
+        
         // DuckPlayer finish loading actions
         duckPlayerNavigationHandler.handleDidFinishLoading(webView: webView)
 
@@ -3195,9 +3165,6 @@ extension TabViewController: UserContentControllerDelegate {
     private var findInPageScript: FindInPageUserScript? {
         userScripts?.findInPageScript
     }
-    private var contentBlockerUserScript: ContentBlockerRulesUserScript? {
-        userScripts?.contentBlockerUserScript
-    }
     private var autofillUserScript: AutofillUserScript? {
         userScripts?.autofillUserScript
     }
@@ -3209,8 +3176,7 @@ extension TabViewController: UserContentControllerDelegate {
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 
         userScripts.debugScript.instrumentation = instrumentation
-        userScripts.surrogatesScript.delegate = self
-        userScripts.contentBlockerUserScript.delegate = self
+        userScripts.trackerProtectionSubfeature.delegate = self
         userScripts.autofillUserScript.emailDelegate = emailManager
         userScripts.autofillUserScript.vaultDelegate = vaultManager
         userScripts.autofillUserScript.passwordImportDelegate = credentialsImportManager
@@ -3251,6 +3217,9 @@ extension TabViewController: UserContentControllerDelegate {
 
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)
         
+        cachedMapper = nil
+        cachedMapperVendor = nil
+        
         let tdsKey = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
         let notificationsTriggeringReload = [
             UserDefaultsFireproofing.Notifications.loginDetectionStateChanged,
@@ -3267,30 +3236,79 @@ extension TabViewController: UserContentControllerDelegate {
 
 }
 
-// MARK: - ContentBlockerRulesUserScriptDelegate
-extension TabViewController: ContentBlockerRulesUserScriptDelegate {
-    
-    func contentBlockerRulesUserScriptShouldProcessTrackers(_ script: ContentBlockerRulesUserScript) -> Bool {
+// MARK: - TrackerProtectionSubfeatureDelegate
+extension TabViewController: TrackerProtectionSubfeatureDelegate {
+
+    func trackerProtectionShouldProcessTrackers(_ subfeature: TrackerProtectionSubfeature) -> Bool {
         return privacyInfo?.isFor(self.url) ?? false
     }
-    
-    func contentBlockerRulesUserScriptShouldProcessCTLTrackers(_ script: ContentBlockerRulesUserScript) -> Bool {
-        return false
+
+    private func makeMapper(attributionTrackerData: TrackerData?, vendor: String?) -> TrackerProtectionEventMapper? {
+        if let cachedMapper, cachedMapperVendor == vendor {
+            return cachedMapper
+        }
+
+        let rules = ContentBlocking.shared.contentBlockingManager.currentRules
+        let tdsName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
+        let attrListName = AdClickAttributionRulesSplitter.blockingAttributionRuleListName(forListNamed: tdsName)
+        guard let mainTrackerData = rules.first(where: { $0.name == tdsName })?.trackerData else { return nil }
+
+        var supplementary: [TrackerData]
+        if let attributionTrackerData {
+            supplementary = rules
+                .filter { $0.name != tdsName && $0.name != attrListName }
+                .map(\.trackerData)
+            supplementary.append(attributionTrackerData)
+        } else {
+            supplementary = rules
+                .filter { $0.name != tdsName }
+                .map(\.trackerData)
+        }
+
+        let tld = AppDependencyProvider.shared.storageCache.tld
+        let privacyConfig = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
+        let tempList = privacyConfig.tempUnprotectedDomains + privacyConfig.exceptionsList(forFeature: .contentBlocking)
+        let mapper = TrackerProtectionEventMapper(tld: tld,
+                                                  mainTrackerData: mainTrackerData,
+                                                  supplementaryTrackerData: supplementary,
+                                                  unprotectedSites: privacyConfig.userUnprotectedDomains,
+                                                  tempList: tempList,
+                                                  contentBlockingEnabled: privacyConfig.isEnabled(featureKey: .contentBlocking),
+                                                  trackerAllowlist: privacyConfig.trackerAllowlist.entries)
+        cachedMapper = mapper
+        cachedMapperVendor = vendor
+        return mapper
     }
 
-    func contentBlockerRulesUserScript(_ script: ContentBlockerRulesUserScript,
-                                       detectedTracker tracker: DetectedRequest) {
-        userScriptDetectedTracker(tracker)
+    func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
+                           didObserveResource observation: TrackerProtectionSubfeature.ResourceObservation) {
+        guard let mapper = makeMapper(attributionTrackerData: subfeature.currentAttributionTrackerData,
+                                      vendor: subfeature.currentAdClickAttributionVendor) else { return }
+
+        if let detected = mapper.classifyResource(observation,
+                                                   adClickAttributionVendor: subfeature.currentAdClickAttributionVendor) {
+            userScriptDetectedTracker(detected)
+        } else if let thirdParty = mapper.makeThirdPartyRequest(from: observation) {
+            privacyInfo?.trackerInfo.add(detectedThirdPartyRequest: thirdParty)
+        }
     }
-    
-    func contentBlockerRulesUserScript(_ script: ContentBlockerRulesUserScript,
-                                       detectedThirdPartyRequest request: DetectedRequest) {
-        privacyInfo?.trackerInfo.add(detectedThirdPartyRequest: request)
+
+    func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
+                           didInjectSurrogate surrogate: TrackerProtectionSubfeature.SurrogateInjection) {
+        guard let url = url,
+              let mapper = makeMapper(attributionTrackerData: subfeature.currentAttributionTrackerData,
+                                      vendor: subfeature.currentAdClickAttributionVendor),
+              let detected = mapper.classifySurrogate(surrogate,
+                                                      adClickAttributionVendor: subfeature.currentAdClickAttributionVendor),
+              let host = mapper.surrogateHost(from: surrogate) else { return }
+
+        privacyInfo?.trackerInfo.addInstalledSurrogateHost(host, for: detected, onPageWithURL: url)
+        userScriptDetectedTracker(detected)
     }
 
     fileprivate func userScriptDetectedTracker(_ tracker: DetectedRequest) {
         guard let url = url else { return }
-        
+
         adClickAttributionLogic.onRequestDetected(request: tracker)
 
         if tracker.isBlocked && fireWoFollowUp {
@@ -3301,8 +3319,7 @@ extension TabViewController: ContentBlockerRulesUserScriptDelegate {
         privacyInfo?.trackerInfo.addDetectedTracker(tracker, onPageWithURL: url)
 
         guard tracker.isBlocked,
-              let host = tracker.url.url?.host,
-              let entityName = ContentBlocking.shared.trackerDataManager.trackerData.findParentEntityOrFallback(forHost: host)?.displayName else {
+              let entityName = tracker.entityName else {
             return
         }
 
@@ -3310,28 +3327,6 @@ extension TabViewController: ContentBlockerRulesUserScriptDelegate {
             await privacyStats.recordBlockedTracker(entityName)
         }
     }
-}
-
-// MARK: - SurrogatesUserScriptDelegate
-extension TabViewController: SurrogatesUserScriptDelegate {
-
-    func surrogatesUserScriptShouldProcessTrackers(_ script: SurrogatesUserScript) -> Bool {
-        return privacyInfo?.isFor(self.url) ?? false
-    }
-
-    func surrogatesUserScriptShouldProcessCTLTrackers(_ script: SurrogatesUserScript) -> Bool {
-        false
-    }
-
-    func surrogatesUserScript(_ script: SurrogatesUserScript,
-                              detectedTracker tracker: DetectedRequest,
-                              withSurrogate host: String) {
-        guard let url = url else { return }
-        
-        privacyInfo?.trackerInfo.addInstalledSurrogateHost(host, for: tracker, onPageWithURL: url)
-        userScriptDetectedTracker(tracker)
-    }
-
 }
 
 // MARK: - PrintingSubfeatureDelegate
@@ -3377,16 +3372,19 @@ extension TabViewController: AdClickAttributionLogicDelegate {
                           didRequestRuleApplication rules: ContentBlockerRulesManager.Rules?,
                           forVendor vendor: String?) {
         let attributedTempListName = AdClickAttributionRulesProvider.Constants.attributedTempRuleListName
-
         guard privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking)
         else {
             userContentController.removeLocalContentRuleList(withIdentifier: attributedTempListName)
-            contentBlockerUserScript?.currentAdClickAttributionVendor = nil
-            contentBlockerUserScript?.supplementaryTrackerData = []
+            userScripts?.trackerProtectionSubfeature.currentAdClickAttributionVendor = nil
+            userScripts?.trackerProtectionSubfeature.currentAdClickAttributionAllowlistHosts = []
+            userScripts?.trackerProtectionSubfeature.currentAttributionTrackerData = nil
             return
         }
 
-        contentBlockerUserScript?.currentAdClickAttributionVendor = vendor
+        userScripts?.trackerProtectionSubfeature.currentAdClickAttributionVendor = vendor
+        userScripts?.trackerProtectionSubfeature.currentAdClickAttributionAllowlistHosts = vendor != nil ? ContentBlocking.shared.adClickAttribution.allowlist.map(\.host) : []
+        userScripts?.trackerProtectionSubfeature.currentAttributionTrackerData = rules?.trackerData
+
         if let rules = rules {
 
             let globalListName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
@@ -3399,10 +3397,6 @@ extension TabViewController: AdClickAttributionLogicDelegate {
                 userContentController.removeLocalContentRuleList(withIdentifier: attributedTempListName)
                 try? userContentController.enableGlobalContentRuleList(withIdentifier: globalAttributionListName)
             }
-
-            contentBlockerUserScript?.supplementaryTrackerData = [rules.trackerData]
-        } else {
-            contentBlockerUserScript?.supplementaryTrackerData = []
         }
     }
 

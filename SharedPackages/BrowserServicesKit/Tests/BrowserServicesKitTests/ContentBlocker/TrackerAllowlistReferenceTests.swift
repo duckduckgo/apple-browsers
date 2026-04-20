@@ -21,199 +21,184 @@
 
 import BrowserServicesKit
 import Common
+import ContentBlocking
+import Foundation
 import os.log
 import PrivacyConfig
 import TrackerRadarKit
 import WebKit
 import XCTest
 
-struct AllowlistTests: Decodable {
+/// Data-driven tracker-allowlist reference tests exercising the full production path:
+///   WKWebView → WKContentRuleList → ContentScopeUserScript → TrackerProtectionSubfeature
+///   → TrackerProtectionEventMapper → DetectedRequest assertions
+///
+/// All fixture domains are `.com` and do not require PSL normalization.
+@available(macOS 14.0, iOS 17.0, *)
+@MainActor
+final class TrackerAllowlistReferenceTests: XCTestCase {
 
-    struct Test: Decodable {
-
+    private struct AllowlistTest: Decodable {
         let description: String
         let site: String
         let request: String
         let isAllowlisted: Bool
-
+        let exceptPlatforms: [String]?
     }
 
-    let domainTests: [Test]
-}
+    func testDomainAllowlist() async throws {
+        let loader = JsonTestDataLoader()
 
-class TrackerAllowlistReferenceTests: XCTestCase {
+        let tdsJSON = String(
+            data: loader.fromJsonFile(
+                "Resources/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_allowlist_tds_reference.json"
+            ),
+            encoding: .utf8
+        )!
 
-    let schemeHandler = TestSchemeHandler()
-    let userScriptDelegateMock = MockRulesUserScriptDelegate()
-    let navigationDelegateMock = MockNavigationDelegate()
-    let tld = TLD()
+        let allowlistData = loader.fromJsonFile(
+            "Resources/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_allowlist_reference.json"
+        )
 
-    var webView: WKWebView!
-    var tds: TrackerData!
-    var tests = [AllowlistTests.Test]()
-    var mockWebsite: MockWebsite!
+        let allowlistJson = try JSONSerialization.jsonObject(with: allowlistData) as! [String: Any]
+        let allowlist = PrivacyConfigurationData.TrackerAllowlist(
+            json: ["state": "enabled", "settings": ["allowlistedTrackers": allowlistJson]]
+        )!
 
-    func setupWebView(trackerData: TrackerData,
-                      userScriptDelegate: ContentBlockerRulesUserScriptDelegate,
-                      trackerAllowlist: PrivacyConfigurationData.TrackerAllowlistData,
-                      schemeHandler: TestSchemeHandler,
-                      completion: @escaping (WKWebView) -> Void) {
+        let tests = try JSONDecoder().decode(
+            [AllowlistTest].self,
+            from: loader.fromJsonFile(
+                "Resources/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_allowlist_matching_tests.json"
+            )
+        )
 
-        let exceptions = DefaultContentBlockerRulesExceptionsSource.transform(allowList: trackerAllowlist)
+        let harness = try await WebViewTestHarness.create(
+            trackerDataJSON: tdsJSON,
+            trackerAllowlist: allowlist.entries,
+            useDefaultDataStore: true
+        )
+        defer {
+            harness.proxy.stop()
+            harness.webView.configuration.websiteDataStore.proxyConfigurations = []
+        }
 
-        WebKitTestHelper.prepareContentBlockingRules(trackerData: trackerData,
-                                                     exceptions: [],
-                                                     tempUnprotected: [],
-                                                     trackerExceptions: exceptions) { rules in
-            guard let rules = rules else {
-                XCTFail("Rules were not compiled properly")
-                return
+        var executed = 0
+        var skipped = 0
+        var allowedReasons = [String]()
+
+        for (index, test) in tests.enumerated() {
+            if test.exceptPlatforms?.contains("ios-browser") == true {
+                os_log("!!SKIPPING: %s", test.description)
+                skipped += 1
+                continue
             }
 
-            let configuration = WKWebViewConfiguration()
-            configuration.setURLSchemeHandler(schemeHandler, forURLScheme: schemeHandler.scheme)
+            os_log("TEST [%d]: %s", index, test.description)
 
-            let webView = WKWebView(frame: .init(origin: .zero, size: .init(width: 500, height: 1000)),
-                                 configuration: configuration)
-            webView.navigationDelegate = self.navigationDelegateMock
+            harness.proxy.clearReceivedRequests()
+            harness.delegate.reset()
+            await harness.clearWebKitCaches()
 
-            let privacyConfig = WebKitTestHelper.preparePrivacyConfig(locallyUnprotected: [],
-                                                                      tempUnprotected: [],
-                                                                      trackerAllowlist: trackerAllowlist,
-                                                                      contentBlockingEnabled: true,
-                                                                      exceptions: [])
+            // --- URL construction ---
 
-            do {
-                let config = try TestSchemeContentBlockerUserScriptConfig(privacyConfiguration: privacyConfig,
-                                                                          trackerData: trackerData,
-                                                                          ctlTrackerData: nil,
-                                                                          tld: self.tld)
-
-                let userScript = ContentBlockerRulesUserScript(configuration: config)
-                userScript.delegate = userScriptDelegate
-
-                for messageName in userScript.messageNames {
-                    configuration.userContentController.add(userScript, name: messageName)
-                }
-
-                configuration.userContentController.addUserScript(WKUserScript(source: userScript.source,
-                                                                               injectionTime: .atDocumentStart,
-                                                                               forMainFrameOnly: false))
-                configuration.userContentController.add(rules)
-
-                completion(webView)
-            } catch {
-                XCTFail("Failed to initialize TestSchemeContentBlockerUserScriptConfig: \(error)")
+            var siteURLString = test.site.replacingOccurrences(of: "https://", with: "http://")
+            if let u = URL(string: siteURLString), u.path.isEmpty || u.path == "/" {
+                siteURLString += "/index.html"
             }
-        }
-    }
 
-    func testDomainAllowlist() throws {
+            let requestURLString = test.request.replacingOccurrences(of: "https://", with: "http://")
 
-        let data = JsonTestDataLoader()
-        let trackerJSON = data.fromJsonFile("Resources/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_allowlist_tds_reference.json")
-        let testJSON = data.fromJsonFile("Resources/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_allowlist_matching_tests.json")
+            guard let siteURL = URL(string: siteURLString),
+                  let requestURL = URL(string: requestURLString) else {
+                XCTFail("\(test.description): invalid fixture URL")
+                continue
+            }
 
-        let allowlistReference = data.fromJsonFile("Resources/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_allowlist_reference.json")
+            let pageHost = siteURL.host!
+            let pagePath = siteURL.path
 
-        tds = try JSONDecoder().decode(TrackerData.self, from: trackerJSON)
+            let resourceHost = requestURL.host!
+            var resourceProxyPath = requestURL.path
+            if let q = requestURL.query { resourceProxyPath += "?\(q)" }
 
-        let allowlistJson = try? JSONSerialization.jsonObject(with: allowlistReference, options: []) as? [String: Any]
+            // Dynamic script creation avoids a macOS 26 WebKit crash with
+            // static <script src> + large WKContentRuleList + WKUserScript.
+            let html = """
+                <!DOCTYPE html>
+                <html><body>
+                <script>
+                var s = document.createElement('script');
+                s.src = '\(requestURL.absoluteString)';
+                document.body.appendChild(s);
+                </script>
+                </body></html>
+                """
 
-        let allowlist = PrivacyConfigurationData.TrackerAllowlist(json: ["state": "enabled", "settings": ["allowlistedTrackers": allowlistJson]])!
+            harness.registerContent(host: pageHost, path: pagePath, body: html)
+            harness.registerContent(
+                host: resourceHost, path: resourceProxyPath,
+                body: "/* resource */", mimeType: "application/javascript"
+            )
 
-        let refTests = try JSONDecoder().decode(Array<AllowlistTests.Test>.self, from: testJSON)
-        tests = refTests
+            let obsExp = harness.expectObservation(of: requestURL.absoluteString, testCase: self)
 
-        let testsExecuted = expectation(description: "tests executed")
-        testsExecuted.expectedFulfillmentCount = tests.count
+            try await harness.load(siteURL)
+            await fulfillment(of: [obsExp], timeout: 10)
+            try await Task.sleep(for: .seconds(0.3))
 
-        setupWebView(trackerData: tds,
-                     userScriptDelegate: userScriptDelegateMock,
-                     trackerAllowlist: allowlist.entries,
-                     schemeHandler: schemeHandler) { webView in
-            self.webView = webView
+            let blockedCount = harness.delegate.detectedTrackers.count
+            let allowedCount = harness.delegate.detectedThirdPartyRequests.count
 
-            self.popTestAndExecute(onTestExecuted: testsExecuted)
-        }
+            // --- Assertions ---
 
-        waitForExpectations(timeout: 30, handler: nil)
-    }
-
-    private func popTestAndExecute(onTestExecuted: XCTestExpectation) {
-
-        guard let test = tests.popLast() else {
-            return
-        }
-
-        os_log("TEST: %s", test.description)
-
-        var siteURL = URL(string: test.site.testSchemeNormalized)!
-        if siteURL.absoluteString.hasSuffix(".com") {
-            siteURL = siteURL.appendingPathComponent("index.html")
-        }
-        let requestURL = URL(string: test.request.testSchemeNormalized)!
-
-        let resource = MockWebsite.EmbeddedResource(type: .script,
-                                                    url: requestURL)
-
-        mockWebsite = MockWebsite(resources: [resource])
-
-        schemeHandler.reset()
-        schemeHandler.requestHandlers[siteURL] = { _ in
-            return self.mockWebsite.htmlRepresentation.data(using: .utf8)!
-        }
-
-        userScriptDelegateMock.reset()
-
-        os_log("Loading %s ...", siteURL.absoluteString)
-        let request = URLRequest(url: siteURL)
-
-        WKWebsiteDataStore.default().removeData(ofTypes: [WKWebsiteDataTypeDiskCache,
-                                                          WKWebsiteDataTypeMemoryCache,
-                                                          WKWebsiteDataTypeOfflineWebApplicationCache],
-                                                modifiedSince: Date(timeIntervalSince1970: 0),
-                                                completionHandler: {
-            self.webView.load(request)
-        })
-
-        navigationDelegateMock.onDidFinishNavigation = {
-            os_log("Website loaded")
             if !test.isAllowlisted {
-                // Only website request
-                XCTAssertEqual(self.schemeHandler.handledRequests.count, 1)
-                // Only resource request
-                XCTAssertEqual(self.userScriptDelegateMock.detectedTrackers.count, 1)
+                // Blocked: content rules prevent the request from reaching the proxy.
+                XCTAssertTrue(
+                    harness.proxyDidReceive(host: pageHost, path: pagePath),
+                    "\(test.description): page must reach proxy")
+                XCTAssertFalse(
+                    harness.proxyDidReceive(host: resourceHost, path: resourceProxyPath),
+                    "\(test.description): blocked resource must NOT reach proxy")
+                XCTAssertEqual(blockedCount, 1,
+                    "\(test.description): expected exactly 1 blocked DetectedRequest")
+                XCTAssertTrue(
+                    harness.delegate.detectedTrackers.first?.isBlocked == true,
+                    "\(test.description): DetectedRequest must be blocked")
+                XCTAssertEqual(allowedCount, 0,
+                    "\(test.description): expected 0 allowed events for blocked resource")
 
-                if let tracker = self.userScriptDelegateMock.detectedTrackers.first {
-                    XCTAssert(tracker.isBlocked)
-                } else {
-                    XCTFail("Expected to detect tracker for test \(test.description)")
-                }
             } else {
-                // Website request & resource request
-                XCTAssertEqual(self.schemeHandler.handledRequests.count, 2)
+                // Allowlisted: content rule exception lets the request through.
+                XCTAssertTrue(
+                    harness.proxyDidReceive(host: pageHost, path: pagePath),
+                    "\(test.description): page must reach proxy")
+                XCTAssertTrue(
+                    harness.proxyDidReceive(host: resourceHost, path: resourceProxyPath),
+                    "\(test.description): allowlisted resource must reach proxy")
+                XCTAssertEqual(blockedCount, 0,
+                    "\(test.description): allowlisted resource must not be blocked")
+                XCTAssertEqual(allowedCount, 1,
+                    "\(test.description): expected exactly 1 allowed DetectedRequest")
+                XCTAssertFalse(
+                    harness.delegate.detectedThirdPartyRequests.first?.isBlocked == true,
+                    "\(test.description): DetectedRequest must NOT be blocked")
 
-                if let pageEntity = self.tds.findEntity(forHost: siteURL.host!),
-                   let trackerOwner = self.tds.findTracker(forUrl: requestURL.absoluteString)?.owner,
-                   pageEntity.displayName == trackerOwner.name {
-
-                    // Nothing to detect - tracker and website have the same entity
-                } else {
-                    XCTAssertEqual(self.userScriptDelegateMock.detectedTrackers.count, 1)
-
-                    if let tracker = self.userScriptDelegateMock.detectedTrackers.first {
-                        XCTAssertFalse(tracker.isBlocked)
-                    } else {
-                        XCTFail("Expected to detect tracker for test \(test.description)")
-                    }
+                if let state = harness.delegate.detectedThirdPartyRequests.first?.state {
+                    allowedReasons.append("\(test.description) → \(state)")
                 }
             }
 
-            onTestExecuted.fulfill()
-            DispatchQueue.main.async {
-                self.popTestAndExecute(onTestExecuted: onTestExecuted)
-            }
+            executed += 1
+        }
+
+        os_log("Allowlist tests: %d executed, %d skipped, %d total",
+               executed, skipped, tests.count)
+        XCTAssertEqual(executed + skipped, tests.count,
+                       "All scenarios must be executed or explicitly skipped")
+
+        // Log observed allowed reasons for post-run analysis.
+        for entry in allowedReasons {
+            os_log("ALLOWED REASON: %s", entry)
         }
     }
 }

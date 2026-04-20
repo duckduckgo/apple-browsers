@@ -19,7 +19,7 @@
 import Foundation
 import Network
 
-public enum LeakIPType: String, CaseIterable {
+public enum LeakIPType: String, Codable, CaseIterable {
     case `public`
     case `private`
     case unknown

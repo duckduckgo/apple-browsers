@@ -85,11 +85,13 @@ extension String {
 // MARK: - Input Sanitization
 
 extension String {
-    /// Returns the string with `U+FFFC OBJECT REPLACEMENT CHARACTER` removed — the
-    /// placeholder iOS keyboard dictation inserts while listening, before committing
-    /// or cancelling the recognised text.
+    /// A "listening" placeholder inserted by iOS dictation
+    /// before the recognised text is committed or cancelled.
+    private static let dictationPlaceholder: Character = "\u{FFFC}"
+
+    /// Returns the string with the dictation-placeholder character removed.
     public var strippingDictationPlaceholder: String {
-        guard contains("\u{FFFC}") else { return self }
-        return replacingOccurrences(of: "\u{FFFC}", with: "")
+        guard contains(Self.dictationPlaceholder) else { return self }
+        return replacingOccurrences(of: String(Self.dictationPlaceholder), with: "")
     }
 }

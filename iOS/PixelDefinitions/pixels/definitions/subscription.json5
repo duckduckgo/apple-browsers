@@ -366,7 +366,22 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
-            "origin",
+            {
+                "key": "origin",
+                "type": "string",
+                "description": "Purchase funnel entry point",
+                "enum": [
+                    "funnel_onboarding_ios",
+                    "funnel_skippedonboarding_ios",
+                    "funnel_appsettings_ios",
+                    "funnel_appmenu_ios",
+                    "funnel_applaunch_ios_winback",
+                    "funnel_appsettings_ios_winback",
+                    "funnel_canceldowngrade_ios",
+                    "funnel_purchaseoffer_ios",
+                    "funnel_prepurchasecheck_ios"
+                ]
+            },
             "locale",
             "freeTrial"
         ]

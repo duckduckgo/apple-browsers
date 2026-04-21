@@ -1260,6 +1260,8 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         guard selectionState == .inactiveWithAIChat else { return }
         selectionState = .activeWithAIChat
         mode = .editing(.aiChat)
+        /// Re-fire the nav bar resize so it re-evaluates width/padding for the new focus state.
+        delegate?.resizeAddressBarForHomePage(self)
         delegate?.addressBarViewControllerDidRefocusInAIChatMode(self)
     }
 }

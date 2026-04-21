@@ -554,7 +554,12 @@ final class NavigationBarViewController: NSViewController {
         let performResize = { [weak self] in
             guard let self else { return }
 
-            let isAddressBarFocused = addressBarViewController?.selectionState.isSelected ?? false
+            /// Treat duck.ai mode (active or inactive) as focused for layout purposes so the nav bar height,
+            /// padding, and focus spacers stay at their "focused" values throughout Duck.ai — otherwise
+            /// `.inactiveWithAIChat` would shrink to unfocused dimensions and refocusing wouldn't restore the
+            /// original width because the AI chat panel flow doesn't re-fire this resize on focus state changes.
+            let selectionState = addressBarViewController?.selectionState ?? .inactive
+            let isAddressBarFocused = selectionState.isSelected || selectionState.isInAIChatMode
 
             let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
             height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass, focused: isAddressBarFocused)
@@ -616,14 +621,7 @@ final class NavigationBarViewController: NSViewController {
 
     private func resizeAddressBarWidth(isAddressBarFocused: Bool) {
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
-            /// The AI chat omnibar container pins to `addressBarStack`, while `activeBackgroundViewWithSuggestions`
-            /// pins to `AddressBarViewController.view` — a subview of the stack. When focus spacers are present
-            /// they make the stack 2pt wider than that subview, producing a 1pt edge mismatch between the address
-            /// bar's background and the Duck.ai panel background. Treat duck.ai mode the same as focused here so
-            /// the spacers are removed and both widths align.
-            let isInAIChatMode = addressBarViewController?.selectionState.isInAIChatMode ?? false
-            let shouldRemoveSpacers = isAddressBarFocused || isInAIChatMode
-            if !shouldRemoveSpacers {
+            if !isAddressBarFocused {
                 if leftFocusSpacer == nil {
                     leftFocusSpacer = NSView()
                     leftFocusSpacer?.wantsLayer = true

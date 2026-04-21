@@ -27,7 +27,9 @@ class TabSuspensionTests: UITestCase {
         continueAfterFailure = false
         app = XCUIApplication.setUp(featureFlags: [
             "tabSuspension": true,
-            "tabSuspensionDebugging": true
+            "tabSuspensionDebugging": true,
+            "aiChatChromeSidebar": true,  // sidebar and floating sidebar feature flags
+            "aiChatSidebarFloating": true // are required for testing AI Chat sidebar suspension
         ])
         app.openNewWindow()
     }
@@ -187,15 +189,6 @@ class TabSuspensionTests: UITestCase {
     }
 
     func testThatTabsWithAIChatAreNotSuspended() {
-        // Re-launch with AI Chat feature flags
-        app = XCUIApplication.setUp(featureFlags: [
-            "tabSuspension": true,
-            "tabSuspensionDebugging": true,
-            "aiChatChromeSidebar": true,
-            "aiChatSidebarFloating": true
-        ])
-        app.openNewWindow()
-
         let tabs = app.tabGroups.matching(identifier: "Tabs")
         let sidebarButton = app.buttons["TabBarViewController.duckAIChromeSidebarButton"]
 
@@ -325,6 +318,7 @@ class TabSuspensionTests: UITestCase {
         simulateCriticalMemoryPressure()
 
         // Verify neither pinned tab was suspended
+        // Close each tab after verifying to clean up after the test
         let pinnedTab1 = app.pinnedTabs[tab1Title]
         XCTAssertTrue(pinnedTab1.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Pinned tab 1 should exist")
         pinnedTab1.rightClick()
@@ -332,7 +326,7 @@ class TabSuspensionTests: UITestCase {
             app.menuItems["Resume Tab"].waitForExistence(timeout: 1),
             "Pinned tab 1 should not be suspended"
         )
-        app.typeKey(.escape, modifierFlags: [])
+        app.menuItems["closeButtonAction:"].click()
 
         let pinnedTab2 = app.pinnedTabs[tab2Title]
         XCTAssertTrue(pinnedTab2.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Pinned tab 2 should exist")
@@ -341,7 +335,10 @@ class TabSuspensionTests: UITestCase {
             app.menuItems["Resume Tab"].waitForExistence(timeout: 1),
             "Pinned tab 2 should not be suspended"
         )
-        app.typeKey(.escape, modifierFlags: [])
+        app.menuItems["closeButtonAction:"].click()
+
+        // wait a bit to allow persistent state to get updated with 0 tabs
+        Thread.sleep(forTimeInterval: 2)
     }
 
     // MARK: - Helpers

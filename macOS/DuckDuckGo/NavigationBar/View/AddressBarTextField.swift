@@ -148,6 +148,10 @@ final class AddressBarTextField: NSTextField {
             .sink { [weak self] selectedTabViewModel in
                 guard let self else { return }
                 hideSuggestionWindow()
+                /// Point sharedTextState at the incoming tab before `restoreValueIfPossible` runs. Otherwise
+                /// `updateValue`'s `sharedTextState?.reset()` would clear the OUTGOING tab's state (including the
+                /// per-tab duck.ai flag), wiping the persistent duck.ai mode from the tab we just left.
+                sharedTextState = selectedTabViewModel.addressBarSharedTextState
                 subscribeToAddressBarString(selectedTabViewModel: selectedTabViewModel)
                 subscribeToContentType(selectedTabViewModel: selectedTabViewModel)
             }

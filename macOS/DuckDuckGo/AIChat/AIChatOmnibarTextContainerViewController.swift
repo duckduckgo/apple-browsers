@@ -348,6 +348,11 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     func focusTextViewWithCursorAtEnd() {
         focusTextView()
+        moveCursorToEnd()
+    }
+
+    /// Moves the caret to the end of the prompt text without changing first responder.
+    func moveCursorToEnd() {
         let textLength = textView.string.count
         textView.selectedRange = NSRange(location: textLength, length: 0)
     }

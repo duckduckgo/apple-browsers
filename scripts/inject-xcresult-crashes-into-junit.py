@@ -77,7 +77,7 @@ def _xcresulttool_summary(xcresult: str) -> dict:
     return json.loads(result.stdout)
 
 
-CRASH_FAILURE_TEXT = re.compile(r"^Test crashed\b")
+CRASH_FAILURE_TEXT = re.compile(r"^(Test crashed\b|Crash:\s)")
 
 
 def _extract_failures(summary: dict) -> tuple[list[dict], list[dict]]:
@@ -317,11 +317,14 @@ def _md_escape(s: str) -> str:
     return s.replace("|", "\\|").replace("\n", " ")
 
 
-_PATH_LINE_PREFIX = re.compile(r"^/\S+\.swift:\d+\s*-\s*(?:failed\s*-\s*)?")
+_PATH_LINE_PREFIX = re.compile(r"^/\S+\.swift:\d+\s*-\s*")
+_FAILED_PREFIX = re.compile(r"^failed\s*-\s*")
 
 
 def _clean_reason(s: str) -> str:
-    return _PATH_LINE_PREFIX.sub("", s).strip()
+    s = _PATH_LINE_PREFIX.sub("", s)
+    s = _FAILED_PREFIX.sub("", s)
+    return s.strip()
 
 
 if __name__ == "__main__":

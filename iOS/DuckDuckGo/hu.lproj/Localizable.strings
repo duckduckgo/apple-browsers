@@ -366,12 +366,6 @@
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "DuckDuckGo keresés";
 
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "A keresési javaslatok között már a legutóbb meglátogatott webhelyek is szerepelnek. A Beállítások alatt kikapcsolhatod, vagy bármikor törölheted a 🔥 Tűz gombbal.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Ugyanolyan adatvédelem.\nJobb keresési javaslatok!";
-
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Váltás lapra";
 

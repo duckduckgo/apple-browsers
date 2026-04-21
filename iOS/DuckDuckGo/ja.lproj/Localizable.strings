@@ -366,12 +366,6 @@
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "DuckDuckGoで検索する";
 
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "検索候補に最近訪問したサイトが含まれるようになりました。設定でオフにするか、いつでも🔥 Fire Buttonでクリアできます。";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "同じプライバシー。\nより優れた検索候補！";
-
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "タブに切り替え";
 

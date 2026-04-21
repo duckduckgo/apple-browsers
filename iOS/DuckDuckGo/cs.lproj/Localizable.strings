@@ -366,12 +366,6 @@
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Vyhledat prostřednictvím DuckDuckGo";
 
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Návrhy vyhledávání teď zahrnují tvoje nedávno navštívené stránky. Vypnout se dají v nastavení nebo je můžeš kdykoli vymazat tlačítkem 🔥 Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Stejné soukromí.\nLepší návrhy pro vyhledávání!";
-
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Přepnout na kartu";
 

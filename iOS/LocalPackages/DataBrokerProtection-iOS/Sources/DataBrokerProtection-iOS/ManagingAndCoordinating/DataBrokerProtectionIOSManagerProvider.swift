@@ -44,7 +44,7 @@ public class DataBrokerProtectionIOSManagerProvider {
 
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
-                                  featureFlagger: DBPFeatureFlagging,
+                                  featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging,
                                   userNotificationService: DataBrokerProtectionUserNotificationService,
                                   pixelKit: PixelKit,
                                   wideEvent: WideEventManaging,

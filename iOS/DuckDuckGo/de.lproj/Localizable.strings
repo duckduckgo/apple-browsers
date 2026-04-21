@@ -366,12 +366,6 @@
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Mit DuckDuckGo suchen";
 
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Suchvorschläge enthalten jetzt Ihre kürzlich besuchten Seiten. Du kannst sie in den Einstellungen deaktivieren oder jederzeit mit dem 🔥 Fire Button löschen.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Gleiche Privatsphäre.\nBessere Suchvorschläge!";
-
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Zu Tab wechseln";
 

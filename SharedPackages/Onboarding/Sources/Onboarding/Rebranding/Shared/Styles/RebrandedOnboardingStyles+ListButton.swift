@@ -59,8 +59,8 @@ public extension OnboardingRebranding.OnboardingStyles {
                     .multilineTextAlignment(.leading)
                     .lineLimit(nil)
                     .foregroundColor(foregroundColor(isPressed: configuration.isPressed, isHovered: isHovered))
-                    .padding(.vertical, 12)
-                    .padding(.horizontal)
+                    .padding(.vertical, optionsListMetrics.verticalPadding)
+                    .padding(.horizontal, optionsListMetrics.horizontalPadding)
                     .frame(minWidth: 0, maxWidth: optionsListMetrics.itemMaxWidth, minHeight: optionsListMetrics.itemMinHeight)
                     .background(backgroundColor(isPressed: configuration.isPressed, isHovered: isHovered))
                     .cornerRadius(optionsListMetrics.cornerRadius)
@@ -78,11 +78,7 @@ public extension OnboardingRebranding.OnboardingStyles {
             }
 
             private func foregroundColor(isPressed: Bool, isHovered: Bool) -> Color {
-#if os(iOS)
                 return colorPalette.optionsListIconColor
-#else
-                return Color(designSystemColor: .accentTextPrimary)
-#endif
             }
 
             private func backgroundColor(isPressed: Bool, isHovered: Bool) -> Color {

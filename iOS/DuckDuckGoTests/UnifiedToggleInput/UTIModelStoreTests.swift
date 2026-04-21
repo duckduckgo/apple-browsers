@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Combine
 import XCTest
 @testable import DuckDuckGo
 
@@ -203,6 +204,7 @@ final class UTIModelStoreTests: XCTestCase {
 private final class StubPreferences: AIChatPreferencesPersisting {
     var selectedModelId: String?
     var selectedModelShortName: String?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
 private final class StubModelsService: AIChatModelsProviding {

@@ -588,7 +588,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         updatePlaceholderVisibility()
         updateButtonState()
         updateTextViewHeight()
-        handler.updateCurrentText(textView.text ?? "")
+        handler.updateCurrentText((textView.text ?? "").strippingDictationPlaceholder)
         handler.markUserInteraction()
 
         // On iPad, reload input views on each keystroke (old behavior, without fade-out animation)

@@ -825,7 +825,9 @@ class TabViewController: UIViewController {
     
     func updateTabModel() {
         if let url = url {
-            let link = Link(title: title, url: url)
+            let hasTitle = title != nil && !title!.isEmpty
+            let previousTitle = (tabModel.link?.url == url) ? tabModel.link?.title : nil
+            let link = Link(title: hasTitle ? title : previousTitle, url: url)
             tabModel.link = link
         } else {
             tabModel.link = nil

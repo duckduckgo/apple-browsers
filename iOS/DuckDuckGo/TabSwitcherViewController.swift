@@ -32,7 +32,6 @@ import DesignResourcesKitIcons
 import BrowserServicesKit
 import PrivacyConfig
 import AIChat
-import TipKit
 import UIComponents
 
 class TabSwitcherViewController: UIViewController {
@@ -177,9 +176,6 @@ class TabSwitcherViewController: UIViewController {
     private(set) var selectedBrowsingMode: BrowsingMode
     private(set) var segmentedPickerHostingController: UIHostingController<TabSwitcherPickerWrapper>?
     private var pickerSelectionCancellable: AnyCancellable?
-    private var fireTabsTipTask: Task<Void, Never>?
-    var fireModePromotionsCoordinator: FireModePromotionCoordinating?
-    var shouldForceShowFireTabsTip = false
     private var fireModeCapability: FireModeCapable {
         FireModeCapability.create()
     }
@@ -277,46 +273,6 @@ class TabSwitcherViewController: UIViewController {
             }
     }
 
-    // MARK: - Fire Tabs Tip
-
-    func showFireTabsTipIfNeeded() {
-        guard #available(iOS 17.0, *) else { return }
-        guard fireModeCapability.isFireModeEnabled else { return }
-        guard selectedBrowsingMode != .fire else { return }
-        guard let sourceView = segmentedPickerHostingController?.view else { return }
-
-        fireTabsTipTask?.cancel()
-
-        let tip = FireTabsTip()
-
-        if shouldForceShowFireTabsTip {
-            shouldForceShowFireTabsTip = false
-            let popoverController = TipUIPopoverViewController(tip, sourceItem: sourceView)
-            popoverController.popoverPresentationController?.permittedArrowDirections = [.up, .down]
-            present(popoverController, animated: true)
-            return
-        }
-
-        if fireModePromotionsCoordinator?.isTabSwitcherTipExpired == true {
-            tip.invalidate(reason: .displayCountExceeded)
-            return
-        }
-
-        fireTabsTipTask = Task { @MainActor [weak self] in
-            for await shouldDisplay in tip.shouldDisplayUpdates {
-                guard let self else { return }
-                if shouldDisplay {
-                    self.fireModePromotionsCoordinator?.markTabSwitcherTipShown()
-                    let popoverController = TipUIPopoverViewController(tip, sourceItem: sourceView)
-                    popoverController.popoverPresentationController?.permittedArrowDirections = [.up, .down]
-                    self.present(popoverController, animated: true)
-                } else if self.presentedViewController is TipUIPopoverViewController {
-                    self.dismiss(animated: true)
-                }
-            }
-        }
-    }
-
     private func modeToggleSelectionChanged(_ selectedItem: ImageSegmentedPickerItem) {
         let newMode: BrowsingMode = pickerItems.first == selectedItem ? .fire : .normal
         guard newMode != selectedBrowsingMode else {
@@ -326,13 +282,6 @@ class TabSwitcherViewController: UIViewController {
         syncPagingScrollViewToCurrentMode(animated: true)
         scrollToInitialTab()
         updateUIForSelectionMode()
-
-        if newMode == .fire {
-            if #available(iOS 17.0, *) {
-                FireTabsTip.hasVisitedFireMode = true
-            }
-            fireModePromotionsCoordinator?.markFireModeVisited()
-        }
     }
 
     private func activateLayoutConstraintsBasedOnBarPosition() {
@@ -584,7 +533,6 @@ class TabSwitcherViewController: UIViewController {
         super.viewDidAppear(animated)
         productSurfaceTelemetry.tabManagerUsed()
         showFireButtonPulseIfNeeded()
-        showFireTabsTipIfNeeded()
     }
 
     private func showFireButtonPulseIfNeeded() {
@@ -771,8 +719,6 @@ class TabSwitcherViewController: UIViewController {
     }
 
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
-        fireTabsTipTask?.cancel()
-        fireTabsTipTask = nil
         canUpdateCollection = false
         if let firePC = firePageController {
             tabManager.tabsModel(for: .fire).tabs.forEach { $0.removeObserver(firePC) }

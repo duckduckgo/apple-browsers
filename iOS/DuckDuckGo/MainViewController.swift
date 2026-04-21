@@ -358,7 +358,7 @@ class MainViewController: UIViewController {
     }
 
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings
-    private(set) var fireModePromotionEligibility: FireModePromotionCoordinating?
+    private let fireModePromotionEligibility: FireModePromotionCoordinating?
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -4200,8 +4200,8 @@ extension MainViewController: OmniBarDelegate {
         toggleModeStorage.save(mode)
     }
     
-    func onTryFireModeRequested() {
-        showTabSwitcher(forceFireTabsTip: true)
+    func onFireModeRequested() {
+        navigateToFireMode()
     }
 
     func isCurrentTabFireTab() -> Bool {
@@ -4322,12 +4322,8 @@ extension MainViewController: NewTabPageControllerDelegate {
         currentNTPEscapeHatch = nil
     }
 
-    func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {
-        markSearchContextualOnboardingAsSeenForExperiment()
-    }
-
-    func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
-        showTabSwitcher(forceFireTabsTip: true)
+    func newTabPageDidRequestFireMode(_ controller: NewTabPageViewController) {
+        navigateToFireMode()
     }
 }
 
@@ -4905,7 +4901,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         showTabSwitcher()
     }
 
-    func showTabSwitcher(forceFireTabsTip: Bool = false) {
+    func showTabSwitcher() {
         if !tabManager.currentTabsModel.allowsEmpty
             && tabManager.current(createIfNeeded: true) == nil {
             fatalError("Unable to get current tab")
@@ -4918,7 +4914,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         updatePreviewForCurrentTab {
             ViewHighlighter.hideAll()
             Task { @MainActor in
-                await self.segueToTabSwitcher(forceFireTabsTip: forceFireTabsTip)
+                await self.segueToTabSwitcher()
             }
         }
     }

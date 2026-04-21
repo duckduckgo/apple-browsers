@@ -554,9 +554,9 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         omniDelegate?.onSwitchToTab(tab)
     }
 
-    func onTryFireModeRequested() {
+    func onFireModeRequested() {
         editingStateViewController?.dismissAnimated()
-        omniDelegate?.onTryFireModeRequested()
+        omniDelegate?.onFireModeRequested()
     }
 
     func onToggleModeSwitched(to mode: TextEntryMode) {

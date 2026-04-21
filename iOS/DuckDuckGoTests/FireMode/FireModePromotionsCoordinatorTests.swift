@@ -140,44 +140,85 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(firstDate, secondDate)
     }
 
-    // MARK: - Tab Switcher Tip: Not Expired Initially
+    // MARK: - Menu Promotion: Feature Flag
 
-    func testWhenTipNeverShownThenNotExpired() {
-        XCTAssertFalse(sut.isTabSwitcherTipExpired)
+    func testWhenFeatureFlagDisabledThenMenuNotEligible() {
+        XCTAssertFalse(sut.isMenuPromotionEligible)
     }
 
-    // MARK: - Tab Switcher Tip: markTabSwitcherTipShown
+    func testWhenFeatureFlagEnabledThenMenuEligible() {
+        mockCapability.isFireModeEnabled = true
 
-    func testWhenMarkTabSwitcherTipShownCalledFirstTimeThenSetsFirstSeenDate() {
-        sut.markTabSwitcherTipShown()
+        XCTAssertTrue(sut.isMenuPromotionEligible)
+    }
 
-        let storedDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.tabSwitcherTip.firstSeenDate") as? Date
+    // MARK: - Menu Promotion: Fire Mode Visited
+
+    func testWhenFireModeVisitedThenMenuNotEligible() {
+        mockCapability.isFireModeEnabled = true
+        sut.markFireModeVisited()
+
+        XCTAssertFalse(sut.isMenuPromotionEligible)
+    }
+
+    // MARK: - Menu Promotion: Engaged
+
+    func testWhenMenuPromotionEngagedThenMenuNotEligible() {
+        mockCapability.isFireModeEnabled = true
+        sut.markMenuPromotionEngaged()
+
+        XCTAssertFalse(sut.isMenuPromotionEligible)
+    }
+
+    // MARK: - Menu Promotion: Shown Count
+
+    func testWhenPromotionShownFiveTimesThenMenuStillEligibleOnFifthAndIneligibleOnSixth() {
+        mockCapability.isFireModeEnabled = true
+        for _ in 0..<4 {
+            sut.markMenuPromotionShown()
+        }
+
+        XCTAssertTrue(sut.isMenuPromotionEligible, "Should still be eligible before 5th showing")
+
+        sut.markMenuPromotionShown()
+
+        XCTAssertFalse(sut.isMenuPromotionEligible, "Should become ineligible after 5th showing")
+    }
+
+    // MARK: - Menu Promotion: Expiration
+
+    func testWhenPromotionFirstShownWithinFourteenDaysThenMenuEligible() {
+        mockCapability.isFireModeEnabled = true
+        sut.markMenuPromotionShown()
+
+        XCTAssertTrue(sut.isMenuPromotionEligible)
+    }
+
+    func testWhenPromotionFirstShownMoreThanFourteenDaysAgoThenMenuNotEligible() {
+        mockCapability.isFireModeEnabled = true
+        let fifteenDaysAgo = Date().addingTimeInterval(-15 * 24 * 60 * 60)
+        userDefaults.set(fifteenDaysAgo, forKey: "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate")
+
+        XCTAssertFalse(sut.isMenuPromotionEligible)
+    }
+
+    // MARK: - Menu Promotion: markMenuPromotionShown
+
+    func testWhenMarkMenuPromotionShownCalledFirstTimeThenSetsFirstShownDate() {
+        sut.markMenuPromotionShown()
+
+        let storedDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate") as? Date
         XCTAssertNotNil(storedDate)
     }
 
-    func testWhenMarkTabSwitcherTipShownCalledMultipleTimesThenDoesNotOverwriteFirstSeenDate() {
-        sut.markTabSwitcherTipShown()
-        let firstDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.tabSwitcherTip.firstSeenDate") as? Date
+    func testWhenMarkMenuPromotionShownCalledMultipleTimesThenDoesNotOverwriteFirstShownDate() {
+        sut.markMenuPromotionShown()
+        let firstDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate") as? Date
 
-        sut.markTabSwitcherTipShown()
-        let secondDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.tabSwitcherTip.firstSeenDate") as? Date
+        sut.markMenuPromotionShown()
+        let secondDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate") as? Date
 
         XCTAssertEqual(firstDate, secondDate)
-    }
-
-    // MARK: - Tab Switcher Tip: Expiration
-
-    func testWhenTipShownWithinThreeDaysThenNotExpired() {
-        sut.markTabSwitcherTipShown()
-
-        XCTAssertFalse(sut.isTabSwitcherTipExpired)
-    }
-
-    func testWhenTipShownMoreThanThreeDaysAgoThenExpired() {
-        let fourDaysAgo = Date().addingTimeInterval(-4 * 24 * 60 * 60)
-        userDefaults.set(fourDaysAgo, forKey: "com.duckduckgo.ios.firePromotion.tabSwitcherTip.firstSeenDate")
-
-        XCTAssertTrue(sut.isTabSwitcherTipExpired)
     }
 
     // MARK: - Helpers

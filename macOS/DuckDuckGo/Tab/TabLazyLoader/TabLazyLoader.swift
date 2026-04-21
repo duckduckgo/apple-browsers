@@ -107,7 +107,7 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
             return
         }
 
-        tab.loadingFinishedPublisher
+        tab.loadingFinishedOrStalledPublisher
             .sink { [weak self] _ in
                 self?.startLazyLoadingRecentlySelectedTabs()
             }
@@ -270,7 +270,7 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
     }
 
     private func subscribeToTabLoadingFinished(_ tab: DataSource.Tab) {
-        tab.loadingFinishedPublisher
+        tab.loadingFinishedOrStalledPublisher
             .sink(receiveValue: { [weak self] tab in
                 tab.isLazyLoadingInProgress = false
                 self?.tabDidLoadSubject.send(tab)

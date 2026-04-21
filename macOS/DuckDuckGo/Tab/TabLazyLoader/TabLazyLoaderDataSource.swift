@@ -82,13 +82,22 @@ extension TabCollectionViewModel: TabLazyLoaderDataSource {
     }
 
     var isSelectedTabLoading: Bool {
-        selectedTabViewModel?.isLoading ?? false
+        let isLoading = selectedTabViewModel?.isLoading ?? false
+        let isStalled = selectedTabViewModel?.tab.hasOnlyStalledResources ?? false
+        return isLoading && !isStalled
     }
 
     var isSelectedTabLoadingPublisher: AnyPublisher<Bool, Never> {
         $selectedTabViewModel
             .compactMap { $0 }
-            .flatMap(\.$isLoading)
+            .flatMap { tabViewModel -> AnyPublisher<Bool, Never> in
+                tabViewModel.$isLoading
+                    .combineLatest(tabViewModel.tab.stalledResourcePublisher.map { true }.prepend(false))
+                    .map { isLoading, isStalled in
+                        isLoading && !isStalled
+                    }
+                    .eraseToAnyPublisher()
+            }
             .eraseToAnyPublisher()
     }
 

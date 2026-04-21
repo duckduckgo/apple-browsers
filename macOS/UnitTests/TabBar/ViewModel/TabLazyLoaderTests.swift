@@ -30,7 +30,7 @@ private final class TabMock: LazyLoadable {
     var webViewSize: CGSize = .zero
 
     var loadingFinishedSubject = PassthroughSubject<TabMock, Never>()
-    lazy var loadingFinishedPublisher: AnyPublisher<TabMock, Never> = loadingFinishedSubject.eraseToAnyPublisher()
+    lazy var loadingFinishedOrStalledPublisher: AnyPublisher<TabMock, Never> = loadingFinishedSubject.eraseToAnyPublisher()
 
     func isNewer(than other: TabMock) -> Bool { isNewerClosure(other) }
     @discardableResult

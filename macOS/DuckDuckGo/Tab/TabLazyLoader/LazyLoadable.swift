@@ -27,7 +27,7 @@ protocol LazyLoadable: AnyObject, Identifiable {
 
     var webViewSize: CGSize { get set }
     var isLazyLoadingInProgress: Bool { get set }
-    var loadingFinishedPublisher: AnyPublisher<Self, Never> { get }
+    var loadingFinishedOrStalledPublisher: AnyPublisher<Self, Never> { get }
 
     @discardableResult
     func reload() -> ExpectedNavigation?
@@ -39,11 +39,17 @@ extension Tab: LazyLoadable {
 
     var url: URL? { content.urlForWebView }
 
-    var loadingFinishedPublisher: AnyPublisher<Tab, Never> {
-        navigationStatePublisher.compactMap { $0 }
+    var loadingFinishedOrStalledPublisher: AnyPublisher<Tab, Never> {
+        let pageNavigationCompleted = navigationStatePublisher.compactMap { $0 }
             .filter { $0.isCompleted }
-            .prefix(1)
             .map { _ in self }
+
+        let pageRenderedButResourcesStalled = stalledResourcePublisher
+            .combineLatest(firstMeaningfulPaintPublisher)
+            .map { _ in self }
+
+        return Publishers.Merge(pageNavigationCompleted, pageRenderedButResourcesStalled)
+            .prefix(1)
             .eraseToAnyPublisher()
     }
 

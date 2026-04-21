@@ -559,6 +559,21 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     let webViewDidReceiveRedirectPublisher = PassthroughSubject<Void, Never>()
     let webViewDidFailNavigationPublisher = PassthroughSubject<Void, Never>()
     let webViewRenderingProgressDidChangePublisher = PassthroughSubject<Void, Never>()
+    let firstMeaningfulPaintPublisher = PassthroughSubject<Void, Never>()
+
+    // MARK: - Stalled Resource Detection
+
+    private let resourceLoadTracker = ResourceLoadTracker()
+
+    /// Fires when all pending resources are stalled (sent request but no response within timeout).
+    var stalledResourcePublisher: AnyPublisher<Void, Never> {
+        resourceLoadTracker.allResourcesStalledPublisher
+    }
+
+    /// True when all pending resources have been waiting for a response longer than the stalled timeout.
+    var hasOnlyStalledResources: Bool {
+        resourceLoadTracker.hasOnlyStalledResources
+    }
 
     // MARK: - Properties
 
@@ -1180,6 +1195,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         webView.uiDelegate = self
         webView.inspectorDelegate = self
         webView.contextMenuDelegate = self.contextMenuManager
+        let setResourceLoadDelegate = NSSelectorFromString("_setResourceLoadDelegate:")
+        if webView.responds(to: setResourceLoadDelegate) {
+            webView.perform(setResourceLoadDelegate, with: self)
+        }
         webView.allowsBackForwardNavigationGestures = true
         webView.allowsMagnification = true
 
@@ -1469,6 +1488,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     func didStart(_ navigation: Navigation) {
+        resourceLoadTracker.reset()
         delegate?.tabDidStartNavigation(self)
         permissions.tabDidStartNavigation()
         userInteractionDialog = nil
@@ -1566,6 +1586,29 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         if progressEvents >= _WKRenderingProgressEvents.firstVisuallyNonEmptyLayout.rawValue {
             webViewRenderingProgressDidChangePublisher.send()
         }
+        if progressEvents & _WKRenderingProgressEvents.firstMeaningfulPaint.rawValue != 0 {
+            firstMeaningfulPaintPublisher.send()
+        }
+    }
+
+    // MARK: - _WKResourceLoadDelegate
+
+    @objc(webView:resourceLoad:didSendRequest:)
+    func webView(_ webView: WKWebView, resourceLoad resourceLoadInfo: Any, didSendRequest request: URLRequest) {
+        guard let id = ResourceLoadTracker.resourceLoadID(from: resourceLoadInfo) else { return }
+        resourceLoadTracker.didSendRequest(for: id)
+    }
+
+    @objc(webView:resourceLoad:didReceiveResponse:)
+    func webView(_ webView: WKWebView, resourceLoad resourceLoadInfo: Any, didReceiveResponse response: URLResponse) {
+        guard let id = ResourceLoadTracker.resourceLoadID(from: resourceLoadInfo) else { return }
+        resourceLoadTracker.didReceiveResponse(for: id)
+    }
+
+    @objc(webView:resourceLoad:didCompleteWithError:response:)
+    func webView(_ webView: WKWebView, resourceLoad resourceLoadInfo: Any, didCompleteWithError error: Error?, response: URLResponse?) {
+        guard let id = ResourceLoadTracker.resourceLoadID(from: resourceLoadInfo) else { return }
+        resourceLoadTracker.didComplete(for: id)
     }
 
     /// Factory method to create a child Tab

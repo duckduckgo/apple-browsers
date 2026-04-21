@@ -3621,6 +3621,18 @@
         }
       }
     },
+    "aichat.reasoning-effort-picker-button.tooltip" : {
+      "comment" : "Tooltip and accessibility label for the reasoning effort picker button in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Choose reasoning effort"
+          }
+        }
+      }
+    },
     "aichat.reasoning-effort.fast.subtitle" : {
       "comment" : "Subtitle of the 'Fast' option in the reasoning effort picker menu in AI chat omnibar",
       "extractionState" : "extracted_with_value",

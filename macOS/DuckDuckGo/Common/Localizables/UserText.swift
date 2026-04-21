@@ -689,6 +689,7 @@ struct UserText {
     static let aiChatReasoningEffortLowSubtitle = NSLocalizedString("aichat.reasoning-effort.low.subtitle", value: "Takes a moment to respond", comment: "Subtitle of the 'Reasoning' option in the reasoning effort picker menu in AI chat omnibar")
     static let aiChatReasoningEffortMediumTitle = NSLocalizedString("aichat.reasoning-effort.medium.title", value: "Extended Reasoning", comment: "Title of the 'Extended Reasoning' option in the reasoning effort picker menu in AI chat omnibar")
     static let aiChatReasoningEffortMediumSubtitle = NSLocalizedString("aichat.reasoning-effort.medium.subtitle", value: "Researches before responding", comment: "Subtitle of the 'Extended Reasoning' option in the reasoning effort picker menu in AI chat omnibar")
+    static let aiChatReasoningEffortPickerButtonTooltip = NSLocalizedString("aichat.reasoning-effort-picker-button.tooltip", value: "Choose reasoning effort", comment: "Tooltip and accessibility label for the reasoning effort picker button in AI chat omnibar")
 
     static let aiChatModelPickerButtonTooltip = NSLocalizedString("aichat.model-picker-button.tooltip", value: "Choose model", comment: "Tooltip for the model picker button in AI chat omnibar")
     static let aiChatModelPickerAdvancedSectionHeader = NSLocalizedString("aichat.model-picker.advanced-section-header", value: "Advanced Models - DuckDuckGo subscription", comment: "Section header in the model picker menu for premium models that require a subscription")

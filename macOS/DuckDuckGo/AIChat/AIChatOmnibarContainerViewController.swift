@@ -135,9 +135,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Called when a tool button receives a Tab key press. Wire this to advance focus to the next visible button.
     var onToolButtonTabPressed: (() -> Void)?
 
-    /// Ordered list of focusable tool buttons. Tab cycles through visible/enabled buttons in this order.
+    /// Ordered list of focusable tool buttons. Tab cycles through visible/enabled buttons in this
+    /// order, then proceeds to the model picker. Reasoning picker is last so focus flows
+    /// left-to-right through the left-side tools, then the reasoning chip (which sits visually
+    /// adjacent to the model picker), then the model picker itself.
     private var focusableToolButtons: [AIChatOmnibarToolButton] {
-        [imageUploadButton, toolsButton, imageGenActiveButton, webSearchActiveButton]
+        [imageUploadButton, toolsButton, imageGenActiveButton, webSearchActiveButton, reasoningPickerButton]
     }
 
     var isImageUploadButtonAvailableForFocus: Bool {
@@ -495,6 +498,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         reasoningPickerButton.translatesAutoresizingMaskIntoConstraints = false
         reasoningPickerButton.target = self
         reasoningPickerButton.action = #selector(reasoningPickerButtonClicked)
+        reasoningPickerButton.toolTip = UserText.aiChatReasoningEffortPickerButtonTooltip
+        reasoningPickerButton.setAccessibilityLabel(UserText.aiChatReasoningEffortPickerButtonTooltip)
+        reasoningPickerButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.reasoningPickerButton) }
         reasoningPickerButton.isHidden = true
         containerView.addSubview(reasoningPickerButton)
 

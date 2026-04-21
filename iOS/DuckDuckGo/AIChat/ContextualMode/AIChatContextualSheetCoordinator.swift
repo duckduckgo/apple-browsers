@@ -33,7 +33,7 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL)
 
     /// Called when the user taps expand to open duck.ai in a new tab with the given chat URL.
-    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL)
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL, shouldToggleSidebar: Bool)
 
     /// Called when the user requests to open AI Chat settings.
     func aiChatContextualSheetCoordinatorDidRequestOpenSettings(_ coordinator: AIChatContextualSheetCoordinator)
@@ -65,6 +65,7 @@ final class AIChatContextualSheetCoordinator {
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
+    private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
     private let isFireTab: Bool
 
@@ -104,6 +105,7 @@ final class AIChatContextualSheetCoordinator {
          featureFlagger: FeatureFlagger,
          pageContextHandler: AIChatPageContextHandling,
          isFireTab: Bool = false,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()) {
         self.voiceSearchHelper = voiceSearchHelper
@@ -114,6 +116,7 @@ final class AIChatContextualSheetCoordinator {
         self.featureFlagger = featureFlagger
         self.pageContextHandler = pageContextHandler
         self.isFireTab = isFireTab
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.debugSettings = debugSettings
         self.pixelHandler = pixelHandler
         self.sessionState = AIChatContextualChatSessionState(
@@ -201,6 +204,8 @@ private extension AIChatContextualSheetCoordinator {
             sessionState.restoreChat(with: restoreURL)
         }
 
+        let suggestionsReader = makeSuggestionsReaderIfEnabled()
+
         let sheetVC = AIChatContextualSheetViewController(
             sessionState: sessionState,
             aiChatSettings: aiChatSettings,
@@ -210,12 +215,25 @@ private extension AIChatContextualSheetCoordinator {
                 return self.makeWebViewController()
             },
             pixelHandler: pixelHandler,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            suggestionsReader: suggestionsReader
         )
         sheetVC.delegate = self
         sheetViewController = sheetVC
-        
+
         presentingVC.present(sheetVC, animated: true)
+    }
+
+    func makeSuggestionsReaderIfEnabled() -> AIChatSuggestionsReading? {
+        guard featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements) else { return nil }
+        let reader = SuggestionsReader(
+            featureFlagger: featureFlagger,
+            privacyConfig: privacyConfigurationManager,
+            nativeStorageHandler: duckAiNativeStorageHandler,
+            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+        )
+        let settings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
+        return AIChatSuggestionsReader(suggestionsReader: reader, historySettings: settings)
     }
 
     func startObservingContextUpdates() {
@@ -326,15 +344,14 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         }
     }
 
-    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL) {
-        delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: url)
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL, shouldToggleSidebar: Bool) {
+        delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: url, shouldToggleSidebar: shouldToggleSidebar)
         viewController.dismiss(animated: true) { [weak self] in
             self?.startSessionTimer()
         }
         stopObservingContextUpdates()
         sessionState.cancelManualAttach()
     }
-
 
     func aiChatContextualSheetViewControllerDidRequestOpenSettings(_ viewController: AIChatContextualSheetViewController) {
         viewController.dismiss(animated: true) { [weak self] in

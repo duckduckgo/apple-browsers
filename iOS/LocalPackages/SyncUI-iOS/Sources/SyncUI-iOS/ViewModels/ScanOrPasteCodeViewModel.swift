@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 
 public enum CodeEntrySource: String {
     case qrCode
@@ -38,6 +39,7 @@ public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
     func shareCode(_ code: String)
 
     func codeEntryScreenShown()
+    func codeCopied()
 }
 
 public class ScanOrPasteCodeViewModel: ObservableObject {
@@ -75,11 +77,24 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     }
 
     func codeScanned(_ code: String) async -> Bool {
+        // Pre-emptively trigger haptic as soon as we detect a QR code.
+        // This feels better than deferring until we've determined whether the code is valid.
+        await MainActor.run {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
         return await delegate?.syncCodeEntered(code: code, source: .qrCode) == true
     }
 
     func cameraUnavailable() {
         showCamera = false
+    }
+
+    @MainActor
+    func copyCode() {
+        guard showQRCodeModel.codeForDisplayOrPasting.isEmpty == false else { return }
+        showQRCodeModel.copy()
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        delegate?.codeCopied()
     }
 
     @MainActor

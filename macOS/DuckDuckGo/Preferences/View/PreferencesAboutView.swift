@@ -416,7 +416,7 @@ extension Preferences {
             }
             for word in Self.boldWords {
                 if let range = attributed.range(of: word) {
-                    attributed[range].inlinePresentationIntent = .stronglyEmphasized
+                    attributed[range].inlinePresentationIntent = .stronglyEmphasized // Bold
                 }
             }
             return attributed

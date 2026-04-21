@@ -126,13 +126,13 @@ struct WebExtensionsDebugView: View {
                             .font(.caption)
                             .fontWeight(.medium)
                         HStack {
-                            Text("Cached:")
+                            Text(verbatim: "Cached:")
                             Text(info.cachedVersion ?? "none")
                                 .foregroundColor(.secondary)
                         }
                         .font(.caption2)
                         HStack {
-                            Text("Installed:")
+                            Text(verbatim: "Installed:")
                             Text(info.installedVersion ?? "none")
                                 .foregroundColor(.secondary)
                         }
@@ -147,7 +147,7 @@ struct WebExtensionsDebugView: View {
                     }
                 }
             } header: {
-                Text("Scriptlets")
+                Text(verbatim: "Scriptlets")
             }
         }
     }

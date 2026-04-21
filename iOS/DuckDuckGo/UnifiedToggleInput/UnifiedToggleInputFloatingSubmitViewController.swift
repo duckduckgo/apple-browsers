@@ -41,6 +41,10 @@ final class UnifiedToggleInputFloatingSubmitViewController: UIViewController {
         return button
     }()
 
+    var isAIVoiceChatEnabled = false {
+        didSet { updateIcon() }
+    }
+
     private var hasText = false
     private var cancellables = Set<AnyCancellable>()
 
@@ -76,16 +80,19 @@ final class UnifiedToggleInputFloatingSubmitViewController: UIViewController {
     }
 
     private func updateIcon() {
-        let icon: UIImage? = hasText
-            ? DesignSystemImages.Glyphs.Size24.arrowUp
-            : DesignSystemImages.Glyphs.Size24.voice
+        let showVoice = !hasText && isAIVoiceChatEnabled
+        let isActive = hasText || showVoice
+        let icon = showVoice ? DesignSystemImages.Glyphs.Size24.voice : DesignSystemImages.Glyphs.Size24.arrowUp
         button.setImage(icon, for: .normal)
+        button.isEnabled = isActive
+        button.backgroundColor = isActive ? UIColor(designSystemColor: .accent) : UIColor(designSystemColor: .controlsFillPrimary)
+        button.tintColor = isActive ? UIColor(designSystemColor: .accentContentPrimary) : UIColor(designSystemColor: .iconsSecondary)
     }
 
     @objc private func buttonTapped() {
         if hasText {
             delegate?.floatingSubmitDidTapSubmit()
-        } else {
+        } else if isAIVoiceChatEnabled {
             delegate?.floatingSubmitDidTapVoice()
         }
     }

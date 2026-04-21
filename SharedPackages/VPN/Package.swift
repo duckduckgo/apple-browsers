@@ -23,6 +23,7 @@ let package = Package(
                 .target(name: "WireGuardC"),
                 .product(name: "Common", package: "BrowserServicesKit"),
                 .product(name: "Networking", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit")
             ],

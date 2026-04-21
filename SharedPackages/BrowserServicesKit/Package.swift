@@ -17,6 +17,7 @@ let package = Package(
         .library(name: "DDGSync", targets: ["DDGSync"]),
         .library(name: "BrowserServicesKitTestsUtils", targets: ["BrowserServicesKitTestsUtils"]),
         .library(name: "Persistence", targets: ["Persistence"]),
+        .library(name: "DuckAiDataStore", targets: ["DuckAiDataStore"]),
         .library(name: "PersistenceTestingUtils", targets: ["PersistenceTestingUtils"]),
         .library(name: "SecureStorageTestsUtils", targets: ["SecureStorageTestsUtils"]),
         .library(name: "Bookmarks", targets: ["Bookmarks"]),
@@ -63,7 +64,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "13.38.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "14.0.0"),
         .package(path: "../URLPredictor"),
     ],
     targets: [
@@ -120,6 +121,18 @@ let package = Package(
             name: "Persistence",
             dependencies: [
                 "Common",
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "DuckAiDataStore",
+            dependencies: [
+                "Common",
+                "Persistence",
+                "SecureStorage",
+                "GRDB",
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -293,6 +306,7 @@ let package = Package(
                 .define("TERMINATE_WITH_REASON_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
                 .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),
+                .define("_WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED", .when(platforms: [.macOS])),
             ]
         ),
         .target(
@@ -682,6 +696,7 @@ let package = Package(
                 .define("TERMINATE_WITH_REASON_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
                 .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),
+                .define("_WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED", .when(platforms: [.macOS])),
             ]
         ),
         .testTarget(
@@ -702,6 +717,14 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "PersistenceTestingUtils",
                 "TrackerRadarKit",
+            ]
+        ),
+        .testTarget(
+            name: "DuckAiDataStoreTests",
+            dependencies: [
+                "DuckAiDataStore",
+                "PersistenceTestingUtils",
+                "SecureStorage",
             ]
         ),
         .testTarget(
@@ -777,6 +800,7 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "PrivacyDashboard",
                 "PersistenceTestingUtils",
+                "BrowserServicesKitTestsUtils",
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
             ]
         ),

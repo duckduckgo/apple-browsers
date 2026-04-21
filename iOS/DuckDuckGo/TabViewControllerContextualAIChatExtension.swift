@@ -76,8 +76,11 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
         delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
     }
 
-    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL) {
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL, shouldToggleSidebar: Bool) {
         delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
+        if shouldToggleSidebar {
+            delegate?.tabDidRequestToggleSidebarOnCurrentTab(self)
+        }
     }
 
     func aiChatContextualSheetCoordinatorDidRequestOpenSettings(_ coordinator: AIChatContextualSheetCoordinator) {

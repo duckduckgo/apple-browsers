@@ -49,6 +49,7 @@ public enum SingleUseColor {
 
     // Fire Mode
     case fireModeAccent
+    case fireModeAccentDark
     case fireModeAccentTertiary
     case fireModeBackground
 }

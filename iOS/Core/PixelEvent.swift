@@ -256,6 +256,12 @@ extension Pixel {
         case onboardingIntroChooseSearchExperienceImpressionUnique
         case onboardingIntroAIChatSelected
         case onboardingIntroSearchOnlySelected
+        case onboardingIntroDuckAIExperimentToggleImpressionUnique
+        case onboardingIntroDuckAIExperimentToggleContinuePressedSearch
+        case onboardingIntroDuckAIExperimentToggleContinuePressedAI
+        case onboardingDuckAIExperimentFireDialogShownUnique
+        case onboardingDuckAIExperimentFireButtonCTAPressed
+        case onboardingDuckAIExperimentFinalDialogShownUnique
 
         case onboardingContextualSearchOptionTappedUnique
         case onboardingContextualSearchCustomUnique
@@ -593,6 +599,7 @@ extension Pixel {
         case networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken
         case networkProtectionTunnelStartSuccess
         case networkProtectionTunnelStartFailure
+        case networkProtectionConnectionFailureLoopDetected
 
         case networkProtectionTunnelStopAttempt
         case networkProtectionTunnelStopSuccess
@@ -1595,6 +1602,10 @@ extension Pixel {
         case aiChatContextualFireButtonConfirmed
         case aiChatContextualPageContextCollectionEmpty
         case aiChatContextualPageContextCollectionUnavailable
+        case aiChatContextualQuickActionAskAboutPageSelected
+        case aiChatContextualRecentChatsPopupDisplayed
+        case aiChatContextualRecentChatSelected
+        case aiChatContextualViewAllChatsTapped
 
         // MARK: Customization
         case customizationAddressBarStarted
@@ -1604,6 +1615,7 @@ extension Pixel {
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
+        case sceneWillConnectToWindowCalledInConnectedState
 
         // MARK: Tab interaction state debug pixels
         case tabInteractionStateSourceMissingRootDirectory
@@ -1729,6 +1741,17 @@ extension Pixel {
         case webExtensionAdBlockingInstalled
         case webExtensionAdBlockingUpgraded
         case webExtensionAdBlockingInstallError
+        case webExtensionAdBlockingSettingsOpen
+        case webExtensionAdBlockingEnabled
+        case webExtensionAdBlockingDisabled
+
+        case webExtensionScriptletFetchSuccess
+        case webExtensionScriptletFetchError
+        case webExtensionScriptletValidationError
+        case webExtensionScriptletInstalled
+        case webExtensionScriptletInstallError
+
+        case webExtensionDailyAdBlockingState
     }
 
 }
@@ -1956,6 +1979,12 @@ extension Pixel.Event {
         case .onboardingIntroChooseSearchExperienceImpressionUnique: return "m_preonboarding_choose_search_experience_impressions_unique"
         case .onboardingIntroAIChatSelected: return "m_preonboarding_aichat_selected"
         case .onboardingIntroSearchOnlySelected: return "m_preonboarding_search_only_selected"
+        case .onboardingIntroDuckAIExperimentToggleImpressionUnique: return "m_preonboarding_duckai_toggle-screen-impression_unique"
+        case .onboardingIntroDuckAIExperimentToggleContinuePressedSearch: return "m_preonboarding_duckai_toggle-continue-pressed_search"
+        case .onboardingIntroDuckAIExperimentToggleContinuePressedAI: return "m_preonboarding_duckai_toggle-continue-pressed_ai"
+        case .onboardingDuckAIExperimentFireDialogShownUnique: return "m_preonboarding_duckai_fire-dialog-impression_unique"
+        case .onboardingDuckAIExperimentFireButtonCTAPressed: return "m_preonboarding_duckai_fire-button-pressed"
+        case .onboardingDuckAIExperimentFinalDialogShownUnique: return "m_preonboarding_duckai_final-dialog-impression_unique"
 
         case .onboardingContextualSearchOptionTappedUnique: return "m_onboarding_search_option_tapped_unique"
         case .onboardingContextualSiteOptionTappedUnique: return "m_onboarding_visit_site_option_tapped_unique"
@@ -2266,6 +2295,7 @@ extension Pixel.Event {
         case .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken: return "m_netp_tunnel_start_attempt_on_demand_without_access_token"
         case .networkProtectionTunnelStartSuccess: return "m_netp_tunnel_start_success"
         case .networkProtectionTunnelStartFailure: return "m_netp_tunnel_start_failure"
+        case .networkProtectionConnectionFailureLoopDetected: return "m_netp_connection_failure_loop_detected"
         case .networkProtectionTunnelStopAttempt: return "m_netp_tunnel_stop_attempt"
         case .networkProtectionTunnelStopSuccess: return "m_netp_tunnel_stop_success"
         case .networkProtectionTunnelStopFailure: return "m_netp_tunnel_stop_failure"
@@ -3174,6 +3204,10 @@ extension Pixel.Event {
         case .aiChatContextualFireButtonConfirmed: return "m_aichat_contextual_fire_button_confirmed"
         case .aiChatContextualPageContextCollectionEmpty: return "m_aichat_contextual_page_context_collection_empty"
         case .aiChatContextualPageContextCollectionUnavailable: return "m_aichat_contextual_page_context_collection_unavailable"
+        case .aiChatContextualQuickActionAskAboutPageSelected: return "m_aichat_contextual_quick_action_ask_about_page_selected"
+        case .aiChatContextualRecentChatsPopupDisplayed: return "m_aichat_contextual_recent_chats_popup_displayed"
+        case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"
+        case .aiChatContextualViewAllChatsTapped: return "m_aichat_contextual_view_all_chats_tapped"
 
         // MARK: AI Chat Sync
 
@@ -3186,6 +3220,7 @@ extension Pixel.Event {
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"
+        case .sceneWillConnectToWindowCalledInConnectedState: return "m_debug_scene-will-connect-to-window-called-in-connected-state"
 
         case .debugBreakageExperiment: return "m_debug_breakage_experiment_u"
 
@@ -3369,6 +3404,17 @@ extension Pixel.Event {
         case .webExtensionAdBlockingInstalled: return "m_web_extension_ad_blocking_installed"
         case .webExtensionAdBlockingUpgraded: return "m_web_extension_ad_blocking_upgraded"
         case .webExtensionAdBlockingInstallError: return "m_web_extension_ad_blocking_install_error"
+        case .webExtensionAdBlockingSettingsOpen: return "m_web_extension_ad_blocking_settings_open"
+        case .webExtensionAdBlockingEnabled: return "m_web_extension_ad_blocking_enabled"
+        case .webExtensionAdBlockingDisabled: return "m_web_extension_ad_blocking_disabled"
+
+        case .webExtensionScriptletFetchSuccess: return "m_web_extension_scriptlet_fetch_success"
+        case .webExtensionScriptletFetchError: return "m_web_extension_scriptlet_fetch_error"
+        case .webExtensionScriptletValidationError: return "m_web_extension_scriptlet_validation_error"
+        case .webExtensionScriptletInstalled: return "m_web_extension_scriptlet_installed"
+        case .webExtensionScriptletInstallError: return "m_web_extension_scriptlet_install_error"
+
+        case .webExtensionDailyAdBlockingState: return "m_web_extension_daily_ad_blocking_state"
         }
     }
 }

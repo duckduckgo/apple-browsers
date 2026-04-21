@@ -75,7 +75,6 @@ final class NewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSet
 }
 
 final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
-
     private enum Key: String {
         case newTabPageOmnibarMode
         case newTabPageSelectedModelId
@@ -91,6 +90,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let firePixel: (PixelKitEvent) -> Void
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
+    @Published private var hasExcessChats = false
+    private var aiChatsProviderCancellable: AnyCancellable?
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
@@ -190,6 +191,31 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         }
         set {
         }
+    }
+
+    var showViewAllAiChats: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
+            && featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
+            && hasExcessChats
+    }
+
+    var showViewAllAiChatsPublisher: AnyPublisher<Bool, Never> {
+        $hasExcessChats
+            .map { [weak self] hasExcess in
+                guard let self else { return false }
+                return self.featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
+                    && self.featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
+                    && hasExcess
+            }
+            .eraseToAnyPublisher()
+    }
+
+    func configure(aiChatsProvider: NewTabPageOmnibarAiChatsProviding) {
+        aiChatsProviderCancellable = aiChatsProvider.hasExcessChatsPublisher
+            .sink { [weak self] hasExcess in
+                guard let self else { return }
+                self.hasExcessChats = hasExcess
+            }
     }
 
 }

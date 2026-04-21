@@ -124,6 +124,7 @@ final class SwipeContainerViewController: UIViewController {
         view.addSubview(swipeScrollView)
 
         searchPageContainer = UIView()
+        searchPageContainer.backgroundColor = UIColor(designSystemColor: .panel)
         searchPageContainer.translatesAutoresizingMaskIntoConstraints = false
 
         chatPageContainer = UIView()

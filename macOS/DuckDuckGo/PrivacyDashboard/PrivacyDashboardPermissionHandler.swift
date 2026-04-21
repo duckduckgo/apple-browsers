@@ -132,7 +132,7 @@ final class PrivacyDashboardPermissionHandler {
 extension PermissionType {
     var jsStyle: String {
         switch self {
-        case .camera, .microphone, .geolocation, .popups, .notification:
+        case .camera, .microphone, .geolocation, .popups, .notification, .autoplayPolicy:
             return self.rawValue
         case .externalScheme:
             return "externalScheme"
@@ -141,7 +141,7 @@ extension PermissionType {
 
     var jsTitle: String {
         switch self {
-        case .camera, .microphone, .geolocation, .popups, .notification:
+        case .camera, .microphone, .geolocation, .popups, .notification, .autoplayPolicy:
             return self.localizedDescription
         case .externalScheme:
             return String(format: UserText.permissionExternalSchemeOpenFormat, self.localizedDescription)

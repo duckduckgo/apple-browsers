@@ -217,6 +217,7 @@ extension SimplifiedSyncSettingsView {
             .animation(.easeInOut(duration: 0.3), value: model.isBusy)
             .disabled(model.isBusy || (!model.isSyncEnabled && !model.isAccountCreationAvailable))
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     @ViewBuilder
@@ -257,6 +258,7 @@ extension SimplifiedSyncSettingsView {
         } header: {
             Text(UserText.simplifiedAlreadySetUpSectionHeader)
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     @ViewBuilder
@@ -278,6 +280,7 @@ extension SimplifiedSyncSettingsView {
             }
             .buttonStyle(.plain)
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 }
 
@@ -404,6 +407,7 @@ extension SimplifiedSyncSettingsView {
                 model.delegate?.refreshDevices(clearDevices: false)
             }
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     @ViewBuilder
@@ -466,6 +470,7 @@ extension SimplifiedSyncSettingsView {
         .onAppear {
             model.delegate?.updateOptions()
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     // MARK: Recovery
@@ -496,7 +501,7 @@ extension SimplifiedSyncSettingsView {
             }
 
             Button {
-                model.copyCode()
+                model.simplifiedCopyRecoveryCode()
             } label: {
                 Text(UserText.simplifiedCopyRecoveryCodeButton)
                     .foregroundColor(Color(designSystemColor: .accent))
@@ -506,6 +511,7 @@ extension SimplifiedSyncSettingsView {
         } footer: {
             Text(UserText.simplifiedRecoverySectionFooter)
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     // MARK: Delete
@@ -519,5 +525,6 @@ extension SimplifiedSyncSettingsView {
                 Text(UserText.simplifiedDeleteSyncDataButton)
             }
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 }

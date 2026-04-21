@@ -386,6 +386,7 @@ enum GeneralPixel: PixelKitEvent {
     case keyValueFileStoreInitError
     case dbContainerInitializationError(error: Error)
     case dbInitializationError(error: Error)
+    case dbValueTransformerRegistrationError
     case dbSaveExcludedHTTPSDomainsError(error: Error?)
     case dbSaveBloomFilterError(error: Error?)
 
@@ -491,6 +492,7 @@ enum GeneralPixel: PixelKitEvent {
     case bookmarksSortByName(origin: String)
     case bookmarksSearchExecuted(origin: String)
     case bookmarksSearchResultClicked(origin: String)
+    case bookmarksSaveAllOpenTabs
 
     case syncSentUnauthenticatedRequest
     case syncMetadataCouldNotLoadDatabase
@@ -575,6 +577,11 @@ enum GeneralPixel: PixelKitEvent {
     case userScriptLoadJSFailed(jsFile: String, error: Error, source: UserScriptError.Source)
 
     case attributionXattrCanary(variantMatch: String, originMatch: String)
+
+    // Website Autoplay
+    case autoplaySettingAllowAll
+    case autoplaySettingBlockAudio
+    case autoplaySettingBlockAll
 
     var name: String {
         switch self {
@@ -1053,6 +1060,8 @@ enum GeneralPixel: PixelKitEvent {
             return "database_container_error"
         case .dbInitializationError:
             return "dbie"
+        case .dbValueTransformerRegistrationError:
+            return "db_value_transformer_registration_error"
         case .dbSaveExcludedHTTPSDomainsError:
             return "database_save_excluded_https_domains_error"
         case .dbSaveBloomFilterError:
@@ -1305,6 +1314,7 @@ enum GeneralPixel: PixelKitEvent {
         case .bookmarksSortByName: return "m_mac_sort_bookmarks_by_name"
         case .bookmarksSearchExecuted: return "m_mac_search_bookmarks_executed"
         case .bookmarksSearchResultClicked: return "m_mac_search_result_clicked"
+        case .bookmarksSaveAllOpenTabs: return "m_mac_bookmarks_save-all-open-tabs"
 
             // Broken site prompt
         case .pageRefreshThreeTimesWithin20Seconds: return "m_mac_reload-three-times-within-20-seconds"
@@ -1318,6 +1328,14 @@ enum GeneralPixel: PixelKitEvent {
         case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
 
         case .attributionXattrCanary: return "m_mac_attribution-xattr-canary_u"
+
+            // Website Autoplay
+        case .autoplaySettingAllowAll:
+            return "m_mac_autoplay_setting_allow-all"
+        case .autoplaySettingBlockAudio:
+            return "m_mac_autoplay_setting_block-audio"
+        case .autoplaySettingBlockAll:
+            return "m_mac_autoplay_setting_block-all"
         }
     }
 
@@ -1438,6 +1456,9 @@ enum GeneralPixel: PixelKitEvent {
                 .duckPlayerWatchOnYoutube,
                 .duckPlayerAutoplaySettingsOn,
                 .duckPlayerAutoplaySettingsOff,
+                .autoplaySettingAllowAll,
+                .autoplaySettingBlockAudio,
+                .autoplaySettingBlockAll,
                 .duckPlayerNewTabSettingsOn,
                 .duckPlayerNewTabSettingsOff,
                 .duckPlayerContingencySettingsDisplayed,
@@ -1595,6 +1616,9 @@ enum GeneralPixel: PixelKitEvent {
                 .duckPlayerWatchOnYoutube,
                 .duckPlayerAutoplaySettingsOn,
                 .duckPlayerAutoplaySettingsOff,
+                .autoplaySettingAllowAll,
+                .autoplaySettingBlockAudio,
+                .autoplaySettingBlockAll,
                 .duckPlayerNewTabSettingsOn,
                 .duckPlayerNewTabSettingsOff,
                 .duckPlayerContingencySettingsDisplayed,
@@ -1728,6 +1752,7 @@ enum GeneralPixel: PixelKitEvent {
                 .keyValueFileStoreInitError,
                 .dbContainerInitializationError,
                 .dbInitializationError,
+                .dbValueTransformerRegistrationError,
                 .dbSaveExcludedHTTPSDomainsError,
                 .dbSaveBloomFilterError,
                 .remoteMessagingSaveConfigError,
@@ -1807,6 +1832,7 @@ enum GeneralPixel: PixelKitEvent {
                 .bookmarksSortByName,
                 .bookmarksSearchExecuted,
                 .bookmarksSearchResultClicked,
+                .bookmarksSaveAllOpenTabs,
                 .syncSentUnauthenticatedRequest,
                 .syncMetadataCouldNotLoadDatabase,
                 .syncBookmarksProviderInitializationFailed,

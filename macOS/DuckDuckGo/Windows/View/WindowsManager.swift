@@ -47,10 +47,10 @@ final class WindowsManager {
     }
 
     /// finds window to position newly opened (or popup) windows against
-    private class func findPositioningSourceWindow(for tab: Tab?) -> NSWindow? {
+    private class func findPositioningSourceWindow(for tab: AnyTab?) -> NSWindow? {
         if let parentTab = tab?.parentTab,
            let sourceWindowController = Application.appDelegate.windowControllersManager.mainWindowControllers.first(where: {
-               $0.mainViewController.tabCollectionViewModel.tabs.contains(parentTab)
+               $0.mainViewController.tabCollectionViewModel.tabCollection.contains(tab: parentTab)
            }) {
             // window that initiated the new window opening
             return sourceWindowController.window
@@ -103,7 +103,7 @@ final class WindowsManager {
 
         if let droppingPoint {
             mainWindowController.window?.setFrameOrigin(droppingPoint: droppingPoint)
-        } else if let sourceWindow = self.findPositioningSourceWindow(for: tabCollectionViewModel?.tabs.first) {
+        } else if let sourceWindow = self.findPositioningSourceWindow(for: tabCollectionViewModel?.tabCollection.tabs.first) {
             mainWindowController.window?.setFrameOrigin(cascadedFrom: sourceWindow)
         }
 
@@ -206,7 +206,7 @@ final class WindowsManager {
     ///   - contentSize: The requested popup content size
     /// - Returns: A tuple containing the dropping point (top-center) and final content size
     private class func calculatePopupFrame(for tab: Tab, origin: NSPoint?, contentSize: NSSize?) -> (droppingPoint: NSPoint?, contentSize: NSSize) {
-        let sourceWindow = findPositioningSourceWindow(for: tab)
+        let sourceWindow = findPositioningSourceWindow(for: .loaded(tab))
         // Use visibleFrame to ensure popup doesn't go behind dock or menu bar
         let screenFrame = (sourceWindow?.screen ?? .main)?.visibleFrame ?? NSScreen.fallbackHeadlessScreenFrame
         return calculatePopupFrame(screenFrame: screenFrame, origin: origin, contentSize: contentSize)

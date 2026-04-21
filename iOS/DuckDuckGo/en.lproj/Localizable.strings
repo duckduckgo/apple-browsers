@@ -79,11 +79,14 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Tabs and data cleared";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Clear Tabs, Data, and Duck.ai Chats";
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Open in Background";
+
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "New Fire Tab";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Open in a Fire Tab";
 
 /* Create New Tab action */
 "action.title.newTabAction" = "New Tab";
@@ -180,6 +183,15 @@
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Take a Photo";
+
+/* Title for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.title" = "Customize Responses";
+
+/* Subtitle for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.subtitle" = "Find current information";
+
+/* Title for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.title" = "Web Search";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Existing bookmarks will not be duplicated.";
@@ -1538,7 +1550,7 @@
 "duckplayer.settings.autoplay.label" = "Autoplay Videos";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Opens videos in a private theatre mode that prevents what you watch from influencing your YouTube feed.";
+"duckplayer.settings.enable-footer" = "Opens videos in theater mode that prevents what you watch from influencing your YouTube feed.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Enable Duck Player";
@@ -1725,6 +1737,9 @@
 
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Switches to this tab";
+
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Last used Fire Tab";
 
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Return to %@";
@@ -2022,6 +2037,42 @@
 
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Choose What To Delete";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Sign in to a site with a different account";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Browse without saving local history";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Troubleshoot websites";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire Tabs are isolated from other browser data, and their data is burned when you close them all. They have the same tracking protection as other tabs.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "New Fire Tab";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire Tabs";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "New";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Browse without saving local history or sign in to sites with a different account.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Not Now";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Try Fire Tabs";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Try Fire Tabs";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire Tab";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
@@ -2515,6 +2566,9 @@ https://duckduckgo.com/mac";
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "YouTube Ad Block On";
+
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Got It";
 
@@ -2569,8 +2623,8 @@ https://duckduckgo.com/mac";
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Skip";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Hi there.\n\nReady for a faster browser that keeps you protected?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Hi there.\n\nReady for a faster browser that protects you and lets you decide when and how to use AI?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Next";
@@ -2584,11 +2638,17 @@ https://duckduckgo.com/mac";
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Settings > AI Features.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Want easy access to private AI chat?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Toggle between\nSearch and Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Let’s do it!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Search only";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Want easy access to private AI chat in the address bar?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Let’s get started!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "I’ve been here before";
@@ -2615,7 +2675,7 @@ https://duckduckgo.com/mac";
 "onboarding.rebranding.first-search-done.title" = "That’s DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ready for a faster browser that keeps you protected?";
+"onboarding.rebranding.intro.message" = "Ready for a faster browser that protects you and lets you decide when and how to use AI?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hi there.";
@@ -2908,6 +2968,9 @@ https://duckduckgo.com/mac";
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "This site wants to open in Safari.";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Delete Fire Tabs and their data?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Delete tabs and site data?";
 
@@ -3037,12 +3100,6 @@ Take back control of your personal information with the browser designed for dat
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "New Tab";
 
-/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_and_duckai" = "Search & Duck.ai";
-
-/* Title for the 'Search Only' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_only" = "Search Only";
-
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Try the new option to toggle between search and Duck.ai in the Address Bar.";
 
@@ -3105,12 +3162,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Clear";
-
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Clear Tabs and Data";
-
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Clear Tabs, Data, and Duck.ai Chats";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Close all open tabs";
@@ -3187,14 +3238,8 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button will also delete Duck.ai history, including pinned chats.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Clear Duck.ai Chats";
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Clear Browsing Data";
-
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Automatically Clear Data";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Complete Your Setup";
@@ -3213,12 +3258,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings title for the customize section */
 "settings.customize" = "Customize";
-
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Clears all tabs, Duck.ai chats, and data for any sites you haven't fireproofed.";
-
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Clears all tabs and data for any sites you haven't fireproofed.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Data Clearing";
@@ -3288,9 +3327,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Fire Button Animation";
-
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Fireproof Sites";
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproofed Sites";
@@ -3955,14 +3991,38 @@ Take back control of your personal information with the browser designed for dat
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Sorry, but Sync & Backup is no longer available in this app version. Please update DuckDuckGo to the latest version to continue.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Close Tab";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Tab Unread";
+
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Close fire tab";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Close tab";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Close home tab";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Close \"%1$@\" at %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire Tab";
+
+/* New tab title */
+"tab.new.title" = "New Tab";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Open home tab";
+
+/* Accessibility label on tab cell */
+"tab.open.new" = "Open new tab";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Open fire tab";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Open \"%1$@\" at %2$@";

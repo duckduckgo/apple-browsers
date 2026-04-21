@@ -17,8 +17,11 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Core
+import DuckAiDataStore
 import Persistence
+import PrivacyConfig
 import UIKit
 import PixelKit
 import BrowserServicesKit
@@ -115,6 +118,8 @@ struct Launching: LaunchingHandling {
             }
         )
 
+        let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(featureFlagger: featureFlagger)
+
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
                                                             contentBlocking: contentBlocking,
                                                             sync: syncService.sync,
@@ -122,7 +127,8 @@ struct Launching: LaunchingHandling {
                                                             contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                             syncErrorHandler: syncService.syncErrorHandler,
-                                                            webExtensionAvailability: webExtensionAvailability)
+                                                            webExtensionAvailability: webExtensionAvailability,
+                                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
         let configurationService = RemoteConfigurationService()
@@ -328,6 +334,21 @@ struct Launching: LaunchingHandling {
         // - Use a service for functionality that persists throughout the app's lifecycle.
         // More details: https://app.asana.com/0/1202500774821704/1209445353536498/f
         // For a broader overview: https://app.asana.com/0/1202500774821704/1209445353536490/f
+    }
+
+    private static func makeNativeStorageHandler(featureFlagger: FeatureFlagger) -> DuckAiNativeStorageHandling? {
+        guard featureFlagger.isFeatureOn(.aiChatNativeStorage),
+              let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) else {
+            return nil
+        }
+        let containerURL = groupContainer.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
+        do {
+            let keyStoreProvider = DuckAiKeyStoreProvider(accessGroup: Global.appConfigurationGroupName)
+            return try DuckAiNativeStorageProvider(containerURL: containerURL, keyStoreProvider: keyStoreProvider).handler
+        } catch {
+            Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
+            return nil
+        }
     }
 
     private func logAppLaunchTime() {

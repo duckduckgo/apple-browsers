@@ -31,6 +31,12 @@
             "dbpBackgroundAgent"
         ]
     },
+    "channel": {
+        "key": "channel",
+        "type": "string",
+        "description": "Identifies non-production pixels. 'canary' for internal users; 'dev' for alpha/review builds. Omitted for production builds.",
+        "enum": ["canary", "dev"]
+    },
     "errorDomain": {
         "key": "d",
         "type": "string",

@@ -302,7 +302,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let onManualDismiss = { onManualDismissRun = true }
 
         let mainViewController = MainViewController(
-            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
+            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
             aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()),
             fireCoordinator: fireCoordinator

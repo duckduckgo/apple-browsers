@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Combine
+import History
 import Navigation
 import SharedTestUtilities
 import WebKit
@@ -66,6 +67,54 @@ class HistoryTabExtensionTests: XCTestCase {
         XCTAssertFalse(historyCoordinatingMock.addVisitCalled)
         XCTAssertFalse(historyCoordinatingMock.updateTitleIfNeededCalled)
         XCTAssertFalse(historyCoordinatingMock.commitChangesCalled)
+    }
+
+    // MARK: - HistoryCoordinating.visits(matching:)
+
+    @MainActor
+    func testVisitsMatchingReturnsMatchingVisits() {
+        let mock = HistoryCoordinatingMock()
+        let url1 = URL(string: "https://example.com")!
+        let url2 = URL(string: "https://test.org")!
+        let visit1 = Visit(date: Date(), identifier: url1)
+        let visit2 = Visit(date: Date(), identifier: url2)
+        mock.allHistoryVisits = [visit1, visit2]
+
+        let result = mock.visits(matching: [url1, url2])
+        XCTAssertEqual(result.count, 2)
+        XCTAssertTrue(result.contains(where: { $0 === visit1 }))
+        XCTAssertTrue(result.contains(where: { $0 === visit2 }))
+    }
+
+    @MainActor
+    func testVisitsMatchingReturnsEmptyForUnknownIDs() {
+        let mock = HistoryCoordinatingMock()
+        mock.allHistoryVisits = [Visit(date: Date(), identifier: URL(string: "https://example.com")!)]
+
+        let result = mock.visits(matching: [URL(string: "https://unknown.com")!])
+        XCTAssertTrue(result.isEmpty)
+    }
+
+    @MainActor
+    func testVisitsMatchingReturnsMixedResults() {
+        let mock = HistoryCoordinatingMock()
+        let knownURL = URL(string: "https://example.com")!
+        let unknownURL = URL(string: "https://unknown.com")!
+        let visit = Visit(date: Date(), identifier: knownURL)
+        mock.allHistoryVisits = [visit]
+
+        let result = mock.visits(matching: [knownURL, unknownURL])
+        XCTAssertEqual(result.count, 1)
+        XCTAssertTrue(result.first === visit)
+    }
+
+    @MainActor
+    func testVisitsMatchingReturnsEmptyForEmptyIDs() {
+        let mock = HistoryCoordinatingMock()
+        mock.allHistoryVisits = [Visit(date: Date(), identifier: URL(string: "https://example.com")!)]
+
+        let result = mock.visits(matching: [])
+        XCTAssertTrue(result.isEmpty)
     }
 
 }

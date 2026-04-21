@@ -617,6 +617,18 @@ struct UserText {
     static let aiChatPreferencesLearnMoreButton = NSLocalizedString("ai-chat.preferences.learn-more", value: "Learn More", comment: "AI Chat preferences button to learn more about it")
     static let newAIChatMenuItem = NSLocalizedString("duckai.menu.new", value: "New Duck.ai Chat", comment: "Menu item to launch AI Chat")
 
+    // Duck.ai main menu
+    static let aiChatMenuOpenDuckAI = NSLocalizedString("duckai.menu.open-duck-ai", value: "Open Duck.ai", comment: "Duck.ai menu item to open Duck.ai")
+    static let aiChatMenuNewChat = NSLocalizedString("duckai.menu.new-chat", value: "New Chat", comment: "Duck.ai menu item to start a new chat")
+    static let aiChatMenuNewVoiceChat = NSLocalizedString("duckai.menu.new-voice-chat", value: "New Voice Chat", comment: "Duck.ai main menu item to start a new voice chat")
+    static let aiChatMenuNewImageChat = NSLocalizedString("duckai.menu.new-image-chat", value: "New Image Chat", comment: "Duck.ai main menu item to start a new image chat")
+    static let aiChatMenuRecentChats = NSLocalizedString("duckai.menu.recent-chats", value: "Recent Chats", comment: "Duck.ai main menu section label for recent chat history")
+    static let aiChatMenuViewAllChats = NSLocalizedString("duckai.menu.view-all-chats", value: "View All Chats...", comment: "Duck.ai menu item shown when there are more chats than displayed, opens Duck.ai to view all chats")
+    static let aiChatMenuDeleteAllChats = NSLocalizedString("duckai.menu.delete-all-chats", value: "Delete All Chats...", comment: "Duck.ai main menu item to delete all chat history")
+    static let aiChatMenuDeleteAllChatsDialogTitle = NSLocalizedString("duckai.menu.delete-all-chats.dialog-title", value: "Delete Chats", comment: "Title of the custom delete dialog when there are 2 or fewer chats to delete")
+    static let aiChatMenuDeleteAllChatsAlertMessage = NSLocalizedString("duckai.menu.delete-all-chats.alert-message", value: "This will permanently delete all your Duck.ai chats.", comment: "Message body of the confirmation dialog before deleting all Duck.ai chats")
+    static let aiChatMenuDeleteAllChatsConfirmButton = NSLocalizedString("duckai.menu.delete-all-chats.confirm-button", value: "Delete Chats", comment: "Confirm button in the Delete All Duck.ai Chats alert")
+
     static let aiChatAddressBarTrustedIndicator = NSLocalizedString("aichat.address-bar.trusted-indicator", value: "Duck.ai", comment: "Label for the AI Chat displayed in the address bar")
 
     static let aiChatSummarize = NSLocalizedString("duckai.summarize.context-menu-action", value: "Summarize with Duck.ai", comment: "Context menu option that triggers Duck.ai-assisted summarization of selected text")
@@ -661,13 +673,33 @@ struct UserText {
     static let aiChatSendButtonTooltip = NSLocalizedString("aichat.send-button.tooltip", value: "Send", comment: "Tooltip for the send button in AI chat omnibar")
     static let aiChatSearchToggleButtonTooltip = NSLocalizedString("aichat.search-toggle-button.tooltip", value: "Search the web", comment: "Tooltip for the search toggle button in AI chat omnibar")
     static let aiChatImageUploadButtonTooltip = NSLocalizedString("aichat.image-upload-button.tooltip", value: "Attach image", comment: "Tooltip for the image upload button in AI chat omnibar")
+    static let aiChatToolsButtonLabel = NSLocalizedString("aichat.tools-button.label", value: "Tools", comment: "Label for the tools dropdown button in AI chat omnibar")
+    static let aiChatImageGenButtonLabel = NSLocalizedString("aichat.image-gen-button.label", value: "Create Image", comment: "Label for the image generation toggle button in AI chat omnibar")
+    static let aiChatImageGenToolSubtitle = NSLocalizedString("aichat.image-gen-tool.subtitle", value: "Turn text into images", comment: "Subtitle for Create Image tool in the tools dropdown menu")
+    static let aiChatWebSearchButtonLabel = NSLocalizedString("aichat.web-search-button.label", value: "Web Search", comment: "Label for the web search tool button in AI chat omnibar")
+    static let aiChatWebSearchToolSubtitle = NSLocalizedString("aichat.web-search-tool.subtitle", value: "Source answers from the web", comment: "Subtitle for Web Search tool in the tools dropdown menu")
+    static let aiChatWebSearchDeactivateTooltip = NSLocalizedString("aichat.web-search-button.deactivate-tooltip", value: "Deactivate web search", comment: "Tooltip for the web search button when web search mode is active")
+    static let aiChatImageGenPlaceholder = NSLocalizedString("aichat.omnibar.image-gen-placeholder", value: "Describe the image you want to create", comment: "Placeholder text in AI chat input when image generation mode is active")
+    static let aiChatImageGenWithAttachmentPlaceholder = NSLocalizedString("aichat.omnibar.image-gen-with-attachment-placeholder", value: "Describe changes based on the image", comment: "Placeholder text in AI chat input when image generation mode is active and an image is attached")
+    static let aiChatImageGenDeactivateTooltip = NSLocalizedString("aichat.image-gen-button.deactivate-tooltip", value: "Deactivate image generation", comment: "Tooltip for the image generation button when image generation mode is active")
+    static let aiChatAttachmentsLimitError = NSLocalizedString("aichat.attachments.limit-error", value: "You can only attach 3 images at a time", comment: "Error message shown when the user tries to attach more than 3 images in AI chat")
     static let aiChatModelPickerButtonTooltip = NSLocalizedString("aichat.model-picker-button.tooltip", value: "Choose model", comment: "Tooltip for the model picker button in AI chat omnibar")
     static let aiChatModelPickerAdvancedSectionHeader = NSLocalizedString("aichat.model-picker.advanced-section-header", value: "Advanced Models - DuckDuckGo subscription", comment: "Section header in the model picker menu for premium models that require a subscription")
     static let aiChatModelPickerAdvancedModelsSectionHeader = NSLocalizedString("aichat.model-picker.advanced-models-section-header", value: "Advanced Models", comment: "Section header in the model picker menu for advanced models when user has an active subscription")
     static let aiChatModelPickerBasicModelsSectionHeader = NSLocalizedString("aichat.model-picker.basic-models-section-header", value: "Basic Models", comment: "Section header in the model picker menu for basic/free models when user has an active subscription")
     static let aiChatRemoveAttachmentButtonAccessibility = NSLocalizedString("aichat.remove-attachment-button.accessibility", value: "Remove attachment", comment: "Accessibility label for the remove attachment button on image thumbnails in AI chat")
     static let aiChatRemoveAttachmentButtonTooltip = NSLocalizedString("aichat.remove-attachment-button.tooltip", value: "Remove attachment", comment: "Tooltip for the remove attachment button on image thumbnails in AI chat")
-    static let aiChatOmnibarPlaceholder = NSLocalizedString("aichat.omnibar.placeholder", value: "Ask privately", comment: "Placeholder text shown in the Duck.ai chat input field")
+    static let aiChatViewAllChats = NSLocalizedString(
+        "aichat.suggestions.view-all-chats",
+        value: "View all chats",
+        comment: "Footer row in the duck.ai address bar suggestions list, opens full chat history"
+    )
+    static let aiChatOpenDuckAI = NSLocalizedString(
+        "aichat.suggestions.open-duck-ai",
+        value: "Open Duck.ai",
+        comment: "Label on the 'View all chats' footer row indicating it opens duck.ai"
+    )
+    static let aiChatOmnibarPlaceholder = NSLocalizedString("aichat.omnibar.placeholder", value: "Ask anything privately", comment: "Placeholder text shown in the Duck.ai chat input field")
     static let moreSearchSettings = NSLocalizedString("settings.more-search-settings", value: "More Search Settings", comment: "The button name in preferences for More Search Settings")
     static let moreSearchSettingsDescription = NSLocalizedString("settings.more-search-settings.description", value: "Customize your language, region, and more.", comment: "Subtitle of the 'More Search Settings' button")
     static let moreSearchSettingsLink = NSLocalizedString("settings.more-search-settings.link", value: "Open DuckDuckGo Search Settings", comment: "Button to open Search Settings on duckduckgo.com")
@@ -704,7 +736,7 @@ struct UserText {
     static let duckPlayerShowPlayerButtons = NSLocalizedString("duck-player.show-buttons", value: "Show option to use Duck Player over YouTube previews on hover", comment: "Private YouTube Player option")
     static let duckPlayerOff = NSLocalizedString("duck-player.off", value: "Never use Duck Player", comment: "Private YouTube Player option")
     static let duckPlayerExplanation = NSLocalizedString("duck-player.explanation", value: "Duck Player provides a clean viewing experience without personalized ads and prevents viewing activity from influencing your YouTube recommendations.", comment: "Private YouTube Player explanation in settings")
-    static let duckPlayerYouTubeAdBlockingExplanation = NSLocalizedString("duck-player.youtube-ad-blocking.explanation", value: "Opens videos in a private theatre mode that prevents what you watch from influencing your YouTube feed.", comment: "Duck Player explanation shown in YouTube Ad Blocking settings")
+    static let duckPlayerYouTubeAdBlockingExplanation = NSLocalizedString("duck-player.youtube-ad-blocking.explanation", value: "Opens videos in theater mode that prevents what you watch from influencing your YouTube feed.", comment: "Duck Player explanation shown in YouTube Ad Blocking settings")
     static let duckPlayerAutoplayPreference = NSLocalizedString("duck-player.video-autoplay-preference", value: "Autoplay videos when opened in Duck Player", comment: "Autoplay preference in settings")
     static let duckPlayerNewTabPreference = NSLocalizedString("duck-player.newtab-preference", value: "Open Duck Player in a new tab whenever possible", comment: "New tab preference in settings")
     static let duckPlayerNewTabPreferenceExtraInfo = NSLocalizedString("duck-player.newtab.info-preference", value: "When browsing YouTube on the web", comment: "New tab preference extra info in settings")
@@ -1113,15 +1145,23 @@ struct UserText {
     static let permissionCenterExternalSchemeDescription = NSLocalizedString("permission.center.external.scheme.description", value: "%@ to open “%@” links", comment: "Description for external scheme permission, first %@ is domain, second %@ is scheme name")
     static let permissionCenterExternalApps = NSLocalizedString("permission.center.external.apps", value: "External apps", comment: "Permission center header for external app permissions")
     static let permissionCenterExternalSchemeFormat = NSLocalizedString("permission.center.external.scheme.format", value: "Open “%@” links", comment: "Format for external scheme row, %@ is scheme name like mailto or sms")
-    static let permissionCenterSystemNotificationDisabled = NSLocalizedString("permission.center.system.notification.disabled", value: "System notifications disabled. Turn them on in", comment: "Warning shown when system notifications are disabled but user has allowed the site")
+    static let permissionCenterSystemNotificationDisabled = NSLocalizedString("permission.center.system.notification.disabled", value: "To allow notifications, first enable them in", comment: "Warning shown when system notifications are disabled but user has allowed the site")
     static let permissionCenterSystemNotificationNotDetermined = NSLocalizedString("permission.center.system.notification.not.determined", value: "System notifications disabled.", comment: "Warning shown when system notification permission has not been requested yet")
     static let permissionCenterTurnOnNotifications = NSLocalizedString("permission.center.turn.on.notifications", value: "Turn them on", comment: "Link text to request system notification permission")
-    static let permissionCenterSystemSettingsNotifications = NSLocalizedString("permission.center.system.settings.notifications", value: "System Settings → Notifications", comment: "Link text to open System Settings Notifications panel")
-    static let permissionPopoverSystemNotificationDisabled = NSLocalizedString("permission.popover.system.notification.disabled", value: "System notifications are disabled. First, turn them on in", comment: "Warning shown in permission popover when system notifications are disabled")
-    static let permissionPopoverSystemNotificationDisabledStandalone = NSLocalizedString("permission.popover.system.notification.disabled.standalone", value: "System notifications disabled.\nTurn them on in", comment: "Warning shown in standalone system-disabled permission view")
+    static let permissionCenterSystemSettingsNotifications = NSLocalizedString("permission.center.system.settings.notifications", value: "System Settings → Notifications → DuckDuckGo", comment: "Link text to open System Settings Notifications panel")
+    static let permissionPopoverSystemNotificationDisabled = NSLocalizedString("permission.popover.system.notification.disabled", value: "First, you need to turn on browser notifications in", comment: "Warning shown in permission popover when system notifications are disabled")
+    static let permissionPopoverSystemNotificationDisabledStandalone = NSLocalizedString("permission.popover.system.notification.disabled.standalone", value: "System notifications disabled. Turn them on in", comment: "Warning shown in standalone system-disabled permission view")
     static let permissionCenterResetTooltip = NSLocalizedString("permission.center.reset.tooltip", value: "Remove permission", comment: "Tooltip for the remove permission button in permission center")
     static let permissionCenterReloadMessage = NSLocalizedString("permission.center.reload.message", value: "Reload for changes to take effect", comment: "Message shown in permission center when permissions have been changed and reload is needed")
     static let permissionCenterReloadButton = NSLocalizedString("permission.center.reload.button", value: "Reload", comment: "Button to reload the page to apply permission changes")
+
+    static let permissionsSection = NSLocalizedString("preferences.permissions.section", value: "Permissions", comment: "Section header for the Permissions section in General preferences")
+    static let autoplayLabel = NSLocalizedString("preferences.autoplay.label", value: "Autoplay website media", comment: "Label for the autoplay blocking preference picker in General preferences")
+    static let autoplayCaption = NSLocalizedString("preferences.autoplay.caption", value: "Doesn't apply to videos opened in Duck Player when 'Autoplay videos when opened in Duck Player' is on.", comment: "Caption for the autoplay blocking preference picker in General preferences")
+    static let autoplayModeAllowAll = NSLocalizedString("preferences.autoplay.mode.allow-all", value: "Video and audio", comment: "Autoplay mode: allow all media to autoplay")
+    static let autoplayModeBlockAudio = NSLocalizedString("preferences.autoplay.mode.block-audio", value: "Stop videos with sound", comment: "Autoplay mode: allow video but block audio autoplay (default)")
+    static let autoplayModeBlockAll = NSLocalizedString("preferences.autoplay.mode.block-all", value: "Never", comment: "Autoplay mode: block all media autoplay")
+    static let permissionAutoplay = NSLocalizedString("permission.autoplay", value: "Autoplay", comment: "Display name for the autoplay permission type in Permission Center")
 
     static let privacyDashboardPopupsAlwaysAsk = NSLocalizedString("dashboard.popups.ask", value: "Notify", comment: "Make pop-up windows always request permission for the current domain")
 
@@ -2283,6 +2323,7 @@ struct UserText {
     // MARK: - OmniBar Notifications
     static let omnibarNotificationCookiesManaged = NSLocalizedString("omnibar.notification.cookies.managed", value: "Cookies Managed", comment: "Text displayed when cookies are managed by DuckDuckGo")
     static let omnibarNotificationPopupHidden = NSLocalizedString("omnibar.notification.popup.hidden", value: "Pop-up Hidden", comment: "Text displayed when a pop-up is hidden by DuckDuckGo")
+    static let omnibarNotificationYouTubeAdBlockOn = NSLocalizedString("omnibar.notification.youtube-ad-block-on", value: "YouTube Ad Block On", comment: "Text displayed on notification appearing in the address bar when YouTube ad blocking is active")
 
     static func omnibarNotificationTrackersBlocked(_ count: Int) -> String {
         let template = NSLocalizedString(

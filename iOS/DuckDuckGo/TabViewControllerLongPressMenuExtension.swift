@@ -24,31 +24,53 @@ import WebKit
 import History
 import Common
 import Combine
+import DesignResourcesKitIcons
 
 extension TabViewController {
 
     func buildLinkPreviewMenu(for url: URL, withProvided providedElements: [UIMenuElement]) -> UIMenu {
-        var items = [UIMenuElement]()
+        let isFireTab = tabModel.fireTab
 
-        items.append(UIAction(title: UserText.actionNewTabForUrl, image: UIImage(systemName: "plus.square.on.square")) { [weak self] _ in
+        var sections = [UIMenuElement]()
+        var tabActions = [UIMenuElement]()
+
+        let newTabTitle = isFireTab ? UserText.actionNewFireTabForUrl : UserText.actionNewTabForUrl
+        tabActions.append(UIAction(title: newTabTitle,
+                                   image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
             self?.onNewTabAction(url: url)
         })
-        items.append(UIAction(title: UserText.actionNewBackgroundTabForUrl,
-                              image: UIImage(systemName: "arrow.up.right.square")) { [weak self] _ in
+
+        tabActions.append(UIAction(title: UserText.actionNewBackgroundTabForUrl,
+                                   image: DesignSystemImages.Glyphs.Size16.openIn) { [weak self] _ in
             self?.onBackgroundTabAction(url: url)
         })
-        items.append(UIAction(title: UserText.actionCopy,
-                              image: UIImage(systemName: "doc.on.doc")) { [weak self] _ in
-            self?.onCopyAction(forUrl: url)
-        })
-        items.append(UIAction(title: UserText.actionShare,
-                              image: UIImage(systemName: "square.and.arrow.up")) { [weak self] _ in
-            guard let webView = self?.webView else { return }
-            let shareSheetOrigin = Point(x: Int(webView.bounds.midX), y: Int(0))
-            self?.onShareAction(forUrl: url, atPoint: shareSheetOrigin)
-        })
 
-        return UIMenu(title: url.host?.droppingWwwPrefix() ?? "", children: items + providedElements)
+        sections.append(UIMenu(title: "", options: .displayInline, children: tabActions))
+
+        let fireModeCapability = FireModeCapability.create()
+        if !isFireTab && fireModeCapability.isFireModeEnabled {
+            let fireTabAction = UIAction(title: UserText.actionNewFireTabForUrl,
+                                         image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
+                self?.onFireTabAction(url: url)
+            }
+            sections.append(UIMenu(title: "", options: .displayInline, children: [fireTabAction]))
+        }
+
+        let utilityActions = [
+            UIAction(title: UserText.actionCopy,
+                     image: DesignSystemImages.Glyphs.Size16.copy) { [weak self] _ in
+                self?.onCopyAction(forUrl: url)
+            },
+            UIAction(title: UserText.actionShare,
+                     image: DesignSystemImages.Glyphs.Size16.shareApple) { [weak self] _ in
+                guard let webView = self?.webView else { return }
+                let shareSheetOrigin = Point(x: Int(webView.bounds.midX), y: Int(0))
+                self?.onShareAction(forUrl: url, atPoint: shareSheetOrigin)
+            }
+        ]
+        sections.append(UIMenu(title: "", options: .displayInline, children: utilityActions))
+
+        return UIMenu(title: url.host?.droppingWwwPrefix() ?? "", children: sections + providedElements)
     }
 
     private func onNewTabAction(url: URL) {
@@ -57,7 +79,13 @@ extension TabViewController {
                       openedByPage: false,
                       inheritingAttribution: adClickAttributionLogic.state)
     }
-    
+
+    private func onFireTabAction(url: URL) {
+        delegate?.tab(self,
+                      didRequestNewFireTabForUrl: url,
+                      inheritingAttribution: adClickAttributionLogic.state)
+    }
+
     private func onBackgroundTabAction(url: URL) {
         delegate?.tab(self, didRequestNewBackgroundTabForUrl: url, inheritingAttribution: adClickAttributionLogic.state)
     }

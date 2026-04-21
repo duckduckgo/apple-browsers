@@ -31,6 +31,7 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
     func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView)
 }
 
 // MARK: - Card Position
@@ -69,6 +70,8 @@ final class UnifiedToggleInputView: UIView {
         static let toggleHorizontalPadding: CGFloat = 8
         static let animationDuration: TimeInterval = 0.25
         static let toggleDisabledSearchTopPadding: CGFloat = 10
+        static let toolbarHeight: CGFloat = 56
+        static let expandedBorderWidth: CGFloat = 0.5
     }
 
     // MARK: - Hit Testing
@@ -125,14 +128,24 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.modelPickerMenu = newValue }
     }
 
+    var toolsMenu: UIMenu? {
+        get { toolsToolbar.toolsMenu }
+        set { toolsToolbar.toolsMenu = newValue }
+    }
+
     var isModelChipHidden: Bool {
         get { toolsToolbar.isModelChipHidden }
         set { toolsToolbar.isModelChipHidden = newValue }
     }
 
-    var isCustomizeResponsesButtonHidden: Bool {
-        get { toolsToolbar.isCustomizeResponsesButtonHidden }
-        set { toolsToolbar.isCustomizeResponsesButtonHidden = newValue }
+    var selectedTool: AIChatRAGTool? {
+        get { toolsToolbar.selectedTool }
+        set { toolsToolbar.selectedTool = newValue }
+    }
+
+    var isToolsButtonHidden: Bool {
+        get { toolsToolbar.isToolsButtonHidden }
+        set { toolsToolbar.isToolsButtonHidden = newValue }
     }
 
     /// Called inside animation blocks when a hierarchy-wide layout pass is needed
@@ -147,6 +160,16 @@ final class UnifiedToggleInputView: UIView {
 
     var usesOmnibarMargins: Bool = false
     private(set) var isToggleEnabled: Bool
+
+    var modelSupportsImageAttachments: Bool = true {
+        didSet {
+            guard modelSupportsImageAttachments != oldValue else { return }
+            updateAttachmentsStripLayout()
+            layoutIfNeeded()
+            onNeedsHierarchyLayout?()
+            onAttachmentsLayoutDidChange?()
+        }
+    }
 
     var handlerIsTopBarPosition: Bool {
         get { handler.isTopBarPosition }
@@ -165,6 +188,11 @@ final class UnifiedToggleInputView: UIView {
     var isImageButtonHidden: Bool {
         get { toolsToolbar.isImageButtonHidden }
         set { toolsToolbar.isImageButtonHidden = newValue }
+    }
+
+    var isImageButtonEnabled: Bool {
+        get { toolsToolbar.isImageButtonEnabled }
+        set { toolsToolbar.isImageButtonEnabled = newValue }
     }
 
     var isAttachmentsFull: Bool {
@@ -328,7 +356,9 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {
-        handler.setToggleState(mode)
+        if handler.currentToggleState != mode {
+            handler.setToggleState(mode)
+        }
         if isToggleEnabled {
             toggleView.setMode(mode, animated: animated)
         }
@@ -400,7 +430,7 @@ final class UnifiedToggleInputView: UIView {
         cardView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)
 
-        cardView.layer.borderWidth = showToolbar ? 0.5 : 0
+        cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
 
         let expandedCornerRadius = effectiveToggleEnabled ? Constants.cardCornerRadiusExpanded : Constants.cardCornerRadiusCollapsed
@@ -416,7 +446,7 @@ final class UnifiedToggleInputView: UIView {
             self.inputTopConstraint.constant = expanded && effectiveToggleEnabled ? Constants.toggleBottomPadding : (toggleDisabledSearchPadding ? Constants.toggleDisabledSearchTopPadding : 0)
             self.toolbarBottomConstraint.constant = toggleDisabledSearchPadding ? -Constants.toggleDisabledSearchTopPadding : 0
             self.toggleView.alpha = (expanded && effectiveToggleEnabled) ? 1 : 0
-            self.toolbarHeightConstraint.constant = showToolbar ? 56 : 0
+            self.toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
             self.toolsToolbar.alpha = showToolbar ? 1 : 0
             self.updateAttachmentsStripLayout()
         }
@@ -449,6 +479,8 @@ final class UnifiedToggleInputView: UIView {
             return
         }
 
+        let showToolbar = toggleView.selectedMode == .aiChat
+
         UIView.animate(
             withDuration: Constants.animationDuration,
             delay: 0,
@@ -459,6 +491,11 @@ final class UnifiedToggleInputView: UIView {
                 self.toggleHeightConstraint.constant = Constants.toggleHeight
                 self.toggleView.alpha = 1
                 self.inputTopConstraint.constant = Constants.toggleBottomPadding
+                self.cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
+                self.cardView.layer.borderColor = showToolbar ? self.expandedBorderColor : UIColor.clear.cgColor
+                self.toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
+                self.toolsToolbar.alpha = showToolbar ? 1 : 0
+                self.updateAttachmentsStripLayout()
                 if self.cardPosition == .top {
                     self.cardTrailingConstraint.constant = -Constants.cardTrailingMarginWithDismiss
                 }
@@ -540,7 +577,7 @@ final class UnifiedToggleInputView: UIView {
                 self.cardLeadingConstraint.constant = leadingMargin
                 self.cardTrailingConstraint.constant = -trailingMargin
                 self.cardBottomConstraint.constant = -verticalMargin
-                self.toolbarHeightConstraint.constant = showToolbar ? 56 : 0
+                self.toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
                 self.toolsToolbar.alpha = showToolbar ? 1 : 0
             }
             self.layoutIfNeeded()
@@ -554,8 +591,8 @@ final class UnifiedToggleInputView: UIView {
         guard isExpanded else { return }
 
         let showToolbar = mode == .aiChat
-        toolbarHeightConstraint.constant = showToolbar ? 56 : 0
-        cardView.layer.borderWidth = showToolbar ? 0.5 : 0
+        toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
+        cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
         updateAttachmentsStripLayout()
 
@@ -576,7 +613,7 @@ final class UnifiedToggleInputView: UIView {
 
     private func updateAttachmentsStripLayout() {
         let hasImages = !attachmentsStrip.attachments.isEmpty
-        let showStrip = hasImages && isExpanded && handler.currentToggleState == .aiChat
+        let showStrip = hasImages && isExpanded && handler.currentToggleState == .aiChat && modelSupportsImageAttachments
         attachmentsStripHeightConstraint.constant = showStrip ? UnifiedToggleInputAttachmentsStripView.Constants.stripHeight : 0
         attachmentsStrip.alpha = showStrip ? 1 : 0
     }
@@ -645,14 +682,15 @@ private extension UnifiedToggleInputView {
         toolsToolbar.onStopGeneratingTapped = { [weak self] in
             self?.handler.stopGeneratingButtonTapped()
         }
-        toolsToolbar.onCustomizeResponsesTapped = { [weak self] in
-            self?.handler.customizeResponsesButtonTapped()
-        }
         toolsToolbar.onAttachTapped = { [weak self] in
             self?.onAttachTapped?()
         }
         toolsToolbar.onVoiceTapped = { [weak self] in
             self?.handler.microphoneButtonTapped()
+        }
+        toolsToolbar.onSelectedToolClearTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputViewDidClearSelectedTool(self)
         }
         addSubview(toolsToolbar)
 

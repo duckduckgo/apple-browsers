@@ -109,12 +109,14 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Skirtukai ir duomenys išvalyti";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Išvalyti skirtukus, duomenis ir „Duck.ai“ pokalbius";
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Atidaryti fone";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Nauja „Fire“ kortelė";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Atidaryk „Fire“ kortelėje";
 /* Create New Tab action */
 "action.title.newTabAction" = "Nauja kortelė";
 
@@ -210,6 +212,15 @@
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fotografuoti";
+
+/* Title for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.title" = "Tinkinti atsakymus";
+
+/* Subtitle for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.subtitle" = "Naujausios informacijos paieška";
+
+/* Title for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.title" = "Žiniatinklio paieška";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Esamos žymės nebus kopijuojamos.";
@@ -937,6 +948,15 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Atnaujinti naudotojo vardą?";
 
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Leisti garsą ir vaizdą";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Blokuoti garsą ir vaizdą";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Blokuoti garsą";
+
 /* No comment provided by engineer. */
 "Available Products" = "Prieinami produktai";
 
@@ -1228,8 +1248,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Pasirinktinis URL: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importuoti žymės failą...";
 
@@ -1488,6 +1506,12 @@
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Apibendrinti šį puslapį";
 
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Pridėti „Duck.ai“ į valdymo centrą";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Pridėti „Duck.ai“ valdiklį pagrindiniame ekrane";
+
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Rodyti „Duck.ai“ mygtukus ir nuorodas „DuckDuckGo“ paieškos rezultatuose.";
 
@@ -1496,12 +1520,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Užduokite papildomus klausimus";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Pridėti „Duck.ai“ į valdymo centrą";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Pridėti „Duck.ai“ valdiklį pagrindiniame ekrane";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Naršyklės šaukiniai";
@@ -1527,9 +1545,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "„iOS“ skirta „DuckDuckGo“";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Šaukiniai";
 
@@ -1547,6 +1562,9 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Kalbėkite su „Duck.ai“ naudodami „Siri“!";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "„iOS“ skirta „DuckDuckGo“";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Pridėkite savo „DuckDuckGo“ prenumeratą prie šio įrenginio";
@@ -1623,11 +1641,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Vaizdo įrašai, atidaryti „Duck Player“, bus automatiškai paleidžiami. Išjunk šią funkciją, jei nori rankiniu būdu paleisti „Duck Player“ atidarytų vaizdo įrašų atkūrimą.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Automatiškai paleidžiami vaizdo įrašai";
+/* Label for the autoplay toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Automatiškai paleisti vaizdo įrašus";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Atidaro vaizdo įrašus privačiu kino teatro režimu, kad tai, ką žiūri, nedarytų įtakos tavo „YouTube“ srautui.";
+"duckplayer.settings.enable-footer" = "Atidaro vaizdo įrašus kino teatro režimu, kad tai, ką žiūri, nedarytų įtakos tavo „YouTube“ srautui.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Įjungti „Duck Player“";
@@ -1824,6 +1842,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Perjungia į šį skirtuką";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Paskutinį kartą naudota „Fire“ kortelė";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Grįžti į %@";
 
@@ -2133,6 +2153,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Pasirinkite, ką ištrinti";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Prisijunk prie svetainės su kita paskyra";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Naršyk ir nesaugok vietinės istorijos";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Šalink interneto svetainių triktis";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "„Fire“ kortelės izoliuotos nuo kitų naršyklės duomenų. Kai visas jas uždarai, duomenys ištrinami. Joms taikoma tokia pati apsauga nuo sekimo kaip ir kitoms kortelėms.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Nauja „Fire“ kortelė";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "„Fire“ kortelės";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Naujas";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Naršyk ir nesaugok vietinės istorijos arba prisijunk prie svetainių su kita paskyra.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Ne dabar";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Išbandyk „Fire“ korteles";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Išbandyk „Fire“ korteles";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "„Fire“ kortelė";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "„Airstream“";
 
@@ -2659,8 +2714,6 @@
 "No active subscriptions" = "Nėra aktyvių prenumeratų";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Nerasta jokių esamų prenumeratų";
 
 /* No comment provided by engineer. */
@@ -2702,8 +2755,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "„App Store“ versijose šis langas bus rodomas tik jei per **use-login.duckduckgo.com** prisijungsi kaip vidinis naudotojas.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "„YouTube“ reklamų blokavimas įjungtas";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Supratau";
@@ -2759,8 +2812,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Praleisti";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Sveiki.\n\nPasiruošę greitesnei naršyklei, kuri jus apsaugo?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Sveiki.\n\nAr nori greitesnės naršyklės, kuri saugo tave ir leidžia nuspręsti, kada ir kaip naudoti dirbtinį intelektą?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Kitas";
@@ -2774,11 +2827,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Nustatymai > DI funkcijos.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Norite lengvos prieigos prie privačių DI pokalbių?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Perjungti tarpusavyje \npaiešką ir Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Pirmyn!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Tik paieška";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Ar nori lengvai pasiekti privatų DI pokalbį adreso juostoje?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Pradėkime!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Jau buvau čia anksčiau";
@@ -2805,7 +2864,7 @@
 "onboarding.rebranding.first-search-done.title" = "Tai – „DuckDuckGo Search“!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Pasiruošę greitesnei naršyklei, kuri jus apsaugo?";
+"onboarding.rebranding.intro.message" = "Ar nori greitesnės naršyklės, kuri saugo tave ir leidžia nuspręsti, kada ir kaip naudoti dirbtinį intelektą?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Sveiki.";
@@ -2884,9 +2943,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Atsisakoma...";
-
-/* No comment provided by engineer. */
-"Override" = "Perrašyti";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nepavyksta pasiekti tik prenumeratoriams skirtų „Duck.ai“ modelių.";
@@ -3146,6 +3202,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skenuojama...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Ištrinti „Fire“ korteles ir jų duomenis?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Ištrinti skirtukus ir svetainės duomenis?";
 
@@ -3275,12 +3333,6 @@
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Nauja kortelė";
 
-/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_and_duckai" = "Paieška ir „Duck.ai“";
-
-/* Title for the 'Search Only' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_only" = "Tik paieška";
-
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Išbandykite naują parinktį, leidžiančią adreso juostoje perjungti paiešką ir „Duck.ai“.";
 
@@ -3344,12 +3396,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Valyti";
 
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Valyti skirtukus ir duomenis";
-
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Išvalyti skirtukus, duomenis ir „Duck.ai“ pokalbius";
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Uždaryti visus atidarytus skirtukus";
 
@@ -3410,20 +3456,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Automatiškai ištrinti duomenis";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automatinis paleidimas";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "„Duck Player“ nuostatos";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Automatinio paleidimo nuostatos galios tik naujai atvertoms kortelėms. Pakeitimų negalima pritaikyti esamoms kortelėms iš naujo nepaleidus programos. Jei nori valdyti automatinį paleidimą „Duck Player“ programoje, eik į ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Naršyklės atsiliepimai";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "„Fire Button“ taip pat ištrins „Duck.ai“ istoriją, įskaitant prisegtus pokalbius.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Išvalyti „Duck.ai“ pokalbius";
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Išvalyti naršymo duomenis";
-
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Automatiškai valyti duomenis";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Užbaik savo sąranką";
@@ -3443,12 +3492,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Tinkinti";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Išvalo visus skirtukus, „Duck.ai“ pokalbius ir duomenis visose svetainėse, kurių neapsaugojote ugniasiene.";
-
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Išvalo visus skirtukus ir duomenis visose svetainėse, kurių neapsaugojote ugniasiene.";
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Duomenų valymas";
 
@@ -3458,10 +3501,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Numatytoji naršyklė";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Numatytoji perjungiklio padėtis naujose kortelėse.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Perjungiklio padėtis";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Paskutinį kartą naudota";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Paieška";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Ištrinti „Duck.ai“ pokalbius";
 
@@ -3507,9 +3561,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Mygtuko „Fire“ animacija";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Apsaugoti svetaines";
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Apsaugoti svetaines";
 
@@ -3551,6 +3602,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Tvarkyti paskyrą";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Medija";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Daugiau iš „DuckDuckGo“";
@@ -4191,15 +4245,36 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Atsiprašome, bet šioje programos versijoje nepasiekiamos sinchronizavimo ir atsarginės kopijos kūrimo funkcijos. Norėdami tęsti, atnaujinkite „DuckDuckGo“ į naujausią versiją.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Uždaryti kortelę";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Skirtukas neperskaitytas";
+
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Uždaryk „Fire“ kortelę";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Uždaryti kortelę";
 /* Accessibility label on remove button */
 "tab.close.home" = "Uždaryti pagrindinio puslapio skirtuką";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Uždaryti „%1$@“ adresu %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "„Fire“ kortelė";
+
+/* New tab title */
+"tab.new.title" = "Nauja kortelė";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Atidaryti pagrindinio puslapio skirtuką";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Atidaryk naują kortelę";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Atidaryk „Fire“ kortelę";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Atidaryti „%1$@“ adresu %2$@";
 
@@ -4638,12 +4713,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ką nori importuoti?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Leisti garsą ir vaizdą";
-"autoplay.mode.blockAll" = "Blokuoti garsą ir vaizdą";
-"autoplay.mode.blockAudio" = "Blokuoti garsą";
-"settings.autoplay" = "Automatinis paleidimas";
-"settings.autoplay.duck.player.link" = "„Duck Player“ nuostatos";
-"settings.autoplay.footer" = "Automatinio paleidimo nuostatos galios tik naujai atvertoms kortelėms. Pakeitimų negalima pritaikyti esamoms kortelėms iš naujo nepaleidus programos. Jei nori valdyti automatinį paleidimą „Duck Player“ programoje, eik į ";
-"settings.media.section" = "Medija";

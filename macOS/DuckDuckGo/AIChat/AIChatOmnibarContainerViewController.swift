@@ -657,8 +657,22 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// The last known suggestions height before image gen mode suppressed it.
     private var lastKnownSuggestionsHeight: CGFloat = 0
 
+    /// Whether suggestions are collapsed due to the address bar being unfocused while in duck.ai mode.
+    private var isSuggestionsCollapsedByUnfocus: Bool = false
+
     private var shouldSuppressSuggestions: Bool {
-        omnibarController.isImageGenerationMode || !attachmentsContainerView.attachments.isEmpty
+        omnibarController.isImageGenerationMode || !attachmentsContainerView.attachments.isEmpty || isSuggestionsCollapsedByUnfocus
+    }
+
+    /// Collapses/expands the suggestions row without affecting tools, submit button, or model picker.
+    /// Used to reflect unfocused duck.ai mode, where the panel stays on screen but suggestions are hidden.
+    func setSuggestionsCollapsedByUnfocus(_ collapsed: Bool) {
+        guard isSuggestionsCollapsedByUnfocus != collapsed else { return }
+        isSuggestionsCollapsedByUnfocus = collapsed
+        suggestionsView.isHidden = shouldSuppressSuggestions
+        suggestionsHeight = -1
+        updateSuggestionsHeight(shouldSuppressSuggestions ? 0 : lastKnownSuggestionsHeight)
+        onPassthroughHeightNeedsUpdate?()
     }
 
     private func updateSuggestionsHeight(_ newHeight: CGFloat) {
@@ -703,6 +717,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.modelName = persistedModelShortName
 
         omnibarController.cleanup()
+
+        // Reset cached height state so the next open doesn't reuse stale values from the previous session.
+        // Without this, switching tabs after suggestions loaded leaves `lastKnownSuggestionsHeight` > 0,
+        // and the next activation sizes the panel as if suggestions were still present.
+        isSuggestionsCollapsedByUnfocus = false
+        lastKnownSuggestionsHeight = 0
+        suggestionsHeight = 0
+        suggestionsHeightConstraint?.constant = 0
     }
 
     private func addShadowToWindow() {

@@ -300,6 +300,85 @@ final class AddressBarSharedTextStateTests: XCTestCase {
         XCTAssertEqual(sut.text, "")
     }
 
+    // MARK: - Duck.ai Mode Tests
+
+    func testWhenInitialized_ThenIsInDuckAIModeIsFalse() {
+        XCTAssertFalse(sut.isInDuckAIMode)
+    }
+
+    func testWhenSetDuckAIModeTrue_ThenIsInDuckAIModeIsTrue() {
+        sut.setDuckAIMode(true)
+        XCTAssertTrue(sut.isInDuckAIMode)
+    }
+
+    func testWhenSetDuckAIModeFalse_ThenIsInDuckAIModeIsFalse() {
+        sut.setDuckAIMode(true)
+        sut.setDuckAIMode(false)
+        XCTAssertFalse(sut.isInDuckAIMode)
+    }
+
+    func testWhenResetCalled_ThenIsInDuckAIModeIsFalse() {
+        sut.setDuckAIMode(true)
+        sut.reset()
+        XCTAssertFalse(sut.isInDuckAIMode)
+    }
+
+    func testWhenSetDuckAIModeToSameValue_ThenPublisherDoesNotEmitAgain() {
+        sut.setDuckAIMode(true)
+        let expectation = expectation(description: "Publisher does not emit for no-op assignment")
+        expectation.isInverted = true
+
+        sut.$isInDuckAIMode
+            .dropFirst() // skip current value
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        sut.setDuckAIMode(true) // no-op
+
+        wait(for: [expectation], timeout: 0.2)
+    }
+
+    func testWhenSetDuckAIModeChanges_ThenPublisherEmits() {
+        let expectation = expectation(description: "Publisher emits on state change")
+        var received: [Bool] = []
+
+        sut.$isInDuckAIMode
+            .dropFirst()
+            .sink { value in
+                received.append(value)
+                if received.count == 2 { expectation.fulfill() }
+            }
+            .store(in: &cancellables)
+
+        sut.setDuckAIMode(true)
+        sut.setDuckAIMode(false)
+
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(received, [true, false])
+    }
+
+    func testWhenResetCalled_WithDuckAIModeAlreadyFalse_ThenPublisherDoesNotRedundantlyEmit() {
+        let expectation = expectation(description: "Publisher does not emit for no-op reset")
+        expectation.isInverted = true
+
+        sut.$isInDuckAIMode
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        sut.reset() // isInDuckAIMode was already false
+
+        wait(for: [expectation], timeout: 0.2)
+    }
+
+    func testWhenDuckAIModeEnabled_AndTextIsUpdated_ThenModeIsPreserved() {
+        sut.setDuckAIMode(true)
+        sut.updateText("prompt text")
+
+        XCTAssertTrue(sut.isInDuckAIMode)
+        XCTAssertEqual(sut.text, "prompt text")
+    }
+
     // MARK: - Thread Safety Tests
 
     func testWhenUpdatingFromMultipleThreads_ThenNoRaceConditionsOccur() {

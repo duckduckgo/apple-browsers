@@ -51,6 +51,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         didSet { wireTabCycle() }
     }
     var heightDidChange: ((CGFloat) -> Void)?
+    /// Fires when the prompt text view becomes first responder.
+    /// Used by the orchestrating layer to re-focus into duck.ai mode when the user clicks the prompt while unfocused.
+    var onTextViewDidBecomeFirstResponder: (() -> Void)?
 
     init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging) {
         self.omnibarController = omnibarController
@@ -89,6 +92,14 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         scrollView.documentView = textView
         textView.navigationDelegate = self
         textView.registerForImageDrop()
+        textView.onDidBecomeFirstResponder = { [weak self] in
+            self?.onTextViewDidBecomeFirstResponder?()
+        }
+    }
+
+    /// Whether the prompt editor is currently the window's first responder.
+    var isTextViewFirstResponder: Bool {
+        view.window?.firstResponder === textView
     }
 
     override func viewWillAppear() {
@@ -462,6 +473,28 @@ protocol FocusableTextViewNavigationDelegate: AnyObject {
 private final class FocusableTextView: NSTextView {
 
     weak var navigationDelegate: FocusableTextViewNavigationDelegate?
+
+    /// Fires when the text view transitions from not-first-responder to first-responder (gaining focus).
+    var onDidBecomeFirstResponder: (() -> Void)?
+
+    private var wasFirstResponder: Bool = false
+
+    override func becomeFirstResponder() -> Bool {
+        let didBecome = super.becomeFirstResponder()
+        if didBecome && !wasFirstResponder {
+            wasFirstResponder = true
+            onDidBecomeFirstResponder?()
+        }
+        return didBecome
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let didResign = super.resignFirstResponder()
+        if didResign {
+            wasFirstResponder = false
+        }
+        return didResign
+    }
 
     private static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tiff", "tif"]
 

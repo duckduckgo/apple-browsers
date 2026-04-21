@@ -2218,6 +2218,18 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
             mainViewController.updateAIChatOmnibarContainerVisibility(visible: isAIChatMode, shouldKeepSelection: !isAIChatMode)
         }
     }
+
+    func addressBarViewControllerDidResignFocusKeepingAIChatMode(_ addressBarViewController: AddressBarViewController) {
+        (parent as? MainViewController)?.collapseAIChatOmnibarSuggestionsForUnfocus()
+    }
+
+    func addressBarViewControllerDidRefocusInAIChatMode(_ addressBarViewController: AddressBarViewController) {
+        (parent as? MainViewController)?.expandAIChatOmnibarSuggestionsForFocus()
+    }
+
+    func addressBarViewControllerShouldPresentAIChatPanelUnfocused(_ addressBarViewController: AddressBarViewController) {
+        (parent as? MainViewController)?.presentAIChatOmnibarContainerUnfocused()
+    }
 }
 
 extension NavigationBarViewController: MemoryUsagePresenting {

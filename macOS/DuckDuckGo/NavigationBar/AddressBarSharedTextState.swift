@@ -35,11 +35,24 @@ final class AddressBarSharedTextState: ObservableObject {
     /// Whether the user has type anything after switching modes
     private(set) var hasUserInteractedWithTextAfterSwitchingModes: Bool = false
 
+    /// Whether duck.ai mode is the currently selected mode for this tab.
+    /// Persists across focus changes and tab switches; cleared on navigation, submit, or explicit switch back to search.
+    @Published private(set) var isInDuckAIMode: Bool = false
+
     /// Resets the shared state to initial values
     func reset() {
         text = ""
         selectionRange = NSRange(location: 0, length: 0)
         hasUserInteractedWithText = false
+        if isInDuckAIMode {
+            isInDuckAIMode = false
+        }
+    }
+
+    /// Sets the duck.ai mode flag for this tab without touching text state.
+    func setDuckAIMode(_ enabled: Bool) {
+        guard isInDuckAIMode != enabled else { return }
+        isInDuckAIMode = enabled
     }
 
     func resetUserInteraction() {

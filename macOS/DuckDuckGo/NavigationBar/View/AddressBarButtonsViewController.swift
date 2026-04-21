@@ -246,6 +246,14 @@ final class AddressBarButtonsViewController: NSViewController {
             }
         }
     }
+    /// True when duck.ai is the persistent mode for the current tab (focused or unfocused-with-AIchat).
+    /// Drives the toggle's visibility when the address bar isn't focused so the mode remains indicated.
+    var isInAIChatMode: Bool = false {
+        didSet {
+            guard isInAIChatMode != oldValue else { return }
+            updateButtons()
+        }
+    }
     var textFieldValue: AddressBarTextField.Value? {
         didSet {
             updateButtons()
@@ -1011,14 +1019,11 @@ final class AddressBarButtonsViewController: NSViewController {
         && !isLocalUrl
 
         // Hide the left icon when the toggle is visible
-        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
-        let shouldShowToggle = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
-
         imageButtonWrapper.isShown = imageButton.image != nil
         && !isInPopUpWindow
         && (isHypertextUrl || isTextFieldEditorFirstResponder || isEditingMode || isNewTab)
         && privacyDashboardButton.isHidden
-        && !shouldShowToggle
+        && !shouldShowSearchModeToggle
         && !isOnboarding
     }
 
@@ -1851,14 +1856,27 @@ final class AddressBarButtonsViewController: NSViewController {
         updateZoomButtonVisibility()
     }
 
+    /// True when the search/duck.ai toggle feature is active for the current focus/mode combination.
+    /// Toggle stays visible while duck.ai is the persistent mode for the tab, even when the bar is unfocused,
+    /// so the user can see which mode is active and switch back to search without refocusing first.
+    private var isSearchModeToggleFeatureActive: Bool {
+        let isToggleRelevant = isTextFieldEditorFirstResponder || isInAIChatMode
+        return isToggleRelevant && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+    }
+
+    /// True when the toggle should be shown (feature active + user setting enabled).
+    private var shouldShowSearchModeToggle: Bool {
+        isSearchModeToggleFeatureActive && aiChatSettings.showSearchAndDuckAIToggle
+    }
+
     func updateButtons() {
         // Prevent crash if Combine subscriptions outlive view lifecycle
         guard isViewLoaded else { return }
 
         stopAnimationsAfterFocus()
 
-        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
-        let shouldShowToggle = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
+        let isToggleFeatureEnabled = isSearchModeToggleFeatureActive
+        let shouldShowToggle = shouldShowSearchModeToggle
 
         // Update key view chain when toggle visibility changes
         updateKeyViewChainForToggle(shouldShowToggle: shouldShowToggle)
@@ -1892,8 +1910,12 @@ final class AddressBarButtonsViewController: NSViewController {
         let hasUserTypedText = textFieldValue?.isUserTyped == true && hasText
         let hasInteractedBefore = aiChatToggleConditions.hasUserInteractedWithToggle
 
+        // While unfocused-in-duck.ai the toggle is shown only to indicate the persistent mode,
+        // so it should always be collapsed (the expanded labels are reserved for the focused experience).
+        let shouldForceCollapsed = isInAIChatMode && !isTextFieldEditorFirstResponder
+
         if shouldShowToggle && !wasToggleVisible {
-            if hasText || hasInteractedBefore {
+            if shouldForceCollapsed || hasText || hasInteractedBefore {
                 toggleControl.setExpanded(false, animated: false)
                 searchModeToggleWidthConstraint?.constant = toggleControl.collapsedWidth
             } else {
@@ -1901,8 +1923,8 @@ final class AddressBarButtonsViewController: NSViewController {
                 searchModeToggleWidthConstraint?.constant = toggleControl.expandedWidth
             }
 
-        } else if shouldShowToggle && hasUserTypedText && toggleControl.isExpanded {
-            toggleControl.setExpanded(false, animated: true)
+        } else if shouldShowToggle && (hasUserTypedText || shouldForceCollapsed) && toggleControl.isExpanded {
+            toggleControl.setExpanded(false, animated: !shouldForceCollapsed)
         } else if !shouldShowToggle && toggleControl.isExpanded {
             toggleControl.setExpanded(false, animated: false)
             searchModeToggleWidthConstraint?.constant = toggleControl.collapsedWidth
@@ -2249,6 +2271,13 @@ final class AddressBarButtonsViewController: NSViewController {
 
     func resetSearchModeToggle() {
         searchModeToggleControl?.reset()
+    }
+
+    /// Syncs the toggle segment to duck.ai (index 1) without firing the action.
+    /// Used on tab switch to restore the toggle state for a tab whose persistent mode is duck.ai,
+    /// without triggering the toggle-changed handler (which would re-open the panel with focus).
+    func syncToggleSegmentToAIChatMode() {
+        searchModeToggleControl?.setSelectedSegmentSilently(1)
     }
 
     func toggleSearchMode() {

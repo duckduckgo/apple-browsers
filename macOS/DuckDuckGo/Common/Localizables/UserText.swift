@@ -1993,7 +1993,7 @@ struct UserText {
     static let fireproofExplanation = NSLocalizedString("fireproof.explanation", value: "When you Fireproof a site, cookies won't be erased and you'll stay signed in, even after using the Fire Button.", comment: "Fireproofing mechanism explanation")
     static let manageFireproofSites = NSLocalizedString("fireproof.manage-sites", value: "Manage Fireproof Sites…", comment: "Fireproof settings button caption")
 
-    static let autoClear = NSLocalizedString("auto.clear", value: "Auto-Clear", comment: "Header of a section in Settings. The setting configures clearing data automatically after quitting the app.")
+    static let autoClear = NSLocalizedString("auto.delete", value: "Automatically Delete Data", comment: "Header of a section in Settings. The setting configures deleting data automatically after quitting the app.")
     static let automaticallyClearData = NSLocalizedString("automatically.clear.data", value: "Automatically delete tabs and browsing data when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.")
     static let autoClearAIChatHistory = NSLocalizedString("automatically.clear.chats", value: "Delete Duck.ai chat history when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing Duck.ai chat history automatically after quitting the app.")
     static func warnBeforeQuit(_ clearChats: Bool) -> String {

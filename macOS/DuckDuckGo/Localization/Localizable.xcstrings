@@ -6768,7 +6768,7 @@
     },
     "auto.clear" : {
       "comment" : "Header of a section in Settings. The setting configures clearing data automatically after quitting the app.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6822,6 +6822,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Автоочистка"
+          }
+        }
+      }
+    },
+    "auto.delete" : {
+      "comment" : "Header of a section in Settings. The setting configures deleting data automatically after quitting the app.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Automatically Delete Data"
           }
         }
       }

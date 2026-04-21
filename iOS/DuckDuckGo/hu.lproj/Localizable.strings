@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Megnyitás a háttérben";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Új Fire lap";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Megnyitás Fire lapon";
 /* Create New Tab action */
 "action.title.newTabAction" = "Új lap";
 
@@ -1837,6 +1842,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Erre a lapra vált";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Utoljára használt Fire lap";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Visszalépés erre: %@";
 
@@ -2146,6 +2153,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Törlendő elemek kiválasztása";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Bejelentkezés egy webhelyre másik fiókkal";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Böngészés a helyi előzmények mentése nélkül";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Webhelyek hibaelhárítása";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "A Fire lapok a böngésző egyéb adataitól el vannak különítve, és az összes Fire lap bezárásakor a hozzájuk tartozó adatok törlésre kerülnek. Ugyanolyan nyomkövetés elleni védelemmel rendelkeznek, mint a többi lap.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Új Fire lap";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire lapok";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Új";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Böngészés a helyi előzmények mentése nélkül, vagy bejelentkezés a webhelyekre másik fiókkal.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Most nem";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Fire lapok kipróbálása";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Fire lapok kipróbálása";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire lap";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Levegő";
 
@@ -3160,6 +3202,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Beolvasás…";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Törlöd a Fire lapokat és azok adatait?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Törlöd a lapokat és a webhelyadatokat?";
 
@@ -4207,15 +4251,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Olvasatlan lap";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Fire lap bezárása";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Lap bezárása";
 /* Accessibility label on remove button */
 "tab.close.home" = "Kezdőlap bezárása";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "\"%1$@\" bezárása itt: %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire lap";
+
+/* New tab title */
+"tab.new.title" = "Új lap";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Kezdőlap megnyitása";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Új lap megnyitása";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Fire lap megnyitása";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "\"%1$@\" megnyitása itt: %2$@";
 

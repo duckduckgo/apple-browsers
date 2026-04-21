@@ -21,6 +21,11 @@ import SwiftUI
 import Onboarding
 
 struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
+    private enum TrySearchMetrics {
+        static let panelHeight: CGFloat = 208
+        static let illustrationOffsetY: CGFloat = 50
+    }
+
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let fireCoordinator: FireCoordinator
 
@@ -47,17 +52,39 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             onboardingPixelReporter.measureLastDialogShown()
         }
 
-        let adjustedView = HStack {
+        let centeredView = HStack {
             Spacer()
             dialogView
                 .frame(maxWidth: 640.0)
             Spacer()
         }
-        .padding()
 
-        let viewWithBackground = adjustedView
-            .background(OnboardingGradient())
-            .applyOnboardingTheme(.macOSRebranding2026)
+        let viewWithBackground: AnyView
+        switch type {
+        case .tryASearch:
+            viewWithBackground = AnyView(
+                ZStack(alignment: .bottomTrailing) {
+                    OnboardingTheme.macOSRebranding2026.colorPalette.background
+
+                    OnboardingRebrandingImages.Contextual.tryASearchBackground
+                        .offset(y: TrySearchMetrics.illustrationOffsetY)
+
+                    centeredView
+                        .padding(.horizontal)
+                        .frame(maxHeight: .infinity)
+                }
+                .frame(height: TrySearchMetrics.panelHeight)
+                .clipped()
+                .applyOnboardingTheme(.macOSRebranding2026)
+            )
+        default:
+            viewWithBackground = AnyView(
+                centeredView
+                    .padding()
+                    .background(OnboardingGradient())
+                    .applyOnboardingTheme(.macOSRebranding2026)
+            )
+        }
 
         #if DEBUG
         return AnyView(

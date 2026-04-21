@@ -82,6 +82,12 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Open in Background";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "New Fire Tab";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Open in a Fire Tab";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "New Tab";
 
@@ -1732,6 +1738,9 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Switches to this tab";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Last used Fire Tab";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Return to %@";
 
@@ -2028,6 +2037,42 @@
 
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Choose What To Delete";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Sign in to a site with a different account";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Browse without saving local history";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Troubleshoot websites";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire Tabs are isolated from other browser data, and their data is burned when you close them all. They have the same tracking protection as other tabs.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "New Fire Tab";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire Tabs";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "New";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Browse without saving local history or sign in to sites with a different account.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Not Now";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Try Fire Tabs";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Try Fire Tabs";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire Tab";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
@@ -2922,6 +2967,9 @@ https://duckduckgo.com/mac";
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "This site wants to open in Safari.";
+
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Delete Fire Tabs and their data?";
 
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Delete tabs and site data?";
@@ -3949,14 +3997,32 @@ Take back control of your personal information with the browser designed for dat
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Tab Unread";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Close fire tab";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Close tab";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Close home tab";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Close \"%1$@\" at %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire Tab";
+
+/* New tab title */
+"tab.new.title" = "New Tab";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Open home tab";
+
+/* Accessibility label on tab cell */
+"tab.open.new" = "Open new tab";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Open fire tab";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Open \"%1$@\" at %2$@";

@@ -4745,21 +4745,17 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestNewTab(tabSwitcher: TabSwitcherViewController) {
-        newTab()
-        if newTabPageViewController?.isShowingLogo == true, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
-            animateLogoAppearance()
-        } else if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
-            deferNTPAppearance()
-        }
-        themeColorManager.updateThemeColor()
+        tabSwitcherNewTabWithAnimation()
     }
 
     func tabSwitcherDidRequestNewFireTab(tabSwitcher: TabSwitcherViewController) {
-        newFireTabLongPressMenuAction()
+        tabManager.setBrowsingMode(.fire)
+        tabSwitcherNewTabWithAnimation()
     }
 
     func tabSwitcherDidRequestNewNormalTab(tabSwitcher: TabSwitcherViewController) {
-        newNormalTabLongPressMenuAction()
+        tabManager.setBrowsingMode(.normal)
+        tabSwitcherNewTabWithAnimation()
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL) {
@@ -4861,6 +4857,16 @@ extension MainViewController: TabSwitcherDelegate {
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         newTab(allowingKeyboard: false)
         openAIChat()
+    }
+
+    private func tabSwitcherNewTabWithAnimation() {
+        newTab()
+        if newTabPageViewController?.isShowingLogo == true, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            animateLogoAppearance()
+        } else if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            deferNTPAppearance()
+        }
+        themeColorManager.updateThemeColor()
     }
     
 }

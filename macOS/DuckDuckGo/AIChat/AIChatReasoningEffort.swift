@@ -32,18 +32,18 @@ enum AIChatReasoningEffort: String, CaseIterable {
     /// Label shown on the picker chip and as the menu item's primary text.
     var title: String {
         switch self {
-        case .none, .minimal: return "Fast"
-        case .low: return "Reasoning"
-        case .medium: return "Extended Reasoning"
+        case .none, .minimal: return UserText.aiChatReasoningEffortFastTitle
+        case .low: return UserText.aiChatReasoningEffortLowTitle
+        case .medium: return UserText.aiChatReasoningEffortMediumTitle
         }
     }
 
     /// Secondary menu text describing what the effort does.
     var subtitle: String {
         switch self {
-        case .none, .minimal: return "Answers right away"
-        case .low: return "Takes a moment to respond"
-        case .medium: return "Researches before responding"
+        case .none, .minimal: return UserText.aiChatReasoningEffortFastSubtitle
+        case .low: return UserText.aiChatReasoningEffortLowSubtitle
+        case .medium: return UserText.aiChatReasoningEffortMediumSubtitle
         }
     }
 

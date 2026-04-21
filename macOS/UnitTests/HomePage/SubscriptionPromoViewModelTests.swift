@@ -68,6 +68,15 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         XCTAssertFalse(sut.shouldShowPromo)
     }
 
+    func testWhenNonEnglishUSLocale_ThenDoesNotShowPromo() {
+        persistor.fireTabVisitCount = 3
+        sut = makeSUT(locale: Locale(identifier: "es_US"))
+
+        sut.updateForTab(.notEvaluated)
+
+        XCTAssertFalse(sut.shouldShowPromo)
+    }
+
     func testWhenUserIsSubscriber_ThenDoesNotShowPromo() {
         persistor.fireTabVisitCount = 3
         subscriptionManager.resultSubscription = .success(makeSubscription())

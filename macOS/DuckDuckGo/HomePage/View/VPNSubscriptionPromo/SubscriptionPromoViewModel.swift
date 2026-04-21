@@ -188,7 +188,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
     }
 
     /// Display conditions (feature flag and purchase eligibility are checked before evaluation in `updateForTab`):
-    /// - US locale only
+    /// - en_US locale only
     /// - Non-subscriber only
     /// - Fire Tab visited >= 3 times
     /// - Not dismissed or CTA actioned within the 28-day cooldown (fallback when PromoQueue is off; PromoService handles this via `resultWhenHidden` when on)
@@ -200,7 +200,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
             onPromoEvaluated?(shouldShow)
         }
 
-        guard isUSLocale else { return }
+        guard isENUSLocale else { return }
         guard !subscriptionManager.isSubscriptionPresent() else { return }
         guard persistor.fireTabVisitCount >= SubscriptionPromoConstants.requiredVisitCount else { return }
         guard !isDismissedWithinCooldown else { return }
@@ -213,14 +213,17 @@ final class SubscriptionPromoViewModel: ObservableObject {
         pixelFiring?.fire(SubscriptionPromoPixel.promoViewed(isEligibleForFreeTrial: isEligibleForFreeTrial))
     }
 
-    private var isUSLocale: Bool {
+    private var isENUSLocale: Bool {
+        var languageCode: String?
         var regionCode: String?
         if #available(macOS 13, *) {
+            languageCode = locale.language.languageCode?.identifier
             regionCode = locale.region?.identifier
         } else {
+            languageCode = locale.languageCode
             regionCode = locale.regionCode
         }
-        return regionCode == "US"
+        return languageCode == "en" && regionCode == "US"
     }
 
     /// Checks the rolling window display limit. If allowed, records the display and returns `true`.

@@ -79,10 +79,10 @@ struct SubscriptionPromoView: View {
 
     private var textContent: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(UserText.subscriptionPromoTitle)
+            Text(verbatim: UserText.subscriptionPromoTitle)
                 .font(.headline)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
-            Text(UserText.subscriptionPromoSubtitle)
+            Text(verbatim: UserText.subscriptionPromoSubtitle)
                 .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
         }
@@ -91,10 +91,10 @@ struct SubscriptionPromoView: View {
     @ViewBuilder
     private var actionButton: some View {
         if actionType == .tryForFree {
-            Button(UserText.subscriptionPromoTryForFree, action: onButtonTap)
+            Button(action: onButtonTap) { Text(verbatim: UserText.subscriptionPromoTryForFree) }
                 .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
         } else {
-            Button(UserText.subscriptionPromoLearnMore, action: onButtonTap)
+            Button(action: onButtonTap) { Text(verbatim: UserText.subscriptionPromoLearnMore) }
                 .buttonStyle(DismissActionButtonStyle())
         }
     }

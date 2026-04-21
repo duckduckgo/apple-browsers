@@ -609,7 +609,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)), category: .duckAI)
         case .subscriptionPromoFireWindow:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPromoFireWindow)), supportsLocalOverriding: true, category: .subscription)
+            Config(defaultValue: .disabled, source: .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPromoFireWindow)), supportsLocalOverriding: true, category: .subscription)
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeDataAccess)), category: .duckAI)
         case .autoplayPolicy:

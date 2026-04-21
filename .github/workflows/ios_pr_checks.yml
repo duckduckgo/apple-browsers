@@ -217,8 +217,21 @@ jobs:
         ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
           "$xcresult" unittests.xml \
           --log xcodebuild.log \
-          --crash-reports-dir ~/Library/Logs/DiagnosticReports \
-          --summary-title "iOS PR Checks"
+          --crash-reports-dir ~/Library/Logs/DiagnosticReports
+
+    - name: Render test report
+      if: always()
+      run: |
+        if [[ -f unittests.xml ]]; then
+          crashes_arg=()
+          if [[ -f unittests-crashes.json ]]; then
+            crashes_arg=(--crashes-json unittests-crashes.json)
+          fi
+          ${{ github.workspace }}/scripts/render-test-report.py \
+            --junit unittests.xml \
+            --title "iOS PR Checks" \
+            "${crashes_arg[@]}"
+        fi
 
     - name: Upload JUnit XML as artifact
       uses: actions/upload-artifact@v4
@@ -256,6 +269,7 @@ jobs:
       with:
         report_paths: iOS/unittests.xml
         check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+        job_summary: 'false'
 
     - name: Update Asana with failed unit tests
       if: always() && steps.run-unit-tests.outcome == 'failure'

@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """Inject crashed tests from an xcresult bundle into a JUnit XML file, and
-append a test-results summary to $GITHUB_STEP_SUMMARY.
+write a sidecar JSON describing each crash for later rendering.
 
 xcbeautify doesn't emit <failure> entries for tests that crashed (SIGSEGV,
 fatalError, etc.) because the test host dies before the failure is recorded.
 This reads crashed tests from the xcresult's structured summary and adds them
 as <failure> entries so downstream tooling (mikepenz/action-junit-report,
-yq-based Asana reporter) sees accurate counts.
+yq-based Asana reporter, render-test-report.py) sees accurate counts.
 
 When --log is supplied, crashed-test messages are enriched with the fatal
 error text extracted from the xcodebuild log. When --crash-reports-dir is
-supplied, matching .ips stack traces are included in the step summary.
+supplied, matching .ips stack traces are attached to each crash. All enriched
+crash data is written to a sidecar JSON next to the JUnit XML (e.g.
+unittests.xml -> unittests-crashes.json), which render-test-report.py reads
+to produce the expandable Crashes section of the step-summary report.
 """
 import argparse
 import json
@@ -35,34 +38,31 @@ def main() -> int:
     parser.add_argument("junit", help="path to JUnit XML to patch")
     parser.add_argument("--log", help="xcodebuild log to mine for fatal error messages")
     parser.add_argument("--crash-reports-dir", help="directory of .ips crash reports")
-    parser.add_argument("--summary-title", default="Tests",
-                        help="context prefix for the $GITHUB_STEP_SUMMARY section heading")
     args = parser.parse_args()
 
     summary = _xcresulttool_summary(args.xcresult)
-    failures, crashes = _extract_failures(summary)
+    _, crashes = _extract_failures(summary)
 
-    if crashes:
-        fatal_errors = _extract_fatal_errors(args.log) if args.log else []
-        start_time = summary.get("startTime")
-        finish_time = summary.get("finishTime")
-        crash_reports = (
-            _scan_crash_reports(args.crash_reports_dir, start_time, finish_time)
-            if args.crash_reports_dir else []
-        )
+    if not crashes:
+        return 0
 
-        for i, crash in enumerate(crashes):
-            if i < len(fatal_errors):
-                crash["reason"] = fatal_errors[i]
-            crash["report"] = _match_report(crash_reports, crash)
+    fatal_errors = _extract_fatal_errors(args.log) if args.log else []
+    start_time = summary.get("startTime")
+    finish_time = summary.get("finishTime")
+    crash_reports = (
+        _scan_crash_reports(args.crash_reports_dir, start_time, finish_time)
+        if args.crash_reports_dir else []
+    )
 
-        added = _inject_into_junit(crashes, args.junit)
-        print(f"Injected {added} crash(es) into {args.junit}")
+    for i, crash in enumerate(crashes):
+        if i < len(fatal_errors):
+            crash["reason"] = fatal_errors[i]
+        crash["report"] = _match_report(crash_reports, crash)
 
-    step_summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
-    if step_summary_path and (failures or crashes):
-        _append_step_summary(step_summary_path, args.summary_title, failures, crashes)
+    added = _inject_into_junit(crashes, args.junit)
+    print(f"Injected {added} crash(es) into {args.junit}")
 
+    _write_sidecar(args.junit, crashes)
     return 0
 
 
@@ -263,68 +263,35 @@ def _find_or_create_suite(root: ET.Element, class_name: str, target: str) -> ET.
     })
 
 
-# ---------- GitHub step summary ----------
+# ---------- sidecar ----------
 
-def _append_step_summary(
-    summary_path: str,
-    title: str,
-    failures: list[dict],
-    crashes: list[dict],
-) -> None:
-    lines: list[str] = [f"## {title}", ""]
-
-    if failures:
-        lines += [f"### Failures ({len(failures)})", ""]
-        for f in failures:
-            test_ref = f"`{f['class_name']}.{f['test_name']}`"
-            lines.append(f"- {test_ref} – {_md_escape(_clean_reason(f['reason']))}")
-        lines.append("")
-
-    if crashes:
-        n = len(crashes)
-        lines += [
-            f"### Crashes ({n})",
-            "",
-            "_Expand the entries below for more information._",
-            "",
-        ]
-    for c in crashes:
-        test_ref = f"{c['class_name']}.{c['test_name']}"
-        summary_line = f"<b>{test_ref}</b> – {_md_escape(c['reason'])}"
-        lines.append(f"<details><summary>{summary_line}</summary>")
-        lines.append("")
-        report = c.get("report")
-        if report:
-            lines.append(f"- **Process:** `{report['process']}`")
-            if report["signal"]:
-                lines.append(f"- **Signal:** `{report['signal']}` ({report['exception_type']})")
-            if report["source_location"]:
-                lines.append(f"- **Source location:** `{report['source_location']}`")
-            if report["top_frames"]:
-                lines += ["", "**Top frames (crashed thread):**", "", "```"]
-                for i, frame in enumerate(report["top_frames"]):
-                    lines.append(f"{i}  {frame}")
-                lines.append("```")
-        else:
-            lines.append("_No matching crash report found in DiagnosticReports._")
-        lines += ["", "</details>", ""]
-
-    with open(summary_path, "a") as f:
-        f.write("\n".join(lines) + "\n")
+def _write_sidecar(junit_path: str, crashes: list[dict]) -> None:
+    path = _sidecar_path(junit_path)
+    payload = [_serialize_crash(c) for c in crashes]
+    with open(path, "w") as f:
+        json.dump(payload, f, indent=2)
+    print(f"Wrote {len(payload)} crash detail(s) to {path}")
 
 
-def _md_escape(s: str) -> str:
-    return s.replace("|", "\\|").replace("\n", " ")
+def _sidecar_path(junit_path: str) -> Path:
+    p = Path(junit_path)
+    return p.with_name(f"{p.stem}-crashes.json")
 
 
-_PATH_LINE_PREFIX = re.compile(r"^/\S+\.swift:\d+\s*-\s*")
-_FAILED_PREFIX = re.compile(r"^failed\s*-\s*")
-
-
-def _clean_reason(s: str) -> str:
-    s = _PATH_LINE_PREFIX.sub("", s)
-    s = _FAILED_PREFIX.sub("", s)
-    return s.strip()
+def _serialize_crash(crash: dict) -> dict:
+    report = crash.get("report")
+    return {
+        "class_name": crash["class_name"],
+        "test_name": crash["test_name"],
+        "reason": crash["reason"],
+        "report": None if report is None else {
+            "process": report.get("process", ""),
+            "signal": report.get("signal", ""),
+            "exception_type": report.get("exception_type", ""),
+            "source_location": report.get("source_location", ""),
+            "top_frames": list(report.get("top_frames", [])),
+        },
+    }
 
 
 if __name__ == "__main__":

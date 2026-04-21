@@ -355,16 +355,33 @@ jobs:
           xcresult=${{ matrix.flavor }}-$kind.xcresult
           junit=${{ matrix.flavor }}-$kind.xml
           log=${{ matrix.flavor }}-$kind-xcodebuild.log
-          case "$kind" in
-            unittests) pretty_kind="Unit Tests" ;;
-            integrationtests) pretty_kind="Integration Tests" ;;
-          esac
           if [[ -d "$xcresult" && -f "$junit" ]]; then
             ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
               "$xcresult" "$junit" \
               --log "$log" \
-              --crash-reports-dir ~/Library/Logs/DiagnosticReports \
-              --summary-title "macOS ${{ matrix.flavor }} $pretty_kind"
+              --crash-reports-dir ~/Library/Logs/DiagnosticReports
+          fi
+        done
+
+    - name: Render test report
+      if: always()
+      run: |
+        for kind in unittests integrationtests; do
+          junit=${{ matrix.flavor }}-$kind.xml
+          sidecar=${{ matrix.flavor }}-$kind-crashes.json
+          case "$kind" in
+            unittests) pretty_kind="Unit Tests" ;;
+            integrationtests) pretty_kind="Integration Tests" ;;
+          esac
+          if [[ -f "$junit" ]]; then
+            crashes_arg=()
+            if [[ -f "$sidecar" ]]; then
+              crashes_arg=(--crashes-json "$sidecar")
+            fi
+            ${{ github.workspace }}/scripts/render-test-report.py \
+              --junit "$junit" \
+              --title "macOS ${{ matrix.flavor }} $pretty_kind" \
+              "${crashes_arg[@]}"
           fi
         done
 
@@ -383,6 +400,7 @@ jobs:
         check_name: "Test Report: ${{ matrix.flavor }}"
         report_paths: 'macOS/${{ matrix.flavor }}*.xml'
         check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+        job_summary: 'false'
 
     - name: Update Asana with failed unit tests
       if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')

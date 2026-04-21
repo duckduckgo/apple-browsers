@@ -1034,8 +1034,7 @@ final class AddressBarViewController: NSViewController {
             }
 
             // In focused AI chat mode, only block clicks specifically on the address bar text fields
-            // Allow clicks elsewhere (like on the AI chat text view). In unfocused AI chat mode the address bar
-            // renders normally and should accept clicks (which focus into search, exiting duck.ai).
+            // Allow clicks elsewhere (like on the AI chat text view).
             if selectionState == .activeWithAIChat {
                 let isClickOnAddressBarTextField = hitView === addressBarTextField ||
                 hitView?.isDescendant(of: addressBarTextField) == true ||
@@ -1044,6 +1043,15 @@ final class AddressBarViewController: NSViewController {
                 if isClickOnAddressBarTextField {
                     return nil
                 }
+                return event
+            }
+
+            // The AI chat prompt container overlays the address bar area while the panel is up. Clicks inside the
+            // panel area must not auto-focus the address bar (which would exit duck.ai to search), so defer to the
+            // panel's own hit testing to handle the click (refocusing the prompt via FocusableTextView).
+            if selectionState == .inactiveWithAIChat,
+               let isPointInAIChatOmnibar,
+               isPointInAIChatOmnibar(event.locationInWindow) {
                 return event
             }
 

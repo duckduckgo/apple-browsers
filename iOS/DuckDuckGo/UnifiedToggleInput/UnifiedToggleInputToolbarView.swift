@@ -59,6 +59,13 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateSubmitButtonState() }
     }
 
+    private var isFireTab: Bool = false
+
+    func refreshFireMode(fireMode: Bool) {
+        isFireTab = fireMode
+        updateSubmitButtonAppearance()
+    }
+
     var isSubmitButtonHidden: Bool = false {
         didSet { updateGeneratingVisibility() }
     }
@@ -216,13 +223,10 @@ final class UnifiedToggleInputToolbarView: UIView {
         return view
     }()
 
-    private lazy var submitButton: UIButton = {
-        let button = UIButton(type: .system)
+    private lazy var submitButton: CircularButton = {
+        let button = CircularButton()
+        button.isShadowHidden = true
         button.setImage(DesignSystemImages.Glyphs.Size24.arrowUp, for: .normal)
-        button.tintColor = .white
-        button.backgroundColor = UIColor(designSystemColor: .accent)
-        button.layer.cornerRadius = Constants.toolButtonSize / 2
-        button.clipsToBounds = true
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setContentHuggingPriority(.required, for: .horizontal)
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -353,13 +357,28 @@ private extension UnifiedToggleInputToolbarView {
         let showVoice = isAIVoiceChatActive && !isSubmitEnabled
         let icon = showVoice ? DesignSystemImages.Glyphs.Size24.voice : DesignSystemImages.Glyphs.Size24.arrowUp
         submitButton.setImage(icon, for: .normal)
-        submitButton.isEnabled = isSubmitEnabled || showVoice
-        submitButton.backgroundColor = (isSubmitEnabled || showVoice)
-            ? UIColor(designSystemColor: .accent)
-            : UIColor(designSystemColor: .controlsFillPrimary)
-        submitButton.tintColor = (isSubmitEnabled || showVoice)
-            ? .white
-            : UIColor(designSystemColor: .iconsSecondary)
+        let isActive = isSubmitEnabled || showVoice
+        submitButton.isEnabled = isActive
+        applySubmitButtonColors(isActive: isActive)
+    }
+
+    private func applySubmitButtonColors(isActive: Bool) {
+        guard isActive else {
+            submitButton.setColors(foreground: UIColor(designSystemColor: .iconsSecondary),
+                                   background: UIColor(designSystemColor: .controlsFillPrimary))
+            return
+        }
+        let foreground: UIColor = .white
+        let background: UIColor = isFireTab
+            ? UIColor(singleUseColor: .fireModeAccent)
+            : UIColor(designSystemColor: .accent)
+        let pressedBackground: UIColor = isFireTab
+            ? UIColor(singleUseColor: .fireModeAccentTertiary)
+            : UIColor(designSystemColor: .accentTertiary)
+        submitButton.setColors(foreground: foreground,
+                               background: background,
+                               pressedForeground: foreground,
+                               pressedBackground: pressedBackground)
     }
 
     func updateGeneratingVisibility() {

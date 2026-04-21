@@ -324,6 +324,26 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
+    // MARK: - Fire Mode
+
+    func refreshFireMode(fireMode: Bool) {
+        applyFireModeAppearance(isFireTab: fireMode)
+        textEntryView.refreshFireMode(fireMode: fireMode)
+        toolsToolbar.refreshFireMode(fireMode: fireMode)
+    }
+
+    private func applyFireModeAppearance(isFireTab: Bool) {
+        cardView.backgroundColor = isFireTab
+            ? UIColor(singleUseColor: .fireModeBackground)
+            : UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+        // Override the content subviews only — cardView is intentionally left alone so `fireModeBackground` resolves with the OS trait and picks its light variant in light appearance.
+        let style: UIUserInterfaceStyle = isFireTab ? .dark : .unspecified
+        toggleView.overrideUserInterfaceStyle = style
+        textEntryView.overrideUserInterfaceStyle = style
+        attachmentsStrip.overrideUserInterfaceStyle = style
+        toolsToolbar.overrideUserInterfaceStyle = style
+    }
+
     // MARK: - First Responder
 
     @discardableResult
@@ -631,7 +651,6 @@ private extension UnifiedToggleInputView {
         layer.insertSublayer(expandedShadow1, at: 1)
 
         cardView.translatesAutoresizingMaskIntoConstraints = false
-        cardView.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
         cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
         cardView.layer.shadowColor = cardShadowColor
         cardView.layer.shadowOpacity = 1.0
@@ -693,6 +712,7 @@ private extension UnifiedToggleInputView {
             delegate?.unifiedToggleInputViewDidClearSelectedTool(self)
         }
         addSubview(toolsToolbar)
+        toolsToolbar.refreshFireMode(fireMode: handler.isFireTab)
 
         textEntryView.onTextInputActivated = { [weak self] in
             guard let self, !self.isExpanded else { return }
@@ -700,6 +720,7 @@ private extension UnifiedToggleInputView {
         }
 
         setupConstraints()
+        applyFireModeAppearance(isFireTab: handler.isFireTab)
     }
 
     func setupConstraints() {

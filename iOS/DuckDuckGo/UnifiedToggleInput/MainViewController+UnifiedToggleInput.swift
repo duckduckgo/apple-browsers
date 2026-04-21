@@ -40,6 +40,7 @@ extension MainViewController {
 
         let coordinator = UnifiedToggleInputCoordinator(
             isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            isFireTab: isCurrentTabFireTab(),
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             toggleModeStorage: toggleModeStorage
         )
@@ -77,6 +78,8 @@ extension MainViewController {
               let coordinator = unifiedToggleInputCoordinator else {
             return
         }
+
+        coordinator.updateIsFireTab(tab.tabModel.fireTab)
 
         let action = refreshAction(for: tab, coordinator: coordinator)
 

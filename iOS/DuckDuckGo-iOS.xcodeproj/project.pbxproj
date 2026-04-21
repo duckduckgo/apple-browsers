@@ -239,6 +239,7 @@
 		31E69A63280F4CB600478327 /* DuckUI in Frameworks */ = {isa = PBXBuildFile; productRef = 31E69A62280F4CB600478327 /* DuckUI */; };
 		31EEBCD92E2AAB4C00901255 /* NavigationActionBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31EEBCD82E2AAB4700901255 /* NavigationActionBarViewController.swift */; };
 		31EEBCDB2E2AABAD00901255 /* NavigationActionBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31EEBCDA2E2AABA900901255 /* NavigationActionBarView.swift */; };
+		DEADBEEFCAFEBABE12345001 /* CircularButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEADBEEFCAFEBABE12345002 /* CircularButton.swift */; };
 		31F43E1F2F472F3C001BBCDA /* AIChatAddressBarExperience.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F43E1E2F472F3C001BBCDA /* AIChatAddressBarExperience.swift */; };
 		31F43E212F4734B8001BBCDA /* AIChatAddressBarExperienceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F43E202F4734B8001BBCDA /* AIChatAddressBarExperienceTests.swift */; };
 		31FD991B2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FD991A2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift */; };
@@ -2734,6 +2735,7 @@
 		31E2655E2D66392E002B5624 /* VoiceSearchFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSearchFeedbackView.swift; sourceTree = "<group>"; };
 		31EEBCD82E2AAB4700901255 /* NavigationActionBarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationActionBarViewController.swift; sourceTree = "<group>"; };
 		31EEBCDA2E2AABA900901255 /* NavigationActionBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationActionBarView.swift; sourceTree = "<group>"; };
+		DEADBEEFCAFEBABE12345002 /* CircularButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularButton.swift; sourceTree = "<group>"; };
 		31F43E1E2F472F3C001BBCDA /* AIChatAddressBarExperience.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAddressBarExperience.swift; sourceTree = "<group>"; };
 		31F43E202F4734B8001BBCDA /* AIChatAddressBarExperienceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAddressBarExperienceTests.swift; sourceTree = "<group>"; };
 		31FD991A2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentalAIChatManager.swift; sourceTree = "<group>"; };
@@ -6621,6 +6623,7 @@
 				31550CD62E0D89EA006FA55B /* NavigationActionBarViewModel.swift */,
 				31EEBCD82E2AAB4700901255 /* NavigationActionBarViewController.swift */,
 				31EEBCDA2E2AABA900901255 /* NavigationActionBarView.swift */,
+				DEADBEEFCAFEBABE12345002 /* CircularButton.swift */,
 				315E14A72DF77BCD00419C8A /* SwitchBarHandler.swift */,
 				315E14A82DF77BCD00419C8A /* SwitchBarViewController.swift */,
 				C1AAECBC2E699F740016B82E /* SessionStateMetrics.swift */,
@@ -11943,6 +11946,7 @@
 				6F23316B2DD4E2C4004D102D /* TabSwitcherAnimatedButton.swift in Sources */,
 				6F23316C2DD4E2C4004D102D /* TabSwitcherButton.swift in Sources */,
 				31EEBCDB2E2AABAD00901255 /* NavigationActionBarView.swift in Sources */,
+				DEADBEEFCAFEBABE12345001 /* CircularButton.swift in Sources */,
 				8540BD5623D9E9C20057FDD2 /* FireproofingSettingsViewController.swift in Sources */,
 				F1849C702D6E3D17000589A4 /* DiagnosticReport.swift in Sources */,
 				6FE1F3412E33A1EB00C88A09 /* OmniBarEditingStateTransitioning.swift in Sources */,

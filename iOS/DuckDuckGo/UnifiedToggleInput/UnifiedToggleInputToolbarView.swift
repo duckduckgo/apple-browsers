@@ -359,26 +359,7 @@ private extension UnifiedToggleInputToolbarView {
         submitButton.setImage(icon, for: .normal)
         let isActive = isSubmitEnabled || showVoice
         submitButton.isEnabled = isActive
-        applySubmitButtonColors(isActive: isActive)
-    }
-
-    private func applySubmitButtonColors(isActive: Bool) {
-        guard isActive else {
-            submitButton.setColors(foreground: UIColor(designSystemColor: .iconsSecondary),
-                                   background: UIColor(designSystemColor: .controlsFillPrimary))
-            return
-        }
-        let foreground: UIColor = .white
-        let background: UIColor = isFireTab
-            ? UIColor(singleUseColor: .fireModeAccent)
-            : UIColor(designSystemColor: .accent)
-        let pressedBackground: UIColor = isFireTab
-            ? UIColor(singleUseColor: .fireModeAccentTertiary)
-            : UIColor(designSystemColor: .accentTertiary)
-        submitButton.setColors(foreground: foreground,
-                               background: background,
-                               pressedForeground: foreground,
-                               pressedBackground: pressedBackground)
+        submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
     }
 
     func updateGeneratingVisibility() {

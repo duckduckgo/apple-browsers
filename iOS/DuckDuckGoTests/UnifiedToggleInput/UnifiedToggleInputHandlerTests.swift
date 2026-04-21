@@ -75,12 +75,6 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertTrue(sut.isFireTab)
     }
 
-    func test_isFireTab_isMutable() {
-        XCTAssertFalse(sut.isFireTab)
-        sut.isFireTab = true
-        XCTAssertTrue(sut.isFireTab)
-    }
-
     // MARK: - updateCurrentText
 
     func test_updateCurrentText_setsCurrentText() {

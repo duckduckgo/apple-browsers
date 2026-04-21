@@ -123,7 +123,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         aiChatHistoryManager?.hasSuggestions ?? false
     }
 
-    private let daxLogoManager: DaxLogoManager
+    private var daxLogoManager: DaxLogoManager
     private var notificationCancellable: AnyCancellable?
 
     private weak var contentAnimator: UIViewPropertyAnimator?
@@ -137,7 +137,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.switchBarHandler = switchBarHandler
-        self.daxLogoManager = DaxLogoManager()
+        self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -196,6 +196,20 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     func setLogoHidden(_ hidden: Bool) {
         daxLogoManager.setForcedHidden(hidden)
+    }
+
+    func refreshFireMode(fireMode: Bool) {
+        guard daxLogoManager.isFireTab != fireMode else { return }
+        let wasInstalled = isViewLoaded
+        if wasInstalled {
+            daxLogoManager.tearDown()
+        }
+        daxLogoManager = DaxLogoManager(isFireTab: fireMode)
+        if wasInstalled {
+            installDaxLogoView()
+            applyRequestedContentInset()
+            updateDaxVisibility()
+        }
     }
 
     var isSwipeEnabled: Bool = true {
@@ -555,6 +569,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             right: 0
         )
         insets.top += Metrics.contentTopInset
+        daxLogoManager.setFireTabContentInsets(insets)
         guard swipeContainerManager?.containerViewController.additionalSafeAreaInsets != insets else { return }
         swipeContainerManager?.containerViewController.additionalSafeAreaInsets = insets
     }
@@ -589,6 +604,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let isChatHistoryPending = aiChatHistoryManager != nil
             && aiChatHistoryManager?.hasCompletedInitialFetch != true
             && switchBarHandler.currentToggleState == .aiChat
+            && !switchBarHandler.isFireTab
         let isURLFallbackShowingContent = isShowingURLFallback && isShowingTray
 
         let hasContent = (shouldDisplaySuggestionTray && isShowingTray) || isHorizontallyCompactLayoutEnabled

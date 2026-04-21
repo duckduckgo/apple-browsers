@@ -541,6 +541,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.handler.isFireTab = isFireTab
         viewController.refreshFireMode(fireMode: isFireTab)
         floatingSubmitViewController.refreshFireMode(fireMode: isFireTab)
+        contentViewController.refreshFireMode(fireMode: isFireTab)
     }
 
     private func cancelTopOmnibarKeyboardPresentationFallback() {

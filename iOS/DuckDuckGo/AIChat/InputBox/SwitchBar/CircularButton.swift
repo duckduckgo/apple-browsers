@@ -116,6 +116,24 @@ final class CircularButton: UIButton {
         setTitleColor(foreground, for: .normal)
     }
 
+    func applySubmitStyle(isActive: Bool, isFireTab: Bool, activeForeground: UIColor) {
+        guard isActive else {
+            setColors(foreground: UIColor(designSystemColor: .iconsSecondary),
+                      background: UIColor(designSystemColor: .controlsFillPrimary))
+            return
+        }
+        let background = isFireTab
+            ? UIColor(singleUseColor: .fireModeAccent)
+            : UIColor(designSystemColor: .accent)
+        let pressedBackground = isFireTab
+            ? UIColor(singleUseColor: .fireModeAccentTertiary)
+            : UIColor(designSystemColor: .accentTertiary)
+        setColors(foreground: activeForeground,
+                  background: background,
+                  pressedForeground: activeForeground,
+                  pressedBackground: pressedBackground)
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
 

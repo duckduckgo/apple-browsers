@@ -28,7 +28,7 @@ final class DaxLogoManager {
     
     // MARK: - Properties
 
-    private let isFireTab: Bool
+    let isFireTab: Bool
 
     private var logoContainerView: UIView = UIView()
 
@@ -99,10 +99,31 @@ final class DaxLogoManager {
         updateState()
     }
 
+    /// Matches sibling scrollable content insets so the fire-tab empty state isn't clipped by the nav bar.
+    func setFireTabContentInsets(_ insets: UIEdgeInsets) {
+        fireTabHostingController?.additionalSafeAreaInsets = insets
+    }
+
+    /// Removes the managed views from the hierarchy so the manager can be discarded.
+    func tearDown() {
+        fireTabHostingController?.willMove(toParent: nil)
+        fireTabHostingController?.view.removeFromSuperview()
+        fireTabHostingController?.removeFromParent()
+        fireTabHostingController = nil
+        logoContainerView.removeFromSuperview()
+    }
+
     // MARK: - Private Methods
 
     private func installFireTabConstraints(parentView: UIView, anchorView: UIView, isTopBarPosition: Bool) {
-        if isTopBarPosition {
+        // UTI has no in-container anchor (input lives outside the content container), so fall back to filling the parent's safe area.
+        let fillsParent = anchorView === parentView
+        if fillsParent {
+            NSLayoutConstraint.activate([
+                logoContainerView.topAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.topAnchor),
+                logoContainerView.bottomAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.bottomAnchor)
+            ])
+        } else if isTopBarPosition {
             NSLayoutConstraint.activate([
                 logoContainerView.topAnchor.constraint(equalTo: anchorView.bottomAnchor),
                 logoContainerView.bottomAnchor.constraint(equalTo: parentView.keyboardLayoutGuide.topAnchor)
@@ -162,7 +183,8 @@ final class DaxLogoManager {
             rootView: FireModeEmptyStateView(type: .tab,
                                              escapeHatch: escapeHatch,
                                              onEscapeHatchTap: onEscapeHatchTap))
-        hostingController.view.backgroundColor = .clear
+        // Opaque NTP background so the fire empty state fully covers any favorites/suggestion tray content layered beneath.
+        hostingController.view.backgroundColor = UIColor(designSystemColor: .background)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
         parentController.addChild(hostingController)
@@ -191,10 +213,11 @@ final class DaxLogoManager {
 
         if forcedHidden {
             resolvedAlpha = 0
+        } else if isFireTab {
+            // Fire-mode empty state is a single shared view (no home/AI variants to blend), so show it whenever either dax slot is active.
+            resolvedAlpha = (isHomeDaxVisible || isAIDaxVisible) ? 1 : 0
         } else if isHomeDaxVisible != isAIDaxVisible {
-            if !isFireTab {
-                daxLogoView.updateProgress(isAIDaxVisible ? 1 : 0)
-            }
+            daxLogoView.updateProgress(isAIDaxVisible ? 1 : 0)
 
             let homeLogoProgress = 1 - progress
             let aiLogoProgress = progress
@@ -207,9 +230,7 @@ final class DaxLogoManager {
 
             resolvedAlpha = max(daxAlpha, aiAlpha)
         } else if isHomeDaxVisible && isAIDaxVisible {
-            if !isFireTab {
-                daxLogoView.updateProgress(progress)
-            }
+            daxLogoView.updateProgress(progress)
 
             resolvedAlpha = 1
         } else {

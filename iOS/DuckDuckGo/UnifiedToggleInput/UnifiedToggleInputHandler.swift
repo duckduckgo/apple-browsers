@@ -32,8 +32,6 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     let isUsingFadeOutAnimation: Bool = false
     let isCurrentTextValidURL: Bool = false
     let modeParameters: [String: String] = [:]
-    /// Mutable to follow per-tab fire state. Updates are pushed imperatively by
-    /// `UnifiedToggleInputCoordinator.updateIsFireTab(_:)`, which also refreshes affected views.
     var isFireTab: Bool
 
     // MARK: - SwitchBarHandling — Dynamic State

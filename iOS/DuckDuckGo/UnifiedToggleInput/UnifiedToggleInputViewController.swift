@@ -53,16 +53,15 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     let isToggleEnabled: Bool
-    private let initialIsFireTab: Bool
-    lazy var handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
-                                                 isToggleEnabled: isToggleEnabled,
-                                                 isFireTab: initialIsFireTab)
+    let handler: UnifiedToggleInputHandler
 
     // MARK: - Public API
 
     init(isToggleEnabled: Bool, isFireTab: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
-        self.initialIsFireTab = isFireTab
+        self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
+                                                 isToggleEnabled: isToggleEnabled,
+                                                 isFireTab: isFireTab)
         super.init(nibName: nil, bundle: nil)
     }
 

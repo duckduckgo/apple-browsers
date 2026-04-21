@@ -336,12 +336,11 @@ final class UnifiedToggleInputView: UIView {
         cardView.backgroundColor = isFireTab
             ? UIColor(singleUseColor: .fireModeBackground)
             : UIColor(singleUseColor: .unifiedToggleInputCardBackground)
-        // Override the content subviews only — cardView is intentionally left alone so `fireModeBackground` resolves with the OS trait and picks its light variant in light appearance.
+        // cardView keeps the OS trait so `fireModeBackground` picks its light variant in light OS; content subviews force `.dark` so their dynamic colors resolve against the dark surface.
         let style: UIUserInterfaceStyle = isFireTab ? .dark : .unspecified
-        toggleView.overrideUserInterfaceStyle = style
-        textEntryView.overrideUserInterfaceStyle = style
-        attachmentsStrip.overrideUserInterfaceStyle = style
-        toolsToolbar.overrideUserInterfaceStyle = style
+        [toggleView, textEntryView, attachmentsStrip, toolsToolbar].forEach {
+            $0.overrideUserInterfaceStyle = style
+        }
     }
 
     // MARK: - First Responder

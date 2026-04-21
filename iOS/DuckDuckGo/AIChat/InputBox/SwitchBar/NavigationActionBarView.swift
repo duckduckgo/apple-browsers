@@ -37,11 +37,6 @@ final class NavigationActionBarView: UIView {
         static let padding: CGFloat = 16
         static let buttonSpacing: CGFloat = 12
         static let cornerRadius: CGFloat = 8
-        
-        static let shadowRadius1: CGFloat = 6
-        static let shadowOffset1Y: CGFloat = 2
-        static let shadowRadius2: CGFloat = 16
-        static let shadowOffset2Y: CGFloat = 16
     }
     
     // MARK: - Properties

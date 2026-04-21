@@ -88,26 +88,9 @@ final class UnifiedToggleInputFloatingSubmitViewController: UIViewController {
         let icon = showVoice ? DesignSystemImages.Glyphs.Size24.voice : DesignSystemImages.Glyphs.Size24.arrowUp
         button.setImage(icon, for: .normal)
         button.isEnabled = isActive
-        applyColors(isActive: isActive)
-    }
-
-    private func applyColors(isActive: Bool) {
-        guard isActive else {
-            button.setColors(foreground: UIColor(designSystemColor: .iconsSecondary),
-                             background: UIColor(designSystemColor: .controlsFillPrimary))
-            return
-        }
-        let foreground = UIColor(designSystemColor: .accentContentPrimary)
-        let background: UIColor = isFireTab
-            ? UIColor(singleUseColor: .fireModeAccent)
-            : UIColor(designSystemColor: .accent)
-        let pressedBackground: UIColor = isFireTab
-            ? UIColor(singleUseColor: .fireModeAccentTertiary)
-            : UIColor(designSystemColor: .accentTertiary)
-        button.setColors(foreground: foreground,
-                         background: background,
-                         pressedForeground: foreground,
-                         pressedBackground: pressedBackground)
+        button.applySubmitStyle(isActive: isActive,
+                                isFireTab: isFireTab,
+                                activeForeground: UIColor(designSystemColor: .accentContentPrimary))
     }
 
     @objc private func buttonTapped() {

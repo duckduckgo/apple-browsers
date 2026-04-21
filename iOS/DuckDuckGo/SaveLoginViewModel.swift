@@ -69,10 +69,14 @@ final class SaveLoginViewModel: ObservableObject {
 
     var minHeight: CGFloat {
         switch layoutType {
-        case .newUser, .saveLogin:
+        case .newUser:
+            return AutofillViews.newUserMinHeight
+        case .saveLogin:
             return AutofillViews.saveLoginMinHeight
-        case .savePassword, .updatePassword:
+        case .savePassword:
             return AutofillViews.savePasswordMinHeight
+        case .updatePassword:
+            return AutofillViews.updatePasswordMinHeight
         case .updateUsername:
             return AutofillViews.updateUsernameMinHeight
         }

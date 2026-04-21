@@ -37,6 +37,7 @@ struct SaveLoginView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @State private var orientation = UIDevice.current.orientation
+    @State private var bottomSafeArea: CGFloat = 0
 
     private var layoutType: LayoutType {
         viewModel.layoutType
@@ -56,15 +57,19 @@ struct SaveLoginView: View {
     }
     
     private func makeBodyView(_ geometry: GeometryProxy) -> some View {
-        DispatchQueue.main.async { self.frame = geometry.size }
+        DispatchQueue.main.async {
+            self.frame = geometry.size
+            self.bottomSafeArea = geometry.safeAreaInsets.bottom
+        }
 
         return ZStack {
             AutofillViews.CloseButtonHeader(action: viewModel.cancelButtonPressed)
-                .offset(x: horizontalPadding)
+                .padding(.top, closeButtonExtraPadding)
+                .offset(x: horizontalPadding - closeButtonExtraPadding)
                 .zIndex(1)
 
             innerContent
-                .padding([.bottom], (layoutType == .newUser || layoutType == .saveLogin) ? 0 : Const.Size.bodyBottomPadding)
+                .padding(.bottom, max(Const.Size.bodyBottomPadding - bottomSafeArea, 0))
                 .fixedSize(horizontal: false, vertical: shouldFixSize)
                 .background(GeometryReader { proxy -> Color in
                     DispatchQueue.main.async { viewModel.contentHeight = proxy.size.height }
@@ -257,6 +262,15 @@ struct SaveLoginView: View {
                                         action: viewModel.save)
             AutofillViews.TertiaryButton(title: UserText.autofillSaveLoginNeverPromptCTA,
                                          action: viewModel.neverPrompt)
+        }
+    }
+
+    // iOS 26 needs some extra padding due to its very large corner radii
+    private var closeButtonExtraPadding: CGFloat {
+        if #available(iOS 26, *) {
+            return 10
+        } else {
+            return 0
         }
     }
 

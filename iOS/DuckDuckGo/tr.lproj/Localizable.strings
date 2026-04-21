@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Arka Planda Aç";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Yeni Fire Sekmesi";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Fire sekmesinde açın";
 /* Create New Tab action */
 "action.title.newTabAction" = "Yeni Sekme";
 
@@ -360,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "DuckDuckGo'da Ara";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Arama önerileri artık son ziyaret ettiğiniz siteleri de içeriyor. Ayarlardan kapatabilir veya istediğiniz zaman 🔥 Fire Button ile temizleyebilirsiniz.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Aynı gizlilik.\nDaha iyi arama önerileri!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Sekmeye Geç";
@@ -1837,6 +1836,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Bu sekmeye geçer";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "En son kullanılan Fire Sekmesi";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "%@ sekmesine geri dönün";
 
@@ -2146,6 +2147,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Nelerin Silineceğini Seçin";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Farklı bir hesapla bir sitede oturum açın";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Yerel geçmişi kaydetmeden göz atın";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Web sitelerindeki sorunları giderin";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire Sekmeleri diğer tarayıcı verilerinden izole edilmiştir ve tümünü kapattığınızda verileri silinir. Diğer sekmelerle aynı izleme korumasına sahiptirler.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Yeni Fire Sekmesi";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire Sekmeleri";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Yeni";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Yerel geçmişi kaydetmeden göz atın veya sitelerde farklı bir hesapla oturum açın.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Şimdi Değil";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Fire Sekmelerini Deneyin";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Fire Sekmelerini Deneyin";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire Sekmesi";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Hava";
 
@@ -3160,6 +3196,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Taranıyor...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Fire Sekmeleri ve verileri silinsin mi?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Sekmeleri ve site verilerini silmek mi istiyorsunuz?";
 
@@ -4207,15 +4245,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Sekme Okunmamış";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Fire sekmesini kapatın";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Sekmeyi kapat";
 /* Accessibility label on remove button */
 "tab.close.home" = "Ana sekmeyi kapat";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "%2$@ adresindeki \"%1$@\" sitesini kapat";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire Sekmesi";
+
+/* New tab title */
+"tab.new.title" = "Yeni Sekme";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Ana sekmeyi aç";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Yeni sekme açın";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Fire sekmesini açın";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "%2$@ adresindeki \"%1$@\" sitesini aç";
 

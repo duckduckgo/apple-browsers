@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Abrir en segundo plano";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Nueva Fire Tab";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Abrir en una Fire Tab";
 /* Create New Tab action */
 "action.title.newTabAction" = "Nueva pestaña";
 
@@ -360,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Buscar en DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Las sugerencias de búsqueda ahora incluyen los sitios visitados recientemente. Desactívalas en Ajustes o elimínalas en cualquier momento con el 🔥 Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Misma privacidad.\n¡Mejores sugerencias de búsqueda!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Cambiar a Pestaña";
@@ -1837,6 +1836,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Cambia a esta pestaña";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Última Fire Tab utilizada";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Volver a %@";
 
@@ -2146,6 +2147,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Elige qué eliminar";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Iniciar sesión en un sitio con una cuenta diferente";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Navegar sin guardar el historial local";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Solucionar problemas de sitios web";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Las Fire Tabs están aisladas de otros datos del navegador y sus datos se queman cuando las cierras todas. Tienen la misma protección contra el rastreo que otras pestañas.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Nueva Fire Tab";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Pestañas Fire";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Nuevo";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Navega sin guardar el historial local o inicia sesión en sitios con una cuenta diferente.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Ahora no";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Prueba Fire Tabs";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Prueba Fire Tabs";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire tab";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Corriente de aire";
 
@@ -3160,6 +3196,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Escaneando...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "¿Eliminar Fire Tabs y sus datos?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "¿Eliminar pestañas y datos del sitio?";
 
@@ -4207,15 +4245,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Pestaña sin leer";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Cerrar fire tab";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Cerrar pestaña";
 /* Accessibility label on remove button */
 "tab.close.home" = "Cerrar la pestaña inicio";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Cerrar \"%1$@\" en %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Pestaña Fire";
+
+/* New tab title */
+"tab.new.title" = "Nueva pestaña";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Abrir la pestaña inicio";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Abrir en una nueva pestaña";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Abrir fire tab";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Abrir \"%1$@\" en %2$@";
 

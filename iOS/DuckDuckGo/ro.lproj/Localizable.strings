@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Deschide în fundal";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Nouă filă Fire";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Deschide într-o filă Fire";
 /* Create New Tab action */
 "action.title.newTabAction" = "Filă nouă";
 
@@ -360,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Căutare DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Sugestiile de căutare includ acum site-urile accesate recent. Dezactivează-le din Setări sau șterge-le în orice moment cu ajutorul Fire Button 🔥.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Aceeași confidențialitate.\nSugestii de căutare mai bune!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Comutați la filă";
@@ -1837,6 +1836,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Trece la această filă";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Fila Fire utilizată ultima dată";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Înapoi la %@";
 
@@ -2146,6 +2147,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Alege ce să ștergi";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Conectează-te la un site cu un alt cont";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Navighează fără a salva istoricul local";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Depanează site-uri";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Filele Fire sunt izolate de alte date din browser, iar datele lor sunt șterse când le închizi pe toate. Au aceeași protecție împotriva urmăririi ca și alte file.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Nouă filă Fire";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "File Fire";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Nouă";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Răsfoiește fără a salva istoricul local sau conectează-te la site-uri cu un cont diferit.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Nu acum";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Încearcă filele Fire";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Încearcă filele Fire";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Filă Fire";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Curent de aer";
 
@@ -3160,6 +3196,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Scanare...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Ștergi filele Fire și datele aferente?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Dorești să ștergi filele și datele site-ului?";
 
@@ -4207,15 +4245,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Filă necitită";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Închide fila Fire";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Închidere filă";
 /* Accessibility label on remove button */
 "tab.close.home" = "Închide fila de pornire";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Închideți \"%1$@\" la %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Filă Fire";
+
+/* New tab title */
+"tab.new.title" = "Filă nouă";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Deschide fila de pornire";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Deschide o filă nouă";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Deschide o filă Fire";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Deschide \"%1$@\" la %2$@";
 

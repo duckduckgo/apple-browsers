@@ -670,6 +670,7 @@ private class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
     var selectedModelId: String?
     var selectedModelShortName: String?
     var selectedReasoningEffort: String?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
 // MARK: - Mock Models Service

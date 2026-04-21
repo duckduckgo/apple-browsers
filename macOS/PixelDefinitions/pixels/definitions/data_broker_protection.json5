@@ -294,6 +294,16 @@
             "dbpAttemptId",
             "dbpAttemptDuration",
             {
+                "key": "error_category",
+                "description": "High-level error classification",
+                "type": "string"
+            },
+            {
+                "key": "error_details",
+                "description": "Error description supplied by the failing stage",
+                "type": "string"
+            },
+            {
                 "key": "stage",
                 "description": "The stage where the failure occurred",
                 "type": "string"
@@ -478,7 +488,7 @@
                 "key": "error_code",
                 "description": "Backend item error code",
                 "type": "string",
-                "enum": ["server_error", "extraction_error", "request_error"]
+                "enum": ["server_error", "extraction_error", "request_error", "unknown"]
             }
         ]
     },
@@ -904,7 +914,7 @@
         "description": "Fired when a scan or opt-out action fails while processing a data broker.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -970,25 +980,6 @@
                 "type": "string"
             },
             "dbpIsFreeScan"
-        ]
-    },
-    "m_mac_dbp_data_broker_action-payload_typed-fallback_unexpected": {
-        "description": "Fired when a broker action is unexpectedly injected using typed fallback payload instead of raw JSON.",
-        "owners": ["quanganhdo"],
-        "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpDataBroker",
-            "dbpBrokerVersion",
-            "dbpActionType",
-            {
-                "key": "stepType",
-                "description": "Step type where typed-fallback payload injection occurred",
-                "type": "string",
-                "enum": ["scan", "optOut", "unknown"]
-            }
         ]
     },
     "m_mac_dbp_engagement_dau": {

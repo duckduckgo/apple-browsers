@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Avaa taustalla";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Uusi Fire-välilehti";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Avaa Fire-välilehdessä";
 /* Create New Tab action */
 "action.title.newTabAction" = "Uusi välilehti";
 
@@ -360,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Hae DuckDuckGo:sta";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Hakuehdotuksiin sisältyvät nyt myös viimeksi käymäsi sivustot. Voit poistaa tämän käytöstä asetuksissa tai tyhjentää sivustotiedot milloin tahansa 🔥 Fire Buttonilla.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Sama tietoja,\nparempia hakuehdotuksia!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Vaihda välilehteen";
@@ -1837,6 +1836,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Siirtyy tälle välilehdelle";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Viimeksi käytetty Fire-välilehti";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Palaa välilehdelle %@";
 
@@ -2146,6 +2147,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Valitse, mitä poistetaan";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Kirjaudu sivustolle eri tilillä";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Selaa tallentamatta paikallista historiaa";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Vianmääritys verkkosivustoille";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire-välilehdet on eristetty muista selaintiedoista, ja niiden tiedot poltetaan, kun suljet ne kaikki. Niillä on sama seurantasuoja kuin muillakin välilehdillä.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Uusi Fire-välilehti";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire-välilehdet";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Uusi";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Selaa tallentamatta paikallista historiaa tai kirjaudu sivustoille eri tilillä.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Ei nyt";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Kokeile Fire-välilehtiä";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Kokeile Fire-välilehtiä";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire-välilehti";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Ilmavirta";
 
@@ -3160,6 +3196,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skannataan...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Poistetaanko Fire-välilehdet ja niiden tiedot?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Poistetaanko välilehdet ja sivuston tiedot?";
 
@@ -4207,15 +4245,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Lukematon välilehti";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Sulje Fire-välilehti";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Sulje välilehti";
 /* Accessibility label on remove button */
 "tab.close.home" = "Sulje koti-välilehti";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Sulje \"%1$@\" osoitteessa %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire-välilehti";
+
+/* New tab title */
+"tab.new.title" = "Uusi välilehti";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Avaa koti-välilehti";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Avaa uusi välilehti";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Avaa Fire-välilehti";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Avaa \"%1$@\" osoitteessa %2$@";
 

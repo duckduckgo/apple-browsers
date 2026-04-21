@@ -101,7 +101,9 @@ final class ScriptSourceProviderTests: XCTestCase {
             syncServiceProvider: { nil },
             syncErrorHandler: SyncErrorHandler(),
             webExtensionAvailability: nil,
-            dockCustomization: DockCustomizerMock()
+            dockCustomization: DockCustomizerMock(),
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: MockKeyValueStore()),
+            installDateProvider: { Date() }
         )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

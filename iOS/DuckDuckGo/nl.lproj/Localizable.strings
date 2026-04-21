@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Openen op de achtergrond";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Nieuw Fire Window";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Openen in nieuw Fire-tabblad";
 /* Create New Tab action */
 "action.title.newTabAction" = "Nieuw tabblad";
 
@@ -360,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Zoek in DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Zoekopdrachtsuggesties bevatten nu ook je recent bezochte sites. Je kunt suggesties uitschakelen in de instellingen of ze op elk gewenst moment wissen met de 🔥 Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Dezelfde privacy.\nBetere zoeksuggesties!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Overschakelen naar tabblad";
@@ -1837,6 +1836,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Schakelt over naar dit tabblad";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Laatst gebruikte Fire Tab";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Keer terug naar %@";
 
@@ -2146,6 +2147,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Kies wat je wilt verwijderen";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Meld je aan bij een website met een ander account";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Bladeren zonder lokale geschiedenis op te slaan";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Problemen met websites oplossen";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire Tabs staan los van andere browsergegevens en de gegevens worden verwijderd wanneer je ze allemaal sluit. Ze hebben dezelfde trackingbeveiliging als andere tabbladen.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Nieuw Fire Window";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire-tabbladen";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Nieuw";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Blader zonder je lokale geschiedenis op te slaan of log in op sites met een ander account.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Niet nu";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Probeer Fire Tabs";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Probeer Fire Tabs";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire-tabblad";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luchtstroom";
 
@@ -3160,6 +3196,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Scannen...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Fire Tabs en hun gegevens verwijderen?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Tabbladen en sitegegevens verwijderen?";
 
@@ -4207,15 +4245,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Ongelezen tabblad";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Fire-tabblad sluiten";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Tabblad sluiten";
 /* Accessibility label on remove button */
 "tab.close.home" = "Starttabblad sluiten";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "'%1$@' op %2$@ sluiten";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire-tabblad";
+
+/* New tab title */
+"tab.new.title" = "Nieuw tabblad";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Starttabblad openen";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Nieuw tabblad openen";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Fire-tabblad openen";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "'%1$@' op %2$@ openen";
 

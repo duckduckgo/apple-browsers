@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otvori u pozadini";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Nova Fire kartica";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Otvori na Fire kartici";
 /* Create New Tab action */
 "action.title.newTabAction" = "Nova kartica";
 
@@ -360,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Pretraži DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Prijedlozi za pretraživanje sada uključuju i nedavno posjećena mrežna mjesta. Isključi u Postavkama ili izbriši u bilo kojem trenutku pomoću Fire Buttona 🔥.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Ista privatnost.\nBolji prijedlozi za pretraživanje!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Prebaci se na karticu";
@@ -1837,6 +1836,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Prebacuje na ovu karticu";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Zadnje korištena Fire kartica";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Povratak na %@";
 
@@ -2146,6 +2147,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Odaberi što želiš izbrisati";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Prijavi se na web-mjesto drugim računom";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Pregledavanje bez spremanja lokalne povijesti";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Rješavanje problema s web-stranicama";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Kartice Fire izolirane su od ostalih podataka preglednika, a njihovi se podaci brišu kada ih sve zatvoriš. Imaju istu zaštitu od praćenja kao i ostale kartice.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Nova Fire kartica";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire kartice";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Novo";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Pregledavaj bez spremanja lokalne povijesti ili se prijavi na web-mjesta drugim računom.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Ne sada";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Isprobaj Fire kartice";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Isprobaj Fire kartice";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire kartica";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Zračna struja";
 
@@ -3160,6 +3196,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skeniranje u tijeku...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Želiš li izbrisati Fire kartice i njihove podatke?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Izbrisati kartice i podatke mrežne lokacije?";
 
@@ -4207,15 +4245,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Kartica Nepročitano";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Zatvori Fire karticu";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Zatvori kartica";
 /* Accessibility label on remove button */
 "tab.close.home" = "Zatvori početnu karticu";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Zatvorite „%1$@” na %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire kartica";
+
+/* New tab title */
+"tab.new.title" = "Nova kartica";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Otvori početnu karticu";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Otvori novu karticu";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Otvori Fire karticu";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Otvorite „%1$@” na %2$@";
 

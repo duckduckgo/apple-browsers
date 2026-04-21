@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Atidaryti fone";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Nauja „Fire“ kortelė";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Atidaryk „Fire“ kortelėje";
 /* Create New Tab action */
 "action.title.newTabAction" = "Nauja kortelė";
 
@@ -360,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Ieškoti DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Dabar paieškos pasiūlymuose bus rodomos ir neseniai aplankytos svetainės. Išjunkite nustatymuose arba bet kada išvalykite naudodami mygtuką 🔥 „Fire Button“.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Tas pats privatumas.\nGeresni paieškos pasiūlymai!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Perjungti skirtuką";
@@ -1837,6 +1836,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Perjungia į šį skirtuką";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Paskutinį kartą naudota „Fire“ kortelė";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Grįžti į %@";
 
@@ -2146,6 +2147,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Pasirinkite, ką ištrinti";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Prisijunk prie svetainės su kita paskyra";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Naršyk ir nesaugok vietinės istorijos";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Šalink interneto svetainių triktis";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "„Fire“ kortelės izoliuotos nuo kitų naršyklės duomenų. Kai visas jas uždarai, duomenys ištrinami. Joms taikoma tokia pati apsauga nuo sekimo kaip ir kitoms kortelėms.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Nauja „Fire“ kortelė";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "„Fire“ kortelės";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Naujas";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Naršyk ir nesaugok vietinės istorijos arba prisijunk prie svetainių su kita paskyra.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Ne dabar";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Išbandyk „Fire“ korteles";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Išbandyk „Fire“ korteles";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "„Fire“ kortelė";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "„Airstream“";
 
@@ -3160,6 +3196,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skenuojama...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Ištrinti „Fire“ korteles ir jų duomenis?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Ištrinti skirtukus ir svetainės duomenis?";
 
@@ -4207,15 +4245,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Skirtukas neperskaitytas";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Uždaryk „Fire“ kortelę";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Uždaryti kortelę";
 /* Accessibility label on remove button */
 "tab.close.home" = "Uždaryti pagrindinio puslapio skirtuką";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Uždaryti „%1$@“ adresu %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "„Fire“ kortelė";
+
+/* New tab title */
+"tab.new.title" = "Nauja kortelė";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Atidaryti pagrindinio puslapio skirtuką";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Atidaryk naują kortelę";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Atidaryk „Fire“ kortelę";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Atidaryti „%1$@“ adresu %2$@";
 

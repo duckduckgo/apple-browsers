@@ -228,6 +228,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatPreferences: AIChatPreferences
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
 
+    /// Shared across the native address-bar omnibar and the New Tab Page omnibar so that model-selection
+    /// changes in either propagate through `selectedModelIdPublisher` to the other.
+    let aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor()
+
     private(set) lazy var aiChatSuggestionsReader: AIChatSuggestionsReading = MainActor.assumeMainThread {
         AIChatSuggestionsReader(
             suggestionsReader: SuggestionsReader(
@@ -934,7 +938,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 contentScopePreferences: contentScopePreferences,
                 syncErrorHandler: syncErrorHandler,
                 webExtensionAvailability: webExtensionAvailability,
-                dockCustomization: dockCustomization
+                dockCustomization: dockCustomization,
+                reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
+                installDateProvider: { AppDelegate.firstLaunchDate }
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
             appContentBlocking = contentBlocking
@@ -967,7 +973,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             contentScopePreferences: contentScopePreferences,
             syncErrorHandler: syncErrorHandler,
             webExtensionAvailability: webExtensionAvailability,
-            dockCustomization: dockCustomization
+            dockCustomization: dockCustomization,
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
+            installDateProvider: { AppDelegate.firstLaunchDate }
         )
         privacyFeatures = AppPrivacyFeatures(
             contentBlocking: contentBlocking,

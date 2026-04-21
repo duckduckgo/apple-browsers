@@ -218,8 +218,6 @@ extension Pixel {
         case favoriteLaunchedWebsite
         case favoriteLaunchedWidget
 
-        case autocompleteMessageShown
-        case autocompleteMessageDismissed
         case autocompleteClickPhrase
         case autocompleteClickWebsite
         case autocompleteClickBookmark
@@ -1941,8 +1939,6 @@ extension Pixel.Event {
         case .favoriteLaunchedWebsite: return "m_favorite_launched_website"
         case .favoriteLaunchedWidget: return "m_favorite_launched_widget"
 
-        case .autocompleteMessageShown: return "m_autocomplete_message_shown"
-        case .autocompleteMessageDismissed: return "m_autocomplete_message_dismissed"
         case .autocompleteClickPhrase: return "m_autocomplete_click_phrase"
         case .autocompleteClickWebsite: return "m_autocomplete_click_website"
         case .autocompleteClickBookmark: return "m_autocomplete_click_bookmark"

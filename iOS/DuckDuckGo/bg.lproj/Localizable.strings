@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Отваряне във фонов режим";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Нов раздел Fire";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Отваряне в раздел Fire";
 /* Create New Tab action */
 "action.title.newTabAction" = "Нов раздел";
 
@@ -360,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Търси с DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Предложенията за търсене вече включват наскоро посетени сайтове. Изключете ги в Настройки, а можете и да ги изтриете по всяко време с 🔥 Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Същата поверителност.\nПо-добри предложения при търсене!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Превключване към раздел";
@@ -1837,6 +1836,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Превключва към този раздел";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Последно използван раздел Fire";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Връщане към %@";
 
@@ -2146,6 +2147,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Избери какво да изтриеш";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Влизане в сайт с друг акаунт";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Сърфиране без запазване на локалната история";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Отстраняване на неизправности в уебсайтове";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Разделите Fire са изолирани от другите данни на браузъра и данните в тях се изгарят, когато затворите всички такива раздели. Имат същата защита от проследяване като другите раздели.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Нов раздел Fire";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Раздели Fire";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Нов";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Можете да сърфирате, без да запазвате локална история или да влизате в сайтове с друг акаунт.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Не сега";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Изпробвайте разделите Fire";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Изпробвайте разделите Fire";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Раздел Fire";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Въздушна струя";
 
@@ -3160,6 +3196,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Сканиране...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Изтриване на разделите Fire и данните в тях?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Да изтрием ли разделите и данните от сайта?";
 
@@ -4207,15 +4245,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Непрочетен раздел";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Затваряне на раздел Fire";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Затваряне на раздел";
 /* Accessibility label on remove button */
 "tab.close.home" = "Затваряне на началния раздел";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Затваряне на \"%1$@\" с адрес %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Раздел Fire";
+
+/* New tab title */
+"tab.new.title" = "Нов раздел";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Отваряне на началния раздел";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Отваряне на нов раздел";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Отваряне на раздел Fire";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Отваряне на \"%1$@\" с адрес %2$@";
 

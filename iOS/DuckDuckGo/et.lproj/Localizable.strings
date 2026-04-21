@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Ava taustal";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Uus Fire vahekaart";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Ava Fire vahekaardil";
 /* Create New Tab action */
 "action.title.newTabAction" = "Uus vaheleht";
 
@@ -360,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Otsi DuckDuckGo'st";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Otsingusoovitused hõlmavad nüüd sinu hiljuti külastatud saite. Saad selle välja lülitada seadetes või tühjendada igal ajal nupu 🔥 Fire Button abil.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Sama privaatsus.\nParemad otsingusoovitused!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Vaheta vahekaardile";
@@ -1837,6 +1836,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Lülitub sellele vahekaardile";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Viimati kasutatud Fire vahekaart";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Tagasi %@ juurde";
 
@@ -2146,6 +2147,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Vali, mida kustutada";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Logi saidile sisse teise kontoga";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Sirvi kohalikku ajalugu salvestamata";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Tõrkeotsing veebilehtedel";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire vahekaardid on teistest brauseriandmetest isoleeritud ja nende andmed põletatakse pärast seda, kui sa need kõik sulged. Neil on sama jälgimiskaitse kui teistel vahekaardil.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Uus Fire vahekaart";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire vahekaardid";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Uus";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Sirvi kohalikku ajalugu salvestamata või logi saitidele sisse teise kontoga.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Mitte praegu";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Proovi Fire vahekaarte";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Proovi Fire vahekaarte";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire vahekaart";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
 
@@ -3160,6 +3196,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skaneerimine...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Kas kustutada Fire vahekaardid ja nende andmed?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Kas kustutada vahekaardid ja saidi andmed?";
 
@@ -4207,15 +4245,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Vahekaart lugemata";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Sulge Fire vahekaart";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Sulge vaheleht";
 /* Accessibility label on remove button */
 "tab.close.home" = "Sulge avalehe vahekaart";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Sulge \"%1$@\" aadressil %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire vahekaart";
+
+/* New tab title */
+"tab.new.title" = "Uus vaheleht";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Ava avalehe vahekaart";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Ava uuel vahekaardil";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Ava Fire vahekaart";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Ava \"%1$@\" aadressil %2$@";
 

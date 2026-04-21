@@ -37,6 +37,7 @@ public final class VPNIPLeakCheckWideEventData: WideEventData {
     public var trigger: LeakCheckTrigger
     public var latencyMsBucketed: Int?
     public var statusReason: String?
+    public var egressServerName: String?
 
     public var ipv4Http: LeakCheckPerTestResult?
     public var ipv4Https: LeakCheckPerTestResult?
@@ -76,6 +77,9 @@ public final class VPNIPLeakCheckWideEventData: WideEventData {
         }
         if let reason = statusReason {
             params["feature.data.ext.status_reason"] = reason
+        }
+        if let serverName = egressServerName {
+            params["feature.data.ext.egress_server_name"] = serverName
         }
         addProbe(ipv4Http, version: .v4, probe: .http, to: &params)
         addProbe(ipv4Https, version: .v4, probe: .https, to: &params)

@@ -1239,6 +1239,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         guard let egressIP = lastSelectedServerInfo?.ipv4?.debugDescription else {
             return
         }
+        let egressServerName = lastSelectedServerInfo?.name
 
         let tunnelInterface = await resolveTunnelInterface()
 
@@ -1248,6 +1249,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 let service = VPNLeakCheckService(
                     configuration: .default,
                     egressIP: egressIP,
+                    egressServerName: egressServerName,
                     tunnelInterface: tunnelInterface,
                     httpClient: DefaultLeakCheckHTTPClient(),
                     stunClient: DefaultLeakCheckSTUNClient(),
@@ -1257,6 +1259,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 leakCheckService = service
                 await service.start()
             } else {
+                await leakCheckService?.updateEgressServerName(egressServerName)
                 await leakCheckService?.updateTunnelInterface(tunnelInterface)
             }
             let service = leakCheckService
@@ -1267,6 +1270,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
         case .reconnected:
             await leakCheckService?.updateEgressIP(egressIP)
+            await leakCheckService?.updateEgressServerName(egressServerName)
             await leakCheckService?.updateTunnelInterface(tunnelInterface)
             let service = leakCheckService
             Task {

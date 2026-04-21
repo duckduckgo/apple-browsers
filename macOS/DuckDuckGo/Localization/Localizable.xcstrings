@@ -3621,6 +3621,78 @@
         }
       }
     },
+    "aichat.reasoning-effort.fast.subtitle" : {
+      "comment" : "Subtitle of the 'Fast' option in the reasoning effort picker menu in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Answers right away"
+          }
+        }
+      }
+    },
+    "aichat.reasoning-effort.fast.title" : {
+      "comment" : "Title of the 'Fast' option in the reasoning effort picker menu in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fast"
+          }
+        }
+      }
+    },
+    "aichat.reasoning-effort.low.subtitle" : {
+      "comment" : "Subtitle of the 'Reasoning' option in the reasoning effort picker menu in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Takes a moment to respond"
+          }
+        }
+      }
+    },
+    "aichat.reasoning-effort.low.title" : {
+      "comment" : "Title of the 'Reasoning' option in the reasoning effort picker menu in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reasoning"
+          }
+        }
+      }
+    },
+    "aichat.reasoning-effort.medium.subtitle" : {
+      "comment" : "Subtitle of the 'Extended Reasoning' option in the reasoning effort picker menu in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Researches before responding"
+          }
+        }
+      }
+    },
+    "aichat.reasoning-effort.medium.title" : {
+      "comment" : "Title of the 'Extended Reasoning' option in the reasoning effort picker menu in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Extended Reasoning"
+          }
+        }
+      }
+    },
     "aichat.remove-attachment-button.accessibility" : {
       "comment" : "Accessibility label for the remove attachment button on image thumbnails in AI chat",
       "extractionState" : "extracted_with_value",

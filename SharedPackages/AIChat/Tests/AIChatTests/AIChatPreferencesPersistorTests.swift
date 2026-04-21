@@ -133,7 +133,7 @@ final class AIChatPreferencesPersistorTests: XCTestCase {
     }
 
     // MARK: - selectedModelIdPublisher
-    
+
     func testSelectedModelIdPublisher_emitsOnEveryDistinctWrite() {
         var received: [String?] = []
         let cancellable = persistor.selectedModelIdPublisher.sink { received.append($0) }

@@ -33,9 +33,15 @@ extension OnboardingRebranding {
         @State private var showNextScreen: Bool = false
 
         let shouldFollowUp: Bool
+        let initialPanelHeight: CGFloat
+        let followUpPanelHeight: CGFloat
         let viewModel: OnboardingSiteSuggestionsViewModel
         let gotItAction: () -> Void
         let onManualDismiss: () -> Void
+
+        private var panelHeight: CGFloat {
+            showNextScreen ? followUpPanelHeight : initialPanelHeight
+        }
 
         var body: some View {
             OnboardingBubbleView.withDismissButton(
@@ -44,6 +50,7 @@ extension OnboardingRebranding {
             ) {
                 if showNextScreen {
                     OnboardingTrySiteDialogContent(viewModel: viewModel)
+                        .transition(.identity)
                 } else {
                     OnboardingRebranding.ContextualDaxDialogContent(
                         orientation: .horizontalStack(alignment: .center),
@@ -52,16 +59,18 @@ extension OnboardingRebranding {
                     ) {
                         Button(cta) {
                             gotItAction()
-                            withAnimation {
-                                if shouldFollowUp {
+                            if shouldFollowUp {
+                                withAnimation(.easeInOut(duration: 0.3)) {
                                     showNextScreen = true
                                 }
                             }
                         }
                         .buttonStyle(theme.primaryButtonStyle.style)
                     }
+                    .transition(.identity)
                 }
             }
+            .frame(height: panelHeight, alignment: .top)
         }
     }
 

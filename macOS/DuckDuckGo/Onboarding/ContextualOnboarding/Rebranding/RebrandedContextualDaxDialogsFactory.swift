@@ -22,15 +22,17 @@ import Onboarding
 
 struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     private enum ContextualPanelMetrics {
-        static let trySearchPanelHeight: CGFloat = 164
-        static let trySearchIllustrationOffsetY: CGFloat = 50
-        static let searchDonePanelHeight: CGFloat = 180
+        static let trySearchPanelHeight: CGFloat = 200
+        static let trySearchIllustrationOffsetY: CGFloat = 96
+        static let searchDonePanelHeight: CGFloat = 140
         static let searchDoneIllustrationOffsetY: CGFloat = -40
-        static let trySitePanelHeight: CGFloat = 170
-        static let trySiteIllustrationOffsetY: CGFloat = 50
+        static let trySitePanelHeight: CGFloat = 240
+        static let trySiteIllustrationOffsetY: CGFloat = 40
         static let trackersPanelHeight: CGFloat = 170
+        static let trackersIllustrationOffsetY: CGFloat = 0
         static let firePanelHeight: CGFloat = 170
         static let highFivePanelHeight: CGFloat = 170
+        static let highFiveIllustrationOffsetY: CGFloat = 0
     }
 
     private let onboardingPixelReporter: OnboardingPixelReporting
@@ -73,14 +75,15 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         case .tryASearch:
             viewWithBackground = AnyView(
                 ZStack(alignment: .topLeading) {
-                    OnboardingTheme.macOSRebranding2026.colorPalette.background
-                        .overlay(
-                            OnboardingRebrandingImages.Contextual.tryASearchBackground
-                                .offset(y: 96),
-                            alignment: .bottomTrailing
-                        )
+                    ZStack(alignment: .bottomTrailing) {
+                        OnboardingTheme.macOSRebranding2026.colorPalette.background
+                        OnboardingRebrandingImages.Contextual.tryASearchBackground
+                            .offset(y: ContextualPanelMetrics.trySearchIllustrationOffsetY)
+                    }
+                    .frame(height: ContextualPanelMetrics.trySearchPanelHeight)
                     centeredView
                 }
+                .frame(height: ContextualPanelMetrics.trySearchPanelHeight)
                 .clipped()
                 .applyOnboardingTheme(.macOSRebranding2026)
             )
@@ -92,11 +95,8 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                         OnboardingRebrandingImages.Contextual.searchDoneBackground
                             .offset(y: ContextualPanelMetrics.searchDoneIllustrationOffsetY)
                     }
-                    .frame(height: ContextualPanelMetrics.searchDonePanelHeight)
-
                     centeredView
                 }
-                .frame(height: ContextualPanelMetrics.searchDonePanelHeight)
                 .clipped()
                 .applyOnboardingTheme(.macOSRebranding2026)
             )
@@ -109,7 +109,6 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                             .offset(y: ContextualPanelMetrics.trySiteIllustrationOffsetY)
                     }
                     .frame(height: ContextualPanelMetrics.trySitePanelHeight)
-
                     centeredView
                 }
                 .frame(height: ContextualPanelMetrics.trySitePanelHeight)
@@ -119,10 +118,13 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         case .trackers:
             viewWithBackground = AnyView(
                 ZStack(alignment: .topLeading) {
-                    OnboardingGradient()
+                    ZStack(alignment: .bottomTrailing) {
+                        OnboardingTheme.macOSRebranding2026.colorPalette.background
+                        OnboardingRebrandingImages.Contextual.trackerBlockedBackground
+                            .offset(y: ContextualPanelMetrics.trackersIllustrationOffsetY)
+                    }
                     centeredView
                 }
-                .frame(height: ContextualPanelMetrics.trackersPanelHeight)
                 .clipped()
                 .applyOnboardingTheme(.macOSRebranding2026)
             )
@@ -132,14 +134,18 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                     OnboardingGradient()
                     centeredView
                 }
-                .frame(height: ContextualPanelMetrics.firePanelHeight)
                 .clipped()
                 .applyOnboardingTheme(.macOSRebranding2026)
             )
         case .highFive:
             viewWithBackground = AnyView(
                 ZStack(alignment: .topLeading) {
-                    OnboardingGradient()
+                    ZStack(alignment: .bottomTrailing) {
+                        OnboardingTheme.macOSRebranding2026.colorPalette.background
+                        OnboardingRebrandingImages.Contextual.endOfJourneyBackground
+                            .offset(y: ContextualPanelMetrics.highFiveIllustrationOffsetY)
+                    }
+                    .frame(height: ContextualPanelMetrics.highFivePanelHeight)
                     centeredView
                 }
                 .frame(height: ContextualPanelMetrics.highFivePanelHeight)
@@ -179,7 +185,14 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         let suggestedSitesProvider = OnboardingSuggestedSitesProvider(surpriseItemTitle: OnboardingSuggestedSitesProvider.surpriseItemTitle)
         let viewModel = OnboardingSiteSuggestionsViewModel(title: "", suggestedSitesProvider: suggestedSitesProvider, delegate: delegate)
         let gotIt = shouldFollowUp ? onGotItPressed : onDismiss
-        return OnboardingRebranding.OnboardingSearchDoneDialog(shouldFollowUp: shouldFollowUp, viewModel: viewModel, gotItAction: gotIt, onManualDismiss: onDismiss)
+        return OnboardingRebranding.OnboardingSearchDoneDialog(
+            shouldFollowUp: shouldFollowUp,
+            initialPanelHeight: ContextualPanelMetrics.searchDonePanelHeight,
+            followUpPanelHeight: ContextualPanelMetrics.trySitePanelHeight,
+            viewModel: viewModel,
+            gotItAction: gotIt,
+            onManualDismiss: onDismiss
+        )
     }
 
     private func tryASiteDialog(delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void) -> some View {
@@ -191,12 +204,25 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     private func trackersDialog(message: NSAttributedString, shouldFollowUp: Bool, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {
         let gotIt = shouldFollowUp ? onGotItPressed : onDismiss
         let viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: onboardingPixelReporter, fireCoordinator: fireCoordinator, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
-        return OnboardingRebranding.OnboardingTrackersBlockedDialog(shouldFollowUp: true, message: message, blockedTrackersCTAAction: gotIt, viewModel: viewModel, onManualDismiss: onDismiss)
+        return OnboardingRebranding.OnboardingTrackersBlockedDialog(
+            shouldFollowUp: shouldFollowUp,
+            initialPanelHeight: ContextualPanelMetrics.trackersPanelHeight,
+            followUpPanelHeight: ContextualPanelMetrics.firePanelHeight,
+            message: message,
+            blockedTrackersCTAAction: gotIt,
+            viewModel: viewModel,
+            onManualDismiss: onDismiss
+        )
     }
 
     private func tryFireButtonDialog(onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {
         let viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: onboardingPixelReporter, fireCoordinator: fireCoordinator, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
-        return OnboardingRebranding.OnboardingFireDialog(viewModel: viewModel, onManualDismiss: onDismiss)
+        return OnboardingRebranding.OnboardingFireDialog(
+            viewModel: viewModel,
+            initialPanelHeight: ContextualPanelMetrics.firePanelHeight,
+            followUpPanelHeight: ContextualPanelMetrics.highFivePanelHeight,
+            onManualDismiss: onDismiss
+        )
     }
 
     private func highFiveDialog(onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void) -> some View {

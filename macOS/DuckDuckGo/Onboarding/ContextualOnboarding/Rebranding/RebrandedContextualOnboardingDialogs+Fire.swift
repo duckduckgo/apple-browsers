@@ -26,7 +26,13 @@ extension OnboardingRebranding {
     struct OnboardingFireDialog: View {
         let viewModel: OnboardingFireButtonDialogViewModel
         @State private var showNextScreen: Bool = false
+        let initialPanelHeight: CGFloat
+        let followUpPanelHeight: CGFloat
         let onManualDismiss: () -> Void
+
+        private var panelHeight: CGFloat {
+            showNextScreen ? followUpPanelHeight : initialPanelHeight
+        }
 
         var body: some View {
             OnboardingBubbleView.withDismissButton(
@@ -39,6 +45,7 @@ extension OnboardingRebranding {
                     OnboardingFireDialogContent(viewModel: viewModel)
                 }
             }
+            .frame(height: panelHeight, alignment: .top)
         }
     }
 

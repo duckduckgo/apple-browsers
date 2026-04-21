@@ -31,10 +31,16 @@ extension OnboardingRebranding {
         @State private var showNextScreen: Bool = false
 
         let shouldFollowUp: Bool
+        let initialPanelHeight: CGFloat
+        let followUpPanelHeight: CGFloat
         let message: NSAttributedString
         let blockedTrackersCTAAction: () -> Void
         let viewModel: OnboardingFireButtonDialogViewModel
         let onManualDismiss: () -> Void
+
+        private var panelHeight: CGFloat {
+            showNextScreen ? followUpPanelHeight : initialPanelHeight
+        }
 
         var body: some View {
             OnboardingBubbleView.withDismissButton(
@@ -43,6 +49,7 @@ extension OnboardingRebranding {
             ) {
                 if showNextScreen {
                     OnboardingFireDialogContent(viewModel: viewModel)
+                        .transition(.identity)
                 } else {
                     OnboardingRebranding.ContextualDaxDialogContent(
                         orientation: .horizontalStack(alignment: .center),
@@ -51,15 +58,17 @@ extension OnboardingRebranding {
                         Button(cta) {
                             blockedTrackersCTAAction()
                             if shouldFollowUp {
-                                withAnimation {
+                                withAnimation(.easeInOut(duration: 0.3)) {
                                     showNextScreen = true
                                 }
                             }
                         }
                         .buttonStyle(theme.primaryButtonStyle.style)
                     }
+                    .transition(.identity)
                 }
             }
+            .frame(height: panelHeight, alignment: .top)
         }
     }
 

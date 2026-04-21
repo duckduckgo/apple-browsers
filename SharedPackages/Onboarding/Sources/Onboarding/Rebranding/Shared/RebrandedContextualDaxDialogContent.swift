@@ -199,7 +199,7 @@ private extension OnboardingRebranding {
                 #if os(iOS)
                 if let title {
                     let titleAlignment = titleTextAlignment ?? theme.contextualOnboardingMetrics.contextualTitleTextAlignment
-                    TypingText(String(title.characters), onTypingFinished: {
+                    TypingText(title, onTypingFinished: {
                         startTypingMessage = true
                     })
                         .font(theme.typography.contextual.title)
@@ -207,7 +207,7 @@ private extension OnboardingRebranding {
                         .frame(maxWidth: .infinity, alignment: Alignment(titleAlignment))
                 }
                 let messageAlignment = messageTextAlignment ?? theme.contextualOnboardingMetrics.contextualBodyTextAlignment
-                TypingText(String(message.characters), startAnimating: title != nil ? $startTypingMessage : .constant(true))
+                TypingText(message, startAnimating: title != nil ? $startTypingMessage : .constant(true))
                     .font(theme.typography.contextual.body)
                     .multilineTextAlignment(messageAlignment)
                     .frame(maxWidth: .infinity, alignment: Alignment(messageAlignment))

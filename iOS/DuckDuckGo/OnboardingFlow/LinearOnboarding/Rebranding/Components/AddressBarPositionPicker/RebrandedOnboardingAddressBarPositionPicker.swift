@@ -60,7 +60,7 @@ private enum AddressBarPositionPickerMetrics {
     static let textSpacing: CGFloat = 0
     static let cornerRadius: CGFloat = 16.0
     static let borderWidth: CGFloat = 1.0
-    static let minHeight: CGFloat = 63.0
+    static let maxHeight: CGFloat = 63.0
     static let borderLightColor = Color.black.opacity(0.18)
     static let borderDarkColor = Color.white.opacity(0.18)
 
@@ -125,7 +125,7 @@ private struct AddressBarPositionButtonStyle: ButtonStyle {
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
             .padding()
-            .frame(minWidth: 0, maxWidth: .infinity, minHeight: AddressBarPositionPickerMetrics.minHeight)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: AddressBarPositionPickerMetrics.maxHeight, maxHeight: AddressBarPositionPickerMetrics.maxHeight)
             .background(backgroundColor(isSelected: isSelected, isPressed: configuration.isPressed))
             .cornerRadius(AddressBarPositionPickerMetrics.cornerRadius)
             .contentShape(Rectangle())

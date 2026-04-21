@@ -116,7 +116,7 @@ private final class TypingAnimationState: ObservableObject {
 ///   `TypingText` animations in the subtree (used for tap-to-skip).
 /// - When `accessibilityReduceMotion` is enabled, the full text appears immediately.
 public struct TypingText: View {
-    private let text: String
+    private let attributedText: AttributedString
     private let startAnimating: Binding<Bool>
     private let onTypingFinished: (() -> Void)?
 
@@ -124,10 +124,14 @@ public struct TypingText: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.typingAnimationSkip) private var skipAnimation
 
-    public init(_ text: String, startAnimating: Binding<Bool> = .constant(true), onTypingFinished: (() -> Void)? = nil) {
-        self.text = text
+    public init(_ attributedText: AttributedString, startAnimating: Binding<Bool> = .constant(true), onTypingFinished: (() -> Void)? = nil) {
+        self.attributedText = attributedText
         self.startAnimating = startAnimating
         self.onTypingFinished = onTypingFinished
+    }
+
+    public init(_ text: String, startAnimating: Binding<Bool> = .constant(true), onTypingFinished: (() -> Void)? = nil) {
+        self.init(AttributedString(text), startAnimating: startAnimating, onTypingFinished: onTypingFinished)
     }
 
     /// Builds an `AttributedString` where the first `visibleCount` characters inherit
@@ -135,39 +139,41 @@ public struct TypingText: View {
     /// Because the full text is always rendered, line breaks never shift.
     private var revealedText: Text {
         if state.isFinished {
-            return Text(text)
+            return Text(attributedText)
         }
-        let chars = Array(text)
-        let visible = AttributedString(String(chars.prefix(state.visibleCount)))
-        var hidden = AttributedString(String(chars.suffix(from: state.visibleCount)))
-        hidden.foregroundColor = .clear
-        return Text(visible) + Text(hidden)
+
+        let splitIndex = attributedText.characters.index(attributedText.startIndex, offsetBy: state.visibleCount)
+        let visibleAttributedString = AttributedString(attributedText[..<splitIndex])
+        var hiddenAttributedString = AttributedString(attributedText[splitIndex...])
+        hiddenAttributedString.foregroundColor = .clear
+
+        return Text(visibleAttributedString) + Text(hiddenAttributedString)
     }
 
     public var body: some View {
         revealedText
             .onChange(of: skipAnimation) { shouldSkip in
-                if shouldSkip { state.skip(totalCount: text.count, onFinished: onTypingFinished) }
+                if shouldSkip { state.skip(totalCount: attributedText.characters.count, onFinished: onTypingFinished) }
             }
             .onChange(of: startAnimating.wrappedValue) { shouldAnimate in
                 if shouldAnimate {
                     if reduceMotion {
-                        state.skip(totalCount: text.count, onFinished: onTypingFinished)
+                        state.skip(totalCount: attributedText.characters.count, onFinished: onTypingFinished)
                     } else {
-                        state.start(totalCount: text.count, onFinished: onTypingFinished)
+                        state.start(totalCount: attributedText.characters.count, onFinished: onTypingFinished)
                     }
                 } else {
                     state.stop()
                 }
             }
             .onChange(of: reduceMotion) { shouldReduce in
-                if shouldReduce { state.skip(totalCount: text.count, onFinished: onTypingFinished) }
+                if shouldReduce { state.skip(totalCount: attributedText.characters.count, onFinished: onTypingFinished) }
             }
             .onAppear {
                 if reduceMotion || skipAnimation {
-                    state.skip(totalCount: text.count, onFinished: onTypingFinished)
+                    state.skip(totalCount: attributedText.characters.count, onFinished: onTypingFinished)
                 } else if startAnimating.wrappedValue {
-                    state.start(totalCount: text.count, onFinished: onTypingFinished)
+                    state.start(totalCount: attributedText.characters.count, onFinished: onTypingFinished)
                 }
             }
             .onDisappear { state.stop() }

@@ -262,14 +262,14 @@ def _find_or_create_suite(root: ET.Element, class_name: str, target: str) -> ET.
 def _append_step_summary(summary_path: str, title: str, crashes: list[dict]) -> None:
     n = len(crashes)
     lines = [
-        f"### {title} — Crashes ({n})",
+        f"### {title} – Crashes ({n})",
         "",
         "_Expand the entries below for more information._",
         "",
     ]
     for c in crashes:
         test_ref = f"{c['class_name']}.{c['test_name']}"
-        summary_line = f"<b>{test_ref}</b> — {_md_escape(c['reason'])}"
+        summary_line = f"<b>{test_ref}</b> – {_md_escape(c['reason'])}"
         lines.append(f"<details><summary>{summary_line}</summary>")
         lines.append("")
         report = c.get("report")

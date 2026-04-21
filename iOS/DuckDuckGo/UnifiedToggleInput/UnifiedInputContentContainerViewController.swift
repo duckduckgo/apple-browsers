@@ -277,6 +277,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // Landscape: chat history hatch sits slightly below Search tray due to different view technologies
         // (UITableView vs SwiftUI NTP). Small pull-up keeps both tabs aligned when switching.
         let landscapeAlignment: CGFloat = isLandscapeOrientation ? Metrics.landscapeDuckAiAlignmentPullUp : 0
+        // Combine all active offsets into the final chat-history inset.
         let chatInset = suggestionInsetBase - compensation + emptyListBoost + landscapeAlignment
         aiChatHistoryManager?.setAdditionalTopInset(chatInset)
     }

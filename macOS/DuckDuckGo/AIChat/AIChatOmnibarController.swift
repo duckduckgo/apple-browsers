@@ -176,7 +176,11 @@ final class AIChatOmnibarController {
 
     /// Called when the duck.ai omnibar becomes visible.
     /// Triggers a models fetch (on every activation) and suggestions fetch.
-    func onOmnibarActivated() {
+    /// - Parameter shouldFetchSuggestions: pass `false` when the activation should avoid triggering an async
+    ///   suggestions fetch that would visibly expand the panel height after it appears (e.g. on tab-switch
+    ///   presentation). User text input will still trigger suggestions via the debounced subscription once
+    ///   `hasBeenActivated` is `true`.
+    func onOmnibarActivated(shouldFetchSuggestions: Bool = true) {
         hasBeenActivated = true
 
         // Re-sync `currentText` from shared state in case a prior `cleanup()` cleared it.
@@ -198,7 +202,9 @@ final class AIChatOmnibarController {
             return
         }
 
-        fetchSuggestionsIfNeeded(query: currentText)
+        if shouldFetchSuggestions {
+            fetchSuggestionsIfNeeded(query: currentText)
+        }
     }
 
     private func fetchModels() {
@@ -339,6 +345,17 @@ final class AIChatOmnibarController {
         if !isUpdatingFromSharedState {
             sharedTextState?.updateText(text, markInteraction: true)
         }
+    }
+
+    /// Persists the prompt text view's cursor position / selection to the current tab's shared state so it
+    /// can be restored when the panel is re-activated (tab switch, refocus).
+    func updateSelection(_ range: NSRange) {
+        sharedTextState?.updateSelection(range)
+    }
+
+    /// The cursor position / selection range currently persisted for this tab, or `nil` if none.
+    var currentSelectionRange: NSRange? {
+        sharedTextState?.selectionRange
     }
 
     func cleanup() {

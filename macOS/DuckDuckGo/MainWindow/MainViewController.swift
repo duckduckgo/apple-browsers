@@ -522,7 +522,7 @@ final class MainViewController: NSViewController {
         updateBookmarksBarViewVisibility(visible: !isInPopUpWindow && !mainView.isBookmarksBarShown)
     }
 
-    func updateAIChatOmnibarContainerVisibility(visible: Bool, shouldKeepSelection: Bool = false) {
+    func updateAIChatOmnibarContainerVisibility(visible: Bool, shouldKeepSelection: Bool = false, shouldFetchSuggestions: Bool = true) {
         if visible {
             // Re-expanding from unfocused-in-duck.ai keeps the container on screen; fully reactivate suggestions.
             aiChatOmnibarContainerViewController.setSuggestionsCollapsedByUnfocus(false)
@@ -536,6 +536,12 @@ final class MainViewController: NSViewController {
             let passthroughHeight = aiChatOmnibarContainerViewController.totalPassthroughHeight
             mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
             aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
+
+            /// Sync text into the prompt view BEFORE flipping isHidden so the panel appears already populated —
+            /// otherwise the normal async `$currentText → textView.string` subscription races the show and the
+            /// user sees the text "filling in" after the panel is visible.
+            aiChatOmnibarContainerViewController.omnibarController.onOmnibarActivated(shouldFetchSuggestions: shouldFetchSuggestions)
+            aiChatOmnibarTextContainerViewController.syncTextViewToCurrentText()
         }
 
         mainView.isAIChatOmnibarContainerShown = visible
@@ -546,13 +552,7 @@ final class MainViewController: NSViewController {
             aiChatOmnibarContainerViewController.startEventMonitoring()
             aiChatOmnibarTextContainerViewController.startEventMonitoring()
 
-            /// Trigger suggestions fetch + re-sync currentText from shared state before we snap the
-            /// prompt view to it synchronously; otherwise the normal async `$currentText` subscription
-            /// renders the text appearing after the panel is already visible.
-            aiChatOmnibarContainerViewController.omnibarController.onOmnibarActivated()
-            aiChatOmnibarTextContainerViewController.syncTextViewToCurrentText()
-
-            aiChatOmnibarTextContainerViewController.focusTextView()
+            aiChatOmnibarTextContainerViewController.focusTextViewRestoringCursorPosition()
 
             // Suppress mouse hover until mouse actually moves
             aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.suppressMouseHoverUntilMouseMoves()
@@ -608,7 +608,7 @@ final class MainViewController: NSViewController {
         mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
         aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
 
-        aiChatOmnibarTextContainerViewController.focusTextViewWithCursorAtEnd()
+        aiChatOmnibarTextContainerViewController.focusTextViewRestoringCursorPosition()
     }
 
     func openNewDuckAIChatTab() {

@@ -264,6 +264,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     @objc func textDidChange(_ notification: Notification) {
         omnibarController.updateText(textView.string)
+        omnibarController.updateSelection(textView.selectedRange)
         let currentScrollPosition = scrollView.documentVisibleRect.origin
         updatePanelHeight()
         updatePlaceholderVisibility()
@@ -272,6 +273,12 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             guard let self = self else { return }
             self.textView.scroll(currentScrollPosition)
         }
+    }
+
+    func textViewDidChangeSelection(_ notification: Notification) {
+        /// Persist the caret / selection to the current tab's shared state so the same position is
+        /// restored when the panel is re-activated (tab switch, refocus, etc.).
+        omnibarController.updateSelection(textView.selectedRange)
     }
 
     private func updatePlaceholderVisibility() {
@@ -349,6 +356,20 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     func focusTextViewWithCursorAtEnd() {
         focusTextView()
         moveCursorToEnd()
+    }
+
+    /// Focuses the text view and restores the caret to the position persisted for the current tab,
+    /// falling back to the end of the prompt when no position has been saved yet or when the saved
+    /// location is past the current text length.
+    func focusTextViewRestoringCursorPosition() {
+        focusTextView()
+        if let saved = omnibarController.currentSelectionRange,
+           saved.location <= textView.string.count {
+            let clampedLength = min(saved.length, max(0, textView.string.count - saved.location))
+            textView.selectedRange = NSRange(location: saved.location, length: clampedLength)
+        } else {
+            moveCursorToEnd()
+        }
     }
 
     /// Forces the text view's string to match `omnibarController.currentText` synchronously.
@@ -574,14 +595,12 @@ private final class FocusableTextView: NSTextView {
 
     override func mouseDown(with event: NSEvent) {
         if window?.firstResponder != self {
-            /// Refocus click: make this the first responder and place cursor at the end of the prompt
-            /// instead of letting `super.mouseDown` position it at the click location (which can land at the
-            /// beginning when the click is near the left edge / before any text). Skip `super.mouseDown` so
-            /// the click doesn't reset the caret; a subsequent click can still reposition normally since we
-            /// are then already first responder.
+            /// Refocus click: make this the first responder so the refocus flow (via `becomeFirstResponder` →
+            /// `onDidBecomeFirstResponder` callback → `focusTextViewRestoringCursorPosition`) can restore the
+            /// caret to the position saved for the current tab. Skip `super.mouseDown` so NSTextView doesn't
+            /// override our restored selection with a click-location caret; a subsequent click with the text
+            /// view already first responder positions the caret normally.
             window?.makeFirstResponder(self)
-            let textLength = string.count
-            selectedRange = NSRange(location: textLength, length: 0)
             return
         }
         super.mouseDown(with: event)

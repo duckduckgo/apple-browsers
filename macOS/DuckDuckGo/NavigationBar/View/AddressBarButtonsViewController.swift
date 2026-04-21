@@ -631,6 +631,11 @@ final class AddressBarButtonsViewController: NSViewController {
 
             updatePrivacyEntryPointIcon()
             updateAIChatButtonState()
+            /// Re-evaluate all button visibility for the new tab. Without this, `privacyDashboardButton.isShown`
+            /// stays at its previous tab's value until an unrelated update (focus change, etc.) fires
+            /// `updateButtons` — the shield is then visibly missing after clicking a URL tab until the user
+            /// focuses + defocuses the address bar.
+            updateButtons()
         }.store(in: &cancellables)
     }
 

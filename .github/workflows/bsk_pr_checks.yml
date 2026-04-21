@@ -130,8 +130,21 @@ jobs:
           ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
             "$xcresult" package-tests.xml \
             --log build-log.txt \
-            --crash-reports-dir ~/Library/Logs/DiagnosticReports \
-            --summary-title "BSK (macOS)"
+            --crash-reports-dir ~/Library/Logs/DiagnosticReports
+
+      - name: Render test report
+        if: always()
+        run: |
+          if [[ -f package-tests.xml ]]; then
+            crashes_arg=()
+            if [[ -f package-tests-crashes.json ]]; then
+              crashes_arg=(--crashes-json package-tests-crashes.json)
+            fi
+            ${{ github.workspace }}/scripts/render-test-report.py \
+              --junit package-tests.xml \
+              --title "BSK (macOS)" \
+              "${crashes_arg[@]}"
+          fi
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4
@@ -140,6 +153,7 @@ jobs:
           name: bsk-macos-unittests.xml
           path: |
             SharedPackages/BrowserServicesKit/package-tests.xml
+            SharedPackages/BrowserServicesKit/package-tests-crashes.json
           retention-days: 7
 
       - name: Publish Unit Tests Report
@@ -150,6 +164,7 @@ jobs:
           report_paths: SharedPackages/BrowserServicesKit/package-tests.xml
           require_tests: true
           check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+          job_summary: 'false'
 
       - name: Update Asana with failed unit tests
         if: always() && steps.run-unit-tests.outcome == 'failure'
@@ -294,8 +309,21 @@ jobs:
           ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
             "$xcresult" bsk-ios-unittests.xml \
             --log ios-build-log.txt \
-            --crash-reports-dir ~/Library/Logs/DiagnosticReports \
-            --summary-title "BSK (iOS)"
+            --crash-reports-dir ~/Library/Logs/DiagnosticReports
+
+      - name: Render test report
+        if: always()
+        run: |
+          if [[ -f bsk-ios-unittests.xml ]]; then
+            crashes_arg=()
+            if [[ -f bsk-ios-unittests-crashes.json ]]; then
+              crashes_arg=(--crashes-json bsk-ios-unittests-crashes.json)
+            fi
+            ${{ github.workspace }}/scripts/render-test-report.py \
+              --junit bsk-ios-unittests.xml \
+              --title "BSK (iOS)" \
+              "${crashes_arg[@]}"
+          fi
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4
@@ -304,6 +332,7 @@ jobs:
           name: bsk-ios-unittests.xml
           path: |
             SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
+            SharedPackages/BrowserServicesKit/bsk-ios-unittests-crashes.json
           retention-days: 7
 
       - name: Publish Unit Tests Report
@@ -314,6 +343,7 @@ jobs:
           report_paths: SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
           require_tests: true
           check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+          job_summary: 'false'
 
       - name: Update Asana with failed unit tests
         if: always() && steps.run-unit-tests-ios.outcome == 'failure'

@@ -113,8 +113,21 @@ jobs:
         ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
           "$xcresult" unittests.xml \
           --log xcodebuild.log \
-          --crash-reports-dir ~/Library/Logs/DiagnosticReports \
-          --summary-title "iOS Nightly"
+          --crash-reports-dir ~/Library/Logs/DiagnosticReports
+
+    - name: Render test report
+      if: always()
+      run: |
+        if [[ -f unittests.xml ]]; then
+          crashes_arg=()
+          if [[ -f unittests-crashes.json ]]; then
+            crashes_arg=(--crashes-json unittests-crashes.json)
+          fi
+          ${{ github.workspace }}/scripts/render-test-report.py \
+            --junit unittests.xml \
+            --title "iOS Nightly" \
+            "${crashes_arg[@]}"
+        fi
 
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v3
@@ -122,6 +135,7 @@ jobs:
       with:
         report_paths: iOS/unittests.xml
         check_retries: true
+        job_summary: 'false'
 
   notify-failure:
     name: Notify on failure

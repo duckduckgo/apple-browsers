@@ -23,7 +23,8 @@ class StringExtensionTests: XCTestCase {
 
     // Temporary: forced crash to verify CI crash-surfacing pipeline on branch sam/gha-surface-crashes. Remove before merging.
     func testForceCrashForReportingVerification() {
-        fatalError("forced crash to verify CI crash reporting")
+        let value: String? = nil
+        _ = value!
     }
 
     // Temporary: forced failure to verify CI failure-surfacing pipeline on branch sam/gha-surface-crashes. Remove before merging.

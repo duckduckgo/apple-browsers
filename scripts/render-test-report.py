@@ -50,8 +50,7 @@ def main() -> int:
         print(f"JUnit file {junit} not found; skipping report.", file=sys.stderr)
         return 0
 
-    totals = _totals(junit)
-    failures, junit_crashes = _failures_and_crashes(junit)
+    totals, failures, junit_crashes = _collect(junit)
     crashes = _merge_crashes(junit_crashes, _load_sidecar(args.crashes_json))
 
     html_doc = _render(args.title, totals, failures, crashes)
@@ -62,63 +61,67 @@ def main() -> int:
 
 # ---------- JUnit parsing ----------
 
-def _totals(junit_path: Path) -> dict:
+def _collect(junit_path: Path) -> tuple[dict, list[dict], list[dict]]:
+    # Group testcase attempts by (classname, name) so retries from
+    # `-retry-tests-on-failure` / `-test-iterations` collapse to one row
+    # per unique test. A test is considered passed if any attempt passed,
+    # skipped if its sole attempt was marked skipped, and failed otherwise.
     root = ET.parse(junit_path).getroot()
-    # Root can be <testsuites> or a single <testsuite>. When the
-    # aggregate attributes are missing, sum across <testsuite> children.
-    tests = _int_attr(root, "tests")
-    failures = _int_attr(root, "failures")
-    errors = _int_attr(root, "errors")
-    skipped = _int_attr(root, "skipped")
-    time = _float_attr(root, "time")
+    groups: dict[tuple[str, str], list[dict]] = {}
+    total_time = 0.0
+    for tc in root.iter("testcase"):
+        key = (tc.get("classname", ""), tc.get("name", ""))
+        total_time += _float_attr(tc, "time")
+        failure_el = tc.find("failure")
+        if failure_el is None:
+            failure_el = tc.find("error")
+        attempt = {
+            "failure_message": (
+                None if failure_el is None
+                else (failure_el.get("message", "") or (failure_el.text or ""))
+            ),
+            "skipped": tc.find("skipped") is not None,
+        }
+        groups.setdefault(key, []).append(attempt)
 
-    suites = root.findall("testsuite") if root.tag == "testsuites" else [root]
-    if tests == 0 and suites:
-        tests = sum(_int_attr(s, "tests") for s in suites)
-        failures = sum(_int_attr(s, "failures") for s in suites)
-        errors = sum(_int_attr(s, "errors") for s in suites)
-        skipped = sum(_int_attr(s, "skipped") for s in suites)
-        time = sum(_float_attr(s, "time") for s in suites)
+    if total_time == 0.0:
+        total_time = _float_attr(root, "time")
 
-    passed = max(tests - failures - errors - skipped, 0)
-    return {
-        "total": tests,
-        "passed": passed,
-        "failed": failures + errors,
-        "skipped": skipped,
-        "duration": _format_duration(time),
-    }
-
-
-def _failures_and_crashes(junit_path: Path) -> tuple[list[dict], list[dict]]:
-    root = ET.parse(junit_path).getroot()
+    total = passed = failed = skipped_count = 0
     failures: list[dict] = []
     crashes: list[dict] = []
-    for tc in root.iter("testcase"):
-        failure = tc.find("failure")
-        if failure is None:
-            failure = tc.find("error")
-        if failure is None:
+    for (class_name, test_name), attempts in groups.items():
+        total += 1
+        any_passed = any(a["failure_message"] is None and not a["skipped"] for a in attempts)
+        only_skipped = all(a["skipped"] for a in attempts)
+        if any_passed:
+            passed += 1
             continue
-        message = failure.get("message", "") or (failure.text or "")
-        row = {
-            "class_name": tc.get("classname", ""),
-            "test_name": tc.get("name", ""),
-            "reason": _clean_reason(message),
-        }
-        if message.startswith(CRASH_PREFIX):
-            row["reason"] = _clean_reason(message[len(CRASH_PREFIX):])
+        if only_skipped:
+            skipped_count += 1
+            continue
+        failed += 1
+        first_fail = next(
+            (a for a in attempts if a["failure_message"] is not None),
+            None,
+        )
+        msg = first_fail["failure_message"] if first_fail else ""
+        row = {"class_name": class_name, "test_name": test_name}
+        if msg.startswith(CRASH_PREFIX):
+            row["reason"] = _clean_reason(msg[len(CRASH_PREFIX):])
             crashes.append(row)
         else:
+            row["reason"] = _clean_reason(msg)
             failures.append(row)
-    return failures, crashes
 
-
-def _int_attr(el: ET.Element, name: str) -> int:
-    try:
-        return int(el.get(name, "0"))
-    except ValueError:
-        return 0
+    totals = {
+        "total": total,
+        "passed": passed,
+        "failed": failed,
+        "skipped": skipped_count,
+        "duration": _format_duration(total_time),
+    }
+    return totals, failures, crashes
 
 
 def _float_attr(el: ET.Element, name: str) -> float:

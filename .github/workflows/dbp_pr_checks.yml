@@ -123,8 +123,21 @@ jobs:
           ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
             "$xcresult" package-tests.xml \
             --log build-log.txt \
-            --crash-reports-dir ~/Library/Logs/DiagnosticReports \
-            --summary-title "DBP (macOS)"
+            --crash-reports-dir ~/Library/Logs/DiagnosticReports
+
+      - name: Render test report
+        if: always()
+        run: |
+          if [[ -f package-tests.xml ]]; then
+            crashes_arg=()
+            if [[ -f package-tests-crashes.json ]]; then
+              crashes_arg=(--crashes-json package-tests-crashes.json)
+            fi
+            ${{ github.workspace }}/scripts/render-test-report.py \
+              --junit package-tests.xml \
+              --title "DBP (macOS)" \
+              "${crashes_arg[@]}"
+          fi
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
@@ -134,6 +147,7 @@ jobs:
           report_paths: SharedPackages/DataBrokerProtectionCore/package-tests.xml
           require_tests: true
           check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+          job_summary: 'false'
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'
@@ -280,8 +294,21 @@ jobs:
           ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
             "$xcresult" dbp-ios-unittests.xml \
             --log ios-build-log.txt \
-            --crash-reports-dir ~/Library/Logs/DiagnosticReports \
-            --summary-title "DBP (iOS)"
+            --crash-reports-dir ~/Library/Logs/DiagnosticReports
+
+      - name: Render test report
+        if: always()
+        run: |
+          if [[ -f dbp-ios-unittests.xml ]]; then
+            crashes_arg=()
+            if [[ -f dbp-ios-unittests-crashes.json ]]; then
+              crashes_arg=(--crashes-json dbp-ios-unittests-crashes.json)
+            fi
+            ${{ github.workspace }}/scripts/render-test-report.py \
+              --junit dbp-ios-unittests.xml \
+              --title "DBP (iOS)" \
+              "${crashes_arg[@]}"
+          fi
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
@@ -291,6 +318,7 @@ jobs:
           report_paths: SharedPackages/DataBrokerProtectionCore/dbp-ios-unittests.xml
           require_tests: true
           check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+          job_summary: 'false'
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'

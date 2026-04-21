@@ -240,6 +240,7 @@ jobs:
         name: ios-unittests.xml
         path: |
           iOS/unittests.xml
+          iOS/unittests-crashes.json
         retention-days: 7
 
     - name: Upload logs if workflow failed

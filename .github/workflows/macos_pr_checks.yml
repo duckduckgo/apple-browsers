@@ -390,7 +390,9 @@ jobs:
       if: always()
       with:
         name: macos-${{ matrix.flavor }}-unittests.xml
-        path: macOS/${{ matrix.flavor }}*.xml
+        path: |
+          macOS/${{ matrix.flavor }}*.xml
+          macOS/${{ matrix.flavor }}*-crashes.json
         retention-days: 7
 
     - name: Publish unit tests report

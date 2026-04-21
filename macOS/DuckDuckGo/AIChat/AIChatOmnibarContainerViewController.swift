@@ -1055,12 +1055,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
+        let currentEffort = omnibarController.selectedReasoningEffort
         for effort in omnibarController.selectedModelReasoningEfforts {
             let item = NSMenuItem(title: "", action: #selector(reasoningEffortSelected(_:)), keyEquivalent: "")
             item.attributedTitle = toolsMenuItemAttributedTitle(title: effort.title, subtitle: effort.subtitle)
             item.target = self
             item.representedObject = effort
             item.image = effort.icon
+            if effort == currentEffort {
+                item.state = .on
+            }
             menu.addItem(item)
         }
 

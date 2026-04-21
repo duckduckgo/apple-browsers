@@ -99,7 +99,11 @@ jobs:
         if [[ -z "$xcresult" ]]; then
           exit 0
         fi
-        ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py "$xcresult" unittests.xml
+        ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
+          "$xcresult" unittests.xml \
+          --log xcodebuild.log \
+          --crash-reports-dir ~/Library/Logs/DiagnosticReports \
+          --summary-title "iOS Nightly — crash details"
 
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v3

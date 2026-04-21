@@ -120,7 +120,11 @@ jobs:
           if [[ -z "$xcresult" ]]; then
             exit 0
           fi
-          ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py "$xcresult" package-tests.xml
+          ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
+            "$xcresult" package-tests.xml \
+            --log build-log.txt \
+            --crash-reports-dir ~/Library/Logs/DiagnosticReports \
+            --summary-title "DBP (macOS) — crash details"
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
@@ -274,7 +278,11 @@ jobs:
           if [[ -z "$xcresult" ]]; then
             exit 0
           fi
-          ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py "$xcresult" dbp-ios-unittests.xml
+          ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
+            "$xcresult" dbp-ios-unittests.xml \
+            --log ios-build-log.txt \
+            --crash-reports-dir ~/Library/Logs/DiagnosticReports \
+            --summary-title "DBP (iOS) — crash details"
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4

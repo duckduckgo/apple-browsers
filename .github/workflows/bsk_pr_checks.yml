@@ -127,7 +127,11 @@ jobs:
           if [[ -z "$xcresult" ]]; then
             exit 0
           fi
-          ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py "$xcresult" package-tests.xml
+          ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
+            "$xcresult" package-tests.xml \
+            --log build-log.txt \
+            --crash-reports-dir ~/Library/Logs/DiagnosticReports \
+            --summary-title "BSK (macOS) — crash details"
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4
@@ -288,7 +292,11 @@ jobs:
           if [[ -z "$xcresult" ]]; then
             exit 0
           fi
-          ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py "$xcresult" bsk-ios-unittests.xml
+          ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
+            "$xcresult" bsk-ios-unittests.xml \
+            --log ios-build-log.txt \
+            --crash-reports-dir ~/Library/Logs/DiagnosticReports \
+            --summary-title "BSK (iOS) — crash details"
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4

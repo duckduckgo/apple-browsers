@@ -214,7 +214,11 @@ jobs:
         if [[ -z "$xcresult" ]]; then
           exit 0
         fi
-        ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py "$xcresult" unittests.xml
+        ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
+          "$xcresult" unittests.xml \
+          --log xcodebuild.log \
+          --crash-reports-dir ~/Library/Logs/DiagnosticReports \
+          --summary-title "iOS PR Checks — crash details"
 
     - name: Upload JUnit XML as artifact
       uses: actions/upload-artifact@v4

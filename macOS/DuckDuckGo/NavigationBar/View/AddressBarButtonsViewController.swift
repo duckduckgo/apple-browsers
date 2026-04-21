@@ -246,14 +246,6 @@ final class AddressBarButtonsViewController: NSViewController {
             }
         }
     }
-    /// True when duck.ai is the persistent mode for the current tab (focused or unfocused-with-AIchat).
-    /// Drives the toggle's visibility when the address bar isn't focused so the mode remains indicated.
-    var isInAIChatMode: Bool = false {
-        didSet {
-            guard isInAIChatMode != oldValue else { return }
-            updateButtons()
-        }
-    }
     var textFieldValue: AddressBarTextField.Value? {
         didSet {
             updateButtons()
@@ -1857,11 +1849,10 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     /// True when the search/duck.ai toggle feature is active for the current focus/mode combination.
-    /// Toggle stays visible while duck.ai is the persistent mode for the tab, even when the bar is unfocused,
-    /// so the user can see which mode is active and switch back to search without refocusing first.
+    /// The toggle is only surfaced while the address bar is focused; in unfocused duck.ai mode the toggle is hidden
+    /// to match the search-mode behaviour (the persistent duck.ai state is indicated by the AI chat panel below).
     private var isSearchModeToggleFeatureActive: Bool {
-        let isToggleRelevant = isTextFieldEditorFirstResponder || isInAIChatMode
-        return isToggleRelevant && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+        isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
     }
 
     /// True when the toggle should be shown (feature active + user setting enabled).
@@ -1910,12 +1901,8 @@ final class AddressBarButtonsViewController: NSViewController {
         let hasUserTypedText = textFieldValue?.isUserTyped == true && hasText
         let hasInteractedBefore = aiChatToggleConditions.hasUserInteractedWithToggle
 
-        // While unfocused-in-duck.ai the toggle is shown only to indicate the persistent mode,
-        // so it should always be collapsed (the expanded labels are reserved for the focused experience).
-        let shouldForceCollapsed = isInAIChatMode && !isTextFieldEditorFirstResponder
-
         if shouldShowToggle && !wasToggleVisible {
-            if shouldForceCollapsed || hasText || hasInteractedBefore {
+            if hasText || hasInteractedBefore {
                 toggleControl.setExpanded(false, animated: false)
                 searchModeToggleWidthConstraint?.constant = toggleControl.collapsedWidth
             } else {
@@ -1923,8 +1910,8 @@ final class AddressBarButtonsViewController: NSViewController {
                 searchModeToggleWidthConstraint?.constant = toggleControl.expandedWidth
             }
 
-        } else if shouldShowToggle && (hasUserTypedText || shouldForceCollapsed) && toggleControl.isExpanded {
-            toggleControl.setExpanded(false, animated: !shouldForceCollapsed)
+        } else if shouldShowToggle && hasUserTypedText && toggleControl.isExpanded {
+            toggleControl.setExpanded(false, animated: true)
         } else if !shouldShowToggle && toggleControl.isExpanded {
             toggleControl.setExpanded(false, animated: false)
             searchModeToggleWidthConstraint?.constant = toggleControl.collapsedWidth

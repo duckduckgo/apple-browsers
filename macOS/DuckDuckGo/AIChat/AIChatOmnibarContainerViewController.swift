@@ -701,6 +701,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         observeWindowFrameChanges()
     }
 
+    /// Shows or hides the drop shadow that extends below the panel. The panel itself stays visible.
+    /// Used to mirror the address-bar shadow behaviour: on focus the shadow is drawn, on unfocus it's removed.
+    func setShadowVisible(_ visible: Bool) {
+        if visible {
+            addShadowToWindow()
+        } else {
+            shadowView.removeFromSuperview()
+        }
+    }
+
     /// Stops event monitoring. Call this when the view controller is about to be dismissed.
     func cleanup() {
         backgroundView.stopListening()

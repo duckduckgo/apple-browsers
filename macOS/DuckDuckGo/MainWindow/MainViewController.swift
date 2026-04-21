@@ -572,6 +572,8 @@ final class MainViewController: NSViewController {
 
         aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.clearSelection()
         aiChatOmnibarContainerViewController.setSuggestionsCollapsedByUnfocus(true)
+        /// Hide the panel's drop shadow so it matches the unfocused address-bar shadow treatment.
+        aiChatOmnibarContainerViewController.setShadowVisible(false)
 
         let textHeight = aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
         let additionalHeight = aiChatOmnibarContainerViewController.additionalContentHeight
@@ -604,6 +606,9 @@ final class MainViewController: NSViewController {
         aiChatOmnibarContainerViewController.startEventMonitoring()
         aiChatOmnibarTextContainerViewController.startEventMonitoring()
 
+        /// Applied after `startEventMonitoring` (which always adds the shadow) so the unfocused state wins.
+        aiChatOmnibarContainerViewController.setShadowVisible(false)
+
         let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
         aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
     }
@@ -614,6 +619,8 @@ final class MainViewController: NSViewController {
         guard mainView.isAIChatOmnibarContainerShown else { return }
 
         aiChatOmnibarContainerViewController.setSuggestionsCollapsedByUnfocus(false)
+        /// Restore the panel's drop shadow to match the focused address-bar shadow treatment.
+        aiChatOmnibarContainerViewController.setShadowVisible(true)
         aiChatOmnibarContainerViewController.omnibarController.onOmnibarActivated()
 
         let textHeight = aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()

@@ -39,7 +39,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let layoutManager = NSLayoutManager()
     private let textContainer = NSTextContainer()
     private let textView: FocusableTextView
-    private let placeholderLabel = NSTextField(labelWithString: "")
+    private let placeholderLabel = ClickThroughLabel(labelWithString: "")
     private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
     private var cancellables = Set<AnyCancellable>()
@@ -467,6 +467,14 @@ protocol FocusableTextViewNavigationDelegate: AnyObject {
     /// Called when the user drops image files onto the text view
     /// - Returns: `true` if any images were accepted, `false` otherwise
     func textViewDidReceiveImageDrop(_ fileURLs: [URL]) -> Bool
+}
+
+/// NSTextField label that lets mouse events pass through to the view beneath it.
+/// Used for the prompt placeholder so clicks on the placeholder area focus the text view instead of being absorbed by the label.
+private final class ClickThroughLabel: NSTextField {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return nil
+    }
 }
 
 /// Custom NSTextView that ensures it can always accept focus when clicked

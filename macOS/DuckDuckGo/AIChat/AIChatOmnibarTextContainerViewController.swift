@@ -574,7 +574,15 @@ private final class FocusableTextView: NSTextView {
 
     override func mouseDown(with event: NSEvent) {
         if window?.firstResponder != self {
+            /// Refocus click: make this the first responder and place cursor at the end of the prompt
+            /// instead of letting `super.mouseDown` position it at the click location (which can land at the
+            /// beginning when the click is near the left edge / before any text). Skip `super.mouseDown` so
+            /// the click doesn't reset the caret; a subsequent click can still reposition normally since we
+            /// are then already first responder.
             window?.makeFirstResponder(self)
+            let textLength = string.count
+            selectedRange = NSRange(location: textLength, length: 0)
+            return
         }
         super.mouseDown(with: event)
     }

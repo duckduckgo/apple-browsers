@@ -636,12 +636,7 @@ final class MainViewController: NSViewController {
         mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
         aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
 
-        aiChatOmnibarTextContainerViewController.focusTextView()
-        /// Dispatch async so the cursor move lands after NSTextView's `super.mouseDown` positioning
-        /// (which places the cursor at the click location). On refocus we always want the cursor at end.
-        DispatchQueue.main.async { [weak self] in
-            self?.aiChatOmnibarTextContainerViewController.moveCursorToEnd()
-        }
+        aiChatOmnibarTextContainerViewController.focusTextViewWithCursorAtEnd()
     }
 
     func openNewDuckAIChatTab() {

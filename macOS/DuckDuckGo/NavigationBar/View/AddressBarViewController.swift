@@ -644,14 +644,14 @@ final class AddressBarViewController: NSViewController {
 
         updateShadowViewPresence(selectionState.isSelected)
         inactiveBackgroundView.backgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor
-        inactiveBackgroundView.alphaValue = selectionState.isSelected ? 0 : 1
-        activeBackgroundView.alphaValue = selectionState.isSelected ? 1 : 0
 
-        /// Keep the active/suggestions-variant background isHidden in sync with the current mode.
-        /// Without this, leaving duck.ai mode via navigation (where `updateShadowView` is only called while
-        /// `isSelected`) leaves the suggestions-variant background visible and the standard active background hidden,
-        /// producing a taller/shadowed address bar as if suggestions were still open.
+        /// When the duck.ai panel is active, the extended `activeBackgroundViewWithSuggestions` is the single
+        /// background we want behind the address bar (it merges with the panel below). Suppress the inactive /
+        /// active variants to avoid two layers rendering with different widths — that's the ~1pt edge mismatch
+        /// and the "address-bar-like" look on tab-switch back into a Duck.ai tab.
         let isSuggestionsVariantActive = addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible
+        inactiveBackgroundView.alphaValue = (selectionState.isSelected || isSuggestionsVariantActive) ? 0 : 1
+        activeBackgroundView.alphaValue = (selectionState.isSelected && !isSuggestionsVariantActive) ? 1 : 0
         activeBackgroundView.isHidden = isSuggestionsVariantActive
         activeBackgroundViewWithSuggestions.isHidden = !isSuggestionsVariantActive
         inactiveAddressBarShadowView.isHidden = isSuggestionsVariantActive || selectionState.isSelected

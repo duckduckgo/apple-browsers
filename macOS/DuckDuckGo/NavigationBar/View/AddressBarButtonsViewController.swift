@@ -1040,6 +1040,14 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
+        /// Hide shields while the duck.ai panel is up — the panel's own prompt overlay takes the address
+        /// bar area and any shield rendering would bleed through at the overlay edges.
+        if isAIChatPanelActive {
+            shieldAnimationView.isHidden = true
+            shieldDotAnimationView.isHidden = true
+            return
+        }
+
         // Hide shields when user is typing in the address bar
         if textFieldValue?.isText ?? false {
             shieldAnimationView.isHidden = true
@@ -1272,6 +1280,14 @@ final class AddressBarButtonsViewController: NSViewController {
         guard !isInPopUpWindow else { return }
 
         if case .editing(.aiChat) = controllerMode {
+            bookmarkButton.isShown = false
+            updateAIChatDividerVisibility()
+            return
+        }
+
+        /// Hide bookmark while the duck.ai panel is up even if the derived mode is .browsing
+        /// (tab switch back to a Duck.ai-persistent URL tab lands in .inactiveWithAIChat with mode=.browsing).
+        if isAIChatPanelActive {
             bookmarkButton.isShown = false
             updateAIChatDividerVisibility()
             return

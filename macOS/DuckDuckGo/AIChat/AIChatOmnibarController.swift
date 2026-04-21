@@ -212,6 +212,7 @@ final class AIChatOmnibarController {
                 self.hasActiveSubscription = userTier != .free
                 self.models = remoteModels.map { AIChatModel(remoteModel: $0, userTier: userTier) }
                 self.clearStaleModelSelectionIfNeeded()
+                self.clearStaleReasoningEffortIfNeeded()
             } catch is CancellationError {
                 return
             } catch {
@@ -284,6 +285,16 @@ final class AIChatOmnibarController {
         }
     }
 
+    /// Clears the persisted reasoning effort if the current model no longer supports it.
+    /// Runs after models are fetched, so a stale value persisted against an older model
+    /// list doesn't linger and get attached to future prompts.
+    private func clearStaleReasoningEffortIfNeeded() {
+        guard let persistedEffort = preferences.selectedReasoningEffort else { return }
+        if !selectedModelReasoningEfforts.contains(persistedEffort) {
+            preferences.selectedReasoningEffort = nil
+        }
+    }
+
     /// The model ID to include in the prompt. Returns nil if the user has never
     /// explicitly selected a model, so the backend uses its default.
     var currentModelId: String? {
@@ -336,9 +347,14 @@ final class AIChatOmnibarController {
     }
 
     /// The reasoning effort to include in the prompt payload.
-    /// Returns nil when the feature flag is off so nothing is sent to duck.ai.
+    /// Returns nil when the feature flag is off, image generation mode is active,
+    /// or the current model doesn't list the persisted effort as supported — so we
+    /// never send a stale value that no longer applies to the active request.
     var effectiveReasoningEffort: String? {
-        isReasoningEffortEnabled ? selectedReasoningEffort : nil
+        guard isReasoningEffortEnabled, !isImageGenerationMode else { return nil }
+        guard let effort = selectedReasoningEffort,
+              selectedModelReasoningEfforts.contains(effort) else { return nil }
+        return effort
     }
 
     /// Updates the selected model ID and persists it (along with its short name) for future sessions.

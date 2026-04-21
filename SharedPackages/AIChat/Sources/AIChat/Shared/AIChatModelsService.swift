@@ -78,6 +78,24 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         self.supportedReasoningEffort = supportedReasoningEffort
         self.accessTier = accessTier
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, modelShortName, provider, entityHasAccess, supportsImageUpload, supportedTools, supportedReasoningEffort, accessTier
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.name = try container.decode(String.self, forKey: .name)
+        self.modelShortName = try container.decodeIfPresent(String.self, forKey: .modelShortName)
+        self.provider = try container.decode(String.self, forKey: .provider)
+        self.entityHasAccess = try container.decode(Bool.self, forKey: .entityHasAccess)
+        self.supportsImageUpload = try container.decode(Bool.self, forKey: .supportsImageUpload)
+        self.supportedTools = try container.decode([String].self, forKey: .supportedTools)
+        // Tolerate older payloads that don't include the field; default to no reasoning support.
+        self.supportedReasoningEffort = try container.decodeIfPresent([String].self, forKey: .supportedReasoningEffort) ?? []
+        self.accessTier = try container.decode([String].self, forKey: .accessTier)
+    }
 }
 
 // MARK: - Service Protocol

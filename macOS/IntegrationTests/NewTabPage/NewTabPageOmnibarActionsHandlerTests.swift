@@ -56,6 +56,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
 
     override func tearDown() {
         autoreleasepool {
+            firedPixels = []
             promptHandler = nil
             windowControllersManager = nil
             tabsPreferences = nil
@@ -99,7 +100,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnSameTab_ThenAIChatOpens() {
         let target: NewTabPageDataModel.OpenTarget = .sameTab
 
-        handler.submitChat("duckduckgo", target: target)
+        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 1)
@@ -109,7 +110,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnNewTab_ThenNewTabOpensWithAIChat() {
         let target: NewTabPageDataModel.OpenTarget = .newTab
 
-        handler.submitChat("duckduckgo", target: target)
+        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)
@@ -145,7 +146,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
 
     @MainActor
     func testViewAllAiChats_opensNewAIChatTab() {
-        handler.viewAllAiChats(target: .sameTab)
+        handler.viewAllAiChats(target: .newTab)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)

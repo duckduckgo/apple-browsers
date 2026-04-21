@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "バックグラウンドで開く";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "新しいFireタブ";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Fireタブで開く";
 /* Create New Tab action */
 "action.title.newTabAction" = "新しいタブ";
 
@@ -1837,6 +1842,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "このタブに切り替えます";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "最後に使ったFireタブ";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "%@に戻る";
 
@@ -2146,6 +2153,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "削除する項目を選択してください";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "別のカウントでサイトにサインインする";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "履歴を残さずにブラウジングする";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "ウェブサイトのトラブルシューティング";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fireタブは他のブラウザデータから切り離されており、タブをすべて閉じるとそのデータは完全に消去されます。他のタブと同様のトラッキング防止機能も備えています。";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "新しいFireタブ";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fireタブ";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "新規";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "履歴を残さずにブラウジングしたり、別のカウントでサイトにサインインしたりできます。";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "後で";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Fireタブを試してみる";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Fireタブを試してみる";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fireタブ";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "エアストリーム";
 
@@ -3160,6 +3202,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "スキャン中...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Fireタブとそのデータを削除する？";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "タブとサイトデータを削除しますか？";
 
@@ -4207,15 +4251,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "未読タブ";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Fireタブを閉じる";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "タブを閉じる";
 /* Accessibility label on remove button */
 "tab.close.home" = "ホームタブを閉じる";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "%2$@で「%1$@」を閉じる";
 
+/* Fire tab title */
+"tab.fire.title" = "Fireタブ";
+
+/* New tab title */
+"tab.new.title" = "新しいタブ";
 /* Accessibility label on tab cell */
 "tab.open.home" = "ホームタブを開く";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "新しいタブを開く";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Fireタブを開く";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "%2$@で「%1$@」を開く";
 

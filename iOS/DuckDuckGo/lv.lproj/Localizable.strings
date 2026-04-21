@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Atvērt fonā";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Jauna Fire cilne";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Atvērt Fire cilnē";
 /* Create New Tab action */
 "action.title.newTabAction" = "Jauna cilne";
 
@@ -1837,6 +1842,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Pārslēdzas uz šo cilni";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Pēdējo reizi izmantotā Fire cilne";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Atgriezties pie %@";
 
@@ -2146,6 +2153,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Izvēlies, ko dzēst";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Pierakstīties vietnē ar citu kontu";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Pārlūkot, nesaglabājot vietējo vēsturi";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Tīmekļa vietņu problēmu novēršana";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire cilnes ir izolētas no citiem pārlūkprogrammas datiem, un to dati tiek dzēsti, kad tās visas aizver. Tām ir tāda pati izsekošanas aizsardzība kā citām cilnēm.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Jauna Fire cilne";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire cilnes";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Jauns";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Pārlūko, nesaglabājot lokālo vēsturi, vai pieraksties vietnēs ar citu kontu.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Ne tagad";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Izmēģini Fire cilnes";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Izmēģini Fire cilnes";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire cilne";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Gaisa plūsma";
 
@@ -3160,6 +3202,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skenēšana...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Vai dzēst Fire cilnes un to datus?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Vai dzēst cilnes un vietņu datus?";
 
@@ -4207,15 +4251,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Nelasīta cilne";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Aizvērt Fire cilni";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Aizvērt cilni";
 /* Accessibility label on remove button */
 "tab.close.home" = "Aizvērt sākuma cilni";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Aizvērt “%1$@” vietnē %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire cilne";
+
+/* New tab title */
+"tab.new.title" = "Jauna cilne";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Atvērt sākuma cilni";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Atvērt jaunu cilni";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Atvērt Fire cilni";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Atvērt “%1$@” vietnē %2$@";
 

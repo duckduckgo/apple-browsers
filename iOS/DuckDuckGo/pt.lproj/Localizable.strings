@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Abrir em segundo plano";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Novo separador Fire";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Abrir num separador Fire";
 /* Create New Tab action */
 "action.title.newTabAction" = "Novo separador";
 
@@ -1837,6 +1842,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Muda para este separador";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Último separador Fire utilizado";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Voltar para %@";
 
@@ -2146,6 +2153,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Escolhe o que apagar";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Iniciar sessão num site com uma conta diferente";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Navegar sem guardar o histórico local";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Resolver problemas de sites";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Os separadores Fire estão isolados de outros dados do navegador e os respetivos dados são queimados quando os fechas. Têm a mesma proteção contra rastreamento que os outros separadores.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Novo separador Fire";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Separadores Fire";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Novo";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Navegue sem guardar o histórico local ou inicie sessão em sites com uma conta diferente.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Agora não";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Experimenta o Fire Tabs";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Experimenta o Fire Tabs";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire Tab";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Corrente de ar";
 
@@ -3160,6 +3202,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "A digitalizar…";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Eliminar separadores Fire e respetivos dados?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Eliminar separadores e dados do site?";
 
@@ -4207,15 +4251,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Separador não lido";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Fechar separador Fire";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Fechar separador";
 /* Accessibility label on remove button */
 "tab.close.home" = "Fechar o separador inicial";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Fechar \"%1$@\" at %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire Tab";
+
+/* New tab title */
+"tab.new.title" = "Novo separador";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Abrir o separador inicial";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Abre um novo separador";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Abrir separador Fire";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Abrir \"%1$@\" at %2$@";
 

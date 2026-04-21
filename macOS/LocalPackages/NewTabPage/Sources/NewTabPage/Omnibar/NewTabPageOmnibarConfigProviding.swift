@@ -40,4 +40,9 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     var isAIChatToolsEnabled: Bool { get }
 
     var selectedModelId: String? { get set }
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { get }
+
+    /// Short display name that the native omnibar can show before its own models fetch completes.
+    /// Mirrors the native `AIChatPreferencesPersisting.selectedModelShortName`.
+    var selectedModelShortName: String? { get set }
 }

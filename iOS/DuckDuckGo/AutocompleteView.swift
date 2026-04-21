@@ -40,16 +40,6 @@ struct AutocompleteView: View {
                 .listRowInsets(EdgeInsets(top: 10, leading: 2, bottom: 0, trailing: 0))
             }
 
-            if model.isMessageVisible {
-                HistoryMessageView {
-                    model.onDismissMessage()
-                }
-                .listRowBackground(Color(designSystemColor: .surface))
-                .onAppear {
-                    model.onShownToUser()
-                }
-            }
-
             SuggestionsSection(suggestions: model.topHits,
                                query: model.query,
                                onSuggestionSelected: model.onSuggestionSelected,
@@ -82,43 +72,6 @@ struct AutocompleteView: View {
         .environmentObject(model)
         .ignoresSafeArea(.keyboard, edges: .bottom)
    }
-
-}
-
-private struct HistoryMessageView: View {
-
-    var onDismiss: () -> Void
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Button {
-                onDismiss()
-            } label: {
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
-                    .foregroundColor(.primary)
-            }
-            .padding(.top, 4)
-            .buttonStyle(.plain)
-
-            VStack {
-                Image(.remoteMessageAnnouncement)
-                    .padding(8)
-
-                Text(UserText.autocompleteHistoryWarningTitle)
-                    .multilineTextAlignment(.center)
-                    .daxHeadline()
-                    .padding(2)
-
-                Text(UserText.autocompleteHistoryWarningDescription)
-                    .multilineTextAlignment(.center)
-                    .daxFootnoteRegular()
-                    .frame(maxWidth: 536)
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .padding(.bottom, 8)
-        .frame(maxWidth: .infinity)
-    }
 
 }
 

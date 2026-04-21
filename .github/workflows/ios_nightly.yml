@@ -122,7 +122,6 @@ jobs:
       with:
         report_paths: iOS/unittests.xml
         check_retries: true
-        detailed_summary: true
 
   notify-failure:
     name: Notify on failure

@@ -134,7 +134,6 @@ jobs:
           report_paths: SharedPackages/DataBrokerProtectionCore/package-tests.xml
           require_tests: true
           check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
-          detailed_summary: true
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'
@@ -292,7 +291,6 @@ jobs:
           report_paths: SharedPackages/DataBrokerProtectionCore/dbp-ios-unittests.xml
           require_tests: true
           check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
-          detailed_summary: true
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'

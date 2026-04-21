@@ -150,7 +150,6 @@ jobs:
           report_paths: SharedPackages/BrowserServicesKit/package-tests.xml
           require_tests: true
           check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
-          detailed_summary: true
 
       - name: Update Asana with failed unit tests
         if: always() && steps.run-unit-tests.outcome == 'failure'
@@ -315,7 +314,6 @@ jobs:
           report_paths: SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
           require_tests: true
           check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
-          detailed_summary: true
 
       - name: Update Asana with failed unit tests
         if: always() && steps.run-unit-tests-ios.outcome == 'failure'

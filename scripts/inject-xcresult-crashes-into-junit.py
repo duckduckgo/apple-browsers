@@ -60,8 +60,8 @@ def main() -> int:
         print(f"Injected {added} crash(es) into {args.junit}")
 
     step_summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
-    if step_summary_path and crashes:
-        _append_step_summary(step_summary_path, args.summary_title, crashes)
+    if step_summary_path and (failures or crashes):
+        _append_step_summary(step_summary_path, args.summary_title, failures, crashes)
 
     return 0
 
@@ -262,14 +262,29 @@ def _find_or_create_suite(root: ET.Element, class_name: str, target: str) -> ET.
 
 # ---------- GitHub step summary ----------
 
-def _append_step_summary(summary_path: str, title: str, crashes: list[dict]) -> None:
-    n = len(crashes)
-    lines = [
-        f"### {title} – Crashes ({n})",
-        "",
-        "_Expand the entries below for more information._",
-        "",
-    ]
+def _append_step_summary(
+    summary_path: str,
+    title: str,
+    failures: list[dict],
+    crashes: list[dict],
+) -> None:
+    lines: list[str] = []
+
+    if failures:
+        lines += [f"### {title} – Failures ({len(failures)})", ""]
+        for f in failures:
+            test_ref = f"`{f['class_name']}.{f['test_name']}`"
+            lines.append(f"- {test_ref} – {_md_escape(_clean_reason(f['reason']))}")
+        lines.append("")
+
+    if crashes:
+        n = len(crashes)
+        lines += [
+            f"### {title} – Crashes ({n})",
+            "",
+            "_Expand the entries below for more information._",
+            "",
+        ]
     for c in crashes:
         test_ref = f"{c['class_name']}.{c['test_name']}"
         summary_line = f"<b>{test_ref}</b> – {_md_escape(c['reason'])}"
@@ -297,6 +312,13 @@ def _append_step_summary(summary_path: str, title: str, crashes: list[dict]) -> 
 
 def _md_escape(s: str) -> str:
     return s.replace("|", "\\|").replace("\n", " ")
+
+
+_PATH_LINE_PREFIX = re.compile(r"^/\S+\.swift:\d+\s*-\s*(?:failed\s*-\s*)?")
+
+
+def _clean_reason(s: str) -> str:
+    return _PATH_LINE_PREFIX.sub("", s).strip()
 
 
 if __name__ == "__main__":

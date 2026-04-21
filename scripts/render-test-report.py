@@ -7,7 +7,7 @@ an optional sidecar JSON produced by inject-xcresult-crashes-into-junit.py
 
 Emits three HTML tables under an <h2> title:
 
-  1. Counts    - total / passed / failed / skipped / duration (always).
+  1. Counts    - total / passed / failed / skipped (always).
   2. Failures  - one row per non-crash failure (omitted when empty).
   3. Crashes   - one row per crash with an inline <details> containing
                  process, signal, source location, and top stack frames
@@ -68,10 +68,8 @@ def _collect(junit_path: Path) -> tuple[dict, list[dict], list[dict]]:
     # skipped if its sole attempt was marked skipped, and failed otherwise.
     root = ET.parse(junit_path).getroot()
     groups: dict[tuple[str, str], list[dict]] = {}
-    total_time = 0.0
     for tc in root.iter("testcase"):
         key = (tc.get("classname", ""), tc.get("name", ""))
-        total_time += _float_attr(tc, "time")
         failure_el = tc.find("failure")
         if failure_el is None:
             failure_el = tc.find("error")
@@ -83,9 +81,6 @@ def _collect(junit_path: Path) -> tuple[dict, list[dict], list[dict]]:
             "skipped": tc.find("skipped") is not None,
         }
         groups.setdefault(key, []).append(attempt)
-
-    if total_time == 0.0:
-        total_time = _float_attr(root, "time")
 
     total = passed = failed = skipped_count = 0
     failures: list[dict] = []
@@ -119,28 +114,8 @@ def _collect(junit_path: Path) -> tuple[dict, list[dict], list[dict]]:
         "passed": passed,
         "failed": failed,
         "skipped": skipped_count,
-        "duration": _format_duration(total_time),
     }
     return totals, failures, crashes
-
-
-def _float_attr(el: ET.Element, name: str) -> float:
-    try:
-        return float(el.get(name, "0"))
-    except ValueError:
-        return 0.0
-
-
-def _format_duration(seconds: float) -> str:
-    if seconds <= 0:
-        return "—"
-    if seconds < 60:
-        return f"{seconds:.1f}s"
-    m, s = divmod(int(round(seconds)), 60)
-    if m < 60:
-        return f"{m}m {s:02d}s"
-    h, m = divmod(m, 60)
-    return f"{h}h {m:02d}m {s:02d}s"
 
 
 def _clean_reason(s: str) -> str:
@@ -211,9 +186,9 @@ def _render(title: str, totals: dict, failures: list[dict], crashes: list[dict])
 def _counts_table(t: dict) -> str:
     return (
         "<table>\n"
-        "  <tr><th>Total</th><th>Passed</th><th>Failed</th><th>Skipped</th><th>Duration</th></tr>\n"
+        "  <tr><th>Total</th><th>Passed</th><th>Failed</th><th>Skipped</th></tr>\n"
         f"  <tr><td>{t['total']}</td><td>{t['passed']}</td><td>{t['failed']}</td>"
-        f"<td>{t['skipped']}</td><td>{html.escape(t['duration'])}</td></tr>\n"
+        f"<td>{t['skipped']}</td></tr>\n"
         "</table>"
     )
 

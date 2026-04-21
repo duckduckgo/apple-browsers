@@ -61,13 +61,7 @@ def main() -> int:
 
     step_summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if step_summary_path and (failures or crashes):
-        counts = {
-            "passed": summary.get("passedTests", 0),
-            "failed": len(failures),
-            "crashed": len(crashes),
-            "skipped": summary.get("skippedTests", 0),
-        }
-        _append_step_summary(step_summary_path, args.summary_title, counts, failures, crashes)
+        _append_step_summary(step_summary_path, args.summary_title, failures, crashes)
 
     return 0
 
@@ -274,17 +268,10 @@ def _find_or_create_suite(root: ET.Element, class_name: str, target: str) -> ET.
 def _append_step_summary(
     summary_path: str,
     title: str,
-    counts: dict,
     failures: list[dict],
     crashes: list[dict],
 ) -> None:
-    lines: list[str] = [
-        f"## {title}",
-        "",
-        f"**{counts['passed']} passed · {counts['failed']} failed · "
-        f"{counts['crashed']} crashed · {counts['skipped']} skipped**",
-        "",
-    ]
+    lines: list[str] = [f"## {title}", ""]
 
     if failures:
         lines += [f"### Failures ({len(failures)})", ""]

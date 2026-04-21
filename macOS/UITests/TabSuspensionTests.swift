@@ -298,6 +298,52 @@ class TabSuspensionTests: UITestCase {
         app.typeKey(.escape, modifierFlags: [])
     }
 
+    func testThatPinnedTabsCannotBeSuspended() {
+        // Tab 1: pinned tab
+        let tab1Title = "Pinned Page 1"
+        app.openSite(pageTitle: tab1Title)
+        app.pinCurrentTab()
+        XCTAssertTrue(
+            app.wait(for: .keyPath(\.pinnedTabs.count, equalTo: 1), timeout: UITests.Timeouts.elementExistence),
+            "Should have 1 pinned tab"
+        )
+
+        // Tab 2: another pinned tab
+        let tab2Title = "Pinned Page 2"
+        app.openNewTab()
+        app.openSite(pageTitle: tab2Title)
+        app.pinCurrentTab()
+        XCTAssertTrue(
+            app.wait(for: .keyPath(\.pinnedTabs.count, equalTo: 2), timeout: UITests.Timeouts.elementExistence),
+            "Should have 2 pinned tabs"
+        )
+
+        // Tab 3: unpinned tab to push pinned tabs to background
+        app.openNewTab()
+
+        Thread.sleep(forTimeInterval: 6)
+        simulateCriticalMemoryPressure()
+
+        // Verify neither pinned tab was suspended
+        let pinnedTab1 = app.pinnedTabs[tab1Title]
+        XCTAssertTrue(pinnedTab1.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Pinned tab 1 should exist")
+        pinnedTab1.rightClick()
+        XCTAssertFalse(
+            app.menuItems["Resume Tab"].waitForExistence(timeout: 1),
+            "Pinned tab 1 should not be suspended"
+        )
+        app.typeKey(.escape, modifierFlags: [])
+
+        let pinnedTab2 = app.pinnedTabs[tab2Title]
+        XCTAssertTrue(pinnedTab2.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Pinned tab 2 should exist")
+        pinnedTab2.rightClick()
+        XCTAssertFalse(
+            app.menuItems["Resume Tab"].waitForExistence(timeout: 1),
+            "Pinned tab 2 should not be suspended"
+        )
+        app.typeKey(.escape, modifierFlags: [])
+    }
+
     // MARK: - Helpers
 
     private func waitForButtonTitle(_ button: XCUIElement, expectedTitle: String) -> Bool {

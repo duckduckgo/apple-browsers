@@ -239,6 +239,17 @@ jobs:
           iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
 
+    - name: Upload crash reports
+      uses: actions/upload-artifact@v4
+      if: failure() || cancelled()
+      with:
+        name: ios-pr-crash-reports
+        path: |
+          ~/Library/Logs/DiagnosticReports/*.ips
+          ~/Library/Logs/DiagnosticReports/*.crash
+        if-no-files-found: ignore
+        retention-days: 7
+
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v3
       if: always()

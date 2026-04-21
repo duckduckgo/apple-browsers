@@ -92,6 +92,17 @@ jobs:
           ${{ steps.collect-logs.outputs.log-path }}
         retention-days: 7
 
+    - name: Upload crash reports
+      uses: actions/upload-artifact@v4
+      if: failure() || cancelled()
+      with:
+        name: ios-nightly-crash-reports
+        path: |
+          ~/Library/Logs/DiagnosticReports/*.ips
+          ~/Library/Logs/DiagnosticReports/*.crash
+        if-no-files-found: ignore
+        retention-days: 7
+
     - name: Inject crashes into JUnit XML
       if: always() && steps.run-unit-tests.outcome == 'failure'
       run: |

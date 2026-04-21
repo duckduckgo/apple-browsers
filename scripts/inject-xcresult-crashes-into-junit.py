@@ -277,11 +277,8 @@ def _append_step_summary(summary_path: str, title: str, crashes: list[dict]) -> 
             lines.append(f"- **Process:** `{report['process']}`")
             if report["signal"]:
                 lines.append(f"- **Signal:** `{report['signal']}` ({report['exception_type']})")
-            if report["timestamp"]:
-                lines.append(f"- **Timestamp:** `{report['timestamp']}`")
             if report["source_location"]:
                 lines.append(f"- **Source location:** `{report['source_location']}`")
-            lines.append(f"- **Crash report:** `{report['path'].name}`")
             if report["top_frames"]:
                 lines += ["", "**Top frames (crashed thread):**", "", "```"]
                 for i, frame in enumerate(report["top_frames"]):

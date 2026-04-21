@@ -104,7 +104,7 @@ public extension OnboardingRebranding.OnboardingStyles {
                 }
 #if os(macOS)
                 if isHovered {
-                    return pressedBackgroundColor.opacity(0.85)
+                    return pressedBackgroundColor
                 }
 #endif
                 return backgroundColor

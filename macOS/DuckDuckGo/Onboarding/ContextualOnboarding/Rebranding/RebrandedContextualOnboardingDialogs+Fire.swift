@@ -25,25 +25,15 @@ extension OnboardingRebranding {
 
     struct OnboardingFireDialog: View {
         let viewModel: OnboardingFireButtonDialogViewModel
-        @State private var showNextScreen: Bool = false
-        let initialPanelHeight: CGFloat
-        let followUpPanelHeight: CGFloat
+        let panelHeight: CGFloat
         let onManualDismiss: () -> Void
-
-        private var panelHeight: CGFloat {
-            showNextScreen ? followUpPanelHeight : initialPanelHeight
-        }
 
         var body: some View {
             OnboardingBubbleView.withDismissButton(
                 tailPosition: .leading(offset: 0.3, direction: .top),
                 onDismiss: onManualDismiss
             ) {
-                if showNextScreen {
-                    OnboardingEndOfJourneyDialogContent(highFiveAction: viewModel.highFive)
-                } else {
-                    OnboardingFireDialogContent(viewModel: viewModel)
-                }
+                OnboardingFireDialogContent(viewModel: viewModel)
             }
             .frame(height: panelHeight, alignment: .top)
         }

@@ -40,9 +40,9 @@ public extension OnboardingTheme {
         let ctaButtonPressed = Color(0xCC3B0A)
 
         let colorPalette = ColorPalette(
-            background: .white,
+            background: Color(NSColor.windowBackgroundColor),
             bubbleBorder: bubbleBorder,
-            bubbleBackground: .white,
+            bubbleBackground: Color(NSColor.windowBackgroundColor),
             bubbleShadow: Color.shade(0.03),
             textPrimary: Color(designSystemColor: .textPrimary),
             textSecondary: Color(designSystemColor: .textSecondary),

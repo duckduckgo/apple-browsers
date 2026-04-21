@@ -219,8 +219,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         let viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: onboardingPixelReporter, fireCoordinator: fireCoordinator, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
         return OnboardingRebranding.OnboardingFireDialog(
             viewModel: viewModel,
-            initialPanelHeight: ContextualPanelMetrics.firePanelHeight,
-            followUpPanelHeight: ContextualPanelMetrics.highFivePanelHeight,
+            panelHeight: ContextualPanelMetrics.firePanelHeight,
             onManualDismiss: onDismiss
         )
     }

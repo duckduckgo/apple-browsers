@@ -270,8 +270,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
 
         let compensation = isBottomBar ? Metrics.chatHistoryBottomBarCompensation : 0
-        let emptyListBoost: CGFloat = (!chatHasSuggestions && !isBottomBar) ? Metrics.escapeHatchEmptyListBoost : 0
-        let chatInset = suggestionInsetBase - compensation + emptyListBoost
+        // Skip empty-list vertical centering in landscape — limited vertical space would push the hatch
+        // under the UTI bar and keyboard (landscape auto-switches to top-bar mode in layout logic).
+        let emptyListBoost: CGFloat = (!chatHasSuggestions && !isBottomBar && !isLandscapeOrientation)
+            ? Metrics.escapeHatchEmptyListBoost : 0
+        // Landscape: chat history hatch sits slightly below Search tray due to different view technologies
+        // (UITableView vs SwiftUI NTP). Small pull-up keeps both tabs aligned when switching.
+        let landscapeAlignment: CGFloat = isLandscapeOrientation ? Metrics.landscapeDuckAiAlignmentPullUp : 0
+        let chatInset = suggestionInsetBase - compensation + emptyListBoost + landscapeAlignment
         aiChatHistoryManager?.setAdditionalTopInset(chatInset)
     }
 
@@ -698,6 +704,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let escapeHatchEmptyListBoost: CGFloat = 165
         // Pulls the suggestion tray (NTP/Favorites) upward in UTI top bar to tighten gap between UTI input and hatch.
         static let escapeHatchTopBarTrayPullUp: CGFloat = -10
+        // Landscape-only small alignment pull-up for chat history hatch so it visually matches Search tray position.
+        static let landscapeDuckAiAlignmentPullUp: CGFloat = -1
     }
 }
 

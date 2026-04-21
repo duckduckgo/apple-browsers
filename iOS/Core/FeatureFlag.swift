@@ -611,7 +611,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .appRatingPrompt:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.appRatingPrompt)))
         case .contextualDuckAIMode:
-            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualDuckAIMode)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualDuckAIMode)))
         case .pageContextFeature:
             Config(source: .remoteReleasable(.feature(.pageContext)))
         case .aiChatAutoAttachContextByDefault:

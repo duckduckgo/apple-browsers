@@ -264,7 +264,7 @@ def _append_step_summary(summary_path: str, title: str, crashes: list[dict]) -> 
     lines = [
         f"### {title} — Crashes ({n})",
         "",
-        "_Crashes don't produce a standard test failure; expand each one for the stack trace and `.ips` report._",
+        "_Expand the entries below for more information._",
         "",
     ]
     for c in crashes:

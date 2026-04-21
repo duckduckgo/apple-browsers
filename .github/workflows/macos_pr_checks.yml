@@ -356,12 +356,16 @@ jobs:
           xcresult=${{ matrix.flavor }}-$kind.xcresult
           junit=${{ matrix.flavor }}-$kind.xml
           log=${{ matrix.flavor }}-$kind-xcodebuild.log
+          case "$kind" in
+            unittests) pretty_kind="Unit Tests" ;;
+            integrationtests) pretty_kind="Integration Tests" ;;
+          esac
           if [[ -d "$xcresult" && -f "$junit" ]]; then
             ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
               "$xcresult" "$junit" \
               --log "$log" \
               --crash-reports-dir ~/Library/Logs/DiagnosticReports \
-              --summary-title "macOS ${{ matrix.flavor }} $kind"
+              --summary-title "macOS ${{ matrix.flavor }} $pretty_kind"
           fi
         done
 

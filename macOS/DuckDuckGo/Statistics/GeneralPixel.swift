@@ -301,6 +301,26 @@ enum GeneralPixel: PixelKitEvent {
     case hideAIGeneratedImagesButtonClicked
     case openDuckAIButtonClick
 
+    case duckAiNativeStorageMigrationDoneUnique(key: String)
+    case duckAiNativeStorageMigrationDoneCount(key: String)
+    case duckAiNativeStorageMigrationDoneBlankCount
+
+    case duckAiNativeStorageInitSuccess
+    case duckAiNativeStorageInitError
+    case duckAiNativeStorageMigrationStarted
+    case duckAiNativeStorageMigrationAlreadyDone
+    case duckAiNativeStorageMigrationError
+    case duckAiNativeStorageSettingsPutError
+    case duckAiNativeStorageSettingsGetError
+    case duckAiNativeStorageSettingsDeleteError
+    case duckAiNativeStorageChatPutError
+    case duckAiNativeStorageChatGetError
+    case duckAiNativeStorageChatDeleteError
+    case duckAiNativeStorageFilePutError
+    case duckAiNativeStorageFileGetError
+    case duckAiNativeStorageFileListError
+    case duckAiNativeStorageFileDeleteError
+
     case protectionToggledOffBreakageReport
     case debugBreakageExperiment
 
@@ -1016,6 +1036,26 @@ enum GeneralPixel: PixelKitEvent {
         case .hideAIGeneratedImagesButtonClicked: return "m_mac_aichat_hide_ai_generated_images_button_clicked"
         case .openDuckAIButtonClick: return "m_mac_serp_settings_open_duck_ai_button_click"
 
+        case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_mac_duck-ai_native-storage_migration_done_\(key)_u"
+        case .duckAiNativeStorageMigrationDoneCount(let key): return "m_mac_duck-ai_native-storage_migration_done_\(key)_count"
+        case .duckAiNativeStorageMigrationDoneBlankCount: return "m_mac_duck-ai_native-storage_migration_done_blank_count"
+
+        case .duckAiNativeStorageInitSuccess: return "m_mac_duck-ai_native-storage_init_success"
+        case .duckAiNativeStorageInitError: return "m_mac_duck-ai_native-storage_init_error"
+        case .duckAiNativeStorageMigrationStarted: return "m_mac_duck-ai_native-storage_migration_started"
+        case .duckAiNativeStorageMigrationAlreadyDone: return "m_mac_duck-ai_native-storage_migration_already-done"
+        case .duckAiNativeStorageMigrationError: return "m_mac_duck-ai_native-storage_migration_error"
+        case .duckAiNativeStorageSettingsPutError: return "m_mac_duck-ai_native-storage_settings-put_error"
+        case .duckAiNativeStorageSettingsGetError: return "m_mac_duck-ai_native-storage_settings-get_error"
+        case .duckAiNativeStorageSettingsDeleteError: return "m_mac_duck-ai_native-storage_settings-delete_error"
+        case .duckAiNativeStorageChatPutError: return "m_mac_duck-ai_native-storage_chat-put_error"
+        case .duckAiNativeStorageChatGetError: return "m_mac_duck-ai_native-storage_chat-get_error"
+        case .duckAiNativeStorageChatDeleteError: return "m_mac_duck-ai_native-storage_chat-delete_error"
+        case .duckAiNativeStorageFilePutError: return "m_mac_duck-ai_native-storage_file-put_error"
+        case .duckAiNativeStorageFileGetError: return "m_mac_duck-ai_native-storage_file-get_error"
+        case .duckAiNativeStorageFileListError: return "m_mac_duck-ai_native-storage_file-list_error"
+        case .duckAiNativeStorageFileDeleteError: return "m_mac_duck-ai_native-storage_file-delete_error"
+
         case .protectionToggledOffBreakageReport: return "m_mac_protection-toggled-off-breakage-report"
         case .debugBreakageExperiment: return "m_mac_debug_breakage_experiment_u"
 
@@ -1723,6 +1763,24 @@ enum GeneralPixel: PixelKitEvent {
                 .serpSettingsKeyValueStoreWriteError,
                 .hideAIGeneratedImagesButtonClicked,
                 .openDuckAIButtonClick,
+                .duckAiNativeStorageMigrationDoneUnique,
+                .duckAiNativeStorageMigrationDoneCount,
+                .duckAiNativeStorageMigrationDoneBlankCount,
+                .duckAiNativeStorageInitSuccess,
+                .duckAiNativeStorageInitError,
+                .duckAiNativeStorageMigrationStarted,
+                .duckAiNativeStorageMigrationAlreadyDone,
+                .duckAiNativeStorageMigrationError,
+                .duckAiNativeStorageSettingsPutError,
+                .duckAiNativeStorageSettingsGetError,
+                .duckAiNativeStorageSettingsDeleteError,
+                .duckAiNativeStorageChatPutError,
+                .duckAiNativeStorageChatGetError,
+                .duckAiNativeStorageChatDeleteError,
+                .duckAiNativeStorageFilePutError,
+                .duckAiNativeStorageFileGetError,
+                .duckAiNativeStorageFileListError,
+                .duckAiNativeStorageFileDeleteError,
                 .protectionToggledOffBreakageReport,
                 .debugBreakageExperiment,
                 .passwordImportKeychainPrompt,

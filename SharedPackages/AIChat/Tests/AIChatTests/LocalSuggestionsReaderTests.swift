@@ -239,12 +239,17 @@ private final class CapturingStorageHandler: DuckAiNativeStorageHandling {
     func replaceAllEntries(_ entries: [String: Any]) throws {}
     func putChat(chatId: String, data: Data) throws {}
     func putChats(_ chats: [DuckAiChatRecord]) throws {}
+    func getChat(chatId: String) throws -> DuckAiChatRecord? {
+        if let error = errorToThrow { throw error }
+        return chatsToReturn.first { $0.chatId == chatId }
+    }
     func deleteChat(chatId: String) throws {}
     func deleteAllChats() throws {}
     func putFile(uuid: String, chatId: String, data: Data) throws {}
     func getFile(uuid: String) throws -> DuckAiFileContent? { nil }
     func listFiles() throws -> [DuckAiFileMetadata] { [] }
     func deleteFile(uuid: String) throws {}
+    func deleteFiles(chatId: String) throws {}
     func deleteAllFiles() throws {}
     func isMigrationDone() throws -> Bool { false }
     func isMigrationDone(key: String) throws -> Bool { false }

@@ -167,6 +167,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         placeholderLabel.drawsBackground = false
         placeholderLabel.isEditable = false
         placeholderLabel.isSelectable = false
+        placeholderLabel.hitTestForwardingTarget = textView
         containerView.addSubview(placeholderLabel)
 
         NSLayoutConstraint.activate([
@@ -469,11 +470,14 @@ protocol FocusableTextViewNavigationDelegate: AnyObject {
     func textViewDidReceiveImageDrop(_ fileURLs: [URL]) -> Bool
 }
 
-/// NSTextField label that lets mouse events pass through to the view beneath it.
-/// Used for the prompt placeholder so clicks on the placeholder area focus the text view instead of being absorbed by the label.
+/// NSTextField label that forwards mouse hits to a configured target view.
+/// Used for the prompt placeholder: clicks on the placeholder area hit-test to the text view so the prompt takes focus,
+/// rather than falling through the empty scroll-view area to the address bar behind (which would switch to search mode).
 private final class ClickThroughLabel: NSTextField {
+    weak var hitTestForwardingTarget: NSView?
+
     override func hitTest(_ point: NSPoint) -> NSView? {
-        return nil
+        return hitTestForwardingTarget ?? nil
     }
 }
 

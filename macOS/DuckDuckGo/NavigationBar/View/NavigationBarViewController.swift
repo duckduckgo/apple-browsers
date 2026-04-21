@@ -616,7 +616,14 @@ final class NavigationBarViewController: NSViewController {
 
     private func resizeAddressBarWidth(isAddressBarFocused: Bool) {
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
-            if !isAddressBarFocused {
+            /// The AI chat omnibar container pins to `addressBarStack`, while `activeBackgroundViewWithSuggestions`
+            /// pins to `AddressBarViewController.view` — a subview of the stack. When focus spacers are present
+            /// they make the stack 2pt wider than that subview, producing a 1pt edge mismatch between the address
+            /// bar's background and the Duck.ai panel background. Treat duck.ai mode the same as focused here so
+            /// the spacers are removed and both widths align.
+            let isInAIChatMode = addressBarViewController?.selectionState.isInAIChatMode ?? false
+            let shouldRemoveSpacers = isAddressBarFocused || isInAIChatMode
+            if !shouldRemoveSpacers {
                 if leftFocusSpacer == nil {
                     leftFocusSpacer = NSView()
                     leftFocusSpacer?.wantsLayer = true

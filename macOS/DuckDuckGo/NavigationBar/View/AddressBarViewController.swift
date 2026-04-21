@@ -488,6 +488,8 @@ final class AddressBarViewController: NSViewController {
             isAIChatOmnibarVisible = true
             mode = .editing(.aiChat)
             addressBarButtonsViewController?.syncToggleSegmentToAIChatMode()
+            /// Trigger nav-bar resize so focus spacers drop, aligning widths with the AI chat container.
+            delegate?.resizeAddressBarForHomePage(self)
             delegate?.addressBarViewControllerShouldPresentAIChatPanelUnfocused(self)
         case (false, false):
             break
@@ -1244,6 +1246,10 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         selectionState = .inactiveWithAIChat
         mode = .editing(.aiChat)
         view.window?.makeFirstResponder(nil)
+        /// Force the nav bar to re-evaluate focus spacers — `resizeAddressBarWidth` now treats duck.ai mode as
+        /// focused (spacers removed) so `activeBackgroundViewWithSuggestions` and the AI chat container widths
+        /// align.
+        delegate?.resizeAddressBarForHomePage(self)
         delegate?.addressBarViewControllerDidResignFocusKeepingAIChatMode(self)
     }
 

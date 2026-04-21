@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import Network
 import PixelKit
 @testable import VPN
 
@@ -478,7 +479,7 @@ final class SlowMockHTTPClient: LeakCheckHTTPClient, @unchecked Sendable {
         self.delaySeconds = delaySeconds
         self.returnIP = returnIP
     }
-    func fetchIP(host: String, port: UInt16, scheme: LeakCheckScheme, ipVersion: IPVersion, timeout: TimeInterval) async throws -> String {
+    func fetchIP(host: String, port: UInt16, scheme: LeakCheckScheme, ipVersion: IPVersion, timeout: TimeInterval, requiredInterface: NWInterface?) async throws -> String {
         try await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
         if ipVersion == .v6 { throw URLError(.cannotFindHost) }
         return returnIP
@@ -505,7 +506,8 @@ final class MockLeakCheckHTTPClient: LeakCheckHTTPClient, @unchecked Sendable {
         port: UInt16,
         scheme: LeakCheckScheme,
         ipVersion: IPVersion,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        requiredInterface: NWInterface?
     ) async throws -> String {
         switch ipVersion {
         case .v4:
@@ -535,7 +537,8 @@ final class MockLeakCheckSTUNClient: LeakCheckSTUNClient, @unchecked Sendable {
         host: String,
         port: UInt16,
         ipVersion: IPVersion,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        requiredInterface: NWInterface?
     ) async throws -> String {
         switch ipVersion {
         case .v4:

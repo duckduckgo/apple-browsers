@@ -545,13 +545,17 @@ final class MainViewController: NSViewController {
         if visible {
             aiChatOmnibarContainerViewController.startEventMonitoring()
             aiChatOmnibarTextContainerViewController.startEventMonitoring()
+
+            /// Trigger suggestions fetch + re-sync currentText from shared state before we snap the
+            /// prompt view to it synchronously; otherwise the normal async `$currentText` subscription
+            /// renders the text appearing after the panel is already visible.
+            aiChatOmnibarContainerViewController.omnibarController.onOmnibarActivated()
+            aiChatOmnibarTextContainerViewController.syncTextViewToCurrentText()
+
             aiChatOmnibarTextContainerViewController.focusTextView()
 
             // Suppress mouse hover until mouse actually moves
             aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.suppressMouseHoverUntilMouseMoves()
-
-            // Trigger suggestions fetch
-            aiChatOmnibarContainerViewController.omnibarController.onOmnibarActivated()
 
             let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
             aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
@@ -1090,6 +1094,14 @@ final class MainViewController: NSViewController {
             return
         }
         let tabContent = tabContent ?? selectedTabViewModel.tab.content
+
+        /// When duck.ai is the persistent mode for the incoming tab, the tab-switch flow has already restored
+        /// the panel (unfocused + prompt preserved). Skip the panel tear-down and the address-bar focus grab
+        /// below — otherwise we'd reset the tab's shared duck.ai flag and exit back to search.
+        let isIncomingTabInDuckAIMode = selectedTabViewModel.addressBarSharedTextState.isInDuckAIMode
+        if isIncomingTabInDuckAIMode, featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+            return
+        }
 
         /// Close AI Chat omnibar if visible before adjusting first responder
         /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1212252449969913?focus=true

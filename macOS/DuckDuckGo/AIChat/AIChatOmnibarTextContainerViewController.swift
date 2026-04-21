@@ -351,6 +351,19 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         moveCursorToEnd()
     }
 
+    /// Forces the text view's string to match `omnibarController.currentText` synchronously.
+    /// The normal `$currentText` → `textView.string` path is async (receive(on: .main)), so typing in search
+    /// mode and immediately toggling to Duck.ai can show the prompt filling in after the panel is already visible.
+    /// Call this at activation to snap the text in place without the visible fill-in.
+    func syncTextViewToCurrentText() {
+        let newText = omnibarController.currentText
+        if textView.string != newText {
+            textView.string = newText
+            updatePlaceholderVisibility()
+            updatePanelHeight()
+        }
+    }
+
     /// Moves the caret to the end of the prompt text without changing first responder.
     func moveCursorToEnd() {
         let textLength = textView.string.count

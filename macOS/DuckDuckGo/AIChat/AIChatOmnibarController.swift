@@ -179,6 +179,17 @@ final class AIChatOmnibarController {
     func onOmnibarActivated() {
         hasBeenActivated = true
 
+        // Re-sync `currentText` from shared state in case a prior `cleanup()` cleared it.
+        // Toggling Duck.ai → search runs cleanup (setting `currentText = ""`) but the shared state still
+        // holds the typed text for the tab; without this, the next Duck.ai activation shows an empty prompt.
+        if let sharedTextState,
+           sharedTextState.hasUserInteractedWithText,
+           currentText != sharedTextState.text {
+            isUpdatingFromSharedState = true
+            currentText = sharedTextState.text
+            isUpdatingFromSharedState = false
+        }
+
         fetchModels()
 
         // If feature is disabled, clear any existing suggestions and don't fetch

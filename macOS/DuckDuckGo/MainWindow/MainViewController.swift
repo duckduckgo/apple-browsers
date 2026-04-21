@@ -589,34 +589,6 @@ final class MainViewController: NSViewController {
         aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
     }
 
-    /// Presents the AI chat panel in its unfocused state for a newly selected tab whose persistent mode is duck.ai.
-    /// The panel becomes visible with suggestions collapsed, the prompt editor does not steal focus,
-    /// and the address bar retains its inactive appearance.
-    func presentAIChatOmnibarContainerUnfocused() {
-        /// Prime the container height using the collapsed suggestions state.
-        aiChatOmnibarContainerViewController.setSuggestionsCollapsedByUnfocus(true)
-
-        let textHeight = aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
-        let additionalHeight = aiChatOmnibarContainerViewController.additionalContentHeight
-        let totalHeight = textHeight + aiChatOmnibarContainerViewController.suggestionsHeight + additionalHeight
-        mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
-
-        let passthroughHeight = aiChatOmnibarContainerViewController.totalPassthroughHeight
-        mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
-        aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
-
-        mainView.isAIChatOmnibarContainerShown = true
-
-        aiChatOmnibarContainerViewController.startEventMonitoring()
-        aiChatOmnibarTextContainerViewController.startEventMonitoring()
-
-        /// Applied after `startEventMonitoring` (which always adds the shadow) so the unfocused state wins.
-        aiChatOmnibarContainerViewController.setShadowVisible(false)
-
-        let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
-        aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
-    }
-
     /// Re-expands the suggestions row and returns focus to the prompt editor.
     /// Called when the user refocuses the address bar while duck.ai remains the persistent mode for the tab.
     func expandAIChatOmnibarSuggestionsForFocus() {

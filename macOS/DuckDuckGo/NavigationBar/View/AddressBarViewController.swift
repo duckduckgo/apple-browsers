@@ -35,9 +35,6 @@ protocol AddressBarViewControllerDelegate: AnyObject {
     /// Called when the user refocuses the address bar while duck.ai mode is the persistent mode for the current tab.
     /// The suggestions row should re-expand and the prompt editor should become first responder.
     func addressBarViewControllerDidRefocusInAIChatMode(_ addressBarViewController: AddressBarViewController)
-    /// Called when a tab switch requires presenting the AI chat panel in unfocused-duck.ai mode,
-    /// because the newly selected tab previously had duck.ai selected as its persistent mode.
-    func addressBarViewControllerShouldPresentAIChatPanelUnfocused(_ addressBarViewController: AddressBarViewController)
 }
 
 final class AddressBarViewController: NSViewController {
@@ -465,32 +462,17 @@ final class AddressBarViewController: NSViewController {
         let incomingIsInDuckAIMode = sharedTextState?.isInDuckAIMode ?? false
 
         switch (wasInAIChatMode, incomingIsInDuckAIMode) {
-        case (true, true):
-            /// Same mode across tabs — keep the panel on screen, ensure we're unfocused (tab switch shouldn't steal focus),
-            /// and sync the toggle segment to duck.ai so the UI matches the persisted state.
+        case (true, true), (false, true):
+            /// Incoming tab has duck.ai selected — present the panel focused on tab switch. Focused mode
+            /// activates the full panel rendering path (background, shadow, suggestions fetch) and lands the
+            /// caret in the prompt ready to continue typing. Reuses the regular toggle-to-duck.ai flow so the
+            /// panel, shared state, and selectionState all get updated via a single, well-tested code path.
             addressBarButtonsViewController?.syncToggleSegmentToAIChatMode()
-            if selectionState == .activeWithAIChat {
-                selectionState = .inactiveWithAIChat
-                mode = .editing(.aiChat)
-                view.window?.makeFirstResponder(nil)
-                delegate?.addressBarViewControllerDidResignFocusKeepingAIChatMode(self)
-            }
+            delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: true)
         case (true, false):
             /// Incoming tab is in search mode — fully dismiss the duck.ai panel and reset the toggle.
             delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
             setAIChatOmnibarVisible(false)
-        case (false, true):
-            /// Incoming tab had duck.ai selected — present the panel unfocused, suggestions collapsed.
-            /// Keep `mode = .editing(.aiChat)` throughout duck.ai (active and inactive) so the AI chat
-            /// button/bookmark/imageButton visibility logic that checks `controllerMode == .editing(.aiChat)`
-            /// continues to hide those icons on a URL-persistent duck.ai tab.
-            selectionState = .inactiveWithAIChat
-            isAIChatOmnibarVisible = true
-            mode = .editing(.aiChat)
-            addressBarButtonsViewController?.syncToggleSegmentToAIChatMode()
-            /// Trigger nav-bar resize so focus spacers drop, aligning widths with the AI chat container.
-            delegate?.resizeAddressBarForHomePage(self)
-            delegate?.addressBarViewControllerShouldPresentAIChatPanelUnfocused(self)
         case (false, false):
             break
         }

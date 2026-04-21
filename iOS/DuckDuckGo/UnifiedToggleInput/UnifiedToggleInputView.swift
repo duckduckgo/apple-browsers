@@ -334,7 +334,7 @@ final class UnifiedToggleInputView: UIView {
 
     private func applyFireModeAppearance(isFireTab: Bool) {
         cardView.backgroundColor = isFireTab
-            ? UIColor(singleUseColor: .fireModeBackground)
+            ? UIColor(singleUseColor: .fireModeCardBackground)
             : UIColor(singleUseColor: .unifiedToggleInputCardBackground)
         // cardView keeps the OS trait so `fireModeBackground` picks its light variant in light OS; content subviews force `.dark` so their dynamic colors resolve against the dark surface.
         let style: UIUserInterfaceStyle = isFireTab ? .dark : .unspecified

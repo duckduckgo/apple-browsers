@@ -1512,9 +1512,9 @@ extension Pixel {
         case aiChatContextualAutoAttachDAU
         case aiChatIsEnabledDaily
 
-        case aiChatNativeStorageMigrationDoneUnique(key: String)
-        case aiChatNativeStorageMigrationDoneCount(key: String)
-        case aiChatNativeStorageMigrationDoneBlankCount
+        case duckAiNativeStorageMigrationDoneUnique(key: String)
+        case duckAiNativeStorageMigrationDoneCount(key: String)
+        case duckAiNativeStorageMigrationDoneBlankCount
 
         case duckAiNativeStorageInitSuccess
         case duckAiNativeStorageInitError
@@ -3143,9 +3143,9 @@ extension Pixel.Event {
         case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
         case .aiChatIsEnabledDaily: return "m_aichat_is_enabled_daily"
 
-        case .aiChatNativeStorageMigrationDoneUnique(let key): return "m_duck-ai_native-storage_migration_done_\(key)_unique"
-        case .aiChatNativeStorageMigrationDoneCount(let key): return "m_duck-ai_native-storage_migration_done_\(key)_count"
-        case .aiChatNativeStorageMigrationDoneBlankCount: return "m_duck-ai_native-storage_migration_done_blank_count"
+        case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_duck-ai_native-storage_migration_done_\(key)_unique"
+        case .duckAiNativeStorageMigrationDoneCount(let key): return "m_duck-ai_native-storage_migration_done_\(key)_count"
+        case .duckAiNativeStorageMigrationDoneBlankCount: return "m_duck-ai_native-storage_migration_done_blank_count"
 
         case .duckAiNativeStorageInitSuccess: return "m_duck-ai_native-storage_init_success"
         case .duckAiNativeStorageInitError: return "m_duck-ai_native-storage_init_error"

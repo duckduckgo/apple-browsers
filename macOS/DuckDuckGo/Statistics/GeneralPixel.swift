@@ -301,9 +301,9 @@ enum GeneralPixel: PixelKitEvent {
     case hideAIGeneratedImagesButtonClicked
     case openDuckAIButtonClick
 
-    case aiChatNativeStorageMigrationDoneUnique(key: String)
-    case aiChatNativeStorageMigrationDoneCount(key: String)
-    case aiChatNativeStorageMigrationDoneBlankCount
+    case duckAiNativeStorageMigrationDoneUnique(key: String)
+    case duckAiNativeStorageMigrationDoneCount(key: String)
+    case duckAiNativeStorageMigrationDoneBlankCount
 
     case duckAiNativeStorageInitSuccess
     case duckAiNativeStorageInitError
@@ -1036,9 +1036,9 @@ enum GeneralPixel: PixelKitEvent {
         case .hideAIGeneratedImagesButtonClicked: return "m_mac_aichat_hide_ai_generated_images_button_clicked"
         case .openDuckAIButtonClick: return "m_mac_serp_settings_open_duck_ai_button_click"
 
-        case .aiChatNativeStorageMigrationDoneUnique(let key): return "m_mac_aichat_native_storage_migration_done_\(key)_u"
-        case .aiChatNativeStorageMigrationDoneCount(let key): return "m_mac_aichat_native_storage_migration_done_\(key)_count"
-        case .aiChatNativeStorageMigrationDoneBlankCount: return "m_mac_aichat_native_storage_migration_done_blank_count"
+        case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_mac_duck-ai_native-storage_migration_done_\(key)_u"
+        case .duckAiNativeStorageMigrationDoneCount(let key): return "m_mac_duck-ai_native-storage_migration_done_\(key)_count"
+        case .duckAiNativeStorageMigrationDoneBlankCount: return "m_mac_duck-ai_native-storage_migration_done_blank_count"
 
         case .duckAiNativeStorageInitSuccess: return "m_mac_duck-ai_native-storage_init_success"
         case .duckAiNativeStorageInitError: return "m_mac_duck-ai_native-storage_init_error"
@@ -1763,9 +1763,9 @@ enum GeneralPixel: PixelKitEvent {
                 .serpSettingsKeyValueStoreWriteError,
                 .hideAIGeneratedImagesButtonClicked,
                 .openDuckAIButtonClick,
-                .aiChatNativeStorageMigrationDoneUnique,
-                .aiChatNativeStorageMigrationDoneCount,
-                .aiChatNativeStorageMigrationDoneBlankCount,
+                .duckAiNativeStorageMigrationDoneUnique,
+                .duckAiNativeStorageMigrationDoneCount,
+                .duckAiNativeStorageMigrationDoneBlankCount,
                 .duckAiNativeStorageInitSuccess,
                 .duckAiNativeStorageInitError,
                 .duckAiNativeStorageMigrationStarted,

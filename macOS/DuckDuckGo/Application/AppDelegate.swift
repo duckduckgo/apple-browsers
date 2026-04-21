@@ -2334,10 +2334,10 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
         case .initError(let error):
             PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageInitError, error: error))
         case .migrationDone(let key):
-            PixelKit.fire(GeneralPixel.aiChatNativeStorageMigrationDoneUnique(key: key), frequency: .uniqueByName)
-            PixelKit.fire(GeneralPixel.aiChatNativeStorageMigrationDoneCount(key: key))
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationDoneUnique(key: key), frequency: .uniqueByName)
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationDoneCount(key: key))
         case .migrationDoneBlankKey:
-            PixelKit.fire(GeneralPixel.aiChatNativeStorageMigrationDoneBlankCount)
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationDoneBlankCount)
         case .migrationStarted:
             PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationStarted)
         case .migrationAlreadyDone:

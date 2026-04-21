@@ -409,10 +409,10 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
         case .initError(let error):
             Pixel.fire(pixel: .duckAiNativeStorageInitError, error: error)
         case .migrationDone(let key):
-            UniquePixel.fire(pixel: .aiChatNativeStorageMigrationDoneUnique(key: key))
-            Pixel.fire(pixel: .aiChatNativeStorageMigrationDoneCount(key: key))
+            UniquePixel.fire(pixel: .duckAiNativeStorageMigrationDoneUnique(key: key))
+            Pixel.fire(pixel: .duckAiNativeStorageMigrationDoneCount(key: key))
         case .migrationDoneBlankKey:
-            Pixel.fire(pixel: .aiChatNativeStorageMigrationDoneBlankCount)
+            Pixel.fire(pixel: .duckAiNativeStorageMigrationDoneBlankCount)
         case .migrationStarted:
             Pixel.fire(pixel: .duckAiNativeStorageMigrationStarted)
         case .migrationAlreadyDone:

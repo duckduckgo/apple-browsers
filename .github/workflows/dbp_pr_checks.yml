@@ -124,7 +124,7 @@ jobs:
             "$xcresult" package-tests.xml \
             --log build-log.txt \
             --crash-reports-dir ~/Library/Logs/DiagnosticReports \
-            --summary-title "DBP (macOS) — Test Results"
+            --summary-title "DBP (macOS)"
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
@@ -282,7 +282,7 @@ jobs:
             "$xcresult" dbp-ios-unittests.xml \
             --log ios-build-log.txt \
             --crash-reports-dir ~/Library/Logs/DiagnosticReports \
-            --summary-title "DBP (iOS) — Test Results"
+            --summary-title "DBP (iOS)"
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4

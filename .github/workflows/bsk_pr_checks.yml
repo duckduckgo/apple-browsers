@@ -131,7 +131,7 @@ jobs:
             "$xcresult" package-tests.xml \
             --log build-log.txt \
             --crash-reports-dir ~/Library/Logs/DiagnosticReports \
-            --summary-title "BSK (macOS) — Test Results"
+            --summary-title "BSK (macOS)"
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4
@@ -296,7 +296,7 @@ jobs:
             "$xcresult" bsk-ios-unittests.xml \
             --log ios-build-log.txt \
             --crash-reports-dir ~/Library/Logs/DiagnosticReports \
-            --summary-title "BSK (iOS) — Test Results"
+            --summary-title "BSK (iOS)"
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4

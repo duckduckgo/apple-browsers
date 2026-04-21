@@ -103,7 +103,7 @@ jobs:
           "$xcresult" unittests.xml \
           --log xcodebuild.log \
           --crash-reports-dir ~/Library/Logs/DiagnosticReports \
-          --summary-title "iOS Nightly — Test Results"
+          --summary-title "iOS Nightly"
 
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v3

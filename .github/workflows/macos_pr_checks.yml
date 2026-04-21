@@ -361,7 +361,7 @@ jobs:
               "$xcresult" "$junit" \
               --log "$log" \
               --crash-reports-dir ~/Library/Logs/DiagnosticReports \
-              --summary-title "macOS ${{ matrix.flavor }} $kind — Test Results"
+              --summary-title "macOS ${{ matrix.flavor }} $kind"
           fi
         done
 

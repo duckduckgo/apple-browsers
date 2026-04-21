@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Inject crashed tests from an xcresult bundle into a JUnit XML file.
+"""Inject crashed tests from an xcresult bundle into a JUnit XML file, and
+append a test-results summary to $GITHUB_STEP_SUMMARY.
 
 xcbeautify doesn't emit <failure> entries for tests that crashed (SIGSEGV,
 fatalError, etc.) because the test host dies before the failure is recorded.
@@ -7,10 +8,9 @@ This reads crashed tests from the xcresult's structured summary and adds them
 as <failure> entries so downstream tooling (mikepenz/action-junit-report,
 yq-based Asana reporter) sees accurate counts.
 
-When --log and/or --crash-reports-dir are supplied, the script also enriches
-the <failure> message with the underlying fatal error text and appends a
-Markdown section to $GITHUB_STEP_SUMMARY (if set) showing the reason, signal,
-source location, and top stack frames for each crash.
+When --log is supplied, crashed-test messages are enriched with the fatal
+error text extracted from the xcodebuild log. When --crash-reports-dir is
+supplied, matching .ips stack traces are included in the step summary.
 """
 import argparse
 import json
@@ -35,36 +35,39 @@ def main() -> int:
     parser.add_argument("junit", help="path to JUnit XML to patch")
     parser.add_argument("--log", help="xcodebuild log to mine for fatal error messages")
     parser.add_argument("--crash-reports-dir", help="directory of .ips crash reports")
-    parser.add_argument("--summary-title", default="Test Crashes",
+    parser.add_argument("--summary-title", default="Test Results",
                         help="heading for the $GITHUB_STEP_SUMMARY section")
     args = parser.parse_args()
 
     summary = _xcresulttool_summary(args.xcresult)
-    crashes = _extract_crashes(summary)
-    if not crashes:
-        return 0
+    failures, crashes = _extract_failures(summary)
 
-    fatal_errors = _extract_fatal_errors(args.log) if args.log else []
-    start_time = summary.get("startTime")
-    finish_time = summary.get("finishTime")
-    crash_reports = (
-        _scan_crash_reports(args.crash_reports_dir, start_time, finish_time)
-        if args.crash_reports_dir else []
-    )
+    if crashes:
+        fatal_errors = _extract_fatal_errors(args.log) if args.log else []
+        start_time = summary.get("startTime")
+        finish_time = summary.get("finishTime")
+        crash_reports = (
+            _scan_crash_reports(args.crash_reports_dir, start_time, finish_time)
+            if args.crash_reports_dir else []
+        )
 
-    # If there's exactly one fatal error in the log and one crash, associate them.
-    # Otherwise leave the generic "Test crashed with signal trap." message in place.
-    for i, crash in enumerate(crashes):
-        if i < len(fatal_errors):
-            crash["reason"] = fatal_errors[i]
-        crash["report"] = _match_report(crash_reports, crash)
+        for i, crash in enumerate(crashes):
+            if i < len(fatal_errors):
+                crash["reason"] = fatal_errors[i]
+            crash["report"] = _match_report(crash_reports, crash)
 
-    added = _inject_into_junit(crashes, args.junit)
-    print(f"Injected {added} crash(es) into {args.junit}")
+        added = _inject_into_junit(crashes, args.junit)
+        print(f"Injected {added} crash(es) into {args.junit}")
 
     step_summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
-    if step_summary_path:
-        _append_step_summary(crashes, step_summary_path, args.summary_title)
+    if step_summary_path and (failures or crashes):
+        counts = {
+            "passed": summary.get("passedTests", 0),
+            "failed": len(failures),
+            "crashed": len(crashes),
+            "skipped": summary.get("skippedTests", 0),
+        }
+        _append_step_summary(step_summary_path, args.summary_title, counts, failures, crashes)
 
     return 0
 
@@ -80,21 +83,23 @@ def _xcresulttool_summary(xcresult: str) -> dict:
     return json.loads(result.stdout)
 
 
-def _extract_crashes(summary: dict) -> list[dict]:
-    crashes = []
+def _extract_failures(summary: dict) -> tuple[list[dict], list[dict]]:
+    failures, crashes = [], []
     for f in summary.get("testFailures", []):
-        if not re.search(r"crash", f.get("failureText", ""), re.IGNORECASE):
-            continue
         class_name, _, test_name = f["testIdentifierString"].partition("/")
-        crashes.append({
+        entry = {
             "class_name": class_name,
             "test_name": test_name.rstrip("()"),
             "target": f["targetName"],
             "failure_text": f["failureText"],
             "reason": f["failureText"],
             "report": None,
-        })
-    return crashes
+        }
+        if re.search(r"crash", f.get("failureText", ""), re.IGNORECASE):
+            crashes.append(entry)
+        else:
+            failures.append(entry)
+    return failures, crashes
 
 
 # ---------- xcodebuild log ----------
@@ -260,41 +265,56 @@ def _find_or_create_suite(root: ET.Element, class_name: str, target: str) -> ET.
 
 # ---------- GitHub step summary ----------
 
-def _append_step_summary(crashes: list[dict], summary_path: str, title: str) -> None:
+def _append_step_summary(
+    summary_path: str,
+    title: str,
+    counts: dict,
+    failures: list[dict],
+    crashes: list[dict],
+) -> None:
     lines = [f"## {title}", ""]
-    n = len(crashes)
-    lines.append(
-        f"**{n} crash{'es' if n != 1 else ''} surfaced** from the xcresult bundle "
-        f"(would otherwise be hidden by `-retry-tests-on-failure`)."
-    )
-    lines += ["", "| Test | Reason |", "|---|---|"]
-    for c in crashes:
-        test_ref = f"`{c['class_name']}.{c['test_name']}`"
-        lines.append(f"| {test_ref} | {_md_escape(c['reason'])} |")
-    lines.append("")
 
-    for c in crashes:
-        report = c.get("report")
-        if not report:
-            continue
-        lines.append(
-            f"<details><summary><b>{c['class_name']}.{c['test_name']} — crash details</b></summary>"
-        )
+    lines += [
+        "| Passed | Failed | Crashed | Skipped |",
+        "|---|---|---|---|",
+        f"| {counts['passed']} | {counts['failed']} | {counts['crashed']} | {counts['skipped']} |",
+        "",
+    ]
+
+    if failures:
+        lines.append("### Failures")
         lines.append("")
-        lines.append(f"- **Process:** `{report['process']}`")
-        if report["signal"]:
-            lines.append(f"- **Signal:** `{report['signal']}` ({report['exception_type']})")
-        if report["timestamp"]:
-            lines.append(f"- **Timestamp:** `{report['timestamp']}`")
-        if report["source_location"]:
-            lines.append(f"- **Source location:** `{report['source_location']}`")
-        lines.append(f"- **Crash report:** `{report['path'].name}`")
-        if report["top_frames"]:
-            lines += ["", "**Top frames (crashed thread):**", "", "```"]
-            for i, frame in enumerate(report["top_frames"]):
-                lines.append(f"{i}  {frame}")
-            lines.append("```")
-        lines += ["", "</details>", ""]
+        for f in failures:
+            test_ref = f"`{f['class_name']}.{f['test_name']}`"
+            lines.append(f"- {test_ref} — {_md_escape(f['reason'])}")
+        lines.append("")
+
+    if crashes:
+        lines.append("### Crashes")
+        lines.append("")
+        for c in crashes:
+            test_ref = f"{c['class_name']}.{c['test_name']}"
+            summary_line = f"<b>{test_ref}</b> — {_md_escape(c['reason'])}"
+            lines.append(f"<details><summary>{summary_line}</summary>")
+            lines.append("")
+            report = c.get("report")
+            if report:
+                lines.append(f"- **Process:** `{report['process']}`")
+                if report["signal"]:
+                    lines.append(f"- **Signal:** `{report['signal']}` ({report['exception_type']})")
+                if report["timestamp"]:
+                    lines.append(f"- **Timestamp:** `{report['timestamp']}`")
+                if report["source_location"]:
+                    lines.append(f"- **Source location:** `{report['source_location']}`")
+                lines.append(f"- **Crash report:** `{report['path'].name}`")
+                if report["top_frames"]:
+                    lines += ["", "**Top frames (crashed thread):**", "", "```"]
+                    for i, frame in enumerate(report["top_frames"]):
+                        lines.append(f"{i}  {frame}")
+                    lines.append("```")
+            else:
+                lines.append("_No matching crash report found in DiagnosticReports._")
+            lines += ["", "</details>", ""]
 
     with open(summary_path, "a") as f:
         f.write("\n".join(lines) + "\n")

@@ -124,7 +124,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private var daxLogoManager: DaxLogoManager
-    private var currentFireTab: Bool
     private var notificationCancellable: AnyCancellable?
 
     private weak var contentAnimator: UIViewPropertyAnimator?
@@ -138,7 +137,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.switchBarHandler = switchBarHandler
-        self.currentFireTab = switchBarHandler.isFireTab
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
@@ -201,8 +199,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func refreshFireMode(fireMode: Bool) {
-        guard currentFireTab != fireMode else { return }
-        currentFireTab = fireMode
         rebuildDaxLogoManager(isFireTab: fireMode)
     }
 

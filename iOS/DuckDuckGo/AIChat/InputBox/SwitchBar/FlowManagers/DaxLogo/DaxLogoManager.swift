@@ -69,10 +69,6 @@ final class DaxLogoManager {
             installFireTabContent(in: parentController, escapeHatch: escapeHatch, onEscapeHatchTap: onEscapeHatchTap)
             installFireTabConstraints(parentView: parentView, anchorView: anchorView, isTopBarPosition: isTopBarPosition)
         } else {
-            guard let anchorView else {
-                assertionFailure("Non-fire Dax logo install requires an anchor view.")
-                return
-            }
             installDaxLogoContent()
             installDaxLogoConstraints(parentView: parentView, anchorView: anchorView, isTopBarPosition: isTopBarPosition)
         }
@@ -147,7 +143,7 @@ final class DaxLogoManager {
         ])
     }
 
-    private func installDaxLogoConstraints(parentView: UIView, anchorView: UIView, isTopBarPosition: Bool) {
+    private func installDaxLogoConstraints(parentView: UIView, anchorView: UIView?, isTopBarPosition: Bool) {
         let centeringGuide = UILayoutGuide()
         centeringGuide.identifier = "DaxLogoCenteringGuide"
         parentView.addLayoutGuide(centeringGuide)
@@ -155,6 +151,10 @@ final class DaxLogoManager {
         containerYCenterConstraint = logoContainerView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor)
 
         if isTopBarPosition {
+            guard let anchorView else {
+                assertionFailure("Top-bar Dax logo install requires an anchor view.")
+                return
+            }
             NSLayoutConstraint.activate([
                 anchorView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
                 parentView.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor)

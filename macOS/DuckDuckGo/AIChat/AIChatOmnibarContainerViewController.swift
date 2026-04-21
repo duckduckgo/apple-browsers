@@ -1119,9 +1119,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func reasoningEffortIcon(_ effort: String) -> NSImage? {
         switch effort {
-        case "none", "minimal": return NSImage(systemSymbolName: "bolt.fill", accessibilityDescription: "Fast")
-        case "low": return NSImage(systemSymbolName: "brain", accessibilityDescription: "Reasoning")
-        case "medium": return NSImage(systemSymbolName: "brain.head.profile", accessibilityDescription: "Extended Reasoning")
+        case "none", "minimal": return DesignSystemImages.Glyphs.Size16.thunderbolt
+        case "low": return DesignSystemImages.Glyphs.Size16.thinking
+        case "medium": return DesignSystemImages.Glyphs.Size16.timer
         default: return nil
         }
     }

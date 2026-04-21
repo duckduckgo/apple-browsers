@@ -4322,6 +4322,10 @@ extension MainViewController: NewTabPageControllerDelegate {
         currentNTPEscapeHatch = nil
     }
 
+    func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {
+        markSearchContextualOnboardingAsSeenForExperiment()
+    }
+
     func newTabPageDidRequestFireMode(_ controller: NewTabPageViewController) {
         navigateToFireMode()
     }

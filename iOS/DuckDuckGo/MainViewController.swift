@@ -4156,6 +4156,9 @@ extension MainViewController: OmniBarDelegate {
     func onSwitchToTab(_ tab: Tab) {
         let targetTabsModel = tabManager.tabsModel(for: tab.mode)
         guard targetTabsModel.tabExists(tab: tab) else {
+            newTabPageViewController?.setEscapeHatch(nil)
+            currentNTPEscapeHatch = nil
+            unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
             viewCoordinator.omniBar.endEditing()
             return
         }

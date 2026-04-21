@@ -1577,7 +1577,7 @@
 "duckai.welcome.message" = "Tüm sohbetler %@ gizlidir";
 
 /* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "gizli";
+"duckai.welcome.private.word" = "gizlidir";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "iOS için DuckDuckGo";

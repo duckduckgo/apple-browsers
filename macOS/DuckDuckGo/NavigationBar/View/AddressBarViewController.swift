@@ -187,6 +187,7 @@ final class AddressBarViewController: NSViewController {
 
     private(set) var isAIChatOmnibarVisible = false {
         didSet {
+            addressBarButtonsViewController?.isAIChatPanelActive = isAIChatOmnibarVisible
             if isSelected {
                 updateShadowView(addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
             }

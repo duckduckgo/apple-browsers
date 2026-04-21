@@ -246,6 +246,15 @@ final class AddressBarButtonsViewController: NSViewController {
             }
         }
     }
+    /// True when the duck.ai omnibar panel is visible (focused or unfocused).
+    /// While the panel is up, the panel itself indicates the current mode, so the address bar suppresses its
+    /// own left-side indicators (image button, privacy shield, permission center).
+    var isAIChatPanelActive: Bool = false {
+        didSet {
+            guard isAIChatPanelActive != oldValue else { return }
+            updateButtons()
+        }
+    }
     var textFieldValue: AddressBarTextField.Value? {
         didSet {
             updateButtons()
@@ -877,7 +886,7 @@ final class AddressBarButtonsViewController: NSViewController {
             isPermissionCenterPopoverShown: isPermissionCenterPopoverShown,
             isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
             hasAnyPersistedPermissions: hasAnyPersistedPermissions
-        )
+        ) && !isAIChatPanelActive
 
         showOrHidePermissionCenterPopoverIfNeeded()
     }
@@ -1009,6 +1018,7 @@ final class AddressBarButtonsViewController: NSViewController {
         && !tabViewModel.isShowingErrorPage
         && !isTextFieldValueText
         && !isLocalUrl
+        && !isAIChatPanelActive
 
         // Hide the left icon when the toggle is visible
         imageButtonWrapper.isShown = imageButton.image != nil
@@ -1017,6 +1027,7 @@ final class AddressBarButtonsViewController: NSViewController {
         && privacyDashboardButton.isHidden
         && !shouldShowSearchModeToggle
         && !isOnboarding
+        && !isAIChatPanelActive
     }
 
     private func updatePrivacyEntryPointIcon() {

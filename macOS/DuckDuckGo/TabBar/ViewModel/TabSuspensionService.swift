@@ -75,10 +75,13 @@ final class TabSuspensionService {
 
     var useShortInactiveInterval: Bool {
         get {
+            // always use short interval in UI tests
+            if AppVersion.runType == .uiTests {
+                return true
+            }
             let storedValue = (try? keyValueStore.object(forKey: Key.useShortInactiveInterval.rawValue) as? Bool) ?? false
-            // only allow to override interval for internal users and in UI tests
-            let shouldAllowOverride = AppVersion.runType == .uiTests || featureFlagger.internalUserDecider.isInternalUser
-            return shouldAllowOverride ? storedValue : false
+            // only allow to override interval for internal users
+            return featureFlagger.internalUserDecider.isInternalUser ? storedValue : false
         }
 
         set {

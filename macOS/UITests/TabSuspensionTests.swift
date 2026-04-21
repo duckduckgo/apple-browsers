@@ -35,9 +35,6 @@ class TabSuspensionTests: UITestCase {
     // MARK: - Tests
 
     func testInactiveBackgroundTabGetsSuspendedOnMemoryPressure() {
-        // Enable short inactivity interval (5s) via the debug menu
-        enableShortInactivityInterval()
-
         // Open a page in the current tab
         app.openSite(pageTitle: pageTitle)
 
@@ -76,8 +73,6 @@ class TabSuspensionTests: UITestCase {
 
     func testWhenTabHadInputFocusThenItIsNotSuspended() throws {
         throw XCTSkip("Disabled until the C-S-S feature is released publicly")
-
-        enableShortInactivityInterval()
 
         let inputPageTitle = "Input Focus Test Page"
         let inputPageURL = UITests.simpleServedPage(
@@ -140,6 +135,57 @@ class TabSuspensionTests: UITestCase {
         app.typeKey(.escape, modifierFlags: [])
     }
 
+    func testThatInternalPagesAreNotSuspended() {
+        // Open Duck.ai in tab 1
+        app.openURL(URL(string: "https://duck.ai")!)
+        let duckAITab = app.tabGroups.matching(identifier: "Tabs").radioButtons.firstMatch
+        XCTAssertTrue(
+            duckAITab.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Settings tab should exist"
+        )
+
+        // Open History in tab 2
+        app.openHistory()
+        let historyTab = app.tabGroups.matching(identifier: "Tabs").radioButtons["History"]
+        XCTAssertTrue(
+            historyTab.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "History tab should exist"
+        )
+
+        // Open Release Notes in tab 3
+        app.openNewTab()
+        let addressBar = app.addressBar
+        XCTAssertTrue(addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        addressBar.typeURL(URL(string: "duck://release-notes")!)
+        let releaseNotesTab = app.tabGroups.matching(identifier: "Tabs").radioButtons["Release Notes"]
+        XCTAssertTrue(
+            releaseNotesTab.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Release Notes tab should exist"
+        )
+
+        // Open a new tab so all internal pages are background tabs
+        app.openNewTab()
+
+        Thread.sleep(forTimeInterval: 6)
+        simulateCriticalMemoryPressure()
+
+        // Verify none of the internal tabs were suspended
+        for (name, tab) in [
+            ("Duck.ai", duckAITab),
+            ("History", historyTab),
+            ("Release Notes", releaseNotesTab)
+        ] {
+            XCTAssertTrue(tab.waitForExistence(timeout: UITests.Timeouts.elementExistence), "\(name) tab should still exist")
+            tab.rightClick()
+            let resumeMenuItem = app.menuItems["Resume Tab"]
+            XCTAssertFalse(
+                resumeMenuItem.waitForExistence(timeout: 1),
+                "\(name) tab should not be suspended"
+            )
+            app.typeKey(.escape, modifierFlags: [])
+        }
+    }
+
     // MARK: - Helpers
 
     private func simulateCriticalMemoryPressure() {
@@ -157,22 +203,5 @@ class TabSuspensionTests: UITestCase {
             "Simulate Memory Pressure menu item didn't appear"
         )
         simulateMenuItem.click()
-    }
-
-    private func enableShortInactivityInterval() {
-        app.debugMenu.click()
-        let tabSuspensionMenu = app.menuItems["Tab Suspension"]
-        XCTAssertTrue(
-            tabSuspensionMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Tab Suspension menu didn't appear"
-        )
-        tabSuspensionMenu.click()
-
-        let shortIntervalMenuItem = app.menuItems["Use Short Inactivity Interval (5s)"]
-        XCTAssertTrue(
-            shortIntervalMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Short Inactivity Interval menu item didn't appear"
-        )
-        shortIntervalMenuItem.click()
     }
 }

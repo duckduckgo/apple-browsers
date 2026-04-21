@@ -616,6 +616,20 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         waitForExpectations(timeout: 0.1)
     }
 
+    // MARK: - Fire Tab
+
+    func test_updateIsFireTab_true_updatesHandler() {
+        XCTAssertFalse(sut.viewController.handler.isFireTab)
+        sut.updateIsFireTab(true)
+        XCTAssertTrue(sut.viewController.handler.isFireTab)
+    }
+
+    func test_updateIsFireTab_falseAfterTrue_updatesHandler() {
+        sut.updateIsFireTab(true)
+        sut.updateIsFireTab(false)
+        XCTAssertFalse(sut.viewController.handler.isFireTab)
+    }
+
     // MARK: - Submit From Omnibar Editing
 
     func test_submitSearch_fromOmnibarEditing_deactivates() {

@@ -61,6 +61,11 @@ final class DaxLogoManager {
                                  escapeHatch: EscapeHatchModel? = nil,
                                  onEscapeHatchTap: (() -> Void)? = nil) {
 
+        if !isFireTab && isTopBarPosition && anchorView == nil {
+            assertionFailure("Non-fire top-bar Dax logo install requires an anchor view.")
+            return
+        }
+
         logoContainerView.translatesAutoresizingMaskIntoConstraints = false
         logoContainerView.isUserInteractionEnabled = isFireTab
         parentView.addSubview(logoContainerView)
@@ -150,11 +155,7 @@ final class DaxLogoManager {
 
         containerYCenterConstraint = logoContainerView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor)
 
-        if isTopBarPosition {
-            guard let anchorView else {
-                assertionFailure("Top-bar Dax logo install requires an anchor view.")
-                return
-            }
+        if let anchorView, isTopBarPosition {
             NSLayoutConstraint.activate([
                 anchorView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
                 parentView.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor)

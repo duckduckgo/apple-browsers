@@ -3472,9 +3472,15 @@ extension MainViewController: OmniBarDelegate {
         if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
+        // Hide suggestion tray before kicking off navigation. refreshOmniBar()
+        // queues an async swipe-tabs collection reload via applyWidth(); that
+        // reload re-parents the OmniBar cell and fires textFieldDidEndEditing
+        // on a later runloop tick, before dismissOmniBar reaches hideSuggestionTray.
+        // Hiding the tray up front ensures onEditingEnd sees autocomplete=false
+        // and resolves to .dismissed, not .suspended.
+        hideSuggestionTray()
         omniBar.cancel()
         loadQuery(query)
-        hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
         showHomeRowReminder()
         fireOnboardingCustomSearchPixelIfNeeded(query: query)

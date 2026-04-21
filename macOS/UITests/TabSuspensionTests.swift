@@ -354,12 +354,13 @@ class TabSuspensionTests: UITestCase {
 
     private func simulateCriticalMemoryPressure() {
         app.debugMenu.click()
-        let memoryReportingMenu = app.menuItems["Memory Usage Reporting"]
+
+        let searchField = app.searchFields["Search debug menu..."]
         XCTAssertTrue(
-            memoryReportingMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Memory Usage Reporting menu didn't appear"
+            searchField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Debug menu search field didn't appear"
         )
-        memoryReportingMenu.click()
+        searchField.typeText("Simulate Memory Pressure")
 
         let simulateMenuItem = app.menuItems["Simulate Memory Pressure (Critical)"]
         XCTAssertTrue(

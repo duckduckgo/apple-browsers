@@ -22,6 +22,7 @@
 import Combine
 import Common
 import Foundation
+import Network
 import NetworkExtension
 import UserNotifications
 import os.log
@@ -1239,12 +1240,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             return
         }
 
+        let tunnelInterface = await resolveTunnelInterface()
+
         switch startReason {
         case .manual, .onDemand, .snoozeEnded:
             if leakCheckService == nil {
                 let service = VPNLeakCheckService(
                     configuration: .default,
                     egressIP: egressIP,
+                    tunnelInterface: tunnelInterface,
                     httpClient: DefaultLeakCheckHTTPClient(),
                     stunClient: DefaultLeakCheckSTUNClient(),
                     wideEvent: wideEvent,
@@ -1252,6 +1256,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 )
                 leakCheckService = service
                 await service.start()
+            } else {
+                await leakCheckService?.updateTunnelInterface(tunnelInterface)
             }
             let service = leakCheckService
             let delay = LeakCheckConfiguration.default.tunnelStartDelay
@@ -1261,12 +1267,33 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
         case .reconnected:
             await leakCheckService?.updateEgressIP(egressIP)
+            await leakCheckService?.updateTunnelInterface(tunnelInterface)
             let service = leakCheckService
             Task {
                 await service?.runCheck(trigger: .reassert)
             }
         case .wake:
             break
+        }
+    }
+
+    private func resolveTunnelInterface() async -> NWInterface? {
+        guard let interfaceName = adapter.interfaceName else {
+            Logger.networkProtectionIPLeakCheck.log("Tunnel interface name unavailable; leak check probes will not be pinned")
+            return nil
+        }
+        return await withCheckedContinuation { continuation in
+            let monitor = NWPathMonitor()
+            var didResume = false
+            monitor.pathUpdateHandler = { path in
+                guard !didResume else { return }
+                didResume = true
+                let match = path.availableInterfaces.first(where: { $0.name == interfaceName })
+                monitor.cancel()
+                monitor.pathUpdateHandler = nil
+                continuation.resume(returning: match)
+            }
+            monitor.start(queue: .global(qos: .utility))
         }
     }
 

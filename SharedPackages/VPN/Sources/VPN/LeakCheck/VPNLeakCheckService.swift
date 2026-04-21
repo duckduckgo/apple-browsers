@@ -25,6 +25,7 @@ public actor VPNLeakCheckService {
 
     private let configuration: LeakCheckConfiguration
     private var egressIP: String
+    private var tunnelInterface: NWInterface?
     private let httpClient: LeakCheckHTTPClient
     private let stunClient: LeakCheckSTUNClient
     private let wideEvent: WideEventManaging
@@ -38,6 +39,7 @@ public actor VPNLeakCheckService {
     public init(
         configuration: LeakCheckConfiguration = .default,
         egressIP: String,
+        tunnelInterface: NWInterface? = nil,
         httpClient: LeakCheckHTTPClient,
         stunClient: LeakCheckSTUNClient,
         wideEvent: WideEventManaging,
@@ -45,6 +47,7 @@ public actor VPNLeakCheckService {
     ) {
         self.configuration = configuration
         self.egressIP = egressIP
+        self.tunnelInterface = tunnelInterface
         self.httpClient = httpClient
         self.stunClient = stunClient
         self.wideEvent = wideEvent
@@ -73,6 +76,11 @@ public actor VPNLeakCheckService {
     public func updateEgressIP(_ newIP: String) {
         Logger.networkProtectionIPLeakCheck.log("Updated egress IP reference")
         egressIP = newIP
+    }
+
+    public func updateTunnelInterface(_ interface: NWInterface?) {
+        Logger.networkProtectionIPLeakCheck.log("Updated tunnel interface reference: \(interface?.name ?? "nil", privacy: .public)")
+        tunnelInterface = interface
     }
 
     public static func completeAllPendingFlows(wideEvent: WideEventManaging) {
@@ -128,8 +136,13 @@ public actor VPNLeakCheckService {
         wideEvent.startFlow(data)
 
         let egressIPSnapshot = egressIP
+        let tunnelInterfaceSnapshot = tunnelInterface
         let startDate = Date()
-        let results = await probeAll()
+        let results = await probeAll(tunnelInterface: tunnelInterfaceSnapshot)
+
+        Logger.networkProtectionIPLeakCheck.debug(
+            "IP comparison — expected: \(egressIPSnapshot, privacy: .public), got ipv4[http: \(Self.describeIP(results.ipv4Http), privacy: .public), https: \(Self.describeIP(results.ipv4Https), privacy: .public), stun: \(Self.describeIP(results.ipv4Stun), privacy: .public)], ipv6[http: \(Self.describeIP(results.ipv6Http), privacy: .public), https: \(Self.describeIP(results.ipv6Https), privacy: .public), stun: \(Self.describeIP(results.ipv6Stun), privacy: .public)]"
+        )
 
         data.ipv4Http = classifyIPv4(results.ipv4Http, egressIP: egressIPSnapshot)
         data.ipv4Https = classifyIPv4(results.ipv4Https, egressIP: egressIPSnapshot)
@@ -176,6 +189,13 @@ public actor VPNLeakCheckService {
         }
     }
 
+    private static func describeIP(_ result: Result<String, Error>) -> String {
+        switch result {
+        case .success(let ip): return ip
+        case .failure(let error): return "error(\(error))"
+        }
+    }
+
     private static func describeResults(_ data: VPNIPLeakCheckWideEventData) -> String {
         func describe(_ result: LeakCheckPerTestResult?) -> String {
             guard let result = result else { return "-" }
@@ -202,31 +222,32 @@ public actor VPNLeakCheckService {
         case ipv4Http, ipv4Https, ipv4Stun, ipv6Http, ipv6Https, ipv6Stun
     }
 
-    private func probeAll() async -> ProbeResults {
+    private func probeAll(tunnelInterface: NWInterface?) async -> ProbeResults {
         let config = configuration
         let http = httpClient
         let stun = stunClient
+        let iface = tunnelInterface
 
         var collected: [ProbeKey: Result<String, Error>] = [:]
 
         await withTaskGroup(of: (ProbeKey, Result<String, Error>).self) { group in
             group.addTask {
-                (.ipv4Http, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpPort, scheme: .http, ipVersion: .v4, timeout: config.httpTimeout) })
+                (.ipv4Http, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpPort, scheme: .http, ipVersion: .v4, timeout: config.httpTimeout, requiredInterface: iface) })
             }
             group.addTask {
-                (.ipv4Https, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpsPort, scheme: .https, ipVersion: .v4, timeout: config.httpTimeout) })
+                (.ipv4Https, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpsPort, scheme: .https, ipVersion: .v4, timeout: config.httpTimeout, requiredInterface: iface) })
             }
             group.addTask {
-                (.ipv4Stun, await Self.runProbe { try await stun.sendBindingRequest(host: config.host, port: config.stunPort, ipVersion: .v4, timeout: config.stunTimeout) })
+                (.ipv4Stun, await Self.runProbe { try await stun.sendBindingRequest(host: config.host, port: config.stunPort, ipVersion: .v4, timeout: config.stunTimeout, requiredInterface: iface) })
             }
             group.addTask {
-                (.ipv6Http, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpPort, scheme: .http, ipVersion: .v6, timeout: config.httpTimeout) })
+                (.ipv6Http, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpPort, scheme: .http, ipVersion: .v6, timeout: config.httpTimeout, requiredInterface: iface) })
             }
             group.addTask {
-                (.ipv6Https, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpsPort, scheme: .https, ipVersion: .v6, timeout: config.httpTimeout) })
+                (.ipv6Https, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpsPort, scheme: .https, ipVersion: .v6, timeout: config.httpTimeout, requiredInterface: iface) })
             }
             group.addTask {
-                (.ipv6Stun, await Self.runProbe { try await stun.sendBindingRequest(host: config.host, port: config.stunPort, ipVersion: .v6, timeout: config.stunTimeout) })
+                (.ipv6Stun, await Self.runProbe { try await stun.sendBindingRequest(host: config.host, port: config.stunPort, ipVersion: .v6, timeout: config.stunTimeout, requiredInterface: iface) })
             }
             for await item in group {
                 collected[item.0] = item.1
@@ -272,7 +293,7 @@ public actor VPNLeakCheckService {
             switch nwError {
             case .posix(let code):
                 switch code {
-                case .EHOSTUNREACH, .ENETUNREACH, .ECONNREFUSED, .ETIMEDOUT, .EADDRNOTAVAIL, .ENOTCONN:
+                case .EHOSTUNREACH, .ENETUNREACH, .ENETDOWN, .ECONNREFUSED, .ETIMEDOUT, .EADDRNOTAVAIL, .ENOTCONN:
                     return true
                 default:
                     return false

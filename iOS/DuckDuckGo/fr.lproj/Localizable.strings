@@ -1577,7 +1577,7 @@
 "duckai.welcome.message" = "Toutes les discussions sont %@ privées";
 
 /* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "confidentielle";
+"duckai.welcome.private.word" = "privées";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo pour iOS";

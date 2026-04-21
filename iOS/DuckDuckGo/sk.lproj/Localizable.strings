@@ -1574,10 +1574,10 @@
 "duckai.siri.education.screen.title" = "Hovor s Duck.ai pomocou Siri!";
 
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
-"duckai.welcome.message" = "Všetky chaty sú úkromné %@ s";
+"duckai.welcome.message" = "Všetky chaty sú %@ súkromné";
 
 /* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "súkromná";
+"duckai.welcome.private.word" = "súkromné";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo pre iOS";

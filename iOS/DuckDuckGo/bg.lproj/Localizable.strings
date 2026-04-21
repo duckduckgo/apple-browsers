@@ -1577,7 +1577,7 @@
 "duckai.welcome.message" = "Всички чатове са %@ поверителни";
 
 /* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "поверително";
+"duckai.welcome.private.word" = "поверителни";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo за iOS";

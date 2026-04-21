@@ -1577,7 +1577,7 @@
 "duckai.welcome.message" = "すべてのチャットは%@非公開です";
 
 /* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "ままです";
+"duckai.welcome.private.word" = "非公開";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "iOS用DuckDuckGo";

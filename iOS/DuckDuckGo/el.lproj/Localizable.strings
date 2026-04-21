@@ -1577,7 +1577,7 @@
 "duckai.welcome.message" = "Όλες οι συνομιλίες είναι %@ ιδιωτικές";
 
 /* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "ιδιωτική";
+"duckai.welcome.private.word" = "ιδιωτικές";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo για iOS";

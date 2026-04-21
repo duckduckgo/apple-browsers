@@ -22,16 +22,6 @@ import XCTest
 
 class StringExtensionTests: XCTestCase {
 
-    // Temporary: forced crash to verify CI crash-surfacing pipeline on PR #4493. Remove before merging.
-    func testForceCrashForReportingVerification() {
-        fatalError("forced crash to verify CI crash reporting")
-    }
-
-    // Temporary: forced failure to verify CI failure-surfacing pipeline on PR #4493. Remove before merging.
-    func testForceFailureForReportingVerification() {
-        XCTFail("forced failure to verify CI failure reporting")
-    }
-
     func testHtmlEscapedString() {
         NSError.disableSwizzledDescription = true
         defer { NSError.disableSwizzledDescription = false }

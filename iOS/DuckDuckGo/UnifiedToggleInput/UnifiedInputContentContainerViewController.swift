@@ -124,6 +124,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private var daxLogoManager: DaxLogoManager
+    private var currentFireTab: Bool
     private var notificationCancellable: AnyCancellable?
 
     private weak var contentAnimator: UIViewPropertyAnimator?
@@ -137,6 +138,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.switchBarHandler = switchBarHandler
+        self.currentFireTab = switchBarHandler.isFireTab
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
@@ -199,17 +201,18 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func refreshFireMode(fireMode: Bool) {
-        guard daxLogoManager.isFireTab != fireMode else { return }
-        let wasInstalled = isViewLoaded
-        if wasInstalled {
-            daxLogoManager.tearDown()
-        }
-        daxLogoManager = DaxLogoManager(isFireTab: fireMode)
-        if wasInstalled {
-            installDaxLogoView()
-            applyRequestedContentInset()
-            updateDaxVisibility()
-        }
+        guard currentFireTab != fireMode else { return }
+        currentFireTab = fireMode
+        rebuildDaxLogoManager(isFireTab: fireMode)
+    }
+
+    private func rebuildDaxLogoManager(isFireTab: Bool) {
+        daxLogoManager.tearDown()
+        daxLogoManager = DaxLogoManager(isFireTab: isFireTab)
+        guard isViewLoaded else { return }
+        installDaxLogoView()
+        applyRequestedContentInset()
+        updateDaxVisibility()
     }
 
     var isSwipeEnabled: Bool = true {
@@ -473,7 +476,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func installDaxLogoView() {
-        daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, anchorView: contentContainerView, isTopBarPosition: false)
+        daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, isTopBarPosition: false)
     }
 
     private func setupSubscriptions() {

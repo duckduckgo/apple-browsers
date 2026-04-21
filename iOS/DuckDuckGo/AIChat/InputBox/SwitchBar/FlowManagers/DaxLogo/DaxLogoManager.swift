@@ -28,7 +28,7 @@ final class DaxLogoManager {
     
     // MARK: - Properties
 
-    let isFireTab: Bool
+    private let isFireTab: Bool
 
     private var logoContainerView: UIView = UIView()
 
@@ -52,9 +52,11 @@ final class DaxLogoManager {
 
     // MARK: - Public Methods
     
+    /// `anchorView` is optional: pass `nil` to fill the parent's safe area (fire-tab-only use case —
+    /// UTI hosts its input outside the content container so there's no in-container anchor to align to).
     func installInViewController(_ parentController: UIViewController,
                                  asSubviewOf parentView: UIView,
-                                 anchorView: UIView,
+                                 anchorView: UIView? = nil,
                                  isTopBarPosition: Bool,
                                  escapeHatch: EscapeHatchModel? = nil,
                                  onEscapeHatchTap: (() -> Void)? = nil) {
@@ -67,6 +69,10 @@ final class DaxLogoManager {
             installFireTabContent(in: parentController, escapeHatch: escapeHatch, onEscapeHatchTap: onEscapeHatchTap)
             installFireTabConstraints(parentView: parentView, anchorView: anchorView, isTopBarPosition: isTopBarPosition)
         } else {
+            guard let anchorView else {
+                assertionFailure("Non-fire Dax logo install requires an anchor view.")
+                return
+            }
             installDaxLogoContent()
             installDaxLogoConstraints(parentView: parentView, anchorView: anchorView, isTopBarPosition: isTopBarPosition)
         }
@@ -115,23 +121,23 @@ final class DaxLogoManager {
 
     // MARK: - Private Methods
 
-    private func installFireTabConstraints(parentView: UIView, anchorView: UIView, isTopBarPosition: Bool) {
-        // UTI has no in-container anchor (input lives outside the content container), so fall back to filling the parent's safe area.
-        let fillsParent = anchorView === parentView
-        if fillsParent {
-            NSLayoutConstraint.activate([
-                logoContainerView.topAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.topAnchor),
-                logoContainerView.bottomAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.bottomAnchor)
-            ])
-        } else if isTopBarPosition {
-            NSLayoutConstraint.activate([
-                logoContainerView.topAnchor.constraint(equalTo: anchorView.bottomAnchor),
-                logoContainerView.bottomAnchor.constraint(equalTo: parentView.keyboardLayoutGuide.topAnchor)
-            ])
+    private func installFireTabConstraints(parentView: UIView, anchorView: UIView?, isTopBarPosition: Bool) {
+        if let anchorView {
+            if isTopBarPosition {
+                NSLayoutConstraint.activate([
+                    logoContainerView.topAnchor.constraint(equalTo: anchorView.bottomAnchor),
+                    logoContainerView.bottomAnchor.constraint(equalTo: parentView.keyboardLayoutGuide.topAnchor)
+                ])
+            } else {
+                NSLayoutConstraint.activate([
+                    logoContainerView.topAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.topAnchor),
+                    logoContainerView.bottomAnchor.constraint(equalTo: anchorView.topAnchor)
+                ])
+            }
         } else {
             NSLayoutConstraint.activate([
                 logoContainerView.topAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.topAnchor),
-                logoContainerView.bottomAnchor.constraint(equalTo: anchorView.topAnchor)
+                logoContainerView.bottomAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.bottomAnchor)
             ])
         }
 

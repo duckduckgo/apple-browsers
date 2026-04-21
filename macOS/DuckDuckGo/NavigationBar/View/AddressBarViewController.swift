@@ -623,13 +623,12 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func updateView() {
-        if selectionState == .activeWithAIChat {
-            /// Focused duck.ai takes over the address bar area with the prompt panel below; hide both text fields.
+        if selectionState.isInAIChatMode {
+            /// Duck.ai takes over the address bar area with its own prompt overlay; hide both text fields so
+            /// their text (and the "- Search DuckDuckGo" suffix) doesn't peek out past the overlay edges.
             addressBarTextField.isHidden = true
             passiveTextField.isHidden = true
         } else {
-            /// `.inactiveWithAIChat` falls into this branch and renders like `.inactive` (URL in passive text field,
-            /// no toggle) so it matches search-mode appearance when unfocused, per product.
             let isPassiveTextFieldHidden = selectionState.isSelected || mode.isEditing
             addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
             passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false

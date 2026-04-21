@@ -21,17 +21,6 @@ import XCTest
 
 class StringExtensionTests: XCTestCase {
 
-    // Temporary: forced crash to verify CI crash-surfacing pipeline on branch sam/gha-surface-crashes. Remove before merging.
-    func testForceCrashForReportingVerification() {
-        let value: String? = nil
-        _ = value!
-    }
-
-    // Temporary: forced failure to verify CI failure-surfacing pipeline on branch sam/gha-surface-crashes. Remove before merging.
-    func testForceFailureForReportingVerification() {
-        XCTFail("forced failure to verify CI failure reporting")
-    }
-
     func testSHA256() {
         XCTAssertEqual("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", "hello".sha256())
     }

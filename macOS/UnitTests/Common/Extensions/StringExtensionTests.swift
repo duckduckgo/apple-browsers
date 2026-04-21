@@ -22,17 +22,6 @@ import XCTest
 
 class StringExtensionTests: XCTestCase {
 
-    // Temporary: forced crash to verify CI crash-surfacing pipeline on branch sam/gha-surface-crashes. Remove before merging.
-    func testForceCrashForReportingVerification() {
-        let value: String? = nil
-        _ = value!
-    }
-
-    // Temporary: forced failure to verify CI failure-surfacing pipeline on branch sam/gha-surface-crashes. Remove before merging.
-    func testForceFailureForReportingVerification() {
-        XCTFail("forced failure to verify CI failure reporting")
-    }
-
     func testHtmlEscapedString() {
         NSError.disableSwizzledDescription = true
         defer { NSError.disableSwizzledDescription = false }

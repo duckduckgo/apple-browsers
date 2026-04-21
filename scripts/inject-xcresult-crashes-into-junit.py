@@ -102,10 +102,14 @@ def _extract_failures(summary: dict) -> tuple[list[dict], list[dict]]:
 # ---------- xcodebuild log ----------
 
 def _extract_fatal_errors(log_path: str) -> list[str]:
+    # Adjacent dedup only: GitHub Actions often repeats the same fatal-error line
+    # once as stdout and once as ##[error]. Collapsing those preserves each
+    # distinct crash's message so positional pairing with xcresult still works
+    # when two different crashes happen to share an identical message.
     p = Path(log_path)
     if not p.is_file():
         return []
-    seen, results = set(), []
+    results: list[str] = []
     with p.open("r", errors="replace") as f:
         for line in f:
             for pat in FATAL_ERROR_PATTERNS:
@@ -113,8 +117,7 @@ def _extract_fatal_errors(log_path: str) -> list[str]:
                 if not m:
                     continue
                 msg = ": ".join(g for g in m.groups() if g).strip()
-                if msg and msg not in seen:
-                    seen.add(msg)
+                if msg and (not results or results[-1] != msg):
                     results.append(msg)
                 break
     return results

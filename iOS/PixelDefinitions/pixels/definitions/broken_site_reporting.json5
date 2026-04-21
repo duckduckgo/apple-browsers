@@ -339,6 +339,16 @@
                 "key": "extendedPerformance.totalResourcesSizeBucket",
                 "type": "string",
                 "description": "Total resources size bucket"
+            },
+            {
+                "key": "loadedWebExtensions",
+                "type": "string",
+                "description": "Comma-separated short labels of currently installed web extensions (e.g. embedded,darkMode,adBlocking)"
+            },
+            {
+                "key": "adBlockingExtensionScriptletsVersion",
+                "type": "string",
+                "description": "Cached scriptlets version for the ad-blocking web extension"
             }
         ]
     },
@@ -652,6 +662,16 @@
                 "key": "extendedPerformance.totalResourcesSizeBucket",
                 "type": "string",
                 "description": "Total resources size bucket"
+            },
+            {
+                "key": "loadedWebExtensions",
+                "type": "string",
+                "description": "Comma-separated short labels of currently installed web extensions (e.g. embedded,darkMode,adBlocking)"
+            },
+            {
+                "key": "adBlockingExtensionScriptletsVersion",
+                "type": "string",
+                "description": "Cached scriptlets version for the ad-blocking web extension"
             }
         ]
     }

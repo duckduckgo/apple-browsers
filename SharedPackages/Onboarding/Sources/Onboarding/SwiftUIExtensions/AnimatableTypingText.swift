@@ -24,6 +24,7 @@ typealias PlatformColor = NSColor
 
 import SwiftUI
 import Combine
+import UIComponents
 
 // MARK: - View
 public struct AnimatableTypingText: View {
@@ -62,15 +63,8 @@ public struct AnimatableTypingText: View {
     }
 
     public var body: some View {
-        Group {
-            if #available(iOS 15, macOS 12, *) {
-                Text(AttributedString(model.typedAttributedText))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                Text(model.typedAttributedText.string)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
+        Text(attributedStringWithAttachments: model.typedAttributedText)
+            .frame(maxWidth: .infinity, alignment: .leading)
         .onChange(of: startAnimating.wrappedValue, perform: { shouldAnimate in
             if skipAnimation.wrappedValue {
                 model.skip()
@@ -200,4 +194,5 @@ extension NSAttributedString {
 
         return mutableAttributedString
     }
+
 }

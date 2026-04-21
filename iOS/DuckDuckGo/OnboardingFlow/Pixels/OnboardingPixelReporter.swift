@@ -90,7 +90,12 @@ protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureSearchExperienceSelectionImpression()
     func measureChooseAIChat()
     func measureChooseSearchOnly()
+    func measureDuckAIQueryExperimentSelectionImpression()
+    func measureDuckAIQueryExperimentChooseSearchOnly()
+    func measureDuckAIQueryExperimentChooseAIChat()
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource)
 }
+
 
 protocol OnboardingCustomInteractionPixelReporting {
     func measureCustomSearch()
@@ -107,11 +112,14 @@ protocol OnboardingDaxDialogsReporting {
     func measureTryVisitSiteDialogDismissButtonTapped()
     func measureTrackersDialogDismissButtonTapped()
     func measureFireDialogDismissButtonTapped()
+    func measureDuckAIExperimentFireButtonCTAAction()
+    func measureDuckAIExperimentFinalDialogImpression()
     func measureEndOfJourneyDialogNewTabDismissButtonTapped()
     func measureEndOfJourneyDialogDismissButtonTapped()
     func measureSubscriptionDialogNewTabDismissButtonTapped()
     func measureEndOfJourneyDialogCTAAction()
 }
+
 
 protocol OnboardingAddToDockReporting {
     func measureAddToDockPromoImpression()
@@ -163,9 +171,58 @@ final class OnboardingPixelReporter {
 
 }
 
+enum DuckAIQueryExperimentPromptSource: String {
+    case custom
+    case option1
+    case option2
+    case option3
+}
+
 // MARK: - OnboardingPixelReporter + Intro
 
 extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
+    private enum DuckAIQueryExperimentMetric {
+        enum Name: String {
+            case search = "search_type"
+            case aiChat = "aichat_type"
+            case screenImpression = "screen-impression"
+            case ctaPressed = "cta-pressed"
+        }
+        enum ScreenImpressionValue: String {
+            case toggleScreen = "toggle-screen"
+            case fireDialog = "fire-dialog"
+            case finalDialog = "final-dialog"
+        }
+        enum CTAPressedValue: String {
+            case continuePressedSearch = "toggle-continue-pressed_search"
+            case continuePressedAI = "toggle-continue-pressed_ai"
+            case fireButtonPressed = "fire-button-pressed"
+        }
+        static let conversionWindowD0: ConversionWindow = 0...0
+        static let conversionWindowD7: ConversionWindow = 0...7
+    }
+
+    private func fireExperimentScreenImpressionPixel(value: DuckAIQueryExperimentMetric.ScreenImpressionValue) {
+        for window in [DuckAIQueryExperimentMetric.conversionWindowD0, DuckAIQueryExperimentMetric.conversionWindowD7] {
+            experimentPixel.fireExperimentPixel(
+                for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
+                metric: DuckAIQueryExperimentMetric.Name.screenImpression.rawValue,
+                conversionWindowDays: window,
+                value: value.rawValue
+            )
+        }
+    }
+
+    private func fireExperimentCTAPressedPixel(value: DuckAIQueryExperimentMetric.CTAPressedValue) {
+        for window in [DuckAIQueryExperimentMetric.conversionWindowD0, DuckAIQueryExperimentMetric.conversionWindowD7] {
+            experimentPixel.fireExperimentPixel(
+                for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
+                metric: DuckAIQueryExperimentMetric.Name.ctaPressed.rawValue,
+                conversionWindowDays: window,
+                value: value.rawValue
+            )
+        }
+    }
 
     func measureSkipOnboardingCTAAction() {
         fire(event: .onboardingIntroSkipOnboardingCTAPressed, unique: false)
@@ -230,6 +287,41 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     func measureChooseSearchOnly() {
         fire(event: .onboardingIntroSearchOnlySelected, unique: false)
     }
+
+    func measureDuckAIQueryExperimentSelectionImpression() {
+        fire(event: .onboardingIntroDuckAIExperimentToggleImpressionUnique, unique: true)
+        fireExperimentScreenImpressionPixel(value: .toggleScreen)
+    }
+
+    func measureDuckAIQueryExperimentChooseSearchOnly() {
+        fire(event: .onboardingIntroDuckAIExperimentToggleContinuePressedSearch, unique: false)
+        fireExperimentCTAPressedPixel(value: .continuePressedSearch)
+    }
+
+    func measureDuckAIQueryExperimentChooseAIChat() {
+        fire(event: .onboardingIntroDuckAIExperimentToggleContinuePressedAI, unique: false)
+        fireExperimentCTAPressedPixel(value: .continuePressedAI)
+    }
+
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
+        let metricName: DuckAIQueryExperimentMetric.Name
+        switch selection {
+        case .duckAI:
+            metricName = .aiChat
+        case .search:
+            metricName = .search
+        }
+
+        for window in [DuckAIQueryExperimentMetric.conversionWindowD0, DuckAIQueryExperimentMetric.conversionWindowD7] {
+            experimentPixel.fireExperimentPixel(
+                for: AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
+                metric: metricName.rawValue,
+                conversionWindowDays: window,
+                value: promptSource.rawValue
+            )
+        }
+    }
+
 }
 
 // MARK: - OnboardingPixelReporter + Custom Interaction
@@ -269,6 +361,9 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
     
     func measureScreenImpression(event: Pixel.Event) {
         fire(event: event, unique: true)
+        if case .onboardingDuckAIExperimentFireDialogShownUnique = event {
+            fireExperimentScreenImpressionPixel(value: .fireDialog)
+        }
     }
 
     func measureTrySearchDialogNewTabDismissButtonTapped() {
@@ -293,6 +388,16 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
 
     func measureFireDialogDismissButtonTapped() {
         fire(event: .onboardingFireDialogDismissButtonTapped, unique: false)
+    }
+
+    func measureDuckAIExperimentFireButtonCTAAction() {
+        fire(event: .onboardingDuckAIExperimentFireButtonCTAPressed, unique: false)
+        fireExperimentCTAPressedPixel(value: .fireButtonPressed)
+    }
+
+    func measureDuckAIExperimentFinalDialogImpression() {
+        fire(event: .onboardingDuckAIExperimentFinalDialogShownUnique, unique: true)
+        fireExperimentScreenImpressionPixel(value: .finalDialog)
     }
 
     func measureEndOfJourneyDialogNewTabDismissButtonTapped() {

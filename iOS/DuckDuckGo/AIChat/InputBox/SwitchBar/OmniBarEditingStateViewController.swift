@@ -59,6 +59,30 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     var automaticallySelectsTextOnAppear = false
     var useNewTransitionBehaviour = false
 
+    /// Container used for swipe/fade-out content stack (search/chat/history/Dax content).
+    var contentStackContainerView: UIView {
+        contentContainerView
+    }
+
+    /// Anchor below the switch bar, used when mounting additional content without covering omnibar controls.
+    var contentStackTopAnchor: NSLayoutYAxisAnchor {
+        switchBarVC.view.bottomAnchor
+    }
+
+    /// Anchor above the switch bar, used when mounting content for bottom address bar mode.
+    var contentStackBottomAnchor: NSLayoutYAxisAnchor {
+        switchBarVC.view.topAnchor
+    }
+
+    /// Distance between the segmented Search/Duck.ai toggle and the address bar input.
+    var addressBarToToggleSpacing: CGFloat {
+        switchBarVC.addressBarToToggleSpacing
+    }
+
+    var isUsingTopBarPositionForLayout: Bool {
+        isUsingTopBarPosition
+    }
+
     // MARK: - Core Components
     private lazy var contentContainerView = UIView()
 

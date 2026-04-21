@@ -1,7 +1,8 @@
 //
-//  UIComponentsTests.swift
+//  DuckAIQueryExperimentMode.swift
+//  DuckDuckGo
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,7 +17,8 @@
 //  limitations under the License.
 //
 
-import Testing
-@testable import UIComponents
-
-@Test func example() async throws { }
+/// The search mode selected by the user in the Duck.ai query experiment onboarding step.
+enum DuckAIQueryExperimentMode {
+    case search
+    case duckAI
+}

@@ -139,6 +139,7 @@ public final class PixelKit {
     private let fireRequest: FireRequest
     private var dryRun: Bool
     private let source: String?
+    private let channel: String?
     private let pixelCalendar: Calendar
 
     /// Sets up PixelKit for the entire app.
@@ -146,10 +147,12 @@ public final class PixelKit {
     /// - Parameters:
     /// - `dryRun`: if `true`, simulate requests and "send" them at an accelerated rate (once every 2 minutes instead of once a day)
     /// - `source`: if set, adds a `pixelSource` parameter to the pixel call; this can be used to specify which target is sending the pixel
+    /// - `channel`: if set, adds a `channel` parameter to pixel calls (e.g. "canary" for internal users, "dev" for alpha/review builds); omit for production builds
     /// - `fireRequest`: this is not triggered when `dryRun` is `true`
     public static func setUp(dryRun: Bool,
                              appVersion: String,
                              source: String? = nil,
+                             channel: String? = nil,
                              defaultHeaders: [String: String],
                              dailyPixelCalendar: Calendar? = nil,
                              dateGenerator: @escaping () -> Date = Date.init,
@@ -158,6 +161,7 @@ public final class PixelKit {
         shared = PixelKit(dryRun: dryRun,
                           appVersion: appVersion,
                           source: source,
+                          channel: channel,
                           defaultHeaders: defaultHeaders,
                           dailyPixelCalendar: dailyPixelCalendar,
                           dateGenerator: dateGenerator,
@@ -174,6 +178,7 @@ public final class PixelKit {
     public init(dryRun: Bool,
                 appVersion: String,
                 source: String? = nil,
+                channel: String? = nil,
                 defaultHeaders: [String: String],
                 dailyPixelCalendar: Calendar? = nil,
                 dateGenerator: @escaping () -> Date = Date.init,
@@ -183,12 +188,13 @@ public final class PixelKit {
         self.dryRun = dryRun
         self.appVersion = appVersion
         self.source = source
+        self.channel = channel
         self.defaultHeaders = defaultHeaders
         self.pixelCalendar = dailyPixelCalendar ?? Self.defaultDailyPixelCalendar
         self.dateGenerator = dateGenerator
         self.defaults = defaults
         self.fireRequest = fireRequest
-        logger.debug("👾 PixelKit initialised: dryRun: \(self.dryRun, privacy: .public) appVersion: \(self.appVersion, privacy: .public) source: \(self.source ?? "-", privacy: .public) defaultHeaders: \(self.defaultHeaders, privacy: .public) pixelCalendar: \(self.pixelCalendar, privacy: .public)")
+        logger.debug("👾 PixelKit initialised: dryRun: \(self.dryRun, privacy: .public) appVersion: \(self.appVersion, privacy: .public) source: \(self.source ?? "-", privacy: .public) channel: \(self.channel ?? "-", privacy: .public) defaultHeaders: \(self.defaultHeaders, privacy: .public) pixelCalendar: \(self.pixelCalendar, privacy: .public)")
     }
 
     // MARK: - Public Fire
@@ -283,6 +289,7 @@ public final class PixelKit {
         var newParams = params ?? [:]
         if includeAppVersionParameter { newParams[Parameters.appVersion] = appVersion }
         if standardParameters.contains(.pixelSource), let source { newParams[Parameters.pixelSource] = source }
+        if let channel { newParams[Parameters.channel] = channel }
         if let error { newParams.appendErrorPixelParams(error: error) }
 
         #if DEBUG

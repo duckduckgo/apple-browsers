@@ -127,6 +127,8 @@ final class MockTabDelegate: TabDelegate {
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestPresentingTrackerAnimation privacyInfo: PrivacyDashboard.PrivacyInfo, isCollapsing: Bool) {}
 
+    func tabDidRequestPresentingYouTubeAdBlockAnimation(tab: DuckDuckGo.TabViewController) {}
+
     func tabDidRequestShowingMenuHighlighter(tab: DuckDuckGo.TabViewController) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestPresentingAlert alert: UIAlertController) {}

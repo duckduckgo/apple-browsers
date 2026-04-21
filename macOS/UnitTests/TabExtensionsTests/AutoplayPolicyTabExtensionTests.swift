@@ -31,6 +31,7 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
 
     private var mockPermissionManager: PermissionManagerMock!
     private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockPrivacyConfigManager: MockPrivacyConfigurationManaging!
     private var autoplayPreferences: AutoplayPreferences!
     private var persistor: AutoplayPreferencesPersistorMock!
     private var telemetryScriptSubject: PassthroughSubject<MockWebTelemetryScriptProvider, Never>!
@@ -40,6 +41,8 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
         super.setUp()
         mockPermissionManager = PermissionManagerMock()
         mockFeatureFlagger = MockFeatureFlagger()
+        mockPrivacyConfigManager = MockPrivacyConfigurationManaging()
+        mockPrivacyConfigManager.mockConfig.identifier = UUID().uuidString
         persistor = AutoplayPreferencesPersistorMock(autoplayBlockingModeRawValue: AutoplayBlockingMode.blockAudio.rawValue)
         autoplayPreferences = AutoplayPreferences(persistor: persistor)
         telemetryScriptSubject = PassthroughSubject<MockWebTelemetryScriptProvider, Never>()
@@ -51,6 +54,7 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     override func tearDown() {
         mockPermissionManager = nil
         mockFeatureFlagger = nil
+        mockPrivacyConfigManager = nil
         autoplayPreferences = nil
         persistor = nil
         telemetryScriptSubject = nil
@@ -65,6 +69,7 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
             autoplayPreferences: autoplayPreferences,
             featureFlagger: mockFeatureFlagger,
             permissionManager: mockPermissionManager,
+            privacyConfigurationManager: mockPrivacyConfigManager,
             telemetryScriptPublisher: telemetryScriptSubject
         )
     }
@@ -282,6 +287,59 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
         _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
 
         XCTAssertFalse(ext.videoPlaybackDetected)
+    }
+
+    // MARK: - Default permission seeding
+
+    func testWhenNavigatingToConfigDomainThenDefaultPermissionIsSeeded() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+        mockPrivacyConfigManager.mockConfig.subfeatureSettings = "{\"domainsAllowList\":[\"example.com\"]}"
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertTrue(mockPermissionManager.hasPermissionPersisted(forDomain: "example.com", permissionType: .autoplayPolicy))
+        XCTAssertEqual(mockPermissionManager.permission(forDomain: "example.com", permissionType: .autoplayPolicy), .allow)
+        XCTAssertTrue(persistor.seededDomains.contains("example.com"))
+    }
+
+    func testWhenNavigatingToNonConfigDomainThenNoPermissionIsSeeded() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+        mockPrivacyConfigManager.mockConfig.subfeatureSettings = "{\"domainsAllowList\":[\"other.com\"]}"
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertFalse(mockPermissionManager.hasPermissionPersisted(forDomain: "example.com", permissionType: .autoplayPolicy))
+        XCTAssertTrue(persistor.seededDomains.isEmpty)
+    }
+
+    func testWhenDomainAlreadySeededThenPermissionIsNotReSeeded() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+        mockPrivacyConfigManager.mockConfig.subfeatureSettings = "{\"domainsAllowList\":[\"example.com\"]}"
+        persistor.seededDomains = ["example.com"]
+        autoplayPreferences = AutoplayPreferences(persistor: persistor)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertFalse(mockPermissionManager.hasPermissionPersisted(forDomain: "example.com", permissionType: .autoplayPolicy))
+    }
+
+    func testWhenNoRemoteConfigThenYouTubeIsSeededByDefault() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+        // No subfeatureSettings configured — remote config returns nil
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://youtube.com")!), preferences: &prefs)
+
+        XCTAssertTrue(mockPermissionManager.hasPermissionPersisted(forDomain: "youtube.com", permissionType: .autoplayPolicy))
+        XCTAssertEqual(mockPermissionManager.permission(forDomain: "youtube.com", permissionType: .autoplayPolicy), .allow)
+        XCTAssertTrue(persistor.seededDomains.contains("youtube.com"))
     }
 }
 

@@ -31,12 +31,16 @@ let package = Package(
             targets: ["DuckUI"])
     ],
     dependencies: [
-        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit")
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
+        .package(path: "../../../SharedPackages/UIComponents"),
     ],
     targets: [
         .target(
             name: "DuckUI",
-            dependencies: ["DesignResourcesKit"],
+            dependencies: [
+                "DesignResourcesKit",
+                "UIComponents",
+            ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]

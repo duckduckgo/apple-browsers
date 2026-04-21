@@ -26,6 +26,7 @@ import PrivacyConfig
 import PrivacyDashboard
 import WebKit
 import DesignResourcesKitIcons
+import WebExtensions
 
 final class TabViewModel: NSObject {
 
@@ -33,6 +34,13 @@ final class TabViewModel: NSObject {
     private let appearancePreferences: AppearancePreferences
     private let accessibilityPreferences: AccessibilityPreferences
     private let featureFlagger: FeatureFlagger
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding
+    private lazy var adBlockingNavigationHandler: AdBlockingNavigationHandling = AdBlockingNavigationHandler(
+        availability: adBlockingAvailability,
+        onShouldShowAdBlockingAnimation: { [weak self] in
+            self?.youtubeAdBlockAnimationTriggerPublisher.send()
+        }
+    )
     private var cancellables = Set<AnyCancellable>()
 
     @Published private(set) var canGoForward: Bool = false
@@ -135,11 +143,13 @@ final class TabViewModel: NSObject {
     init(tab: Tab,
          appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
          accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability) {
         self.tab = tab
         self.appearancePreferences = appearancePreferences
         self.accessibilityPreferences = accessibilityPreferences
         self.featureFlagger = featureFlagger
+        self.adBlockingAvailability = adBlockingAvailability
         zoomLevel = accessibilityPreferences.defaultPageZoom
 
         super.init()
@@ -151,6 +161,7 @@ final class TabViewModel: NSObject {
         subscribeToPermissions()
         subscribeToPreferences()
         subscribeToWebViewDidFinishNavigation()
+        subscribeToYouTubeAdBlockAnimationTrigger()
         tab.$isLoading
             .assign(to: \.isLoading, onWeaklyHeld: self)
             .store(in: &cancellables)
@@ -476,6 +487,7 @@ final class TabViewModel: NSObject {
     }
 
     func reload() {
+        adBlockingNavigationHandler.handleReload()
         tab.reload()
         updateAddressBarStrings()
         self.updateZoomForWebsite()
@@ -485,6 +497,7 @@ final class TabViewModel: NSObject {
 
     let trackersAnimationTriggerPublisher = PassthroughSubject<Void, Never>()
     let privacyEntryPointIconUpdateTrigger = PassthroughSubject<Void, Never>()
+    let youtubeAdBlockAnimationTriggerPublisher = PassthroughSubject<Void, Never>()
 
     private var trackerAnimationTimer: Timer?
 
@@ -495,6 +508,27 @@ final class TabViewModel: NSObject {
         }
     }
 
+    private func subscribeToYouTubeAdBlockAnimationTrigger() {
+        let contentURLChanges = tab.$content
+            .compactMap { content -> URL? in
+                guard case .url(let url, _, source: .webViewUpdated) = content else { return nil }
+                return url
+            }
+            .debounce(for: .milliseconds(200), scheduler: RunLoop.main)
+
+        let navigationFinished = tab.webViewDidFinishNavigationPublisher
+            .compactMap { [weak tab] _ -> URL? in
+                guard let tab, case .url(let url, _, _) = tab.content else { return nil }
+                return url
+            }
+
+        contentURLChanges.merge(with: navigationFinished)
+            .throttle(for: .milliseconds(500), scheduler: RunLoop.main, latest: true)
+            .sink { [weak self] url in
+                self?.adBlockingNavigationHandler.handleURLChange(previousURL: nil, newURL: url)
+            }
+            .store(in: &cancellables)
+    }
 }
 
 extension TabViewModel {

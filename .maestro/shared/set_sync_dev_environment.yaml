@@ -15,7 +15,7 @@ appId: com.duckduckgo.mobile.ios
 - scrollUntilVisible:
     element: Production
     direction: DOWN
-    centerElement: true
+    centerElement: false
 - tapOn: Production
 - tapOn: Debug
 - tapOn: Settings

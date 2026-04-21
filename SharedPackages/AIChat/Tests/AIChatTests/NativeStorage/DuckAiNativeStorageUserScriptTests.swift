@@ -100,10 +100,15 @@ final class MockDuckAiNativeStoragePixelFiring: DuckAiNativeStoragePixelFiring {
 
 final class MockDuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     var stubbedIsMigrationDone = false
+    var stubbedGetAllEntries: [String: Any] = [:]
+    var stubbedGetAllEntriesError: Error?
 
     func putEntry(key: String, value: Any) throws {}
     func getEntry(key: String) throws -> Any? { nil }
-    func getAllEntries() throws -> [String: Any] { [:] }
+    func getAllEntries() throws -> [String: Any] {
+        if let stubbedGetAllEntriesError { throw stubbedGetAllEntriesError }
+        return stubbedGetAllEntries
+    }
     func deleteEntry(key: String) throws {}
     func deleteAllEntries() throws {}
     func replaceAllEntries(_ entries: [String: Any]) throws {}

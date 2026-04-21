@@ -1055,16 +1055,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        let efforts = omnibarController.selectedModelReasoningEfforts
-        for effort in efforts {
+        for effort in omnibarController.selectedModelReasoningEfforts {
             let item = NSMenuItem(title: "", action: #selector(reasoningEffortSelected(_:)), keyEquivalent: "")
-            item.attributedTitle = toolsMenuItemAttributedTitle(
-                title: reasoningEffortDisplayName(effort),
-                subtitle: reasoningEffortSubtitle(effort)
-            )
+            item.attributedTitle = toolsMenuItemAttributedTitle(title: effort.title, subtitle: effort.subtitle)
             item.target = self
             item.representedObject = effort
-            item.image = reasoningEffortIcon(effort)
+            item.image = effort.icon
             menu.addItem(item)
         }
 
@@ -1072,7 +1068,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     @objc private func reasoningEffortSelected(_ sender: NSMenuItem) {
-        guard let effort = sender.representedObject as? String else { return }
+        guard let effort = sender.representedObject as? AIChatReasoningEffort else { return }
         omnibarController.updateSelectedReasoningEffort(effort)
         updateReasoningPickerAppearance(effort)
     }
@@ -1084,46 +1080,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         let efforts = omnibarController.selectedModelReasoningEfforts
         reasoningPickerButton.isHidden = efforts.isEmpty || omnibarController.isImageGenerationMode
-        if !efforts.isEmpty {
-            let current = omnibarController.selectedReasoningEffort ?? efforts.first
-            if let current, !efforts.contains(current) {
-                // Current selection not available for new model — reset to default
-                omnibarController.updateSelectedReasoningEffort(efforts.first)
-            }
-            updateReasoningPickerAppearance(omnibarController.selectedReasoningEffort ?? efforts.first ?? "")
+        guard let fallback = efforts.first else { return }
+        let current = omnibarController.selectedReasoningEffort
+        if let current, !efforts.contains(current) {
+            // Current selection not available for new model — reset to default
+            omnibarController.updateSelectedReasoningEffort(fallback)
+            updateReasoningPickerAppearance(fallback)
+        } else {
+            updateReasoningPickerAppearance(current ?? fallback)
         }
     }
 
-    private func updateReasoningPickerAppearance(_ effort: String) {
-        reasoningPickerButton.label = reasoningEffortDisplayName(effort)
-        reasoningPickerButton.image = reasoningEffortIcon(effort)
-    }
-
-    private func reasoningEffortDisplayName(_ effort: String) -> String {
-        switch effort {
-        case "none", "minimal": return "Fast"
-        case "low": return "Reasoning"
-        case "medium": return "Extended Reasoning"
-        default: return effort.capitalized
-        }
-    }
-
-    private func reasoningEffortSubtitle(_ effort: String) -> String {
-        switch effort {
-        case "none", "minimal": return "Answers right away"
-        case "low": return "Takes a moment to respond"
-        case "medium": return "Researches before responding"
-        default: return ""
-        }
-    }
-
-    private func reasoningEffortIcon(_ effort: String) -> NSImage? {
-        switch effort {
-        case "none", "minimal": return DesignSystemImages.Glyphs.Size16.thunderbolt
-        case "low": return DesignSystemImages.Glyphs.Size16.thinking
-        case "medium": return DesignSystemImages.Glyphs.Size16.timer
-        default: return nil
-        }
+    private func updateReasoningPickerAppearance(_ effort: AIChatReasoningEffort) {
+        reasoningPickerButton.label = effort.title
+        reasoningPickerButton.image = effort.icon
     }
 
     private func updateImageUploadVisibility(supportsImageUpload: Bool) {

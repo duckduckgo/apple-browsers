@@ -46,9 +46,10 @@ final class AIChatOmnibarController {
     @Published private(set) var activeToolMode: ToolMode?
     @Published var hasImageAttachments: Bool = false
 
-    /// The last selected reasoning effort, persisted across sessions.
-    var selectedReasoningEffort: String? {
-        preferences.selectedReasoningEffort
+    /// The last selected reasoning effort, persisted across sessions. `nil` if no selection has
+    /// been made, or the persisted raw value doesn't map to a known `AIChatReasoningEffort` case.
+    var selectedReasoningEffort: AIChatReasoningEffort? {
+        preferences.selectedReasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
     }
 
     var isImageGenerationMode: Bool { activeToolMode == .imageGeneration }
@@ -285,12 +286,19 @@ final class AIChatOmnibarController {
         }
     }
 
-    /// Clears the persisted reasoning effort if the current model no longer supports it.
-    /// Runs after models are fetched, so a stale value persisted against an older model
-    /// list doesn't linger and get attached to future prompts.
+    /// Clears the persisted reasoning effort if the current model no longer supports it, or if
+    /// the persisted raw value doesn't map to a known `AIChatReasoningEffort` case. Runs after
+    /// models are fetched, so a stale value persisted against an older model list doesn't linger
+    /// and get attached to future prompts.
     private func clearStaleReasoningEffortIfNeeded() {
-        guard let persistedEffort = preferences.selectedReasoningEffort else { return }
-        if !selectedModelReasoningEfforts.contains(persistedEffort) {
+        guard let effort = selectedReasoningEffort else {
+            // Wipe any unknown raw value we couldn't decode into the enum.
+            if preferences.selectedReasoningEffort != nil {
+                preferences.selectedReasoningEffort = nil
+            }
+            return
+        }
+        if !selectedModelReasoningEfforts.contains(effort) {
             preferences.selectedReasoningEffort = nil
         }
     }
@@ -320,14 +328,17 @@ final class AIChatOmnibarController {
         return models.first(where: { $0.id == persistedModelId })?.supportedImageFormats ?? ["png", "jpeg", "webp"]
     }
 
-    /// Supported reasoning effort levels for the currently selected model.
-    var selectedModelReasoningEfforts: [String] {
-        models.first(where: { $0.id == persistedModelId })?.supportedReasoningEffort ?? []
+    /// Supported reasoning effort levels for the currently selected model. Unknown raw values
+    /// returned by the backend are silently filtered out — the picker only shows efforts the app
+    /// knows how to render.
+    var selectedModelReasoningEfforts: [AIChatReasoningEffort] {
+        (models.first(where: { $0.id == persistedModelId })?.supportedReasoningEffort ?? [])
+            .compactMap(AIChatReasoningEffort.init(rawValue:))
     }
 
     /// Updates the selected reasoning effort and persists it for future sessions.
-    func updateSelectedReasoningEffort(_ effort: String?) {
-        preferences.selectedReasoningEffort = effort
+    func updateSelectedReasoningEffort(_ effort: AIChatReasoningEffort?) {
+        preferences.selectedReasoningEffort = effort?.rawValue
     }
 
     /// The model ID to use for the current submission.
@@ -346,15 +357,15 @@ final class AIChatOmnibarController {
         isWebSearchMode ? [AIChatRAGTool.webSearch.rawValue] : nil
     }
 
-    /// The reasoning effort to include in the prompt payload.
-    /// Returns nil when the feature flag is off, image generation mode is active,
-    /// or the current model doesn't list the persisted effort as supported — so we
-    /// never send a stale value that no longer applies to the active request.
+    /// The reasoning effort to include in the prompt payload as a raw server-contract value.
+    /// Returns nil when the feature flag is off, image generation mode is active, or the current
+    /// model doesn't list the persisted effort as supported — so we never send a stale value that
+    /// no longer applies to the active request.
     var effectiveReasoningEffort: String? {
         guard isReasoningEffortEnabled, !isImageGenerationMode else { return nil }
         guard let effort = selectedReasoningEffort,
               selectedModelReasoningEfforts.contains(effort) else { return nil }
-        return effort
+        return effort.rawValue
     }
 
     /// Updates the selected model ID and persists it (along with its short name) for future sessions.

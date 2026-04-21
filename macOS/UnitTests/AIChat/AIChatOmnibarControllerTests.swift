@@ -444,7 +444,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     func testWhenUpdateSelectedReasoningEffort_ThenValueIsPersistedToPreferences() {
         // When
-        controller.updateSelectedReasoningEffort("low")
+        controller.updateSelectedReasoningEffort(.low)
 
         // Then
         XCTAssertEqual(mockPreferences.selectedReasoningEffort, "low")
@@ -455,7 +455,15 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         mockPreferences.selectedReasoningEffort = "medium"
 
         // Then
-        XCTAssertEqual(controller.selectedReasoningEffort, "medium")
+        XCTAssertEqual(controller.selectedReasoningEffort, .medium)
+    }
+
+    func testWhenPersistedReasoningEffortRawValueIsUnknown_ThenSelectedReasoningEffortIsNil() {
+        // Given — backend or older build stored a raw value this app version doesn't know about
+        mockPreferences.selectedReasoningEffort = "high"
+
+        // Then — safely surfaces as nil rather than leaking the raw string through the typed API
+        XCTAssertNil(controller.selectedReasoningEffort)
     }
 
     func testWhenUpdateSelectedReasoningEffortToNil_ThenPreferencesValueIsCleared() {
@@ -477,7 +485,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         controller.cleanup()
 
         // Then — persisted preference is not reset by cleanup
-        XCTAssertEqual(controller.selectedReasoningEffort, "medium")
+        XCTAssertEqual(controller.selectedReasoningEffort, .medium)
     }
 
     func testWhenModelSupportsReasoningEfforts_ThenSelectedModelReasoningEffortsReturnsList() async {
@@ -492,7 +500,22 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         await waitForModels()
 
         // Then
-        XCTAssertEqual(controller.selectedModelReasoningEfforts, ["none", "low", "medium"])
+        XCTAssertEqual(controller.selectedModelReasoningEfforts, [.none, .low, .medium])
+    }
+
+    func testWhenModelSupportsUnknownReasoningEffort_ThenUnknownValueIsFilteredOut() async {
+        // Given — backend includes a value the app doesn't know about yet
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "forward-compat-model", entityHasAccess: true, supportedReasoningEffort: ["none", "low", "high"])
+        ]
+        mockPreferences.selectedModelId = "forward-compat-model"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then — "high" is dropped, known values pass through
+        XCTAssertEqual(controller.selectedModelReasoningEfforts, [.none, .low])
     }
 
     func testWhenModelDoesNotSupportReasoningEfforts_ThenSelectedModelReasoningEffortsIsEmpty() async {

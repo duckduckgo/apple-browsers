@@ -185,10 +185,11 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         guard let button = plusButton.customView as? BrowserChromeButton else { return }
         guard isFireModeEnabled else {
             button.menu = nil
+            plusButton.menu = nil
             return
         }
 
-        button.menu = UIMenu(children: [
+        let menu = UIMenu(children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
                 Pixel.fire(pixel: .tabLongPressMenuDisplayed, withAdditionalParameters: [
                     PixelParameters.source: "tab_switcher"
@@ -211,6 +212,11 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
                 ])
             }
         ])
+
+        button.menu = menu
+        // UIBarButtonItem.menu is needed for iPad where the button is in a UINavigationBar;
+        // UIButton.menu alone doesn't reliably trigger the long-press context menu there.
+        plusButton.menu = menu
     }
 
     private func configureButtons() {

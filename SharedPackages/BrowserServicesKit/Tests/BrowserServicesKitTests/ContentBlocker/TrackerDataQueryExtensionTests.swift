@@ -27,6 +27,16 @@ final class TrackerDataQueryExtensionTests: XCTestCase {
         fatalError("forced crash to verify CI crash reporting")
     }
 
+    // Temporary: second forced crash to verify multi-crash rendering on PR #4493. Remove before merging.
+    func testForceCrashOne() {
+        fatalError("first forced crash: one of multiple distinct crashes")
+    }
+
+    // Temporary: third forced crash to verify multi-crash rendering on PR #4493. Remove before merging.
+    func testForceCrashTwo() {
+        fatalError("second forced crash: one of multiple distinct crashes")
+    }
+
     // Temporary: forced failure to verify CI failure-surfacing pipeline on PR #4493. Remove before merging.
     func testForceFailureForReportingVerification() {
         XCTFail("forced failure to verify CI failure reporting")

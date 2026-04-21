@@ -135,7 +135,7 @@ class TabSuspensionTests: UITestCase {
         app.typeKey(.escape, modifierFlags: [])
     }
 
-    func testThatInternalPagesAreNotSuspended() {
+    func testThatInternalPagesAndDuckAIAreNotSuspended() {
         // Open Duck.ai in tab 1
         app.openURL(URL(string: "https://duck.ai")!)
         let duckAITab = app.tabGroups.matching(identifier: "Tabs").radioButtons.firstMatch
@@ -186,7 +186,125 @@ class TabSuspensionTests: UITestCase {
         }
     }
 
+    func testThatTabsWithAIChatAreNotSuspended() {
+        // Re-launch with AI Chat feature flags
+        app = XCUIApplication.setUp(featureFlags: [
+            "tabSuspension": true,
+            "tabSuspensionDebugging": true,
+            "aiChatChromeSidebar": true,
+            "aiChatSidebarFloating": true
+        ])
+        app.openNewWindow()
+
+        let tabs = app.tabGroups.matching(identifier: "Tabs")
+        let sidebarButton = app.buttons["TabBarViewController.duckAIChromeSidebarButton"]
+
+        // Tab 1: plain page (no AI Chat)
+        let tab1Title = "Plain Page"
+        app.openSite(pageTitle: tab1Title)
+
+        // Tab 2: page with docked AI Chat sidebar
+        let tab2Title = "Docked Sidebar Page"
+        app.openNewTab()
+        app.openSite(pageTitle: tab2Title)
+        sidebarButton.click()
+        XCTAssertTrue(
+            waitForButtonTitle(sidebarButton, expectedTitle: "Close Duck.ai sidebar"),
+            "AI Chat sidebar should open"
+        )
+
+        // Tab 3: page where AI Chat sidebar was opened and closed
+        let tab3Title = "Closed Sidebar Page"
+        app.openNewTab()
+        app.openSite(pageTitle: tab3Title)
+        sidebarButton.click()
+        XCTAssertTrue(
+            waitForButtonTitle(sidebarButton, expectedTitle: "Close Duck.ai sidebar"),
+            "AI Chat sidebar should open on tab 3"
+        )
+        sidebarButton.click()
+        XCTAssertTrue(
+            waitForButtonTitle(sidebarButton, expectedTitle: "Open Duck.ai sidebar"),
+            "AI Chat sidebar should close on tab 3"
+        )
+
+        // Tab 4: page with detached (floating) AI Chat sidebar
+        let tab4Title = "Floating Sidebar Page"
+        app.openNewTab()
+        app.openSite(pageTitle: tab4Title)
+        sidebarButton.click()
+        XCTAssertTrue(
+            waitForButtonTitle(sidebarButton, expectedTitle: "Close Duck.ai sidebar"),
+            "AI Chat sidebar should open before detaching"
+        )
+        let detachButton = app.buttons["AIChatViewController.detachButton"]
+        XCTAssertTrue(
+            detachButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Detach button should exist in the sidebar"
+        )
+        detachButton.click()
+        XCTAssertTrue(
+            waitForButtonTitle(sidebarButton, expectedTitle: "Show Duck.ai"),
+            "Sidebar should be detached into a floating panel"
+        )
+
+        // Re-focus the main window after detaching (floating panel takes focus)
+        tabs.radioButtons[tab4Title].click()
+
+        // Tab 5: new empty tab to push others to background
+        app.openNewTab()
+
+        Thread.sleep(forTimeInterval: 6)
+        simulateCriticalMemoryPressure()
+
+        // Tab 1 should be suspended (no AI Chat session)
+        let tab1 = tabs.radioButtons[tab1Title]
+        XCTAssertTrue(tab1.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tab 1 should exist")
+        tab1.rightClick()
+        XCTAssertTrue(
+            app.menuItems["Resume Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Tab without AI Chat should be suspended"
+        )
+        app.typeKey(.escape, modifierFlags: [])
+
+        // Tab 2 should NOT be suspended (docked sidebar session)
+        let tab2 = tabs.radioButtons[tab2Title]
+        XCTAssertTrue(tab2.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tab 2 should exist")
+        tab2.rightClick()
+        XCTAssertTrue(
+            app.menuItems["Suspend Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Tab with docked AI Chat sidebar should not be suspended"
+        )
+        app.typeKey(.escape, modifierFlags: [])
+
+        // Tab 3 should NOT be suspended (closed sidebar still has a session)
+        let tab3 = tabs.radioButtons[tab3Title]
+        XCTAssertTrue(tab3.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tab 3 should exist")
+        tab3.rightClick()
+        XCTAssertTrue(
+            app.menuItems["Suspend Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Tab with closed AI Chat sidebar should not be suspended"
+        )
+        app.typeKey(.escape, modifierFlags: [])
+
+        // Tab 4 should NOT be suspended (detached/floating sidebar session)
+        let tab4 = tabs.radioButtons[tab4Title]
+        XCTAssertTrue(tab4.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tab 4 should exist")
+        tab4.rightClick()
+        XCTAssertTrue(
+            app.menuItems["Suspend Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Tab with floating AI Chat sidebar should not be suspended"
+        )
+        app.typeKey(.escape, modifierFlags: [])
+    }
+
     // MARK: - Helpers
+
+    private func waitForButtonTitle(_ button: XCUIElement, expectedTitle: String) -> Bool {
+        let predicate = NSPredicate(format: "title == %@", expectedTitle)
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: button)
+        return XCTWaiter.wait(for: [expectation], timeout: UITests.Timeouts.elementExistence) == .completed
+    }
 
     private func simulateCriticalMemoryPressure() {
         app.debugMenu.click()

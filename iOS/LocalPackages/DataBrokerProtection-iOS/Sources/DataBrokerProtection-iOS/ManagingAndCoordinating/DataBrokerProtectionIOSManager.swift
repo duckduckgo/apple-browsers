@@ -329,7 +329,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
         await sendGoToMarketFirstScanNotificationIfEligible()
 
         let isAuthenticated = await refreshFreeScanState()
-        if !isAuthenticated && !canRunFreemiumScans {
+        guard isAuthenticated || canRunFreemiumScans else {
             return
         }
 
@@ -827,10 +827,13 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
             let startOperations: (@escaping () -> Void) -> Void = { [weak self] completion in
                 guard let self else { return }
                 if isAuthenticated {
+                    Logger.dataBrokerProtection.log("Starting all operations in background task")
                     self.queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: self.jobDependencies, errorHandler: nil, completion: completion)
                 } else if self.canRunFreemiumScans {
+                    Logger.dataBrokerProtection.log("Starting scan-only operations in background task (freemium)")
                     self.queueManager.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: self.jobDependencies, errorHandler: nil, completion: completion)
                 } else {
+                    Logger.dataBrokerProtection.log("No operations to start in background task")
                     completion()
                 }
             }

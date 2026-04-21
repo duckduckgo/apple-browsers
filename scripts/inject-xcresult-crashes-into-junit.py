@@ -77,6 +77,9 @@ def _xcresulttool_summary(xcresult: str) -> dict:
     return json.loads(result.stdout)
 
 
+CRASH_FAILURE_TEXT = re.compile(r"^Test crashed\b")
+
+
 def _extract_failures(summary: dict) -> tuple[list[dict], list[dict]]:
     failures, crashes = [], []
     for f in summary.get("testFailures", []):
@@ -89,7 +92,7 @@ def _extract_failures(summary: dict) -> tuple[list[dict], list[dict]]:
             "reason": f["failureText"],
             "report": None,
         }
-        if re.search(r"crash", f.get("failureText", ""), re.IGNORECASE):
+        if CRASH_FAILURE_TEXT.match(f.get("failureText", "")):
             crashes.append(entry)
         else:
             failures.append(entry)

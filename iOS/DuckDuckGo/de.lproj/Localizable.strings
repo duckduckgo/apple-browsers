@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Im Hintergrund öffnen";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Neues Fire-Tab";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "In einem Fire-Tab öffnen";
 /* Create New Tab action */
 "action.title.newTabAction" = "Neuer Tab";
 
@@ -1837,6 +1842,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Wechselt zu diesem Tab";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Zuletzt verwendeter Fire-Tab";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Zurück zu %@";
 
@@ -2146,6 +2153,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Wähle, was du löschen möchtest";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Melde dich mit einem anderen Konto bei einer Website an";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Durchsuchen ohne Speichern des lokalen Verlaufs";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Website-Fehlerbehebung";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire-Tabs sind von anderen Browserdaten isoliert und ihre Daten werden gelöscht, wenn du sie alle schließt. Sie haben den gleichen Tracking-Schutz wie andere Tabs.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Neues Fire-Tab";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire-Tabs";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Neu";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Surfe, ohne den lokalen Verlauf zu speichern, oder melde dich mit einem anderen Konto auf Websites an.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Jetzt nicht";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Fire-Tabs ausprobieren";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Fire-Tabs ausprobieren";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire-Tab";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luftstrom";
 
@@ -3160,6 +3202,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Scannen ...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Fire-Tabs und deren Daten löschen?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Tabs und Seitendaten löschen?";
 
@@ -4207,15 +4251,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Ungelesener Tab";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Fire-Tab schließen";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Tab schließen";
 /* Accessibility label on remove button */
 "tab.close.home" = "Startseiten-Tab schließen";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "„%1$@“ auf %2$@ schließen";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire-Tab";
+
+/* New tab title */
+"tab.new.title" = "Neuer Tab";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Startseiten-Tab öffnen";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Neuen Tab öffnen";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Fire-Tab öffnen";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "„%1$@“ auf %2$@ öffnen";
 

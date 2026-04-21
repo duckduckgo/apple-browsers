@@ -56,7 +56,7 @@ final class OnboardingPixelReporter {
          onboardingSharedPixelHandler: OnboardingSharedPixelHandling = OnboardingSharedPixelHandler(
             platform: .macOS,
             installType: DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore).isReinstallingUser ? .reinstall : .newInstall,
-            installDate: AppDelegate.firstLaunchDate
+            installDateProvider: { AppDelegate.firstLaunchDate }
          )) {
         self.onboardingStateProvider = onboardingStateProvider
         self.fire = fireAction

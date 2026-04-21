@@ -186,7 +186,7 @@ def _render(title: str, totals: dict, failures: list[dict], crashes: list[dict])
 def _counts_table(t: dict) -> str:
     return (
         "<table>\n"
-        "  <tr><th>Total</th><th>Passed</th><th>Failed</th><th>Skipped</th></tr>\n"
+        "  <tr><th>📊 Total</th><th>✅ Passed</th><th>❌ Failed</th><th>⏭️ Skipped</th></tr>\n"
         f"  <tr><td>{t['total']}</td><td>{t['passed']}</td><td>{t['failed']}</td>"
         f"<td>{t['skipped']}</td></tr>\n"
         "</table>"

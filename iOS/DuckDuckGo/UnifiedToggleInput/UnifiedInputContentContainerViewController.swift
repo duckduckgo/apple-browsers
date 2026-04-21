@@ -171,9 +171,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if aiChatHistoryManager == nil && featureFlagger.isFeatureOn(.aiChatSuggestions) && aiChatSettings.isChatSuggestionsEnabled {
-            installChatHistoryList()
-        }
+        installChatHistoryListIfNeeded()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -200,6 +198,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     func refreshFireMode(fireMode: Bool) {
         rebuildDaxLogoManager(isFireTab: fireMode)
+        rebuildChatHistoryManager()
     }
 
     private func rebuildDaxLogoManager(isFireTab: Bool) {
@@ -424,6 +423,20 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         manager.delegate = self
         manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: nil)
         suggestionTrayManager = manager
+    }
+
+    private func installChatHistoryListIfNeeded() {
+        guard aiChatHistoryManager == nil,
+              featureFlagger.isFeatureOn(.aiChatSuggestions),
+              aiChatSettings.isChatSuggestionsEnabled else { return }
+        installChatHistoryList()
+    }
+
+    private func rebuildChatHistoryManager() {
+        guard aiChatHistoryManager != nil else { return }
+        aiChatHistoryManager?.tearDown()
+        aiChatHistoryManager = nil
+        installChatHistoryListIfNeeded()
     }
 
     private func installChatHistoryList() {

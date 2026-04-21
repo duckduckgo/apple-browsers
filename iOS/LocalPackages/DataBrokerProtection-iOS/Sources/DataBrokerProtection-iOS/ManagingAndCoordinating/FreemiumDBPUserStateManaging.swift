@@ -50,7 +50,7 @@ public protocol FreemiumDBPUserStateManaging {
     /// Records the moment the user upgrades to a paid subscription. Must only be called
     /// on a real purchase/upgrade signal — not from a generic "current state is subscribed"
     /// listener. See spec §3.
-    func recordSubscriptionUpgradeIfNeeded() async
+    func recordSubscriptionUpgradeIfEligible() async
 
     /// Clears every stored value. For debug tools.
     func resetAllState()
@@ -68,7 +68,7 @@ public struct DisabledFreemiumDBPUserStateManager: FreemiumDBPUserStateManaging 
 
     public func recordProfileSavedIfNeeded() async {}
     public func recordFirstScanResultIfNeeded(hasMatches: Bool) async {}
-    public func recordSubscriptionUpgradeIfNeeded() async {}
+    public func recordSubscriptionUpgradeIfEligible() async {}
 
     public func resetAllState() {}
 }

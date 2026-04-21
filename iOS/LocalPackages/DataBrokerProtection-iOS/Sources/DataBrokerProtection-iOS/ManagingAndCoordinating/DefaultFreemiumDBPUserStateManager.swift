@@ -79,7 +79,7 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
         persistFirstScanResultIfAbsent(hasMatches: hasMatches)
     }
 
-    public func recordSubscriptionUpgradeIfNeeded() async {
+    public func recordSubscriptionUpgradeIfEligible() async {
         // By contract, the caller drives this from a real purchase-success / transition
         // signal, so we do NOT check isUserAuthenticated here. See spec §3.
         persistSubscriptionUpgradeIfEligible()

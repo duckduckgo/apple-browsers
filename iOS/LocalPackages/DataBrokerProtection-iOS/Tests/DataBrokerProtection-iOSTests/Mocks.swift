@@ -130,7 +130,7 @@ final class MockFreemiumDBPUserStateManager: FreemiumDBPUserStateManaging {
     // Test controls
     var recordProfileSavedIfNeededCallCount = 0
     var recordFirstScanResultIfNeededCalls: [Bool] = []
-    var recordSubscriptionUpgradeIfNeededCallCount = 0
+    var recordSubscriptionUpgradeIfEligibleCallCount = 0
     var resetAllStateCallCount = 0
 
     func recordProfileSavedIfNeeded() async {
@@ -141,8 +141,8 @@ final class MockFreemiumDBPUserStateManager: FreemiumDBPUserStateManaging {
         recordFirstScanResultIfNeededCalls.append(hasMatches)
     }
 
-    func recordSubscriptionUpgradeIfNeeded() async {
-        recordSubscriptionUpgradeIfNeededCallCount += 1
+    func recordSubscriptionUpgradeIfEligible() async {
+        recordSubscriptionUpgradeIfEligibleCallCount += 1
     }
 
     func resetAllState() {

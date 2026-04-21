@@ -25,6 +25,7 @@ public actor VPNLeakCheckService {
 
     private let configuration: LeakCheckConfiguration
     private var egressIP: String
+    private var egressServerName: String?
     private var tunnelInterface: NWInterface?
     private let httpClient: LeakCheckHTTPClient
     private let stunClient: LeakCheckSTUNClient
@@ -39,6 +40,7 @@ public actor VPNLeakCheckService {
     public init(
         configuration: LeakCheckConfiguration = .default,
         egressIP: String,
+        egressServerName: String? = nil,
         tunnelInterface: NWInterface? = nil,
         httpClient: LeakCheckHTTPClient,
         stunClient: LeakCheckSTUNClient,
@@ -47,6 +49,7 @@ public actor VPNLeakCheckService {
     ) {
         self.configuration = configuration
         self.egressIP = egressIP
+        self.egressServerName = egressServerName
         self.tunnelInterface = tunnelInterface
         self.httpClient = httpClient
         self.stunClient = stunClient
@@ -78,6 +81,10 @@ public actor VPNLeakCheckService {
         egressIP = newIP
     }
 
+    public func updateEgressServerName(_ newName: String?) {
+        egressServerName = newName
+    }
+
     public func updateTunnelInterface(_ interface: NWInterface?) {
         Logger.networkProtectionIPLeakCheck.log("Updated tunnel interface reference: \(interface?.name ?? "nil", privacy: .public)")
         tunnelInterface = interface
@@ -106,7 +113,9 @@ public actor VPNLeakCheckService {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — already in flight (trigger: \(trigger.rawValue, privacy: .public))")
             return
         }
-        if let last = lastCompletionDate, Date().timeIntervalSince(last) < configuration.cooldown {
+        if trigger != .reassert,
+           let last = lastCompletionDate,
+           Date().timeIntervalSince(last) < configuration.cooldown {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — cooldown active (trigger: \(trigger.rawValue, privacy: .public))")
             return
         }
@@ -133,6 +142,7 @@ public actor VPNLeakCheckService {
             trigger: trigger,
             contextData: WideEventContextData(name: contextName)
         )
+        data.egressServerName = egressServerName
         wideEvent.startFlow(data)
 
         let egressIPSnapshot = egressIP

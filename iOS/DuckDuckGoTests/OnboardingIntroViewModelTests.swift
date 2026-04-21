@@ -699,7 +699,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenStateChangesToChooseSearchExperienceThenPixelReporterMeasureSearchExperienceSelectionImpression() {
         // GIVEN
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection)
         XCTAssertFalse(pixelReporterMock.didCallMeasureSearchExperienceSelectionImpression)
 
@@ -714,7 +714,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         // GIVEN
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection, onboardingSearchExperienceProvider: mockSearchExperienceProvider)
         XCTAssertFalse(pixelReporterMock.didCallMeasureChooseAIChat)
 
@@ -729,7 +729,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         // GIVEN
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = false
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection, onboardingSearchExperienceProvider: mockSearchExperienceProvider)
         XCTAssertFalse(pixelReporterMock.didCallMeasureChooseSearchOnly)
 
@@ -742,7 +742,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenSelectAddressBarPositionActionIsCalledAndIsIphoneFlowWithSearchExperienceThenViewStateChangesToChooseSearchExperienceDialogAndProgressIs5Of5() {
         // GIVEN
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection)
 
         // WHEN
@@ -755,7 +755,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
     func testWhenSelectSearchExperienceActionIsCalledAndIsIphoneFlowWithSearchExperienceThenOnCompletingOnboardingIntroIsCalled() {
         // GIVEN
         var didCallOnCompletingOnboardingIntro = false
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection)
         sut.onCompletingOnboardingIntro = {
             didCallOnCompletingOnboardingIntro = true

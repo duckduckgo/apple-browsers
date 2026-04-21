@@ -23,7 +23,7 @@ import Foundation
 /// The onboarding flow type determines which steps, content, and UI are shown during
 /// the initial user onboarding experience. Different flows can be triggered based on
 /// the user's acquisition context (e.g., App Store Custom Product Page, marketing campaign).
-public enum OnboardingFlowType: String, Codable, Equatable {
+public enum OnboardingFlowType: String, Equatable {
 
     /// The default onboarding experience shown to users who install the app
     /// through standard channels (e.g., direct App Store download).

@@ -1285,14 +1285,6 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        /// Hide bookmark while the duck.ai panel is up even if the derived mode is .browsing
-        /// (tab switch back to a Duck.ai-persistent URL tab lands in .inactiveWithAIChat with mode=.browsing).
-        if isAIChatPanelActive {
-            bookmarkButton.isShown = false
-            updateAIChatDividerVisibility()
-            return
-        }
-
         if isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
             bookmarkButton.isShown = false
             updateAIChatDividerVisibility()

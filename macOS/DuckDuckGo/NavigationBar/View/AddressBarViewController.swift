@@ -471,7 +471,7 @@ final class AddressBarViewController: NSViewController {
             addressBarButtonsViewController?.syncToggleSegmentToAIChatMode()
             if selectionState == .activeWithAIChat {
                 selectionState = .inactiveWithAIChat
-                updateMode()
+                mode = .editing(.aiChat)
                 view.window?.makeFirstResponder(nil)
                 delegate?.addressBarViewControllerDidResignFocusKeepingAIChatMode(self)
             }
@@ -481,10 +481,12 @@ final class AddressBarViewController: NSViewController {
             setAIChatOmnibarVisible(false)
         case (false, true):
             /// Incoming tab had duck.ai selected — present the panel unfocused, suggestions collapsed.
-            /// The address bar itself renders like `.inactive` (URL visible), so derive `mode` from the current value.
+            /// Keep `mode = .editing(.aiChat)` throughout duck.ai (active and inactive) so the AI chat
+            /// button/bookmark/imageButton visibility logic that checks `controllerMode == .editing(.aiChat)`
+            /// continues to hide those icons on a URL-persistent duck.ai tab.
             selectionState = .inactiveWithAIChat
             isAIChatOmnibarVisible = true
-            updateMode()
+            mode = .editing(.aiChat)
             addressBarButtonsViewController?.syncToggleSegmentToAIChatMode()
             delegate?.addressBarViewControllerShouldPresentAIChatPanelUnfocused(self)
         case (false, false):
@@ -1235,12 +1237,12 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     /// Transitions from focused duck.ai mode (`.activeWithAIChat`) to unfocused duck.ai mode (`.inactiveWithAIChat`):
     /// resigns first responder, keeps the panel on screen (prompt + tools + submit) but collapses suggestions,
     /// leaves the toggle segment on duck.ai, and preserves per-tab state.
-    /// The address bar itself renders like `.inactive` (URL visible, no AI Chat icon/bookmark suppression),
-    /// so `updateMode()` is called to re-derive `mode` from the current value.
+    /// `mode` stays at `.editing(.aiChat)` so the buttons VC continues to treat the tab as AI-chat mode (hides
+    /// bookmark / aiChatButton and keeps the correct left-side icon) even while unfocused.
     func resignFocusKeepingAIChatMode() {
         guard selectionState == .activeWithAIChat else { return }
         selectionState = .inactiveWithAIChat
-        updateMode()
+        mode = .editing(.aiChat)
         view.window?.makeFirstResponder(nil)
         delegate?.addressBarViewControllerDidResignFocusKeepingAIChatMode(self)
     }

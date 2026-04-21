@@ -230,6 +230,85 @@ final class CrashLogMessageExtractorTests: XCTestCase {
         XCTAssertTrue(CrashLogMessageExtractor.isHandlingTermination)
     }
 
+    // ── Integration tests: exception → writeDiagnostic → readable file ───────────
+    //
+    // These verify that the extractor serves its end-to-end purpose for the three
+    // exception kinds it must handle: pure C++, plain NSException, and an NSException
+    // subclass (as thrown by system frameworks like WebKit).
+    //
+    // Each test drives the real write → read cycle so we know the exception name,
+    // reason, and stack trace survive the full pipeline, not just isolated components.
+
+    // C++ exception path: currentCxxException() extracts name/reason from a live
+    // std::runtime_error and the result is correctly persisted and recovered.
+    func testExtractorPipeline_cxxException_writesAndReadsCorrectDiagnostic() throws {
+        let dir = FileManager.default.temporaryDirectory
+        let referenceDate = Date()
+        let ext = CrashLogMessageExtractor(diagnosticsDirectory: dir, dateProvider: { referenceDate })
+
+        guard let exception = _currentCxxExceptionInsideCatchBlock() else {
+            XCTFail("expected currentCxxException to return an NSException for an active std::runtime_error")
+            return
+        }
+        try ext.writeDiagnostic(for: exception)
+
+        guard let diag = ext.crashDiagnostic(for: referenceDate, pid: ProcessInfo().processIdentifier) else {
+            XCTFail("diagnostic file not found after write")
+            return
+        }
+        let data = try diag.diagnosticData()
+        // The C++ exception name is the mangled type name; reason is exc.what().
+        XCTAssertTrue(data.message.contains("test cxx exception"),
+                      "diagnostic message must contain the C++ exception reason; got: \(data.message)")
+        XCTAssertFalse(data.message.isEmpty)
+    }
+
+    // NSException path: a plain NSException thrown via @throw → writeDiagnostic → readable.
+    func testExtractorPipeline_nsException_writesAndReadsCorrectDiagnostic() throws {
+        let dir = FileManager.default.temporaryDirectory
+        let referenceDate = Date()
+        let ext = CrashLogMessageExtractor(diagnosticsDirectory: dir, dateProvider: { referenceDate })
+
+        let exception = NSException(name: NSExceptionName("TestNSException"),
+                                    reason: "plain NSException test reason",
+                                    userInfo: ["key": "value"])
+        try ext.writeDiagnostic(for: exception)
+
+        guard let diag = ext.crashDiagnostic(for: referenceDate, pid: ProcessInfo().processIdentifier) else {
+            XCTFail("diagnostic file not found after write")
+            return
+        }
+        let data = try diag.diagnosticData()
+        XCTAssertTrue(data.message.contains("TestNSException"))
+        XCTAssertTrue(data.message.contains("plain NSException test reason"))
+        XCTAssertTrue(data.message.contains("key: value"))
+    }
+
+    // NSException subclass path: a real ObjC subclass of NSException (as thrown by system
+    // frameworks) arrives via NSUncaughtExceptionHandler → writeDiagnostic → readable.
+    func testExtractorPipeline_nsExceptionSubclass_writesAndReadsCorrectDiagnostic() throws {
+        let dir = FileManager.default.temporaryDirectory
+        let referenceDate = Date()
+        let ext = CrashLogMessageExtractor(diagnosticsDirectory: dir, dateProvider: { referenceDate })
+
+        // Use a Swift subclass of NSException — same scenario as a WebKit NSRangeException
+        // subclass arriving through the NSUncaughtExceptionHandler.
+        final class TestSwiftExceptionSubclass: NSException {}
+        let exception = TestSwiftExceptionSubclass(name: NSExceptionName("TestSwiftExceptionSubclass"),
+                                                   reason: "NSException subclass test reason",
+                                                   userInfo: nil)
+        try ext.writeDiagnostic(for: exception)
+
+        guard let diag = ext.crashDiagnostic(for: referenceDate, pid: ProcessInfo().processIdentifier) else {
+            XCTFail("diagnostic file not found after write")
+            return
+        }
+        let data = try diag.diagnosticData()
+        XCTAssertTrue(data.message.contains("TestSwiftExceptionSubclass"),
+                      "subclass name must appear in diagnostic message; got: \(data.message)")
+        XCTAssertTrue(data.message.contains("NSException subclass test reason"))
+    }
+
     func testCrashDiagnosticWritingAndReading() throws {
         let fm = FileManager.default
         let referenceDate = Date()

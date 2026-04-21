@@ -81,6 +81,19 @@ final class DaxLogoManager {
         updateState()
     }
 
+    /// Home Dax is shown when the content pane is empty, unless the favorites overlay covers it —
+    /// exception: when the escape hatch is the only thing on screen (no favorites, no remote messages),
+    /// we still show Dax beneath the hatch.
+    func shouldShowHomeDax(hasContent: Bool,
+                           shouldDisplayFavoritesOverlay: Bool,
+                           hasEscapeHatch: Bool,
+                           hasFavorites: Bool,
+                           hasRemoteMessages: Bool) -> Bool {
+        guard !hasContent else { return false }
+        let hasEscapeHatchOnly = hasEscapeHatch && !hasFavorites && !hasRemoteMessages
+        return !shouldDisplayFavoritesOverlay || hasEscapeHatchOnly
+    }
+
     func setForcedHidden(_ hidden: Bool) {
         guard forcedHidden != hidden else { return }
         forcedHidden = hidden

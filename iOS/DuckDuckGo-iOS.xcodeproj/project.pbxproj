@@ -951,6 +951,7 @@
 		9795B2132EC62BF2002A812F /* OnboardingSearchExperienceSelectionHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9795B2122EC62BF2002A812F /* OnboardingSearchExperienceSelectionHandlerTests.swift */; };
 		9795B2152EC6360B002A812F /* OnboardingSearchExperiencePickerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9795B2142EC6360B002A812F /* OnboardingSearchExperiencePickerViewModelTests.swift */; };
 		97B908652F75457100372B50 /* DuckAIVoiceControlWidgetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97B908642F75457100372B50 /* DuckAIVoiceControlWidgetTests.swift */; };
+		97C00D062F97ACD100593A53 /* DaxLogoManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C00D052F97ACD100593A53 /* DaxLogoManagerTests.swift */; };
 		97D99E622F741FE900EE34E7 /* AIVoiceChatIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D99E612F741FE900EE34E7 /* AIVoiceChatIntent.swift */; };
 		97D99E642F7420A900EE34E7 /* AIVoiceChatIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D99E632F7420A900EE34E7 /* AIVoiceChatIntentTests.swift */; };
 		97EFB1592EFAB15900CF06E1 /* OnboardingSearchExperienceSettingsResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97EFB1582EFAB15900CF06E1 /* OnboardingSearchExperienceSettingsResolver.swift */; };
@@ -3365,6 +3366,7 @@
 		9795B2122EC62BF2002A812F /* OnboardingSearchExperienceSelectionHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSearchExperienceSelectionHandlerTests.swift; sourceTree = "<group>"; };
 		9795B2142EC6360B002A812F /* OnboardingSearchExperiencePickerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSearchExperiencePickerViewModelTests.swift; sourceTree = "<group>"; };
 		97B908642F75457100372B50 /* DuckAIVoiceControlWidgetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIVoiceControlWidgetTests.swift; sourceTree = "<group>"; };
+		97C00D052F97ACD100593A53 /* DaxLogoManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxLogoManagerTests.swift; sourceTree = "<group>"; };
 		97D99E612F741FE900EE34E7 /* AIVoiceChatIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIVoiceChatIntent.swift; sourceTree = "<group>"; };
 		97D99E632F7420A900EE34E7 /* AIVoiceChatIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIVoiceChatIntentTests.swift; sourceTree = "<group>"; };
 		97EFB1582EFAB15900CF06E1 /* OnboardingSearchExperienceSettingsResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSearchExperienceSettingsResolver.swift; sourceTree = "<group>"; };
@@ -5555,6 +5557,7 @@
 				319BE1082D47EBE300E510A4 /* AIChatUserScriptHandlerTests.swift */,
 				9770D4AA2F6AFD600029361F /* NavigationActionBarViewModelTests.swift */,
 				312BF6F02E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift */,
+				97C00D052F97ACD100593A53 /* DaxLogoManagerTests.swift */,
 				310EEA2E2CFFCDBF0043CA1A /* AIChatSettingsTests.swift */,
 				C124F0552E6879E7008D0F49 /* SwitchBarFunnelTests.swift */,
 				C14414782EB11A100057F921 /* AIChatFullModeFeatureTests.swift */,
@@ -13068,6 +13071,7 @@
 				9770D4AB2F6AFD600029361F /* NavigationActionBarViewModelTests.swift in Sources */,
 				8544C9852EDDE952001E1DB4 /* MockProductSurfaceTelemetry.swift in Sources */,
 				BDE219EA2C457B46005D5884 /* SubscriptionDataReporterTests.swift in Sources */,
+				97C00D062F97ACD100593A53 /* DaxLogoManagerTests.swift in Sources */,
 				9FA0AF232EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift in Sources */,
 				80DD839F2EF0FEF400DAB108 /* DataClearingSettingsViewModelTests.swift in Sources */,
 				EEFE9C732A603CE9005B0A26 /* NetworkProtectionStatusViewModelTests.swift in Sources */,

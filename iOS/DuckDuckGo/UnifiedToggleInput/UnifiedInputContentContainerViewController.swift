@@ -652,25 +652,19 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let isURLFallbackShowingContent = isShowingURLFallback && isShowingTray
 
         let hasContent = (shouldDisplaySuggestionTray && isShowingTray) || isHorizontallyCompactLayoutEnabled
-        let isHomeDaxVisible = shouldShowHomeDax(hasContent: hasContent, shouldDisplayFavoritesOverlay: shouldDisplayFavoritesOverlay)
+        let isHomeDaxVisible = daxLogoManager.shouldShowHomeDax(
+            hasContent: hasContent,
+            shouldDisplayFavoritesOverlay: shouldDisplayFavoritesOverlay,
+            hasEscapeHatch: escapeHatchModel != nil,
+            hasFavorites: suggestionTrayManager?.hasFavorites ?? false,
+            hasRemoteMessages: suggestionTrayManager?.hasRemoteMessages ?? false
+        )
         let isAIDaxVisible = !hasContent && !isShowingChatHistory && !isChatHistoryPending && !isURLFallbackShowingContent
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
         let escapeHatchOffset: CGFloat = (escapeHatchModel != nil && !switchBarHandler.isFireTab) ? Metrics.escapeHatchLogoOffset : 0
         daxLogoManager.setEscapeHatchBaseOffset(escapeHatchOffset)
         updateSectionTitle()
-    }
-
-    /// Home Dax is shown when the content pane is empty, unless the favorites overlay covers it —
-    /// exception: when the escape hatch is the only thing on screen (no favorites, no remote messages),
-    /// we still show Dax beneath the hatch.
-    private func shouldShowHomeDax(hasContent: Bool, shouldDisplayFavoritesOverlay: Bool) -> Bool {
-        guard !hasContent else { return false }
-        let hasRemoteMessages = suggestionTrayManager?.hasRemoteMessages ?? false
-        let hasEscapeHatchOnly = escapeHatchModel != nil
-            && !(suggestionTrayManager?.hasFavorites ?? false)
-            && !hasRemoteMessages
-        return !shouldDisplayFavoritesOverlay || hasEscapeHatchOnly
     }
 
     // MARK: - URL Fallback Suggestions

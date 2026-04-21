@@ -167,7 +167,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     private var didRequestDefaultBrowser: Bool = false
-    private var didToggleDuckPlayer: Bool = false
 
     convenience init(
         navigationDelegate: OnboardingNavigating,
@@ -262,6 +261,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
                     continuation.resume(returning: false)
                     return
                 }
+                if dataImportProvider.didImport {
+                    onboardingSharedPixelHandler.fire(.importData(.confirmed))
+                }
                 continuation.resume(returning: self.dataImportProvider.didImport)
             })
         }
@@ -349,12 +351,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             // Each system settings row is measured separately, when it is completed
             pixel = nil
         case .duckPlayerSingle:
-            if !didToggleDuckPlayer {
-                pixel = .duckPlayer(.clicked(.dismiss))
-            } else {
-                // If the user previews Duck Player, we measure that click when it happens
-                pixel = nil
-            }
+            // We fire the engage pixel when the user engages with the Duck Player toggle or completes the step.
+            pixel = .duckPlayer(.clicked(.engage))
         case .customize:
             let enabled: [OnboardingSharedPixelEvent.CustomizeEvent.Value] = [
                 appearancePreferences.showBookmarksBar ? .bookmarksBar : nil,
@@ -408,7 +406,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         case .dockInstructionsShown:
             onboardingSharedPixelHandler.fire(.addToDock(.clicked(.engage)))
         case .duckPlayerToggled:
-            didToggleDuckPlayer = true
             onboardingSharedPixelHandler.fire(.duckPlayer(.clicked(.engage)))
         case .rowShown(let row):
             switch row {

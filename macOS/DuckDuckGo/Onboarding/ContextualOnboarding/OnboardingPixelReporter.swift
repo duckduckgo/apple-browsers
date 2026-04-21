@@ -40,6 +40,8 @@ protocol OnboardingDialogsReporting: AnyObject {
 
 protocol OnboardingFireReporting: AnyObject {
     func measureFireButtonPressed()
+    func measureFireDialogBurnAction()
+    func measureFireDialogDismissed()
 }
 
 final class OnboardingPixelReporter {
@@ -100,6 +102,18 @@ extension OnboardingPixelReporter: OnboardingFireReporting {
             fire(ContextualOnboardingPixel.onboardingFireButtonPressed, .uniqueByName)
         }
     }
+
+    func measureFireDialogBurnAction() {
+        if onboardingStateProvider?.state != .onboardingCompleted {
+            sharedPixelHandler.fire(.fireButton(.clicked(.engage)))
+        }
+    }
+
+    func measureFireDialogDismissed() {
+        if onboardingStateProvider?.state != .onboardingCompleted {
+            sharedPixelHandler.fire(.fireButton(.clicked(.dismiss)))
+        }
+    }
 }
 
 extension OnboardingPixelReporter: OnboardingDialogsReporting {
@@ -143,7 +157,6 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
 
     func measureFireButtonTryIt() {
         fire(ContextualOnboardingPixel.onboardingFireButtonTryItPressed, .uniqueByName)
-        sharedPixelHandler.fire(.fireButton(.clicked(.engage)))
     }
 
     func measureDialogShown(dialogType: ContextualDialogType) {

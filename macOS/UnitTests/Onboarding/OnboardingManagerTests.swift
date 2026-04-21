@@ -489,34 +489,38 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.addToDock(.clicked(.engage))])
     }
 
-    func testImportEngagePixelFired_WhenImportRequested() async {
+    func testImportEngageAndConfirmedPixelsFired_WhenImportSuccessfullyCompleted() async {
         // When
+        importProvider.didImport = true
+        _ = await manager.importData()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.importData(.clicked(.engage)), .importData(.confirmed)])
+    }
+
+    func testOnlyImportEngagePixelFired_WhenImportNotSuccessfullyCompleted() async {
+        // When
+        importProvider.didImport = false
         _ = await manager.importData()
 
         // Then
         XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.importData(.clicked(.engage))])
     }
 
-    func testOnlyDuckPlayerEngagePixelFired_WhenDuckPlayerToggledTelemetryEventReported() {
+    func testDuckPlayerEngagePixelFired_WhenDuckPlayerToggledTelemetryEventReported() {
         // When
         manager.reportTelemetryEvent(.duckPlayerToggled)
 
         // Then
         XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.duckPlayer(.clicked(.engage))])
+    }
 
+    func testDuckPlayerEngagePixelFired_WhenDuckPlayerStepCompleted() {
         // When
         manager.stepCompleted(step: .duckPlayerSingle)
 
         // Then
         XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.duckPlayer(.clicked(.engage))])
-    }
-
-    func testDuckPlayerDismissPixelFired_WhenDuckPlayerStepCompleted_AndDuckPlayerNotToggled() {
-        // When
-        manager.stepCompleted(step: .duckPlayerSingle)
-
-        // Then
-        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.duckPlayer(.clicked(.dismiss))])
     }
 
     func testCustomizationClickedPixelFired_WithEnabledSettings_WhenCustomizeStepCompleted() {

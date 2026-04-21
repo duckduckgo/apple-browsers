@@ -96,7 +96,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         reporter.measureFireButtonTryIt()
         XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingFireButtonTryItPressed.name)
         XCTAssertEqual(frequency, .uniqueByName)
-        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.fireButton(.clicked(.engage))])
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [])
     }
 
     func test_WhenMeasureLastDialogShown_ThenOnboardingFinishedSent() {
@@ -117,6 +117,30 @@ final class OnboardingPixelReporterTests: XCTestCase {
         reporter.measureFireButtonPressed()
         XCTAssertNil(eventSent)
         XCTAssertNil(frequency)
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [])
+    }
+
+    func test_WhenMeasureFireDialogBurnAction_AndOnboardingNotCompleted_ThenFireButtonEngageSent() {
+        onboardingState.state = .ongoing
+        reporter.measureFireDialogBurnAction()
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.fireButton(.clicked(.engage))])
+    }
+
+    func test_WhenMeasureFireDialogBurnAction_AndOnboardingCompleted_ThenNoPixelSent() {
+        onboardingState.state = .onboardingCompleted
+        reporter.measureFireDialogBurnAction()
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [])
+    }
+
+    func test_WhenMeasureFireDialogDismissed_AndOnboardingNotCompleted_ThenFireButtonDismissedSent() {
+        onboardingState.state = .ongoing
+        reporter.measureFireDialogDismissed()
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.fireButton(.clicked(.dismiss))])
+    }
+
+    func test_WhenMeasureFireDialogDismissed_AndOnboardingCompleted_ThenNoPixelSent() {
+        onboardingState.state = .onboardingCompleted
+        reporter.measureFireDialogDismissed()
         XCTAssertEqual(sharedPixelHandler.eventsReceived, [])
     }
 

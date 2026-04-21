@@ -122,6 +122,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
 
         case shown
         case clicked(Value)
+        case confirmed
     }
 
     public enum SearchExperienceEvent: Equatable {
@@ -213,6 +214,7 @@ private extension OnboardingSharedPixelEvent {
         static let shown = "shown"
         static let clicked = "clicked"
         static let dismiss = "dismiss"
+        static let confirmed = "confirmed"
     }
 
     var eventType: String {
@@ -231,6 +233,8 @@ private extension OnboardingSharedPixelEvent {
                 return ParameterValues.shown
             case .clicked:
                 return ParameterValues.clicked
+            case .confirmed:
+                return ParameterValues.confirmed
             }
         case .searchExperience(let event):
             switch event {
@@ -269,7 +273,7 @@ private extension OnboardingSharedPixelEvent {
                 .fireButton(let event),
                 .end(let event):
             switch event {
-            case .shown:
+            case .shown, .confirmed:
                 return nil
             case .clicked(let value):
                 return value.rawValue

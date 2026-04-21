@@ -2,7 +2,7 @@
 """Render a single HTML test report into $GITHUB_STEP_SUMMARY.
 
 Reads a JUnit XML file (authoritative for counts and the failure list) and
-an optional sidecar JSON produced by inject-xcresult-crashes-into-junit.py
+an optional crash details JSON produced by inject-xcresult-crashes-into-junit.py
 (provides expandable details for crashed tests).
 
 Emits three HTML tables under an <h2> title:
@@ -36,8 +36,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--junit", required=True, help="path to JUnit XML")
     parser.add_argument("--title", required=True, help="heading shown above the report")
-    parser.add_argument("--crashes-json",
-                        help="optional path to the sidecar crash-details JSON")
+    parser.add_argument("--crash-details-json",
+                        help="optional path to the JSON crash details file written by "
+                             "inject-xcresult-crashes-into-junit.py")
     args = parser.parse_args()
 
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
@@ -51,7 +52,7 @@ def main() -> int:
         return 0
 
     totals, failures, junit_crashes = _collect(junit)
-    crashes = _merge_crashes(junit_crashes, _load_sidecar(args.crashes_json))
+    crashes = _merge_crashes(junit_crashes, _load_crash_details_file(args.crash_details_json))
 
     html_doc = _render(args.title, totals, failures, crashes)
     with open(summary_path, "a") as f:
@@ -124,9 +125,9 @@ def _clean_reason(s: str) -> str:
     return s.strip()
 
 
-# ---------- sidecar ----------
+# ---------- crash details file ----------
 
-def _load_sidecar(path: str | None) -> list[dict]:
+def _load_crash_details_file(path: str | None) -> list[dict]:
     if not path:
         return []
     p = Path(path)
@@ -140,25 +141,24 @@ def _load_sidecar(path: str | None) -> list[dict]:
         return []
 
 
-def _merge_crashes(junit_crashes: list[dict], sidecar: list[dict]) -> list[dict]:
-    # Key the sidecar by class.test so rendering is independent of ordering.
-    by_key = {f"{c['class_name']}.{c['test_name']}": c for c in sidecar}
+def _merge_crashes(junit_crashes: list[dict], crash_details: list[dict]) -> list[dict]:
+    # The crash details file's class_name may be bare (e.g.
+    # "StringExtensionTests") while the JUnit is target-prefixed (e.g.
+    # "UnitTests.StringExtensionTests"); match by exact key first, then by
+    # classname-suffix as a fallback.
+    crash_details_remaining = list(crash_details)
     merged: list[dict] = []
-    seen: set[str] = set()
     for jc in junit_crashes:
-        key = f"{jc['class_name']}.{jc['test_name']}"
-        side = by_key.get(key)
+        detail = _pop_matching_crash_detail(crash_details_remaining, jc)
         merged.append({
             "class_name": jc["class_name"],
             "test_name": jc["test_name"],
-            "reason": (side or jc)["reason"],
-            "report": (side or {}).get("report"),
+            "reason": (detail or jc)["reason"],
+            "report": (detail or {}).get("report"),
         })
-        seen.add(key)
-    # Include any sidecar-only entries (e.g. if JUnit injection was skipped).
-    for key, c in by_key.items():
-        if key in seen:
-            continue
+    # Any crash details entry we couldn't match to a JUnit crash (e.g. JUnit
+    # injection was skipped) still gets rendered with its own data.
+    for c in crash_details_remaining:
         merged.append({
             "class_name": c["class_name"],
             "test_name": c["test_name"],
@@ -166,6 +166,19 @@ def _merge_crashes(junit_crashes: list[dict], sidecar: list[dict]) -> list[dict]
             "report": c.get("report"),
         })
     return merged
+
+
+def _pop_matching_crash_detail(crash_details: list[dict], jc: dict) -> dict | None:
+    for i, c in enumerate(crash_details):
+        if c["test_name"] != jc["test_name"]:
+            continue
+        junit_class = jc["class_name"]
+        detail_class = c["class_name"]
+        if (detail_class == junit_class
+                or junit_class.endswith("." + detail_class)
+                or detail_class.endswith("." + junit_class)):
+            return crash_details.pop(i)
+    return None
 
 
 # ---------- HTML ----------

@@ -368,20 +368,20 @@ jobs:
       run: |
         for kind in unittests integrationtests; do
           junit=${{ matrix.flavor }}-$kind.xml
-          sidecar=${{ matrix.flavor }}-$kind-crashes.json
+          crash_details=${{ matrix.flavor }}-$kind-crash-details.json
           case "$kind" in
             unittests) pretty_kind="Unit Tests" ;;
             integrationtests) pretty_kind="Integration Tests" ;;
           esac
           if [[ -f "$junit" ]]; then
-            crashes_arg=()
-            if [[ -f "$sidecar" ]]; then
-              crashes_arg=(--crashes-json "$sidecar")
+            crash_details_arg=()
+            if [[ -f "$crash_details" ]]; then
+              crash_details_arg=(--crash-details-json "$crash_details")
             fi
             ${{ github.workspace }}/scripts/render-test-report.py \
               --junit "$junit" \
               --title "macOS ${{ matrix.flavor }} $pretty_kind" \
-              "${crashes_arg[@]}"
+              "${crash_details_arg[@]}"
           fi
         done
 
@@ -392,7 +392,7 @@ jobs:
         name: macos-${{ matrix.flavor }}-unittests.xml
         path: |
           macOS/${{ matrix.flavor }}*.xml
-          macOS/${{ matrix.flavor }}*-crashes.json
+          macOS/${{ matrix.flavor }}*-crash-details.json
         retention-days: 7
 
     - name: Publish unit tests report

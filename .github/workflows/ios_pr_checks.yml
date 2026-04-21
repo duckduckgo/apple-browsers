@@ -223,14 +223,14 @@ jobs:
       if: always()
       run: |
         if [[ -f unittests.xml ]]; then
-          crashes_arg=()
-          if [[ -f unittests-crashes.json ]]; then
-            crashes_arg=(--crashes-json unittests-crashes.json)
+          crash_details_arg=()
+          if [[ -f unittests-crash-details.json ]]; then
+            crash_details_arg=(--crash-details-json unittests-crash-details.json)
           fi
           ${{ github.workspace }}/scripts/render-test-report.py \
             --junit unittests.xml \
             --title "iOS PR Checks" \
-            "${crashes_arg[@]}"
+            "${crash_details_arg[@]}"
         fi
 
     - name: Upload JUnit XML as artifact
@@ -240,7 +240,7 @@ jobs:
         name: ios-unittests.xml
         path: |
           iOS/unittests.xml
-          iOS/unittests-crashes.json
+          iOS/unittests-crash-details.json
         retention-days: 7
 
     - name: Upload logs if workflow failed

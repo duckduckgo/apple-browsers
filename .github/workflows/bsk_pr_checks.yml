@@ -136,14 +136,14 @@ jobs:
         if: always()
         run: |
           if [[ -f package-tests.xml ]]; then
-            crashes_arg=()
-            if [[ -f package-tests-crashes.json ]]; then
-              crashes_arg=(--crashes-json package-tests-crashes.json)
+            crash_details_arg=()
+            if [[ -f package-tests-crash-details.json ]]; then
+              crash_details_arg=(--crash-details-json package-tests-crash-details.json)
             fi
             ${{ github.workspace }}/scripts/render-test-report.py \
               --junit package-tests.xml \
               --title "BSK (macOS)" \
-              "${crashes_arg[@]}"
+              "${crash_details_arg[@]}"
           fi
 
       - name: Upload JUnit XML as artifact
@@ -153,7 +153,7 @@ jobs:
           name: bsk-macos-unittests.xml
           path: |
             SharedPackages/BrowserServicesKit/package-tests.xml
-            SharedPackages/BrowserServicesKit/package-tests-crashes.json
+            SharedPackages/BrowserServicesKit/package-tests-crash-details.json
           retention-days: 7
 
       - name: Publish Unit Tests Report
@@ -315,14 +315,14 @@ jobs:
         if: always()
         run: |
           if [[ -f bsk-ios-unittests.xml ]]; then
-            crashes_arg=()
-            if [[ -f bsk-ios-unittests-crashes.json ]]; then
-              crashes_arg=(--crashes-json bsk-ios-unittests-crashes.json)
+            crash_details_arg=()
+            if [[ -f bsk-ios-unittests-crash-details.json ]]; then
+              crash_details_arg=(--crash-details-json bsk-ios-unittests-crash-details.json)
             fi
             ${{ github.workspace }}/scripts/render-test-report.py \
               --junit bsk-ios-unittests.xml \
               --title "BSK (iOS)" \
-              "${crashes_arg[@]}"
+              "${crash_details_arg[@]}"
           fi
 
       - name: Upload JUnit XML as artifact
@@ -332,7 +332,7 @@ jobs:
           name: bsk-ios-unittests.xml
           path: |
             SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
-            SharedPackages/BrowserServicesKit/bsk-ios-unittests-crashes.json
+            SharedPackages/BrowserServicesKit/bsk-ios-unittests-crash-details.json
           retention-days: 7
 
       - name: Publish Unit Tests Report

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Inject crashed tests from an xcresult bundle into a JUnit XML file, and
-write a sidecar JSON describing each crash for later rendering.
+write a crash details file describing each crash for later rendering.
 
 xcbeautify doesn't emit <failure> entries for tests that crashed (SIGSEGV,
 fatalError, etc.) because the test host dies before the failure is recorded.
@@ -11,9 +11,10 @@ yq-based Asana reporter, render-test-report.py) sees accurate counts.
 When --log is supplied, crashed-test messages are enriched with the fatal
 error text extracted from the xcodebuild log. When --crash-reports-dir is
 supplied, matching .ips stack traces are attached to each crash. All enriched
-crash data is written to a sidecar JSON next to the JUnit XML (e.g.
-unittests.xml -> unittests-crashes.json), which render-test-report.py reads
-to produce the expandable Crashes section of the step-summary report.
+crash data is written to a JSON crash details file alongside the JUnit XML
+(e.g. unittests.xml -> unittests-crash-details.json), which
+render-test-report.py reads to produce the expandable Crashes section of
+the step-summary report.
 """
 import argparse
 import json
@@ -62,7 +63,7 @@ def main() -> int:
     added = _inject_into_junit(crashes, args.junit)
     print(f"Injected {added} crash(es) into {args.junit}")
 
-    _write_sidecar(args.junit, crashes)
+    _write_crash_details_file(args.junit, crashes)
     return 0
 
 
@@ -233,8 +234,13 @@ def _inject_into_junit(crashes: list[dict], junit_path: str) -> int:
         suite = _find_or_create_suite(root, crash["class_name"], crash["target"])
         if suite.find(f"./testcase[@name='{crash['test_name']}']/failure") is not None:
             continue
+        classname = suite.get("name", crash["class_name"])
+        # Sync so the crash details file's class_name matches the JUnit's
+        # (target-prefixed); otherwise render-test-report.py can't merge the
+        # two views of this crash.
+        crash["class_name"] = classname
         tc = ET.SubElement(suite, "testcase", {
-            "classname": suite.get("name", crash["class_name"]),
+            "classname": classname,
             "name": crash["test_name"],
             "time": "0",
         })
@@ -263,19 +269,19 @@ def _find_or_create_suite(root: ET.Element, class_name: str, target: str) -> ET.
     })
 
 
-# ---------- sidecar ----------
+# ---------- crash details file ----------
 
-def _write_sidecar(junit_path: str, crashes: list[dict]) -> None:
-    path = _sidecar_path(junit_path)
+def _write_crash_details_file(junit_path: str, crashes: list[dict]) -> None:
+    path = _crash_details_path(junit_path)
     payload = [_serialize_crash(c) for c in crashes]
     with open(path, "w") as f:
         json.dump(payload, f, indent=2)
     print(f"Wrote {len(payload)} crash detail(s) to {path}")
 
 
-def _sidecar_path(junit_path: str) -> Path:
+def _crash_details_path(junit_path: str) -> Path:
     p = Path(junit_path)
-    return p.with_name(f"{p.stem}-crashes.json")
+    return p.with_name(f"{p.stem}-crash-details.json")
 
 
 def _serialize_crash(crash: dict) -> dict:

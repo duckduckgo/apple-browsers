@@ -129,14 +129,14 @@ jobs:
         if: always()
         run: |
           if [[ -f package-tests.xml ]]; then
-            crashes_arg=()
-            if [[ -f package-tests-crashes.json ]]; then
-              crashes_arg=(--crashes-json package-tests-crashes.json)
+            crash_details_arg=()
+            if [[ -f package-tests-crash-details.json ]]; then
+              crash_details_arg=(--crash-details-json package-tests-crash-details.json)
             fi
             ${{ github.workspace }}/scripts/render-test-report.py \
               --junit package-tests.xml \
               --title "DBP (macOS)" \
-              "${crashes_arg[@]}"
+              "${crash_details_arg[@]}"
           fi
 
       - name: Publish Unit Tests Report
@@ -300,14 +300,14 @@ jobs:
         if: always()
         run: |
           if [[ -f dbp-ios-unittests.xml ]]; then
-            crashes_arg=()
-            if [[ -f dbp-ios-unittests-crashes.json ]]; then
-              crashes_arg=(--crashes-json dbp-ios-unittests-crashes.json)
+            crash_details_arg=()
+            if [[ -f dbp-ios-unittests-crash-details.json ]]; then
+              crash_details_arg=(--crash-details-json dbp-ios-unittests-crash-details.json)
             fi
             ${{ github.workspace }}/scripts/render-test-report.py \
               --junit dbp-ios-unittests.xml \
               --title "DBP (iOS)" \
-              "${crashes_arg[@]}"
+              "${crash_details_arg[@]}"
           fi
 
       - name: Publish Unit Tests Report

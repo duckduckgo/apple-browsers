@@ -119,14 +119,14 @@ jobs:
       if: always()
       run: |
         if [[ -f unittests.xml ]]; then
-          crashes_arg=()
-          if [[ -f unittests-crashes.json ]]; then
-            crashes_arg=(--crashes-json unittests-crashes.json)
+          crash_details_arg=()
+          if [[ -f unittests-crash-details.json ]]; then
+            crash_details_arg=(--crash-details-json unittests-crash-details.json)
           fi
           ${{ github.workspace }}/scripts/render-test-report.py \
             --junit unittests.xml \
             --title "iOS Nightly" \
-            "${crashes_arg[@]}"
+            "${crash_details_arg[@]}"
         fi
 
     - name: Publish unit tests report

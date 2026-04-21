@@ -215,6 +215,7 @@ private final class SpyUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
 }
 
 private final class StubAIChatPreferences: AIChatPreferencesPersisting {
+    var selectedReasoningEffort: String?
     var selectedModelId: String?
     var selectedModelShortName: String?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }

@@ -121,7 +121,7 @@ class SyncDebugViewController: UITableViewController {
             case .some(.getRecoveryCode):
                 cell.textLabel?.text = "Paste and Copy Recovery Code"
             case .resetSyncAnotherDevicePrompt:
-                cell.textLabel?.text = "Reset Sync With Another Device prompt"
+                cell.textLabel?.text = "Reset Sync Another Device prompt"
             case .none:
                 break
             }

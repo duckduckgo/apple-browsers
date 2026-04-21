@@ -400,7 +400,7 @@ extension SimplifiedSyncSettingsView {
                     HStack {
                         Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)
                             .foregroundColor(Color(designSystemColor: .accent))
-                        Text(UserText.simplifiedSyncWithAnotherDeviceButton)
+                        Text(UserText.simplifiedSyncAnotherDeviceButton)
                             .daxBodyRegular()
                             .foregroundColor(Color(designSystemColor: .accent))
                     }

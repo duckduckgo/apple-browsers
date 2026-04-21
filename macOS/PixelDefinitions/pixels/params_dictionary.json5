@@ -293,7 +293,7 @@
         "key": "e",
         "type": "string",
         "description": "Event type to classify what happened at each onboarding step",
-        "enum": ["shown", "clicked"]
+        "enum": ["shown", "clicked", "confirmed"]
     },
     "onboardingClickedValue": {
         "key": "value",

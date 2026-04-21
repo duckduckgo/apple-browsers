@@ -94,42 +94,23 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let featureFlagger: FeatureFlagger
     private let firePixel: (PixelKitEvent) -> Void
     private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
-    private let aiChatModelSelectionObserver: UserDefaults
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
-    private let selectedModelIdSubject = PassthroughSubject<String?, Never>()
     @Published private var hasExcessChats = false
     private var aiChatsProviderCancellable: AnyCancellable?
-    private var userDefaultsChangeCancellable: AnyCancellable?
-    private var lastObservedModelId: String?
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
          aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
-         aiChatModelSelectionObserver: UserDefaults = .standard,
          firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger
         self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
-        self.aiChatModelSelectionObserver = aiChatModelSelectionObserver
         self.firePixel = firePixel
 
         Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &self.aiChatPreferencesPersistor)
-
-        self.lastObservedModelId = aiChatPreferencesPersistor.selectedModelId
-
-        userDefaultsChangeCancellable = NotificationCenter.default
-            .publisher(for: UserDefaults.didChangeNotification, object: aiChatModelSelectionObserver)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                let current = self.aiChatPreferencesPersistor.selectedModelId
-                guard current != self.lastObservedModelId else { return }
-                self.lastObservedModelId = current
-                self.selectedModelIdSubject.send(current)
-            }
     }
 
     @MainActor
@@ -206,7 +187,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     var selectedModelIdPublisher: AnyPublisher<String?, Never> {
-        selectedModelIdSubject.eraseToAnyPublisher()
+        aiChatPreferencesPersistor.selectedModelIdPublisher
     }
 
     var selectedModelShortName: String? {

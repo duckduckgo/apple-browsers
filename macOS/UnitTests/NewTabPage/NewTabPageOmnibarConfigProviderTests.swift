@@ -259,7 +259,6 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     private func makeProvider(
         persistor: AIChatPreferencesPersisting,
-        observer: UserDefaults,
         keyValueStore: ThrowingKeyValueStoring? = nil
     ) throws -> NewTabPageOmnibarConfigProvider {
         NewTabPageOmnibarConfigProvider(
@@ -267,7 +266,6 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
             aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
             featureFlagger: MockFeatureFlagger(),
             aiChatPreferencesPersistor: persistor,
-            aiChatModelSelectionObserver: observer,
             firePixel: { _ in }
         )
     }
@@ -275,14 +273,14 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testSelectedModelId_readsFromInjectedPersistor() throws {
         let persistor = MockAIChatPreferencesPersisting()
         persistor.selectedModelId = "gpt-4o-mini"
-        let provider = try makeProvider(persistor: persistor, observer: .standard)
+        let provider = try makeProvider(persistor: persistor)
 
         XCTAssertEqual(provider.selectedModelId, "gpt-4o-mini")
     }
 
     func testSelectedModelId_writesThroughToInjectedPersistor() throws {
         let persistor = MockAIChatPreferencesPersisting()
-        let provider = try makeProvider(persistor: persistor, observer: .standard)
+        let provider = try makeProvider(persistor: persistor)
 
         provider.selectedModelId = "claude-4"
         XCTAssertEqual(persistor.selectedModelId, "claude-4")
@@ -291,82 +289,22 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertNil(persistor.selectedModelId)
     }
 
-    func testSelectedModelIdPublisher_emitsWhenSharedStorageChanges() throws {
-        let suiteName = "NewTabPageOmnibarConfigProviderTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let persistor = AIChatPreferencesPersistor(keyValueStore: defaults)
-        let provider = try makeProvider(persistor: persistor, observer: defaults)
-
-        let exp = expectation(description: "publisher emits")
-        var received: [String?] = []
-        let cancellable = provider.selectedModelIdPublisher.sink { value in
-            received.append(value)
-            exp.fulfill()
-        }
-
-        // Simulate a native-side change writing directly through its own AIChatPreferencesPersistor
-        // instance on the same UserDefaults (the shared storage).
-        var nativePersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(keyValueStore: defaults)
-        nativePersistor.selectedModelId = "maverick"
-
-        wait(for: [exp], timeout: 1.0)
-        cancellable.cancel()
-
-        XCTAssertEqual(received, ["maverick"])
-    }
-
-    func testSelectedModelIdPublisher_doesNotEmitForUnchangedValue() throws {
-        let suiteName = "NewTabPageOmnibarConfigProviderTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        var persistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(keyValueStore: defaults)
-        persistor.selectedModelId = "maverick"
-
-        let provider = try makeProvider(persistor: persistor, observer: defaults)
+    func testSelectedModelIdPublisher_forwardsFromSharedPersistor() throws {
+        // Native and NTP hold the same persistor. A write on the "native" side must reach
+        // the NTP provider's publisher so JS gets notified via omnibar_onConfigUpdate.
+        let persistor = MockAIChatPreferencesPersisting()
+        let provider = try makeProvider(persistor: persistor)
 
         var received: [String?] = []
         let cancellable = provider.selectedModelIdPublisher.sink { received.append($0) }
 
-        // Write the same value via the shared storage — lastObservedModelId should dedup.
         persistor.selectedModelId = "maverick"
-
-        // Pump the main runloop so any receive(on:) blocks would fire.
-        let pump = expectation(description: "runloop")
-        DispatchQueue.main.async { pump.fulfill() }
-        wait(for: [pump], timeout: 1.0)
+        persistor.selectedModelId = "maverick"   // dedup in persistor → no second emit
+        persistor.selectedModelId = "claude-4"
+        persistor.selectedModelId = nil
 
         cancellable.cancel()
-        XCTAssertEqual(received, [])
-    }
-
-    func testSelectedModelId_setterIsReentrancySafe() throws {
-        // Regression: assigning through the provider used to crash in AIChatPreferencesPersistor
-        // when the UserDefaults.didChangeNotification sink read the same var while the setter
-        // still held exclusive-write access.
-        let suiteName = "NewTabPageOmnibarConfigProviderTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let persistor = AIChatPreferencesPersistor(keyValueStore: defaults)
-        let provider = try makeProvider(persistor: persistor, observer: defaults)
-
-        let exp = expectation(description: "publisher emits after setter")
-        var received: String?
-        let cancellable = provider.selectedModelIdPublisher.sink { value in
-            received = value
-            exp.fulfill()
-        }
-
-        provider.selectedModelId = "claude-4"
-
-        wait(for: [exp], timeout: 1.0)
-        cancellable.cancel()
-
-        XCTAssertEqual(received, "claude-4")
-        XCTAssertEqual(persistor.selectedModelId, "claude-4")
+        XCTAssertEqual(received, ["maverick", "claude-4", nil])
     }
 
     // MARK: - legacy model id migration
@@ -375,7 +313,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
         let persistor = MockAIChatPreferencesPersisting()
 
-        _ = try makeProvider(persistor: persistor, observer: .standard, keyValueStore: store)
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
 
         XCTAssertEqual(persistor.selectedModelId, "maverick")
         XCTAssertNil(store.underlyingDict[legacyModelIdKey])
@@ -387,7 +325,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
         let persistor = MockAIChatPreferencesPersisting()
 
-        _ = try makeProvider(persistor: persistor, observer: .standard, keyValueStore: store)
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
 
         XCTAssertEqual(persistor.selectedModelShortName, "maverick")
     }
@@ -397,7 +335,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let persistor = MockAIChatPreferencesPersisting()
         persistor.selectedModelId = "gpt-5"
 
-        _ = try makeProvider(persistor: persistor, observer: .standard, keyValueStore: store)
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
 
         XCTAssertEqual(persistor.selectedModelId, "gpt-5")
         XCTAssertNil(store.underlyingDict[legacyModelIdKey])
@@ -410,7 +348,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         persistor.selectedModelId = "gpt-5"
         persistor.selectedModelShortName = "GPT-5"
 
-        _ = try makeProvider(persistor: persistor, observer: .standard, keyValueStore: store)
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
 
         XCTAssertEqual(persistor.selectedModelShortName, "GPT-5")
     }
@@ -419,7 +357,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let store = try makeStore()
         let persistor = MockAIChatPreferencesPersisting()
 
-        _ = try makeProvider(persistor: persistor, observer: .standard, keyValueStore: store)
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
 
         XCTAssertNil(persistor.selectedModelId)
         XCTAssertNil(store.underlyingDict[legacyModelIdKey])
@@ -430,14 +368,14 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let persistor = MockAIChatPreferencesPersisting()
 
         // First launch: migrates.
-        _ = try makeProvider(persistor: persistor, observer: .standard, keyValueStore: store)
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
         XCTAssertEqual(persistor.selectedModelId, "maverick")
 
         // Simulate the user picking a new model after migration.
         persistor.selectedModelId = "claude-4"
 
         // Second launch: legacy key is gone, so nothing is overwritten.
-        _ = try makeProvider(persistor: persistor, observer: .standard, keyValueStore: store)
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
         XCTAssertEqual(persistor.selectedModelId, "claude-4")
     }
 
@@ -467,8 +405,16 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 // MARK: - Mocks
 
 private final class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
-    var selectedModelId: String?
+    private let subject = PassthroughSubject<String?, Never>()
+
+    var selectedModelId: String? {
+        didSet {
+            guard selectedModelId != oldValue else { return }
+            subject.send(selectedModelId)
+        }
+    }
     var selectedModelShortName: String?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { subject.eraseToAnyPublisher() }
 }
 
 private final class MockAIChatExcessProvider: NewTabPageOmnibarAiChatsProviding {

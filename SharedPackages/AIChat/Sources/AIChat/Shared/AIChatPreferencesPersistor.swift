@@ -16,16 +16,22 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import Persistence
 
 public protocol AIChatPreferencesPersisting {
     var selectedModelId: String? { get set }
+    /// Emits the new value whenever `selectedModelId` changes through this persistor instance.
+    /// Consumers that need cross-component sync must share the same instance.
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { get }
     /// The short display name of the last selected model, used to show the button before models are fetched.
     var selectedModelShortName: String? { get set }
 }
 
-public struct AIChatPreferencesPersistor: AIChatPreferencesPersisting {
+/// Reference type so that a single instance can be shared across components (e.g. the native address-bar
+/// omnibar and the New Tab Page omnibar) and both observe the same `selectedModelIdPublisher`.
+public final class AIChatPreferencesPersistor: AIChatPreferencesPersisting {
 
     enum Key: String {
         case selectedModelId = "aichat.omnibar.selected-model-id"
@@ -33,6 +39,7 @@ public struct AIChatPreferencesPersistor: AIChatPreferencesPersisting {
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
+    private let selectedModelIdSubject = PassthroughSubject<String?, Never>()
 
     public init(keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) {
         self.keyValueStore = keyValueStore
@@ -41,12 +48,19 @@ public struct AIChatPreferencesPersistor: AIChatPreferencesPersisting {
     public var selectedModelId: String? {
         get { try? keyValueStore.object(forKey: Key.selectedModelId.rawValue) as? String }
         set {
+            let current = try? keyValueStore.object(forKey: Key.selectedModelId.rawValue) as? String
+            guard newValue != current else { return }
             if let value = newValue {
                 try? keyValueStore.set(value, forKey: Key.selectedModelId.rawValue)
             } else {
                 try? keyValueStore.removeObject(forKey: Key.selectedModelId.rawValue)
             }
+            selectedModelIdSubject.send(newValue)
         }
+    }
+
+    public var selectedModelIdPublisher: AnyPublisher<String?, Never> {
+        selectedModelIdSubject.eraseToAnyPublisher()
     }
 
     public var selectedModelShortName: String? {

@@ -1216,7 +1216,12 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
                 view.window?.makeFirstResponder(nil)
             }
         } else {
-            sharedTextState?.setDuckAIMode(false)
+            /// Note: we intentionally do NOT clear `sharedTextState?.setDuckAIMode(false)` here. On tab switch,
+            /// this method runs with `self.tabViewModel` still pointing at the OUTGOING tab (AddressBarVC's own
+            /// $selectedTabViewModel sink fires after MainVC's), so clearing would wipe the wrong tab's flag.
+            /// Explicit exit paths (toggle to search, prompt submit, URL navigation, context-menu hide toggle)
+            /// call `setDuckAIMode(false)` themselves. In-tab navigation clears via `sharedTextState.reset()`
+            /// from `AddressBarTextField.updateValue`.
             if shouldKeepSelection {
                 addressBarButtonsViewController?.resetSearchModeToggle()
             } else {

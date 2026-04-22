@@ -234,11 +234,6 @@ class TabSwitcherViewController: UIViewController {
     required init?(coder: NSCoder) {
         fatalError("Not implemented")
     }
-
-    fileprivate func createTitleBar() {
-        // Height is managed internally by TabSwitcherTitleBarView (60pt).
-        // No appearance configuration needed -- it's a plain UIView.
-    }
     
     private func setupModeToggle() {
         guard fireModeCapability.isFireModeEnabled else {
@@ -370,7 +365,6 @@ class TabSwitcherViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        createTitleBar()
         setupModeToggle()
         setupPagingScrollView()
 

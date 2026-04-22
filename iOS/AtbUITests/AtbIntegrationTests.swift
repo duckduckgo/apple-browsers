@@ -91,20 +91,21 @@ class AtbIntegrationTests: XCTestCase {
 
     private func search(forText text: String) {
 
-        let input = waitForAddressBarInput(timeout: Constants.defaultTimeout)
+        guard let input = waitForAddressBarInput(timeout: Constants.defaultTimeout) else { return }
         input.tap()
         input.typeText("\(text)\r")
         Snapshot.waitForLoadingIndicatorToDisappear(within: Constants.defaultTimeout)
 
     }
 
-    private func waitForAddressBarInput(timeout: TimeInterval) -> XCUIElement {
+    private func waitForAddressBarInput(timeout: TimeInterval) -> XCUIElement? {
         let predicate = NSPredicate(format: "elementType == %d OR elementType == %d",
                                     XCUIElement.ElementType.searchField.rawValue,
                                     XCUIElement.ElementType.textView.rawValue)
         let input = app.descendants(matching: .any).matching(predicate).firstMatch
         guard input.waitForExistence(timeout: timeout) else {
-            fatalError("Could not find an address bar input (searchField or textView) within \(timeout)s")
+            XCTFail("Could not find an address bar input (searchField or textView) within \(timeout)s")
+            return nil
         }
         return input
     }

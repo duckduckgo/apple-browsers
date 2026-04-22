@@ -650,7 +650,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             navController.navigationBar.scrollEdgeAppearance = transparentAppearance
         }
         navController.setNeedsStatusBarAppearanceUpdate()
-        navController.modalPresentationStyle = .fullScreen
+        if useSimplifiedLayout, UIDevice.current.userInterfaceIdiom == .pad {
+            navController.modalPresentationStyle = .formSheet
+        } else {
+            navController.modalPresentationStyle = .fullScreen
+        }
         navigationController?.present(navController, animated: true) {
             self.checkCameraPermission(model: model)
             if let onPresentPixelInfo {

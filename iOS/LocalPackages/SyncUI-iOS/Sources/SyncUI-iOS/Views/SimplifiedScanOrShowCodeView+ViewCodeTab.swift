@@ -73,7 +73,7 @@ extension SimplifiedScanOrShowCodeView {
 
     private var qrCodeContainer: some View {
         VStack(spacing: 16) {
-            QRCodeView(string: qrCodeModel.qrCodeString, desiredSize: 240, backgroundColor: SimplifiedSyncStyle.qrCodeBackground)
+            QRCodeView(string: qrCodeModel.qrCodeString, desiredSize: 240, backgroundColor: SimplifiedSyncStyle.qrCodeBackground, flexible: true)
                 .padding(.top, 24)
 
             Text(qrCodeModel.codeForDisplayOrPasting)
@@ -84,6 +84,8 @@ extension SimplifiedScanOrShowCodeView {
                 .multilineTextAlignment(.center)
                 .lineLimit(3)
                 .truncationMode(.tail)
+                .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
                 .padding(.horizontal, 46)
                 .padding(.bottom, 24)
         }

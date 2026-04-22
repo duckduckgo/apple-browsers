@@ -394,7 +394,11 @@ final class MainCoordinator {
         // (applicationDidBecomeActive) to ensure the WebKit process and
         // protected data are fully available. Loading too early during launch
         // can cause WKWebExtensionErrorInvalidArchive errors on iOS.
-        isWebExtensionLoadPending = true
+        if UIApplication.shared.applicationState == .active {
+            scheduleExtensionLoad()
+        } else {
+            isWebExtensionLoadPending = true
+        }
     }
 
     @available(iOS 18.4, *)

@@ -1556,15 +1556,13 @@ class MainViewController: UIViewController {
             unifiedToggleInputCoordinator?.setEscapeHatch(hatch, onTapped: { [weak self] in
                 guard let self else { return }
                 guard tabManager.tabsModel(for: targetTab.mode).tabExists(tab: targetTab) else {
-                    newTabPageViewController?.setEscapeHatch(nil)
-                    currentNTPEscapeHatch = nil
-                    unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
+                    clearEscapeHatch()
                     return
                 }
                 onSwitchToTab(targetTab)
             })
         } else {
-            unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
+            clearEscapeHatch()
         }
 
         addToContentContainer(controller: controller)
@@ -1608,8 +1606,7 @@ class MainViewController: UIViewController {
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
-        currentNTPEscapeHatch = nil
-        unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
+        clearEscapeHatch()
     }
 
     @IBAction func onFirePressed() {
@@ -4150,6 +4147,12 @@ extension MainViewController: OmniBarDelegate {
         return currentNTPEscapeHatch
     }
 
+    private func clearEscapeHatch() {
+        newTabPageViewController?.setEscapeHatch(nil)
+        currentNTPEscapeHatch = nil
+        unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
+    }
+
     func useNewOmnibarTransitionBehaviour() -> Bool {
         escapeHatchForEditingState() != nil
     }
@@ -4157,9 +4160,7 @@ extension MainViewController: OmniBarDelegate {
     func onSwitchToTab(_ tab: Tab) {
         let targetTabsModel = tabManager.tabsModel(for: tab.mode)
         guard targetTabsModel.tabExists(tab: tab) else {
-            newTabPageViewController?.setEscapeHatch(nil)
-            currentNTPEscapeHatch = nil
-            unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
+            clearEscapeHatch()
             viewCoordinator.omniBar.endEditing()
             return
         }
@@ -4327,9 +4328,7 @@ extension MainViewController: NewTabPageControllerDelegate {
     func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
         let targetTabsModel = tabManager.tabsModel(for: tab.mode)
         guard targetTabsModel.tabExists(tab: tab) else {
-            controller.setEscapeHatch(nil)
-            currentNTPEscapeHatch = nil
-            unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
+            clearEscapeHatch()
             return
         }
         let currentTab = tabManager.currentTabsModel.currentTab
@@ -4340,8 +4339,7 @@ extension MainViewController: NewTabPageControllerDelegate {
             closeTab(currentTab)
         }
         selectTab(tab)
-        currentNTPEscapeHatch = nil
-        unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
+        clearEscapeHatch()
     }
 
     func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {

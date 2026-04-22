@@ -1952,9 +1952,9 @@ struct UserText {
     static let burnerHomepageDescription4 = NSLocalizedString("burner.homepage.description.4", value: "Fire windows are isolated from other browser data, and their data is burned when you close them. They have the same tracking protection as other windows.", comment: "This describes the functionality of one of out browser feature Fire Window, highlighting their isolation from other browser data and the automatic deletion of their data upon closure. Additionally, it emphasizes that fire windows offer the same level of tracking protection as other browsing windows.")
 
     // Subscription Promo on Fire Window (US locale only, no translation needed)
-    static let subscriptionPromoTitle = "Go beyond the Fire Window with our VPN"
-    static let subscriptionPromoSubtitle = "Protect more of what you do online."
-    static let subscriptionPromoTryForFree = "Try For Free"
+    static let subscriptionPromoTitle = "Boost protection beyond the Fire Window"
+    static let subscriptionPromoSubtitle = "Protect even more with DuckDuckGo VPN."
+    static let subscriptionPromoTryForFree = "Try Our VPN"
     static let subscriptionPromoLearnMore = "Learn More"
 
     // Email Protection Management

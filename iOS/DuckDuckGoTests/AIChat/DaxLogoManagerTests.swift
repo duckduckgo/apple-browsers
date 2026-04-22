@@ -37,81 +37,81 @@ final class DaxLogoManagerTests: XCTestCase {
     // MARK: - shouldShowHomeDax
 
     func test_shouldShowHomeDax_whenHasContent_returnsFalse() {
-        let result = sut.shouldShowHomeDax(
+        let inputs = HomeDaxInputs(
             hasContent: true,
             shouldDisplayFavoritesOverlay: false,
             hasEscapeHatch: false,
             hasFavorites: false,
             hasRemoteMessages: false
         )
-        XCTAssertFalse(result)
+        XCTAssertFalse(sut.shouldShowHomeDax(inputs))
     }
 
     func test_shouldShowHomeDax_whenHasContent_alwaysReturnsFalse_regardlessOfOtherFlags() {
-        let result = sut.shouldShowHomeDax(
+        let inputs = HomeDaxInputs(
             hasContent: true,
             shouldDisplayFavoritesOverlay: true,
             hasEscapeHatch: true,
             hasFavorites: true,
             hasRemoteMessages: true
         )
-        XCTAssertFalse(result)
+        XCTAssertFalse(sut.shouldShowHomeDax(inputs))
     }
 
     func test_shouldShowHomeDax_whenEmptyAndNoFavoritesOverlay_returnsTrue() {
-        let result = sut.shouldShowHomeDax(
+        let inputs = HomeDaxInputs(
             hasContent: false,
             shouldDisplayFavoritesOverlay: false,
             hasEscapeHatch: false,
             hasFavorites: false,
             hasRemoteMessages: false
         )
-        XCTAssertTrue(result)
+        XCTAssertTrue(sut.shouldShowHomeDax(inputs))
     }
 
     func test_shouldShowHomeDax_whenFavoritesOverlayAndNoEscapeHatch_returnsFalse() {
-        let result = sut.shouldShowHomeDax(
+        let inputs = HomeDaxInputs(
             hasContent: false,
             shouldDisplayFavoritesOverlay: true,
             hasEscapeHatch: false,
             hasFavorites: true,
             hasRemoteMessages: false
         )
-        XCTAssertFalse(result)
+        XCTAssertFalse(sut.shouldShowHomeDax(inputs))
     }
 
     func test_shouldShowHomeDax_whenFavoritesOverlayAndEscapeHatchWithFavorites_returnsFalse() {
-        let result = sut.shouldShowHomeDax(
+        let inputs = HomeDaxInputs(
             hasContent: false,
             shouldDisplayFavoritesOverlay: true,
             hasEscapeHatch: true,
             hasFavorites: true,
             hasRemoteMessages: false
         )
-        XCTAssertFalse(result)
+        XCTAssertFalse(sut.shouldShowHomeDax(inputs))
     }
 
     func test_shouldShowHomeDax_whenFavoritesOverlayAndEscapeHatchWithRemoteMessages_returnsFalse() {
-        let result = sut.shouldShowHomeDax(
+        let inputs = HomeDaxInputs(
             hasContent: false,
             shouldDisplayFavoritesOverlay: true,
             hasEscapeHatch: true,
             hasFavorites: false,
             hasRemoteMessages: true
         )
-        XCTAssertFalse(result)
+        XCTAssertFalse(sut.shouldShowHomeDax(inputs))
     }
 
     // The escape hatch exception: even with favorites overlay active, Dax is still shown
     // when the hatch is the only thing present (no favorites, no remote messages).
     func test_shouldShowHomeDax_whenFavoritesOverlayAndOnlyEscapeHatch_returnsTrue() {
-        let result = sut.shouldShowHomeDax(
+        let inputs = HomeDaxInputs(
             hasContent: false,
             shouldDisplayFavoritesOverlay: true,
             hasEscapeHatch: true,
             hasFavorites: false,
             hasRemoteMessages: false
         )
-        XCTAssertTrue(result)
+        XCTAssertTrue(sut.shouldShowHomeDax(inputs))
     }
 }

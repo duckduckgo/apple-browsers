@@ -23,6 +23,14 @@ import UIComponents
 import SwiftUI
 import DesignResourcesKit
 
+struct HomeDaxInputs {
+    let hasContent: Bool
+    let shouldDisplayFavoritesOverlay: Bool
+    let hasEscapeHatch: Bool
+    let hasFavorites: Bool
+    let hasRemoteMessages: Bool
+}
+
 /// Manages the Dax logo view display and positioning
 final class DaxLogoManager {
     
@@ -84,14 +92,10 @@ final class DaxLogoManager {
     /// Home Dax is shown when the content pane is empty, unless the favorites overlay covers it —
     /// exception: when the escape hatch is the only thing on screen (no favorites, no remote messages),
     /// we still show Dax beneath the hatch.
-    func shouldShowHomeDax(hasContent: Bool,
-                           shouldDisplayFavoritesOverlay: Bool,
-                           hasEscapeHatch: Bool,
-                           hasFavorites: Bool,
-                           hasRemoteMessages: Bool) -> Bool {
-        guard !hasContent else { return false }
-        let hasEscapeHatchOnly = hasEscapeHatch && !hasFavorites && !hasRemoteMessages
-        return !shouldDisplayFavoritesOverlay || hasEscapeHatchOnly
+    func shouldShowHomeDax(_ inputs: HomeDaxInputs) -> Bool {
+        guard !inputs.hasContent else { return false }
+        let hasEscapeHatchOnly = inputs.hasEscapeHatch && !inputs.hasFavorites && !inputs.hasRemoteMessages
+        return !inputs.shouldDisplayFavoritesOverlay || hasEscapeHatchOnly
     }
 
     func setForcedHidden(_ hidden: Bool) {

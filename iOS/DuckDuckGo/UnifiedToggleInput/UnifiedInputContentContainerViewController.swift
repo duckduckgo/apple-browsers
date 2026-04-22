@@ -657,13 +657,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let isURLFallbackShowingContent = isShowingURLFallback && isShowingTray
 
         let hasContent = (shouldDisplaySuggestionTray && isShowingTray) || isHorizontallyCompactLayoutEnabled
-        let isHomeDaxVisible = daxLogoManager.shouldShowHomeDax(
+        let homeDaxInputs = HomeDaxInputs(
             hasContent: hasContent,
             shouldDisplayFavoritesOverlay: shouldDisplayFavoritesOverlay,
             hasEscapeHatch: escapeHatchModel != nil,
             hasFavorites: suggestionTrayManager?.hasFavorites ?? false,
             hasRemoteMessages: suggestionTrayManager?.hasRemoteMessages ?? false
         )
+        let isHomeDaxVisible = daxLogoManager.shouldShowHomeDax(homeDaxInputs)
         let isAIDaxVisible = !hasContent && !isShowingChatHistory && !isChatHistoryPending && !isURLFallbackShowingContent
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)

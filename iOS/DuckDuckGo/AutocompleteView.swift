@@ -144,47 +144,14 @@ private struct SuggestionsSection: View {
                  Button {
                      onSuggestionSelected(suggestions[index])
                  } label: {
-                    SuggestionView(model: suggestions[index], query: query)
+                    SuggestionView(model: suggestions[index],
+                                   query: query,
+                                   onDelete: { onSuggestionDeleted(suggestions[index]) })
                  }
                  .listRowBackground(autocompleteViewModel.selection == suggestions[index] ? selectedColor : unselectedColor)
                  .listRowInsets(Metrics.rowInsets)
                  .listRowSeparatorTint(Color(designSystemColor: .lines), edges: [.bottom])
-                 .modifier(SwipeDeleteHistoryModifier(suggestion: suggestions[index], onSuggestionDeleted: onSuggestionDeleted))
             }
-        }
-    }
-
-}
-
-private struct SwipeDeleteHistoryModifier: ViewModifier {
-
-    @EnvironmentObject var autocompleteViewModel: AutocompleteViewModel
-
-    let suggestion: AutocompleteViewModel.SuggestionModel
-    var onSuggestionDeleted: (AutocompleteViewModel.SuggestionModel) -> Void
-
-    func body(content: Content) -> some View {
-        /// Swipe-to-delete is disabled when Duck.ai toggle is enabled to avoid gesture conflict
-        if autocompleteViewModel.isSwipeToDeleteEnabled {
-            switch suggestion.suggestion {
-            case .historyEntry:
-                content.swipeActions {
-                    Button(role: .destructive) {
-                        onSuggestionDeleted(suggestion)
-                    } label: {
-                        Label {
-                            Text("Delete")
-                        } icon: {
-                            Image(uiImage: DesignSystemImages.Glyphs.Size24.trash)
-                        }
-                    }
-                }
-
-            default:
-                content
-            }
-        } else {
-            content
         }
     }
 
@@ -196,6 +163,7 @@ private struct SuggestionView: View {
 
     let model: AutocompleteViewModel.SuggestionModel
     let query: String?
+    let onDelete: () -> Void
 
     var tapAheadImage: Image? {
         guard model.canShowTapAhead else { return nil }
@@ -235,13 +203,15 @@ private struct SuggestionView: View {
             case .historyEntry(_, let url, _) where url.isDuckDuckGoSearch:
                 SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.history),
                                    title: url.searchQuery ?? "",
-                                   subtitle: UserText.autocompleteSearchDuckDuckGo)
+                                   subtitle: UserText.autocompleteSearchDuckDuckGo,
+                                   onDelete: onDelete)
                 .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.SERPHistory-\(url.searchQuery ?? "")")
 
             case .historyEntry(let title, let url, _):
                 SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.history),
                                    title: title ?? "",
-                                   subtitle: url.formattedForSuggestion())
+                                   subtitle: url.formattedForSuggestion(),
+                                   onDelete: onDelete)
                 .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.History-\(url.formattedForSuggestion())")
 
             case .openTab(title: let title, url: let url, _, _):
@@ -277,13 +247,15 @@ private struct SuggestionListItem: View {
     let query: String?
     let indicator: Image?
     let onTapIndicator: (() -> Void)?
+    let onDelete: (() -> Void)?
 
     init(icon: Image,
          title: String,
          subtitle: String? = nil,
          query: String? = nil,
          indicator: Image? = nil,
-         onTapIndicator: ( () -> Void)? = nil) {
+         onTapIndicator: ( () -> Void)? = nil,
+         onDelete: (() -> Void)? = nil) {
 
         self.icon = icon
         self.title = title
@@ -291,6 +263,7 @@ private struct SuggestionListItem: View {
         self.query = query
         self.indicator = indicator
         self.onTapIndicator = onTapIndicator
+        self.onDelete = onDelete
     }
 
     var body: some View {
@@ -330,8 +303,8 @@ private struct SuggestionListItem: View {
             }
             .padding(.leading, Metrics.verticalSpacing)
 
-            if indicator == nil {
-                // No indicator means we want to preserve the room for icon,
+            if indicator == nil && onDelete == nil {
+                // No trailing accessory means we want to preserve the room for icon,
                 // so all the titles from other cells are aligned.
                 Spacer(minLength: Metrics.trailingPadding)
             } else {
@@ -345,6 +318,15 @@ private struct SuggestionListItem: View {
                     })
                     .tintIfAvailable(Color.init(designSystemColor: .iconsSecondary))
                     .padding(.leading, Metrics.indicatorLeadingPadding)
+            } else if let onDelete {
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.clear)
+                    .highPriorityGesture(TapGesture().onEnded {
+                        onDelete()
+                    })
+                    .tintIfAvailable(Color(designSystemColor: .iconsSecondary))
+                    .padding(.leading, Metrics.indicatorLeadingPadding)
+                    .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.DeleteButton")
+                    .accessibilityLabel(UserText.actionDelete)
             }
         }
     }

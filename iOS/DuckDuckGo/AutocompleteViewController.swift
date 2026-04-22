@@ -104,12 +104,10 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
 
-        let isAIChatSearchInputUserSettingsEnabled = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
         let isAddressBarAtBottom = appSettings.currentAddressBarPosition == .bottom
         self.showAskAIChat = aiChatSettings.isAIChatEnabled
         self.model = AutocompleteViewModel(isAddressBarAtBottom: isAddressBarAtBottom,
-                                           showAskAIChat: showAskAIChat,
-                                           isSwipeToDeleteEnabled: !isAIChatSearchInputUserSettingsEnabled)
+                                           showAskAIChat: showAskAIChat)
 
         super.init(rootView: AutocompleteView(model: model))
         self.model.delegate = self

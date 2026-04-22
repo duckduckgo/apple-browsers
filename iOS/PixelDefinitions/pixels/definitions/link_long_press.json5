@@ -12,7 +12,8 @@
         "owners": ["hassaanelgarem"],
         "triggers": ["user_submitted"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "browsingMode"]
+        "parameters": ["appVersion", "browsingMode"],
+        "expires": "2026-08-04"
     },
 
     "m_link-long-press_background-tab": {
@@ -20,7 +21,8 @@
         "owners": ["hassaanelgarem"],
         "triggers": ["user_submitted"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "browsingMode"]
+        "parameters": ["appVersion", "browsingMode"],
+        "expires": "2026-08-04"
     },
 
     "m_link-long-press_fire-tab": {
@@ -28,6 +30,7 @@
         "owners": ["hassaanelgarem"],
         "triggers": ["user_submitted"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion"],
+        "expires": "2026-08-04"
     }
 }

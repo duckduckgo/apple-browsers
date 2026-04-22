@@ -524,6 +524,10 @@ private extension MainViewController {
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator) {
         applyUnifiedInputChromeBackground(.standardChrome)
         let isTopPosition = coordinator.cardPosition == .top
+        // Capture the activation sequence so that if the user re-activates the omnibar
+        // while this dismiss animation is in flight, the completion becomes a no-op and
+        // does not tear down the new session.
+        let activationSequenceAtDismissStart = coordinator.omnibarActivationSequence
         if isTopPosition && coordinator.isToggleEnabled {
             coordinator.viewController.animateToggleHide(additionalAnimations: { [weak self] in
                 guard let self else { return }
@@ -531,6 +535,7 @@ private extension MainViewController {
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 0
             }, completion: { [weak self] in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+                guard coordinator.omnibarActivationSequence == activationSequenceAtDismissStart else { return }
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
@@ -542,6 +547,7 @@ private extension MainViewController {
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 0
             }, completion: { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+                guard coordinator.omnibarActivationSequence == activationSequenceAtDismissStart else { return }
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)

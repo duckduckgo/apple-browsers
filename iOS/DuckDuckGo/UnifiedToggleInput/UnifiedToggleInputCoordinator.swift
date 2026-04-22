@@ -121,6 +121,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var isInputVisibleForKeyboard: Bool = true
     private var isAwaitingTopOmnibarKeyboardPresentation = false
     private var topOmnibarKeyboardPresentationFallback: DispatchWorkItem?
+    /// Incremented each time a new omnibar session is activated. Dismiss flows capture this
+    /// value before starting their animation and compare it in the completion, so that if the
+    /// user re-activates while the dismiss animation is in flight the completion becomes a
+    /// no-op rather than tearing down the newly started session.
+    private(set) var omnibarActivationSequence: Int = 0
 
     private(set) var currentText: String = ""
     var hasActiveChat: Bool { boundUserScript != nil }
@@ -324,6 +329,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func activateFromOmnibar(prefilledText: String? = nil, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
         let effectiveInputMode = isToggleEnabled ? inputMode : .search
         cancelTopOmnibarKeyboardPresentationFallback()
+        omnibarActivationSequence &+= 1
         isAwaitingTopOmnibarKeyboardPresentation = cardPosition == .top
         displayState = .omnibar(.active)
         setInitialInputMode(effectiveInputMode)

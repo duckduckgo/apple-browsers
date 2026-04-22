@@ -290,6 +290,7 @@ final class UnifiedToggleInputView: UIView {
     private var toggleTopConstraint: NSLayoutConstraint!
     private var toggleTrailingConstraint: NSLayoutConstraint!
     private var toggleHeightConstraint: NSLayoutConstraint!
+    private var inlineDismissHeightConstraint: NSLayoutConstraint!
     private var inputTopConstraint: NSLayoutConstraint!
     private var toolbarBottomConstraint: NSLayoutConstraint!
     private var attachmentsStripHeightConstraint: NSLayoutConstraint!
@@ -658,9 +659,12 @@ private extension UnifiedToggleInputView {
 
     /// Apply visibility without touching the toggle trailing constraint. Intended for use
     /// inside existing animation blocks so that opacity and layout animate together.
+    /// The height collapses to 0 when hidden so the button grows/shrinks alongside the
+    /// toggle's own height animation, mirroring its reveal behaviour.
     func applyInlineDismissVisibility(_ visible: Bool) {
         inlineDismissButton.alpha = visible ? 1 : 0
         inlineDismissButton.isUserInteractionEnabled = visible
+        inlineDismissHeightConstraint.constant = visible ? Constants.inlineDismissSize : 0
     }
 
     @objc func handleInlineDismissTap() {
@@ -783,6 +787,7 @@ private extension UnifiedToggleInputView {
         toggleTopConstraint = toggleView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 0)
         toggleHeightConstraint = toggleView.heightAnchor.constraint(equalToConstant: 0)
         toggleTrailingConstraint = toggleView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -Constants.toggleHorizontalPadding)
+        inlineDismissHeightConstraint = inlineDismissButton.heightAnchor.constraint(equalToConstant: 0)
         inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
         toolbarBottomConstraint = toolsToolbar.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
         attachmentsStripHeightConstraint = attachmentsStrip.heightAnchor.constraint(equalToConstant: 0)
@@ -802,7 +807,7 @@ private extension UnifiedToggleInputView {
             inlineDismissButton.topAnchor.constraint(equalTo: cardView.topAnchor, constant: Constants.toggleTopPadding),
             inlineDismissButton.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -Constants.inlineDismissTrailingPadding),
             inlineDismissButton.widthAnchor.constraint(equalToConstant: Constants.inlineDismissSize),
-            inlineDismissButton.heightAnchor.constraint(equalToConstant: Constants.inlineDismissSize),
+            inlineDismissHeightConstraint,
 
             inputTopConstraint,
             textEntryView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),

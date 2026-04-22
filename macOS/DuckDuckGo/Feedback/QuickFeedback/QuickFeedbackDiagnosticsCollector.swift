@@ -18,7 +18,7 @@
 
 import AppKit
 import Foundation
-import IOKit
+import Metal
 
 final class QuickFeedbackDiagnosticsCollector {
 
@@ -65,29 +65,9 @@ final class QuickFeedbackDiagnosticsCollector {
     // MARK: - Private
 
     private func gpuSummary() -> String {
-        var iterator: io_iterator_t = 0
-        let port: mach_port_t
-        if #available(macOS 12.0, *) {
-            port = kIOMainPortDefault
-        } else {
-            port = kIOMasterPortDefault
-        }
-        let result = IOServiceGetMatchingServices(port, IOServiceMatching("IOPCIDevice"), &iterator)
-        guard result == KERN_SUCCESS else { return "unknown" }
-        defer { IOObjectRelease(iterator) }
-
-        var names = [String]()
-        var entry: io_object_t = IOIteratorNext(iterator)
-        while entry != 0 {
-            if let modelData = IORegistryEntryCreateCFProperty(entry, "model" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? Data,
-               let model = String(data: modelData.prefix(while: { $0 != 0 }), encoding: .utf8) {
-                names.append(model)
-            }
-            IOObjectRelease(entry)
-            entry = IOIteratorNext(iterator)
-        }
-
-        return names.isEmpty ? "unknown" : names.joined(separator: ", ")
+        let devices = MTLCopyAllDevices()
+        guard !devices.isEmpty else { return "unknown" }
+        return devices.map(\.name).joined(separator: ", ")
     }
 
     private func memorySummary() -> String {

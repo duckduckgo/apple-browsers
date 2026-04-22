@@ -468,8 +468,16 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
+        presentSyncCompletionAfterDelay(isRecovery: false)
+    }
+
+    func presentSyncCompletionAfterDelay(isRecovery: Bool) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.dismissVCAndShowRecoveryPDF()
+            if self.useSimplifiedLayout, !isRecovery {
+                self.dismissVCAndShowSyncEnabledToast()
+            } else {
+                self.dismissVCAndShowRecoveryPDF()
+            }
         }
     }
 
@@ -602,13 +610,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if self.useSimplifiedLayout, !isRecovery {
-                self.dismissVCAndShowSyncEnabledToast()
-            } else {
-                self.dismissVCAndShowRecoveryPDF()
-            }
-        }
+        presentSyncCompletionAfterDelay(isRecovery: isRecovery)
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
             return
         }

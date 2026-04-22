@@ -474,7 +474,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     func presentSyncCompletionAfterDelay(isRecovery: Bool) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             if self.useSimplifiedLayout, !isRecovery {
-                self.dismissVCAndShowSyncEnabledToast()
+                self.dismissVCAndShowDeviceSyncedToast()
             } else {
                 self.dismissVCAndShowRecoveryPDF()
             }
@@ -514,10 +514,10 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         self.navigationController?.topViewController?.dismiss(animated: true, completion: self.showRecoveryPDF)
     }
 
-    func dismissVCAndShowSyncEnabledToast() {
+    func dismissVCAndShowDeviceSyncedToast() {
         self.navigationController?.topViewController?.dismiss(animated: true) {
             self.enableAutoRestoreByDefaultIfNeeded()
-            ActionMessageView.present(message: UserText.simplifiedSyncEnabledToast)
+            ActionMessageView.present(message: UserText.simplifiedDeviceSyncedSuccessfullyToast)
         }
     }
 
@@ -555,7 +555,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             .sink { [weak self] _ in
                 guard let self else { return }
                 if self.useSimplifiedLayout {
-                    self.dismissVCAndShowSyncEnabledToast()
+                    self.dismissVCAndShowDeviceSyncedToast()
                 } else {
                     self.dismissVCAndShowRecoveryPDF()
                 }
@@ -567,7 +567,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         if useSimplifiedLayout {
-            dismissVCAndShowSyncEnabledToast()
+            dismissVCAndShowDeviceSyncedToast()
         } else {
             self.dismissVCAndShowRecoveryPDF()
         }

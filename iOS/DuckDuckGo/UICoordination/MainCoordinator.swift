@@ -452,6 +452,7 @@ final class MainCoordinator {
     }
 
     private func clearWebExtensionReferences() {
+        isWebExtensionLoadPending = false
         webExtensionLoadTask?.cancel()
         webExtensionLoadTask = nil
         webExtensionManager = nil

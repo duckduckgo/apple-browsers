@@ -789,10 +789,11 @@ final class TabCollectionViewModel: NSObject {
 
         let tabCopy = Tab(
             content: tab.content.loadedFromCache(),
+            title: tab.title,
             favicon: tab.favicon,
             interactionStateData: tab.interactionStateData,
             shouldLoadInBackground: true,
-            burnerMode: burnerMode
+            burnerMode: tab.burnerMode
         )
         let newIndex = tabIndex.makeNext()
 

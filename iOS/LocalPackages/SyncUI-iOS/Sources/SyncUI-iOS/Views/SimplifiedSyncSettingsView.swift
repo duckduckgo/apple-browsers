@@ -474,6 +474,7 @@ extension SimplifiedSyncSettingsView {
                 }
                 .fixedSize(horizontal: false, vertical: true)
             }
+            .tint(Color(designSystemColor: .accent))
             .accessibility(identifier: "UnifiedFavoritesToggle")
 
             Toggle(isOn: $model.isFaviconsFetchingEnabled) {
@@ -486,6 +487,7 @@ extension SimplifiedSyncSettingsView {
                 }
                 .fixedSize(horizontal: false, vertical: true)
             }
+            .tint(Color(designSystemColor: .accent))
             .accessibility(identifier: "FaviconFetchingToggle")
         } header: {
             Text(UserText.simplifiedBookmarksSectionHeader)

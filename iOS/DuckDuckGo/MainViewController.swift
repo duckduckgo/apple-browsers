@@ -4772,12 +4772,12 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestNewFireTab(tabSwitcher: TabSwitcherViewController) {
-        tabManager.setBrowsingMode(.fire)
+        tabManager.setBrowsingMode(.fire, source: .tabSwitcherLongPress)
         tabSwitcherNewTabWithAnimation()
     }
 
     func tabSwitcherDidRequestNewNormalTab(tabSwitcher: TabSwitcherViewController) {
-        tabManager.setBrowsingMode(.normal)
+        tabManager.setBrowsingMode(.normal, source: .tabSwitcherLongPress)
         tabSwitcherNewTabWithAnimation()
     }
 

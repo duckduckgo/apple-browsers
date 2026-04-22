@@ -1977,7 +1977,7 @@ public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJob
     }
 }
 
-public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
+public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     public let isRemoteBrokerDeliveryFeatureOn: Bool
     public let isEmailConfirmationDecouplingFeatureOn: Bool
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
@@ -1985,6 +1985,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
     public let isClickActionDelayReductionOptimizationOn: Bool
     public let isContinuedProcessingFeatureOn: Bool
     public let isWebViewUserAgentOn: Bool
+    public let isFreemiumPIREnabled: Bool
 
     public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
                 isEmailConfirmationDecouplingFeatureOn: Bool = false,
@@ -1992,7 +1993,8 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
                 isForegroundRunningWhenDashboardOpenFeatureOn: Bool = true,
                 isClickActionDelayReductionOptimizationOn: Bool = false,
                 isContinuedProcessingFeatureOn: Bool = true,
-                isWebViewUserAgentOn: Bool = false) {
+                isWebViewUserAgentOn: Bool = false,
+                isFreemiumPIREnabled: Bool = false) {
         self.isRemoteBrokerDeliveryFeatureOn = isRemoteBrokerDeliveryFeatureOn
         self.isEmailConfirmationDecouplingFeatureOn = isEmailConfirmationDecouplingFeatureOn
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
@@ -2000,6 +2002,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
         self.isClickActionDelayReductionOptimizationOn = isClickActionDelayReductionOptimizationOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isWebViewUserAgentOn = isWebViewUserAgentOn
+        self.isFreemiumPIREnabled = isFreemiumPIREnabled
     }
 }
 

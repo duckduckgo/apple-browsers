@@ -102,7 +102,7 @@ final class DBPService: NSObject {
     }
 }
 
-final class DBPFeatureFlagger: DBPFeatureFlagging {
+final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     
     private let appDependencies: DependencyProvider
 
@@ -132,6 +132,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
 
     var isWebViewUserAgentOn: Bool {
         false
+    }
+
+    var isFreemiumPIREnabled: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpFreemiumPIR)
     }
 
     init(appDependencies: DependencyProvider) {

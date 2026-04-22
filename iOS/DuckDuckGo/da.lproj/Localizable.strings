@@ -366,12 +366,6 @@
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Søg med DuckDuckGo";
 
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Søgeforslag inkluderer nu nyligt besøgte websteder. Slå fra i Indstillinger, eller ryd når som helst med 🔥 Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Samme fortrolighed.\nBedre søgeforslag!";
-
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Skift til fane";
 

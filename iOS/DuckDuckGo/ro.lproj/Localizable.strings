@@ -366,12 +366,6 @@
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Căutare DuckDuckGo";
 
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Sugestiile de căutare includ acum site-urile accesate recent. Dezactivează-le din Setări sau șterge-le în orice moment cu ajutorul Fire Button 🔥.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Aceeași confidențialitate.\nSugestii de căutare mai bune!";
-
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Comutați la filă";
 

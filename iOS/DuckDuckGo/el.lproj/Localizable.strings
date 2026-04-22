@@ -366,12 +366,6 @@
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Αναζήτηση DuckDuckGo";
 
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Οι προτάσεις αναζήτησης περιλαμβάνουν πλέον τους ιστότοπους που επισκεφθήκατε πρόσφατα. Απενεργοποιήστε τη λειτουργία από τις Ρυθμίσεις ή καταργήστε την οποιαδήποτε στιγμή με το κουμπί 🔥 Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Ίδιο απόρρητο.\nΚαλύτερες προτάσεις αναζήτησης!";
-
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Αλλαγή στην Καρτέλα";
 

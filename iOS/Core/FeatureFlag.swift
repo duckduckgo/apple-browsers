@@ -630,7 +630,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSuggestions:
             Config(source: .remoteReleasable(.feature(.duckAiChatHistory)))
         case .aiChatContextualSheetImprovements:
-            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualSheetImprovements)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualSheetImprovements)))
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand)))
         case .unifiedToggleInput:

@@ -305,5 +305,16 @@
         "key": "free_trial",
         "type": "boolean",
         "description": "Whether the user is eligible for a free trial"
+    },
+    "browsingMode": {
+        "key": "browsing_mode",
+        "type": "string",
+        "description": "The current browsing mode: fire (Fire Tabs) or normal",
+        "enum": ["fire", "normal"]
+    },
+    "durationSeconds": {
+        "key": "dur",
+        "type": "string",
+        "description": "Duration in seconds (as a floating-point string)"
     }
 }

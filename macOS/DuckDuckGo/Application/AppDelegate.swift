@@ -850,7 +850,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
             do {
                 let keyStoreProvider = DuckAiKeyStoreProvider()
-                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: nativeStorageContainerURL, keyStoreProvider: keyStoreProvider).handler
+                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(
+                    containerURL: nativeStorageContainerURL,
+                    keyStoreProvider: keyStoreProvider,
+                    pixelFiring: DuckAiNativeStoragePixelAdapter()
+                ).handler
             } catch {
                 Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
                 duckAiNativeStorageHandler = nil
@@ -2327,4 +2331,47 @@ private extension FeatureFlagLocalOverrides {
         }
     }
 
+}
+
+struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
+
+    func fire(_ event: DuckAiNativeStorageEvent) {
+        switch event {
+        case .initSuccess:
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageInitSuccess)
+        case .initError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageInitError, error: error))
+        case .migrationDone(let key):
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationDoneUnique(key: key), frequency: .uniqueByName)
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationDoneCount(key: key))
+        case .migrationDoneBlankKey:
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationDoneBlankCount)
+        case .migrationStarted:
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationStarted)
+        case .migrationAlreadyDone:
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationAlreadyDone)
+        case .migrationError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageMigrationError, error: error))
+        case .settingsPutError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageSettingsPutError, error: error))
+        case .settingsGetError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageSettingsGetError, error: error))
+        case .settingsDeleteError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageSettingsDeleteError, error: error))
+        case .chatPutError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageChatPutError, error: error))
+        case .chatGetError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageChatGetError, error: error))
+        case .chatDeleteError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageChatDeleteError, error: error))
+        case .filePutError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFilePutError, error: error))
+        case .fileGetError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileGetError, error: error))
+        case .fileListError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileListError, error: error))
+        case .fileDeleteError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileDeleteError, error: error))
+        }
+    }
 }

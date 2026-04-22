@@ -25,7 +25,7 @@ import os
 /// Register routes with `addRoute(_:method:handler:)` before calling `start()`.
 ///
 /// ```swift
-/// let server = DebugHTTPServer(port: 8080)
+/// let server = DebugHTTPServer(port: 8473)
 /// server.addRoute("/api/data", method: .GET) { request in
 ///     .json(someData)
 /// }
@@ -56,8 +56,8 @@ public final class DebugHTTPServer: HTTPServerProtocol {
 
     /// Creates a new debug server.
     ///
-    /// - Parameter port: The TCP port to listen on. Defaults to `8080`.
-    public init(port: UInt16 = 8080) {
+    /// - Parameter port: The TCP port to listen on. Defaults to `8473`.
+    public init(port: UInt16 = 8473) {
         self.port = port
         self.queue = DispatchQueue(label: "com.debugserver.listener", qos: .userInitiated)
     }

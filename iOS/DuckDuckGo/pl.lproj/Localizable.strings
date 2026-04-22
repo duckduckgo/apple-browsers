@@ -1488,6 +1488,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Wysyłane z Twoją wiadomością do Duck.ai";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Ostatnie czaty";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Ostatnie czaty";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Zobacz wszystkie czaty";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Dodaj Duck.ai skrót głosowy do swojego Centrum Sterowania";
 
@@ -1497,8 +1506,14 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Dołącz zawartość strony";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Zapytaj o stronę";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Podsumuj tę stronę";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Podsumuj stronę";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Dodaj Duck.ai do Centrum Sterowania";
@@ -1556,6 +1571,12 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Porozmawiaj z Duck.ai używając Siri!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Wszystkie czaty są %@ prywatne";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "prywatne";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo dla systemu iOS";
@@ -2246,7 +2267,7 @@
 "import.passwords.promo.title" = "Importuj hasła do DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Zapytaj prywatnie";
+"input.field.placeholder.duckai" = "Zapytaj o cokolwiek prywatnie";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Zadaj pytanie uzupełniające...";

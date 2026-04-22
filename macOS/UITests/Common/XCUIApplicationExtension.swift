@@ -345,6 +345,7 @@ extension XCUIApplication {
                 scheme + naked + "/",
                 scheme + "www." + naked,
                 scheme + "www." + naked + "/",
+                url.absoluteString,
             ]), timeout: UITests.Timeouts.navigation),
             "Tab did not change URL to \(url.absoluteString) in a reasonable timeframe (current URL: \(tab.url ?? "<nil>"))."
         )

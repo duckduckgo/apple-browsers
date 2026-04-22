@@ -1488,6 +1488,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Üzeneteddel együtt elküldve a Duck.ai-nak";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Legutóbbi csevegések";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Legutóbbi csevegések";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Összes csevegés megtekintése";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Duck.ai hang gyorsparancsának hozzáadása a Vezérlőközponthoz";
 
@@ -1497,8 +1506,14 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Oldal tartalmának csatolása";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Kérdezz az oldalról";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Oldal összefoglalása";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Oldal összefoglalása";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Duck.ai hozzáadása a Vezérlőközponthoz";
@@ -1556,6 +1571,12 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Beszélgess a Duck.ai-jal a Siri segítségével!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Minden csevegés %@ privát";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "privát";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo iOS verzió";
@@ -2246,7 +2267,7 @@
 "import.passwords.promo.title" = "Jelszavak importálása a DuckDuckGóba";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Kérdezz privátban";
+"input.field.placeholder.duckai" = "Kérdezz bármit privátban";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Tegyél fel egy kapcsolódó kérdést...";

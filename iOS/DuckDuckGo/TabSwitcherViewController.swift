@@ -100,6 +100,7 @@ class TabSwitcherViewController: UIViewController {
     private var normalPageContainer: UIView!
     private(set) var firePageController: TabSwitcherPageViewController?
     private(set) var normalPageController: TabSwitcherPageViewController!
+    private var modeChangeFromSwipe = false
 
     var activePageController: TabSwitcherPageViewController {
         if selectedBrowsingMode == .fire, let firePageController {
@@ -266,7 +267,13 @@ class TabSwitcherViewController: UIViewController {
         guard newMode != selectedBrowsingMode else {
             return
         }
+        let source = modeChangeFromSwipe ? "swipe" : "tap"
+        modeChangeFromSwipe = false
         selectedBrowsingMode = newMode
+        Pixel.fire(pixel: .tabSwitcherModeToggled, withAdditionalParameters: [
+            PixelParameters.browsingMode: newMode.pixelParamValue,
+            PixelParameters.source: source
+        ])
         syncPagingScrollViewToCurrentMode(animated: true)
         scrollToInitialTab()
         updateUIForSelectionMode()
@@ -609,7 +616,9 @@ class TabSwitcherViewController: UIViewController {
         // Will be dismissed, so no need to process incoming updates
         canUpdateCollection = false
 
-        Pixel.fire(pixel: .tabSwitcherNewTab)
+        Pixel.fire(pixel: .tabSwitcherNewTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: selectedBrowsingMode.pixelParamValue
+        ])
         dismissIfPossible(forceDismissOnEmpty: true)
         // This call needs to be after the dismiss to allow OmniBarEditingStateViewController
         // to present on top of MainVC instead of TabSwitcher.
@@ -692,7 +701,7 @@ class TabSwitcherViewController: UIViewController {
         let tabsModel = tabManager.tabsModel(for: selectedBrowsingMode)
 
         if selectedBrowsingMode.allowsEmpty && tabsModel.isEmpty {
-            tabManager.setBrowsingMode(selectedBrowsingMode)
+            tabManager.setBrowsingMode(selectedBrowsingMode, source: .tabSelection)
         } else {
             let selectedTab = activePageController.selectedTab
             delegate?.tabSwitcher(self, didFinishWithSelectedTab: selectedTab)
@@ -745,6 +754,7 @@ extension TabSwitcherViewController: UIScrollViewDelegate {
         let newMode: BrowsingMode = currentPage == 0 ? .fire : .normal
 
         if newMode != selectedBrowsingMode {
+            modeChangeFromSwipe = true
             pickerViewModel.selectItem(pickerItems[newMode.rawValue])
         }
     }

@@ -59,4 +59,12 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     }
 
     var selectedModelShortName: String?
+
+    var isReasoningEffortEnabled: Bool = false
+
+    @Published var selectedReasoningEffort: String?
+
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
+        $selectedReasoningEffort.dropFirst().eraseToAnyPublisher()
+    }
 }

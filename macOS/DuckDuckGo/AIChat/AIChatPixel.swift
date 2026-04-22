@@ -250,6 +250,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a model from the New Tab Page model picker
     case aiChatNtpModelSelected
 
+    /// Event Trigger: User selects a reasoning effort from the New Tab Page omnibar picker
+    case aiChatNtpReasoningEffortSelected
+
     /// Event Trigger: User taps "View all chats" from the New Tab Page omnibar
     case aiChatNtpViewAllChatsClicked
 
@@ -487,6 +490,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_ntp_submit_with_image"
         case .aiChatNtpModelSelected:
             return "aichat_ntp_model_selected"
+        case .aiChatNtpReasoningEffortSelected:
+            return "aichat_ntp_reasoning_effort_selected"
         case .aiChatNtpViewAllChatsClicked:
             return "aichat_ntp_view_all_chats_clicked"
         case .aiChatViewAllChatsClicked:
@@ -590,6 +595,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarWebSearchDeactivated,
                 .aiChatAddressBarWebSearchSubmitted,
                 .aiChatNtpModelSelected,
+                .aiChatNtpReasoningEffortSelected,
                 .aiChatNtpViewAllChatsClicked,
                 .aiChatViewAllChatsClicked,
                 .aiChatModelsFetchFailed,
@@ -711,6 +717,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarModelSelected,
                 .aiChatNtpSubmitWithImage,
                 .aiChatNtpModelSelected,
+                .aiChatNtpReasoningEffortSelected,
                 .aiChatNtpViewAllChatsClicked,
                 .aiChatViewAllChatsClicked,
                 .aiChatModelsFetchFailed,

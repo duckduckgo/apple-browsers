@@ -50,7 +50,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         // Check for the keyboard shortcut to open the chat
         if isShiftPressed() {
-            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil)
+            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, reasoningEffort: nil)
             return
         }
 
@@ -117,7 +117,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
     }
 
-    func submitChat(_ chat: String, target: NewTabPage.NewTabPageDataModel.OpenTarget, modelId: String?, images: [NewTabPage.NewTabPageDataModel.SubmitChatImage]?) {
+    func submitChat(_ chat: String, target: NewTabPage.NewTabPageDataModel.OpenTarget, modelId: String?, images: [NewTabPage.NewTabPageDataModel.SubmitChatImage]?, reasoningEffort: String?) {
         firePixel(NewTabPagePixel.promptSubmitted)
 
         if let images, !images.isEmpty {
@@ -137,10 +137,10 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
         tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)
 
-        // Re-set prompt after tab opener to include images and model selection
-        // (tab opener overwrites with a plain query)
+        // Re-set prompt after tab opener to include images, model selection, and reasoning
+        // effort (tab opener overwrites with a plain query)
         let nativeImages = images?.map { AIChatNativePrompt.NativePromptImage(data: $0.data, format: $0.format) }
-        let nativePrompt = AIChatNativePrompt.queryPrompt(chat, autoSubmit: true, images: nativeImages, modelId: modelId)
+        let nativePrompt = AIChatNativePrompt.queryPrompt(chat, autoSubmit: true, images: nativeImages, modelId: modelId, reasoningEffort: reasoningEffort)
         promptHandler.setData(nativePrompt)
     }
 

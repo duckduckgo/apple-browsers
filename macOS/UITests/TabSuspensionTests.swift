@@ -55,13 +55,7 @@ class TabSuspensionTests: UITestCase {
             suspendedTab.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Background tab should still exist in the tab bar after suspension"
         )
-        suspendedTab.rightClick()
-        let resumeMenuItem = app.menuItems["Resume Tab"]
-        XCTAssertTrue(
-            resumeMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Suspended tab's context menu should show 'Resume Tab'"
-        )
-        app.typeKey(.escape, modifierFlags: [])
+        assertIsSuspended(suspendedTab, expected: true, "Background tab should be suspended after memory pressure")
 
         // Switch back to the first tab — selecting a suspended tab triggers a reload
         app.typeKey("1", modifierFlags: [.command])
@@ -94,13 +88,7 @@ class TabSuspensionTests: UITestCase {
             tab.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Tab should still exist in the tab bar"
         )
-        tab.rightClick()
-        let resumeMenuItem = app.menuItems["Resume Tab"]
-        XCTAssertTrue(
-            resumeMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Tab without input focus should be suspended and show 'Resume Tab'"
-        )
-        app.typeKey(.escape, modifierFlags: [])
+        assertIsSuspended(tab, expected: true, "Tab without input focus should be suspended")
 
         // Resume the tab for the second part of the test
         app.typeKey("1", modifierFlags: [.command])
@@ -128,13 +116,7 @@ class TabSuspensionTests: UITestCase {
             tabAfterFocus.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Tab should still exist in the tab bar"
         )
-        tabAfterFocus.rightClick()
-        let suspendMenuItem = app.menuItems["Suspend Tab"]
-        XCTAssertTrue(
-            suspendMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Tab with input focus should NOT be suspended and show 'Suspend Tab'"
-        )
-        app.typeKey(.escape, modifierFlags: [])
+        assertIsSuspended(tabAfterFocus, expected: false, "Tab with input focus should not be suspended")
     }
 
     func testThatInternalPagesAndDuckAIAreNotSuspended() {
@@ -178,13 +160,7 @@ class TabSuspensionTests: UITestCase {
             ("Release Notes", releaseNotesTab)
         ] {
             XCTAssertTrue(tab.waitForExistence(timeout: UITests.Timeouts.elementExistence), "\(name) tab should still exist")
-            tab.rightClick()
-            let resumeMenuItem = app.menuItems["Resume Tab"]
-            XCTAssertFalse(
-                resumeMenuItem.waitForExistence(timeout: 1),
-                "\(name) tab should not be suspended"
-            )
-            app.typeKey(.escape, modifierFlags: [])
+            assertIsSuspended(tab, expected: false, "\(name) tab should not be suspended")
         }
     }
 
@@ -253,42 +229,22 @@ class TabSuspensionTests: UITestCase {
         // Tab 1 should be suspended (no AI Chat session)
         let tab1 = tabs.radioButtons[tab1Title]
         XCTAssertTrue(tab1.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tab 1 should exist")
-        tab1.rightClick()
-        XCTAssertTrue(
-            app.menuItems["Resume Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Tab without AI Chat should be suspended"
-        )
-        app.typeKey(.escape, modifierFlags: [])
+        assertIsSuspended(tab1, expected: true, "Tab without AI Chat should be suspended")
 
         // Tab 2 should NOT be suspended (docked sidebar session)
         let tab2 = tabs.radioButtons[tab2Title]
         XCTAssertTrue(tab2.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tab 2 should exist")
-        tab2.rightClick()
-        XCTAssertTrue(
-            app.menuItems["Suspend Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Tab with docked AI Chat sidebar should not be suspended"
-        )
-        app.typeKey(.escape, modifierFlags: [])
+        assertIsSuspended(tab2, expected: false, "Tab with docked AI Chat sidebar should not be suspended")
 
         // Tab 3 should NOT be suspended (closed sidebar still has a session)
         let tab3 = tabs.radioButtons[tab3Title]
         XCTAssertTrue(tab3.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tab 3 should exist")
-        tab3.rightClick()
-        XCTAssertTrue(
-            app.menuItems["Suspend Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Tab with closed AI Chat sidebar should not be suspended"
-        )
-        app.typeKey(.escape, modifierFlags: [])
+        assertIsSuspended(tab3, expected: false, "Tab with closed AI Chat sidebar should not be suspended")
 
         // Tab 4 should NOT be suspended (detached/floating sidebar session)
         let tab4 = tabs.radioButtons[tab4Title]
         XCTAssertTrue(tab4.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tab 4 should exist")
-        tab4.rightClick()
-        XCTAssertTrue(
-            app.menuItems["Suspend Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Tab with floating AI Chat sidebar should not be suspended"
-        )
-        app.typeKey(.escape, modifierFlags: [])
+        assertIsSuspended(tab4, expected: false, "Tab with floating AI Chat sidebar should not be suspended")
     }
 
     func testThatPinnedTabsCannotBeSuspended() {
@@ -321,20 +277,14 @@ class TabSuspensionTests: UITestCase {
         // Close each tab after verifying to clean up after the test
         let pinnedTab1 = app.pinnedTabs[tab1Title]
         XCTAssertTrue(pinnedTab1.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Pinned tab 1 should exist")
+        assertIsSuspended(pinnedTab1, expected: false, "Pinned tab 1 should not be suspended")
         pinnedTab1.rightClick()
-        XCTAssertFalse(
-            app.menuItems["Resume Tab"].waitForExistence(timeout: 1),
-            "Pinned tab 1 should not be suspended"
-        )
         app.menuItems["closeButtonAction:"].click()
 
         let pinnedTab2 = app.pinnedTabs[tab2Title]
         XCTAssertTrue(pinnedTab2.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Pinned tab 2 should exist")
+        assertIsSuspended(pinnedTab2, expected: false, "Pinned tab 2 should not be suspended")
         pinnedTab2.rightClick()
-        XCTAssertFalse(
-            app.menuItems["Resume Tab"].waitForExistence(timeout: 1),
-            "Pinned tab 2 should not be suspended"
-        )
         app.menuItems["closeButtonAction:"].click()
 
         // wait a bit to allow persistent state to get updated with 0 tabs
@@ -357,15 +307,22 @@ class TabSuspensionTests: UITestCase {
             tab.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Fire Window tab should still exist"
         )
-        tab.rightClick()
-        XCTAssertFalse(
-            app.menuItems["Resume Tab"].waitForExistence(timeout: 1),
-            "Fire Window tab should not be suspended"
-        )
-        app.typeKey(.escape, modifierFlags: [])
+        assertIsSuspended(tab, expected: false, "Fire Window tab should not be suspended")
     }
 
     // MARK: - Helpers
+
+    private func assertIsSuspended(_ tab: XCUIElement, expected: Bool, _ message: String, file: StaticString = #file, line: UInt = #line) {
+        tab.rightClick()
+        let menuItemTitle = expected ? "isSuspended: true" : "isSuspended: false"
+        XCTAssertTrue(
+            app.menuItems[menuItemTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            message,
+            file: file,
+            line: line
+        )
+        app.typeKey(.escape, modifierFlags: [])
+    }
 
     private func waitForButtonTitle(_ button: XCUIElement, expectedTitle: String) -> Bool {
         let predicate = NSPredicate(format: "title == %@", expectedTitle)

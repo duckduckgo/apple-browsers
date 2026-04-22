@@ -24,12 +24,14 @@ final class DefaultFreemiumDBPUserStateManagerTests: XCTestCase {
     private var userDefaults: UserDefaults!
     private var suiteName: String!
     private var isAuthenticatedReturnValue = false
+    private var isFreemiumEnabledReturnValue = true
 
     override func setUp() {
         super.setUp()
         suiteName = "DefaultFreemiumDBPUserStateManagerTests.\(UUID().uuidString)"
         userDefaults = UserDefaults(suiteName: suiteName)!
         isAuthenticatedReturnValue = false
+        isFreemiumEnabledReturnValue = true
     }
 
     override func tearDown() {
@@ -42,7 +44,8 @@ final class DefaultFreemiumDBPUserStateManagerTests: XCTestCase {
     private func makeSUT() -> DefaultFreemiumDBPUserStateManager {
         DefaultFreemiumDBPUserStateManager(
             userDefaults: userDefaults,
-            isUserAuthenticated: { [self] in isAuthenticatedReturnValue }
+            isUserAuthenticated: { [self] in isAuthenticatedReturnValue },
+            isFreemiumEnabled: { [self] in isFreemiumEnabledReturnValue }
         )
     }
 
@@ -231,5 +234,78 @@ final class DefaultFreemiumDBPUserStateManagerTests: XCTestCase {
         await sut.recordSubscriptionUpgradeIfEligible()
 
         XCTAssertEqual(sut.upgradeToSubscriptionTimestamp, priorDate)
+    }
+
+    // MARK: - Feature-flag gate on writes (persisted state outlives flag transitions)
+
+    func test_recordProfileSavedIfNeeded_flagDisabled_writesNothing() async {
+        isAuthenticatedReturnValue = false
+        isFreemiumEnabledReturnValue = false
+        let sut = makeSUT()
+
+        await sut.recordProfileSavedIfNeeded()
+
+        XCTAssertFalse(sut.didActivate)
+        XCTAssertNil(sut.firstProfileSavedTimestamp)
+    }
+
+    func test_recordFirstScanResultIfNeeded_flagDisabled_writesNothing() async {
+        isAuthenticatedReturnValue = false
+        isFreemiumEnabledReturnValue = false
+        let sut = makeSUT()
+
+        await sut.recordFirstScanResultIfNeeded(hasMatches: true)
+
+        XCTAssertNil(sut.firstScanResult)
+    }
+
+    func test_recordSubscriptionUpgradeIfEligible_flagDisabled_writesNothing() async {
+        userDefaults.set(true, forKey: "ios.browser.freemium.dbp.did.activate")
+        isFreemiumEnabledReturnValue = false
+        let sut = makeSUT()
+
+        await sut.recordSubscriptionUpgradeIfEligible()
+
+        XCTAssertNil(sut.upgradeToSubscriptionTimestamp)
+    }
+
+    // The async write methods check `isFreemiumEnabled()` up front as a fast path, but the
+    // flag can flip off while they're suspended on `await isUserAuthenticated()`. The sync
+    // persist helpers re-check the flag under the lock to keep the gate atomic with the
+    // write. These tests simulate the transition by flipping the flag from inside the auth
+    // closure — the auth closure runs after the first flag check and before the persist
+    // helper runs.
+
+    func test_recordProfileSavedIfNeeded_flagFlipsOffDuringAuthCheck_writesNothing() async {
+        isFreemiumEnabledReturnValue = true
+        let sut = DefaultFreemiumDBPUserStateManager(
+            userDefaults: userDefaults,
+            isUserAuthenticated: { [self] in
+                isFreemiumEnabledReturnValue = false
+                return false
+            },
+            isFreemiumEnabled: { [self] in isFreemiumEnabledReturnValue }
+        )
+
+        await sut.recordProfileSavedIfNeeded()
+
+        XCTAssertFalse(sut.didActivate)
+        XCTAssertNil(sut.firstProfileSavedTimestamp)
+    }
+
+    func test_recordFirstScanResultIfNeeded_flagFlipsOffDuringAuthCheck_writesNothing() async {
+        isFreemiumEnabledReturnValue = true
+        let sut = DefaultFreemiumDBPUserStateManager(
+            userDefaults: userDefaults,
+            isUserAuthenticated: { [self] in
+                isFreemiumEnabledReturnValue = false
+                return false
+            },
+            isFreemiumEnabled: { [self] in isFreemiumEnabledReturnValue }
+        )
+
+        await sut.recordFirstScanResultIfNeeded(hasMatches: true)
+
+        XCTAssertNil(sut.firstScanResult)
     }
 }

@@ -36,7 +36,8 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
         isAuthenticated = false
         stateManager = DefaultFreemiumDBPUserStateManager(
             userDefaults: userDefaults,
-            isUserAuthenticated: { [self] in isAuthenticated }
+            isUserAuthenticated: { [self] in isAuthenticated },
+            isFreemiumEnabled: { true }
         )
     }
 

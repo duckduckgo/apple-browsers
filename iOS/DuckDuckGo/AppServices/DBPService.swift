@@ -52,7 +52,8 @@ final class DBPService: NSObject {
             )
             let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
                 userDefaults: .dbp,
-                isUserAuthenticated: { [authManager] in await authManager.isUserAuthenticated }
+                isUserAuthenticated: { [authManager] in await authManager.isUserAuthenticated },
+                isFreemiumEnabled: { [featureFlagger] in featureFlagger.isFreemiumPIREnabled }
             )
             let eventsHandler = BrokerProfileJobEventsHandler(
                 userNotificationService: notificationService,

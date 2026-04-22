@@ -33,11 +33,17 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
 
     private let userDefaults: UserDefaults
     private let isUserAuthenticated: () async -> Bool
+    private let isFreemiumEnabled: () -> Bool
     private let lock = NSLock()
 
-    public init(userDefaults: UserDefaults, isUserAuthenticated: @escaping () async -> Bool) {
+    public init(
+        userDefaults: UserDefaults,
+        isUserAuthenticated: @escaping () async -> Bool,
+        isFreemiumEnabled: @escaping () -> Bool
+    ) {
         self.userDefaults = userDefaults
         self.isUserAuthenticated = isUserAuthenticated
+        self.isFreemiumEnabled = isFreemiumEnabled
     }
 
     // MARK: - Read-side getters
@@ -70,11 +76,13 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
     // MARK: - Write-side methods
 
     public func recordProfileSavedIfNeeded() async {
+        guard isFreemiumEnabled() else { return }
         guard await !isUserAuthenticated() else { return }
         persistProfileSaved()
     }
 
     public func recordFirstScanResultIfNeeded(hasMatches: Bool) async {
+        guard isFreemiumEnabled() else { return }
         guard await !isUserAuthenticated() else { return }
         persistFirstScanResultIfAbsent(hasMatches: hasMatches)
     }
@@ -82,14 +90,21 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
     public func recordSubscriptionUpgradeIfEligible() async {
         // By contract, the caller drives this from a real purchase-success / transition
         // signal, so we do NOT check isUserAuthenticated here. See spec §3.
+        guard isFreemiumEnabled() else { return }
         persistSubscriptionUpgradeIfEligible()
     }
 
     // MARK: - Private synchronous helpers
 
+    // Each helper re-checks `isFreemiumEnabled()` under the lock so the gate is atomic with
+    // the write. The async callers also check upfront as a fast path, but the flag can
+    // transition off while those methods are suspended on `await isUserAuthenticated()`;
+    // re-checking here keeps the "flag off ⇒ no writes" invariant regardless of timing.
+
     private func persistProfileSaved() {
         lock.lock()
         defer { lock.unlock() }
+        guard isFreemiumEnabled() else { return }
         userDefaults.set(true, forKey: Keys.didActivate)
         if userDefaults.object(forKey: Keys.firstProfileSavedTimestamp) == nil {
             userDefaults.set(Date(), forKey: Keys.firstProfileSavedTimestamp)
@@ -99,6 +114,7 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
     private func persistFirstScanResultIfAbsent(hasMatches: Bool) {
         lock.lock()
         defer { lock.unlock() }
+        guard isFreemiumEnabled() else { return }
         guard userDefaults.string(forKey: Keys.firstScanResult) == nil else { return }
         let value: FreemiumFirstScanResult = hasMatches ? .matchesFound : .noMatches
         userDefaults.set(value.rawValue, forKey: Keys.firstScanResult)
@@ -107,6 +123,7 @@ public final class DefaultFreemiumDBPUserStateManager: FreemiumDBPUserStateManag
     private func persistSubscriptionUpgradeIfEligible() {
         lock.lock()
         defer { lock.unlock() }
+        guard isFreemiumEnabled() else { return }
         guard userDefaults.bool(forKey: Keys.didActivate) else { return }
         guard userDefaults.object(forKey: Keys.upgradeToSubscriptionTimestamp) == nil else { return }
         userDefaults.set(Date(), forKey: Keys.upgradeToSubscriptionTimestamp)

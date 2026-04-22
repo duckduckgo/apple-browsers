@@ -36,7 +36,8 @@ final class BrokerProfileJobEventsHandlerFreemiumTests: XCTestCase {
         isAuthenticated = false
         stateManager = DefaultFreemiumDBPUserStateManager(
             userDefaults: userDefaults,
-            isUserAuthenticated: { [self] in isAuthenticated }
+            isUserAuthenticated: { [self] in isAuthenticated },
+            isFreemiumEnabled: { true }
         )
         notificationService = MockDataBrokerProtectionUserNotificationService()
         sut = BrokerProfileJobEventsHandler(

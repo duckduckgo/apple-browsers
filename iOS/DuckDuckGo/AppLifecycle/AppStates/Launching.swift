@@ -60,6 +60,7 @@ struct Launching: LaunchingHandling {
     private let launchTaskManager = LaunchTaskManager()
     private let launchSourceManager = LaunchSourceManager()
     private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
+    private let onboardingCoordinator: OnboardingCoordinator
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
@@ -104,6 +105,8 @@ struct Launching: LaunchingHandling {
         let autofillService = AutofillService(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
         let contentBlocking = ContentBlocking.shared
+
+        onboardingCoordinator = OnboardingCoordinator(appSettings: appSettings, featureFlagger: featureFlagger, variantManager: configuration.atbAndVariantConfiguration.variantManager)
 
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
@@ -266,7 +269,9 @@ struct Launching: LaunchingHandling {
                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                               whatsNewRepository: whatsNewRepository,
                                               sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault,
-                                              wideEvent: AppDependencyProvider.shared.wideEvent)
+                                              wideEvent: AppDependencyProvider.shared.wideEvent,
+                                              onboardingManager: onboardingCoordinator.manager
+        )
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
@@ -286,6 +291,7 @@ struct Launching: LaunchingHandling {
         )
 
         winBackOfferService.setURLHandler(mainCoordinator)
+        onboardingCoordinator.setPresenter(mainCoordinator)
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
@@ -378,7 +384,8 @@ struct Launching: LaunchingHandling {
             featureFlagger: featureFlagger,
             voiceSearchHelper: voiceSearchHelper,
             appSettings: appSettings,
-            backgroundTaskManager: BackgroundTaskManager(featureFlagger: featureFlagger)
+            backgroundTaskManager: BackgroundTaskManager(featureFlagger: featureFlagger),
+            onboardingCoordinator: onboardingCoordinator
         )
     }
 

@@ -33,6 +33,7 @@ import DataBrokerProtection_iOS
 import PrivacyStats
 import Networking
 import WebExtensions
+import Onboarding
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -88,6 +89,8 @@ final class MainCoordinator {
     private var isWebExtensionLoadPending = false
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
 
+    private var hasPresentedOnboarding = false
+
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
          contentBlockingService: ContentBlockingService,
@@ -119,7 +122,8 @@ final class MainCoordinator {
          whatsNewRepository: WhatsNewMessageRepository,
          sharedSecureVault: (any AutofillSecureVault)? = nil,
          syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager,
-         wideEvent: WideEventManaging
+         wideEvent: WideEventManaging,
+         onboardingManager: OnboardingManaging
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -275,7 +279,8 @@ final class MainCoordinator {
                                         whatsNewRepository: whatsNewRepository,
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
-                                        fireModePromotionEligibility: fireModePromotionsCoordinator)
+                                        fireModePromotionEligibility: fireModePromotionsCoordinator,
+                                        onboardingManager: onboardingManager)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
@@ -810,4 +815,18 @@ extension MainCoordinator: SystemSettingsPiPTutorialPresenting {
     func detachPlayerView(_ view: UIView) {
         view.removeFromSuperview()
     }
+
+}
+
+// MARK: MainCoordinator + Onboarding
+
+extension MainCoordinator: OnboardingPresenting {
+
+    func presentOnboardingFlowIfNotSeenBefore() {
+        guard !hasPresentedOnboarding, controller.isStartupOnboardingPending else { return }
+        hasPresentedOnboarding = true
+        controller.startupOnboardingCover.bringToFront()
+        controller.startOnboardingFlowIfNotSeenBefore()
+    }
+
 }

@@ -1590,6 +1590,7 @@
 		9FD6E6192DFA72C200C2B032 /* PictureInPictureControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E6182DFA72BC00C2B032 /* PictureInPictureControllerTests.swift */; };
 		9FD6E61B2DFA739200C2B032 /* MockAVPictureInPictureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E61A2DFA738800C2B032 /* MockAVPictureInPictureController.swift */; };
 		9FD6E61D2DFA743300C2B032 /* MockPIctureInPictureControllerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E61C2DFA742A00C2B032 /* MockPIctureInPictureControllerFactory.swift */; };
+		9FD8A2ED2F984D8F005772BC /* OnboardingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8A2EC2F984D8B005772BC /* OnboardingCoordinator.swift */; };
 		9FDD72052D895D8C0016246B /* CombineSchedulers in Frameworks */ = {isa = PBXBuildFile; productRef = 9FDD72042D895D8C0016246B /* CombineSchedulers */; };
 		9FDEC7B42C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEC7B32C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift */; };
 		9FDEC7B82C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEC7B72C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift */; };
@@ -4183,6 +4184,7 @@
 		9FD6E6182DFA72BC00C2B032 /* PictureInPictureControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PictureInPictureControllerTests.swift; sourceTree = "<group>"; };
 		9FD6E61A2DFA738800C2B032 /* MockAVPictureInPictureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAVPictureInPictureController.swift; sourceTree = "<group>"; };
 		9FD6E61C2DFA742A00C2B032 /* MockPIctureInPictureControllerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPIctureInPictureControllerFactory.swift; sourceTree = "<group>"; };
+		9FD8A2EC2F984D8B005772BC /* OnboardingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingCoordinator.swift; sourceTree = "<group>"; };
 		9FDEC7B32C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAddressBarPositionPickerViewModelTests.swift; sourceTree = "<group>"; };
 		9FDEC7B72C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingIntroViewModel+Copy.swift"; sourceTree = "<group>"; };
 		9FDEC7BB2C91204900C7A692 /* AppIconPickerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconPickerViewModel.swift; sourceTree = "<group>"; };
@@ -9627,6 +9629,7 @@
 				CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */,
 				CBF259912D47BFDD00AC63E4 /* OverlayWindowManager.swift */,
 				CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */,
+				9FD8A2EC2F984D8B005772BC /* OnboardingCoordinator.swift */,
 			);
 			path = UICoordination;
 			sourceTree = "<group>";
@@ -12243,6 +12246,7 @@
 				CBAD0F272D02EE4B006267B8 /* AfterInactivitySettingStorage.swift in Sources */,
 				CBAD0F2B2D02EE4E006267B8 /* AfterInactivityEffectiveOptionResolver.swift in Sources */,
 				CBAD0F3B2D02EE5B006267B8 /* IdleReturnCohort.swift in Sources */,
+				9FD8A2ED2F984D8F005772BC /* OnboardingCoordinator.swift in Sources */,
 				80A09D522F6B854400AACDEE /* URLCacheFireWorker.swift in Sources */,
 				CBAD0F2D2D02EE50006267B8 /* IdleReturnEligibilityManager.swift in Sources */,
 				EDDEC0152F99679E00FBE920 /* SyncSetupExperimentPixels.swift in Sources */,

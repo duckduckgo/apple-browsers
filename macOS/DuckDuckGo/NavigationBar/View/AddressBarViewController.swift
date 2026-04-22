@@ -1009,6 +1009,7 @@ final class AddressBarViewController: NSViewController {
             self.addressBarTextField.makeMeFirstResponder()
         }
 
+        // The event location is not a button so we can forward the event to the textfield
         addressBarTextField.rightMouseDown(with: event)
         return nil
     }

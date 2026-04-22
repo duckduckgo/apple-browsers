@@ -341,6 +341,30 @@ class TabSuspensionTests: UITestCase {
         Thread.sleep(forTimeInterval: 2)
     }
 
+    func testThatFireWindowTabsCannotBeSuspended() {
+        app.openFireWindow()
+
+        let firePageTitle = "Fire Window Page"
+        app.openSite(pageTitle: firePageTitle)
+
+        app.openNewTab()
+
+        Thread.sleep(forTimeInterval: 6)
+        simulateCriticalMemoryPressure()
+
+        let tab = app.tabGroups.matching(identifier: "Tabs").radioButtons[firePageTitle]
+        XCTAssertTrue(
+            tab.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Fire Window tab should still exist"
+        )
+        tab.rightClick()
+        XCTAssertFalse(
+            app.menuItems["Resume Tab"].waitForExistence(timeout: 1),
+            "Fire Window tab should not be suspended"
+        )
+        app.typeKey(.escape, modifierFlags: [])
+    }
+
     // MARK: - Helpers
 
     private func waitForButtonTitle(_ button: XCUIElement, expectedTitle: String) -> Bool {

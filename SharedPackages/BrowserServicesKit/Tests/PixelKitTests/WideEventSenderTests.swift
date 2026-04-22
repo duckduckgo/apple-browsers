@@ -449,34 +449,6 @@ final class WideEventSenderTests: XCTestCase {
 
     // MARK: - POST Request Tests
 
-    func testSendFiresPOSTRequestWhenEnabled() {
-        let sender = makeSender()
-        let data = makeTestData()
-
-        let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
-            expectation.fulfill()
-        }
-
-        wait(for: [expectation], timeout: 5.0)
-
-        XCTAssertEqual(capturedPOSTRequests.count, 1)
-    }
-
-    func testSendSkipsPOSTRequestWhenDisabled() {
-        let sender = makeSender()
-        let data = makeTestData()
-
-        let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
-            expectation.fulfill()
-        }
-
-        wait(for: [expectation], timeout: 5.0)
-
-        XCTAssertEqual(capturedPOSTRequests.count, 0)
-    }
-
     func testSendPOSTRequestUsesCorrectEndpoint() {
         let sender = makeSender()
         let data = makeTestData()

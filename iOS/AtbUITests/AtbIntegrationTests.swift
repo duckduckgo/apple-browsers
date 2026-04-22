@@ -91,20 +91,12 @@ class AtbIntegrationTests: XCTestCase {
 
     private func search(forText text: String) {
 
-        guard let input = waitForAddressBarInput(timeout: Constants.defaultTimeout) else { return }
-        input.tap()
-        input.typeText("\(text)\r")
+        let searchentrySearchField = app.descendants(matching: .any)["searchEntry"]
+        XCTAssertTrue(searchentrySearchField.waitForExistence(timeout: Constants.defaultTimeout))
+        searchentrySearchField.tap()
+        searchentrySearchField.typeText("\(text)\r")
         Snapshot.waitForLoadingIndicatorToDisappear(within: Constants.defaultTimeout)
 
-    }
-
-    private func waitForAddressBarInput(timeout: TimeInterval) -> XCUIElement? {
-        let input = app.descendants(matching: .any)["searchEntry"]
-        guard input.waitForExistence(timeout: timeout) else {
-            XCTFail("Could not find the address bar input (searchEntry) within \(timeout)s")
-            return nil
-        }
-        return input
     }
 
     /// We don't care which requests, as long as it's one of the expected endpoints.  The actual logic is tested in

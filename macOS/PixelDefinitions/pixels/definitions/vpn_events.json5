@@ -169,12 +169,6 @@
                 "enum": ["vpn-ip-leak-check"]
             },
             {
-                "key": "context.name",
-                "type": "string",
-                "description": "Context name for the flow",
-                "enum": ["vpn-ip-leak-check"]
-            },
-            {
                 "key": "feature.data.ext.trigger",
                 "type": "string",
                 "description": "What caused the leak check cycle to run",

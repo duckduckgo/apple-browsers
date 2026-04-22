@@ -51,12 +51,11 @@ public final class VPNIPLeakCheckWideEventData: WideEventData {
 
     public init(
         trigger: LeakCheckTrigger,
-        contextData: WideEventContextData,
         appData: WideEventAppData = WideEventAppData(),
         globalData: WideEventGlobalData = WideEventGlobalData()
     ) {
         self.trigger = trigger
-        self.contextData = contextData
+        self.contextData = WideEventContextData()
         self.appData = appData
         self.globalData = globalData
     }

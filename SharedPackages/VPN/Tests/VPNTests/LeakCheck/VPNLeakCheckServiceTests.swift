@@ -39,8 +39,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         await service.runCheck(trigger: .tunnelStart)
@@ -65,8 +64,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         await service.runCheck(trigger: .periodic)
@@ -88,8 +86,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         await service.runCheck(trigger: .tunnelStart)
@@ -117,8 +114,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         await service.runCheck(trigger: .tunnelStart)
@@ -145,8 +141,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         await service.runCheck(trigger: .tunnelStart)
@@ -172,8 +167,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         await service.runCheck(trigger: .tunnelStart)
@@ -194,8 +188,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         await service.runCheck(trigger: .tunnelStart)
@@ -217,8 +210,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         await service.runCheck(trigger: .tunnelStart)
@@ -241,8 +233,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         await service.runCheck(trigger: .tunnelStart)
@@ -265,8 +256,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
         await service.runCheck(trigger: .tunnelStart)
         XCTAssertNotNil(wideEvent.lastCompletedData?.latencyMsBucketed)
@@ -283,8 +273,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         async let first: Void = service.runCheck(trigger: .tunnelStart)
@@ -313,8 +302,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         await service.start()
@@ -346,8 +334,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         await service.runCheck(trigger: .tunnelStart)
@@ -374,8 +361,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         await service.runCheck(trigger: .tunnelStart)
@@ -394,8 +380,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         async let checkTask: Void = service.runCheck(trigger: .tunnelStart)
@@ -417,8 +402,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
         await service.updateEgressInfo(makeEgressInfo(ip: "5.6.7.8"))
         await service.runCheck(trigger: .reassert)
@@ -436,8 +420,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         Task { await service.runCheck(trigger: .tunnelStart) }
@@ -458,8 +441,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             tunnelInterface: testInterface,
             httpClient: http,
             stunClient: stun,
-            wideEvent: wideEvent,
-            contextName: "Test-Context"
+            wideEvent: wideEvent
         )
 
         await service.stop()
@@ -471,10 +453,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
 
     func testCompletePendingFlows_completesWithInterruptedReason() {
         let wideEvent = MockWideEventManagerWithPending()
-        let pending = VPNIPLeakCheckWideEventData(
-            trigger: .periodic,
-            contextData: WideEventContextData(name: "Test-Context")
-        )
+        let pending = VPNIPLeakCheckWideEventData(trigger: .periodic)
         wideEvent.pending = [pending]
 
         VPNLeakCheckService.completeAllPendingFlows(wideEvent: wideEvent)

@@ -282,10 +282,8 @@ private extension DataImportFileUploadCoordinator {
 private extension DataImportFileUploadCoordinator {
 
     func recordImportedDataTypes(from summary: DataImportSummary) {
-        for (dataType, result) in summary {
-            if (try? result.get()) != nil {
-                sessionImportedDataTypes.insert(dataType)
-            }
+        for (dataType, result) in summary where (try? result.get()) != nil {
+            sessionImportedDataTypes.insert(dataType)
         }
     }
 

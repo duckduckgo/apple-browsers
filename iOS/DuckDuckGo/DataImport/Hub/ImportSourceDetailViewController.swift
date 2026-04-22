@@ -120,11 +120,12 @@ extension ImportSourceDetailViewController: DataImportFileUploadFlowOwner {
     }
 
     func dataImportUploadDidRequestContinueToSafariImport() {
+        // When the summary is presented from Safari import, dismissing it already returns
+        // to this Safari detail screen, so pushing another Safari detail controller is redundant.
         guard source != .safari else { return }
 
         let safariDetailViewController = ImportSourceDetailViewController(
             source: .safari,
-            syncService: syncService,
             fileUploadCoordinator: fileUploadCoordinator,
             onFinished: onFinished
         )

@@ -667,22 +667,17 @@ private extension UnifiedToggleInputView {
         onInlineDismissTapped?()
     }
 
+    /// Flat, circular button styled to sit inside the card's top row. The floating dismiss
+    /// button in the content container uses Liquid Glass on iOS 26, but inside the card the
+    /// design calls for a flat control.
     static func makeInlineDismissButton() -> UIButton {
-        let button: UIButton
-        if #available(iOS 26, *) {
-            var config = UIButton.Configuration.glass()
-            config.image = UIImage(systemName: "xmark")
-            config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 12, weight: .medium)
-            button = UIButton(configuration: config)
-        } else {
-            button = UIButton(type: .system)
-            let image = UIImage(systemName: "xmark")?
-                .withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium))
-            button.setImage(image, for: .normal)
-            button.tintColor = UIColor(designSystemColor: .textPrimary)
-            button.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-            button.layer.cornerRadius = Constants.inlineDismissSize / 2
-        }
+        let button = UIButton(type: .system)
+        let image = UIImage(systemName: "xmark")?
+            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium))
+        button.setImage(image, for: .normal)
+        button.tintColor = UIColor(designSystemColor: .textPrimary)
+        button.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        button.layer.cornerRadius = Constants.inlineDismissSize / 2
         button.translatesAutoresizingMaskIntoConstraints = false
         button.accessibilityLabel = UserText.keyCommandClose
         button.alpha = 0

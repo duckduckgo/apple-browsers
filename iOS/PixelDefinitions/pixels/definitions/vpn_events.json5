@@ -193,7 +193,7 @@
                 "key": "feature.data.ext.egress_server_name",
                 "type": "string",
                 "description": "Name of the VPN egress server the cycle ran against",
-                "examples": ["egress.euw.01"]
+                "examples": ["yvr2-netp-prod-egress2"]
             },
             {
                 "keyPattern": "feature\\.data\\.ext\\.ipv(4|6)\\.leak_ip_type",

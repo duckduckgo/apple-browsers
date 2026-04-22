@@ -136,7 +136,8 @@ final class TabSwitcherTitleBarView: UIView {
     }
 
     func setCenterView(_ view: UIView?) {
-        if let existing = currentCenterView, existing !== view {
+        if let existing = currentCenterView {
+            guard existing !== view else { return }
             existing.removeFromSuperview()
         }
 

@@ -82,10 +82,6 @@ final class WideEventSenderTests: XCTestCase {
         )
     }
 
-    private func makeFeatureFlagProvider(isPostEndpointEnabled: Bool) -> WideEventFeatureFlagProviding {
-        return MockWideEventFeatureFlagProvider(isPostEndpointEnabled: isPostEndpointEnabled)
-    }
-
     private func makeTestData(
         contextName: String? = "test-context",
         testIdentifier: String? = nil,
@@ -115,7 +111,7 @@ final class WideEventSenderTests: XCTestCase {
 
         let data = makeTestData()
         let expectation = XCTestExpectation(description: "Send completed")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -136,7 +132,7 @@ final class WideEventSenderTests: XCTestCase {
 
         let data = makeTestData()
         let expectation = XCTestExpectation(description: "Send completed")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: true)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -152,7 +148,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -166,7 +162,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -190,7 +186,7 @@ final class WideEventSenderTests: XCTestCase {
         var receivedSuccess = false
         var receivedError: Error?
 
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { success, error in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { success, error in
             receivedSuccess = success
             receivedError = error
             expectation.fulfill()
@@ -214,7 +210,7 @@ final class WideEventSenderTests: XCTestCase {
         var receivedSuccess = true
         var receivedError: Error?
 
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { success, error in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { success, error in
             receivedSuccess = success
             receivedError = error
             expectation.fulfill()
@@ -239,7 +235,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData(platform: "testPlatform", sampleRate: 0.5)
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -256,7 +252,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -273,7 +269,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData(contextName: "my-test-context")
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -288,7 +284,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -303,7 +299,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -318,7 +314,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData(testIdentifier: "test-id-123", testEligible: true)
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -336,7 +332,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData(errorData: errorData)
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .failure, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .failure, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -356,7 +352,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData(errorData: errorData)
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .failure, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .failure, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -376,7 +372,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -392,7 +388,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success(reason: "completed_successfully"), featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success(reason: "completed_successfully"), featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -408,7 +404,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .failure, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .failure, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -424,7 +420,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .cancelled, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .cancelled, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -440,7 +436,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .unknown(reason: "unexpected_state"), featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .unknown(reason: "unexpected_state"), featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -458,7 +454,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: true)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -472,7 +468,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -486,7 +482,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: true)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -501,7 +497,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: true)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -516,7 +512,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: true)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -537,7 +533,7 @@ final class WideEventSenderTests: XCTestCase {
         )
 
         let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: true)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -572,7 +568,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData(sampleRate: 0.75)
 
         let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: true)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1.0)
@@ -590,7 +586,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData(contextName: nil)
 
         let expectation = XCTestExpectation(description: "Send completed")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { success, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { success, _ in
             XCTAssertTrue(success)
             expectation.fulfill()
         }
@@ -618,7 +614,7 @@ final class WideEventSenderTests: XCTestCase {
 
         let data = makeTestData()
         let expectation = XCTestExpectation(description: "Send completed")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: true)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -641,7 +637,7 @@ final class WideEventSenderTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Send completed")
         var receivedSuccess = false
 
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: true)) { success, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { success, _ in
             receivedSuccess = success
             expectation.fulfill()
         }
@@ -660,7 +656,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -675,7 +671,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation1 = XCTestExpectation(description: "First pixels fired")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation1.fulfill()
         }
 
@@ -684,7 +680,7 @@ final class WideEventSenderTests: XCTestCase {
         capturedPixels.removeAll()
 
         let expectation2 = XCTestExpectation(description: "Second pixels fired")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation2.fulfill()
         }
 
@@ -705,7 +701,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -723,7 +719,7 @@ final class WideEventSenderTests: XCTestCase {
         XCTAssertNil(mockStorage.timestamps[SenderTestWideEventData.metadata.type])
 
         let expectation = XCTestExpectation(description: "Pixels fired")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -737,7 +733,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: true)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 
@@ -758,7 +754,7 @@ final class WideEventSenderTests: XCTestCase {
         let data = makeTestData()
 
         let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: true)) { _, _ in
+        sender.send(data, status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 

@@ -120,29 +120,12 @@ final class TabSwitcherTitleBarView: UIView {
 
     func setLeadingButtons(_ buttons: [UIView]) {
         leadingButtonsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        buttons.forEach {
-            activateItemSizeConstraints(for: $0)
-            leadingButtonsStack.addArrangedSubview($0)
-        }
+        buttons.forEach { leadingButtonsStack.addArrangedSubview($0) }
     }
 
     func setTrailingButtons(_ buttons: [UIView]) {
         trailingButtonsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        buttons.forEach {
-            activateItemSizeConstraints(for: $0)
-            trailingButtonsStack.addArrangedSubview($0)
-        }
-    }
-
-    private func activateItemSizeConstraints(for item: UIView) {
-        if let button = item as? UIButton,
-           button.currentImage == nil,
-           button.currentTitle?.isEmpty == false {
-            item.widthAnchor.constraint(greaterThanOrEqualToConstant: Metrics.buttonSize).isActive = true
-            return
-        }
-        item.widthAnchor.constraint(equalTo: item.heightAnchor).isActive = true
-        item.widthAnchor.constraint(equalToConstant: Metrics.buttonSize).isActive = true
+        buttons.forEach { trailingButtonsStack.addArrangedSubview($0) }
     }
 
     func updateForAddressBarPosition(isBottom: Bool) {

@@ -290,7 +290,6 @@ class TabSwitcherViewController: UIViewController {
         }
 
         // Changing this?  Best change MainView too
-//        let bottomOffset = 8.0
         let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
 
         // The constants here are to force the ai button to align between the tab switcher and this view

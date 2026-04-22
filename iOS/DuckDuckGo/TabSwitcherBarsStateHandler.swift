@@ -84,23 +84,36 @@ protocol TabSwitcherBarsStateHandling {
 /// This is what we hope will be the new version long term.
 class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
-    lazy var plusButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.keyCommandNewTab, image: DesignSystemImages.Glyphs.Size24.add) { [weak self] in
-        self?.onPlusButtonTapped?()
-    }
+    lazy var plusButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.keyCommandNewTab, image: DesignSystemImages.Glyphs.Size24.add) { [weak self] in
+            self?.onPlusButtonTapped?()
+        }
+        Self.applyIconConstraints(to: item)
+        return item
+    }()
 
-    lazy var fireButton = BrowserChromeButton.createToolbarButtonItem(title: "Close all tabs and clear data", image: DesignSystemImages.Glyphs.Size24.fireSolid) { [weak self] in
-        self?.onFireButtonTapped?()
-    }
+    lazy var fireButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: "Close all tabs and clear data", image: DesignSystemImages.Glyphs.Size24.fireSolid) { [weak self] in
+            self?.onFireButtonTapped?()
+        }
+        Self.applyIconConstraints(to: item)
+        return item
+    }()
 
-    lazy var doneIconButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: DesignSystemImages.Glyphs.Size24.arrowLeft) { [weak self] in
-        self?.onDoneButtonTapped?()
-    }
+    lazy var doneIconButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: DesignSystemImages.Glyphs.Size24.arrowLeft) { [weak self] in
+            self?.onDoneButtonTapped?()
+        }
+        Self.applyIconConstraints(to: item)
+        return item
+    }()
 
     lazy var doneTextButton: UIBarButtonItem = {
         let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: nil) { [weak self] in
             self?.onDoneButtonTapped?()
         }
         (item.customView as? BrowserChromeButton)?.setTitle(UserText.navigationTitleDone, for: .normal)
+        Self.applyTextConstraints(to: item)
         return item
     }()
 
@@ -112,27 +125,49 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         self?.onCloseTabsTapped?()
     }
 
-    // No action as this is a menu
-    lazy var menuButton = BrowserChromeButton.createToolbarButtonItem(title: "More Menu", image: DesignSystemImages.Glyphs.Size24.moreApple)
+    lazy var menuButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: "More Menu", image: DesignSystemImages.Glyphs.Size24.moreApple)
+        Self.applyIconConstraints(to: item)
+        return item
+    }()
 
-    lazy var tabSwitcherStyleButton = BrowserChromeButton.createToolbarButtonItem(title: "", image: nil) { [weak self] in
-        self?.onTabStyleButtonTapped?()
-    }
+    lazy var tabSwitcherStyleButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: "", image: nil) { [weak self] in
+            self?.onTabStyleButtonTapped?()
+        }
+        Self.applyIconConstraints(to: item)
+        return item
+    }()
 
-    // No action as shows a menu instead
-    lazy var editButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.actionGenericEdit, image: DesignSystemImages.Glyphs.Size24.menuDotsVertical)
+    lazy var editButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.actionGenericEdit, image: DesignSystemImages.Glyphs.Size24.menuDotsVertical)
+        Self.applyIconConstraints(to: item)
+        return item
+    }()
 
-    lazy var selectAllButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.selectAllTabs, image: nil) { [weak self] in
-        self?.onSelectAllTapped?()
-    }
+    lazy var selectAllButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.selectAllTabs, image: nil) { [weak self] in
+            self?.onSelectAllTapped?()
+        }
+        Self.applyTextConstraints(to: item)
+        return item
+    }()
 
-    lazy var deselectAllButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.deselectAllTabs, image: nil) { [weak self] in
-        self?.onDeselectAllTapped?()
-    }
+    lazy var deselectAllButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.deselectAllTabs, image: nil) { [weak self] in
+            self?.onDeselectAllTapped?()
+        }
+        Self.applyTextConstraints(to: item)
+        return item
+    }()
 
-    lazy var duckChatButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.duckAiFeatureName, image: DesignSystemImages.Glyphs.Size24.aiChat) { [weak self] in
-        self?.onDuckChatTapped?()
-    }
+    lazy var duckChatButton: UIBarButtonItem = {
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.duckAiFeatureName, image: DesignSystemImages.Glyphs.Size24.aiChat) { [weak self] in
+            self?.onDuckChatTapped?()
+        }
+        Self.applyIconConstraints(to: item)
+        return item
+    }()
 
     private(set) var bottomBarItems = [UIBarButtonItem]()
     private(set) var isBottomBarHidden = false
@@ -156,7 +191,22 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     var onCloseTabsTapped: (() -> Void)?
     var onDuckChatTapped: (() -> Void)?
 
+    private static let buttonSize: CGFloat = 44
+
     init() { }
+
+    private static func applyIconConstraints(to item: UIBarButtonItem) {
+        guard let view = item.customView else { return }
+        NSLayoutConstraint.activate([
+            view.widthAnchor.constraint(equalTo: view.heightAnchor),
+            view.widthAnchor.constraint(equalToConstant: buttonSize),
+        ])
+    }
+
+    private static func applyTextConstraints(to item: UIBarButtonItem) {
+        guard let view = item.customView else { return }
+        view.widthAnchor.constraint(greaterThanOrEqualToConstant: buttonSize).isActive = true
+    }
 
     private var currentState: TabSwitcherToolbarState?
 

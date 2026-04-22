@@ -638,7 +638,11 @@ final class AIChatOmnibarController {
 
     /// Checks if the input text is a navigable URL (not a search query).
     /// Returns the URL if it should be navigated to, nil if it should be treated as an AI chat query.
+    /// Pre-filter: a URL cannot contain internal whitespace, so any multi-word prompt that happens to start
+    /// with a URL (e.g. "https://example.com\nexplain this") is treated as a chat query. Without this the
+    /// classifier (after URL construction strips the whitespace) would navigate to the concatenated string.
     private func classifyAsNavigableURL(_ text: String) -> URL? {
+        guard text.rangeOfCharacter(from: .whitespacesAndNewlines) == nil else { return nil }
         do {
             switch try Classifier.classify(input: text) {
             case .navigate(let url):

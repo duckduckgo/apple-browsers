@@ -538,13 +538,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func observeAddressBarPositionChanges() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(onAddressBarPositionChanged),
-                                               name: AppUserDefaults.Notifications.addressBarPositionChanged,
-                                               object: nil)
+        NotificationCenter.default
+            .publisher(for: AppUserDefaults.Notifications.addressBarPositionChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.onAddressBarPositionChanged() }
+            .store(in: &cancellables)
     }
 
-    @objc private func onAddressBarPositionChanged() {
+    private func onAddressBarPositionChanged() {
         isUsingTopBarPosition = !forceBottomBarLayout && (appSettings.currentAddressBarPosition == .top || isLandscapeOrientation)
         updateLayoutForCurrentOrientation()
     }

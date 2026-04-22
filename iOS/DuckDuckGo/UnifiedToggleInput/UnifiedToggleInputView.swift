@@ -95,7 +95,7 @@ final class UnifiedToggleInputView: UIView {
     var cardPosition: UnifiedToggleInputCardPosition = .bottom {
         didSet {
             guard cardPosition != oldValue else { return }
-            refreshInlineDismissPresentation(animated: false)
+            refreshInlineDismissPresentation()
             guard isExpanded else { return }
             let allCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
             cardView.layer.maskedCorners = allCorners
@@ -631,30 +631,15 @@ final class UnifiedToggleInputView: UIView {
 
 private extension UnifiedToggleInputView {
 
-    /// The inline dismiss (X) button is part of the card's top row when the card is anchored
-    /// at the top of the screen. When anchored at the bottom, the dismiss button is rendered
-    /// as a separate floating control in the content container, so the inline one stays hidden.
-    var shouldShowInlineDismiss: Bool {
-        isExpanded && cardPosition == .top
-    }
-
     /// Updates layout and opacity so the toggle either reserves space for the inline dismiss
     /// button or expands to fill the card's top row. Safe to call outside of animation blocks.
-    func refreshInlineDismissPresentation(animated: Bool) {
-        let shouldShow = shouldShowInlineDismiss
+    func refreshInlineDismissPresentation() {
+        let shouldShow = isExpanded && cardPosition == .top
         toggleTrailingConstraint.constant = shouldShow
             ? Constants.toggleTrailingWithInlineDismiss
             : -Constants.toggleHorizontalPadding
-
         applyInlineDismissVisibility(shouldShow)
-
-        if animated {
-            UIView.animate(withDuration: Constants.animationDuration, delay: 0, options: .curveEaseInOut) {
-                self.layoutIfNeeded()
-            }
-        } else {
-            layoutIfNeeded()
-        }
+        layoutIfNeeded()
     }
 
     /// Apply visibility without touching the toggle trailing constraint. Intended for use

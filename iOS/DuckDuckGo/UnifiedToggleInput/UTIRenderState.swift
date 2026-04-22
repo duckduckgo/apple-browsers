@@ -28,7 +28,6 @@ struct UTIRenderState: Equatable {
     var isToolbarSubmitHidden: Bool
     var inactiveAppearance: Bool
     var isFloatingSubmitVisible: Bool
-    var isInlineDismissActive: Bool
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
 
@@ -44,11 +43,12 @@ struct UTIRenderState: Equatable {
         )
     }
 
-    /// The floating dismiss control (owned by the content container) is shown whenever content
-    /// is visible but the inline dismiss button in the card is not currently taking over. At
-    /// `.bottom` the inline dismiss never applies, and at `.top` the inline dismiss only takes
-    /// over once the Search/Duck.ai toggle is in place (i.e. not during keyboard-presentation
-    /// transients and not when the toggle setting is disabled).
+    /// The inline dismiss (X inside the card's top row) takes over when the expanded card is
+    /// anchored at the top; otherwise the floating dismiss in the content container is used.
+    var isInlineDismissActive: Bool {
+        cardPosition == .top && isExpanded
+    }
+
     var isFloatingDismissVisible: Bool {
         isContentVisible && !isInlineDismissActive
     }

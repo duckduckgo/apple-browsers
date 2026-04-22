@@ -691,11 +691,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             && cardPosition == .top
             && inputMode == .aiChat
 
-        // The inline dismiss (X inside the card's top row) applies whenever the expanded
-        // card is anchored at the top. At the bottom, dismissal uses the floating button
-        // in the content container.
-        let isInlineDismissActive = cardPosition == .top && isExpanded
-
         return UTIRenderState(
             isInputVisible: isInputVisible,
             isContentVisible: isContentVisible,
@@ -705,7 +700,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isToolbarSubmitHidden: cardPosition == .top && isOmnibarSession,
             inactiveAppearance: inactiveAppearance,
             isFloatingSubmitVisible: isFloatingSubmitVisible,
-            isInlineDismissActive: isInlineDismissActive,
             contentInputMode: inputMode,
             inputMode: inputMode
         )
@@ -907,6 +901,12 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {
         delegate?.unifiedToggleInputDidChangeHeight()
+    }
+
+    func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController) {
+        // The inline X dismisses the same way the floating X does — forward to the
+        // content container's shared handler so both controls route through one path.
+        contentViewController.onDismissRequested?()
     }
 }
 

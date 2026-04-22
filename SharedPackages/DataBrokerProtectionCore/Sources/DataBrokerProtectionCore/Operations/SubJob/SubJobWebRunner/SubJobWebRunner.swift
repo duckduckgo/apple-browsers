@@ -174,13 +174,19 @@ public extension SubJobWebRunning {
                 // sync with the DB row persisted by the service.
                 extractedProfile?.email = emailData.emailAddress
                 stageCalculator.setEmailPattern(emailData.pattern)
-                stageCalculator.fireOptOutEmailGenerate()
+                if stepType == .optOut {
+                    stageCalculator.fireOptOutEmailGenerate()
+                }
                 await executeNextStep()
             } catch {
                 recordDebugEvent(kind: .actionResponse,
                                  actionType: generateEmailAction.actionType,
                                  details: errorDetails(error))
-                await onError(error: DataBrokerProtectionError.emailError(error as? EmailError))
+                if let emailError = error as? EmailError {
+                    await onError(error: DataBrokerProtectionError.emailError(emailError))
+                } else {
+                    await onError(error: error as? DataBrokerProtectionError ?? .emailError(nil))
+                }
             }
 
             return
@@ -242,9 +248,15 @@ public extension SubJobWebRunning {
                                      details: "Email address received")
                     extractedProfile?.email = emailData.emailAddress
                     stageCalculator.setEmailPattern(emailData.pattern)
-                    stageCalculator.fireOptOutEmailGenerate()
+                    if stepType == .optOut {
+                        stageCalculator.fireOptOutEmailGenerate()
+                    }
                 } catch {
-                    await onError(error: DataBrokerProtectionError.emailError(error as? EmailError))
+                    if let emailError = error as? EmailError {
+                        await onError(error: DataBrokerProtectionError.emailError(emailError))
+                    } else {
+                        await onError(error: error as? DataBrokerProtectionError ?? .emailError(nil))
+                    }
                     return
                 }
             }

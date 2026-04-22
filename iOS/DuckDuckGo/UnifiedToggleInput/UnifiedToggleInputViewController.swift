@@ -275,8 +275,13 @@ final class UnifiedToggleInputViewController: UIViewController {
             guard let self else { return }
             delegate?.unifiedToggleInputVCDidChangeAttachments(self)
         }
+        barView.onInlineDismissTapped = { [weak self] in
+            self?.onInlineDismissTapped?()
+        }
         view = barView
     }
+
+    var onInlineDismissTapped: (() -> Void)?
 }
 
 // MARK: - UnifiedToggleInputViewDelegate

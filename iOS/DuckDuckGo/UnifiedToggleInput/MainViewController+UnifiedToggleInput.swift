@@ -466,7 +466,7 @@ extension MainViewController {
         let contentVC = coordinator.contentViewController
         contentVC.suggestionTrayDependencies = suggestionTrayDependencies
         contentVC.delegate = self
-        contentVC.onDismissRequested = { [weak self] in
+        let dismissHandler: () -> Void = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             if coordinator.isOmnibarSession {
                 self.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator)
@@ -474,6 +474,8 @@ extension MainViewController {
                 coordinator.showCollapsed()
             }
         }
+        contentVC.onDismissRequested = dismissHandler
+        coordinator.viewController.onInlineDismissTapped = dismissHandler
         contentVC.onSwipeDownRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             coordinator.dismissOmnibarKeyboard()

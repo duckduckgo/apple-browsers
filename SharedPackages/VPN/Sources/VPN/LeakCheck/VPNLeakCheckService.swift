@@ -25,7 +25,7 @@ public actor VPNLeakCheckService {
 
     private let configuration: LeakCheckConfiguration
     private var egressInfo: LeakCheckEgressInfo
-    private var tunnelInterface: NWInterface
+    private var tunnelInterface: NWInterface?
     private let httpClient: LeakCheckHTTPClient
     private let stunClient: LeakCheckSTUNClient
     private let wideEvent: WideEventManaging
@@ -36,10 +36,13 @@ public actor VPNLeakCheckService {
     private var periodicTask: Task<Void, Never>?
     private var isStopped = false
 
+    /// `tunnelInterface` is optional at the type level so tests can omit a real `NWInterface`
+    /// (Apple provides no public initializer). Production callers must always pass a non-nil value —
+    /// see `PacketTunnelProvider.scheduleLeakCheck` which refuses to construct the service otherwise.
     public init(
         configuration: LeakCheckConfiguration = .default,
         egressInfo: LeakCheckEgressInfo,
-        tunnelInterface: NWInterface,
+        tunnelInterface: NWInterface?,
         httpClient: LeakCheckHTTPClient,
         stunClient: LeakCheckSTUNClient,
         wideEvent: WideEventManaging,
@@ -78,8 +81,8 @@ public actor VPNLeakCheckService {
         egressInfo = newInfo
     }
 
-    public func updateTunnelInterface(_ interface: NWInterface) {
-        Logger.networkProtectionIPLeakCheck.log("Updated tunnel interface reference: \(interface.name, privacy: .public)")
+    public func updateTunnelInterface(_ interface: NWInterface?) {
+        Logger.networkProtectionIPLeakCheck.log("Updated tunnel interface reference: \(interface?.name ?? "<nil>", privacy: .public)")
         tunnelInterface = interface
     }
 
@@ -227,7 +230,7 @@ public actor VPNLeakCheckService {
         case ipv4Http, ipv4Https, ipv4Stun, ipv6Http, ipv6Https, ipv6Stun
     }
 
-    private func probeAll(tunnelInterface: NWInterface) async -> ProbeResults {
+    private func probeAll(tunnelInterface: NWInterface?) async -> ProbeResults {
         let config = configuration
         let http = httpClient
         let stun = stunClient

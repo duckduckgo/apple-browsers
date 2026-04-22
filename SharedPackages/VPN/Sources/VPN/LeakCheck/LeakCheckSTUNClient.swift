@@ -25,7 +25,7 @@ public protocol LeakCheckSTUNClient: Sendable {
         port: UInt16,
         ipVersion: IPVersion,
         timeout: TimeInterval,
-        requiredInterface: NWInterface
+        requiredInterface: NWInterface?
     ) async throws -> String
 }
 
@@ -38,7 +38,7 @@ public struct DefaultLeakCheckSTUNClient: LeakCheckSTUNClient {
         port: UInt16,
         ipVersion: IPVersion,
         timeout: TimeInterval,
-        requiredInterface: NWInterface
+        requiredInterface: NWInterface?
     ) async throws -> String {
         let transactionID = STUNMessage.randomTransactionID()
         let request = STUNMessage.bindingRequest(transactionID: transactionID)

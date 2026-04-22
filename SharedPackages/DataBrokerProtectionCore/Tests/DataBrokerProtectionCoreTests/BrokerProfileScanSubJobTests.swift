@@ -566,6 +566,55 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         XCTAssertTrue(removedProfiles.isEmpty)
     }
 
+    // MARK: - markSavedProfilesAsRemovedAndNotifyUser
+
+    func testMarkSavedProfilesAsRemovedAndNotifyUser_whenProfileIsNewlyRemoved_firesTransitionPixels() throws {
+        MockDataBrokerProtectionPixelsHandler.lastPixelsFired = []
+        mockDatabase.attemptInformation = .mock
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        try sut.markSavedProfilesAsRemovedAndNotifyUser(
+            removedProfiles: [.mockWithoutRemovedDate],
+            brokerId: identifiers.brokerId,
+            profileQueryId: identifiers.profileQueryId,
+            brokerProfileQueryData: brokerData,
+            database: mockDatabase,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler,
+            featureFlagger: MockDBPFeatureFlagger()
+        )
+
+        let firedNames = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.map(\.name)
+        XCTAssertTrue(firedNames.contains("dbp_optout_process_success"))
+        XCTAssertTrue(firedNames.contains("dbp_optout_stage_finish"))
+    }
+
+    func testMarkSavedProfilesAsRemovedAndNotifyUser_whenProfileAlreadyHasRemovedDate_doesNotFireTransitionPixels() throws {
+        // Maintenance-scan scenario: the profile was already confirmed removed on a prior scan
+        // (removedDate set) but the current scan still doesn't find it, so it re-enters the
+        // confirmation path with stored attempt info. The transition pixels must NOT re-fire.
+        MockDataBrokerProtectionPixelsHandler.lastPixelsFired = []
+        mockDatabase.attemptInformation = .mock
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        try sut.markSavedProfilesAsRemovedAndNotifyUser(
+            removedProfiles: [.mockWithRemovedDate],
+            brokerId: identifiers.brokerId,
+            profileQueryId: identifiers.profileQueryId,
+            brokerProfileQueryData: brokerData,
+            database: mockDatabase,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler,
+            featureFlagger: MockDBPFeatureFlagger()
+        )
+
+        let firedNames = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.map(\.name)
+        XCTAssertFalse(firedNames.contains("dbp_optout_process_success"))
+        XCTAssertFalse(firedNames.contains("dbp_optout_stage_finish"))
+    }
+
     // MARK: - handleRemovedProfiles
 
     func testHandleRemovedProfiles_callsMarkRemovedAndNotify() throws {

@@ -470,7 +470,7 @@ struct BrokerProfileScanSubJob {
         try database.add(event)
     }
 
-    private func markSavedProfilesAsRemovedAndNotifyUser(
+    internal func markSavedProfilesAsRemovedAndNotifyUser(
         removedProfiles: [ExtractedProfile],
         brokerId: Int64,
         profileQueryId: Int64,
@@ -513,7 +513,9 @@ struct BrokerProfileScanSubJob {
 
                 Logger.dataBrokerProtection.log("Profile removed from optOutsData: \(String(describing: removedProfile))")
 
-                if let attempt = try database.fetchAttemptInformation(for: extractedProfileId),
+                // Fire only on the transition to removed (pre-scan removedDate == nil).
+                if removedProfile.removedDate == nil,
+                   let attempt = try database.fetchAttemptInformation(for: extractedProfileId),
                    let attemptUUID = UUID(uuidString: attempt.attemptId) {
                     let now = Date()
                     let calculateDurationSinceLastStage = now.timeIntervalSince(attempt.lastStageDate) * 1000

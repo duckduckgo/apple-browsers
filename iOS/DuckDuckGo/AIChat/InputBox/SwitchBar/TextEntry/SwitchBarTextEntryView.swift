@@ -293,7 +293,7 @@ class SwitchBarTextEntryView: UIView {
         case .aiChat:
             textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
             textView.returnKeyType = .default
-            if textView.text.isEmpty {
+            if handler.shouldDisableAutocorrectOnEmpty && textView.text.isEmpty {
                 disableAutoCorrectionAndSpellChecking()
             } else {
                 enableAutoCorrectionAndSpellChecking()
@@ -516,7 +516,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateAutoCorrectionSetupForAIChat(for text: String) {
-        guard currentMode == .aiChat else { return }
+        guard handler.shouldDisableAutocorrectOnEmpty, currentMode == .aiChat else { return }
 
         let isTextEmpty = text.isEmpty
         let stateChanged = isTextEmpty != wasTextEmptyForAutocorrection

@@ -24,6 +24,16 @@ public enum LeakCheckTrigger: String, Codable, CaseIterable {
     case periodic
 }
 
+public struct LeakCheckEgressInfo: Equatable, Sendable {
+    public let ipAddress: String
+    public let name: String
+
+    public init(ipAddress: String, name: String) {
+        self.ipAddress = ipAddress
+        self.name = name
+    }
+}
+
 public enum IPVersion: String, Codable, CaseIterable {
     case v4 = "ipv4"
     case v6 = "ipv6"
@@ -102,7 +112,7 @@ public struct LeakCheckConfiguration {
         stunPort: 3478,
         httpTimeout: 10,
         stunTimeout: 5,
-        periodicInterval: 6 * 60 * 60,
+        periodicInterval: 4 * 60 * 60,
         cooldown: 30,
         tunnelStartDelay: 5
     )

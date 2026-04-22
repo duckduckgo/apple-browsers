@@ -24,9 +24,8 @@ import PixelKit
 public actor VPNLeakCheckService {
 
     private let configuration: LeakCheckConfiguration
-    private var egressIP: String
-    private var egressServerName: String?
-    private var tunnelInterface: NWInterface?
+    private var egressInfo: LeakCheckEgressInfo
+    private var tunnelInterface: NWInterface
     private let httpClient: LeakCheckHTTPClient
     private let stunClient: LeakCheckSTUNClient
     private let wideEvent: WideEventManaging
@@ -39,17 +38,15 @@ public actor VPNLeakCheckService {
 
     public init(
         configuration: LeakCheckConfiguration = .default,
-        egressIP: String,
-        egressServerName: String? = nil,
-        tunnelInterface: NWInterface? = nil,
+        egressInfo: LeakCheckEgressInfo,
+        tunnelInterface: NWInterface,
         httpClient: LeakCheckHTTPClient,
         stunClient: LeakCheckSTUNClient,
         wideEvent: WideEventManaging,
         contextName: String
     ) {
         self.configuration = configuration
-        self.egressIP = egressIP
-        self.egressServerName = egressServerName
+        self.egressInfo = egressInfo
         self.tunnelInterface = tunnelInterface
         self.httpClient = httpClient
         self.stunClient = stunClient
@@ -76,17 +73,13 @@ public actor VPNLeakCheckService {
         }
     }
 
-    public func updateEgressIP(_ newIP: String) {
-        Logger.networkProtectionIPLeakCheck.log("Updated egress IP reference")
-        egressIP = newIP
+    public func updateEgressInfo(_ newInfo: LeakCheckEgressInfo) {
+        Logger.networkProtectionIPLeakCheck.log("Updated egress info reference")
+        egressInfo = newInfo
     }
 
-    public func updateEgressServerName(_ newName: String?) {
-        egressServerName = newName
-    }
-
-    public func updateTunnelInterface(_ interface: NWInterface?) {
-        Logger.networkProtectionIPLeakCheck.log("Updated tunnel interface reference: \(interface?.name ?? "nil", privacy: .public)")
+    public func updateTunnelInterface(_ interface: NWInterface) {
+        Logger.networkProtectionIPLeakCheck.log("Updated tunnel interface reference: \(interface.name, privacy: .public)")
         tunnelInterface = interface
     }
 
@@ -138,15 +131,17 @@ public actor VPNLeakCheckService {
 
         Logger.networkProtectionIPLeakCheck.log("🟢 Starting leak check (trigger: \(trigger.rawValue, privacy: .public))")
 
+        let egressInfoSnapshot = egressInfo
+        let tunnelInterfaceSnapshot = tunnelInterface
+
         let data = VPNIPLeakCheckWideEventData(
             trigger: trigger,
             contextData: WideEventContextData(name: contextName)
         )
-        data.egressServerName = egressServerName
+        data.egressServerName = egressInfoSnapshot.name
         wideEvent.startFlow(data)
 
-        let egressIPSnapshot = egressIP
-        let tunnelInterfaceSnapshot = tunnelInterface
+        let egressIPSnapshot = egressInfoSnapshot.ipAddress
         let startDate = Date()
         let results = await probeAll(tunnelInterface: tunnelInterfaceSnapshot)
 
@@ -232,7 +227,7 @@ public actor VPNLeakCheckService {
         case ipv4Http, ipv4Https, ipv4Stun, ipv6Http, ipv6Https, ipv6Stun
     }
 
-    private func probeAll(tunnelInterface: NWInterface?) async -> ProbeResults {
+    private func probeAll(tunnelInterface: NWInterface) async -> ProbeResults {
         let config = configuration
         let http = httpClient
         let stun = stunClient
@@ -248,7 +243,7 @@ public actor VPNLeakCheckService {
                 (.ipv4Https, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpsPort, scheme: .https, ipVersion: .v4, timeout: config.httpTimeout, requiredInterface: iface) })
             }
             group.addTask {
-                (.ipv4Stun, await Self.runProbe { try await stun.sendBindingRequest(host: config.host, port: config.stunPort, ipVersion: .v4, timeout: config.stunTimeout, requiredInterface: iface) })
+                (.ipv4Stun, await Self.runProbe { try await stun.fetchIP(host: config.host, port: config.stunPort, ipVersion: .v4, timeout: config.stunTimeout, requiredInterface: iface) })
             }
             group.addTask {
                 (.ipv6Http, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpPort, scheme: .http, ipVersion: .v6, timeout: config.httpTimeout, requiredInterface: iface) })
@@ -257,7 +252,7 @@ public actor VPNLeakCheckService {
                 (.ipv6Https, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpsPort, scheme: .https, ipVersion: .v6, timeout: config.httpTimeout, requiredInterface: iface) })
             }
             group.addTask {
-                (.ipv6Stun, await Self.runProbe { try await stun.sendBindingRequest(host: config.host, port: config.stunPort, ipVersion: .v6, timeout: config.stunTimeout, requiredInterface: iface) })
+                (.ipv6Stun, await Self.runProbe { try await stun.fetchIP(host: config.host, port: config.stunPort, ipVersion: .v6, timeout: config.stunTimeout, requiredInterface: iface) })
             }
             for await item in group {
                 collected[item.0] = item.1
@@ -343,8 +338,8 @@ public actor VPNLeakCheckService {
 
     private func bucketedLatency(_ seconds: TimeInterval) -> Int {
         let ms = Int(seconds * 1000)
-        let rounded = ((ms + 500) / 1000) * 1000
-        return min(rounded, 10_000)
+        let rounded = ((ms + 499) / 500) * 500
+        return min(rounded, 5_000)
     }
 
     private func schedulePeriodic() {

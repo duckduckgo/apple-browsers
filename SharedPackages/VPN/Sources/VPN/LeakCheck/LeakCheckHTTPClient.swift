@@ -26,7 +26,7 @@ public protocol LeakCheckHTTPClient: Sendable {
         scheme: LeakCheckScheme,
         ipVersion: IPVersion,
         timeout: TimeInterval,
-        requiredInterface: NWInterface?
+        requiredInterface: NWInterface
     ) async throws -> String
 }
 
@@ -84,7 +84,7 @@ public struct DefaultLeakCheckHTTPClient: LeakCheckHTTPClient {
         scheme: LeakCheckScheme,
         ipVersion: IPVersion,
         timeout: TimeInterval,
-        requiredInterface: NWInterface?
+        requiredInterface: NWInterface
     ) async throws -> String {
         let parameters: NWParameters
         switch scheme {

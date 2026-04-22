@@ -20,12 +20,12 @@ import Foundation
 import Network
 
 public protocol LeakCheckSTUNClient: Sendable {
-    func sendBindingRequest(
+    func fetchIP(
         host: String,
         port: UInt16,
         ipVersion: IPVersion,
         timeout: TimeInterval,
-        requiredInterface: NWInterface?
+        requiredInterface: NWInterface
     ) async throws -> String
 }
 
@@ -33,12 +33,12 @@ public struct DefaultLeakCheckSTUNClient: LeakCheckSTUNClient {
 
     public init() {}
 
-    public func sendBindingRequest(
+    public func fetchIP(
         host: String,
         port: UInt16,
         ipVersion: IPVersion,
         timeout: TimeInterval,
-        requiredInterface: NWInterface?
+        requiredInterface: NWInterface
     ) async throws -> String {
         let transactionID = STUNMessage.randomTransactionID()
         let request = STUNMessage.bindingRequest(transactionID: transactionID)

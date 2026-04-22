@@ -301,8 +301,8 @@ class TabSwitcherViewController: UIViewController {
                     let popoverController = TipUIPopoverViewController(tip, sourceItem: sourceView)
                     popoverController.popoverPresentationController?.permittedArrowDirections = [.up, .down]
                     self.present(popoverController, animated: true)
-                } else if self.presentedViewController is TipUIPopoverViewController {
-                    self.dismiss(animated: true)
+                } else if let tipVC = self.presentedViewController as? TipUIPopoverViewController {
+                    tipVC.dismiss(animated: true)
                 }
             }
         }
@@ -761,6 +761,13 @@ class TabSwitcherViewController: UIViewController {
     }
 
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
+        // When a presented child (e.g. TipKit popover) is being dismissed, skip
+        // tab-switcher teardown — only forward to super so the child is removed.
+        if presentedViewController != nil {
+            super.dismiss(animated: animated, completion: completion)
+            return
+        }
+
         fireTabsTipTask?.cancel()
         fireTabsTipTask = nil
         canUpdateCollection = false

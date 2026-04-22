@@ -1554,13 +1554,14 @@ class MainViewController: UIViewController {
         if let hatch {
             let targetTab = hatch.targetTab
             unifiedToggleInputCoordinator?.setEscapeHatch(hatch, onTapped: { [weak self] in
-                guard let self, tabManager.tabsModel(for: targetTab.mode).tabExists(tab: targetTab) else {
-                    self?.newTabPageViewController?.setEscapeHatch(nil)
-                    self?.currentNTPEscapeHatch = nil
-                    self?.unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
+                guard let self else { return }
+                guard tabManager.tabsModel(for: targetTab.mode).tabExists(tab: targetTab) else {
+                    newTabPageViewController?.setEscapeHatch(nil)
+                    currentNTPEscapeHatch = nil
+                    unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
                     return
                 }
-                self.onSwitchToTab(targetTab)
+                onSwitchToTab(targetTab)
             })
         } else {
             unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)

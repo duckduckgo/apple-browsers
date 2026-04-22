@@ -1236,20 +1236,22 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     private func scheduleLeakCheck(for startReason: AdapterStartReason) async {
-        guard let egressIP = lastSelectedServerInfo?.ipv4?.debugDescription else {
+        guard let egressIP = lastSelectedServerInfo?.ipv4?.debugDescription,
+              let egressServerName = lastSelectedServerInfo?.name else {
             return
         }
-        let egressServerName = lastSelectedServerInfo?.name
-
-        let tunnelInterface = await resolveTunnelInterface()
+        guard let tunnelInterface = await resolveTunnelInterface() else {
+            Logger.networkProtectionIPLeakCheck.log("Skipping leak check — unable to resolve tunnel interface")
+            return
+        }
+        let egressInfo = LeakCheckEgressInfo(ipAddress: egressIP, name: egressServerName)
 
         switch startReason {
         case .manual, .onDemand, .snoozeEnded:
             if leakCheckService == nil {
                 let service = VPNLeakCheckService(
                     configuration: .default,
-                    egressIP: egressIP,
-                    egressServerName: egressServerName,
+                    egressInfo: egressInfo,
                     tunnelInterface: tunnelInterface,
                     httpClient: DefaultLeakCheckHTTPClient(),
                     stunClient: DefaultLeakCheckSTUNClient(),
@@ -1259,7 +1261,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 leakCheckService = service
                 await service.start()
             } else {
-                await leakCheckService?.updateEgressServerName(egressServerName)
+                await leakCheckService?.updateEgressInfo(egressInfo)
                 await leakCheckService?.updateTunnelInterface(tunnelInterface)
             }
             let service = leakCheckService
@@ -1269,8 +1271,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 await service?.runCheck(trigger: .tunnelStart)
             }
         case .reconnected:
-            await leakCheckService?.updateEgressIP(egressIP)
-            await leakCheckService?.updateEgressServerName(egressServerName)
+            await leakCheckService?.updateEgressInfo(egressInfo)
             await leakCheckService?.updateTunnelInterface(tunnelInterface)
             let service = leakCheckService
             Task {

@@ -43,7 +43,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.namePrefix, "m_mac_")
     }
 
-    func testWhenFiringPixelEventThenUsesExpectedName() throws {
+    func testWhenFiringPixelEventThenUsesExpectedNameAndEventType() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)
 
@@ -51,6 +51,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(event.pixel.name, "onboarding_welcome")
+        XCTAssertEqual(event.pixel.parameters?["e"], "shown")
     }
 
     func testWhenFiringPixelEventThenFrequencyIsUniqueByNameAndParameters() throws {
@@ -184,6 +185,26 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(event.pixel.standardParameters, [.pixelSource])
+    }
+
+    func testWhenAppIconColorClickedThenUsesColorValue() throws {
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        pixelHandler.fire(.appIconColor(.clicked(.purple)))
+
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.pixel.parameters?["value"], "purple")
+    }
+
+    func testWhenAddressBarPositionClickedThenUsesPositionValue() throws {
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        pixelHandler.fire(.addressBarPosition(.clicked(.bottom)))
+
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.pixel.parameters?["value"], "bottom")
     }
 }
 

@@ -61,5 +61,144 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_ios_onboarding_welcome": {
+        "description": "Fired during onboarding on the Welcome step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+    },
+    "m_ios_onboarding_skip-onboarding": {
+        "description": "Fired during onboarding on the Skip Onboarding step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+    },
+    "m_ios_onboarding_set-default": {
+        "description": "Fired during onboarding on the Set Default Browser step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+    },
+    "m_ios_onboarding_add-to-dock": {
+        "description": "Fired during onboarding on the Add to Dock step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+    },
+    "m_ios_onboarding_app-icon-color": {
+        "description": "Fired during onboarding on the App Icon Color step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "The selected app icon color",
+                "enum": ["red", "pink", "yellow", "green", "blue", "purple", "black"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall"
+        ]
+    },
+    "m_ios_onboarding_address-bar-position": {
+        "description": "Fired during onboarding on the Address Bar Position step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "The selected address bar position",
+                "enum": ["top", "bottom"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall"
+        ]
+    },
+    "m_ios_onboarding_search-experience": {
+        "description": "Fired during onboarding on the Search Experience step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "Which search experience option the user selected",
+                "enum": ["search_only", "search_plus_duckai"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall"
+        ]
+    },
+    "m_ios_onboarding_search": {
+        "description": "Fired during onboarding on the contextual Search step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "Whether the user selected a suggested search, entered a custom search, or dismissed the step",
+                "enum": ["custom", "dismiss", "suggested"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall"
+        ]
+    },
+    "m_ios_onboarding_search-results": {
+        "description": "Fired during onboarding on the Search Results step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+    },
+    "m_ios_onboarding_visit-site": {
+        "description": "Fired during onboarding on the contextual Visit Site step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "Whether the user selected a suggested site, entered a custom site, or dismissed the step",
+                "enum": ["custom", "dismiss", "suggested"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall"
+        ]
+    },
+    "m_ios_onboarding_trackers-blocked": {
+        "description": "Fired during onboarding on the Trackers Blocked step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+    },
+    "m_ios_onboarding_fire-button": {
+        "description": "Fired during onboarding on the Fire Button step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+    },
+    "m_ios_onboarding_end": {
+        "description": "Fired on the final step of the contextual onboarding flow.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+    },
+    "m_ios_onboarding_subscription-promo": {
+        "description": "Fired during onboarding on the Subscription Promotion step.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
     }
 }

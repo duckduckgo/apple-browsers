@@ -99,11 +99,14 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
 public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
     // Linear onboarding events
     case welcome(EngagementEvent)
+    case skipOnboarding(EngagementEvent) // iOS only
     case setDefault(EngagementEvent)
     case addToDock(EngagementEvent)
-    case importData(EngagementEvent)
-    case duckPlayer(EngagementEvent)
-    case customization(CustomizeEvent)
+    case appIconColor(AppIconColorEvent) // iOS only
+    case addressBarPosition(AddressBarPositionEvent) // iOS only
+    case importData(EngagementEvent) // macOS only
+    case duckPlayer(EngagementEvent) // macOS only
+    case customization(CustomizeEvent) // macOS only
     case searchExperience(SearchExperienceEvent)
 
     // Contextual onboarding events
@@ -113,6 +116,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
     case trackersBlocked(EngagementEvent)
     case fireButton(EngagementEvent)
     case end(EngagementEvent)
+    case subscriptionPromo(EngagementEvent) // iOS only
 
     public enum EngagementEvent: Equatable {
         public enum Value: String {
@@ -156,6 +160,32 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
         case shown
         case clicked([Value])
     }
+
+    /// Matches alternate app icon colors (`AppIcon`) in the iOS app.
+    public enum AppIconColorEvent: Equatable {
+        public enum Value: String {
+            case red
+            case pink
+            case yellow
+            case green
+            case blue
+            case purple
+            case black
+        }
+
+        case shown
+        case clicked(Value)
+    }
+
+    public enum AddressBarPositionEvent: Equatable {
+        public enum Value: String {
+            case top
+            case bottom
+        }
+
+        case shown
+        case clicked(Value)
+    }
 }
 
 public extension OnboardingSharedPixelEvent {
@@ -195,8 +225,11 @@ private extension OnboardingSharedPixelEvent {
     var stepName: String {
         switch self {
         case .welcome: return "welcome"
+        case .skipOnboarding: return "skip-onboarding"
         case .setDefault: return "set-default"
         case .addToDock: return "add-to-dock"
+        case .appIconColor: return "app-icon-color"
+        case .addressBarPosition: return "address-bar-position"
         case .importData: return "import-data"
         case .duckPlayer: return "duck-player"
         case .customization: return "customization"
@@ -207,6 +240,7 @@ private extension OnboardingSharedPixelEvent {
         case .trackersBlocked: return "trackers-blocked"
         case .fireButton: return "fire-button"
         case .end: return "end"
+        case .subscriptionPromo: return "subscription-promo"
         }
     }
 
@@ -224,10 +258,12 @@ private extension OnboardingSharedPixelEvent {
                 .addToDock(let event),
                 .importData(let event),
                 .duckPlayer(let event),
+                .skipOnboarding(let event),
                 .searchResults(let event),
                 .trackersBlocked(let event),
                 .fireButton(let event),
-                .end(let event):
+                .end(let event),
+                .subscriptionPromo(let event):
             switch event {
             case .shown:
                 return ParameterValues.shown
@@ -235,6 +271,20 @@ private extension OnboardingSharedPixelEvent {
                 return ParameterValues.clicked
             case .confirmed:
                 return ParameterValues.confirmed
+            }
+        case .appIconColor(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
+        case .addressBarPosition(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
             }
         case .searchExperience(let event):
             switch event {
@@ -268,12 +318,28 @@ private extension OnboardingSharedPixelEvent {
                 .addToDock(let event),
                 .importData(let event),
                 .duckPlayer(let event),
+                .skipOnboarding(let event),
                 .searchResults(let event),
                 .trackersBlocked(let event),
                 .fireButton(let event),
-                .end(let event):
+                .end(let event),
+                .subscriptionPromo(let event):
             switch event {
             case .shown, .confirmed:
+                return nil
+            case .clicked(let value):
+                return value.rawValue
+            }
+        case .appIconColor(let event):
+            switch event {
+            case .shown:
+                return nil
+            case .clicked(let value):
+                return value.rawValue
+            }
+        case .addressBarPosition(let event):
+            switch event {
+            case .shown:
                 return nil
             case .clicked(let value):
                 return value.rawValue

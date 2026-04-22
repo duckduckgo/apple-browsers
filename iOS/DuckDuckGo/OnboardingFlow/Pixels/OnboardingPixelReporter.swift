@@ -141,6 +141,7 @@ final class OnboardingPixelReporter {
     private let calendar: Calendar
     private let dateProvider: () -> Date
     private let userDefaults: UserDefaults
+    private let sharedPixelHandler: OnboardingSharedPixelHandling
     private let siteVisitedUserDefaultsKey = "com.duckduckgo.ios.site-visited"
 
     init(
@@ -150,7 +151,8 @@ final class OnboardingPixelReporter {
         statisticsStore: StatisticsStore = StatisticsUserDefaults(),
         calendar: Calendar = .current,
         dateProvider: @escaping () -> Date = Date.init,
-        userDefaults: UserDefaults = UserDefaults.app
+        userDefaults: UserDefaults = UserDefaults.app,
+        onboardingSharedPixelHandler: OnboardingSharedPixelHandling? = nil
     ) {
         self.pixel = pixel
         self.uniquePixel = uniquePixel
@@ -159,6 +161,17 @@ final class OnboardingPixelReporter {
         self.calendar = calendar
         self.dateProvider = dateProvider
         self.userDefaults = userDefaults
+        self.sharedPixelHandler = onboardingSharedPixelHandler ?? Self.makeDefaultSharedPixelHandler(statisticsStore: statisticsStore, dateProvider: dateProvider)
+    }
+
+    private static func makeDefaultSharedPixelHandler(statisticsStore: StatisticsStore, dateProvider: @escaping () -> Date) -> OnboardingSharedPixelHandling {
+        let onboardingManager = OnboardingManager()
+        let installType: OnboardingSharedPixelHandler.InstallType? = onboardingManager.isNewUser ? .reinstall : .newInstall
+        return OnboardingSharedPixelHandler(
+            platform: .iOS,
+            installType: installType,
+            installDateProvider: { statisticsStore.installDate }
+        )
     }
 
     private func fire(event: Pixel.Event, unique: Bool, additionalParameters: [String: String] = [:], includedParameters: [Pixel.QueryParameters] = [.appVersion]) {

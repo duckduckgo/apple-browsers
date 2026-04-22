@@ -19,6 +19,7 @@
 
 import XCTest
 import Core
+import Onboarding
 @testable import DuckDuckGo
 
 final class OnboardingPixelReporterTests: XCTestCase {
@@ -27,6 +28,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
     private var statisticsStoreMock: MockStatisticsStore!
     private var now: Date!
     private var userDefaultsMock: UserDefaults!
+    private var sharedPixelHandlerMock: MockOnboardingSharedPixelHandling!
 
     override func setUpWithError() throws {
         statisticsStoreMock = MockStatisticsStore()
@@ -35,7 +37,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
         userDefaultsMock = UserDefaults(suiteName: Self.suiteName)
-        sut = OnboardingPixelReporter(pixel: OnboardingPixelFireMock.self, uniquePixel: OnboardingUniquePixelFireMock.self, experimentPixel: OnboardingExperimentPixelFireMock.self, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock)
+        sut = OnboardingPixelReporter(pixel: OnboardingPixelFireMock.self, uniquePixel: OnboardingUniquePixelFireMock.self, experimentPixel: OnboardingExperimentPixelFireMock.self, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock, onboardingSharedPixelHandler: sharedPixelHandlerMock)
         try super.setUpWithError()
     }
 
@@ -43,6 +45,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         OnboardingPixelFireMock.tearDown()
         OnboardingUniquePixelFireMock.tearDown()
         OnboardingExperimentPixelFireMock.tearDown()
+        sharedPixelHandlerMock = nil
         statisticsStoreMock = nil
         now = nil
         userDefaultsMock.removePersistentDomain(forName: Self.suiteName)
@@ -671,4 +674,25 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
     }
 
+}
+
+private final class MockOnboardingSharedPixelHandling: OnboardingSharedPixelHandling {
+    private(set) var eventsFired: [OnboardingSharedPixelEvent] = []
+    private(set) var receivedSource: OnboardingSourcePixelParameter?
+    private(set) var receivedFlow: OnboardingFlowTypePixelParameter?
+    private(set) var receivedVariant: OnboardingVariantPixelParameter?
+
+    func fire(_ event: OnboardingSharedPixelEvent) {
+        eventsFired.append(event)
+    }
+
+    func setMetadata(source: OnboardingSourcePixelParameter, flow: OnboardingFlowTypePixelParameter, variant: OnboardingVariantPixelParameter?) {
+        receivedSource = source
+        receivedFlow = flow
+        receivedVariant = variant
+    }
+
+    func setVariant(_ variant: OnboardingVariantPixelParameter) {
+        receivedVariant = variant
+    }
 }

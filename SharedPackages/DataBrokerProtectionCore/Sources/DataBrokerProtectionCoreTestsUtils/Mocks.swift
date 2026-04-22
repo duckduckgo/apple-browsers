@@ -439,6 +439,9 @@ public final class EmailServiceMock: EmailServiceProtocol {
 public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDataServiceProvider {
 
     public var shouldThrow: Bool = false
+    public private(set) var getEmailAndSaveCallCount: Int = 0
+    public private(set) var getEmailCallCount: Int = 0
+    public private(set) var lastExtractedProfileIdPassed: Int64?
 
     public init() {}
 
@@ -447,6 +450,16 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
                                                     profileQueryId: Int64?,
                                                     extractedProfileId: Int64?,
                                                     attemptId: UUID) async throws -> EmailData {
+        getEmailAndSaveCallCount += 1
+        lastExtractedProfileIdPassed = extractedProfileId
+        if shouldThrow {
+            throw DataBrokerProtectionError.emailError(nil)
+        }
+        return EmailData(pattern: nil, emailAddress: "test@duck.com")
+    }
+
+    public func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData {
+        getEmailCallCount += 1
         if shouldThrow {
             throw DataBrokerProtectionError.emailError(nil)
         }
@@ -472,6 +485,9 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
 
     public func reset() {
         shouldThrow = false
+        getEmailAndSaveCallCount = 0
+        getEmailCallCount = 0
+        lastExtractedProfileIdPassed = nil
     }
 }
 

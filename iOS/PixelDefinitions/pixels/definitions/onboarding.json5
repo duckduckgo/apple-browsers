@@ -84,7 +84,14 @@
         "description": "Fired during onboarding on the Add to Dock step.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall"
+        ]
     },
     "m_ios_onboarding_app-icon-color": {
         "description": "Fired during onboarding on the App Icon Color step.",

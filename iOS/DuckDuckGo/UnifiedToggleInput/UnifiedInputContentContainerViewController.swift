@@ -255,31 +255,36 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// The two tabs use different view technologies (SwiftUI NTP vs UITableView) that handle
     /// safe area differently, so chat history needs per-position compensation to align visually.
     private func updateEscapeHatchTopInset() {
-        let hasEscapeHatch = escapeHatchModel != nil
-        let isBottomBar = !isUsingTopBarPosition
+        let insets = Self.computeEscapeHatchInsets(
+            hasEscapeHatch: escapeHatchModel != nil,
+            isBottomBar: !isUsingTopBarPosition,
+            chatHasSuggestions: chatHasSuggestions,
+            isLandscape: isLandscapeOrientation
+        )
+        suggestionTrayManager?.setAdditionalTopInset(insets.tray)
+        aiChatHistoryManager?.setAdditionalTopInset(insets.chat)
+    }
 
-        let suggestionInsetBase: CGFloat = (hasEscapeHatch && isBottomBar) ? Metrics.escapeHatchDismissButtonInset : 0
+    static func computeEscapeHatchInsets(hasEscapeHatch: Bool,
+                                         isBottomBar: Bool,
+                                         chatHasSuggestions: Bool,
+                                         isLandscape: Bool) -> (tray: CGFloat, chat: CGFloat) {
+        // Tray: bottom bar needs space for dismiss button; top bar gets a small pull-up.
+        let suggestionInsetBase: CGFloat = hasEscapeHatch && isBottomBar ? Metrics.escapeHatchDismissButtonInset : 0
+        let trayTopBarPullUp: CGFloat = hasEscapeHatch && !isBottomBar ? Metrics.escapeHatchTopBarTrayPullUp : 0
+        let tray = suggestionInsetBase + trayTopBarPullUp
 
-        let trayTopBarPullUp: CGFloat = (hasEscapeHatch && !isBottomBar) ? Metrics.escapeHatchTopBarTrayPullUp : 0
-        suggestionTrayManager?.setAdditionalTopInset(suggestionInsetBase + trayTopBarPullUp)
-
-        // Chat history: compensate for built-in table header padding that the NTP doesn't have.
-        guard hasEscapeHatch else {
-            aiChatHistoryManager?.setAdditionalTopInset(0)
-            return
-        }
-
-        let compensation = isBottomBar ? Metrics.chatHistoryBottomBarCompensation : 0
-        // Skip empty-list vertical centering in landscape — limited vertical space would push the hatch
-        // under the UTI bar and keyboard (landscape auto-switches to top-bar mode in layout logic).
-        let emptyListBoost: CGFloat = (!chatHasSuggestions && !isBottomBar && !isLandscapeOrientation)
+        // Chat history uses the same base, then applies corrections:
+        // - compensation: UITableView vs SwiftUI NTP safe-area difference in bottom bar
+        // - emptyListBoost: vertical centering of hatch when chat list is empty (portrait top bar only)
+        // - landscapeAlignment: small pull-up so chat hatch aligns with Search tray in landscape
+        let compensation: CGFloat = hasEscapeHatch && isBottomBar ? Metrics.chatHistoryBottomBarCompensation : 0
+        let emptyListBoost: CGFloat = hasEscapeHatch && !chatHasSuggestions && !isBottomBar && !isLandscape
             ? Metrics.escapeHatchEmptyListBoost : 0
-        // Landscape: chat history hatch sits slightly below Search tray due to different view technologies
-        // (UITableView vs SwiftUI NTP). Small pull-up keeps both tabs aligned when switching.
-        let landscapeAlignment: CGFloat = isLandscapeOrientation ? Metrics.landscapeDuckAiAlignmentPullUp : 0
-        // Combine all active offsets into the final chat-history inset.
-        let chatInset = suggestionInsetBase - compensation + emptyListBoost + landscapeAlignment
-        aiChatHistoryManager?.setAdditionalTopInset(chatInset)
+        let landscapeAlignment: CGFloat = hasEscapeHatch && isLandscape ? Metrics.landscapeDuckAiAlignmentPullUp : 0
+        let chat = suggestionInsetBase - compensation + emptyListBoost + landscapeAlignment
+
+        return (tray: tray, chat: chat)
     }
 
     func setText(_ text: String) {

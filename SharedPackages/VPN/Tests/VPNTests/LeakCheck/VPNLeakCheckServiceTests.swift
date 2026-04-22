@@ -23,29 +23,13 @@ import PixelKit
 
 final class VPNLeakCheckServiceTests: XCTestCase {
 
-    private static let testInterface: NWInterface = {
-        let semaphore = DispatchSemaphore(value: 0)
-        var resolved: NWInterface?
-        let monitor = NWPathMonitor()
-        monitor.pathUpdateHandler = { path in
-            guard resolved == nil, let iface = path.availableInterfaces.first else { return }
-            resolved = iface
-            monitor.pathUpdateHandler = nil
-            monitor.cancel()
-            semaphore.signal()
-        }
-        monitor.start(queue: .global(qos: .utility))
-        semaphore.wait()
-        return resolved!
-    }()
-
-    private var testInterface: NWInterface { Self.testInterface }
+    private let testInterface: NWInterface? = nil
 
     private func makeEgressInfo(ip: String = "1.2.3.4", name: String = "test-server") -> LeakCheckEgressInfo {
         LeakCheckEgressInfo(ipAddress: ip, name: name)
     }
 
-    func testAllProbesMatchEgress_allSuccess() async {
+    func testAllProbesMatchEgress_allSuccess() async throws {
         let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let wideEvent = MockWideEventManager()
@@ -61,7 +45,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
 
         await service.runCheck(trigger: .tunnelStart)
 
-        let data = try! XCTUnwrap(wideEvent.lastCompletedData)
+        let data = try XCTUnwrap(wideEvent.lastCompletedData)
         XCTAssertEqual(data.ipv4Http?.status, .success)
         XCTAssertEqual(data.ipv4Https?.status, .success)
         XCTAssertEqual(data.ipv4Stun?.status, .success)
@@ -71,7 +55,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         XCTAssertNil(data.ipv4LeakIPType)
     }
 
-    func testIPv4Mismatch_detectsLeakAndClassifiesType() async {
+    func testIPv4Mismatch_detectsLeakAndClassifiesType() async throws {
         let http = MockLeakCheckHTTPClient(ipv4: "8.8.8.8", ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let wideEvent = MockWideEventManager()
@@ -87,14 +71,14 @@ final class VPNLeakCheckServiceTests: XCTestCase {
 
         await service.runCheck(trigger: .periodic)
 
-        let data = try! XCTUnwrap(wideEvent.lastCompletedData)
+        let data = try XCTUnwrap(wideEvent.lastCompletedData)
         XCTAssertEqual(data.ipv4Http?.status, .leak)
         XCTAssertEqual(data.ipv4Https?.status, .leak)
         XCTAssertEqual(data.ipv4Stun?.status, .success)
         XCTAssertEqual(data.ipv4LeakIPType, .public)
     }
 
-    func testIPv6Response_detectsLeak() async {
+    func testIPv6Response_detectsLeak() async throws {
         let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6: "2001:db8::1")
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let wideEvent = MockWideEventManager()
@@ -110,14 +94,14 @@ final class VPNLeakCheckServiceTests: XCTestCase {
 
         await service.runCheck(trigger: .tunnelStart)
 
-        let data = try! XCTUnwrap(wideEvent.lastCompletedData)
+        let data = try XCTUnwrap(wideEvent.lastCompletedData)
         XCTAssertEqual(data.ipv6Http?.status, .leak)
         XCTAssertEqual(data.ipv6Https?.status, .leak)
         XCTAssertEqual(data.ipv6Stun?.status, .success)
         XCTAssertEqual(data.ipv6LeakIPType, .public)
     }
 
-    func testIPv6PostConnectionError_recordedAsError() async {
+    func testIPv6PostConnectionError_recordedAsError() async throws {
         let http = MockLeakCheckHTTPClient(
             ipv4: "1.2.3.4",
             ipv6Error: LeakCheckHTTPResponseParser.ParseError.nonSuccessStatus(500)
@@ -139,13 +123,13 @@ final class VPNLeakCheckServiceTests: XCTestCase {
 
         await service.runCheck(trigger: .tunnelStart)
 
-        let data = try! XCTUnwrap(wideEvent.lastCompletedData)
+        let data = try XCTUnwrap(wideEvent.lastCompletedData)
         XCTAssertEqual(data.ipv6Http?.status, .error)
         XCTAssertEqual(data.ipv6Https?.status, .error)
         XCTAssertEqual(data.ipv6Stun?.status, .success)
     }
 
-    func testIPv6TimeoutError_mapsToSuccess() async {
+    func testIPv6TimeoutError_mapsToSuccess() async throws {
         let http = MockLeakCheckHTTPClient(
             ipv4: "1.2.3.4",
             ipv6Error: URLError(.timedOut)
@@ -167,12 +151,12 @@ final class VPNLeakCheckServiceTests: XCTestCase {
 
         await service.runCheck(trigger: .tunnelStart)
 
-        let data = try! XCTUnwrap(wideEvent.lastCompletedData)
+        let data = try XCTUnwrap(wideEvent.lastCompletedData)
         XCTAssertEqual(data.ipv6Http?.status, .success)
         XCTAssertEqual(data.ipv6Https?.status, .success)
     }
 
-    func testIPv6ConnectionError_mapsToSuccess() async {
+    func testIPv6ConnectionError_mapsToSuccess() async throws {
         let http = MockLeakCheckHTTPClient(
             ipv4: "1.2.3.4",
             ipv6Error: URLError(.cannotFindHost)
@@ -194,13 +178,13 @@ final class VPNLeakCheckServiceTests: XCTestCase {
 
         await service.runCheck(trigger: .tunnelStart)
 
-        let data = try! XCTUnwrap(wideEvent.lastCompletedData)
+        let data = try XCTUnwrap(wideEvent.lastCompletedData)
         XCTAssertEqual(data.ipv6Http?.status, .success)
         XCTAssertEqual(data.ipv6Https?.status, .success)
         XCTAssertEqual(data.ipv6Stun?.status, .success)
     }
 
-    func testIPv4ProbeError_recordedAsError() async {
+    func testIPv4ProbeError_recordedAsError() async throws {
         let http = MockLeakCheckHTTPClient(ipv4Error: URLError(.timedOut), ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let wideEvent = MockWideEventManager()
@@ -216,7 +200,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
 
         await service.runCheck(trigger: .tunnelStart)
 
-        let data = try! XCTUnwrap(wideEvent.lastCompletedData)
+        let data = try XCTUnwrap(wideEvent.lastCompletedData)
         XCTAssertEqual(data.ipv4Http?.status, .error)
         XCTAssertEqual(data.ipv4Http?.errorDomain, URLError.errorDomain)
         XCTAssertEqual(data.ipv4Http?.errorCode, URLError.timedOut.rawValue)
@@ -367,9 +351,37 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         )
 
         await service.runCheck(trigger: .tunnelStart)
-        await service.runCheck(trigger: .reassert)
+        await service.runCheck(trigger: .periodic)
 
         XCTAssertEqual(wideEvent.startedFlows.count, 1)
+    }
+
+    func testCooldown_reassertBypassesCooldown() async {
+        let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let config = LeakCheckConfiguration(
+            host: "leakcheck.netp.duckduckgo.com",
+            httpPort: 80, httpsPort: 443, stunPort: 3478,
+            httpTimeout: 10, stunTimeout: 5,
+            periodicInterval: 60 * 60,
+            cooldown: 60,
+            tunnelStartDelay: 0
+        )
+        let service = VPNLeakCheckService(
+            configuration: config,
+            egressInfo: makeEgressInfo(),
+            tunnelInterface: testInterface,
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent,
+            contextName: "Test-Context"
+        )
+
+        await service.runCheck(trigger: .tunnelStart)
+        await service.runCheck(trigger: .reassert)
+
+        XCTAssertEqual(wideEvent.startedFlows.count, 2)
     }
 
     func testUpdateEgressIP_duringInflightCheck_usesSnapshot() async {
@@ -518,7 +530,7 @@ final class SlowMockHTTPClient: LeakCheckHTTPClient, @unchecked Sendable {
         self.delaySeconds = delaySeconds
         self.returnIP = returnIP
     }
-    func fetchIP(host: String, port: UInt16, scheme: LeakCheckScheme, ipVersion: IPVersion, timeout: TimeInterval, requiredInterface: NWInterface) async throws -> String {
+    func fetchIP(host: String, port: UInt16, scheme: LeakCheckScheme, ipVersion: IPVersion, timeout: TimeInterval, requiredInterface: NWInterface?) async throws -> String {
         try await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
         if ipVersion == .v6 { throw URLError(.cannotFindHost) }
         return returnIP
@@ -546,7 +558,7 @@ final class MockLeakCheckHTTPClient: LeakCheckHTTPClient, @unchecked Sendable {
         scheme: LeakCheckScheme,
         ipVersion: IPVersion,
         timeout: TimeInterval,
-        requiredInterface: NWInterface
+        requiredInterface: NWInterface?
     ) async throws -> String {
         switch ipVersion {
         case .v4:
@@ -577,7 +589,7 @@ final class MockLeakCheckSTUNClient: LeakCheckSTUNClient, @unchecked Sendable {
         port: UInt16,
         ipVersion: IPVersion,
         timeout: TimeInterval,
-        requiredInterface: NWInterface
+        requiredInterface: NWInterface?
     ) async throws -> String {
         switch ipVersion {
         case .v4:

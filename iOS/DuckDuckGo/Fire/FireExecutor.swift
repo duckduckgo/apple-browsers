@@ -55,6 +55,9 @@ struct FireRequest {
     enum Scope {
         case tab(viewModel: TabViewModel)
         case fireMode
+        // Burns only normal-mode tabs/data, leaving fire-mode tabs/data untouched.
+        // This differs from `.all`, which burns both fire-mode and normal-mode tabs/data together.
+        // Note: this case is not currently invoked in production code paths.
         case normalMode
         case all
     }

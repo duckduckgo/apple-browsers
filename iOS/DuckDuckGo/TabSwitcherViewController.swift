@@ -319,9 +319,6 @@ class TabSwitcherViewController: UIViewController {
         updateUIForSelectionMode()
 
         if newMode == .fire {
-            if #available(iOS 17.0, *) {
-                FireTabsTip.hasVisitedFireMode = true
-            }
             fireModePromotionsCoordinator?.markFireModeVisited()
         }
     }

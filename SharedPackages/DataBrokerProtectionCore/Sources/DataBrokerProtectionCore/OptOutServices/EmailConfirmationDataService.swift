@@ -22,11 +22,22 @@ import Algorithms
 import os.log
 
 public protocol EmailConfirmationDataServiceProvider {
+    /// Fetches a disposable email address and, when the decoupling feature flag is on, queues an
+    /// `emailConfirmationStore` row so the background `emailConfirmation` poller can later look up
+    /// the confirmation link. Requires all IDs to be non-nil when the flag is on; throws
+    /// `dataNotInDatabase` otherwise. Use from the opt-out path where a downstream
+    /// `emailConfirmation` action will rely on the store row.
     func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64?,
                                              dataBrokerURL: String,
                                              profileQueryId: Int64?,
                                              extractedProfileId: Int64?,
                                              attemptId: UUID) async throws -> EmailData
+
+    /// Fetches a disposable email address with no DB side effects. Use from the scan path where
+    /// there is no `ExtractedProfile` and no downstream `emailConfirmation` action that would
+    /// need a store row.
+    func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData
+
     func checkForEmailConfirmationData() async throws
 
     @available(*, deprecated, message: "Use checkForEmailConfirmationData() instead")
@@ -75,7 +86,7 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                                                     profileQueryId: Int64?,
                                                     extractedProfileId: Int64?,
                                                     attemptId: UUID) async throws -> EmailData {
-        let emailData = try await emailServiceV0.getEmail(dataBrokerURL: dataBrokerURL, attemptId: attemptId)
+        let emailData = try await getEmail(dataBrokerURL: dataBrokerURL, attemptId: attemptId)
 
         if featureFlagger.isEmailConfirmationDecouplingFeatureOn {
             guard let dataBrokerId = dataBrokerId,
@@ -93,6 +104,10 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
         }
 
         return emailData
+    }
+
+    public func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData {
+        try await emailServiceV0.getEmail(dataBrokerURL: dataBrokerURL, attemptId: attemptId)
     }
 
     public func getConfirmationLink(from email: String,

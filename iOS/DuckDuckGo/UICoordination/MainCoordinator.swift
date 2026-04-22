@@ -84,6 +84,7 @@ final class MainCoordinator {
     private var darkReaderCancellables = Set<AnyCancellable>()
     private var youTubeAdBlockingCancellable: AnyCancellable?
     private var webExtensionLoadTask: Task<Void, Never>?
+    private var isWebExtensionLoadPending = false
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
     private let keyValueStore: ThrowingKeyValueStoring
 
@@ -364,14 +365,7 @@ final class MainCoordinator {
     private func initializeWebExtensions() {
         guard webExtensionManager == nil else {
             // Already initialized, just reload extensions and re-register tabs
-            webExtensionLoadTask?.cancel()
-            webExtensionLoadTask = Task { @MainActor [weak self] in
-                await self?.webExtensionManager?.loadInstalledExtensions()
-                guard !Task.isCancelled else { return }
-                await self?.syncEmbeddedExtensions()
-                guard !Task.isCancelled else { return }
-                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
-            }
+            scheduleExtensionLoad()
             return
         }
 
@@ -396,9 +390,19 @@ final class MainCoordinator {
         controller.setWebExtensionManager(webExtensionManager)
         subscribeToDarkReaderChanges()
 
-        // Load extensions asynchronously - the controller is already attached to tabs
+        // Defer extension loading until the app reaches the foreground
+        // (applicationDidBecomeActive) to ensure the WebKit process and
+        // protected data are fully available. Loading too early during launch
+        // can cause WKWebExtensionErrorInvalidArchive errors on iOS.
+        isWebExtensionLoadPending = true
+    }
+
+    @available(iOS 18.4, *)
+    private func scheduleExtensionLoad() {
+        isWebExtensionLoadPending = false
+        webExtensionLoadTask?.cancel()
         webExtensionLoadTask = Task { @MainActor [weak self] in
-            await webExtensionManager.loadInstalledExtensions()
+            await self?.webExtensionManager?.loadInstalledExtensions()
             guard !Task.isCancelled else { return }
             await self?.syncEmbeddedExtensions()
             guard !Task.isCancelled else { return }
@@ -526,14 +530,10 @@ final class MainCoordinator {
     // MARK: App Lifecycle handling
 
     func onForeground(isFirstForeground: Bool) {
-        // Apply tracker animation suppression based on launch source
-        // Must be called after launchSourceManager.handleAppAction sets the source
         if isFirstForeground {
             tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
         }
 
-        // Clear external launch flags when app comes to foreground
-        // This ensures flags are reset for subsequent in-app navigations
         tabManager.clearExternalLaunchFlags()
 
         controller.showBars()
@@ -542,6 +542,9 @@ final class MainCoordinator {
         fireDailyAdBlockingPixel()
 
         if #available(iOS 18.4, *) {
+            if isWebExtensionLoadPending {
+                scheduleExtensionLoad()
+            }
             webExtensionEventsCoordinator?.didFocusWindow()
         }
     }

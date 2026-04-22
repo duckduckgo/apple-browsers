@@ -171,6 +171,12 @@ final class AddressBarViewController: NSViewController {
             updateView()
             updateSwitchToTabBoxAppearance()
             self.addressBarButtonsViewController?.isTextFieldEditorFirstResponder = selectionState.isSelected
+            /// `isAIChatPanelActive` gates the suppression of left-side indicators (privacy shield, permission
+            /// center, image button, bookmark). Propagate `isInAIChatMode` so unfocused duck.ai also hides these
+            /// — even though the panel itself isn't visible, the bar is logically a prompt input, not a URL
+            /// indicator. `isAIChatOmnibarVisible.didSet` also writes this flag; the last write wins, so sequence
+            /// the ordering carefully in transitions (flip `isAIChatOmnibarVisible` first, then `selectionState`).
+            self.addressBarButtonsViewController?.isAIChatPanelActive = selectionState.isInAIChatMode
             if selectionState == .inactive {
                 self.clickPoint = nil // reset click point if the address bar activated during click
             }
@@ -629,17 +635,21 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func updateView() {
-        if selectionState == .activeWithAIChat {
+        switch selectionState {
+        case .activeWithAIChat:
             /// Focused Duck.ai: the prompt panel covers the address-bar area. Hide both text fields so their
             /// text / suffix doesn't peek out past the panel edges.
             addressBarTextField.isHidden = true
             passiveTextField.isHidden = true
-        } else {
-            /// `.active`, `.inactive`, and `.inactiveWithAIChat` share identical rendering: the editable
-            /// `addressBarTextField` when focused or in an editing mode (typed text / URL / Duck.ai prompt),
-            /// otherwise the passive URL/content label. `.inactiveWithAIChat` thus looks visually identical to
-            /// `.inactive` with typed text — only the toggle segment differs. `addressBarTextField.value` is
-            /// already synced to the preserved duck.ai prompt via `subscribeToSharedTextState`.
+        case .inactiveWithAIChat:
+            /// Unfocused Duck.ai: always render via `addressBarTextField` showing the preserved prompt (or empty
+            /// for the "Ask anything privately" placeholder). We explicitly push the shared-state text onto the
+            /// field — without that, on a URL-loaded tab the value would still be the URL and `passiveTextField`
+            /// would show the URL / the left shield / the permission center (all undesired in duck.ai mode).
+            addressBarTextField.isHidden = false
+            passiveTextField.isHidden = true
+            addressBarTextField.applyDuckAIUnfocusedValue()
+        case .active, .inactive:
             let isPassiveTextFieldHidden = selectionState.isSelected || mode.isEditing
             addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
             passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
@@ -818,6 +828,14 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func updateMode(value: AddressBarTextField.Value? = nil) {
+        /// Whenever the tab is in duck.ai mode (focused or unfocused) the bar represents a prompt input, not an
+        /// address — keep `mode` pinned to `.editing(.aiChat)` so downstream button / icon / placeholder logic
+        /// treats it as such regardless of what URL / text the underlying `addressBarTextField.value` currently
+        /// holds (the sync from shared state happens asynchronously on the main queue).
+        if selectionState.isInAIChatMode {
+            self.mode = .editing(.aiChat)
+            return
+        }
         switch value ?? self.addressBarTextField.value {
         case .text: self.mode = .editing(.text)
         case .url(urlString: _, url: _, userTyped: let userTyped): self.mode = userTyped ? .editing(.url) : .browsing

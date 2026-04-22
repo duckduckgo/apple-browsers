@@ -181,6 +181,18 @@ final class AddressBarTextField: NSTextField {
         isUpdatingFromSharedState = false
     }
 
+    /// Pins `value` to `.text(sharedTextState.text, userTyped: true)` for the unfocused duck.ai state so the
+    /// bar renders the preserved prompt (or an empty string that triggers the "Ask anything privately"
+    /// placeholder) even when the underlying tab has a URL loaded — without this, entering unfocused duck.ai
+    /// on a browsing tab would leave `value = .url(...)` and the bar would render the URL + privacy indicators.
+    func applyDuckAIUnfocusedValue() {
+        let text = sharedTextState?.text ?? ""
+        guard stringValueWithoutSuffix != text else { return }
+        isUpdatingFromSharedState = true
+        self.value = Value(stringValue: text, userTyped: true)
+        isUpdatingFromSharedState = false
+    }
+
     /// Subscribes to shared text state changes to keep address bar in sync with Duck.ai panel
     private func subscribeToSharedTextState() {
         sharedTextStateCancellable?.cancel()

@@ -1132,6 +1132,12 @@ extension AddressBarTextField: NSTextFieldDelegate {
 
         if !isUpdatingFromSharedState {
             sharedTextState?.updateText(stringValueWithoutSuffix, markInteraction: true)
+            /// Keep the caret in sync with the search-mode field editor so toggling to duck.ai mid-type places
+            /// the prompt cursor where the user left it instead of at position 0. Without this the duck.ai
+            /// panel's `focusTextViewRestoringCursorPosition` only ever sees the default `(0, 0)` selection.
+            if let editor = currentEditor() {
+                sharedTextState?.updateSelection(editor.selectedRange)
+            }
         }
     }
 

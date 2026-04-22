@@ -660,16 +660,14 @@ final class AddressBarViewController: NSViewController {
         updateShadowViewPresence(selectionState.isSelected)
         inactiveBackgroundView.backgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor
 
-        /// When the duck.ai panel is active, the extended `activeBackgroundViewWithSuggestions` is the single
-        /// background we want behind the address bar (it merges with the panel below). Suppress the inactive /
-        /// active variants to avoid two layers rendering with different widths — that's the ~1pt edge mismatch
-        /// and the "address-bar-like" look on tab-switch back into a Duck.ai tab.
-        let isSuggestionsVariantActive = addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible
-        inactiveBackgroundView.alphaValue = (selectionState.isSelected || isSuggestionsVariantActive) ? 0 : 1
-        activeBackgroundView.alphaValue = (selectionState.isSelected && !isSuggestionsVariantActive) ? 1 : 0
-        activeBackgroundView.isHidden = isSuggestionsVariantActive
-        activeBackgroundViewWithSuggestions.isHidden = !isSuggestionsVariantActive
-        inactiveAddressBarShadowView.isHidden = isSuggestionsVariantActive || selectionState.isSelected
+        /// When duck.ai is active, the extended `activeBackgroundViewWithSuggestions` is the single background
+        /// behind the bar (it merges with the panel below). Suppress the regular inactive / active variants to
+        /// avoid two layers rendering with different widths — that's the ~1pt edge mismatch and the
+        /// "address-bar-like" look on tab-switch back into a Duck.ai tab. `updateShadowView` (fired off the
+        /// suggestion-window publisher) handles the suggestions-visible case; don't duplicate its isHidden flips
+        /// here or we risk racing it after first ESC closes the suggestions window.
+        inactiveBackgroundView.alphaValue = (selectionState.isSelected || isAIChatOmnibarVisible) ? 0 : 1
+        activeBackgroundView.alphaValue = (selectionState.isSelected && !isAIChatOmnibarVisible) ? 1 : 0
 
         let isKey = self.view.window?.isKeyWindow == true
         let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
@@ -687,6 +685,7 @@ final class AddressBarViewController: NSViewController {
 
         setupAddressBarPlaceHolder()
         setupAddressBarCornerRadius()
+        inactiveAddressBarShadowView.isHidden = selectionState.isSelected
     }
 
     private func setupAddressBarCornerRadius() {
@@ -729,7 +728,12 @@ final class AddressBarViewController: NSViewController {
         let isNewTab = tabViewModel?.tab.content == .newtab
         let addressBarPlaceholder: String
 
-        if isNewTab {
+        if selectionState.isInAIChatMode {
+            /// Duck.ai (focused or unfocused) — the bar represents a prompt input, not an address. Use the
+            /// same placeholder as the Duck.ai panel's prompt editor so the empty-state label matches across
+            /// focused and unfocused states.
+            addressBarPlaceholder = UserText.aiChatOmnibarPlaceholder
+        } else if isNewTab {
             addressBarPlaceholder = UserText.addressBarPlaceholder
         } else {
             addressBarPlaceholder = ""
@@ -1219,6 +1223,13 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         sharedTextState?.setDuckAIMode(isAIChatMode)
 
         if isAIChatMode {
+            /// Capture the address-bar field editor's caret before we transition — search-mode typing doesn't
+            /// keep `sharedTextState.selectionRange` in sync, so without this the Duck.ai panel would restore
+            /// the prompt cursor to `(0, 0)`. If there's no editor (address bar wasn't focused), leave the
+            /// stored value alone and let `focusTextViewRestoringCursorPosition` fall back to end-of-text.
+            if let editor = addressBarTextField.currentEditor() {
+                sharedTextState?.updateSelection(editor.selectedRange)
+            }
             selectionState = .activeWithAIChat
             mode = .editing(.aiChat)
             if isFirstResponder {

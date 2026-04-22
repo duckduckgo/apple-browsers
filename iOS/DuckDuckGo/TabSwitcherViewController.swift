@@ -645,6 +645,9 @@ class TabSwitcherViewController: UIViewController {
         guard !isProcessingUpdates else { return }
         canUpdateCollection = false
 
+        Pixel.fire(pixel: .tabSwitcherNewTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: BrowsingMode.fire.pixelParamValue
+        ])
         dismissIfPossible(forceDismissOnEmpty: true)
         delegate.tabSwitcherDidRequestNewFireTab(tabSwitcher: self)
     }
@@ -653,6 +656,9 @@ class TabSwitcherViewController: UIViewController {
         guard !isProcessingUpdates else { return }
         canUpdateCollection = false
 
+        Pixel.fire(pixel: .tabSwitcherNewTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: BrowsingMode.normal.pixelParamValue
+        ])
         dismissIfPossible(forceDismissOnEmpty: true)
         delegate.tabSwitcherDidRequestNewNormalTab(tabSwitcher: self)
     }

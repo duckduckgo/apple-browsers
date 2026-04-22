@@ -334,9 +334,9 @@ public actor VPNLeakCheckService {
     }
 
     private func bucketedLatency(_ seconds: TimeInterval) -> Int {
-        let ms = Int(seconds * 1000)
+        let ms = max(0, Int(seconds * 1000))
         let rounded = ((ms + 499) / 500) * 500
-        return min(rounded, 5_000)
+        return min(max(rounded, 500), 5_000)
     }
 
     private func schedulePeriodic() {

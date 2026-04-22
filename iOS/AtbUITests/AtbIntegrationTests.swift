@@ -99,12 +99,9 @@ class AtbIntegrationTests: XCTestCase {
     }
 
     private func waitForAddressBarInput(timeout: TimeInterval) -> XCUIElement? {
-        let predicate = NSPredicate(format: "elementType == %d OR elementType == %d",
-                                    XCUIElement.ElementType.searchField.rawValue,
-                                    XCUIElement.ElementType.textView.rawValue)
-        let input = app.descendants(matching: .any).matching(predicate).firstMatch
+        let input = app.descendants(matching: .any)["searchEntry"]
         guard input.waitForExistence(timeout: timeout) else {
-            XCTFail("Could not find an address bar input (searchField or textView) within \(timeout)s")
+            XCTFail("Could not find the address bar input (searchEntry) within \(timeout)s")
             return nil
         }
         return input

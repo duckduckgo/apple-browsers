@@ -463,12 +463,12 @@ extension MainViewController: TabsBarDelegate {
     }
 
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController) {
-        tabManager.setBrowsingMode(.fire)
+        tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
         newTab()
     }
-    
+
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController) {
-        tabManager.setBrowsingMode(.normal)
+        tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         newTab()
     }
 

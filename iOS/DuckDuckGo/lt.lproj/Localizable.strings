@@ -1488,6 +1488,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Išsiųstas su jūsų žinute Duck.ai";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Naujausi pokalbiai";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Naujausi pokalbiai";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Peržiūrėti visus pokalbius";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Pridėkite „Duck.ai“ balso sparčiuosius klavišus į savo valdymo centrą";
 
@@ -1497,8 +1506,14 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Pridėkite puslapio turinį";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Klausti apie puslapį";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Apibendrinti šį puslapį";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Apibendrinti puslapį";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Pridėti „Duck.ai“ į valdymo centrą";
@@ -1556,6 +1571,12 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Kalbėkite su „Duck.ai“ naudodami „Siri“!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Visi pokalbiai – %@ privatūs";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "privatūs";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "„iOS“ skirta „DuckDuckGo“";
@@ -2246,7 +2267,7 @@
 "import.passwords.promo.title" = "Importuok slaptažodžius į „DuckDuckGo“";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Klauskite privačiai";
+"input.field.placeholder.duckai" = "Klausk bet ko privačiai";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Užduok papildomą klausimą...";

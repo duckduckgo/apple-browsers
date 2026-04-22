@@ -1488,6 +1488,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Изпратено с твоето съобщение до Duck.ai";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Последни чатове";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Последни чатове";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Преглед на всички чатове";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Добавяне на пряк път за Duck.ai Voice към Центъра за управление";
 
@@ -1497,8 +1506,14 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Прикачи съдържанието на страницата";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Попитайте за страницата";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Обобщи тази страница";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Обобщаване на страницата";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Добавяне на Duck.ai към Центъра за управление";
@@ -1556,6 +1571,12 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Говорете с Duck.ai чрез Сири!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Всички чатове са %@ поверителни";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "поверителни";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo за iOS";
@@ -2246,7 +2267,7 @@
 "import.passwords.promo.title" = "Импортиране на пароли в DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Задавайте въпроси поверително";
+"input.field.placeholder.duckai" = "Задайте въпрос поверително";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Задайте последващ въпрос...";

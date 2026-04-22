@@ -172,6 +172,7 @@ class TabSwitcherPageViewController: UIViewController {
     private func setupFireModeEmptyState() {
         guard browsingMode == .fire, isFireModeEnabled else { return }
         let emptyStateView = FireModeEmptyStateView(type: .tabSwitcher(onNewFireTab: { [weak self] in
+            Pixel.fire(pixel: .fireModeEmptyStateNewTab)
             self?.onNewFireTab?()
         }))
         let hostingController = UIHostingController(rootView: emptyStateView)
@@ -391,7 +392,9 @@ extension TabSwitcherPageViewController: UICollectionViewDelegate {
             pageDelegate?.page(self, didSelectTabAt: indexPath.row)
         } else {
             currentSelection = indexPath.row
-            Pixel.fire(pixel: .tabSwitcherSwitchTabs)
+            Pixel.fire(pixel: .tabSwitcherSwitchTabs, withAdditionalParameters: [
+                PixelParameters.browsingMode: browsingMode.pixelParamValue
+            ])
             if let tab = tabsModel.get(tabAt: indexPath.row) {
                 if tab.isAITab {
                     DailyPixel.fireDailyAndCount(pixel: .tabManagerSwitchToAITab)
@@ -427,8 +430,9 @@ extension TabSwitcherPageViewController: UICollectionViewDelegate {
 
         let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
             guard let self else { return nil }
-            Pixel.fire(pixel: .tabSwitcherLongPress)
-            DailyPixel.fire(pixel: .tabSwitcherLongPressDaily)
+            let modeParam = [PixelParameters.browsingMode: self.browsingMode.pixelParamValue]
+            Pixel.fire(pixel: .tabSwitcherLongPress, withAdditionalParameters: modeParam)
+            DailyPixel.fire(pixel: .tabSwitcherLongPressDaily, withAdditionalParameters: modeParam)
             return self.pageDelegate?.page(self, contextMenuForTabsAt: indexPaths)
         }
         return configuration

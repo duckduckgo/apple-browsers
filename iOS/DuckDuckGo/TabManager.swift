@@ -49,7 +49,15 @@ protocol TabManaging {
     /// Closes the tab and navigates to homepage reusing an existing homepage or creating a new one
     @MainActor func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool)
     @MainActor func closeTabAndOpenNewChat(_ tab: Tab, clearTabHistory: Bool)
-    @MainActor func setBrowsingMode(_ mode: BrowsingMode)
+    @MainActor func setBrowsingMode(_ mode: BrowsingMode, source: FireModeSwitchSource)
+}
+
+enum FireModeSwitchSource: String {
+    case tabSelection = "tab_selection"
+    case longPressTabsIcon = "long_press_tabs_icon"
+    case menuPromotion = "menu_promotion"
+    case ntpPromotion = "ntp_promotion"
+    case longPressLink = "long_press_link"
 }
 
 /// Receives lifecycle events for TabViewController instances managed by TabManager.
@@ -246,7 +254,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
     
     @MainActor
-    func setBrowsingMode(_ mode: BrowsingMode) {
+    func setBrowsingMode(_ mode: BrowsingMode, source: FireModeSwitchSource) {
         guard mode != currentBrowsingMode else {
             return
         }
@@ -255,7 +263,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         if mode == .fire {
             fireModePromotionEligibility?.markFireModeVisited()
         }
-        // TODO: - Fire pixel
+        Pixel.fire(pixel: .browsingModeSwitched, withAdditionalParameters: [
+            PixelParameters.browsingMode: mode.pixelParamValue,
+            PixelParameters.source: source.rawValue
+        ])
     }
 
     func tabsModel(for mode: BrowsingMode) -> TabsModelManaging {
@@ -489,7 +500,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     @MainActor
     @discardableResult
     func select(_ tab: Tab, dismissCurrent: Bool = true, in tabsModel: TabsModelManaging? = nil) -> TabViewController? {
-        setBrowsingMode(tab.mode)
+        setBrowsingMode(tab.mode, source: .tabSelection)
         let model = tabsModel ?? currentTabsModel
         if dismissCurrent {
             current()?.dismiss()
@@ -553,10 +564,17 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         // In normal mode, removing the last tab auto-inserts a blank tab, so we skip
         // inserting newTab (the auto-created tab serves the same purpose).
         // In fire mode (allowsEmpty), no auto-insert happens, so we must always insert newTab.
-        if model.tabs.count == 1 && !model.allowsEmpty {
+        if model.tabs.count == 1 && !model.allowsEmpty && newTab.link == nil {
             // Since we're not re-inserting we should use the proper removal to ensure
             //  things are cleaned up properly.
             remove(tab: tab, clearTabHistory: clearTabHistory, in: model)
+        } else if model.tabs.count == 1 && !model.allowsEmpty {
+            // newTab has content (e.g. AI chat URL) so the auto-created blank won't suffice.
+            // Use removeTabs (no auto-insert) to avoid ending up with both newTab and an
+            // auto-created blank tab.
+            model.removeTabs([tab])
+            model.insert(tab: newTab, placement: .atEnd, selectNewTab: false)
+            clean(tabs: [tab], clearTabHistory: clearTabHistory)
         } else {
             model.insert(tab: newTab, placement: .replacing(tab), selectNewTab: false)
             clean(tabs: [tab], clearTabHistory: clearTabHistory)

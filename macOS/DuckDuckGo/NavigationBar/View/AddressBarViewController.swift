@@ -489,8 +489,11 @@ final class AddressBarViewController: NSViewController {
             /// `makeFirstResponder(nil)` drops any FR on `addressBarTextField` inherited from the outgoing tab
             /// (e.g. the new-tab NTP path makes it FR). Without it the field editor stays active over the
             /// now-unfocused duck.ai bar and renders the suffix + selected text on top of our plain-looking bar.
+            /// `applyDuckAIUnfocusedValue` pushes the incoming tab's preserved prompt onto the bar — otherwise
+            /// on a URL-loaded tab the value would still be the URL and the bar would render the URL + shield.
             addressBarButtonsViewController?.syncToggleSegmentToAIChatMode()
             isAIChatOmnibarVisible = false
+            addressBarTextField.applyDuckAIUnfocusedValue()
             selectionState = .inactiveWithAIChat
             updateMode()
             view.window?.makeFirstResponder(nil)
@@ -643,12 +646,12 @@ final class AddressBarViewController: NSViewController {
             passiveTextField.isHidden = true
         case .inactiveWithAIChat:
             /// Unfocused Duck.ai: always render via `addressBarTextField` showing the preserved prompt (or empty
-            /// for the "Ask anything privately" placeholder). We explicitly push the shared-state text onto the
-            /// field — without that, on a URL-loaded tab the value would still be the URL and `passiveTextField`
-            /// would show the URL / the left shield / the permission center (all undesired in duck.ai mode).
+            /// for the "Ask anything privately" placeholder). The value is pushed onto the field by the transitions
+            /// that enter this state (`resignFocusKeepingAIChatMode`, `applyIncomingTabAIChatMode`, and
+            /// `refocusInAIChatMode` when bouncing in/out), not here — calling `applyDuckAIUnfocusedValue` from
+            /// inside `updateView` would recurse through the `$value` sink.
             addressBarTextField.isHidden = false
             passiveTextField.isHidden = true
-            addressBarTextField.applyDuckAIUnfocusedValue()
         case .active, .inactive:
             let isPassiveTextFieldHidden = selectionState.isSelected || mode.isEditing
             addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
@@ -1305,10 +1308,10 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     /// remains on the duck.ai segment via the tab's preserved mode flag.
     func resignFocusKeepingAIChatMode() {
         guard selectionState == .activeWithAIChat else { return }
-        /// Make sure `addressBarTextField.value` reflects the preserved duck.ai prompt before the bar reveals it.
-        /// The normal `subscribeToSharedTextState` sync runs asynchronously on the main queue; without this explicit
-        /// pull the unfocused render can briefly show empty content before the async emission lands.
-        addressBarTextField.syncValueFromSharedTextStateForDuckAIUnfocus()
+        /// Force `addressBarTextField.value` to the duck.ai prompt (or empty for the placeholder) before the
+        /// bar becomes visible. On a URL-loaded tab the underlying value is still the URL; without this push,
+        /// unfocused duck.ai would render the URL + privacy shield + permission center.
+        addressBarTextField.applyDuckAIUnfocusedValue()
         /// Flip `isAIChatOmnibarVisible` FIRST — `selectionState`'s didSet calls `updateView`, which reads
         /// `isAIChatOmnibarVisible` to decide whether the suggestions-variant background (the tall one merged
         /// with the Duck.ai panel) should stay visible. Setting visibility after the state change leaves that

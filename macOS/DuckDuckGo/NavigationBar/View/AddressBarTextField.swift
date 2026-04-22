@@ -169,27 +169,18 @@ final class AddressBarTextField: NSTextField {
             }
     }
 
-    /// Forces the address bar's `value` to the current `sharedTextState.text`, bypassing the usual sync
-    /// guards. Called when exiting focused Duck.ai so the bar reliably shows the preserved prompt once
-    /// the unfocused branch of `updateView` reveals it.
-    func syncValueFromSharedTextStateForDuckAIUnfocus() {
-        guard let sharedTextState,
-              sharedTextState.hasUserInteractedWithText,
-              stringValueWithoutSuffix != sharedTextState.text else { return }
-        isUpdatingFromSharedState = true
-        self.value = Value(stringValue: sharedTextState.text, userTyped: true)
-        isUpdatingFromSharedState = false
-    }
-
     /// Pins `value` to `.text(sharedTextState.text, userTyped: true)` for the unfocused duck.ai state so the
     /// bar renders the preserved prompt (or an empty string that triggers the "Ask anything privately"
     /// placeholder) even when the underlying tab has a URL loaded — without this, entering unfocused duck.ai
     /// on a browsing tab would leave `value = .url(...)` and the bar would render the URL + privacy indicators.
+    /// Call at transitions that enter `.inactiveWithAIChat` — NOT from `updateView`, because assigning `value`
+    /// fires the `$value` sink which re-enters `updateView` and would recurse forever.
     func applyDuckAIUnfocusedValue() {
         let text = sharedTextState?.text ?? ""
-        guard stringValueWithoutSuffix != text else { return }
+        let target: Value = .text(text, userTyped: true)
+        guard value != target else { return }
         isUpdatingFromSharedState = true
-        self.value = Value(stringValue: text, userTyped: true)
+        self.value = target
         isUpdatingFromSharedState = false
     }
 

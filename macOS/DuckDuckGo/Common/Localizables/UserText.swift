@@ -2011,9 +2011,9 @@ struct UserText {
         }
     }
     static let warnBeforeQuitDialogCheckboxMessage = NSLocalizedString("warn.before.quit.dialog.checkbox.message", value: "Warn me every time", comment: "A label after checkbox to configure the warning before clearing data on the application termination.")
-    static let disableAutoClearToEnableSessionRestore = NSLocalizedString("disable.auto.clear.to.enable.session.restore",
-                                                                          value: "Your session won't be restored if Auto-Clear is turned on. Fire Windows also won’t be restored.",
-                                                                          comment: "Information label in Settings. It tells user that to enable session restoration setting they have to disable burn on quit. Auto-Clear should match the string with 'auto.clear' key")
+    static let disableAutoDeleteToEnableSessionRestore = NSLocalizedString("disable.auto.delete.to.enable.session.restore",
+                                                                           value: "Your session won't be restored if Automatically Delete Data is turned on. Fire Windows also won’t be restored.",
+                                                                           comment: "Information label in Settings. It tells user that to enable session restoration setting they have to disable burn on quit. Automatically Delete Data should match the string with 'auto.delete' key")
     static let showDataClearingSettings = NSLocalizedString("show.data.clearing.settings",
                                                             value: "Go to Data Clearing Settings",
                                                             comment: "Button in Settings. It navigates user to Data Clearing Settings. The Data Clearing string should match the string with the preferences.data-clearing key")

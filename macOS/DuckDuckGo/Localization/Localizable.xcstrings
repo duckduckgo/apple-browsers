@@ -22714,7 +22714,7 @@
     },
     "disable.auto.clear.to.enable.session.restore" : {
       "comment" : "Information label in Settings. It tells user that to enable session restoration setting they have to disable burn on quit. Auto-Clear should match the string with 'auto.clear' key",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -22768,6 +22768,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Если функция «Автоочистка» включена, восстановление сеанса невозможно. Окна Fire Window также не будут восстанавливаться."
+          }
+        }
+      }
+    },
+    "disable.auto.delete.to.enable.session.restore" : {
+      "comment" : "Information label in Settings. It tells user that to enable session restoration setting they have to disable burn on quit. Automatically Delete Data should match the string with 'auto.delete' key",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your session won't be restored if Automatically Delete Data is turned on. Fire Windows also won’t be restored."
           }
         }
       }

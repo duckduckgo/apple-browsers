@@ -197,6 +197,53 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
         await runPathA(hasMatches: true, authenticated: false)
         XCTAssertEqual(stateManager.firstScanResult, .matchesFound)
     }
+
+    // MARK: - Interrupted runs: freemium write is gated, pre-existing event fire is preserved
+
+    func test_pathA_unauthenticated_interruptedRun_doesNotWriteFirstScanResult_butStillFiresMatchesFound() async {
+        isAuthenticated = false
+        let (sut, deps) = DBPContinuedProcessingTestUtils.makeTestIOSManager(
+            freemiumDBPUserStateManagerOverride: stateManager
+        )
+        deps.database.hasMatchesToReturn = true
+        deps.authenticationManager.isUserAuthenticatedValue = false
+        deps.queueManager.startImmediateScanOperationsIfPermittedCompletionError =
+            DataBrokerProtectionJobsErrorCollection(oneTimeError: BrokerProfileJobQueueError.interrupted)
+
+        await sut.startImmediateScanOperations()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        _ = sut
+
+        // Branch-new behavior: interrupted run must not first-write-lock firstScanResult.
+        XCTAssertNil(stateManager.firstScanResult)
+        XCTAssertFalse(deps.eventsHandler.firstScanCompletedFired)
+        // Pre-existing behavior: `.firstScanCompletedAndMatchesFound` still fires on
+        // interruption when hasMatches is true, matching the pre-branch completion block.
+        XCTAssertTrue(deps.eventsHandler.firstScanCompletedAndMatchesFoundFired)
+
+        // A later non-interrupted run still records correctly.
+        await runPathA(hasMatches: true, authenticated: false)
+        XCTAssertEqual(stateManager.firstScanResult, .matchesFound)
+    }
+
+    func test_pathB_unauthenticated_interruptedRun_doesNotWriteFirstScanResult_butStillFiresMatchesFound() async {
+        isAuthenticated = false
+        let (sut, deps) = DBPContinuedProcessingTestUtils.makeTestIOSManager(
+            freemiumDBPUserStateManagerOverride: stateManager
+        )
+        deps.database.hasMatchesToReturn = true
+        deps.authenticationManager.isUserAuthenticatedValue = false
+        deps.queueManager.startImmediateScanOperationsIfPermittedCompletionError =
+            DataBrokerProtectionJobsErrorCollection(oneTimeError: BrokerProfileJobQueueError.interrupted)
+
+        await sut.coordinatorIsReadyForScanOperations()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        _ = sut
+
+        XCTAssertNil(stateManager.firstScanResult)
+        XCTAssertFalse(deps.eventsHandler.firstScanCompletedFired)
+        XCTAssertTrue(deps.eventsHandler.firstScanCompletedAndMatchesFoundFired)
+    }
 }
 
 private enum ScanCompletionTestError: Error {

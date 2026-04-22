@@ -29,7 +29,6 @@ public actor VPNLeakCheckService {
     private let httpClient: LeakCheckHTTPClient
     private let stunClient: LeakCheckSTUNClient
     private let wideEvent: WideEventManaging
-    private let contextName: String
 
     private var currentCheck: Task<Void, Never>?
     private var lastCompletionDate: Date?
@@ -45,8 +44,7 @@ public actor VPNLeakCheckService {
         tunnelInterface: NWInterface?,
         httpClient: LeakCheckHTTPClient,
         stunClient: LeakCheckSTUNClient,
-        wideEvent: WideEventManaging,
-        contextName: String
+        wideEvent: WideEventManaging
     ) {
         self.configuration = configuration
         self.egressInfo = egressInfo
@@ -54,7 +52,6 @@ public actor VPNLeakCheckService {
         self.httpClient = httpClient
         self.stunClient = stunClient
         self.wideEvent = wideEvent
-        self.contextName = contextName
     }
 
     public func start() {
@@ -137,10 +134,7 @@ public actor VPNLeakCheckService {
         let egressInfoSnapshot = egressInfo
         let tunnelInterfaceSnapshot = tunnelInterface
 
-        let data = VPNIPLeakCheckWideEventData(
-            trigger: trigger,
-            contextData: WideEventContextData(name: contextName)
-        )
+        let data = VPNIPLeakCheckWideEventData(trigger: trigger)
         data.egressServerName = egressInfoSnapshot.name
         wideEvent.startFlow(data)
 

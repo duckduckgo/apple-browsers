@@ -87,9 +87,6 @@ final class VPNIPLeakCheckWideEventDataTests: XCTestCase {
     }
 
     private func makeEventData() -> VPNIPLeakCheckWideEventData {
-        VPNIPLeakCheckWideEventData(
-            trigger: .tunnelStart,
-            contextData: WideEventContextData(name: "Test-Context")
-        )
+        VPNIPLeakCheckWideEventData(trigger: .tunnelStart)
     }
 }

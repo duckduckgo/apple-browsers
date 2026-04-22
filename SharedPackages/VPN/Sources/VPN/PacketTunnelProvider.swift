@@ -1255,8 +1255,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                     tunnelInterface: tunnelInterface,
                     httpClient: DefaultLeakCheckHTTPClient(),
                     stunClient: DefaultLeakCheckSTUNClient(),
-                    wideEvent: wideEvent,
-                    contextName: "vpn-ip-leak-check"
+                    wideEvent: wideEvent
                 )
                 leakCheckService = service
                 await service.start()

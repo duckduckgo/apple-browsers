@@ -52,6 +52,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
     func simplifiedConfirmAndDisableSync() async -> Bool
     func simplifiedCopyRecoveryCode()
+    func showSimplifiedSyncEnabledToast()
     var hasShownSimplifiedSyncAnotherDevicePrompt: Bool { get set }
 
     var syncBookmarksPausedTitle: String? { get }
@@ -178,6 +179,7 @@ public class SyncSettingsViewModel: ObservableObject {
     private(set) var switchToProdEnvironment: () -> Void = {}
     private var cancellables = Set<AnyCancellable>()
     private var pendingPreservedAccountContinuation: PreservedAccountContinuation?
+    private var shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
 
     private let autoRestoreProvider: SyncAutoRestoreProviding
 
@@ -394,17 +396,36 @@ public class SyncSettingsViewModel: ObservableObject {
         }
     }
 
-    public func checkAndShowSyncWithAnotherDevicePrompt() {
-        guard !isBusy else { return }
-        guard isSyncEnabled else { return }
-        guard devices.count == 1 else { return }
-        guard delegate?.hasShownSimplifiedSyncAnotherDevicePrompt == false else { return }
+    @discardableResult
+    public func checkAndShowSyncWithAnotherDevicePrompt() -> Bool {
+        guard !isBusy else { return false }
+        guard isSyncEnabled else { return false }
+        guard devices.count == 1 else { return false }
+        guard delegate?.hasShownSimplifiedSyncAnotherDevicePrompt == false else { return false }
         isSyncWithAnotherDevicePromptVisible = true
         delegate?.hasShownSimplifiedSyncAnotherDevicePrompt = true
+        return true
     }
 
     public func dismissSyncWithAnotherDevicePrompt() {
         isSyncWithAnotherDevicePromptVisible = false
+    }
+
+    public func syncAnotherDeviceFromPromptTapped() {
+        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
+        dismissSyncWithAnotherDevicePrompt()
+        scanQRCode()
+    }
+
+    public func scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal() {
+        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = true
+    }
+
+    public func syncWithAnotherDevicePromptDidDismiss() {
+        guard shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal else { return }
+
+        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
+        delegate?.showSimplifiedSyncEnabledToast()
     }
 
     public func copyCode() {
@@ -519,4 +540,5 @@ public class SyncSettingsViewModel: ObservableObject {
 public extension SyncManagementViewModelDelegate {
     func fireAutoRestorePixel(event _: SyncSettingsViewModel.AutoRestorePixelEvent) {}
     func simplifiedCopyRecoveryCode() {}
+    func showSimplifiedSyncEnabledToast() {}
 }

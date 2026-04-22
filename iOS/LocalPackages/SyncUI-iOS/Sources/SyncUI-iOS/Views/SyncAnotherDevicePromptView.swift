@@ -52,8 +52,7 @@ struct SyncAnotherDevicePromptView: View {
 
             VStack(spacing: 8) {
                 Button {
-                    model.dismissSyncWithAnotherDevicePrompt()
-                    model.scanQRCode()
+                    model.syncAnotherDeviceFromPromptTapped()
                 } label: {
                     HStack(spacing: 8) {
                         Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)

@@ -203,10 +203,14 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
                 self.enableAutoRestoreByDefaultIfNeeded()
-                self.refreshDevices(clearDevices: false)
-                ActionMessageView.present(message: UserText.simplifiedSyncEnabledToast, onDidDismiss: {
-                    optionsViewModel.checkAndShowSyncWithAnotherDevicePrompt()
-                })
+                await self.refreshDevicesAfterSimplifiedSyncEnable()
+
+                let didShowPrompt = optionsViewModel.checkAndShowSyncWithAnotherDevicePrompt()
+                if didShowPrompt {
+                    optionsViewModel.scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal()
+                } else {
+                    self.showSimplifiedSyncEnabledToast()
+                }
             } catch {
                 self.firePixelIfNeededFor(event: .syncSignupError, error: error)
                 ActionMessageView.present(message: UserText.simplifiedSyncSetupFailedToast)
@@ -836,6 +840,21 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 // MARK: - Simplified Sync
 
 extension SyncSettingsViewController {
+    private func refreshDevicesAfterSimplifiedSyncEnable() async {
+        do {
+            let devices = try await syncService.fetchDevices()
+            mapDevices(devices)
+        } catch {
+            Logger.sync.error("Failed to fetch devices after simplified sync enable: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    func showSimplifiedSyncEnabledToast() {
+        DispatchQueue.main.async {
+            ActionMessageView.present(message: UserText.simplifiedSyncEnabledToast)
+        }
+    }
+
     func simplifiedCopyRecoveryCode() {
         UIPasteboard.general.string = recoveryCode
         UINotificationFeedbackGenerator().notificationOccurred(.success)

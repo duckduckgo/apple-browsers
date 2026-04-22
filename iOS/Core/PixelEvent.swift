@@ -218,8 +218,6 @@ extension Pixel {
         case favoriteLaunchedWebsite
         case favoriteLaunchedWidget
 
-        case autocompleteMessageShown
-        case autocompleteMessageDismissed
         case autocompleteClickPhrase
         case autocompleteClickWebsite
         case autocompleteClickBookmark
@@ -1512,6 +1510,26 @@ extension Pixel {
         case aiChatContextualAutoAttachDAU
         case aiChatIsEnabledDaily
 
+        case duckAiNativeStorageMigrationDoneUnique(key: String)
+        case duckAiNativeStorageMigrationDoneCount(key: String)
+        case duckAiNativeStorageMigrationDoneBlankCount
+
+        case duckAiNativeStorageInitSuccess
+        case duckAiNativeStorageInitError
+        case duckAiNativeStorageMigrationStarted
+        case duckAiNativeStorageMigrationAlreadyDone
+        case duckAiNativeStorageMigrationError
+        case duckAiNativeStorageSettingsPutError
+        case duckAiNativeStorageSettingsGetError
+        case duckAiNativeStorageSettingsDeleteError
+        case duckAiNativeStorageChatPutError
+        case duckAiNativeStorageChatGetError
+        case duckAiNativeStorageChatDeleteError
+        case duckAiNativeStorageFilePutError
+        case duckAiNativeStorageFileGetError
+        case duckAiNativeStorageFileListError
+        case duckAiNativeStorageFileDeleteError
+
         case aiChatOmnibarSidebarButtonTapped
         case aiChatOmnibarNewChatButtonTapped
         
@@ -1741,6 +1759,17 @@ extension Pixel {
         case webExtensionAdBlockingInstalled
         case webExtensionAdBlockingUpgraded
         case webExtensionAdBlockingInstallError
+        case webExtensionAdBlockingSettingsOpen
+        case webExtensionAdBlockingEnabled
+        case webExtensionAdBlockingDisabled
+
+        case webExtensionScriptletFetchSuccess
+        case webExtensionScriptletFetchError
+        case webExtensionScriptletValidationError
+        case webExtensionScriptletInstalled
+        case webExtensionScriptletInstallError
+
+        case webExtensionDailyAdBlockingState
     }
 
 }
@@ -1930,8 +1959,6 @@ extension Pixel.Event {
         case .favoriteLaunchedWebsite: return "m_favorite_launched_website"
         case .favoriteLaunchedWidget: return "m_favorite_launched_widget"
 
-        case .autocompleteMessageShown: return "m_autocomplete_message_shown"
-        case .autocompleteMessageDismissed: return "m_autocomplete_message_dismissed"
         case .autocompleteClickPhrase: return "m_autocomplete_click_phrase"
         case .autocompleteClickWebsite: return "m_autocomplete_click_website"
         case .autocompleteClickBookmark: return "m_autocomplete_click_bookmark"
@@ -3112,6 +3139,26 @@ extension Pixel.Event {
         case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
         case .aiChatIsEnabledDaily: return "m_aichat_is_enabled_daily"
 
+        case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_duck-ai_native-storage_migration_done_\(key)_unique"
+        case .duckAiNativeStorageMigrationDoneCount(let key): return "m_duck-ai_native-storage_migration_done_\(key)_count"
+        case .duckAiNativeStorageMigrationDoneBlankCount: return "m_duck-ai_native-storage_migration_done_blank_count"
+
+        case .duckAiNativeStorageInitSuccess: return "m_duck-ai_native-storage_init_success"
+        case .duckAiNativeStorageInitError: return "m_duck-ai_native-storage_init_error"
+        case .duckAiNativeStorageMigrationStarted: return "m_duck-ai_native-storage_migration_started"
+        case .duckAiNativeStorageMigrationAlreadyDone: return "m_duck-ai_native-storage_migration_already-done"
+        case .duckAiNativeStorageMigrationError: return "m_duck-ai_native-storage_migration_error"
+        case .duckAiNativeStorageSettingsPutError: return "m_duck-ai_native-storage_settings-put_error"
+        case .duckAiNativeStorageSettingsGetError: return "m_duck-ai_native-storage_settings-get_error"
+        case .duckAiNativeStorageSettingsDeleteError: return "m_duck-ai_native-storage_settings-delete_error"
+        case .duckAiNativeStorageChatPutError: return "m_duck-ai_native-storage_chat-put_error"
+        case .duckAiNativeStorageChatGetError: return "m_duck-ai_native-storage_chat-get_error"
+        case .duckAiNativeStorageChatDeleteError: return "m_duck-ai_native-storage_chat-delete_error"
+        case .duckAiNativeStorageFilePutError: return "m_duck-ai_native-storage_file-put_error"
+        case .duckAiNativeStorageFileGetError: return "m_duck-ai_native-storage_file-get_error"
+        case .duckAiNativeStorageFileListError: return "m_duck-ai_native-storage_file-list_error"
+        case .duckAiNativeStorageFileDeleteError: return "m_duck-ai_native-storage_file-delete_error"
+
         case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
         case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"
 
@@ -3393,6 +3440,17 @@ extension Pixel.Event {
         case .webExtensionAdBlockingInstalled: return "m_web_extension_ad_blocking_installed"
         case .webExtensionAdBlockingUpgraded: return "m_web_extension_ad_blocking_upgraded"
         case .webExtensionAdBlockingInstallError: return "m_web_extension_ad_blocking_install_error"
+        case .webExtensionAdBlockingSettingsOpen: return "m_web_extension_ad_blocking_settings_open"
+        case .webExtensionAdBlockingEnabled: return "m_web_extension_ad_blocking_enabled"
+        case .webExtensionAdBlockingDisabled: return "m_web_extension_ad_blocking_disabled"
+
+        case .webExtensionScriptletFetchSuccess: return "m_web_extension_scriptlet_fetch_success"
+        case .webExtensionScriptletFetchError: return "m_web_extension_scriptlet_fetch_error"
+        case .webExtensionScriptletValidationError: return "m_web_extension_scriptlet_validation_error"
+        case .webExtensionScriptletInstalled: return "m_web_extension_scriptlet_installed"
+        case .webExtensionScriptletInstallError: return "m_web_extension_scriptlet_install_error"
+
+        case .webExtensionDailyAdBlockingState: return "m_web_extension_daily_ad_blocking_state"
         }
     }
 }

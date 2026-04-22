@@ -160,15 +160,9 @@ final class AIChatHistoryListViewController: UIViewController {
         viewModel.$filteredSuggestions
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self else { return }
-                self.tableView.reloadData()
-                self.updateScrollEnabled()
+                self?.tableView.reloadData()
             }
             .store(in: &cancellables)
-    }
-
-    private func updateScrollEnabled() {
-        tableView.isScrollEnabled = !chats.isEmpty
     }
 
     func setScrollableTitle(_ title: String?) {
@@ -269,7 +263,6 @@ final class AIChatHistoryListViewController: UIViewController {
             addChild(hosting)
             updateTableHeader()
             hosting.didMove(toParent: self)
-            updateScrollEnabled()
         } else {
             if let hosting = escapeHatchHostingController {
                 hosting.willMove(toParent: nil)
@@ -278,7 +271,6 @@ final class AIChatHistoryListViewController: UIViewController {
             }
             escapeHatchHostingController = nil
             updateTableHeader()
-            updateScrollEnabled()
         }
     }
 

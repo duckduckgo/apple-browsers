@@ -28,6 +28,7 @@ struct BadgeNotificationContentView: View {
     var badgeAnimationModel: BadgeNotificationAnimationModel
     var customText: String?
     var useShieldIcon: Bool
+    var useVideoPlayerIcon: Bool = false
     var trackerCount: Int = 0
     var textGenerator: ((Int) -> String)?
 
@@ -42,7 +43,9 @@ struct BadgeNotificationContentView: View {
     }
 
     private var iconView: AnyView {
-        if useShieldIcon {
+        if useVideoPlayerIcon {
+            return AnyView(VideoPlayerIconView())
+        } else if useShieldIcon {
             return AnyView(ShieldIconView())
         } else {
             return AnyView(BadgeIconAnimationView(animationModel: badgeIconAnimationModel))
@@ -240,6 +243,15 @@ struct ShieldIconView: View {
     }
 }
 
+struct VideoPlayerIconView: View {
+    var body: some View {
+        Image(nsImage: DesignSystemImages.Color.Size16.videoPlayer)
+            .resizable()
+            .frame(width: 16, height: 16)
+            .offset(x: 1)
+    }
+}
+
 struct BadgeNotificationContentView_Previews: PreviewProvider {
     static var previews: some View {
         BadgeNotificationContentView(
@@ -248,6 +260,7 @@ struct BadgeNotificationContentView_Previews: PreviewProvider {
             badgeAnimationModel: BadgeNotificationAnimationModel(),
             customText: nil,
             useShieldIcon: false,
+            useVideoPlayerIcon: false,
             trackerCount: 0,
             textGenerator: nil
         )

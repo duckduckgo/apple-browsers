@@ -278,6 +278,8 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var isImageGenerationEnabled: Bool = false
     var isWebSearchEnabled: Bool = false
     var selectedModelId: String?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> {Just(nil).eraseToAnyPublisher() }
+    var selectedModelShortName: String?
 }
 
 private extension AIChatSuggestion {

@@ -800,6 +800,7 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "PrivacyDashboard",
                 "PersistenceTestingUtils",
+                "BrowserServicesKitTestsUtils",
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
             ]
         ),

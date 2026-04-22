@@ -115,6 +115,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213433655862033?focus=true
     case dbpContinuedProcessing
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214085808544002
+    case dbpFreemiumPIR
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
 
@@ -505,6 +508,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization)))
         case .dbpContinuedProcessing:
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.continuedProcessing)))
+        case .dbpFreemiumPIR:
+            Config(source: .remoteReleasable(.subfeature(DBPSubfeature.freemiumPIR)))
         case .crashReportOptInStatusResetting:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.crashReportOptInStatusResetting)), supportsLocalOverriding: false)
         case .syncSeamlessAccountSwitching:

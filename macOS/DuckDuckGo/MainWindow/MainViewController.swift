@@ -31,6 +31,7 @@ import PixelKit
 import PrivacyConfig
 import SwiftUI
 import VPN
+import WebExtensions
 
 final class MainViewController: NSViewController {
     private(set) lazy var mainView = MainView(frame: NSRect(x: 0, y: 0, width: 600, height: 660))
@@ -148,7 +149,8 @@ final class MainViewController: NSViewController {
          pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
          memoryUsageMonitor: MemoryUsageMonitor = NSApp.delegateTyped.memoryUsageMonitor,
-         startupProfiler: StartupProfiler = NSApp.delegateTyped.startupProfiler
+         startupProfiler: StartupProfiler = NSApp.delegateTyped.startupProfiler,
+         adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -237,7 +239,8 @@ final class MainViewController: NSViewController {
             dockPreferences: dockPreferences,
             accessibilityPreferences: accessibilityPreferences,
             duckPlayer: duckPlayer,
-            pinningManager: pinningManager
+            pinningManager: pinningManager,
+            adBlockingAvailability: adBlockingAvailability
         )
         aiChatCoordinator = AIChatCoordinator(
             sidebarHost: browserTabViewController,
@@ -276,6 +279,7 @@ final class MainViewController: NSViewController {
                                                                          networkProtectionStatusReporter: networkProtectionStatusReporter,
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
                                                                          brokenSitePromptLimiter: brokenSitePromptLimiter,
+                                                                         adBlockingAvailability: adBlockingAvailability,
                                                                          searchPreferences: searchPreferences,
                                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                                                                          aiChatMenuConfig: aiChatMenuConfig,
@@ -310,7 +314,8 @@ final class MainViewController: NSViewController {
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,
             tabCollectionViewModel: tabCollectionViewModel,
-            suggestionsReader: suggestionsReader
+            suggestionsReader: suggestionsReader,
+            preferences: NSApp.delegateTyped.aiChatPreferencesPersistor
         )
 
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(

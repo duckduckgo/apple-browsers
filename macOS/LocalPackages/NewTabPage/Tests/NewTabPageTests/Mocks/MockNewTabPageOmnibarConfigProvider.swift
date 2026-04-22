@@ -56,5 +56,11 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var isWebSearchEnabled: Bool = false
 
-    var selectedModelId: String?
+    @Published var selectedModelId: String?
+
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> {
+        $selectedModelId.dropFirst().eraseToAnyPublisher()
+    }
+
+    var selectedModelShortName: String?
 }

@@ -44,9 +44,9 @@ public struct UserText {
     public static let actionDelete = NSLocalizedString("action.title.delete", value: "Delete", comment: "Delete action - button shown in alert")
     public static let actionBookmark = NSLocalizedString("action.title.bookmark", value: "Bookmark", comment: "Confirmation of Add to Bookmarks action in Add All Open Tabs to Bookmarks alert")
     public static let actionNewTab = NSLocalizedString("action.title.newTabAction", value: "New Tab", comment: "Create New Tab action")
-    public static let actionNewFireTab = NotLocalizedString("action.title.newFireTabAction", value: "New Fire Tab", comment: "Create New Fire Tab action")
+    public static let actionNewFireTab = NSLocalizedString("action.title.newFireTabAction", value: "New Fire Tab", comment: "Create New Fire Tab action")
     public static let actionNewTabForUrl = NSLocalizedString("action.title.newTabForUrl", value: "Open in New Tab", comment: "Open in New Tab action")
-    public static let actionNewFireTabForUrl = NotLocalizedString("action.title.newFireTabForUrl", value: "Open in a Fire Tab", comment: "Open in New Fire Tab action")
+    public static let actionNewFireTabForUrl = NSLocalizedString("action.title.newFireTabForUrl", value: "Open in a Fire Tab", comment: "Open in New Fire Tab action")
     public static let actionNewBackgroundTabForUrl = NSLocalizedString("action.title.newBackgroundTabForUrl", value: "Open in Background", comment: "Open in New Background Tab action")
     public static let actionForgetAll = NSLocalizedString("action.title.forgetAll", value: "Clear Tabs and Data", comment: "")
     public static let actionForgetAllDone = NSLocalizedString("action.title.forgetAllDone", value: "Tabs and data cleared", comment: "Confirmation message")
@@ -54,7 +54,7 @@ public struct UserText {
     // MARK: Scoped Fire Confirmation
 
     public static let scopedFireConfirmationAlertTitle = NSLocalizedString("scoped.fire.confirmation.alert.title", value: "Delete tabs and site data?", comment: "Title for scoped fire confirmation dialog asking user to delete tabs and site data")
-    public static let scopedFireConfirmationAlertFireModeTitle = NotLocalizedString("scoped.fire.confirmation.alert.fireMode.title", value: "Delete Fire Tabs and their data?", comment: "Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data")
+    public static let scopedFireConfirmationAlertFireModeTitle = NSLocalizedString("scoped.fire.confirmation.alert.fireMode.title", value: "Delete Fire Tabs and their data?", comment: "Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data")
     public static let scopedFireConfirmationAlertTitleWithAIChat = NSLocalizedString("scoped.fire.confirmation.alert.title.with.aichat", value: "Delete tabs, site data, and chats?", comment: "Title for scoped fire confirmation dialog when AI chat clearing is enabled")
     public static let scopedFireConfirmationDeleteAllButton = NSLocalizedString("scoped.fire.confirmation.delete.all.button", value: "Delete All", comment: "Button to delete all tabs and data in scoped fire confirmation dialog")
     public static let scopedFireConfirmationDeleteThisTabButton = NSLocalizedString("scoped.fire.confirmation.delete.this.tab.button", value: "Delete This Tab", comment: "Button to delete only the current tab in scoped fire confirmation dialog")
@@ -74,36 +74,36 @@ public struct UserText {
 
     // MARK: Fire Mode Empty State
 
-    public static let fireModeEmptyStateTitle = NotLocalizedString("fire.mode.empty.state.title", value: "Fire Tabs", comment: "Title shown on the Fire Mode empty state screen")
-    public static let fireTabEmptyStateTitle = NotLocalizedString("fire.tab.empty.state.title", value: "Fire Tab", comment: "Title shown on the Fire tab empty state screen")
-    public static let fireModeEmptyStateBulletHistory = NotLocalizedString("fire.mode.empty.state.bullet.history", value: "Browse without saving local history", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
-    public static let fireModeEmptyStateBulletAccount = NotLocalizedString("fire.mode.empty.state.bullet.account", value: "Sign in to a site with a different account", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
-    public static let fireModeEmptyStateBulletTroubleshoot = NotLocalizedString("fire.mode.empty.state.bullet.troubleshoot", value: "Troubleshoot websites", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
-    public static let fireModeEmptyStateDescription = NotLocalizedString("fire.mode.empty.state.description", value: "Fire Tabs are isolated from other browser data, and their data is burned when you close them all. They have the same tracking protection as other tabs.", comment: "Description explaining how Fire Tabs work on the empty state screen")
-    public static let fireModeEmptyStateNewFireTab = NotLocalizedString("fire.mode.empty.state.new.fire.tab", value: "New Fire Tab", comment: "Button label to create a new Fire Tab on the empty state screen")
+    public static let fireModeEmptyStateTitle = NSLocalizedString("fire.mode.empty.state.title", value: "Fire Tabs", comment: "Title shown on the Fire Mode empty state screen")
+    public static let fireTabEmptyStateTitle = NSLocalizedString("fire.tab.empty.state.title", value: "Fire Tab", comment: "Title shown on the Fire tab empty state screen")
+    public static let fireModeEmptyStateBulletHistory = NSLocalizedString("fire.mode.empty.state.bullet.history", value: "Browse without saving local history", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
+    public static let fireModeEmptyStateBulletAccount = NSLocalizedString("fire.mode.empty.state.bullet.account", value: "Sign in to a site with a different account", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
+    public static let fireModeEmptyStateBulletTroubleshoot = NSLocalizedString("fire.mode.empty.state.bullet.troubleshoot", value: "Troubleshoot websites", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
+    public static let fireModeEmptyStateDescription = NSLocalizedString("fire.mode.empty.state.description", value: "Fire Tabs are isolated from other browser data, and their data is burned when you close them all. They have the same tracking protection as other tabs.", comment: "Description explaining how Fire Tabs work on the empty state screen")
+    public static let fireModeEmptyStateNewFireTab = NSLocalizedString("fire.mode.empty.state.new.fire.tab", value: "New Fire Tab", comment: "Button label to create a new Fire Tab on the empty state screen")
 
     // MARK: Fire Mode NTP Promotion
 
-    public static let fireModePromotionTitle = NotLocalizedString("fire.mode.promotion.title", value: "Try Fire Tabs", comment: "Title for promotion element for pushing users to try fire mode.")
-    public static let fireModeNTPPromotionDescription = NotLocalizedString("fire.mode.ntp.promotion.description", value: "Browse without saving local history or sign in to sites with a different account.", comment: "Description for the Fire Mode promotion card shown on the new tab page")
-    public static let fireModeNTPPromotionPrimaryAction = NotLocalizedString("fire.mode.ntp.promotion.primary.action", value: "Try Fire Tabs", comment: "Primary action button on the Fire Mode promotion card that opens Fire Mode")
-    public static let fireModeNTPPromotionDismiss = NotLocalizedString("fire.mode.ntp.promotion.dismiss", value: "Not Now", comment: "Dismiss button on the Fire Mode promotion card on the new tab page")
+    public static let fireModePromotionTitle = NSLocalizedString("fire.mode.promotion.title", value: "Try Fire Tabs", comment: "Title for promotion element for pushing users to try fire mode.")
+    public static let fireModeNTPPromotionDescription = NSLocalizedString("fire.mode.ntp.promotion.description", value: "Browse without saving local history or sign in to sites with a different account.", comment: "Description for the Fire Mode promotion card shown on the new tab page")
+    public static let fireModeNTPPromotionPrimaryAction = NSLocalizedString("fire.mode.ntp.promotion.primary.action", value: "Try Fire Tabs", comment: "Primary action button on the Fire Mode promotion card that opens Fire Mode")
+    public static let fireModeNTPPromotionDismiss = NSLocalizedString("fire.mode.ntp.promotion.dismiss", value: "Not Now", comment: "Dismiss button on the Fire Mode promotion card on the new tab page")
 
     // MARK: Fire Mode Menu Promotion
 
-    public static let fireModeMenuPromotionBadge = NotLocalizedString("fire.mode.menu.promotion.badge", value: "New", comment: "Badge label on the Fire Mode promotion entry in the browsing menu")
+    public static let fireModeMenuPromotionBadge = NSLocalizedString("fire.mode.menu.promotion.badge", value: "New", comment: "Badge label on the Fire Mode promotion entry in the browsing menu")
 
     // MARK: - Tab Switcher Fire Mode
-    public static let openNewTab = NotLocalizedString("tab.open.new", value: "Open new tab", comment: "Accessibility label on tab cell")
-    public static let openNewFireTab = NotLocalizedString("tab.open.newFireTab", value: "Open fire tab", comment: "Accessibility label on tab cell")
-    public static let closeFireTab = NotLocalizedString("tab.close.closeFireTab", value: "Close fire tab", comment: "Accessibility label on tab cell")
-    public static let closeNewTab = NotLocalizedString("tab.close.closeNewTab", value: "Close tab", comment: "Accessibility label on tab cell")
+    public static let openNewTab = NSLocalizedString("tab.open.new", value: "Open new tab", comment: "Accessibility label on tab cell")
+    public static let openNewFireTab = NSLocalizedString("tab.open.newFireTab", value: "Open fire tab", comment: "Accessibility label on tab cell")
+    public static let closeFireTab = NSLocalizedString("tab.close.closeFireTab", value: "Close fire tab", comment: "Accessibility label on tab cell")
+    public static let closeNewTab = NSLocalizedString("tab.close.closeNewTab", value: "Close tab", comment: "Accessibility label on tab cell")
 
     // MARK: - Tab Cell Accessibility
     public static let tabCellCloseButtonAccessibility = NSLocalizedString("tab.cell.closeButton.accessibility", value: "Close Tab", comment: "Accessibility label for the close button on a tab cell")
     public static let tabCellUnreadAccessibility = NSLocalizedString("tab.cell.unread.accessibility", value: "Tab Unread", comment: "Accessibility label for the unread indicator on a tab cell")
-    public static let newTabTitle = NotLocalizedString("tab.new.title", value: "New Tab", comment: "New tab title")
-    public static let fireTabTitle = NotLocalizedString("tab.fire.title", value: "Fire Tab", comment: "Fire tab title")
+    public static let newTabTitle = NSLocalizedString("tab.new.title", value: "New Tab", comment: "New tab title")
+    public static let fireTabTitle = NSLocalizedString("tab.fire.title", value: "Fire Tab", comment: "Fire tab title")
 
     public static let actionOpen = NSLocalizedString("action.title.open", value: "Open", comment: "Open action")
     public static let actionCopy = NSLocalizedString("action.title.copy", value: "Copy", comment: "Copy action")
@@ -1220,6 +1220,9 @@ public struct UserText {
 
         return String.localizedStringWithFormat(omnibarNotificationTrackersBlockedFormat, count)
     }
+
+    public static let omnibarNotificationYouTubeAdBlockOn = NSLocalizedString("omnibar.notification.youtube-ad-block-on", value: "YouTube Ad Block On", comment: "Text displayed on notification appearing in the address bar when YouTube ad blocking is active")
+
     // MARK: Sync
 
     public static let syncUserUserAuthenticationReason = NSLocalizedString("sync.user.auth.reason", value: "Unlock device to set up Sync & Backup", comment: "Reason for auth when setting up Sync")
@@ -1603,7 +1606,7 @@ public struct UserText {
     public static let escapeHatchReturnToAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.accessibility.label", value: "Return to %@", comment: "Accessibility label for escape hatch card; %@ is the tab title")
     public static let escapeHatchReturnToWithSubtitleAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.withSubtitle.accessibility.label", value: "Return to %@, %@", comment: "Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain")
     public static let escapeHatchAccessibilityHint = NSLocalizedString("escapeHatch.accessibility.hint", value: "Switches to this tab", comment: "Accessibility hint for the escape hatch card")
-    public static let escapeHatchFireTabTitle = NotLocalizedString("escapeHatch.fireTab.title", value: "Last used Fire Tab", comment: "Title shown on the escape hatch card when the target is a fire tab")
+    public static let escapeHatchFireTabTitle = NSLocalizedString("escapeHatch.fireTab.title", value: "Last used Fire Tab", comment: "Title shown on the escape hatch card when the target is a fire tab")
 
     // Subscription Section
     public static let settingsSubscriptionSection = NSLocalizedString("settings.subscription.Section", value: "DuckDuckGo Subscription", comment: "Product name for the subscription bundle")
@@ -1934,8 +1937,6 @@ public struct UserText {
     static let winBackCampaignSubscriptionSettingsMenuExistingSubscriptionButton = NSLocalizedString("win-back.campaign.subscription.settings.menu.existing.subscription.button", value: "I Have a Subscription", comment: "Button for using existing subscription during the win-back campaign")
 
     // Autocomplete
-    public static let autocompleteHistoryWarningTitle = NSLocalizedString("autocomplete.history.warning.title", value: "Same privacy.\nBetter search suggestions!", comment: "Title for message show in suggestions")
-    public static let autocompleteHistoryWarningDescription = NSLocalizedString("autocomplete.history.warning.message", value: "Search suggestions now include your recently visited sites. Turn off in Settings, or clear anytime with the 🔥 Fire Button.", comment: "The message text shown in suggestions")
     public static let autocompleteSearchDuckDuckGo = NSLocalizedString("autocomplete.history.search.duckduckgo", value: "Search DuckDuckGo", comment: "Subtitle for search history items")
     public static let autocompleteSwitchToTab = NSLocalizedString("autocomplete.switch.to.tab", value: "Switch to Tab", comment: "Switch to tab hint")
 
@@ -1962,7 +1963,7 @@ public struct UserText {
     public static let duckPlayerAskLabel = NSLocalizedString("duckPlayer.ask.label", value: "Ask every time", comment: "Text displayed when DuckPlayer is in 'Ask' mode.")
     public static let duckPlayerDisabledLabel = NSLocalizedString("duckPlayer.never.label", value: "Never", comment: "Text displayed when DuckPlayer is in off.")
     public static let duckPlayerEnableToggle = NSLocalizedString("duckplayer.settings.enable-toggle", value: "Enable Duck Player", comment: "Toggle to enable Duck Player")
-    public static let duckPlayerEnableFooter = NSLocalizedString("duckplayer.settings.enable-footer", value: "Opens videos in a private theatre mode that prevents what you watch from influencing your YouTube feed.", comment: "Footer text for Enable Duck Player toggle")
+    public static let duckPlayerEnableFooter = NSLocalizedString("duckplayer.settings.enable-footer", value: "Opens videos in theater mode that prevents what you watch from influencing your YouTube feed.", comment: "Footer text for Enable Duck Player toggle")
     public static let duckPlayerAlwaysOpenToggle = NSLocalizedString("duckplayer.settings.always-open-toggle", value: "Always open YouTube videos in Duck Player", comment: "Toggle to always open videos in Duck Player")
     public static let duckPlayerExplanation = NSLocalizedString("duckplayer.settings.explanation", value: "Duck Player lets you watch YouTube without targeted ads and prevents viewing activity from influencing your recommendations.", comment: "Explanation footer for Duck Player settings")
     public static let settingsOpenVideosInDuckPlayerLabel = NSLocalizedString("duckplayer.settings.open-videos-in", value: "Open YouTube Videos in Duck Player", comment: "Settings screen cell text for DuckPlayer settings")
@@ -2152,12 +2153,13 @@ public struct UserText {
     public static let aiChatSettingsAllowFollowUpQuestionsDescription = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.description", value: "Show Duck.ai buttons and links in DuckDuckGo search results.", comment: "Description text explaining what the 'Ask Follow-up Questions' toggle does")
 
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask privately", comment: "Placeholder text for the duck.ai input field")
+    public static let searchInputFieldPlaceholderDuckAIV2 = NotLocalizedString("input.field.placeholder.duckai.v2", value: "Ask anything privately", comment: "Updated placeholder text for the duck.ai input field")
 
     public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Ask a follow-up question...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
 
     // MARK: - AI Chat Welcome Message
-    public static let aiChatWelcomeAskAnything = NotLocalizedString("duckai.welcome.ask.anything", value: "Ask Anything ", comment: "First part of the welcome message in Duck.ai contextual sheet, before the shield icon")
-    public static let aiChatWelcomePrivately = NotLocalizedString("duckai.welcome.privately", value: " privately", comment: "Second part of the welcome message in Duck.ai contextual sheet, after the shield icon, shown in green")
+    public static let aiChatWelcomeAskAnything = NotLocalizedString("duckai.welcome.ask.anything", value: "All chats are ", comment: "First part of the welcome message in Duck.ai contextual sheet, before the shield icon")
+    public static let aiChatWelcomePrivately = NotLocalizedString("duckai.welcome.privately", value: " private", comment: "Second part of the welcome message in Duck.ai contextual sheet, after the shield icon, shown in green")
 
     // MARK: - AI Chat Quick Actions
     public static let aiChatQuickActionAskAboutPage = NotLocalizedString("duckai.quick.action.ask.about.page", value: "Ask about page", comment: "Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content.")
@@ -2349,7 +2351,7 @@ public struct UserText {
 
             public static let fireOnboardingTitle = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.fire.title",
-                value: "That’s duck.ai!",
+                value: "That’s Duck.ai!",
                 comment: "Experiment-only fire onboarding title shown after the first Duck.ai response."
             )
             public static let fireOnboardingMessage = NotLocalizedString(

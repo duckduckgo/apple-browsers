@@ -85,7 +85,8 @@ struct BrokerProfileScanSubJob {
         let stageCalculator = scanContext.stageCalculator
 
         let metadata = ScanWideEventRecorder.Metadata(
-            from: brokerProfileQueryData.scanJobData,
+            scanHistoryEvents: brokerProfileQueryData.scanJobDataHistoryEventsSortedEarliestFirst,
+            optOutsHistoryEvents: brokerProfileQueryData.optOutJobDataHistoryEventsSortedWithinOptOutEarliestFirst,
             referenceDate: stageCalculator.startTime,
             isFreeScan: !isAuthenticated
         )

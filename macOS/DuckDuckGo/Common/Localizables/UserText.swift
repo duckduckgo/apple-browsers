@@ -736,7 +736,7 @@ struct UserText {
     static let duckPlayerShowPlayerButtons = NSLocalizedString("duck-player.show-buttons", value: "Show option to use Duck Player over YouTube previews on hover", comment: "Private YouTube Player option")
     static let duckPlayerOff = NSLocalizedString("duck-player.off", value: "Never use Duck Player", comment: "Private YouTube Player option")
     static let duckPlayerExplanation = NSLocalizedString("duck-player.explanation", value: "Duck Player provides a clean viewing experience without personalized ads and prevents viewing activity from influencing your YouTube recommendations.", comment: "Private YouTube Player explanation in settings")
-    static let duckPlayerYouTubeAdBlockingExplanation = NSLocalizedString("duck-player.youtube-ad-blocking.explanation", value: "Opens videos in a private theatre mode that prevents what you watch from influencing your YouTube feed.", comment: "Duck Player explanation shown in YouTube Ad Blocking settings")
+    static let duckPlayerYouTubeAdBlockingExplanation = NSLocalizedString("duck-player.youtube-ad-blocking.explanation", value: "Opens videos in theater mode that prevents what you watch from influencing your YouTube feed.", comment: "Duck Player explanation shown in YouTube Ad Blocking settings")
     static let duckPlayerAutoplayPreference = NSLocalizedString("duck-player.video-autoplay-preference", value: "Autoplay videos when opened in Duck Player", comment: "Autoplay preference in settings")
     static let duckPlayerNewTabPreference = NSLocalizedString("duck-player.newtab-preference", value: "Open Duck Player in a new tab whenever possible", comment: "New tab preference in settings")
     static let duckPlayerNewTabPreferenceExtraInfo = NSLocalizedString("duck-player.newtab.info-preference", value: "When browsing YouTube on the web", comment: "New tab preference extra info in settings")
@@ -2323,6 +2323,7 @@ struct UserText {
     // MARK: - OmniBar Notifications
     static let omnibarNotificationCookiesManaged = NSLocalizedString("omnibar.notification.cookies.managed", value: "Cookies Managed", comment: "Text displayed when cookies are managed by DuckDuckGo")
     static let omnibarNotificationPopupHidden = NSLocalizedString("omnibar.notification.popup.hidden", value: "Pop-up Hidden", comment: "Text displayed when a pop-up is hidden by DuckDuckGo")
+    static let omnibarNotificationYouTubeAdBlockOn = NSLocalizedString("omnibar.notification.youtube-ad-block-on", value: "YouTube Ad Block On", comment: "Text displayed on notification appearing in the address bar when YouTube ad blocking is active")
 
     static func omnibarNotificationTrackersBlocked(_ count: Int) -> String {
         let template = NSLocalizedString(

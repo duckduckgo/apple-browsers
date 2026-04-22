@@ -74,6 +74,11 @@ final class UnifiedToggleInputView: UIView {
         static let inlineDismissSize: CGFloat = 40
         static let inlineDismissTrailingPadding: CGFloat = 8
         static let toggleInlineDismissSpacing: CGFloat = 6
+        /// Trailing margin used at `.top` when the Search/Duck.ai toggle is disabled in
+        /// settings, so the floating X in the content container has room to sit outside the
+        /// card. With the toggle enabled the inline X lives inside the card and the card
+        /// spans the full width.
+        static let cardTrailingMarginWithFloatingDismiss: CGFloat = 68
 
         /// Trailing constant for the toggle when the inline dismiss button shares the top row.
         static var toggleTrailingWithInlineDismiss: CGFloat {
@@ -415,7 +420,7 @@ final class UnifiedToggleInputView: UIView {
             hTrailingMargin = Constants.cardHorizontalMarginBottom
         } else {
             hLeadingMargin = Constants.cardHorizontalMargin
-            hTrailingMargin = Constants.cardHorizontalMargin
+            hTrailingMargin = cardTrailingMargin
         }
 
         let vMargin: CGFloat
@@ -560,7 +565,7 @@ final class UnifiedToggleInputView: UIView {
                 self.expandedShadow1.shadowOffset = CGSize(width: 0, height: 2)
                 self.cardTopConstraint.constant = Constants.cardVerticalMargin
                 self.cardLeadingConstraint.constant = Constants.cardHorizontalMargin
-                self.cardTrailingConstraint.constant = -Constants.cardHorizontalMargin
+                self.cardTrailingConstraint.constant = -self.cardTrailingMargin
                 self.cardBottomConstraint.constant = -Constants.cardVerticalMargin
                 self.toolbarHeightConstraint.constant = 0
                 self.toolsToolbar.alpha = 0
@@ -575,7 +580,7 @@ final class UnifiedToggleInputView: UIView {
                     trailingMargin = Constants.cardHorizontalMarginBottom
                 } else {
                     leadingMargin = Constants.cardHorizontalMargin
-                    trailingMargin = Constants.cardHorizontalMargin
+                    trailingMargin = self.cardTrailingMargin
                 }
                 let verticalMargin: CGFloat = (!self.usesOmnibarMargins && self.cardPosition == .bottom)
                     ? Constants.cardVerticalMarginBottom
@@ -594,6 +599,16 @@ final class UnifiedToggleInputView: UIView {
     }
 
     // MARK: - Private
+
+    /// Card trailing margin for the current state. Carves out room for the floating X in
+    /// the content container when the toggle is disabled at `.top`; otherwise the card
+    /// spans the full width to host the inline X.
+    private var cardTrailingMargin: CGFloat {
+        let needsFloatingDismissCarveOut = isExpanded && cardPosition == .top && !isToggleEnabled
+        return needsFloatingDismissCarveOut
+            ? Constants.cardTrailingMarginWithFloatingDismiss
+            : Constants.cardHorizontalMargin
+    }
 
     private func updateToolbarVisibility(for mode: TextEntryMode, animated: Bool) {
         guard isExpanded else { return }

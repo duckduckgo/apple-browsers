@@ -221,6 +221,20 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertFalse(sut.computeRenderState().isInlineDismissActive)
     }
 
+    func test_inlineDismiss_hiddenWhenToggleDisabled() {
+        sut = UnifiedToggleInputCoordinator(isToggleEnabled: false)
+        sut.activateFromOmnibar(cardPosition: .top)
+        XCTAssertFalse(sut.computeRenderState().isInlineDismissActive)
+    }
+
+    func test_floatingDismiss_visibleAtTopWhenToggleDisabled() {
+        // Regression: with the toggle setting off, the card has no top row for the inline X;
+        // the floating X must still appear so users can dismiss the omnibar session.
+        sut = UnifiedToggleInputCoordinator(isToggleEnabled: false)
+        sut.activateFromOmnibar(cardPosition: .top)
+        XCTAssertTrue(sut.computeRenderState().isFloatingDismissVisible)
+    }
+
     func test_inlineDismiss_hiddenWhenCollapsed() {
         sut.showCollapsed()
         XCTAssertFalse(sut.computeRenderState().isInlineDismissActive)

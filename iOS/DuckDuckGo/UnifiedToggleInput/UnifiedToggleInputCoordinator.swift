@@ -700,6 +700,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isToolbarSubmitHidden: cardPosition == .top && isOmnibarSession,
             inactiveAppearance: inactiveAppearance,
             isFloatingSubmitVisible: isFloatingSubmitVisible,
+            isToggleEnabled: isToggleEnabled,
             contentInputMode: inputMode,
             inputMode: inputMode
         )

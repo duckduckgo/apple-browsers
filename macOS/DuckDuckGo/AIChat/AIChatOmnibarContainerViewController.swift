@@ -94,6 +94,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Tracks ongoing resize tasks by attachment ID. Used to ensure resizes complete before submission.
     private var resizeTasks: [UUID: Task<Void, Never>] = [:]
+    /// When true, the attachments view is being reinstalled from the current tab's shared state (on tab switch).
+    /// Used to suppress the `onAttachmentsChanged` → `persistAttachmentsToActiveTab` writeback during that window.
+    private var isRestoringAttachmentsFromSharedState = false
+    /// True while `cleanup()` is tearing down the panel. The clear-attachments call inside cleanup must not
+    /// persist an empty list back to shared state — on a tab-switch dismissal, cleanup runs before the controller's
+    /// `$selectedTabViewModel` sink has swapped `sharedTextState` to the incoming tab, so any persist at this point
+    /// would zero out the *outgoing* tab's attachments.
+    private var isCleaningUp = false
 
     /// Constraint for suggestions view height
     private var suggestionsHeightConstraint: NSLayoutConstraint?
@@ -501,7 +509,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         attachmentsContainerView.translatesAutoresizingMaskIntoConstraints = false
         attachmentsContainerView.onAttachmentsChanged = { [weak self] in
-            self?.updateAttachmentsLayout()
+            guard let self else { return }
+            self.updateAttachmentsLayout()
+            /// Skip the persist write during restore (tab switch reinstall — would echo back the list we just read)
+            /// and during cleanup (panel teardown — at that moment the controller's `sharedTextState` may still be
+            /// pointing at the outgoing tab, and persisting an empty list would wipe that tab's saved attachments).
+            if !self.isRestoringAttachmentsFromSharedState && !self.isCleaningUp {
+                self.omnibarController.persistAttachmentsToActiveTab(self.attachmentsContainerView.attachments)
+            }
         }
         attachmentsContainerView.onAttachmentWillRemove = { [weak self] id in
             PixelKit.fire(AIChatPixel.aiChatAddressBarImageRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
@@ -713,6 +728,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Stops event monitoring. Call this when the view controller is about to be dismissed.
     func cleanup() {
+        isCleaningUp = true
+        defer { isCleaningUp = false }
         backgroundView.stopListening()
         shadowView.removeFromSuperview()
         windowFrameObserver?.cancel()
@@ -939,6 +956,27 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             for task in tasks {
                 await task.value
             }
+        }
+        omnibarController.onActiveTabAttachmentsRestoreRequested = { [weak self] attachments in
+            self?.restoreAttachmentsFromSharedState(attachments)
+        }
+    }
+
+    /// Reinstalls the attachments view from the incoming tab's persisted list on tab switch.
+    /// Any in-flight resize tasks are cancelled because they were associated with the outgoing tab's
+    /// view instances; the persisted attachments already hold the best-available image we had for them.
+    private func restoreAttachmentsFromSharedState(_ attachments: [AIChatImageAttachment]) {
+        isRestoringAttachmentsFromSharedState = true
+        defer { isRestoringAttachmentsFromSharedState = false }
+
+        for task in resizeTasks.values {
+            task.cancel()
+        }
+        resizeTasks.removeAll()
+
+        attachmentsContainerView.removeAllAttachments()
+        for attachment in attachments {
+            attachmentsContainerView.addAttachment(attachment)
         }
     }
 

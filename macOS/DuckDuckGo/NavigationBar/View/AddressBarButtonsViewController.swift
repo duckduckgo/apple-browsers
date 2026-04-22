@@ -981,19 +981,12 @@ final class AddressBarButtonsViewController: NSViewController {
             } else {
                 imageButton.image = .web
             }
-        case .editing(.url):
-            imageButton.image = .web
-        case .editing(.text):
-            let addressBarStyleProvider = theme.addressBarStyleProvider
-            if addressBarStyleProvider.shouldShowNewSearchIcon {
-                imageButton.image = addressBarStyleProvider.addressBarLogoImage
-            } else {
-                imageButton.image = .search
-            }
-        case .editing(.openTabSuggestion):
-            imageButton.image = .openTabSuggestion
-        case .editing(.aiChat):
-            imageButton.image = .aiChat
+        case .editing(.text), .editing(.url), .editing(.openTabSuggestion), .editing(.aiChat):
+            /// Per the redesign, the address bar no longer shows a leading icon in any editing state — the user-
+            /// typed text and the right-hand toggle carry the mode indication, and keeping the left clear avoids
+            /// the text position shifting as the user cycles through / accepts suggestions (which changes the
+            /// underlying mode between `.text`, `.url`, `.openTabSuggestion`).
+            imageButton.image = nil
         default:
             imageButton.image = nil
         }
@@ -1025,12 +1018,13 @@ final class AddressBarButtonsViewController: NSViewController {
         && !isLocalUrl
         && !isAIChatPanelActive
 
-        // Hide the left icon when the toggle is visible
+        /// The `imageButton.image != nil` check is the gate that keeps the left icon out of `.editing(.text)` and
+        /// `.editing(.aiChat)` (the redesign removed the leading search icon; see `updateImageButton`). Favicon /
+        /// web icons still render in browsing and URL-editing modes where `imageButton.image` is set.
         imageButtonWrapper.isShown = imageButton.image != nil
         && !isInPopUpWindow
         && (isHypertextUrl || isTextFieldEditorFirstResponder || isEditingMode || isNewTab)
         && privacyDashboardButton.isHidden
-        && !shouldShowSearchModeToggle
         && !isOnboarding
         && !isAIChatPanelActive
     }
@@ -1872,11 +1866,11 @@ final class AddressBarButtonsViewController: NSViewController {
         updateZoomButtonVisibility()
     }
 
-    /// True when the search/duck.ai toggle feature is active for the current focus/mode combination.
-    /// The toggle is only surfaced while the address bar is focused; in unfocused duck.ai mode the toggle is hidden
-    /// to match the search-mode behaviour (the persistent duck.ai state is indicated by the AI chat panel below).
+    /// True when the search/duck.ai toggle feature is active.
+    /// Per the new design the toggle is visible in all selection states (focused and unfocused) so the user can
+    /// always see / change the tab's current mode — previously it was gated on the address bar being first responder.
     private var isSearchModeToggleFeatureActive: Bool {
-        isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+        featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
     }
 
     /// True when the toggle should be shown (feature active + user setting enabled).

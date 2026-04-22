@@ -169,6 +169,18 @@ final class AddressBarTextField: NSTextField {
             }
     }
 
+    /// Forces the address bar's `value` to the current `sharedTextState.text`, bypassing the usual sync
+    /// guards. Called when exiting focused Duck.ai so the bar reliably shows the preserved prompt once
+    /// the unfocused branch of `updateView` reveals it.
+    func syncValueFromSharedTextStateForDuckAIUnfocus() {
+        guard let sharedTextState,
+              sharedTextState.hasUserInteractedWithText,
+              stringValueWithoutSuffix != sharedTextState.text else { return }
+        isUpdatingFromSharedState = true
+        self.value = Value(stringValue: sharedTextState.text, userTyped: true)
+        isUpdatingFromSharedState = false
+    }
+
     /// Subscribes to shared text state changes to keep address bar in sync with Duck.ai panel
     private func subscribeToSharedTextState() {
         sharedTextStateCancellable?.cancel()
@@ -285,10 +297,14 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func restoreValueIfPossible(newSelectedTabViewModel: TabViewModel) {
+        /// Tab-switch restore must not wipe the incoming tab's duck.ai mode / tool mode / attachments — the controller
+        /// sink that fires earlier in this same emission chain just restored those from the tab's shared state, and the
+        /// `updateValue` path below (via `sharedTextState?.reset()`) would otherwise clear them again right afterwards
+        /// whenever the incoming tab had no user-typed address-bar value to restore.
         // save current (possibly modified) value into the old TabViewModel when selecting another Tab
         if let oldSelectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel {
             guard oldSelectedTabViewModel !== newSelectedTabViewModel else {
-                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil)
+                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
                 return
             }
             oldSelectedTabViewModel.lastAddressBarTextFieldValue = value
@@ -300,7 +316,7 @@ final class AddressBarTextField: NSTextField {
             if !text.isEmpty {
                 restoreValue(.text(text, userTyped: userTyped))
             } else {
-                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil)
+                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
             }
         case .suggestion(let suggestionViewModel):
             let suggestion = suggestionViewModel.suggestion
@@ -310,12 +326,12 @@ final class AddressBarTextField: NSTextField {
             case .phrase(phrase: let phase):
                 restoreValue(Value.text(phase, userTyped: false))
             case .unknown, .askAIChat:
-                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil)
+                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
             }
         case .url(urlString: let urlString, url: _, userTyped: true):
             restoreValue(Value(stringValue: urlString, userTyped: true))
         case .url, .none:
-            updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil)
+            updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
         }
     }
 
@@ -343,7 +359,7 @@ final class AddressBarTextField: NSTextField {
         }
     }
 
-    private func updateValue(selectedTabViewModel: TabViewModel?, addressBarString: String?) {
+    private func updateValue(selectedTabViewModel: TabViewModel?, addressBarString: String?, clearingDuckAIState: Bool = true) {
         guard let selectedTabViewModel = selectedTabViewModel ?? tabCollectionViewModel?.selectedTabViewModel else { return }
 
         let addressBarString = addressBarString ?? selectedTabViewModel.addressBarString
@@ -353,7 +369,7 @@ final class AddressBarTextField: NSTextField {
 
         /// Reset shared state when navigating to a website (not user-typed)
         /// This prevents old typed text from appearing when toggling modes while on a website
-        sharedTextState?.reset()
+        sharedTextState?.reset(clearingDuckAIState: clearingDuckAIState)
     }
 
     func clearValue() {

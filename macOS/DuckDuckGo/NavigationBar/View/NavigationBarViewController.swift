@@ -554,12 +554,9 @@ final class NavigationBarViewController: NSViewController {
         let performResize = { [weak self] in
             guard let self else { return }
 
-            /// Treat duck.ai mode (active or inactive) as focused for layout purposes so the nav bar height,
-            /// padding, and focus spacers stay at their "focused" values throughout Duck.ai — otherwise
-            /// `.inactiveWithAIChat` would shrink to unfocused dimensions and refocusing wouldn't restore the
-            /// original width because the AI chat panel flow doesn't re-fire this resize on focus state changes.
-            let selectionState = addressBarViewController?.selectionState ?? .inactive
-            let isAddressBarFocused = selectionState.isSelected || selectionState.isInAIChatMode
+            /// Use the taller, wider layout whenever there's user-provided input or Duck.ai is active; compact only
+            /// for `.inactive` + `.browsing` (see `AddressBarViewController.shouldUseTallAddressBarLayout`).
+            let isAddressBarFocused = addressBarViewController?.shouldUseTallAddressBarLayout ?? false
 
             let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
             height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass, focused: isAddressBarFocused)
@@ -2225,11 +2222,11 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
     }
 
     func addressBarViewControllerDidResignFocusKeepingAIChatMode(_ addressBarViewController: AddressBarViewController) {
-        (parent as? MainViewController)?.collapseAIChatOmnibarSuggestionsForUnfocus()
+        (parent as? MainViewController)?.hideAIChatOmnibarPanelKeepingTabState()
     }
 
     func addressBarViewControllerDidRefocusInAIChatMode(_ addressBarViewController: AddressBarViewController) {
-        (parent as? MainViewController)?.expandAIChatOmnibarSuggestionsForFocus()
+        (parent as? MainViewController)?.showAIChatOmnibarPanelForRefocus()
     }
 
     func addressBarViewControllerShouldActivateDuckAIForTabSwitch(_ addressBarViewController: AddressBarViewController) {

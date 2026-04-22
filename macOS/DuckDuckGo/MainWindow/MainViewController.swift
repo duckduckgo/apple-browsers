@@ -569,46 +569,24 @@ final class MainViewController: NSViewController {
         }
     }
 
-    /// Collapses the suggestions row while keeping the AI chat panel (prompt + tools + submit) visible.
-    /// Called when the address bar unfocuses while duck.ai stays the persistent mode for the tab.
-    func collapseAIChatOmnibarSuggestionsForUnfocus() {
+    /// Fully hides the Duck.ai panel on address-bar unfocus while leaving the tab's per-tab Duck.ai state
+    /// (mode flag, prompt text, tool selection, attachments) intact so re-entry restores the draft.
+    /// The `isCleaningUp` guards on the container VC / controller prevent the hide-driven view resets from
+    /// writing back into the tab's shared state.
+    func hideAIChatOmnibarPanelKeepingTabState() {
         guard mainView.isAIChatOmnibarContainerShown else { return }
 
-        aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.clearSelection()
-        aiChatOmnibarContainerViewController.setSuggestionsCollapsedByUnfocus(true)
-        /// Hide the panel's drop shadow so it matches the unfocused address-bar shadow treatment.
         aiChatOmnibarContainerViewController.setShadowVisible(false)
-
-        let textHeight = aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
-        let additionalHeight = aiChatOmnibarContainerViewController.additionalContentHeight
-        let totalHeight = textHeight + aiChatOmnibarContainerViewController.suggestionsHeight + additionalHeight
-        mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: true)
-
-        let passthroughHeight = aiChatOmnibarContainerViewController.totalPassthroughHeight
-        mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
-        aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
+        aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.clearSelection()
+        mainView.updateAIChatOmnibarContainerHeight(0, animated: true)
+        mainView.isAIChatOmnibarContainerShown = false
+        aiChatOmnibarTextContainerViewController.stopEventMonitoring()
     }
 
-    /// Re-expands the suggestions row and returns focus to the prompt editor.
-    /// Called when the user refocuses the address bar while duck.ai remains the persistent mode for the tab.
-    func expandAIChatOmnibarSuggestionsForFocus() {
-        guard mainView.isAIChatOmnibarContainerShown else { return }
-
-        aiChatOmnibarContainerViewController.setSuggestionsCollapsedByUnfocus(false)
-        /// Restore the panel's drop shadow to match the focused address-bar shadow treatment.
-        aiChatOmnibarContainerViewController.setShadowVisible(true)
-        aiChatOmnibarContainerViewController.omnibarController.onOmnibarActivated()
-
-        let textHeight = aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
-        let additionalHeight = aiChatOmnibarContainerViewController.additionalContentHeight
-        let totalHeight = textHeight + aiChatOmnibarContainerViewController.suggestionsHeight + additionalHeight
-        mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: true)
-
-        let passthroughHeight = aiChatOmnibarContainerViewController.totalPassthroughHeight
-        mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
-        aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
-
-        aiChatOmnibarTextContainerViewController.focusTextViewRestoringCursorPosition()
+    /// Re-shows the Duck.ai panel when the user refocuses the address bar in `.inactiveWithAIChat`.
+    /// Delegates to the standard visibility path so the panel reappears with the preserved draft / tool / attachments.
+    func showAIChatOmnibarPanelForRefocus() {
+        updateAIChatOmnibarContainerVisibility(visible: true, shouldKeepSelection: false, shouldFetchSuggestions: false)
     }
 
     func openNewDuckAIChatTab() {

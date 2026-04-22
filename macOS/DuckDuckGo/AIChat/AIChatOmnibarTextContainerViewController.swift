@@ -43,6 +43,11 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
     private var cancellables = Set<AnyCancellable>()
+    /// When true, the text view is being updated programmatically (text or selection) and any
+    /// resulting `textViewDidChangeSelection` callback must not overwrite the persisted caret
+    /// position — otherwise e.g. a tab-switch cleanup that clears `currentText` would also wipe
+    /// the saved selection with `(0, 0)` before we get a chance to restore it.
+    private var isUpdatingProgrammatically = false
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
@@ -232,11 +237,13 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             .sink { [weak self] newText in
                 guard let self = self else { return }
                 if self.textView.string != newText {
+                    self.isUpdatingProgrammatically = true
                     self.textView.string = newText
                     if self.view.window?.firstResponder == self.textView {
                         let textLength = newText.count
                         self.textView.selectedRange = NSRange(location: textLength, length: 0)
                     }
+                    self.isUpdatingProgrammatically = false
                     /// Update panel height when text changes programmatically (e.g., from paste)
                     self.updatePanelHeight()
                 }
@@ -278,6 +285,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     func textViewDidChangeSelection(_ notification: Notification) {
         /// Persist the caret / selection to the current tab's shared state so the same position is
         /// restored when the panel is re-activated (tab switch, refocus, etc.).
+        /// Skip programmatic updates — otherwise clearing `textView.string` via the `$currentText`
+        /// sink (triggered by cleanup on tab switch) would overwrite the saved selection with `(0, 0)`.
+        guard !isUpdatingProgrammatically else { return }
         omnibarController.updateSelection(textView.selectedRange)
     }
 
@@ -363,6 +373,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     /// location is past the current text length.
     func focusTextViewRestoringCursorPosition() {
         focusTextView()
+        isUpdatingProgrammatically = true
+        defer { isUpdatingProgrammatically = false }
         if let saved = omnibarController.currentSelectionRange,
            saved.location <= textView.string.count {
             let clampedLength = min(saved.length, max(0, textView.string.count - saved.location))
@@ -379,7 +391,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     func syncTextViewToCurrentText() {
         let newText = omnibarController.currentText
         if textView.string != newText {
+            isUpdatingProgrammatically = true
             textView.string = newText
+            isUpdatingProgrammatically = false
             updatePlaceholderVisibility()
             updatePanelHeight()
         }

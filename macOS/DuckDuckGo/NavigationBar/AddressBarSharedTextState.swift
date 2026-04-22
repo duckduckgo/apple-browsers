@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import AIChat
 
 /// Manages shared text state between search mode and duck.ai mode in the address bar.
 /// This allows text content and selection to be preserved when switching between modes.
@@ -39,13 +40,32 @@ final class AddressBarSharedTextState: ObservableObject {
     /// Persists across focus changes and tab switches; cleared on navigation, submit, or explicit switch back to search.
     @Published private(set) var isInDuckAIMode: Bool = false
 
-    /// Resets the shared state to initial values
-    func reset() {
+    /// The duck.ai tool selection for this tab (image generation / web search).
+    /// Persists across tab switches; cleared alongside text on navigation, submit, or explicit reset.
+    @Published private(set) var aiChatToolMode: AIChatToolMode?
+
+    /// The duck.ai image attachments for this tab.
+    /// Persists across tab switches so the user doesn't lose a prepared prompt's attachments when bouncing between tabs.
+    @Published private(set) var aiChatAttachments: [AIChatImageAttachment] = []
+
+    /// Resets the shared state to initial values.
+    /// - Parameter clearingDuckAIState: Pass `false` from tab-switch restore paths. Tab switches must not
+    ///   wipe per-tab duck.ai mode / tool mode / attachments — those belong to the tab and are only cleared
+    ///   on explicit user action (toggle off, submit, navigation). Default `true` preserves the navigation
+    ///   semantics for callers that do want a full reset.
+    func reset(clearingDuckAIState: Bool = true) {
         text = ""
         selectionRange = NSRange(location: 0, length: 0)
         hasUserInteractedWithText = false
+        guard clearingDuckAIState else { return }
         if isInDuckAIMode {
             isInDuckAIMode = false
+        }
+        if aiChatToolMode != nil {
+            aiChatToolMode = nil
+        }
+        if !aiChatAttachments.isEmpty {
+            aiChatAttachments = []
         }
     }
 
@@ -53,6 +73,23 @@ final class AddressBarSharedTextState: ObservableObject {
     func setDuckAIMode(_ enabled: Bool) {
         guard isInDuckAIMode != enabled else { return }
         isInDuckAIMode = enabled
+    }
+
+    /// Sets the duck.ai tool selection for this tab. No-op when the value is unchanged to avoid
+    /// spurious publisher emissions (and subscription loops between controller ↔ shared state).
+    func setAIChatToolMode(_ mode: AIChatToolMode?) {
+        guard aiChatToolMode != mode else { return }
+        aiChatToolMode = mode
+    }
+
+    /// Replaces the duck.ai attachment list for this tab. Skips the write when the attachments are
+    /// already equivalent by id to avoid subscription churn when a tab-switch restore hands back the
+    /// same list we just wrote.
+    func setAIChatAttachments(_ attachments: [AIChatImageAttachment]) {
+        let sameIds = attachments.count == aiChatAttachments.count
+            && zip(attachments, aiChatAttachments).allSatisfy { $0.id == $1.id }
+        guard !sameIds else { return }
+        aiChatAttachments = attachments
     }
 
     func resetUserInteraction() {

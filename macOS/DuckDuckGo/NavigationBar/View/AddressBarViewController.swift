@@ -74,8 +74,9 @@ final class AddressBarViewController: NSViewController {
         case active
         case activeWithAIChat
         /// Address bar is unfocused, but duck.ai is the persistent mode for the current tab:
-        /// the AI Chat panel remains on-screen (prompt + tools + submit), suggestions collapse,
-        /// toggle stays on the duck.ai segment, and the address bar reverts to its inactive look.
+        /// the AI chat panel is hidden and the bar renders identically to `.inactive` (single-line,
+        /// no left icon), with the toggle on the duck.ai segment. Clicking the bar re-enters focused
+        /// duck.ai (`.activeWithAIChat`); the typed prompt / cursor / tool mode / attachments are preserved.
         case inactiveWithAIChat
 
         var isSelected: Bool {
@@ -153,6 +154,13 @@ final class AddressBarViewController: NSViewController {
         didSet {
             addressBarButtonsViewController?.controllerMode = mode
         }
+    }
+
+    /// True when the nav bar should render at its tall / focused height. Covers any selected state, duck.ai
+    /// (focused or unfocused — Duck.ai is always a typing context), and unfocused search with user-provided
+    /// input (typed text / URL / tab suggestion). Compact only for `.inactive` + `.browsing` (URL rendered passively).
+    var shouldUseTallAddressBarLayout: Bool {
+        selectionState.isSelected || selectionState.isInAIChatMode || mode.isEditing
     }
 
     let themeManager: ThemeManaging
@@ -459,22 +467,30 @@ final class AddressBarViewController: NSViewController {
             .store(in: &cancellables)
     }
 
-    /// Reconciles the AI chat panel visibility with the newly selected tab's persistent duck.ai state:
-    /// switching to a tab that previously had duck.ai selected restores the panel (unfocused + suggestions collapsed),
-    /// while switching to a search-mode tab tears down the panel if it was up.
+    /// Reconciles the selection state with the newly selected tab's persistent duck.ai flag.
+    /// Per the redesign the unfocused duck.ai bar looks identical to unfocused search (one-line passive text field,
+    /// panel hidden). Tab switches always land in the unfocused state: `.inactiveWithAIChat` for duck.ai tabs,
+    /// `.inactive` otherwise. The user can click the bar or the toggle to enter focused duck.ai.
     private func applyIncomingTabAIChatMode(wasInAIChatMode: Bool) {
         let incomingIsInDuckAIMode = sharedTextState?.isInDuckAIMode ?? false
 
         switch (wasInAIChatMode, incomingIsInDuckAIMode) {
         case (true, true), (false, true):
-            /// Incoming tab has duck.ai selected — present the panel focused. Use the tab-switch path rather
-            /// than the regular toggle path so the activation skips the async suggestions fetch (the fetch's
-            /// async completion produces a visible panel expansion animation right after the panel appears on
-            /// tab switch). User typing still triggers suggestions via the debounced subscription.
+            /// Incoming tab has duck.ai selected — sync toggle + land in unfocused duck.ai without opening the panel.
+            /// `isAIChatOmnibarVisible` is flipped BEFORE `selectionState` so `updateView` (triggered by the state
+            /// change) sees the panel-hidden flag and drops the suggestions-variant background; otherwise the
+            /// unfocused bar renders at the taller focused-with-suggestions height.
+            /// `makeFirstResponder(nil)` drops any FR on `addressBarTextField` inherited from the outgoing tab
+            /// (e.g. the new-tab NTP path makes it FR). Without it the field editor stays active over the
+            /// now-unfocused duck.ai bar and renders the suffix + selected text on top of our plain-looking bar.
             addressBarButtonsViewController?.syncToggleSegmentToAIChatMode()
-            delegate?.addressBarViewControllerShouldActivateDuckAIForTabSwitch(self)
+            isAIChatOmnibarVisible = false
+            selectionState = .inactiveWithAIChat
+            updateMode()
+            view.window?.makeFirstResponder(nil)
+            delegate?.resizeAddressBarForHomePage(self)
         case (true, false):
-            /// Incoming tab is in search mode — fully dismiss the duck.ai panel and reset the toggle.
+            /// Incoming tab is in search mode — fully dismiss the duck.ai panel (in case it was up) and reset the toggle.
             delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
             setAIChatOmnibarVisible(false)
         case (false, false):
@@ -613,22 +629,31 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func updateView() {
-        if selectionState.isInAIChatMode {
-            /// Duck.ai takes over the address bar area with its own prompt overlay; hide both text fields so
-            /// their text (and the "- Search DuckDuckGo" suffix) doesn't peek out past the overlay edges.
+        if selectionState == .activeWithAIChat {
+            /// Focused Duck.ai: the prompt panel covers the address-bar area. Hide both text fields so their
+            /// text / suffix doesn't peek out past the panel edges.
             addressBarTextField.isHidden = true
             passiveTextField.isHidden = true
         } else {
+            /// `.active`, `.inactive`, and `.inactiveWithAIChat` share identical rendering: the editable
+            /// `addressBarTextField` when focused or in an editing mode (typed text / URL / Duck.ai prompt),
+            /// otherwise the passive URL/content label. `.inactiveWithAIChat` thus looks visually identical to
+            /// `.inactive` with typed text — only the toggle segment differs. `addressBarTextField.value` is
+            /// already synced to the preserved duck.ai prompt via `subscribeToSharedTextState`.
             let isPassiveTextFieldHidden = selectionState.isSelected || mode.isEditing
             addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
             passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
         }
         passiveTextField.textColor = theme.colorsProvider.textPrimaryColor
 
-        // Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug
+        // Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug.
+        // The internal labels get `alpha = 0` when the text field is hidden; un-hiding the field (e.g. transitioning
+        // out of `.activeWithAIChat` into `.inactiveWithAIChat`) must restore them or the text won't render.
         if #available(macOS 26.0, *), featureFlagger.isFeatureOn(.blurryAddressBarTahoeFix) {
             if addressBarTextField.isHidden {
                 forceHideInternalTextFieldLabels(in: addressBarTextField)
+            } else {
+                restoreInternalTextFieldLabels(in: addressBarTextField)
             }
         }
 
@@ -861,24 +886,30 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func layoutTextFields(withMinX minX: CGFloat) {
-        self.passiveTextFieldMinXConstraint.constant = minX
-        // adjust min-x to passive text field when "Search or enter" placeholder is displayed (to prevent placeholder overlapping buttons)
+        /// Keep the text leading X fixed across focused / unfocused / mode transitions so accepting a suggestion
+        /// (which flips `mode` between `.text` / `.url` / `.openTabSuggestion`) doesn't visibly shift the text.
+        /// When the toggle feature is on, all editing states have no left icon, so we pin the text at a constant
+        /// padding that matches the Duck.ai prompt panel's leading inset. When the buttons container is wider
+        /// (e.g. browsing with the privacy dashboard showing), we respect that width so the text clears the button.
+        let isToggleFeatureEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+        let isToggleVisible = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
+        let duckAILeadingPadding: CGFloat = 20
 
+        if isToggleVisible {
+            let effectiveMinX = max(minX, duckAILeadingPadding)
+            self.passiveTextFieldMinXConstraint.constant = effectiveMinX
+            self.activeTextFieldMinXConstraint.constant = effectiveMinX
+            return
+        }
+
+        self.passiveTextFieldMinXConstraint.constant = minX
         let isAddressBarFocused = view.window?.firstResponder == addressBarTextField.currentEditor()
         let adjustedMinX: CGFloat = (!self.isSelected || self.mode.isEditing) ? minX : Constants.defaultActiveTextFieldMinX
 
-        let isOmnibarToggleFeatureEnabled = isAddressBarFocused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
-        let isToggleVisible = isOmnibarToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
-        let textMargin: CGFloat = 20
-
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
-            if isAddressBarFocused {
-                self.activeTextFieldMinXConstraint.constant = isToggleVisible ? textMargin : adjustedMinX - 5
-            } else {
-                self.activeTextFieldMinXConstraint.constant = adjustedMinX - 6
-            }
+            self.activeTextFieldMinXConstraint.constant = isAddressBarFocused ? adjustedMinX - 5 : adjustedMinX - 6
         } else {
-            self.activeTextFieldMinXConstraint.constant = isToggleVisible ? textMargin : adjustedMinX
+            self.activeTextFieldMinXConstraint.constant = adjustedMinX
         }
     }
 
@@ -938,10 +969,12 @@ final class AddressBarViewController: NSViewController {
             break
         case .inactiveWithAIChat:
             if isFirstResponder {
-                /// User focused the address bar (URL) while duck.ai was the persistent mode for the tab.
-                /// Exit duck.ai fully and transition to search-focused state.
-                delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
-                selectionState = .active
+                /// User clicked the address bar while duck.ai is the persistent mode for the tab. Don't let
+                /// `addressBarTextField` stay first responder (its editor becoming responder is what triggered
+                /// this call); bounce back into focused Duck.ai instead so the panel reappears with the preserved
+                /// prompt / cursor / tool mode / attachments and the Duck.ai text view takes focus.
+                view.window?.makeFirstResponder(nil)
+                refocusInAIChatMode()
                 fireAddressBarActivatedPixelIfNeeded()
             }
         }
@@ -963,10 +996,23 @@ final class AddressBarViewController: NSViewController {
     // MARK: - Event handling
 
     func escapeKeyDown() -> Bool {
+        /// Second Escape press while unfocused in duck.ai mode: fully exit duck.ai for this tab, mirroring the
+        /// "clear content and mode" step search mode performs. `addressBarTextField.escapeKeyDown()` resets the
+        /// bar's value to the tab's URL (or empty for NTP) and calls `sharedTextState?.reset(clearingDuckAIState: true)`
+        /// via `updateValue`, which clears the preserved prompt / selection / tool mode / attachments / duck.ai flag.
+        if selectionState == .inactiveWithAIChat {
+            selectionState = .inactive
+            addressBarTextField.escapeKeyDown()
+            addressBarButtonsViewController?.resetSearchModeToggle()
+            updateMode()
+            return true
+        }
+
         guard selectionState.isSelected else { return false }
 
         if selectionState == .activeWithAIChat {
-            /// Escape in focused duck.ai mode just unfocuses — toggle + prompt are preserved for the tab.
+            /// First Escape press in focused duck.ai: just resign focus. The tab stays in duck.ai mode, the prompt
+            /// stays in `passiveTextField`, and the tool / attachment state is preserved for the next refocus.
             resignFocusKeepingAIChatMode()
             return true
         }
@@ -1035,13 +1081,13 @@ final class AddressBarViewController: NSViewController {
                 return event
             }
 
-            // The AI chat prompt container overlays the address bar area while the panel is up. Clicks inside the
-            // panel area must not auto-focus the address bar (which would exit duck.ai to search), so defer to the
-            // panel's own hit testing to handle the click (refocusing the prompt via FocusableTextView).
-            if selectionState == .inactiveWithAIChat,
-               let isPointInAIChatOmnibar,
-               isPointInAIChatOmnibar(event.locationInWindow) {
-                return event
+            // Unfocused duck.ai renders as a single-line `passiveTextField`; clicking it should refocus into
+            // duck.ai (restore panel + prompt + cursor), not make `addressBarTextField` first responder (which
+            // would briefly transition to search-focused and flash). Intercept the click and short-circuit into
+            // the refocus path. Hits on tool buttons / the toggle fall through above via `shouldShowArrowCursor`.
+            if selectionState == .inactiveWithAIChat {
+                refocusInAIChatMode()
+                return nil
             }
 
             guard self.view.window?.firstResponder !== addressBarTextField.currentEditor()
@@ -1223,30 +1269,36 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     }
 
     /// Transitions from focused duck.ai mode (`.activeWithAIChat`) to unfocused duck.ai mode (`.inactiveWithAIChat`):
-    /// resigns first responder, keeps the panel on screen (prompt + tools + submit) but collapses suggestions,
-    /// leaves the toggle segment on duck.ai, and preserves per-tab state.
-    /// `mode` stays at `.editing(.aiChat)` so the buttons VC continues to treat the tab as AI-chat mode (hides
-    /// bookmark / aiChatButton and keeps the correct left-side icon) even while unfocused.
+    /// resigns first responder, fully hides the Duck.ai panel, and lets the bar revert to its inactive single-line
+    /// rendering (with `passiveTextField` showing the preserved prompt). The tab's `isInDuckAIMode` flag and the
+    /// shared text state stay intact so clicking the bar or submitting from elsewhere resumes the draft.
+    /// `isAIChatOmnibarVisible` flips to false so the buttons VC stops treating the panel as active; the toggle
+    /// remains on the duck.ai segment via the tab's preserved mode flag.
     func resignFocusKeepingAIChatMode() {
         guard selectionState == .activeWithAIChat else { return }
+        /// Make sure `addressBarTextField.value` reflects the preserved duck.ai prompt before the bar reveals it.
+        /// The normal `subscribeToSharedTextState` sync runs asynchronously on the main queue; without this explicit
+        /// pull the unfocused render can briefly show empty content before the async emission lands.
+        addressBarTextField.syncValueFromSharedTextStateForDuckAIUnfocus()
+        /// Flip `isAIChatOmnibarVisible` FIRST — `selectionState`'s didSet calls `updateView`, which reads
+        /// `isAIChatOmnibarVisible` to decide whether the suggestions-variant background (the tall one merged
+        /// with the Duck.ai panel) should stay visible. Setting visibility after the state change leaves that
+        /// background up, making the unfocused bar look taller than `.inactive` with typed text.
+        isAIChatOmnibarVisible = false
         selectionState = .inactiveWithAIChat
-        mode = .editing(.aiChat)
+        updateMode()
         view.window?.makeFirstResponder(nil)
-        /// Force the nav bar to re-evaluate focus spacers — `resizeAddressBarWidth` now treats duck.ai mode as
-        /// focused (spacers removed) so `activeBackgroundViewWithSuggestions` and the AI chat container widths
-        /// align.
         delegate?.resizeAddressBarForHomePage(self)
         delegate?.addressBarViewControllerDidResignFocusKeepingAIChatMode(self)
     }
 
     /// Transitions from unfocused duck.ai mode (`.inactiveWithAIChat`) back to focused duck.ai mode (`.activeWithAIChat`):
-    /// re-expands suggestions and restores active styling on the address bar.
-    /// The prompt text view's first-responder state is managed by the caller (usually the click that triggered the refocus).
+    /// re-shows the Duck.ai panel and returns focus to the prompt editor with the preserved draft / cursor position.
     func refocusInAIChatMode() {
         guard selectionState == .inactiveWithAIChat else { return }
         selectionState = .activeWithAIChat
+        isAIChatOmnibarVisible = true
         mode = .editing(.aiChat)
-        /// Re-fire the nav bar resize so it re-evaluates width/padding for the new focus state.
         delegate?.resizeAddressBarForHomePage(self)
         delegate?.addressBarViewControllerDidRefocusInAIChatMode(self)
     }

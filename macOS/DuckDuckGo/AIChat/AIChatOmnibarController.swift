@@ -32,18 +32,19 @@ protocol AIChatOmnibarControllerDelegate: AnyObject {
     func aiChatOmnibarController(_ controller: AIChatOmnibarController, didSelectSuggestion suggestion: AIChatSuggestion)
 }
 
+/// Duck.ai omnibar tool selection. Preserved across tab switches via `AddressBarSharedTextState`.
+enum AIChatToolMode: Equatable {
+    case imageGeneration
+    case webSearch
+}
+
 /// Controller that manages the state and actions for the AI Chat omnibar.
 /// This controller is shared between AIChatOmnibarContainerViewController and AIChatOmnibarTextContainerViewController
 /// to coordinate text input and submission.
 @MainActor
 final class AIChatOmnibarController {
-    enum ToolMode: Equatable {
-        case imageGeneration
-        case webSearch
-    }
-
     @Published private(set) var currentText: String = ""
-    @Published private(set) var activeToolMode: ToolMode?
+    @Published private(set) var activeToolMode: AIChatToolMode?
     @Published var hasImageAttachments: Bool = false
 
     var isImageGenerationMode: Bool { activeToolMode == .imageGeneration }
@@ -61,6 +62,11 @@ final class AIChatOmnibarController {
     private var cancellables = Set<AnyCancellable>()
     private var sharedTextStateCancellable: AnyCancellable?
     private var isUpdatingFromSharedState = false
+    /// True while `cleanup()` is zeroing out controller-local state. Cleanup is a teardown of the controller's
+    /// transient state, not a user action, so its side-effect writes must not reach shared state — otherwise
+    /// when cleanup runs during a tab switch before the controller's `$selectedTabViewModel` sink has swapped
+    /// `sharedTextState` to the incoming tab, the zeros stomp the *outgoing* tab's per-tab state.
+    private(set) var isCleaningUp = false
     private var currentFetchTask: Task<Void, Never>?
     private var modelsFetchTask: Task<Void, Never>?
     private var hasBeenActivated = false
@@ -76,6 +82,11 @@ final class AIChatOmnibarController {
 
     /// Called after a successful submit so the container VC can clear its attachment UI.
     var onAttachmentsClearRequested: (() -> Void)?
+
+    /// Called on tab switch so the container VC can reinstall the attachments persisted for the incoming tab.
+    /// Owned by the container VC (where the attachments view and its resize tasks live); the controller just
+    /// delivers the list pulled from the incoming tab's `AddressBarSharedTextState`.
+    var onActiveTabAttachmentsRestoreRequested: (([AIChatImageAttachment]) -> Void)?
 
     /// Waits for all attachment resizing to complete before proceeding.
     var waitForAttachmentsReady: (() async -> Void)?
@@ -127,10 +138,12 @@ final class AIChatOmnibarController {
             .eraseToAnyPublisher()
     }
 
-    /// Gets the shared text state from the current tab's view model
-    private var sharedTextState: AddressBarSharedTextState? {
-        tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
-    }
+    /// The currently active tab's shared text state. Updated in the `$selectedTabViewModel` sink rather than
+    /// computed on demand — `@Published` fires in willSet, so during the tab-switch emission chain the
+    /// `selectedTabViewModel` stored property is still the *outgoing* tab. Delegate-chained callers such as
+    /// `onOmnibarActivated` would otherwise read the stale outgoing tab's state (empty text / zero selection)
+    /// and wipe the real saved cursor position for the incoming tab.
+    private var sharedTextState: AddressBarSharedTextState?
 
     // MARK: - Initialization
 
@@ -160,6 +173,7 @@ final class AIChatOmnibarController {
 
         subscribeToSelectedTabViewModel()
         subscribeToTextChangesForSuggestions()
+        subscribeToToolModeChangesForSharedState()
     }
 
     private func subscribeToTextChangesForSuggestions() {
@@ -168,6 +182,18 @@ final class AIChatOmnibarController {
             .sink { [weak self] text in
                 guard let self, self.isSuggestionsEnabled else { return }
                 self.fetchSuggestionsIfNeeded(query: text)
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Persists the user's tool selection (image generation / web search) to the current tab's shared state
+    /// so it survives tab switches. Skipped while we're mid-restore from shared state to avoid a feedback loop.
+    private func subscribeToToolModeChangesForSharedState() {
+        $activeToolMode
+            .dropFirst()
+            .sink { [weak self] mode in
+                guard let self, !self.isUpdatingFromSharedState, !self.isCleaningUp else { return }
+                self.sharedTextState?.setAIChatToolMode(mode)
             }
             .store(in: &cancellables)
     }
@@ -183,15 +209,21 @@ final class AIChatOmnibarController {
     func onOmnibarActivated(shouldFetchSuggestions: Bool = true) {
         hasBeenActivated = true
 
-        // Re-sync `currentText` from shared state in case a prior `cleanup()` cleared it.
-        // Toggling Duck.ai → search runs cleanup (setting `currentText = ""`) but the shared state still
-        // holds the typed text for the tab; without this, the next Duck.ai activation shows an empty prompt.
-        if let sharedTextState,
-           sharedTextState.hasUserInteractedWithText,
-           currentText != sharedTextState.text {
-            isUpdatingFromSharedState = true
-            currentText = sharedTextState.text
-            isUpdatingFromSharedState = false
+        // Re-sync per-tab Duck.ai state from shared state in case a prior `cleanup()` cleared the controller-local copy.
+        // Toggling Duck.ai → search runs `cleanup()` (zeroing `currentText`, `activeToolMode`, the attachments view),
+        // but the tab's shared state still holds the draft; without re-sync, toggling back would show an empty panel.
+        if let sharedTextState {
+            if sharedTextState.hasUserInteractedWithText, currentText != sharedTextState.text {
+                isUpdatingFromSharedState = true
+                currentText = sharedTextState.text
+                isUpdatingFromSharedState = false
+            }
+            if activeToolMode != sharedTextState.aiChatToolMode {
+                isUpdatingFromSharedState = true
+                activeToolMode = sharedTextState.aiChatToolMode
+                isUpdatingFromSharedState = false
+            }
+            onActiveTabAttachmentsRestoreRequested?(sharedTextState.aiChatAttachments)
         }
 
         fetchModels()
@@ -358,7 +390,15 @@ final class AIChatOmnibarController {
         sharedTextState?.selectionRange
     }
 
+    /// Persists the Duck.ai image attachments for the current tab so they survive tab switches.
+    /// Called by the container VC whenever the attachment list changes (add, remove, resize-complete replacement).
+    func persistAttachmentsToActiveTab(_ attachments: [AIChatImageAttachment]) {
+        sharedTextState?.setAIChatAttachments(attachments)
+    }
+
     func cleanup() {
+        isCleaningUp = true
+        defer { isCleaningUp = false }
         currentText = ""
         activeToolMode = nil
         hasImageAttachments = false
@@ -422,12 +462,25 @@ final class AIChatOmnibarController {
         tabCollectionViewModel.$selectedTabViewModel
             .sink { [weak self] tabViewModel in
                 guard let self else { return }
-                self.subscribeToSharedTextState(tabViewModel?.addressBarSharedTextState)
+                let sharedState = tabViewModel?.addressBarSharedTextState
+                /// Cache the incoming tab's shared state now so synchronous delegate chains driven off the same
+                /// tab-switch emission (e.g. AddressBarVC → MainVC → onOmnibarActivated) read the new state
+                /// rather than the stale outgoing tab via `selectedTabViewModel`'s not-yet-updated storage.
+                self.sharedTextState = sharedState
+                self.subscribeToSharedTextState(sharedState)
 
-                /// Restore text on duck.ai panel when changing tabs
-                if let text = tabViewModel?.addressBarSharedTextState.text {
+                /// Restore Duck.ai per-tab state when switching. The `isUpdatingFromSharedState` guard prevents the
+                /// `$activeToolMode` sink from writing the restored value back to the (now-incoming) shared state.
+                self.isUpdatingFromSharedState = true
+                if let text = sharedState?.text {
                     self.currentText = text
                 }
+                self.activeToolMode = sharedState?.aiChatToolMode
+                self.isUpdatingFromSharedState = false
+
+                /// Tell the container VC to reinstall this tab's attachments. The container owns the actual views
+                /// and resize tasks, so restoration has to happen there; shared state is just the storage.
+                self.onActiveTabAttachmentsRestoreRequested?(sharedState?.aiChatAttachments ?? [])
             }
             .store(in: &cancellables)
     }

@@ -246,7 +246,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         XCTAssertEqual(wideEvent.lastCompletedData?.statusReason, "checks_errored")
     }
 
-    func testLatencyBucketing_isPopulatedAndCapped() async {
+    func testLatencyBucketing_isPopulatedAndCapped() async throws {
         let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let wideEvent = MockWideEventManager()
@@ -259,8 +259,10 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             wideEvent: wideEvent
         )
         await service.runCheck(trigger: .tunnelStart)
-        XCTAssertNotNil(wideEvent.lastCompletedData?.latencyMsBucketed)
-        XCTAssertLessThanOrEqual(wideEvent.lastCompletedData?.latencyMsBucketed ?? -1, 5_000)
+        let bucket = try XCTUnwrap(wideEvent.lastCompletedData?.latencyMsBucketed)
+        XCTAssertGreaterThanOrEqual(bucket, 500)
+        XCTAssertLessThanOrEqual(bucket, 5_000)
+        XCTAssertEqual(bucket % 500, 0)
     }
 
     func testInFlightTrigger_isDropped() async {

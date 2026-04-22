@@ -124,17 +124,17 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
         if firstSeenDate == nil {
             firstSeenDate = Date()
         }
-        // TODO: fire promotion shown pixel
+        DailyPixel.fireDailyAndCount(pixel: .fireModeNTPPromotionShown)
     }
 
     func markNTPPromotionDismissed() {
         isDismissed = true
-        // TODO: fire promotion dismissed pixel
+        Pixel.fire(pixel: .fireModeNTPPromotionDismissed)
     }
 
     func markNTPPromotionEngaged() {
         isEngaged = true
-        // TODO: fire promotion engaged pixel
+        Pixel.fire(pixel: .fireModeNTPPromotionEngaged)
     }
 
     // MARK: - Menu Promotion
@@ -150,12 +150,12 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
             menuPromotionFirstShownDate = Date()
         }
         menuPromotionShownCount += 1
-        // TODO: fire menu promotion shown pixel
+        DailyPixel.fireDailyAndCount(pixel: .fireModeMenuPromotionShown)
     }
 
     func markMenuPromotionEngaged() {
         menuPromotionEngaged = true
-        // TODO: fire menu promotion engaged pixel
+        Pixel.fire(pixel: .fireModeMenuPromotionEngaged)
     }
 
     // MARK: - Tab Switcher Tip

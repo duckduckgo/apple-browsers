@@ -24,6 +24,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     private var suggestionsProvider: MockNewTabPageOmnibarSuggestionsProvider!
     private var aiChatsProvider: MockNewTabPageOmnibarAiChatsProvider!
     private var configProvider: MockNewTabPageOmnibarConfigProvider!
+    private var modelsProvider: StubNewTabPageOmnibarModelsProvider!
     private var actionHandler: NewTabPageOmnibarActionsHandling!
     private var client: NewTabPageOmnibarClient!
     private var userScript: NewTabPageUserScript!
@@ -35,10 +36,12 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         suggestionsProvider = MockNewTabPageOmnibarSuggestionsProvider()
         aiChatsProvider = MockNewTabPageOmnibarAiChatsProvider()
         configProvider = MockNewTabPageOmnibarConfigProvider()
+        modelsProvider = StubNewTabPageOmnibarModelsProvider()
         actionHandler = MockNewTabPageOmnibarActionsHandler()
         client = NewTabPageOmnibarClient(configProvider: configProvider,
                                          suggestionsProvider: suggestionsProvider,
                                          aiChatsProvider: aiChatsProvider,
+                                         modelsProvider: modelsProvider,
                                          actionHandler: actionHandler)
 
         userScript = NewTabPageUserScript()
@@ -77,6 +80,54 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
         XCTAssertEqual(configProvider.selectedModelId, "gpt-4o-mini")
+    }
+
+    @MainActor
+    func testWhenSetConfigWithSelectedModelIdThenShortNameIsCachedFromModelsProvider() async throws {
+        modelsProvider.lastFetchedSections = [
+            NewTabPageDataModel.AIModelSection(header: nil, items: [
+                NewTabPageDataModel.AIModelItem(id: "gpt-4o-mini", name: "GPT-4o mini", shortName: "G4m", isEnabled: true, supportsImageUpload: false),
+                NewTabPageDataModel.AIModelItem(id: "maverick", name: "Maverick", shortName: "Maverick", isEnabled: true, supportsImageUpload: false)
+            ])
+        ]
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, selectedModelId: "maverick", aiModelSections: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+
+        XCTAssertEqual(configProvider.selectedModelId, "maverick")
+        XCTAssertEqual(configProvider.selectedModelShortName, "Maverick")
+    }
+
+    @MainActor
+    func testWhenSetConfigWithUnknownModelIdThenShortNameIsCleared() async throws {
+        configProvider.selectedModelShortName = "StaleName"
+        modelsProvider.lastFetchedSections = [
+            NewTabPageDataModel.AIModelSection(header: nil, items: [
+                NewTabPageDataModel.AIModelItem(id: "gpt-4o-mini", name: "GPT-4o mini", shortName: "G4m", isEnabled: true, supportsImageUpload: false)
+            ])
+        ]
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, selectedModelId: "brand-new-model", aiModelSections: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+
+        XCTAssertEqual(configProvider.selectedModelId, "brand-new-model")
+        XCTAssertNil(configProvider.selectedModelShortName)
+    }
+
+    @MainActor
+    func testWhenSetConfigWithUnchangedModelIdAndEmptyLookupThenCachedShortNameIsPreserved() async throws {
+        // Given — id already stored with a cached short name, and models haven't been fetched yet
+        configProvider.selectedModelId = "gpt-4o-mini"
+        configProvider.selectedModelShortName = "G4m"
+        modelsProvider.lastFetchedSections = nil
+
+        // When — web echoes back the same id (typical on launch)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+
+        // Then — cached short name is preserved (not wiped by a failed lookup)
+        XCTAssertEqual(configProvider.selectedModelId, "gpt-4o-mini")
+        XCTAssertEqual(configProvider.selectedModelShortName, "G4m")
     }
 
     // MARK: - getSuggestions
@@ -224,5 +275,13 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         let action = NewTabPageDataModel.SubmitChatAction(chat: "Hello Chat", target: .newWindow, modelId: "gpt-4o-mini", images: [image])
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
         await fulfillment(of: [expectation], timeout: 1)
+    }
+}
+
+private final class StubNewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
+    var lastFetchedSections: [NewTabPageDataModel.AIModelSection]?
+
+    func fetchAIModelSections() async -> [NewTabPageDataModel.AIModelSection] {
+        lastFetchedSections ?? []
     }
 }

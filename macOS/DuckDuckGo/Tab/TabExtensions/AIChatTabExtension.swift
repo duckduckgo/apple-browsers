@@ -20,7 +20,10 @@ import Navigation
 import Foundation
 import Combine
 import FeatureFlags
+import os.log
+import Persistence
 import PrivacyConfig
+import UserScript
 import WebKit
 import AIChat
 import BrowserServicesKit
@@ -38,6 +41,7 @@ final class AIChatTabExtension {
     private weak var webView: WKWebView?
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
+    private let bootstrapRefresher: DuckAiNativeStorageBootstrapScriptRefresher?
 
     private(set) weak var aiChatUserScript: AIChatUserScript? {
         didSet {
@@ -49,10 +53,18 @@ final class AIChatTabExtension {
          webViewPublisher: some Publisher<WKWebView, Never>,
          isLoadedInSidebar: Bool,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
+         aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
         self.isLoadedInSidebar = isLoadedInSidebar
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
+        let debugSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
+        self.bootstrapRefresher = Self.makeBootstrapRefresher(
+            featureFlagger: featureFlagger,
+            handler: duckAiNativeStorageHandler,
+            aiChatDebugURLSettings: debugSettings
+        )
         pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
         pageContextConsumedPublisher = pageContextConsumedSubject.eraseToAnyPublisher()
         pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
@@ -200,6 +212,8 @@ final class AIChatTabExtension {
 extension AIChatTabExtension: NavigationResponder {
 
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        refreshNativeStorageBootstrapIfNeeded(for: navigationAction)
+
         // Only handle sidebar, user-initiated, cross-document navigations; otherwise let them proceed normally
         guard isLoadedInSidebar,
               !navigationAction.navigationType.isSameDocumentNavigation,
@@ -233,6 +247,47 @@ extension AIChatTabExtension: NavigationResponder {
         if navigation.url.isDuckAIURL {
             featureDiscovery.setWasUsedBefore(.aiChat)
         }
+    }
+}
+
+// MARK: - Native Storage Bootstrap Refresh
+
+extension AIChatTabExtension {
+
+    @MainActor
+    fileprivate func refreshNativeStorageBootstrapIfNeeded(for navigationAction: NavigationAction) {
+        guard let bootstrapRefresher else {
+            Logger.aiChat.debug("[NativeStorage] Skipping bootstrap refresh: refresher unavailable (flag off or handler nil)")
+            return
+        }
+        guard !navigationAction.navigationType.isSameDocumentNavigation else { return }
+        guard bootstrapRefresher.isInScope(url: navigationAction.url) else {
+            Logger.aiChat.debug("[NativeStorage] Skipping bootstrap refresh: \(navigationAction.url.host ?? "<nil>") out of scope")
+            return
+        }
+        guard let webView else {
+            Logger.aiChat.debug("[NativeStorage] Skipping bootstrap refresh: webView not yet available")
+            return
+        }
+        guard let userContentController = webView.configuration.userContentController as? UserContentController else {
+            Logger.aiChat.debug("[NativeStorage] Skipping bootstrap refresh: user content controller cast failed")
+            return
+        }
+        let staticScripts = userContentController.contentBlockingAssets?.wkUserScripts ?? []
+        bootstrapRefresher.refresh(on: userContentController, staticScripts: staticScripts)
+    }
+
+    fileprivate static func makeBootstrapRefresher(
+        featureFlagger: FeatureFlagger,
+        handler: DuckAiNativeStorageHandling?,
+        aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings>
+    ) -> DuckAiNativeStorageBootstrapScriptRefresher? {
+        guard featureFlagger.isFeatureOn(.aiChatNativeStorage), let handler else { return nil }
+        var originRules: [HostnameMatchingRule] = [.exactOrSubdomain(hostname: "duck.ai")]
+        if let customHostname = aiChatDebugURLSettings.customURLHostname {
+            originRules.append(.exact(hostname: customHostname))
+        }
+        return DuckAiNativeStorageBootstrapScriptRefresher(handler: handler, originRules: originRules)
     }
 }
 

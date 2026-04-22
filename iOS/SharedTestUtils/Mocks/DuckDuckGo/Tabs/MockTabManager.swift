@@ -115,7 +115,7 @@ class MockTabManager: TabManaging {
     private(set) var setBrowsingModeCalled = false
     private(set) var setBrowsingModeCalledWith: BrowsingMode?
     
-    func setBrowsingMode(_ mode: BrowsingMode) {
+    func setBrowsingMode(_ mode: BrowsingMode, source: FireModeSwitchSource) {
         setBrowsingModeCalled = true
         setBrowsingModeCalledWith = mode
     }

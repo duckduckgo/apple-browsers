@@ -2,7 +2,7 @@
 //  TabSwitcherTitleBarView.swift
 //  DuckDuckGo
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -120,29 +120,12 @@ final class TabSwitcherTitleBarView: UIView {
 
     func setLeadingButtons(_ buttons: [UIView]) {
         leadingButtonsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        buttons.forEach {
-            activateItemSizeConstraints(for: $0)
-            leadingButtonsStack.addArrangedSubview($0)
-        }
+        buttons.forEach { leadingButtonsStack.addArrangedSubview($0) }
     }
 
     func setTrailingButtons(_ buttons: [UIView]) {
         trailingButtonsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        buttons.forEach {
-            activateItemSizeConstraints(for: $0)
-            trailingButtonsStack.addArrangedSubview($0)
-        }
-    }
-
-    private func activateItemSizeConstraints(for item: UIView) {
-        if let button = item as? UIButton,
-           button.currentImage == nil,
-           button.currentTitle?.isEmpty == false {
-            item.widthAnchor.constraint(greaterThanOrEqualToConstant: Metrics.buttonSize).isActive = true
-            return
-        }
-        item.widthAnchor.constraint(equalTo: item.heightAnchor).isActive = true
-        item.widthAnchor.constraint(equalToConstant: Metrics.buttonSize).isActive = true
+        buttons.forEach { trailingButtonsStack.addArrangedSubview($0) }
     }
 
     func updateForAddressBarPosition(isBottom: Bool) {
@@ -153,7 +136,8 @@ final class TabSwitcherTitleBarView: UIView {
     }
 
     func setCenterView(_ view: UIView?) {
-        if let existing = currentCenterView, existing !== view {
+        if let existing = currentCenterView {
+            guard existing !== view else { return }
             existing.removeFromSuperview()
         }
 

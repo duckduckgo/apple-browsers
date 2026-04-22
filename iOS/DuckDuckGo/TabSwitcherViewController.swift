@@ -101,6 +101,7 @@ class TabSwitcherViewController: UIViewController {
     private var normalPageContainer: UIView!
     private(set) var firePageController: TabSwitcherPageViewController?
     private(set) var normalPageController: TabSwitcherPageViewController!
+    private var modeChangeFromSwipe = false
 
     var activePageController: TabSwitcherPageViewController {
         if selectedBrowsingMode == .fire, let firePageController {
@@ -313,7 +314,13 @@ class TabSwitcherViewController: UIViewController {
         guard newMode != selectedBrowsingMode else {
             return
         }
+        let source = modeChangeFromSwipe ? "swipe" : "tap"
+        modeChangeFromSwipe = false
         selectedBrowsingMode = newMode
+        Pixel.fire(pixel: .tabSwitcherModeToggled, withAdditionalParameters: [
+            PixelParameters.browsingMode: newMode.pixelParamValue,
+            PixelParameters.source: source
+        ])
         syncPagingScrollViewToCurrentMode(animated: true)
         scrollToInitialTab()
         updateUIForSelectionMode()
@@ -338,24 +345,33 @@ class TabSwitcherViewController: UIViewController {
         }
 
         // Changing this?  Best change MainView too
-//        let bottomOffset = 8.0
         let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
+
+        // On iOS 26 iPad, use the margins layout guide to avoid the native window ornaments
+        // (traffic-light buttons). Mirrors the approach in MainView.constrainNavigationBarContainer()
+        // and MainView.constrainTabBarContainer().
+        let topGuide: UILayoutGuide
+        if #available(iOS 26, *), UIDevice.current.userInterfaceIdiom == .pad {
+            topGuide = view.layoutGuide(for: .margins(cornerAdaptation: .vertical))
+        } else {
+            topGuide = view.safeAreaLayoutGuide
+        }
 
         // The constants here are to force the ai button to align between the tab switcher and this view
         NSLayoutConstraint.activate([
             titleBarView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             titleBarView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor) : nil,
-            !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor) : nil,
+            !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: topGuide.topAnchor) : nil,
 
-            pagingScrollView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
+            pagingScrollView.topAnchor.constraint(equalTo: isBottomBar ? topGuide.topAnchor : titleBarView.bottomAnchor),
             pagingScrollView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             pagingScrollView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 
             interfaceMode.isLarge ? pagingScrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor) :
                 pagingScrollView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
 
-            borderView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
+            borderView.topAnchor.constraint(equalTo: isBottomBar ? topGuide.topAnchor : titleBarView.bottomAnchor),
             borderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             borderView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
@@ -670,7 +686,9 @@ class TabSwitcherViewController: UIViewController {
         // Will be dismissed, so no need to process incoming updates
         canUpdateCollection = false
 
-        Pixel.fire(pixel: .tabSwitcherNewTab)
+        Pixel.fire(pixel: .tabSwitcherNewTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: selectedBrowsingMode.pixelParamValue
+        ])
         dismissIfPossible(forceDismissOnEmpty: true)
         // This call needs to be after the dismiss to allow OmniBarEditingStateViewController
         // to present on top of MainVC instead of TabSwitcher.
@@ -778,7 +796,7 @@ class TabSwitcherViewController: UIViewController {
         let tabsModel = tabManager.tabsModel(for: selectedBrowsingMode)
 
         if selectedBrowsingMode.allowsEmpty && tabsModel.isEmpty {
-            tabManager.setBrowsingMode(selectedBrowsingMode)
+            tabManager.setBrowsingMode(selectedBrowsingMode, source: .tabSelection)
         } else {
             let selectedTab = activePageController.selectedTab
             delegate?.tabSwitcher(self, didFinishWithSelectedTab: selectedTab)
@@ -828,6 +846,7 @@ extension TabSwitcherViewController: UIScrollViewDelegate {
         let newMode: BrowsingMode = currentPage == 0 ? .fire : .normal
 
         if newMode != selectedBrowsingMode {
+            modeChangeFromSwipe = true
             pickerViewModel.selectItem(pickerItems[newMode.rawValue])
         }
     }

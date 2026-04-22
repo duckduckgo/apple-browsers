@@ -77,6 +77,11 @@ final class NewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSet
 final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private enum Key: String {
         case newTabPageOmnibarMode
+    }
+
+    private enum LegacyKey: String {
+        /// Previously-used per-NTP key. Migrated into `AIChatPreferencesPersisting.selectedModelId`
+        /// (shared with the native omnibar) on first init after the unification, then removed.
         case newTabPageSelectedModelId
     }
 
@@ -88,6 +93,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let featureFlagger: FeatureFlagger
     private let firePixel: (PixelKitEvent) -> Void
+    private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
     @Published private var hasExcessChats = false
@@ -96,11 +102,15 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
+         aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
          firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger
+        self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
         self.firePixel = firePixel
+
+        Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &self.aiChatPreferencesPersistor)
     }
 
     @MainActor
@@ -165,22 +175,27 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var selectedModelId: String? {
         get {
-            do {
-                return try keyValueStore.object(forKey: Key.newTabPageSelectedModelId.rawValue) as? String
-            } catch {
-                Logger.newTabPageOmnibar.error("Failed to retrieve selectedModelId from keyValueStore: \(error.localizedDescription)")
-                return nil
-            }
+            aiChatPreferencesPersistor.selectedModelId
         }
         set {
-            do {
-                try keyValueStore.set(newValue, forKey: Key.newTabPageSelectedModelId.rawValue)
-                if newValue != nil {
-                    PixelKit.fire(AIChatPixel.aiChatNtpModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
-                }
-            } catch {
-                Logger.newTabPageOmnibar.error("Failed to set selectedModelId in keyValueStore: \(error.localizedDescription)")
+            guard newValue != aiChatPreferencesPersistor.selectedModelId else { return }
+            aiChatPreferencesPersistor.selectedModelId = newValue
+            if newValue != nil {
+                PixelKit.fire(AIChatPixel.aiChatNtpModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
             }
+        }
+    }
+
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> {
+        aiChatPreferencesPersistor.selectedModelIdPublisher
+    }
+
+    var selectedModelShortName: String? {
+        get {
+            aiChatPreferencesPersistor.selectedModelShortName
+        }
+        set {
+            aiChatPreferencesPersistor.selectedModelShortName = newValue
         }
     }
 
@@ -216,6 +231,30 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
                 guard let self else { return }
                 self.hasExcessChats = hasExcess
             }
+    }
+
+    /// One-time migration: copy the old NTP-only model id into the shared `AIChatPreferencesPersisting`
+    /// store when the shared value is absent, then drop the legacy key so subsequent launches skip the work.
+    ///
+    /// The legacy NTP store never cached a short name, so on the upgrade path we seed it with the
+    /// model id as a placeholder. This keeps the native omnibar's model picker visible on first
+    /// launch post-upgrade (the picker is hidden when both `models` and `selectedModelShortName`
+    /// are empty). The real short name replaces the placeholder once the models fetch completes.
+    private static func migrateLegacySelectedModelIdIfNeeded(
+        from keyValueStore: ThrowingKeyValueStoring,
+        into persistor: inout AIChatPreferencesPersisting
+    ) {
+        let legacyKey = LegacyKey.newTabPageSelectedModelId.rawValue
+        guard let legacyValue = try? keyValueStore.object(forKey: legacyKey) as? String else {
+            return
+        }
+        if persistor.selectedModelId == nil {
+            persistor.selectedModelId = legacyValue
+            if persistor.selectedModelShortName == nil {
+                persistor.selectedModelShortName = legacyValue
+            }
+        }
+        try? keyValueStore.removeObject(forKey: legacyKey)
     }
 
 }

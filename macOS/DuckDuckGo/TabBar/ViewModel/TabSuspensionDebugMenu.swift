@@ -21,7 +21,7 @@ import AppKit
 final class TabSuspensionDebugMenu: NSMenu, NSMenuDelegate {
 
     private let useShortIntervalMenuItem = NSMenuItem(
-        title: "Use Short Inactive Interval (5s)",
+        title: "Use Short Inactivity Interval (5s)",
         action: #selector(toggleShortInterval)
     )
 

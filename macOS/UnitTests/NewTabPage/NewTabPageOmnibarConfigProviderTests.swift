@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Combine
 import XCTest
 import Persistence
@@ -252,6 +253,132 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertTrue(provider.showViewAllAiChats)
     }
 
+    // MARK: - selectedModelId (shared with native omnibar)
+
+    private let legacyModelIdKey = "newTabPageSelectedModelId"
+
+    private func makeProvider(
+        persistor: AIChatPreferencesPersisting,
+        keyValueStore: ThrowingKeyValueStoring? = nil
+    ) throws -> NewTabPageOmnibarConfigProvider {
+        NewTabPageOmnibarConfigProvider(
+            keyValueStore: try keyValueStore ?? makeStore(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatPreferencesPersistor: persistor,
+            firePixel: { _ in }
+        )
+    }
+
+    func testSelectedModelId_readsFromInjectedPersistor() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "gpt-4o-mini"
+        let provider = try makeProvider(persistor: persistor)
+
+        XCTAssertEqual(provider.selectedModelId, "gpt-4o-mini")
+    }
+
+    func testSelectedModelId_writesThroughToInjectedPersistor() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        let provider = try makeProvider(persistor: persistor)
+
+        provider.selectedModelId = "claude-4"
+        XCTAssertEqual(persistor.selectedModelId, "claude-4")
+
+        provider.selectedModelId = nil
+        XCTAssertNil(persistor.selectedModelId)
+    }
+
+    func testSelectedModelIdPublisher_forwardsFromSharedPersistor() throws {
+        // Native and NTP hold the same persistor. A write on the "native" side must reach
+        // the NTP provider's publisher so JS gets notified via omnibar_onConfigUpdate.
+        let persistor = MockAIChatPreferencesPersisting()
+        let provider = try makeProvider(persistor: persistor)
+
+        var received: [String?] = []
+        let cancellable = provider.selectedModelIdPublisher.sink { received.append($0) }
+
+        persistor.selectedModelId = "maverick"
+        persistor.selectedModelId = "maverick"   // dedup in persistor → no second emit
+        persistor.selectedModelId = "claude-4"
+        persistor.selectedModelId = nil
+
+        cancellable.cancel()
+        XCTAssertEqual(received, ["maverick", "claude-4", nil])
+    }
+
+    // MARK: - legacy model id migration
+
+    func testMigration_copiesLegacyValueWhenSharedStoreIsEmpty() throws {
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
+
+        XCTAssertEqual(persistor.selectedModelId, "maverick")
+        XCTAssertNil(store.underlyingDict[legacyModelIdKey])
+    }
+
+    func testMigration_seedsShortNamePlaceholderWhenSharedStoreIsEmpty() throws {
+        // Legacy NTP store never cached a short name. Without a placeholder the native
+        // model picker is hidden on first launch post-upgrade until models fetch completes.
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
+
+        XCTAssertEqual(persistor.selectedModelShortName, "maverick")
+    }
+
+    func testMigration_preservesSharedValueAndDropsLegacyKey() throws {
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "gpt-5"
+
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
+
+        XCTAssertEqual(persistor.selectedModelId, "gpt-5")
+        XCTAssertNil(store.underlyingDict[legacyModelIdKey])
+    }
+
+    func testMigration_doesNotOverwriteExistingShortName() throws {
+        // Native omnibar users may already have a cached short name. Migration must not clobber it.
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "gpt-5"
+        persistor.selectedModelShortName = "GPT-5"
+
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
+
+        XCTAssertEqual(persistor.selectedModelShortName, "GPT-5")
+    }
+
+    func testMigration_noOpWhenLegacyKeyAbsent() throws {
+        let store = try makeStore()
+        let persistor = MockAIChatPreferencesPersisting()
+
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
+
+        XCTAssertNil(persistor.selectedModelId)
+        XCTAssertNil(store.underlyingDict[legacyModelIdKey])
+    }
+
+    func testMigration_runsOnlyOnce() throws {
+        let store = try makeStore(underlying: [legacyModelIdKey: "maverick"])
+        let persistor = MockAIChatPreferencesPersisting()
+
+        // First launch: migrates.
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
+        XCTAssertEqual(persistor.selectedModelId, "maverick")
+
+        // Simulate the user picking a new model after migration.
+        persistor.selectedModelId = "claude-4"
+
+        // Second launch: legacy key is gone, so nothing is overwritten.
+        _ = try makeProvider(persistor: persistor, keyValueStore: store)
+        XCTAssertEqual(persistor.selectedModelId, "claude-4")
+    }
+
     @MainActor
     func testShowViewAllAiChatsPublisher_emitsWhenExcessChanges() throws {
         let store = try makeStore()
@@ -276,6 +403,19 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 }
 
 // MARK: - Mocks
+
+private final class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
+    private let subject = PassthroughSubject<String?, Never>()
+
+    var selectedModelId: String? {
+        didSet {
+            guard selectedModelId != oldValue else { return }
+            subject.send(selectedModelId)
+        }
+    }
+    var selectedModelShortName: String?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { subject.eraseToAnyPublisher() }
+}
 
 private final class MockAIChatExcessProvider: NewTabPageOmnibarAiChatsProviding {
 

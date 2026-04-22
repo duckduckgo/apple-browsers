@@ -38,6 +38,10 @@ final class MockAutoClear: AutoClearing {
         isClearingEnabledValue
     }
 
+    var isTabClearingEnabled: Bool {
+        isClearingEnabledValue
+    }
+
     func clearDataIfEnabled(launching: Bool, applicationState: DataStoreWarmup.ApplicationState) async {
         clearDataIfEnabledCalled = true
         lastLaunchingValue = launching

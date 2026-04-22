@@ -1,0 +1,94 @@
+{
+    // MARK: - Promotion Pixels
+
+    "m_fire-mode_ntp-promotion_shown": {
+        "description": "Fired when the Fire Mode NTP promotion card is displayed to the user",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-08-04"
+    },
+
+    "m_fire-mode_ntp-promotion_dismissed": {
+        "description": "Fired when the user dismisses the Fire Mode NTP promotion card",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-08-04"
+    },
+
+    "m_fire-mode_ntp-promotion_engaged": {
+        "description": "Fired when the user taps the CTA on the Fire Mode NTP promotion card",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-08-04"
+    },
+
+    "m_fire-mode_menu-promotion_shown": {
+        "description": "Fired when the Fire Mode promotion row is displayed in the browsing menu",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-08-04"
+    },
+
+    "m_fire-mode_menu-promotion_engaged": {
+        "description": "Fired when the user taps the Fire Mode promotion row in the browsing menu",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-08-04"
+    },
+
+    // MARK: - Mode Switching
+
+    "m_browsing-mode_switched": {
+        "description": "Fired when the browsing mode actually changes (on tab switcher dismiss, long press, promotions, etc.)",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "browsingMode",
+            {
+                "key": "source",
+                "description": "The entry point that triggered the mode switch",
+                "type": "string",
+                "enum": ["tab_selection", "long_press_tabs_icon", "menu_promotion", "ntp_promotion", "long_press_link"]
+            }
+        ]
+    },
+
+    "m_tab-switcher_mode-toggled": {
+        "description": "Fired when the user toggles or swipes between fire and normal modes in the tab switcher UI",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "browsingMode",
+            {
+                "key": "source",
+                "description": "How the user toggled the mode",
+                "type": "string",
+                "enum": ["tap", "swipe"]
+            }
+        ]
+    },
+
+    // MARK: - Empty State
+
+    "m_fire-mode_empty-state_new-tab": {
+        "description": "Fired when the user taps 'New Fire Tab' from the Fire Mode empty state in the tab switcher",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

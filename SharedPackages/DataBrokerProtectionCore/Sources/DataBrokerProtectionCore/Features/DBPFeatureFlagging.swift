@@ -44,3 +44,7 @@ public protocol ContinuedProcessingFeatureFlagging {
 public protocol WebViewUserAgentFeatureFlagging {
     var isWebViewUserAgentOn: Bool { get }
 }
+
+public protocol FreemiumPIRFeatureFlagging {
+    var isFreemiumPIREnabled: Bool { get }
+}

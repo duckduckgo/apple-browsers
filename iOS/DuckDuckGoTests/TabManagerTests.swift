@@ -143,7 +143,7 @@ final class TabManagerTests: XCTestCase {
         flagger.enabledFeatureFlags = [.fireMode]
         let manager = try makeManager(tabsModel, featureFlagger: flagger)
 
-        manager.setBrowsingMode(.fire)
+        manager.setBrowsingMode(.fire, source: .tabSelection)
         XCTAssertEqual(manager.currentBrowsingMode, .fire)
 
         // Simulate the feature flag source changing mid-session;
@@ -165,7 +165,7 @@ final class TabManagerTests: XCTestCase {
         let flagger = MockFeatureFlagger()
         flagger.enabledFeatureFlags = [.fireMode]
         let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
-        manager.setBrowsingMode(.fire)
+        manager.setBrowsingMode(.fire, source: .tabSelection)
 
         XCTAssertEqual(manager.currentTabsModel.count, 2)
 
@@ -181,7 +181,7 @@ final class TabManagerTests: XCTestCase {
         let flagger = MockFeatureFlagger()
         flagger.enabledFeatureFlags = [.fireMode]
         let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
-        manager.setBrowsingMode(.fire)
+        manager.setBrowsingMode(.fire, source: .tabSelection)
 
         XCTAssertEqual(manager.currentTabsModel.count, 0)
         XCTAssertNil(manager.current(createIfNeeded: false))
@@ -194,7 +194,7 @@ final class TabManagerTests: XCTestCase {
         let flagger = MockFeatureFlagger()
         flagger.enabledFeatureFlags = [.fireMode]
         let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
-        manager.setBrowsingMode(.fire)
+        manager.setBrowsingMode(.fire, source: .tabSelection)
 
         XCTAssertEqual(manager.currentTabsModel.count, 1)
 
@@ -211,7 +211,7 @@ final class TabManagerTests: XCTestCase {
         let flagger = MockFeatureFlagger()
         flagger.enabledFeatureFlags = [.fireMode]
         let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
-        manager.setBrowsingMode(.fire)
+        manager.setBrowsingMode(.fire, source: .tabSelection)
 
         let newTab = Tab(fireTab: true)
         manager.replace(tab: oldTab, withNewTab: newTab)

@@ -94,7 +94,6 @@ final class NewTabPageMessagesModel: ObservableObject {
     // MARK: - Fire Mode Promotion Actions
 
     func firePromotionDidAppear() {
-        // TODO: fire promotion shown pixel
         fireModePromotionEligibility?.markNTPPromotionShown()
     }
 

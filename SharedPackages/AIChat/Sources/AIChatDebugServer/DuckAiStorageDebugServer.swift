@@ -44,7 +44,7 @@ public final class DuckAiStorageDebugServer {
 
     private let port: UInt16
 
-    public init(storageHandler: DuckAiNativeStorageHandling, port: UInt16 = 8080) {
+    public init(storageHandler: DuckAiNativeStorageHandling, port: UInt16 = 8473) {
         self.port = port
         self.server = DebugHTTPServer(port: port)
         self.storageHandler = storageHandler

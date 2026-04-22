@@ -41,11 +41,9 @@ protocol CredentialExchangeImportHandling {
 final class DataImportUserActivityHandler: DataImportUserActivityHandling {
 
     static var browserKitImportActivityType: String {
-#if compiler(>=6.3)
         if #available(iOS 26.4, *) {
             return BEBrowserDataImportManager.userActivityType
         }
-#endif
         return "BEBrowserDataExchangeImportActivity"
     }
 
@@ -93,6 +91,9 @@ final class DataImportUserActivityHandler: DataImportUserActivityHandling {
     // MARK: - ASCredential Exchange
 
     static var credentialExchangeActivityType: String {
+        if #available(iOS 26.0, *) {
+            return ASCredentialExchangeActivity
+        }
         return "ASCredentialExchangeActivity"
     }
 
@@ -124,11 +125,9 @@ final class DataImportUserActivityHandler: DataImportUserActivityHandling {
     }
 
     private static func browserKitImportToken(from userActivity: NSUserActivity) -> UUID? {
-#if compiler(>=6.3)
         if #available(iOS 26.4, *) {
             return userActivity.userInfo?[BEBrowserDataImportManager.importTokenUserInfoKey] as? UUID
         }
-#endif
         return nil
     }
 

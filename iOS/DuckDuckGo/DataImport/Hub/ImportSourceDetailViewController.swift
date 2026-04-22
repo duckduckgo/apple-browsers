@@ -22,23 +22,19 @@ import SwiftUI
 import SafariServices
 import Core
 import Common
-import DDGSync
 import BrowserKit
 import os.log
 
 final class ImportSourceDetailViewController: UIViewController {
 
     private let source: ImportPasswordSource
-    private let syncService: DDGSyncing
     private let fileUploadCoordinator: DataImportFileUploadCoordinating
     private let onFinished: (() -> Void)?
 
     init(source: ImportPasswordSource,
-         syncService: DDGSyncing,
          fileUploadCoordinator: DataImportFileUploadCoordinating,
          onFinished: (() -> Void)? = nil) {
         self.source = source
-        self.syncService = syncService
         self.fileUploadCoordinator = fileUploadCoordinator
         self.onFinished = onFinished
         super.init(nibName: nil, bundle: nil)
@@ -71,14 +67,8 @@ final class ImportSourceDetailViewController: UIViewController {
     // MARK: - Primary Action
 
     private func handlePrimaryAction() {
-        switch source {
-        case .safari:
-            presentSafariExportInterstitial()
-        case .syncFromDuckDuckGo:
-            break
-        case .passwordsApp, .chrome:
-            break
-        }
+        guard source == .safari else { return }
+        presentSafariExportInterstitial()
     }
 
     private func presentSafariExportInterstitial() {
@@ -110,21 +100,6 @@ final class ImportSourceDetailViewController: UIViewController {
     private func handleUploadFile() {
         fileUploadCoordinator.startUploadFlow(from: self, source: source)
     }
-
-    // MARK: - Sync
-
-    private func openSync() {
-        Pixel.fire(pixel: .autofillLoginsImportSync)
-
-        if let settingsVC = navigationController?.children.first as? SettingsHostingController {
-            navigationController?.popToRootViewController(animated: true)
-            settingsVC.viewModel.presentLegacyView(.sync(nil))
-        } else if let mainVC = navigationController?.presentingViewController as? MainViewController ?? presentingViewController as? MainViewController {
-            mainVC.dismiss(animated: true) {
-                mainVC.segueToSettingsSync(with: nil)
-            }
-        }
-    }
 }
 
 // MARK: - DataImportFileUploadFlowOwner
@@ -145,11 +120,12 @@ extension ImportSourceDetailViewController: DataImportFileUploadFlowOwner {
     }
 
     func dataImportUploadDidRequestContinueToSafariImport() {
+        // When the summary is presented from Safari import, dismissing it already returns
+        // to this Safari detail screen, so pushing another Safari detail controller is redundant.
         guard source != .safari else { return }
 
         let safariDetailViewController = ImportSourceDetailViewController(
             source: .safari,
-            syncService: syncService,
             fileUploadCoordinator: fileUploadCoordinator,
             onFinished: onFinished
         )

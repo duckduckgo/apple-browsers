@@ -691,7 +691,6 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
 
         return ImportSourceDetailViewController(
             source: .safari,
-            syncService: syncService,
             fileUploadCoordinator: fileUploadCoordinator
         ) { [weak self] in
             self?.viewModel.reloadData()

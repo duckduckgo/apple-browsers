@@ -77,9 +77,7 @@ struct AutofillSettingsView: View {
 
                             Spacer()
 
-                            Image(systemName: "chevron.forward")
-                                .font(Font.system(.footnote).weight(.bold))
-                                .foregroundColor(Color(UIColor.tertiaryLabel))
+                            SettingsCellComponents.chevron
                         }
                     }
                     Button {
@@ -93,9 +91,7 @@ struct AutofillSettingsView: View {
 
                             Spacer()
 
-                            Image(systemName: "chevron.forward")
-                                .font(Font.system(.footnote).weight(.bold))
-                                .foregroundColor(Color(UIColor.tertiaryLabel))
+                            SettingsCellComponents.chevron
                         }
                     }
                 } else {
@@ -178,9 +174,7 @@ struct AutofillSettingsView: View {
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                 }
 
-                Image(systemName: "chevron.forward")
-                    .font(Font.system(.footnote).weight(.bold))
-                    .foregroundColor(Color(UIColor.tertiaryLabel))
+                SettingsCellComponents.chevron
             }
         }
     }
@@ -200,9 +194,7 @@ struct AutofillSettingsView: View {
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
 
-                Image(systemName: "chevron.forward")
-                    .font(Font.system(.footnote).weight(.bold))
-                    .foregroundColor(Color(UIColor.tertiaryLabel))
+                SettingsCellComponents.chevron
             }
         }
     }

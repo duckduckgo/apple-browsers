@@ -270,7 +270,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                                          chatHasSuggestions: Bool,
                                          isLandscape: Bool) -> (tray: CGFloat, chat: CGFloat) {
         // Tray: bottom bar needs space for dismiss button; top bar gets a small pull-up.
-        let suggestionInsetBase: CGFloat = hasEscapeHatch && isBottomBar ? Metrics.escapeHatchDismissButtonInset : 0
+        let suggestionInsetBase: CGFloat = hasEscapeHatch && isBottomBar ? Metrics.escapeHatchBaseTopInset : 0
         let trayTopBarPullUp: CGFloat = hasEscapeHatch && !isBottomBar ? Metrics.escapeHatchTopBarTrayPullUp : 0
         let tray = suggestionInsetBase + trayTopBarPullUp
 
@@ -709,7 +709,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .panel)
         static let contentTopInset: CGFloat = 10
-        static let escapeHatchDismissButtonInset: CGFloat = 44
+        static let escapeHatchBaseTopInset: CGFloat = 44
         static let chatHistoryBottomBarCompensation: CGFloat = 1
         static let escapeHatchLogoOffset: CGFloat = 120
         // Vertically centers the escape hatch card when the chat history list is empty (no recent chats)

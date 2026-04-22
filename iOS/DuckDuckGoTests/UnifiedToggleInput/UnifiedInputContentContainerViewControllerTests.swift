@@ -30,7 +30,7 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
     // hatch is present.
     //
     // Reference constants (from `Metrics` enum in the VC):
-    //   escapeHatchDismissButtonInset        = 44
+    //   escapeHatchBaseTopInset              = 44
     //   escapeHatchTopBarTrayPullUp          = -10
     //   chatHistoryBottomBarCompensation     = 1
     //   escapeHatchEmptyListBoost            = 165

@@ -1091,14 +1091,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let efforts = omnibarController.selectedModelReasoningEfforts
         reasoningPickerButton.isHidden = efforts.isEmpty || omnibarController.isImageGenerationMode
         guard let fallback = efforts.first else { return }
-        let current = omnibarController.selectedReasoningEffort
-        if let current, !efforts.contains(current) {
-            // Current selection not available for new model — reset to default
-            omnibarController.updateSelectedReasoningEffort(fallback)
-            updateReasoningPickerAppearance(fallback)
-        } else {
-            updateReasoningPickerAppearance(current ?? fallback)
-        }
+        // Display only. The controller owns stale-effort cleanup (on model switch and on models
+        // refetch) so we never write to persistence from here — a saved value that isn't supported
+        // by the current model is ignored for display and not attached to submissions.
+        let validCurrent = omnibarController.selectedReasoningEffort.flatMap { efforts.contains($0) ? $0 : nil }
+        updateReasoningPickerAppearance(validCurrent ?? fallback)
     }
 
     private func updateReasoningPickerAppearance(_ effort: AIChatReasoningEffort) {

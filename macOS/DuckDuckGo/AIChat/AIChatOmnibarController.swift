@@ -372,6 +372,9 @@ final class AIChatOmnibarController {
     func updateSelectedModel(_ modelId: String) {
         preferences.selectedModelId = modelId
         preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
+        // The newly selected model may not support the previously persisted reasoning effort.
+        // Clearing here keeps stale-effort handling in one place (see `clearStaleReasoningEffortIfNeeded`).
+        clearStaleReasoningEffortIfNeeded()
     }
 
     /// Updates the current text being typed by the user

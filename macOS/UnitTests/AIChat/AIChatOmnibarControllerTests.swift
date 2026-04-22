@@ -626,6 +626,42 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(mockPreferences.selectedReasoningEffort, "low")
     }
 
+    func testWhenUpdateSelectedModelToIncompatibleOne_ThenStalePersistedReasoningEffortIsCleared() async {
+        // Given — two models loaded, user has picked a reasoning effort valid on the first
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "reasoning-model", entityHasAccess: true, supportedReasoningEffort: ["none", "low", "medium"]),
+            makeRemoteModel(id: "limited-model", entityHasAccess: true, supportedReasoningEffort: ["low"])
+        ]
+        mockPreferences.selectedModelId = "reasoning-model"
+        mockPreferences.selectedReasoningEffort = "medium"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When — user switches to a model that doesn't support "medium"
+        controller.updateSelectedModel("limited-model")
+
+        // Then — controller clears the stale preference; nothing is silently retained
+        XCTAssertNil(mockPreferences.selectedReasoningEffort)
+    }
+
+    func testWhenUpdateSelectedModelToCompatibleOne_ThenPersistedReasoningEffortIsPreserved() async {
+        // Given — two models that both support "low"
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "model-a", entityHasAccess: true, supportedReasoningEffort: ["none", "low", "medium"]),
+            makeRemoteModel(id: "model-b", entityHasAccess: true, supportedReasoningEffort: ["low", "medium"])
+        ]
+        mockPreferences.selectedModelId = "model-a"
+        mockPreferences.selectedReasoningEffort = "low"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When — switching to another model that still supports "low"
+        controller.updateSelectedModel("model-b")
+
+        // Then — the preference is kept
+        XCTAssertEqual(mockPreferences.selectedReasoningEffort, "low")
+    }
+
     // MARK: - Helpers
 
     /// Creates a remote model for testing. Access is resolved locally from `accessTier`

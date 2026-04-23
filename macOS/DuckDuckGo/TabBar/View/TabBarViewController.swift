@@ -343,6 +343,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         enableScrollButtons()
         subscribeToChildWindows()
         setupAccessibility()
+
+        performInitialChromeSidebarApplyIfNeeded()
+    }
+
+    private var didPerformInitialChromeSidebarApply = false
+
+    private func performInitialChromeSidebarApplyIfNeeded() {
+        guard !didPerformInitialChromeSidebarApply else { return }
+        didPerformInitialChromeSidebarApply = true
+        applyChromeSidebarFeatureFlagState(isEnabled: isChromeSidebarFeatureEnabled)
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -682,12 +692,18 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         )
         let showFullHeight = isInteracting || currentAIChatPresentationMode != .hidden
 
-        if showFullHeight {
-            duckAIChromeDividerInsetConstraint?.isActive = false
-            duckAIChromeDividerFullConstraint?.isActive = true
-        } else {
-            duckAIChromeDividerFullConstraint?.isActive = false
-            duckAIChromeDividerInsetConstraint?.isActive = true
+        let wantFullActive = showFullHeight
+        let wantInsetActive = !showFullHeight
+        let constraintsChanged = duckAIChromeDividerInsetConstraint?.isActive != wantInsetActive
+            || duckAIChromeDividerFullConstraint?.isActive != wantFullActive
+        if constraintsChanged {
+            if showFullHeight {
+                duckAIChromeDividerInsetConstraint?.isActive = false
+                duckAIChromeDividerFullConstraint?.isActive = true
+            } else {
+                duckAIChromeDividerFullConstraint?.isActive = false
+                duckAIChromeDividerInsetConstraint?.isActive = true
+            }
         }
         let colorsProvider = theme.colorsProvider
         duckAIChromeDivider?.backgroundColor = showFullHeight ?
@@ -777,7 +793,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             .map { [weak self] in
                 self?.isChromeSidebarFeatureEnabled ?? false
             }
-            .prepend(isChromeSidebarFeatureEnabled)
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isEnabled in

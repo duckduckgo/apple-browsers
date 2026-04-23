@@ -83,6 +83,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public let featureFlagger: DBPFeatureFlagging
     public let applicationNameForUserAgent: String?
     public var fetchedEmail: String?
+    public var emailData: [String: String] = [:]
     private let actionsHandlerMode: ActionsHandlerMode
 
     public var retriesCountOnError: Int = 0

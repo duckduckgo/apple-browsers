@@ -112,6 +112,9 @@ public struct Step: Codable, Sendable {
             case .generateEmail:
                 let action = try JSONDecoder().decode(GenerateEmailAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
+            case .getEmailData:
+                let action = try JSONDecoder().decode(GetEmailDataAction.self, from: jsonData).with(json: jsonData)
+                actionList.append(action)
             case .condition:
                 let action = try JSONDecoder().decode(ConditionAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
@@ -148,6 +151,8 @@ extension Array where Element == Action {
                 try container.encode(emailConfirmationAction)
             } else if let generateEmailAction = action as? GenerateEmailAction {
                 try container.encode(generateEmailAction)
+            } else if let getEmailDataAction = action as? GetEmailDataAction {
+                try container.encode(getEmailDataAction)
             } else if let clickAction = action as? ClickAction {
                 try container.encode(clickAction)
             } else if let expectationAction = action as? ExpectationAction {

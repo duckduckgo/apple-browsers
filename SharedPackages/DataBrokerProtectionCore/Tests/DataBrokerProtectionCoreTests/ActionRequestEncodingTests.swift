@@ -152,6 +152,30 @@ final class ActionRequestEncodingTests: XCTestCase {
         }
     }
 
+    func testWhenEmailDataIsEmpty_thenEmailDataKeyIsOmittedFromPayload() throws {
+        let action = NavigateAction(id: "navigate-1", actionType: .navigate, url: "https://example.com")
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, emailData: [:])))
+
+        let state = try XCTUnwrap(try params.toDictionary()["state"] as? [String: Any])
+        let data = try XCTUnwrap(state["data"] as? [String: Any])
+
+        // Omit emailData entirely when the bag is empty — keeps the payload shape identical to
+        // pre-getEmailData jobs for the overwhelming majority of actions that don't need it.
+        XCTAssertNil(data["emailData"])
+    }
+
+    func testWhenEmailDataIsPopulated_thenEmailDataAppearsInPayload() throws {
+        let action = FillFormAction(id: "fill-1", actionType: .fillForm, elements: [.init(type: "verificationCode")])
+        let emailData = ["verificationCode": "123456", "token": "abc-def"]
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, emailData: emailData)))
+
+        let state = try XCTUnwrap(try params.toDictionary()["state"] as? [String: Any])
+        let data = try XCTUnwrap(state["data"] as? [String: Any])
+        let emittedEmailData = try XCTUnwrap(data["emailData"] as? [String: String])
+
+        XCTAssertEqual(emittedEmailData, emailData)
+    }
+
     private func makeProfileQuery() -> ProfileQuery {
         ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 1985)
     }

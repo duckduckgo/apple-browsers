@@ -60,6 +60,10 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     /// actions read. Reset per job.
     var fetchedEmail: String? { get set }
 
+    /// Keyed bag populated by `getEmailDataAction` and forwarded to C-S-S as `data.emailData` so
+    /// downstream actions can reference keys by name.
+    var emailData: [String: String] { get set }
+
     func run(inputValue: InputValue,
              webViewHandler: WebViewHandler?,
              actionsHandler: ActionsHandler?,
@@ -182,13 +186,14 @@ public extension SubJobWebRunning {
                 recordDebugEvent(kind: .actionResponse,
                                  actionType: generateEmailAction.actionType,
                                  details: errorDetails(error))
-                if let emailError = error as? EmailError {
-                    await onError(error: DataBrokerProtectionError.emailError(emailError))
-                } else {
-                    await onError(error: error as? DataBrokerProtectionError ?? .emailError(nil))
-                }
+                await onEmailError(error: error)
             }
 
+            return
+        }
+
+        if let getEmailDataAction = action as? GetEmailDataAction {
+            await runGetEmailDataAction(getEmailDataAction)
             return
         }
 
@@ -252,11 +257,7 @@ public extension SubJobWebRunning {
                         stageCalculator.fireOptOutEmailGenerate()
                     }
                 } catch {
-                    if let emailError = error as? EmailError {
-                        await onError(error: DataBrokerProtectionError.emailError(emailError))
-                    } else {
-                        await onError(error: error as? DataBrokerProtectionError ?? .emailError(nil))
-                    }
+                    await onEmailError(error: error)
                     return
                 }
             }
@@ -274,13 +275,59 @@ public extension SubJobWebRunning {
             try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
         }
 
-        let request: CCFRequestData = .userData(context.profileQuery, self.extractedProfile)
+        let request: CCFRequestData = .userData(context.profileQuery, self.extractedProfile, emailData: emailData)
         recordDebugEvent(kind: .actionPayload,
                          actionType: action.actionType,
                          details: DebugHelper.prettyPrintedActionPayload(action: action, data: request))
         await webViewHandler?.execute(action: action,
                                       ofType: stepType,
                                       data: request)
+    }
+
+    private func onEmailError(error: Error) async {
+        if let emailError = error as? EmailError {
+            await onError(error: DataBrokerProtectionError.emailError(emailError))
+        } else {
+            await onError(error: error as? DataBrokerProtectionError ?? .emailError(nil))
+        }
+    }
+
+    private func runGetEmailDataAction(_ action: GetEmailDataAction) async {
+        guard let email = fetchedEmail else {
+            assertionFailure("getEmailData action invoked without a prior generateEmail")
+            recordDebugEvent(kind: .actionResponse,
+                             actionType: action.actionType,
+                             details: "getEmailData invoked before generateEmail")
+            resetRetriesCount()
+            await onError(error: DataBrokerProtectionError.emailError(.cantFindEmail))
+            return
+        }
+        do {
+            let totalTimeout = executionConfig.getEmailDataTotalTimeout
+            recordDebugEvent(kind: .wait,
+                             actionType: action.actionType,
+                             details: "Polling email-data endpoint (polling interval \(action.pollingTime)s, total timeout \(totalTimeout)s)")
+            let fetched = try await emailConfirmationDataService.getEmailData(
+                email: email,
+                attemptId: stageCalculator.attemptId,
+                pollingInterval: action.pollingTime,
+                totalTimeout: totalTimeout,
+                shouldRunNextStep: shouldRunNextStep
+            )
+            for (key, value) in fetched {
+                emailData[key] = value
+            }
+            recordDebugEvent(kind: .wait,
+                             actionType: action.actionType,
+                             details: "Email data received (\(fetched.count) keys)")
+            await executeNextStep()
+        } catch {
+            recordDebugEvent(kind: .actionResponse,
+                             actionType: action.actionType,
+                             details: errorDetails(error))
+            resetRetriesCount()
+            await onEmailError(error: error)
+        }
     }
 
     private func runEmailConfirmationAction(action: EmailConfirmationAction) async throws {

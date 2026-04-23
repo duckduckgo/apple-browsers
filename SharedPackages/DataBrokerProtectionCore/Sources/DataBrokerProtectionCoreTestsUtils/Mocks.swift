@@ -443,6 +443,15 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
     public private(set) var getEmailCallCount: Int = 0
     public private(set) var lastExtractedProfileIdPassed: Int64?
 
+    public var getEmailDataReturnValue: [String: String] = [:]
+    /// Set to a non-nil `EmailError` to have `getEmailData` throw that specific error regardless
+    /// of `shouldThrow`. Lets tests exercise timeout / backend-error branches independently.
+    public var getEmailDataThrowError: EmailError?
+    public private(set) var getEmailDataCallCount: Int = 0
+    public private(set) var lastGetEmailDataEmail: String?
+    public private(set) var lastGetEmailDataPollingInterval: TimeInterval?
+    public private(set) var lastGetEmailDataTotalTimeout: TimeInterval?
+
     public init() {}
 
     public func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64?,
@@ -483,11 +492,36 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
         }
     }
 
+    public func getEmailData(email: String,
+                             attemptId: UUID,
+                             pollingInterval: TimeInterval,
+                             totalTimeout: TimeInterval,
+                             shouldRunNextStep: @escaping () -> Bool) async throws -> [String: String] {
+        getEmailDataCallCount += 1
+        lastGetEmailDataEmail = email
+        lastGetEmailDataPollingInterval = pollingInterval
+        lastGetEmailDataTotalTimeout = totalTimeout
+
+        if let error = getEmailDataThrowError {
+            throw error
+        }
+        if shouldThrow {
+            throw EmailError.cantFindEmail
+        }
+        return getEmailDataReturnValue
+    }
+
     public func reset() {
         shouldThrow = false
         getEmailAndSaveCallCount = 0
         getEmailCallCount = 0
         lastExtractedProfileIdPassed = nil
+        getEmailDataReturnValue = [:]
+        getEmailDataThrowError = nil
+        getEmailDataCallCount = 0
+        lastGetEmailDataEmail = nil
+        lastGetEmailDataPollingInterval = nil
+        lastGetEmailDataTotalTimeout = nil
     }
 }
 

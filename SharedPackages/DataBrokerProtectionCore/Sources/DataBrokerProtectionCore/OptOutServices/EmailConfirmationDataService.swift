@@ -46,6 +46,15 @@ public protocol EmailConfirmationDataServiceProvider {
                              pollingInterval: TimeInterval,
                              attemptId: UUID,
                              shouldRunNextStep: @escaping () -> Bool) async throws -> URL
+
+    /// Polls the V1 email-data endpoint for a single email until `status == .ready` or
+    /// `totalTimeout` wall-clock elapses. Throws `EmailError.linkExtractionTimedOut` on timeout;
+    /// backend `.error`/`.unknown` statuses are translated into `EmailError`.
+    func getEmailData(email: String,
+                      attemptId: UUID,
+                      pollingInterval: TimeInterval,
+                      totalTimeout: TimeInterval,
+                      shouldRunNextStep: @escaping () -> Bool) async throws -> [String: String]
 }
 
 public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider {
@@ -120,6 +129,47 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                                                      pollingInterval: pollingInterval,
                                                      attemptId: attemptId,
                                                      shouldRunNextStep: shouldRunNextStep)
+    }
+
+    public func getEmailData(email: String,
+                             attemptId: UUID,
+                             pollingInterval: TimeInterval,
+                             totalTimeout: TimeInterval,
+                             shouldRunNextStep: @escaping () -> Bool) async throws -> [String: String] {
+        Logger.service.log("✉️ [EmailConfirmationDataService] Polling email-data for \(email, privacy: .public), attemptId: \(attemptId.uuidString, privacy: .public), totalTimeout: \(totalTimeout, privacy: .public)s")
+        let deadline = Date().addingTimeInterval(totalTimeout)
+        let pollingTimeInNanoseconds = UInt64(pollingInterval * 1000) * NSEC_PER_MSEC
+        let item = EmailDataRequestItemV1(email: email, attemptId: attemptId.uuidString)
+
+        while Date() < deadline {
+            let response = try await emailServiceV1.fetchEmailData(items: [item])
+
+            if !shouldRunNextStep() {
+                throw EmailError.cancelled
+            }
+
+            guard let responseItem = response.items.first else {
+                throw EmailError.unknownStatusReceived(email: email)
+            }
+
+            switch responseItem.status {
+            case .ready:
+                var emailData: [String: String] = [:]
+                for datum in responseItem.data {
+                    emailData[datum.name] = datum.value
+                }
+                return emailData
+            case .error, .unknown:
+                Logger.service.error("✉️ [EmailConfirmationDataService] Email-data returned status=\(responseItem.status.rawValue, privacy: .public), error=\(responseItem.errorCode?.rawValue ?? "", privacy: .public)")
+                throw responseItem.errorCode?.asEmailError ?? .unknownStatusReceived(email: email)
+            case .pending:
+                Logger.service.log("✉️ [EmailConfirmationDataService] Email-data pending for \(email, privacy: .public). Sleeping \(pollingInterval, privacy: .public)s")
+                try await Task.sleep(nanoseconds: pollingTimeInNanoseconds)
+            }
+        }
+
+        Logger.service.error("✉️ [EmailConfirmationDataService] Email-data polling timed out for: \(email, privacy: .public)")
+        throw EmailError.linkExtractionTimedOut
     }
 
     public func checkForEmailConfirmationData() async throws {

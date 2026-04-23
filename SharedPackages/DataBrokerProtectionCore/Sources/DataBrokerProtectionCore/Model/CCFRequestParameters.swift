@@ -20,7 +20,7 @@ import Foundation
 
 public enum CCFRequestData: Encodable {
     case solveCaptcha(CaptchaToken)
-    case userData(ProfileQuery, ExtractedProfile?)
+    case userData(ProfileQuery, ExtractedProfile?, emailData: [String: String] = [:])
 }
 
 public struct CaptchaToken: Encodable, Sendable {
@@ -35,6 +35,7 @@ struct InitParams: Encodable {
 private enum UserDataCodingKeys: String, CodingKey {
     case userProfile
     case extractedProfile
+    case emailData
 }
 
 struct ActionRequest: Encodable {
@@ -52,11 +53,14 @@ struct ActionRequest: Encodable {
         switch data {
         case .solveCaptcha(let captchaToken):
             try container.encode(captchaToken, forKey: .data)
-        case .userData(let profileQuery, let extractedProfile):
+        case .userData(let profileQuery, let extractedProfile, let emailData):
             var userDataContainer = container.nestedContainer(keyedBy: UserDataCodingKeys.self, forKey: .data)
             try userDataContainer.encode(profileQuery, forKey: .userProfile)
             if let extractedProfile = extractedProfile {
                 try userDataContainer.encode(extractedProfile, forKey: .extractedProfile)
+            }
+            if !emailData.isEmpty {
+                try userDataContainer.encode(emailData, forKey: .emailData)
             }
         default:
             assertionFailure("Data not found. Please add the mission data to the encoding list.")

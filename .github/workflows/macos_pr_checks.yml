@@ -348,42 +348,25 @@ jobs:
           fi
         fi
 
-    - name: Inject crashes into JUnit XML
-      if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')
-      run: |
-        for kind in unittests integrationtests; do
-          xcresult=${{ matrix.flavor }}-$kind.xcresult
-          junit=${{ matrix.flavor }}-$kind.xml
-          log=${{ matrix.flavor }}-$kind-xcodebuild.log
-          if [[ -d "$xcresult" && -f "$junit" ]]; then
-            ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
-              "$xcresult" "$junit" \
-              --log "$log" \
-              --crash-reports-dir ~/Library/Logs/DiagnosticReports
-          fi
-        done
+    - name: Process unit test results
+      uses: ./.github/actions/process-test-results
+      with:
+        working-directory: macOS
+        junit-path: ${{ matrix.flavor }}-unittests.xml
+        log-path: ${{ matrix.flavor }}-unittests-xcodebuild.log
+        xcresult-glob: ${{ matrix.flavor }}-unittests.xcresult
+        title: macOS ${{ matrix.flavor }} Unit Tests
+        test-outcome: ${{ steps.run-unit-tests.outcome }}
 
-    - name: Render test report
-      if: always()
-      run: |
-        for kind in unittests integrationtests; do
-          junit=${{ matrix.flavor }}-$kind.xml
-          crash_details=${{ matrix.flavor }}-$kind-crash-details.json
-          case "$kind" in
-            unittests) pretty_kind="Unit Tests" ;;
-            integrationtests) pretty_kind="Integration Tests" ;;
-          esac
-          if [[ -f "$junit" ]]; then
-            crash_details_arg=()
-            if [[ -f "$crash_details" ]]; then
-              crash_details_arg=(--crash-details-json "$crash_details")
-            fi
-            ${{ github.workspace }}/scripts/render-test-report.py \
-              --junit "$junit" \
-              --title "macOS ${{ matrix.flavor }} $pretty_kind" \
-              "${crash_details_arg[@]}"
-          fi
-        done
+    - name: Process integration test results
+      uses: ./.github/actions/process-test-results
+      with:
+        working-directory: macOS
+        junit-path: ${{ matrix.flavor }}-integrationtests.xml
+        log-path: ${{ matrix.flavor }}-integrationtests-xcodebuild.log
+        xcresult-glob: ${{ matrix.flavor }}-integrationtests.xcresult
+        title: macOS ${{ matrix.flavor }} Integration Tests
+        test-outcome: ${{ steps.run-integration-tests.outcome }}
 
     - name: Upload JUnit XML as artifact
       uses: actions/upload-artifact@v4

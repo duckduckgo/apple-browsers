@@ -103,31 +103,14 @@ jobs:
         if-no-files-found: ignore
         retention-days: 7
 
-    - name: Inject crashes into JUnit XML
-      if: always() && steps.run-unit-tests.outcome == 'failure'
-      run: |
-        xcresult=$(ls -dt DerivedData/Logs/Test/*.xcresult 2>/dev/null | head -n 1)
-        if [[ -z "$xcresult" ]]; then
-          exit 0
-        fi
-        ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
-          "$xcresult" unittests.xml \
-          --log xcodebuild.log \
-          --crash-reports-dir ~/Library/Logs/DiagnosticReports
-
-    - name: Render test report
-      if: always()
-      run: |
-        if [[ -f unittests.xml ]]; then
-          crash_details_arg=()
-          if [[ -f unittests-crash-details.json ]]; then
-            crash_details_arg=(--crash-details-json unittests-crash-details.json)
-          fi
-          ${{ github.workspace }}/scripts/render-test-report.py \
-            --junit unittests.xml \
-            --title "iOS Nightly" \
-            "${crash_details_arg[@]}"
-        fi
+    - name: Process test results
+      uses: ./.github/actions/process-test-results
+      with:
+        working-directory: iOS
+        junit-path: unittests.xml
+        log-path: xcodebuild.log
+        title: iOS Nightly
+        test-outcome: ${{ steps.run-unit-tests.outcome }}
 
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v3

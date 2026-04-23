@@ -113,31 +113,14 @@ jobs:
           pixel-params: |
             runner: ${{ env.RUNS_ON }}
 
-      - name: Inject crashes into JUnit XML
-        if: always() && steps.run-unit-tests.outcome == 'failure'
-        run: |
-          xcresult=$(ls -dt DerivedData/Logs/Test/*.xcresult 2>/dev/null | head -n 1)
-          if [[ -z "$xcresult" ]]; then
-            exit 0
-          fi
-          ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
-            "$xcresult" package-tests.xml \
-            --log build-log.txt \
-            --crash-reports-dir ~/Library/Logs/DiagnosticReports
-
-      - name: Render test report
-        if: always()
-        run: |
-          if [[ -f package-tests.xml ]]; then
-            crash_details_arg=()
-            if [[ -f package-tests-crash-details.json ]]; then
-              crash_details_arg=(--crash-details-json package-tests-crash-details.json)
-            fi
-            ${{ github.workspace }}/scripts/render-test-report.py \
-              --junit package-tests.xml \
-              --title "DBP (macOS)" \
-              "${crash_details_arg[@]}"
-          fi
+      - name: Process test results
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/DataBrokerProtectionCore
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: DBP (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
@@ -284,31 +267,14 @@ jobs:
           pixel-params: |
             runner: ${{ env.RUNS_ON }}
 
-      - name: Inject crashes into JUnit XML
-        if: always() && steps.run-unit-tests.outcome == 'failure'
-        run: |
-          xcresult=$(ls -dt DerivedData/Logs/Test/*.xcresult 2>/dev/null | head -n 1)
-          if [[ -z "$xcresult" ]]; then
-            exit 0
-          fi
-          ${{ github.workspace }}/scripts/inject-xcresult-crashes-into-junit.py \
-            "$xcresult" dbp-ios-unittests.xml \
-            --log ios-build-log.txt \
-            --crash-reports-dir ~/Library/Logs/DiagnosticReports
-
-      - name: Render test report
-        if: always()
-        run: |
-          if [[ -f dbp-ios-unittests.xml ]]; then
-            crash_details_arg=()
-            if [[ -f dbp-ios-unittests-crash-details.json ]]; then
-              crash_details_arg=(--crash-details-json dbp-ios-unittests-crash-details.json)
-            fi
-            ${{ github.workspace }}/scripts/render-test-report.py \
-              --junit dbp-ios-unittests.xml \
-              --title "DBP (iOS)" \
-              "${crash_details_arg[@]}"
-          fi
+      - name: Process test results
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/DataBrokerProtectionCore
+          junit-path: dbp-ios-unittests.xml
+          log-path: ios-build-log.txt
+          title: DBP (iOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4

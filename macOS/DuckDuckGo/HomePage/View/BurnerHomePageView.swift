@@ -72,7 +72,7 @@ struct BurnerHomePageView: View {
 
                     if promoViewModel.shouldShowPromo {
                         SubscriptionPromoView(
-                            actionType: .tryForFree,
+                            actionType: .learnMore,
                             promoCardWidth: Self.targetWidth,
                             onButtonTap: { promoViewModel.onPromoButtonTapped() },
                             onClose: { promoViewModel.dismiss() }

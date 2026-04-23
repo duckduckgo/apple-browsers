@@ -104151,6 +104151,18 @@
         }
       }
     },
+    "tooltip.feedback.shortcut" : {
+      "comment" : "Tooltip for the internal feedback toolbar button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Send Internal Feedback"
+          }
+        }
+      }
+    },
     "tooltip.find-in-page.close" : {
       "comment" : "Tooltip for the Find In Page bar's Close button",
       "extractionState" : "extracted_with_value",

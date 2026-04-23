@@ -37,6 +37,9 @@ extension OnboardingRebranding {
         let blockedTrackersCTAAction: () -> Void
         let viewModel: OnboardingFireButtonDialogViewModel
         let onManualDismiss: () -> Void
+        /// Fires when the bubble transitions in-place to the follow-up content,
+        /// so the host can swap the background illustration to match.
+        let onContentTransition: (() -> Void)?
 
         private var panelHeight: CGFloat {
             showNextScreen ? followUpPanelHeight : initialPanelHeight
@@ -58,6 +61,7 @@ extension OnboardingRebranding {
                         Button(cta) {
                             blockedTrackersCTAAction()
                             if shouldFollowUp {
+                                onContentTransition?()
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     showNextScreen = true
                                 }

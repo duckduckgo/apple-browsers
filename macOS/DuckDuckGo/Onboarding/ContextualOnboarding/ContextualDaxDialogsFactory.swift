@@ -24,8 +24,15 @@ protocol ContextualDaxDialogsFactory {
     func makeView(for type: ContextualDialogType, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> AnyView
 
     /// Returns the dialog split into bubble and background layers for animated transitions.
-    /// Default implementation returns nil, meaning the factory doesn't support layered transitions.
-    func makeLayeredViews(for type: ContextualDialogType, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> LayeredDialogViews?
+    /// `onInlineTransition` fires when a dialog transitions its content in-place to a follow-up
+    /// type (searchDone → tryASite, trackers → tryFireButton), so the host can swap the
+    /// background illustration to match. Default implementation returns nil, meaning the factory
+    /// doesn't support layered transitions.
+    func makeLayeredViews(for type: ContextualDialogType, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onInlineTransition: ((ContextualDialogType) -> Void)?) -> LayeredDialogViews?
+
+    /// Builds just the themed background illustration for a dialog type.
+    /// Used to swap the background layer when an inline transition occurs.
+    func makeBackgroundView(for type: ContextualDialogType) -> AnyView?
 }
 
 struct LayeredDialogViews {
@@ -34,7 +41,11 @@ struct LayeredDialogViews {
 }
 
 extension ContextualDaxDialogsFactory {
-    func makeLayeredViews(for type: ContextualDialogType, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> LayeredDialogViews? {
+    func makeLayeredViews(for type: ContextualDialogType, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onInlineTransition: ((ContextualDialogType) -> Void)?) -> LayeredDialogViews? {
+        nil
+    }
+
+    func makeBackgroundView(for type: ContextualDialogType) -> AnyView? {
         nil
     }
 }

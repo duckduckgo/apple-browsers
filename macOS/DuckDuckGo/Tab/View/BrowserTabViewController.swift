@@ -729,12 +729,21 @@ final class BrowserTabViewController: NSViewController {
             delegate?.dismissViewHighlight()
         }
 
+        let onInlineTransition: (ContextualDialogType) -> Void = { [weak self] newType in
+            guard let self,
+                  let backgroundContainer = self.layeredDialogBackgroundContainer,
+                  let newBackground = self.onboardingDialogFactory.makeBackgroundView(for: newType)
+            else { return }
+            self.crossfadeLayeredBackground(newBackground, in: backgroundContainer)
+        }
+
         if let layered = onboardingDialogFactory.makeLayeredViews(
             for: dialogType,
             delegate: tab,
             onDismiss: onDismissAction,
             onGotItPressed: onGotItPressed,
-            onFireButtonPressed: onFireButtonPressed
+            onFireButtonPressed: onFireButtonPressed,
+            onInlineTransition: onInlineTransition
         ) {
             presentLayeredContextualOnboarding(layered)
         } else {

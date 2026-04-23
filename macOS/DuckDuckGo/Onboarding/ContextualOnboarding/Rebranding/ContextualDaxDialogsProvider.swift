@@ -68,7 +68,11 @@ final class ContextualDaxDialogsProvider: ContextualDaxDialogsFactory {
         factory.makeView(for: type, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
     }
 
-    func makeLayeredViews(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> LayeredDialogViews? {
-        factory.makeLayeredViews(for: type, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
+    func makeLayeredViews(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onInlineTransition: ((ContextualDialogType) -> Void)?) -> LayeredDialogViews? {
+        factory.makeLayeredViews(for: type, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed, onInlineTransition: onInlineTransition)
+    }
+
+    func makeBackgroundView(for type: ContextualDialogType) -> AnyView? {
+        factory.makeBackgroundView(for: type)
     }
 }

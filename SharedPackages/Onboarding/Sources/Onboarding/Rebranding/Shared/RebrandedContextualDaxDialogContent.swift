@@ -235,6 +235,10 @@ private extension OnboardingRebranding {
                 messageTypingView(alignment: messageAlignment)
             }
             .padding(theme.contextualOnboardingMetrics.titleBodyInset)
+            // In horizontal layouts (text + button side-by-side), SwiftUI will
+            // truncate the text to a single line unless we tell it to size to
+            // its content vertically — wrap instead of truncate.
+            .fixedSize(horizontal: false, vertical: true)
         }
 
         #if os(iOS)

@@ -21,16 +21,16 @@ import SwiftUI
 import Onboarding
 
 struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
-    /// Panel heights sized to fit each dialog's bubble content.
-    /// The illustration is pinned to the bottom at its natural size and can overlap
-    /// the bubble visually.
+    /// Kept only for API compatibility with the existing dialog signatures —
+    /// all panels now size themselves to their bubble content plus uniform vertical
+    /// padding, so these values are no longer used as a layout floor.
     enum ContextualPanelMetrics {
-        static let trySearchPanelHeight: CGFloat = 180
-        static let searchDonePanelHeight: CGFloat = 150
-        static let trySitePanelHeight: CGFloat = 240
-        static let trackersPanelHeight: CGFloat = 150
-        static let firePanelHeight: CGFloat = 140
-        static let highFivePanelHeight: CGFloat = 150
+        static let trySearchPanelHeight: CGFloat = 0
+        static let searchDonePanelHeight: CGFloat = 0
+        static let trySitePanelHeight: CGFloat = 0
+        static let trackersPanelHeight: CGFloat = 0
+        static let firePanelHeight: CGFloat = 0
+        static let highFivePanelHeight: CGFloat = 0
     }
 
     private let onboardingPixelReporter: OnboardingPixelReporting
@@ -42,7 +42,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     }
 
     func makeView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> AnyView {
-        let bubble = makeBubbleView(for: type, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
+        let bubble = makeBubbleView(for: type, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed, onInlineTransition: nil)
 
         let viewWithBackground = AnyView(
             bubble
@@ -71,16 +71,19 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     }
 
     /// Returns just the bubble view (no background) for layered composition.
-    func makeBubbleView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> AnyView {
+    /// `onInlineTransition` is invoked with the follow-up dialog type when a dialog performs
+    /// an in-place content swap (e.g. searchDone → tryASite). The host uses this to swap the
+    /// background illustration so it matches the displayed bubble content.
+    func makeBubbleView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onInlineTransition: ((ContextualDialogType) -> Void)?) -> AnyView {
         switch type {
         case .tryASearch:
             return AnyView(tryASearchDialog(delegate: delegate, onDismiss: onDismiss))
         case .searchDone(shouldFollowUp: let shouldFollowUp):
-            return AnyView(searchDoneDialog(shouldFollowUp: shouldFollowUp, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed))
+            return AnyView(searchDoneDialog(shouldFollowUp: shouldFollowUp, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onInlineTransition: onInlineTransition))
         case .tryASite:
             return AnyView(tryASiteDialog(delegate: delegate, onDismiss: onDismiss))
         case .trackers(message: let message, shouldFollowUp: let shouldFollowUp):
-            return AnyView(trackersDialog(message: message, shouldFollowUp: shouldFollowUp, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
+            return AnyView(trackersDialog(message: message, shouldFollowUp: shouldFollowUp, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed, onInlineTransition: onInlineTransition))
         case .tryFireButton:
             return AnyView(tryFireButtonDialog(onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
         case .highFive:
@@ -89,8 +92,8 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         }
     }
 
-    func makeLayeredViews(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> LayeredDialogViews? {
-        let bubble = makeBubbleView(for: type, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
+    func makeLayeredViews(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onInlineTransition: ((ContextualDialogType) -> Void)?) -> LayeredDialogViews? {
+        let bubble = makeBubbleView(for: type, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed, onInlineTransition: onInlineTransition)
         let themedBubble = AnyView(bubble.applyOnboardingTheme(.macOSRebranding2026))
         let themedBackground = AnyView(
             Self.backgroundView(for: type)
@@ -118,6 +121,13 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     }
 
     // MARK: - Background
+
+    func makeBackgroundView(for type: ContextualDialogType) -> AnyView? {
+        AnyView(
+            Self.backgroundView(for: type)
+                .applyOnboardingTheme(.macOSRebranding2026)
+        )
+    }
 
     static func backgroundView(for type: ContextualDialogType) -> AnyView {
         AnyView(
@@ -162,7 +172,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         return OnboardingRebranding.OnboardingTrySearchDialog(viewModel: viewModel, onManualDismiss: onDismiss)
     }
 
-    private func searchDoneDialog(shouldFollowUp: Bool, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void) -> some View {
+    private func searchDoneDialog(shouldFollowUp: Bool, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onInlineTransition: ((ContextualDialogType) -> Void)?) -> some View {
         let suggestedSitesProvider = OnboardingSuggestedSitesProvider(surpriseItemTitle: OnboardingSuggestedSitesProvider.surpriseItemTitle)
         let viewModel = OnboardingSiteSuggestionsViewModel(title: "", suggestedSitesProvider: suggestedSitesProvider, delegate: delegate)
         let gotIt = shouldFollowUp ? onGotItPressed : onDismiss
@@ -172,7 +182,8 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             followUpPanelHeight: ContextualPanelMetrics.trySitePanelHeight,
             viewModel: viewModel,
             gotItAction: gotIt,
-            onManualDismiss: onDismiss
+            onManualDismiss: onDismiss,
+            onContentTransition: { onInlineTransition?(.tryASite) }
         )
     }
 
@@ -182,7 +193,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         return OnboardingRebranding.OnboardingTrySiteDialog(viewModel: viewModel, onManualDismiss: onDismiss)
     }
 
-    private func trackersDialog(message: NSAttributedString, shouldFollowUp: Bool, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {
+    private func trackersDialog(message: NSAttributedString, shouldFollowUp: Bool, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onInlineTransition: ((ContextualDialogType) -> Void)?) -> some View {
         let gotIt = shouldFollowUp ? onGotItPressed : onDismiss
         let viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: onboardingPixelReporter, fireCoordinator: fireCoordinator, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
         return OnboardingRebranding.OnboardingTrackersBlockedDialog(
@@ -192,17 +203,23 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             message: Self.collapseDoubleNewlines(message),
             blockedTrackersCTAAction: gotIt,
             viewModel: viewModel,
-            onManualDismiss: onDismiss
+            onManualDismiss: onDismiss,
+            onContentTransition: { onInlineTransition?(.tryFireButton) }
         )
     }
 
     /// The localized tracker copy uses `\n\n` to separate the main message from the shield hint,
-    /// which renders as a large gap in the rebranded bubble. Collapse to a single newline so
-    /// the secondary line sits directly below the message.
+    /// which renders as a large gap in the rebranded bubble. Collapse to a single newline and
+    /// add a small paragraph spacing so the secondary line is visually distinct without the
+    /// exaggerated blank line the double newline produces.
     private static func collapseDoubleNewlines(_ source: NSAttributedString) -> NSAttributedString {
         let mutable = NSMutableAttributedString(attributedString: source)
         let fullRange = NSRange(location: 0, length: mutable.length)
         mutable.mutableString.replaceOccurrences(of: "\n\n", with: "\n", range: fullRange)
+
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.paragraphSpacing = 8
+        mutable.addAttribute(.paragraphStyle, value: paragraph, range: NSRange(location: 0, length: mutable.length))
         return mutable
     }
 
@@ -231,19 +248,18 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
 // MARK: - Panel Layout Modifier
 
 extension View {
+    /// Renders the bubble with consistent vertical padding, letting the panel size itself
+    /// entirely from the bubble's intrinsic height. No floor — long text in any language
+    /// grows the panel naturally. The `height` parameter is ignored.
     func contextualOnboardingPanelLayout(height: CGFloat) -> some View {
-        VStack(spacing: 0) {
-            HStack {
-                Spacer()
-                self
-                    .frame(maxWidth: 640)
-                Spacer()
-            }
-            Spacer(minLength: 0)
+        HStack(spacing: 0) {
+            Spacer()
+            self
+                .frame(maxWidth: 640)
+            Spacer()
         }
         .padding(.top, 24)
-        .padding(.bottom, 40)
+        .padding(.bottom, 32)
         .frame(maxWidth: .infinity)
-        .frame(height: height)
     }
 }

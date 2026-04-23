@@ -43,16 +43,23 @@ extension OnboardingRebranding {
         @Environment(\.onboardingTheme) private var theme
 
         // The localized title has `\n\n` to separate the headline and the custom message part,
-        // which renders as an oversized gap in the compact bubble. Collapse to one newline.
+        // which renders as an oversized gap in the compact bubble. Collapse to one newline and
+        // add paragraph spacing so the secondary line still reads as a separate sentence.
         static let firstString = String(format: UserText.ContextualOnboarding.onboardingTryFireButtonTitle, UserText.ContextualOnboarding.onboardingTryFireButtonMessage)
             .replacingOccurrences(of: "\n\n", with: "\n")
-        private let attributedMessage = NSMutableAttributedString.attributedString(
-            from: Self.firstString,
-            defaultFontSize: OnboardingDialogsContants.titleFontSize,
-            boldFontSize: OnboardingDialogsContants.titleFontSize,
-            customPart: UserText.ContextualOnboarding.onboardingTryFireButtonMessage,
-            customFontSize: OnboardingDialogsContants.messageFontSize
-        )
+        private let attributedMessage: NSAttributedString = {
+            let base = NSMutableAttributedString.attributedString(
+                from: firstString,
+                defaultFontSize: OnboardingDialogsContants.titleFontSize,
+                boldFontSize: OnboardingDialogsContants.titleFontSize,
+                customPart: UserText.ContextualOnboarding.onboardingTryFireButtonMessage,
+                customFontSize: OnboardingDialogsContants.messageFontSize
+            )
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.paragraphSpacing = 8
+            base.addAttribute(.paragraphStyle, value: paragraph, range: NSRange(location: 0, length: base.length))
+            return base
+        }()
 
         let viewModel: OnboardingFireButtonDialogViewModel
 

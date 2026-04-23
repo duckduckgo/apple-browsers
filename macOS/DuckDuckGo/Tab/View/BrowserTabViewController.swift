@@ -1218,15 +1218,31 @@ final class BrowserTabViewController: NSViewController {
             containsHostingView = false
         }
 
-        guard let viewForRendering = browserTabView.findContentSubview(containsHostingView: containsHostingView) else {
-            assertionFailure("No view for rendering of the snapshot")
-            return
+        let viewForRendering: NSView
+        if let burnerSnapshotView = burnerHomePageSnapshotView(for: tabViewModel) {
+            viewForRendering = burnerSnapshotView
+        } else {
+            guard let contentSubview = browserTabView.findContentSubview(containsHostingView: containsHostingView) else {
+                assertionFailure("No view for rendering of the snapshot")
+                return
+            }
+            viewForRendering = contentSubview
         }
 
         Task { @MainActor [weak tabViewModel, weak viewForRendering] in
             guard let tabSnapshots = tabViewModel?.tab.tabSnapshots else { return }
             await tabSnapshots.renderSnapshot { [weak viewForRendering] in viewForRendering }
         }
+    }
+
+    private func burnerHomePageSnapshotView(for tabViewModel: TabViewModel) -> NSView? {
+        guard case .newtab = tabViewModel.tab.content,
+              let burnerHomePage = burnerHomePageViewController else { return nil }
+        let promoState = tabViewModel.tab.subscriptionPromo?.promoState ?? .notEvaluated
+        return burnerHomePage.createSnapshotView(
+            promoState: promoState,
+            size: browserTabView.bounds.size
+        )
     }
 
     // MARK: - New Tab page

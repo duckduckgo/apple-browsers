@@ -27,6 +27,8 @@ final class BurnerHomePageViewController: NSViewController {
     let appearancePreferences: AppearancePreferences
     let themeManager: ThemeManager
     let subscriptionPromoViewModel: SubscriptionPromoViewModel
+    private let subscriptionManager: any SubscriptionManager
+    private let featureFlagger: FeatureFlagger
 
     var openSubscriptionPage: (() -> Void)?
 
@@ -40,6 +42,8 @@ final class BurnerHomePageViewController: NSViewController {
          featureFlagger: FeatureFlagger,
          promoDelegate: FireWindowSubscriptionPromoDelegate?,
          dateProvider: @escaping () -> Date = Date.init) {
+        self.subscriptionManager = subscriptionManager
+        self.featureFlagger = featureFlagger
         self.appearancePreferences = appearancePreferences ?? NSApp.delegateTyped.appearancePreferences
         self.themeManager = themeManager ?? NSApp.delegateTyped.themeManager
         self.subscriptionPromoViewModel = SubscriptionPromoViewModel(
@@ -62,6 +66,39 @@ final class BurnerHomePageViewController: NSViewController {
             .environmentObject(themeManager)
 
         self.view = NSHostingView(rootView: rootView)
+    }
+
+    func createSnapshotView(promoState: TabPromoState, size: NSSize) -> NSView {
+        let snapshotViewModel = SubscriptionPromoViewModel(
+            subscriptionManager: subscriptionManager,
+            featureFlagger: featureFlagger,
+            pixelFiring: nil
+        )
+        snapshotViewModel.updateForTabPreview(promoState, isEligibleForFreeTrial: subscriptionPromoViewModel.isEligibleForFreeTrial)
+
+        let rootView = BurnerHomePageView(promoViewModel: snapshotViewModel)
+            .environmentObject(appearancePreferences)
+            .environmentObject(themeManager)
+
+        let hostingView = NSHostingView(rootView: rootView)
+        hostingView.frame = NSRect(origin: .zero, size: size)
+
+        let offscreenWindow = NSWindow(
+            contentRect: NSRect(origin: NSPoint(x: -10000, y: -10000), size: size),
+            styleMask: .borderless,
+            backing: .buffered,
+            defer: true
+        )
+        offscreenWindow.alphaValue = 0
+        offscreenWindow.level = .init(-1)
+        offscreenWindow.ignoresMouseEvents = true
+        offscreenWindow.isExcludedFromWindowsMenu = true
+        offscreenWindow.collectionBehavior = [.transient, .ignoresCycle]
+        offscreenWindow.contentView = hostingView
+        offscreenWindow.orderBack(nil)
+        hostingView.layoutSubtreeIfNeeded()
+
+        return hostingView
     }
 
     func updatePromoState(for tab: Tab) {

@@ -22,8 +22,11 @@ public extension OnboardingRebranding.OnboardingStyles {
 
     struct CTAButtonStyle: ButtonStyle {
         private let backgroundColor: Color
+        private let hoverBackgroundColor: Color
         private let pressedBackgroundColor: Color
+        private let disabledBackgroundColor: Color
         private let foregroundColor: Color
+        private let disabledForegroundColor: Color
         private let font: Font
         private let verticalPadding: CGFloat
         private let horizontalPadding: CGFloat
@@ -33,8 +36,11 @@ public extension OnboardingRebranding.OnboardingStyles {
 
         public init(
             backgroundColor: Color,
+            hoverBackgroundColor: Color? = nil,
             pressedBackgroundColor: Color,
+            disabledBackgroundColor: Color? = nil,
             foregroundColor: Color,
+            disabledForegroundColor: Color? = nil,
             font: Font,
             verticalPadding: CGFloat = 8,
             horizontalPadding: CGFloat = 24,
@@ -43,8 +49,12 @@ public extension OnboardingRebranding.OnboardingStyles {
             minHeight: CGFloat = 32
         ) {
             self.backgroundColor = backgroundColor
+            // Hover falls back to pressed — preserves the old single-pressed-color behavior for callers that don't specify.
+            self.hoverBackgroundColor = hoverBackgroundColor ?? pressedBackgroundColor
             self.pressedBackgroundColor = pressedBackgroundColor
+            self.disabledBackgroundColor = disabledBackgroundColor ?? backgroundColor.opacity(0.4)
             self.foregroundColor = foregroundColor
+            self.disabledForegroundColor = disabledForegroundColor ?? foregroundColor.opacity(0.6)
             self.font = font
             self.verticalPadding = verticalPadding
             self.horizontalPadding = horizontalPadding
@@ -57,8 +67,11 @@ public extension OnboardingRebranding.OnboardingStyles {
             CTAButtonContent(
                 configuration: configuration,
                 backgroundColor: backgroundColor,
+                hoverBackgroundColor: hoverBackgroundColor,
                 pressedBackgroundColor: pressedBackgroundColor,
+                disabledBackgroundColor: disabledBackgroundColor,
                 foregroundColor: foregroundColor,
+                disabledForegroundColor: disabledForegroundColor,
                 font: font,
                 verticalPadding: verticalPadding,
                 horizontalPadding: horizontalPadding,
@@ -71,8 +84,11 @@ public extension OnboardingRebranding.OnboardingStyles {
         private struct CTAButtonContent: View {
             let configuration: ButtonStyle.Configuration
             let backgroundColor: Color
+            let hoverBackgroundColor: Color
             let pressedBackgroundColor: Color
+            let disabledBackgroundColor: Color
             let foregroundColor: Color
+            let disabledForegroundColor: Color
             let font: Font
             let verticalPadding: CGFloat
             let horizontalPadding: CGFloat
@@ -80,12 +96,13 @@ public extension OnboardingRebranding.OnboardingStyles {
             let minWidth: CGFloat
             let minHeight: CGFloat
 
+            @Environment(\.isEnabled) private var isEnabled
             @State private var isHovered = false
 
             var body: some View {
                 configuration.label
                     .font(font)
-                    .foregroundColor(foregroundColor)
+                    .foregroundColor(isEnabled ? foregroundColor : disabledForegroundColor)
                     .padding(.vertical, verticalPadding)
                     .padding(.horizontal, horizontalPadding)
                     .frame(minWidth: minWidth, minHeight: minHeight)
@@ -99,12 +116,15 @@ public extension OnboardingRebranding.OnboardingStyles {
             }
 
             private var resolvedBackgroundColor: Color {
+                if !isEnabled {
+                    return disabledBackgroundColor
+                }
                 if configuration.isPressed {
                     return pressedBackgroundColor
                 }
 #if os(macOS)
                 if isHovered {
-                    return pressedBackgroundColor
+                    return hoverBackgroundColor
                 }
 #endif
                 return backgroundColor

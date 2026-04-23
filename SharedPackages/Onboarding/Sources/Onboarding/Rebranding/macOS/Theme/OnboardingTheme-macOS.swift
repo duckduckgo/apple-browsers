@@ -34,19 +34,58 @@ public extension OnboardingTheme {
         )
 
         let accentPrimary = Color(0x2F95EE)
-        let bubbleBorder = Color(0xCBEAFF)
 
-        let ctaButtonBackground = Color(0xF05F2B)
-        let ctaButtonPressed = Color(0xCC3B0A)
+        // Primary CTA button — adaptive palette.
+        // Light: existing orange scheme (default → pressed, hover falls back to pressed).
+        // Dark: cream/yellow scheme per Figma (#FFD986 default, #FFC95D hover, #FFC95D pressed).
+        let ctaButtonBackground = Color(NSColor(name: nil, dynamicProvider: { appearance in
+            appearance.name == .darkAqua
+                ? NSColor(red: 0xFF/255.0, green: 0xD9/255.0, blue: 0x86/255.0, alpha: 1)
+                : NSColor(red: 0xF0/255.0, green: 0x5F/255.0, blue: 0x2B/255.0, alpha: 1)
+        }))
+        let ctaButtonHover = Color(NSColor(name: nil, dynamicProvider: { appearance in
+            appearance.name == .darkAqua
+                ? NSColor(red: 0xFF/255.0, green: 0xC9/255.0, blue: 0x5D/255.0, alpha: 1)
+                : NSColor(red: 0xCC/255.0, green: 0x3B/255.0, blue: 0x0A/255.0, alpha: 1)
+        }))
+        let ctaButtonPressed = Color(NSColor(name: nil, dynamicProvider: { appearance in
+            appearance.name == .darkAqua
+                ? NSColor(red: 0xFF/255.0, green: 0xC9/255.0, blue: 0x5D/255.0, alpha: 1)
+                : NSColor(red: 0xCC/255.0, green: 0x3B/255.0, blue: 0x0A/255.0, alpha: 1)
+        }))
+        // Disabled: 40% opacity of default (no explicit Figma value yet).
+        let ctaButtonDisabled = ctaButtonBackground.opacity(0.4)
+        // Text on CTA — white on orange (light), dark navy on yellow (dark).
+        let ctaButtonText = Color(NSColor(name: nil, dynamicProvider: { appearance in
+            appearance.name == .darkAqua
+                ? NSColor(red: 0x01/255.0, green: 0x1D/255.0, blue: 0x34/255.0, alpha: 1)
+                : .white
+        }))
 
-        let adaptiveWhite = Color(NSColor(name: nil, dynamicProvider: { appearance in
-            appearance.name == .darkAqua ? NSColor.windowBackgroundColor : .white
+        // Panel/banner background behind the bubble (where the illustration sits).
+        // Light: white. Dark: rebranding dark navy (#133E7C).
+        let adaptiveBanner = Color(NSColor(name: nil, dynamicProvider: { appearance in
+            appearance.name == .darkAqua
+                ? NSColor(red: 0x13/255.0, green: 0x3E/255.0, blue: 0x7C/255.0, alpha: 1)
+                : .white
+        }))
+        // Bubble fill. Light: white. Dark: deeper navy (#011D34).
+        let adaptiveBubbleBackground = Color(NSColor(name: nil, dynamicProvider: { appearance in
+            appearance.name == .darkAqua
+                ? NSColor(red: 0x01/255.0, green: 0x1D/255.0, blue: 0x34/255.0, alpha: 1)
+                : .white
+        }))
+        // Bubble border. Light: pale blue. Dark: pure black (per Figma).
+        let adaptiveBubbleBorder = Color(NSColor(name: nil, dynamicProvider: { appearance in
+            appearance.name == .darkAqua
+                ? .black
+                : NSColor(red: 0xCB/255.0, green: 0xEA/255.0, blue: 0xFF/255.0, alpha: 1)
         }))
 
         let colorPalette = ColorPalette(
-            background: adaptiveWhite,
-            bubbleBorder: bubbleBorder,
-            bubbleBackground: adaptiveWhite,
+            background: adaptiveBanner,
+            bubbleBorder: adaptiveBubbleBorder,
+            bubbleBackground: adaptiveBubbleBackground,
             bubbleShadow: Color.shade(0.03),
             textPrimary: Color(designSystemColor: .textPrimary),
             textSecondary: Color(designSystemColor: .textSecondary),
@@ -57,7 +96,7 @@ public extension OnboardingTheme {
             optionsListPressedColor: Color(red: 0x72/255.0, green: 0x95/255.0, blue: 0xF6/255.0).opacity(0.2),
             primaryButtonBackgroundColor: ctaButtonBackground,
             primaryButtonPressedColor: ctaButtonPressed,
-            primaryButtonTextColor: .white,
+            primaryButtonTextColor: ctaButtonText,
             secondaryButtonBackgroundColor: Color(designSystemColor: .buttonsPrimaryDefault),
             secondaryButtonPressedColor: Color(designSystemColor: .buttonsPrimaryPressed),
             secondaryButtonTextColor: Color(designSystemColor: .buttonsPrimaryText),
@@ -137,8 +176,10 @@ public extension OnboardingTheme {
                 style: AnyButtonStyle(
                     OnboardingRebranding.OnboardingStyles.CTAButtonStyle(
                         backgroundColor: ctaButtonBackground,
+                        hoverBackgroundColor: ctaButtonHover,
                         pressedBackgroundColor: ctaButtonPressed,
-                        foregroundColor: .white,
+                        disabledBackgroundColor: ctaButtonDisabled,
+                        foregroundColor: ctaButtonText,
                         font: typography.contextual.body
                     )
                 )

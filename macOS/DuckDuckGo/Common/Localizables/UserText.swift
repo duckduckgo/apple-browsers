@@ -1954,7 +1954,7 @@ struct UserText {
     // Subscription Promo on Fire Window (US locale only, no translation needed)
     static let subscriptionPromoTitle = "Boost protection beyond the Fire Window"
     static let subscriptionPromoSubtitle = "Protect even more with DuckDuckGo VPN."
-    static let subscriptionPromoTryForFree = "Try Our VPN"
+    static let subscriptionPromoTryForFree = "Try for Free"
     static let subscriptionPromoLearnMore = "Learn More"
 
     // Email Protection Management

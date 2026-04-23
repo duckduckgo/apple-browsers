@@ -70,7 +70,7 @@ extension OnboardingRebranding {
                     .transition(.identity)
                 }
             }
-            .frame(height: panelHeight, alignment: .top)
+            .contextualOnboardingPanelLayout(height: panelHeight)
         }
     }
 

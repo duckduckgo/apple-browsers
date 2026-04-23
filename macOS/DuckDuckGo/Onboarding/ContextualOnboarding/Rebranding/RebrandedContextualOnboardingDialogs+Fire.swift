@@ -35,14 +35,17 @@ extension OnboardingRebranding {
             ) {
                 OnboardingFireDialogContent(viewModel: viewModel)
             }
-            .frame(height: panelHeight, alignment: .top)
+            .contextualOnboardingPanelLayout(height: panelHeight)
         }
     }
 
     struct OnboardingFireDialogContent: View {
         @Environment(\.onboardingTheme) private var theme
 
+        // The localized title has `\n\n` to separate the headline and the custom message part,
+        // which renders as an oversized gap in the compact bubble. Collapse to one newline.
         static let firstString = String(format: UserText.ContextualOnboarding.onboardingTryFireButtonTitle, UserText.ContextualOnboarding.onboardingTryFireButtonMessage)
+            .replacingOccurrences(of: "\n\n", with: "\n")
         private let attributedMessage = NSMutableAttributedString.attributedString(
             from: Self.firstString,
             defaultFontSize: OnboardingDialogsContants.titleFontSize,
@@ -58,11 +61,31 @@ extension OnboardingRebranding {
                 orientation: .horizontalStack(alignment: .center),
                 message: attributedMessage
             ) {
-                Button(UserText.ContextualOnboarding.onboardingTryFireButtonButton) {
-                    viewModel.tryFireButton()
+                VStack(spacing: 8) {
+                    Button(UserText.ContextualOnboarding.onboardingTryFireButtonButton) {
+                        viewModel.tryFireButton()
+                    }
+                    .buttonStyle(theme.primaryButtonStyle.style)
+
+                    Button(UserText.ContextualOnboarding.onboardingTryFireButtonSkip) {
+                        viewModel.skipFireButton()
+                    }
+                    .buttonStyle(OnboardingFireDialogSkipButtonStyle())
                 }
-                .buttonStyle(theme.primaryButtonStyle.style)
             }
+        }
+    }
+
+    private struct OnboardingFireDialogSkipButtonStyle: ButtonStyle {
+        @Environment(\.onboardingTheme) private var theme
+
+        func makeBody(configuration: Configuration) -> some View {
+            OnboardingRebranding.OnboardingStyles.CTAButtonStyle(
+                backgroundColor: Color.secondary.opacity(0.12),
+                pressedBackgroundColor: Color.secondary.opacity(0.2),
+                foregroundColor: theme.colorPalette.textPrimary,
+                font: theme.typography.contextual.body
+            ).makeBody(configuration: configuration)
         }
     }
 

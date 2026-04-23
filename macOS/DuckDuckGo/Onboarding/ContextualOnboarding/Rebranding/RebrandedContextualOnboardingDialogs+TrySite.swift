@@ -34,6 +34,7 @@ extension OnboardingRebranding {
             ) {
                 OnboardingTrySiteDialogContent(viewModel: viewModel)
             }
+            .contextualOnboardingPanelLayout(height: RebrandedContextualDaxDialogsFactory.ContextualPanelMetrics.trySitePanelHeight)
         }
     }
 

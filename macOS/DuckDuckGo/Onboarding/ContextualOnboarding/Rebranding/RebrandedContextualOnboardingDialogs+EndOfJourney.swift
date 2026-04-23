@@ -24,6 +24,7 @@ import Onboarding
 extension OnboardingRebranding {
 
     struct OnboardingEndOfJourneyDialog: View {
+        let panelHeight: CGFloat
         let highFiveAction: () -> Void
         let onManualDismiss: () -> Void
 
@@ -34,6 +35,7 @@ extension OnboardingRebranding {
             ) {
                 OnboardingEndOfJourneyDialogContent(highFiveAction: highFiveAction)
             }
+            .contextualOnboardingPanelLayout(height: panelHeight)
         }
     }
 

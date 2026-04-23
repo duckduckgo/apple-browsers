@@ -122,6 +122,15 @@ final class BrowserTabViewController: NSViewController {
     private var wasContextualOnboardingDialogDismissed = false
     private let onboardingPixelReporter: OnboardingPixelReporting
 
+    // Layered contextual onboarding state: keeps the bubble and background as separate
+    // NSHostingControllers so the background can crossfade between dialog types
+    // while the bubble swaps instantly.
+    private var layeredDialogPanel: NSView?
+    private var layeredDialogBackgroundContainer: NSView?
+    private var layeredDialogBubbleContainer: NSView?
+    private var layeredDialogBackgroundHostingController: NSHostingController<AnyView>?
+    private var layeredDialogBubbleHostingController: NSHostingController<AnyView>?
+
     private(set) var transientTabContentViewController: NSViewController?
 
     public weak var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate?
@@ -643,6 +652,9 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private func removeExistingDialog() {
+        // Tear down the layered panel if present.
+        teardownLayeredDialogPanel()
+
         containerStackView.arrangedSubviews.filter({ $0 != webViewContainer }).forEach {
             containerStackView.removeArrangedSubview($0)
             $0.removeFromSuperview()
@@ -650,26 +662,32 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private func presentContextualOnboarding(showLastDialog: Bool = false) {
-        // Before presenting a new dialog, remove any existing ones.
-        removeExistingDialog()
         // Remove any existing highlights animation
         delegate?.dismissViewHighlight()
 
         // Checks if the feature is on
         guard featureFlagger.isFeatureOn(.contextualOnboarding) else {
             onboardingDialogTypeProvider.turnOffFeature()
+            removeExistingDialog()
             return
         }
 
-        guard !isInPopUpWindow else { return }
+        guard !isInPopUpWindow else {
+            removeExistingDialog()
+            return
+        }
 
-        guard let tab = tabViewModel?.tab else { return }
+        guard let tab = tabViewModel?.tab else {
+            removeExistingDialog()
+            return
+        }
 
         // if showLastDialog is true it asks the onboardingDialogTypeProvider for the lastDialog if the last dialog was shown on this tab
         // If there is it will show it
         // This allow seeing the dialog when leaving and coming back to the Window but will avoid reloading the same when opening a new Window
         guard let dialogType = showLastDialog ? onboardingDialogTypeProvider.lastDialogForTab(tab) : onboardingDialogTypeProvider.dialogTypeForTab(tab, privacyInfo: tab.privacyInfo) else {
             delegate?.dismissViewHighlight()
+            removeExistingDialog()
             return
         }
         // once a dialog is presented we reset the is dismissed flag
@@ -680,7 +698,12 @@ final class BrowserTabViewController: NSViewController {
             // we mark the flag for dialog dismissed
             wasContextualOnboardingDialogDismissed = true
             delegate?.dismissViewHighlight()
-            self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
+            self.removeExistingDialog()
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.25
+                context.allowsImplicitAnimation = true
+                self.containerStackView.layoutSubtreeIfNeeded()
+            }
             if let lastDialog = onboardingDialogTypeProvider.lastDialog {
                 self.onboardingPixelReporter.measureDialogDismissed(dialogType: lastDialog)
             }
@@ -702,31 +725,179 @@ final class BrowserTabViewController: NSViewController {
             }
         }
 
-        let daxView = onboardingDialogFactory.makeView(
+        let onFireButtonPressed: () -> Void = { [weak delegate] in
+            delegate?.dismissViewHighlight()
+        }
+
+        if let layered = onboardingDialogFactory.makeLayeredViews(
             for: dialogType,
             delegate: tab,
             onDismiss: onDismissAction,
             onGotItPressed: onGotItPressed,
-            onFireButtonPressed: { [weak delegate] in
-                delegate?.dismissViewHighlight()
-            })
-        let hostingController = NSHostingController(rootView: AnyView(daxView))
-        insertChild(hostingController, in: containerStackView, at: 0)
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            hostingController.view.widthAnchor.constraint(equalTo: containerStackView.widthAnchor),
-            hostingController.view.leadingAnchor.constraint(equalTo: containerStackView.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: containerStackView.trailingAnchor),
-        ])
+            onFireButtonPressed: onFireButtonPressed
+        ) {
+            presentLayeredContextualOnboarding(layered)
+        } else {
+            // Fallback: legacy combined-view presentation.
+            teardownLayeredDialogPanel()
+            containerStackView.arrangedSubviews.filter({ $0 != webViewContainer }).forEach {
+                containerStackView.removeArrangedSubview($0)
+                $0.removeFromSuperview()
+            }
 
-        containerStackView.layoutSubtreeIfNeeded()
-        webViewContainer?.layoutSubtreeIfNeeded()
+            let daxView = onboardingDialogFactory.makeView(
+                for: dialogType,
+                delegate: tab,
+                onDismiss: onDismissAction,
+                onGotItPressed: onGotItPressed,
+                onFireButtonPressed: onFireButtonPressed)
+            let hostingController = NSHostingController(rootView: AnyView(daxView))
+            insertChild(hostingController, in: containerStackView, at: 0)
+            hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                hostingController.view.widthAnchor.constraint(equalTo: containerStackView.widthAnchor),
+                hostingController.view.leadingAnchor.constraint(equalTo: containerStackView.leadingAnchor),
+                hostingController.view.trailingAnchor.constraint(equalTo: containerStackView.trailingAnchor),
+            ])
+
+            containerStackView.layoutSubtreeIfNeeded()
+            webViewContainer?.layoutSubtreeIfNeeded()
+        }
 
         if dialogType == .tryFireButton {
             delegate?.highlightFireButton()
         } else if case .trackers = dialogType {
             delegate?.highlightPrivacyShield()
         }
+    }
+
+    private func presentLayeredContextualOnboarding(_ layered: LayeredDialogViews) {
+        let panel = ensureLayeredDialogPanel()
+        guard let backgroundContainer = layeredDialogBackgroundContainer,
+              let bubbleContainer = layeredDialogBubbleContainer else { return }
+
+        // Insert panel into stack view if not already present.
+        if panel.superview !== containerStackView {
+            insertLayeredDialogPanelInStackView(panel)
+        }
+
+        swapLayeredBubble(layered.bubble, in: bubbleContainer)
+        crossfadeLayeredBackground(layered.background, in: backgroundContainer)
+
+        containerStackView.layoutSubtreeIfNeeded()
+        webViewContainer?.layoutSubtreeIfNeeded()
+    }
+
+    private func ensureLayeredDialogPanel() -> NSView {
+        if let existing = layeredDialogPanel {
+            return existing
+        }
+
+        let panel = NSView()
+        panel.translatesAutoresizingMaskIntoConstraints = false
+        panel.wantsLayer = true
+        panel.layer?.masksToBounds = true
+
+        let backgroundContainer = NSView()
+        backgroundContainer.translatesAutoresizingMaskIntoConstraints = false
+        backgroundContainer.wantsLayer = true
+        backgroundContainer.layer?.masksToBounds = true
+        backgroundContainer.setContentHuggingPriority(.init(1), for: .vertical)
+        backgroundContainer.setContentCompressionResistancePriority(.init(1), for: .vertical)
+        panel.addSubview(backgroundContainer)
+
+        let bubbleContainer = NSView()
+        bubbleContainer.translatesAutoresizingMaskIntoConstraints = false
+        panel.addSubview(bubbleContainer)
+
+        NSLayoutConstraint.activate([
+            // Bubble drives the panel size.
+            bubbleContainer.leadingAnchor.constraint(equalTo: panel.leadingAnchor),
+            bubbleContainer.trailingAnchor.constraint(equalTo: panel.trailingAnchor),
+            bubbleContainer.topAnchor.constraint(equalTo: panel.topAnchor),
+            bubbleContainer.bottomAnchor.constraint(equalTo: panel.bottomAnchor),
+
+            // Background matches the bubble's size so it never drives the panel taller than the bubble.
+            backgroundContainer.leadingAnchor.constraint(equalTo: bubbleContainer.leadingAnchor),
+            backgroundContainer.trailingAnchor.constraint(equalTo: bubbleContainer.trailingAnchor),
+            backgroundContainer.topAnchor.constraint(equalTo: bubbleContainer.topAnchor),
+            backgroundContainer.bottomAnchor.constraint(equalTo: bubbleContainer.bottomAnchor),
+        ])
+
+        layeredDialogPanel = panel
+        layeredDialogBackgroundContainer = backgroundContainer
+        layeredDialogBubbleContainer = bubbleContainer
+        return panel
+    }
+
+    private func insertLayeredDialogPanelInStackView(_ panel: NSView) {
+        containerStackView.insertArrangedSubview(panel, at: 0)
+        NSLayoutConstraint.activate([
+            panel.widthAnchor.constraint(equalTo: containerStackView.widthAnchor),
+            panel.leadingAnchor.constraint(equalTo: containerStackView.leadingAnchor),
+            panel.trailingAnchor.constraint(equalTo: containerStackView.trailingAnchor),
+        ])
+    }
+
+    private func swapLayeredBubble(_ bubbleView: AnyView, in container: NSView) {
+        layeredDialogBubbleHostingController?.view.removeFromSuperview()
+
+        let newController = NSHostingController(rootView: bubbleView)
+        newController.view.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(newController.view)
+        NSLayoutConstraint.activate([
+            newController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            newController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            newController.view.topAnchor.constraint(equalTo: container.topAnchor),
+            newController.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        layeredDialogBubbleHostingController = newController
+    }
+
+    private func crossfadeLayeredBackground(_ backgroundView: AnyView, in container: NSView) {
+        let oldController = layeredDialogBackgroundHostingController
+
+        let newController = NSHostingController(rootView: backgroundView)
+        newController.view.translatesAutoresizingMaskIntoConstraints = false
+        newController.view.wantsLayer = true
+        newController.view.layer?.masksToBounds = true
+        newController.view.alphaValue = oldController == nil ? 1 : 0
+        // Let the bubble drive the panel height; background just fills whatever we give it.
+        newController.view.setContentHuggingPriority(.init(1), for: .vertical)
+        newController.view.setContentCompressionResistancePriority(.init(1), for: .vertical)
+        container.addSubview(newController.view)
+        NSLayoutConstraint.activate([
+            newController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            newController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            newController.view.topAnchor.constraint(equalTo: container.topAnchor),
+            newController.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        layeredDialogBackgroundHostingController = newController
+
+        guard let oldController else { return }
+
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = 0.3
+            newController.view.animator().alphaValue = 1
+            oldController.view.animator().alphaValue = 0
+        }, completionHandler: {
+            oldController.view.removeFromSuperview()
+        })
+    }
+
+    private func teardownLayeredDialogPanel() {
+        layeredDialogBackgroundHostingController?.view.removeFromSuperview()
+        layeredDialogBackgroundHostingController = nil
+        layeredDialogBubbleHostingController?.view.removeFromSuperview()
+        layeredDialogBubbleHostingController = nil
+
+        if let panel = layeredDialogPanel, panel.superview === containerStackView {
+            containerStackView.removeArrangedSubview(panel)
+            panel.removeFromSuperview()
+        }
+        layeredDialogPanel = nil
+        layeredDialogBackgroundContainer = nil
+        layeredDialogBubbleContainer = nil
     }
 
     private func changeWebView(tabViewModel: TabViewModel?) {
@@ -1444,7 +1615,10 @@ extension BrowserTabViewController: TabDelegate {
         //  - If the dialog was dismissed it will not reload when leaving and coming back to the Window
         //  - It tells presentContextualOnboarding that should show the lastDialog if possible
         //  - Skip for pop-up windows; contextual onboarding is excluded there
-        if !isInPopUpWindow && !wasContextualOnboardingDialogDismissed && onboardingDialogTypeProvider.state != .onboardingCompleted {
+        //  - Skip if a dialog is already displayed; recreating the NSHostingController would
+        //    reset the SwiftUI @State inside the dialog (typewriter animation, content fade-in)
+        let hasExistingDialog = containerStackView.arrangedSubviews.contains { $0 !== webViewContainer }
+        if !isInPopUpWindow && !wasContextualOnboardingDialogDismissed && onboardingDialogTypeProvider.state != .onboardingCompleted && !hasExistingDialog {
             presentContextualOnboarding(showLastDialog: true)
         }
     }

@@ -21,18 +21,16 @@ import SwiftUI
 import Onboarding
 
 struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
-    private enum ContextualPanelMetrics {
-        static let trySearchPanelHeight: CGFloat = 200
-        static let trySearchIllustrationOffsetY: CGFloat = 96
-        static let searchDonePanelHeight: CGFloat = 140
-        static let searchDoneIllustrationOffsetY: CGFloat = -40
+    /// Panel heights sized to fit each dialog's bubble content.
+    /// The illustration is pinned to the bottom at its natural size and can overlap
+    /// the bubble visually.
+    enum ContextualPanelMetrics {
+        static let trySearchPanelHeight: CGFloat = 180
+        static let searchDonePanelHeight: CGFloat = 150
         static let trySitePanelHeight: CGFloat = 240
-        static let trySiteIllustrationOffsetY: CGFloat = 40
-        static let trackersPanelHeight: CGFloat = 170
-        static let trackersIllustrationOffsetY: CGFloat = 0
-        static let firePanelHeight: CGFloat = 170
-        static let highFivePanelHeight: CGFloat = 170
-        static let highFiveIllustrationOffsetY: CGFloat = 0
+        static let trackersPanelHeight: CGFloat = 150
+        static let firePanelHeight: CGFloat = 140
+        static let highFivePanelHeight: CGFloat = 150
     }
 
     private let onboardingPixelReporter: OnboardingPixelReporting
@@ -44,115 +42,14 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     }
 
     func makeView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> AnyView {
-        let dialogView: AnyView
-        switch type {
-        case .tryASearch:
-            dialogView = AnyView(tryASearchDialog(delegate: delegate, onDismiss: onDismiss))
-        case .searchDone(shouldFollowUp: let shouldFollowUp):
-            dialogView = AnyView(searchDoneDialog(shouldFollowUp: shouldFollowUp, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed))
-        case .tryASite:
-            dialogView = AnyView(tryASiteDialog(delegate: delegate, onDismiss: onDismiss))
-        case .trackers(message: let message, shouldFollowUp: let shouldFollowUp):
-            dialogView = AnyView(trackersDialog(message: message, shouldFollowUp: shouldFollowUp, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
-        case .tryFireButton:
-            dialogView = AnyView(tryFireButtonDialog(onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
-        case .highFive:
-            dialogView = AnyView(highFiveDialog(onDismiss: onDismiss, onGotItPressed: onGotItPressed))
-            onboardingPixelReporter.measureLastDialogShown()
-        }
+        let bubble = makeBubbleView(for: type, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
 
-        let centeredView = HStack {
-            Spacer()
-            dialogView
-                .frame(maxWidth: 640.0)
-            Spacer()
-        }
-        .padding(.top, 16)
-        .padding(.bottom, 24)
-
-        let viewWithBackground: AnyView
-        switch type {
-        case .tryASearch:
-            viewWithBackground = AnyView(
-                ZStack(alignment: .topLeading) {
-                    ZStack(alignment: .bottomTrailing) {
-                        OnboardingTheme.macOSRebranding2026.colorPalette.background
-                        OnboardingRebrandingImages.Contextual.tryASearchBackground
-                            .offset(y: ContextualPanelMetrics.trySearchIllustrationOffsetY)
-                    }
-                    .frame(height: ContextualPanelMetrics.trySearchPanelHeight)
-                    centeredView
-                }
-                .frame(height: ContextualPanelMetrics.trySearchPanelHeight)
+        let viewWithBackground = AnyView(
+            bubble
+                .background(Self.backgroundView(for: type))
                 .clipped()
                 .applyOnboardingTheme(.macOSRebranding2026)
-            )
-        case .searchDone:
-            viewWithBackground = AnyView(
-                ZStack(alignment: .topLeading) {
-                    ZStack(alignment: .bottomTrailing) {
-                        OnboardingTheme.macOSRebranding2026.colorPalette.background
-                        OnboardingRebrandingImages.Contextual.searchDoneBackground
-                            .offset(y: ContextualPanelMetrics.searchDoneIllustrationOffsetY)
-                    }
-                    centeredView
-                }
-                .clipped()
-                .applyOnboardingTheme(.macOSRebranding2026)
-            )
-        case .tryASite:
-            viewWithBackground = AnyView(
-                ZStack(alignment: .topLeading) {
-                    ZStack(alignment: .bottomTrailing) {
-                        OnboardingTheme.macOSRebranding2026.colorPalette.background
-                        OnboardingRebrandingImages.Contextual.tryASiteBackground
-                            .offset(y: ContextualPanelMetrics.trySiteIllustrationOffsetY)
-                    }
-                    .frame(height: ContextualPanelMetrics.trySitePanelHeight)
-                    centeredView
-                }
-                .frame(height: ContextualPanelMetrics.trySitePanelHeight)
-                .clipped()
-                .applyOnboardingTheme(.macOSRebranding2026)
-            )
-        case .trackers:
-            viewWithBackground = AnyView(
-                ZStack(alignment: .topLeading) {
-                    ZStack(alignment: .bottomTrailing) {
-                        OnboardingTheme.macOSRebranding2026.colorPalette.background
-                        OnboardingRebrandingImages.Contextual.trackerBlockedBackground
-                            .offset(y: ContextualPanelMetrics.trackersIllustrationOffsetY)
-                    }
-                    centeredView
-                }
-                .clipped()
-                .applyOnboardingTheme(.macOSRebranding2026)
-            )
-        case .tryFireButton:
-            viewWithBackground = AnyView(
-                ZStack(alignment: .topLeading) {
-                    OnboardingGradient()
-                    centeredView
-                }
-                .clipped()
-                .applyOnboardingTheme(.macOSRebranding2026)
-            )
-        case .highFive:
-            viewWithBackground = AnyView(
-                ZStack(alignment: .topLeading) {
-                    ZStack(alignment: .bottomTrailing) {
-                        OnboardingTheme.macOSRebranding2026.colorPalette.background
-                        OnboardingRebrandingImages.Contextual.endOfJourneyBackground
-                            .offset(y: ContextualPanelMetrics.highFiveIllustrationOffsetY)
-                    }
-                    .frame(height: ContextualPanelMetrics.highFivePanelHeight)
-                    centeredView
-                }
-                .frame(height: ContextualPanelMetrics.highFivePanelHeight)
-                .clipped()
-                .applyOnboardingTheme(.macOSRebranding2026)
-            )
-        }
+        )
 
         #if DEBUG
         return AnyView(
@@ -169,8 +66,92 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             )
         )
         #else
-        return AnyView(viewWithBackground)
+        return viewWithBackground
         #endif
+    }
+
+    /// Returns just the bubble view (no background) for layered composition.
+    func makeBubbleView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> AnyView {
+        switch type {
+        case .tryASearch:
+            return AnyView(tryASearchDialog(delegate: delegate, onDismiss: onDismiss))
+        case .searchDone(shouldFollowUp: let shouldFollowUp):
+            return AnyView(searchDoneDialog(shouldFollowUp: shouldFollowUp, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed))
+        case .tryASite:
+            return AnyView(tryASiteDialog(delegate: delegate, onDismiss: onDismiss))
+        case .trackers(message: let message, shouldFollowUp: let shouldFollowUp):
+            return AnyView(trackersDialog(message: message, shouldFollowUp: shouldFollowUp, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
+        case .tryFireButton:
+            return AnyView(tryFireButtonDialog(onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
+        case .highFive:
+            onboardingPixelReporter.measureLastDialogShown()
+            return AnyView(highFiveDialog(onDismiss: onDismiss, onGotItPressed: onGotItPressed))
+        }
+    }
+
+    func makeLayeredViews(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> LayeredDialogViews? {
+        let bubble = makeBubbleView(for: type, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
+        let themedBubble = AnyView(bubble.applyOnboardingTheme(.macOSRebranding2026))
+        let themedBackground = AnyView(
+            Self.backgroundView(for: type)
+                .applyOnboardingTheme(.macOSRebranding2026)
+        )
+
+        #if DEBUG
+        let debugBubble = AnyView(
+            themedBubble.overlay(
+                Text("REBRANDED")
+                    .font(.caption2)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.red)
+                    .cornerRadius(4)
+                    .padding(8),
+                alignment: .topTrailing
+            )
+        )
+        return LayeredDialogViews(bubble: debugBubble, background: themedBackground)
+        #else
+        return LayeredDialogViews(bubble: themedBubble, background: themedBackground)
+        #endif
+    }
+
+    // MARK: - Background
+
+    static func backgroundView(for type: ContextualDialogType) -> AnyView {
+        AnyView(
+            background(for: type)
+                .clipped()
+        )
+    }
+
+    @ViewBuilder
+    private static func background(for type: ContextualDialogType) -> some View {
+        ZStack(alignment: .bottomTrailing) {
+            OnboardingTheme.macOSRebranding2026.colorPalette.background
+            illustration(for: type)
+        }
+    }
+
+    /// macOS-only illustrations loaded from the app's asset catalog
+    /// (`macOS/DuckDuckGo/Assets.xcassets/OnboardingContextual/`).
+    /// iPad uses the shared Onboarding package, so those assets are untouched.
+    private static func illustration(for type: ContextualDialogType) -> Image {
+        switch type {
+        case .tryASearch:
+            return Image("contextual-bg-try-search")
+        case .searchDone:
+            return Image("contextual-bg-search-done")
+        case .tryASite:
+            return Image("contextual-bg-try-site")
+        case .trackers:
+            return Image("contextual-bg-trackers")
+        case .tryFireButton:
+            return Image("contextual-bg-fire")
+        case .highFive:
+            return Image("contextual-bg-end-of-journey")
+        }
     }
 
     // MARK: - Private Dialog Builders
@@ -208,11 +189,21 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             shouldFollowUp: shouldFollowUp,
             initialPanelHeight: ContextualPanelMetrics.trackersPanelHeight,
             followUpPanelHeight: ContextualPanelMetrics.firePanelHeight,
-            message: message,
+            message: Self.collapseDoubleNewlines(message),
             blockedTrackersCTAAction: gotIt,
             viewModel: viewModel,
             onManualDismiss: onDismiss
         )
+    }
+
+    /// The localized tracker copy uses `\n\n` to separate the main message from the shield hint,
+    /// which renders as a large gap in the rebranded bubble. Collapse to a single newline so
+    /// the secondary line sits directly below the message.
+    private static func collapseDoubleNewlines(_ source: NSAttributedString) -> NSAttributedString {
+        let mutable = NSMutableAttributedString(attributedString: source)
+        let fullRange = NSRange(location: 0, length: mutable.length)
+        mutable.mutableString.replaceOccurrences(of: "\n\n", with: "\n", range: fullRange)
+        return mutable
     }
 
     private func tryFireButtonDialog(onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {
@@ -229,6 +220,30 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             onDismiss()
             onGotItPressed()
         }
-        return OnboardingRebranding.OnboardingEndOfJourneyDialog(highFiveAction: action, onManualDismiss: onDismiss)
+        return OnboardingRebranding.OnboardingEndOfJourneyDialog(
+            panelHeight: ContextualPanelMetrics.highFivePanelHeight,
+            highFiveAction: action,
+            onManualDismiss: onDismiss
+        )
+    }
+}
+
+// MARK: - Panel Layout Modifier
+
+extension View {
+    func contextualOnboardingPanelLayout(height: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            HStack {
+                Spacer()
+                self
+                    .frame(maxWidth: 640)
+                Spacer()
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 24)
+        .padding(.bottom, 40)
+        .frame(maxWidth: .infinity)
+        .frame(height: height)
     }
 }

@@ -45,6 +45,7 @@ extension OnboardingRebranding {
                     )
                 }
             }
+            .contextualOnboardingPanelLayout(height: RebrandedContextualDaxDialogsFactory.ContextualPanelMetrics.trySearchPanelHeight)
         }
     }
 

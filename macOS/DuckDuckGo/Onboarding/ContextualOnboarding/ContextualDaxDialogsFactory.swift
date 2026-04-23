@@ -22,6 +22,21 @@ import Onboarding
 
 protocol ContextualDaxDialogsFactory {
     func makeView(for type: ContextualDialogType, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> AnyView
+
+    /// Returns the dialog split into bubble and background layers for animated transitions.
+    /// Default implementation returns nil, meaning the factory doesn't support layered transitions.
+    func makeLayeredViews(for type: ContextualDialogType, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> LayeredDialogViews?
+}
+
+struct LayeredDialogViews {
+    let bubble: AnyView
+    let background: AnyView
+}
+
+extension ContextualDaxDialogsFactory {
+    func makeLayeredViews(for type: ContextualDialogType, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> LayeredDialogViews? {
+        nil
+    }
 }
 
 struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {

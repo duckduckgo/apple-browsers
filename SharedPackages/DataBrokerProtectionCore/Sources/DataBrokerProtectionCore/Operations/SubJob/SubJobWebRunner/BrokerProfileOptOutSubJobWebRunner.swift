@@ -72,9 +72,9 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public var extractedProfile: ExtractedProfile?
     private let operationAwaitTime: TimeInterval
     public let shouldRunNextStep: () -> Bool
-    public lazy var clickAwaitTime: TimeInterval = {
+    public var clickAwaitTime: TimeInterval {
         executionConfig.clickAwaitTimeForOptOut
-    }()
+    }
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig

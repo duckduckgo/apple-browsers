@@ -99,7 +99,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     private(set) var tries = 1
     let vpnConnectionState: String
     let vpnBypassStatus: String
-    let featureFlagger: DBPFeatureFlagging
 
     init(attemptId: UUID = UUID(),
          startTime: Date = Date(),
@@ -111,8 +110,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
          isAuthenticated: Bool = true,
          isFreeScan: Bool?,
          vpnConnectionState: String,
-         vpnBypassStatus: String,
-         featureFlagger: DBPFeatureFlagging) {
+         vpnBypassStatus: String) {
         self.attemptId = attemptId
         self.startTime = startTime
         self.lastStateTime = startTime
@@ -125,7 +123,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.isFreeScan = isFreeScan
         self.vpnConnectionState = vpnConnectionState
         self.vpnBypassStatus = vpnBypassStatus
-        self.featureFlagger = featureFlagger
     }
 
     /// Returned in milliseconds

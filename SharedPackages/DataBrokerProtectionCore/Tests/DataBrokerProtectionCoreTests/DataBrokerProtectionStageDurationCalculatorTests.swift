@@ -32,7 +32,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIs404_thenWeFireScanNoResultsPixel() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 404))
 
@@ -51,7 +51,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIs403_thenWeFireScanErrorPixelWithClientErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 403))
 
@@ -69,7 +69,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIs500_thenWeFireScanErrorPixelWithServerErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 500))
 
@@ -87,7 +87,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testScanErrorIncludesActionContextWhenAvailable() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.setLastAction(ClickAction(id: "action-123", actionType: .click))
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 500))
@@ -107,7 +107,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testScanErrorDefaultsToUnknownActionContextWhenNotSet() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 500))
 
@@ -132,8 +132,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
                                                               parentURL: "parent.com",
                                                               isFreeScan: false,
                                                               vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: MockDBPFeatureFlagger())
+                                                              vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 500))
 
@@ -151,7 +150,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIsNotHttp_thenWeFireScanErrorPixelWithValidationErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.actionFailed(actionID: "Action-ID", message: "Some message"))
 
@@ -169,7 +168,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIsNotDBPErrorButItIsNSURL_thenWeFireScanErrorPixelWithNetworkErrorErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
         let nsURLError = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
 
         sut.fireScanError(error: nsURLError)
@@ -188,7 +187,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIsSecureVaultError_thenWeFireScanErorrPixelWithDatabaseErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
         let error = SecureStorageError.encodingFailed
 
         sut.fireScanError(error: error)
@@ -207,7 +206,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIsNotDBPErrorAndNotURL_thenWeFireScanErrorPixelWithUnclassifiedErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no", featureFlagger: MockDBPFeatureFlagger())
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
         let error = NSError(domain: NSCocoaErrorDomain, code: -1)
 
         sut.fireScanError(error: error)
@@ -233,8 +232,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
                                                               handler: handler,
                                                               isFreeScan: true,
                                                               vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: MockDBPFeatureFlagger())
+                                                              vpnBypassStatus: "no")
 
         sut.fireScanSuccess(matchesFound: 1)
 
@@ -257,8 +255,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
                                                               handler: handler,
                                                               isFreeScan: false,
                                                               vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: MockDBPFeatureFlagger())
+                                                              vpnBypassStatus: "no")
 
         sut.fireScanSuccess(matchesFound: 1)
 
@@ -281,8 +278,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
                                                               handler: handler,
                                                               isFreeScan: true,
                                                               vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: MockDBPFeatureFlagger())
+                                                              vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 500))
 
@@ -305,8 +301,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
                                                               handler: handler,
                                                               isFreeScan: true,
                                                               vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              featureFlagger: MockDBPFeatureFlagger())
+                                                              vpnBypassStatus: "no")
 
         // 404 triggers fireScanNoResults() path
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 404))

@@ -312,11 +312,8 @@ class SwitchBarTextEntryView: UIView {
         buttonsView.isAIVoiceChatEnabled = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
 
         if newButtonState != currentButtonState {
-            // Prevent unexpected animations of this change — the state assignment cascades
-            // to `clearButton.isHidden` which UIStackView would otherwise animate when the
-            // change lands inside an active animation block (e.g. the UTI reveal). Laying
-            // out `self` (not just `buttonsView`) ensures `buttonsView`'s own frame settles
-            // inside this non-animated block instead of in a later layout pass.
+            // UIStackView animates `isHidden` changes that land inside an animation block;
+            // lay out `self` so `buttonsView`'s frame settles here, not on a later pass.
             UIView.performWithoutAnimation {
                 currentButtonState = newButtonState
                 adjustTextViewContentInset()

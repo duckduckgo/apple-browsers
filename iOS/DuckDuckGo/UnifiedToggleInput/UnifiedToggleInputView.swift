@@ -74,10 +74,7 @@ final class UnifiedToggleInputView: UIView {
         static let inlineDismissSize: CGFloat = 40
         static let inlineDismissTrailingPadding: CGFloat = 8
         static let toggleInlineDismissSpacing: CGFloat = 6
-        /// Trailing margin used at `.top` when the Search/Duck.ai toggle is disabled in
-        /// settings, so the floating X in the content container has room to sit outside the
-        /// card. With the toggle enabled the inline X lives inside the card and the card
-        /// spans the full width.
+        /// Carves room for the floating X at `.top` when the toggle is disabled.
         static let cardTrailingMarginWithFloatingDismiss: CGFloat = 68
 
         /// Trailing constant for the toggle when the inline dismiss button shares the top row.
@@ -649,7 +646,7 @@ private extension UnifiedToggleInputView {
     /// Updates layout and opacity so the toggle either reserves space for the inline dismiss
     /// button or expands to fill the card's top row. Safe to call outside of animation blocks.
     func refreshInlineDismissPresentation() {
-        let shouldShow = isExpanded && cardPosition == .top
+        let shouldShow = isExpanded && cardPosition == .top && isToggleEnabled
         toggleTrailingConstraint.constant = shouldShow
             ? Constants.toggleTrailingWithInlineDismiss
             : -Constants.toggleHorizontalPadding

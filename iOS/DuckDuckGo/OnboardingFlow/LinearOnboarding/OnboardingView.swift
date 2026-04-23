@@ -175,6 +175,9 @@ struct OnboardingView: View {
                 skipAction: {
                     model.restorePromptSkipAction()
                     model.skipOnboardingAction()
+                },
+                onSkipOnboardingPresented: {
+                    model.skipOnboardingPresented()
                 }
             )
             .onboardingDaxDialogStyle()
@@ -189,7 +192,10 @@ struct OnboardingView: View {
                 continueAction: {
                     animateBrowserComparisonViewState(isResumingOnboarding: false)
                 },
-                skipAction: model.skipOnboardingAction
+                skipAction: model.skipOnboardingAction,
+                onSkipOnboardingPresented: {
+                    model.skipOnboardingPresented()
+                }
             )
             .onboardingDaxDialogStyle()
             .visibility(model.introState.showIntroViewContent ? .visible : .invisible)

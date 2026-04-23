@@ -181,11 +181,16 @@ final class OnboardingIntroViewModel: ObservableObject {
         if isResumingOnboarding {
             pixelReporter.measureResumeOnboardingCTAAction()
         }
+        pixelReporter.measureStartOnboardingCTAAction()
         makeNextViewState()
     }
 
     func skipOnboardingAction() {
         pixelReporter.measureSkipOnboardingCTAAction()
+    }
+
+    func skipOnboardingPresented() {
+        pixelReporter.measureSkipOnboardingScreenImpression()
     }
 
     func confirmSkipOnboardingAction() {
@@ -204,6 +209,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func cancelSetDefaultBrowserAction() {
+        pixelReporter.measureSetDefaultBrowserSkipped()
         makeNextViewState()
     }
 

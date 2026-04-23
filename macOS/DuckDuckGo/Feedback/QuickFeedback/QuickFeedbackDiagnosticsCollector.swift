@@ -136,8 +136,8 @@ final class QuickFeedbackDiagnosticsCollector {
               let freeBytes = values.volumeAvailableCapacityForImportantUsage else {
             return "unknown"
         }
-        let freeGB = freeBytes / (1024 * 1024 * 1024)
-        return "\(freeGB) GB free"
+        let freeGB = Double(freeBytes) / 1_073_741_824.0
+        return "\(String(format: "%.1f", freeGB)) GB free"
     }
 
     private var sessionLength: String {

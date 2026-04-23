@@ -2022,6 +2022,8 @@ extension NavigationBarViewController: NSMenuDelegate {
         let icon = DesignSystemImages.Color.Size16.feedback
         icon.isTemplate = false
         button.image = icon
+        button.mouseOverColor = theme.colorsProvider.buttonMouseOverColor
+        button.setCornerRadius(theme.toolbarButtonsCornerRadius)
 
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: 28),

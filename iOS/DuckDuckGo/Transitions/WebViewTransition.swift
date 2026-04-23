@@ -145,7 +145,21 @@ class ToWebViewTransition: WebViewTransition {
               let rowIndex = tabSwitcherViewController.tabsModel.indexOf(tab: tab),
               let layoutAttr = tabSwitcherViewController.collectionView.layoutAttributesForItem(at: IndexPath(row: rowIndex, section: 0))
         else {
-            transitionContext.completeTransition(true)
+            // The destination tab is no longer a web view (e.g. the user tapped "+" to add a new tab,
+            // which switches the current tab to a new home tab before this animation runs). Without
+            // this fallback the tab switcher would snap off-screen with no animation, causing a
+            // visible glitch when the new NTP fades in afterwards. Fall back to a simple crossfade
+            // to mirror ToHomeScreenTransition's behaviour for the equivalent case.
+            if let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController {
+                mainViewController.view.alpha = 1
+            }
+            UIView.animate(withDuration: TabSwitcherTransition.Constants.duration, animations: {
+                self.tabSwitcherViewController.view.alpha = 0
+            }, completion: { _ in
+                self.solidBackground.removeFromSuperview()
+                self.imageContainer.removeFromSuperview()
+                transitionContext.completeTransition(true)
+            })
             return
         }
                 

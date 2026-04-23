@@ -58,7 +58,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Used to prevent `syncEmbeddedExtensions` from interleaving during load,
     /// which can cause race conditions where sync deletes files that load still needs.
     @MainActor
-    public private(set) var isLoadingInstalledExtensions = false
+    private(set) var isLoadingInstalledExtensions = false
 
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring

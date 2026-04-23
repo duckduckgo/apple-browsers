@@ -39,6 +39,10 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     var isAIChatToolsEnabled: Bool { get }
 
+    var isImageGenerationEnabled: Bool { get }
+
+    var isWebSearchEnabled: Bool { get }
+
     var selectedModelId: String? { get set }
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { get }
 

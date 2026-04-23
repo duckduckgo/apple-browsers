@@ -84,6 +84,7 @@ final class MainCoordinator {
     private var darkReaderCancellables = Set<AnyCancellable>()
     private var youTubeAdBlockingCancellable: AnyCancellable?
     private var webExtensionLoadTask: Task<Void, Never>?
+    private var isWebExtensionLoadPending = false
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
     private let keyValueStore: ThrowingKeyValueStoring
 
@@ -364,14 +365,7 @@ final class MainCoordinator {
     private func initializeWebExtensions() {
         guard webExtensionManager == nil else {
             // Already initialized, just reload extensions and re-register tabs
-            webExtensionLoadTask?.cancel()
-            webExtensionLoadTask = Task { @MainActor [weak self] in
-                await self?.webExtensionManager?.loadInstalledExtensions()
-                guard !Task.isCancelled else { return }
-                await self?.syncEmbeddedExtensions()
-                guard !Task.isCancelled else { return }
-                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
-            }
+            scheduleExtensionLoad()
             return
         }
 
@@ -396,9 +390,23 @@ final class MainCoordinator {
         controller.setWebExtensionManager(webExtensionManager)
         subscribeToDarkReaderChanges()
 
-        // Load extensions asynchronously - the controller is already attached to tabs
+        // Defer extension loading until the app reaches the foreground
+        // (applicationDidBecomeActive) to ensure the WebKit process and
+        // protected data are fully available. Loading too early during launch
+        // can cause WKWebExtensionErrorInvalidArchive errors on iOS.
+        if UIApplication.shared.applicationState == .active {
+            scheduleExtensionLoad()
+        } else {
+            isWebExtensionLoadPending = true
+        }
+    }
+
+    @available(iOS 18.4, *)
+    private func scheduleExtensionLoad() {
+        isWebExtensionLoadPending = false
+        webExtensionLoadTask?.cancel()
         webExtensionLoadTask = Task { @MainActor [weak self] in
-            await webExtensionManager.loadInstalledExtensions()
+            await self?.webExtensionManager?.loadInstalledExtensions()
             guard !Task.isCancelled else { return }
             await self?.syncEmbeddedExtensions()
             guard !Task.isCancelled else { return }
@@ -444,6 +452,7 @@ final class MainCoordinator {
     }
 
     private func clearWebExtensionReferences() {
+        isWebExtensionLoadPending = false
         webExtensionLoadTask?.cancel()
         webExtensionLoadTask = nil
         webExtensionManager = nil
@@ -542,6 +551,9 @@ final class MainCoordinator {
         fireDailyAdBlockingPixel()
 
         if #available(iOS 18.4, *) {
+            if isWebExtensionLoadPending {
+                scheduleExtensionLoad()
+            }
             webExtensionEventsCoordinator?.didFocusWindow()
         }
     }

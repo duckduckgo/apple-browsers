@@ -291,8 +291,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
-    case onboardingExperiment
-
+    case onboardingDismissExperiment
     case autofillPasswordsStatusBar
 }
 
@@ -308,7 +307,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case emailConfirmationDecoupling
     case foregroundRunningOnAppActive
     case foregroundRunningWhenDashboardOpen
-    case clickActionDelayReductionOptimization
     case continuedProcessing
     case pirRollout
     case goToMarket
@@ -420,6 +418,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables AI chat tools (model selector, image upload) on the New Tab Page omnibar
     case ntpChatTools
 
+    /// Enables image generation mode on the New Tab Page omnibar
+    case ntpImageGeneration
+
+    /// Enables web search mode on the New Tab Page omnibar
+    case ntpWebSearch
+
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
 
@@ -461,6 +465,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables web search tool in the Duck.ai omnibar
     case omnibarWebSearch
+
+    /// Enables the reasoning effort picker in the Duck.ai omnibar
+    case omnibarReasoningEffort
 
     /// Enables querying AI Chat data directly from local storage instead of via webview
     case nativeDataAccess

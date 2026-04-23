@@ -415,6 +415,7 @@ private final class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting
     }
     var selectedModelShortName: String?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { subject.eraseToAnyPublisher() }
+    var selectedReasoningEffort: String?
 }
 
 private final class MockAIChatExcessProvider: NewTabPageOmnibarAiChatsProviding {

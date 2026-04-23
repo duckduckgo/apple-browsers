@@ -44,8 +44,8 @@ public struct ImageSegmentedPickerConfiguration {
     ///   - font: The font for text labels. Defaults to system font with size 16 and medium weight.
     ///   - selectedTextColor: The text color for selected items. Defaults to primary text color.
     ///   - unselectedTextColor: The text color for unselected items. Defaults to primary text color.
-    ///   - backgroundColor: The picker's background color. Defaults to backdrop color.
-    ///   - selectedBackgroundColor: The selected indicator's background color. Defaults to tertiary background color.
+    ///   - backgroundColor: The picker's background color. Defaults to raised backdrop color.
+    ///   - selectedBackgroundColor: The selected indicator's background color. Defaults to raised fill primary color.
     ///   - outerHeight: The total height of the picker. Defaults to 38.
     ///   - innerHeight: The height of the selected indicator pill. Defaults to 34.
     ///   - innerHorizontalPadding: The horizontal padding between the outer edge and the pill. Defaults to 2.
@@ -54,8 +54,8 @@ public struct ImageSegmentedPickerConfiguration {
         itemContentSpacing: CGFloat = 6,
         selectedTextColor: Color = .init(designSystemColor: .textPrimary),
         unselectedTextColor: Color = .init(designSystemColor: .textPrimary),
-        backgroundColor: Color = .init(designSystemColor: .backdrop),
-        selectedBackgroundColor: Color = .init(designSystemColor: .surface),
+        backgroundColor: Color = .init(designSystemColor: .controlsRaisedBackdrop),
+        selectedBackgroundColor: Color = .init(designSystemColor: .controlsRaisedFillPrimary),
         outerHeight: CGFloat = 38,
         innerHeight: CGFloat = 34,
         innerHorizontalPadding: CGFloat = 2

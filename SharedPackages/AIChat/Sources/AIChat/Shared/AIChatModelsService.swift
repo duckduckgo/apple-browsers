@@ -64,9 +64,10 @@ public struct AIChatRemoteModel: Decodable, Equatable {
     public let entityHasAccess: Bool
     public let supportsImageUpload: Bool
     public let supportedTools: [String]
+    public let supportedReasoningEffort: [String]
     public let accessTier: [String]
 
-    public init(id: String, name: String, modelShortName: String? = nil, provider: String, entityHasAccess: Bool, supportsImageUpload: Bool, supportedTools: [String], accessTier: [String]) {
+    public init(id: String, name: String, modelShortName: String? = nil, provider: String, entityHasAccess: Bool, supportsImageUpload: Bool, supportedTools: [String], supportedReasoningEffort: [String] = [], accessTier: [String]) {
         self.id = id
         self.name = name
         self.modelShortName = modelShortName
@@ -74,7 +75,26 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         self.entityHasAccess = entityHasAccess
         self.supportsImageUpload = supportsImageUpload
         self.supportedTools = supportedTools
+        self.supportedReasoningEffort = supportedReasoningEffort
         self.accessTier = accessTier
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, modelShortName, provider, entityHasAccess, supportsImageUpload, supportedTools, supportedReasoningEffort, accessTier
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.name = try container.decode(String.self, forKey: .name)
+        self.modelShortName = try container.decodeIfPresent(String.self, forKey: .modelShortName)
+        self.provider = try container.decode(String.self, forKey: .provider)
+        self.entityHasAccess = try container.decode(Bool.self, forKey: .entityHasAccess)
+        self.supportsImageUpload = try container.decode(Bool.self, forKey: .supportsImageUpload)
+        self.supportedTools = try container.decode([String].self, forKey: .supportedTools)
+        // Tolerate older payloads that don't include the field; default to no reasoning support.
+        self.supportedReasoningEffort = try container.decodeIfPresent([String].self, forKey: .supportedReasoningEffort) ?? []
+        self.accessTier = try container.decode([String].self, forKey: .accessTier)
     }
 }
 
@@ -160,7 +180,8 @@ extension AIChatModel {
             supportedImageFormats: remoteModel.supportsImageUpload ? Self.nativeSupportedImageFormats : [],
             supportedTools: remoteModel.supportedTools.compactMap(AIChatRAGTool.init(rawValue:)),
             entityHasAccess: hasAccess,
-            accessTier: remoteModel.accessTier
+            accessTier: remoteModel.accessTier,
+            supportedReasoningEffort: remoteModel.supportedReasoningEffort
         )
     }
 }

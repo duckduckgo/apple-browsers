@@ -3665,6 +3665,8 @@
 		BBD31EAB2E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD31EA92E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift */; };
 		BBD798AD2DF213B100575051 /* AddressBarPermissionButtonsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */; };
 		BBD798AE2DF213B100575051 /* AddressBarPermissionButtonsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */; };
+		BBD7A1D02F97F0FF00D6AF54 /* AIChatReasoningEffort.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD7A1CF2F97F0FF00D6AF54 /* AIChatReasoningEffort.swift */; };
+		BBD7A1D12F97F0FF00D6AF54 /* AIChatReasoningEffort.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD7A1CF2F97F0FF00D6AF54 /* AIChatReasoningEffort.swift */; };
 		BBD9C3992E9D737B0060A6E8 /* SERPSettings in Frameworks */ = {isa = PBXBuildFile; productRef = BBD9C3982E9D737B0060A6E8 /* SERPSettings */; };
 		BBD9C39B2E9D73880060A6E8 /* SERPSettings in Frameworks */ = {isa = PBXBuildFile; productRef = BBD9C39A2E9D73880060A6E8 /* SERPSettings */; };
 		BBDA795C2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDA795B2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift */; };
@@ -6480,6 +6482,7 @@
 		BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCUIApplicationExtension.swift; sourceTree = "<group>"; };
 		BBD31EA92E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellVisibilityManagerTests.swift; sourceTree = "<group>"; };
 		BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPermissionButtonsIconsProviding.swift; sourceTree = "<group>"; };
+		BBD7A1CF2F97F0FF00D6AF54 /* AIChatReasoningEffort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatReasoningEffort.swift; sourceTree = "<group>"; };
 		BBD9C3952E9D72050060A6E8 /* SERPSettings */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SERPSettings; path = ../SharedPackages/SERPSettings; sourceTree = SOURCE_ROOT; };
 		BBDA795B2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReinstallUserDetectionDebugMenu.swift; sourceTree = "<group>"; };
 		BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentVPNNavigationBarIconProvider.swift; sourceTree = "<group>"; };
@@ -7576,6 +7579,7 @@
 		31521ABE2CC0139C00248E6F /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
+				BBD7A1CF2F97F0FF00D6AF54 /* AIChatReasoningEffort.swift */,
 				31BFDB6C2ECA423900ADFABD /* MouseBlockingBackgroundView.swift */,
 				31BFDB692ECA420E00ADFABD /* AIChatOmnibarContainerViewController.swift */,
 				31BFDB782ECA5FCD00ADFABD /* AIChatOmnibarController.swift */,
@@ -14849,6 +14853,7 @@
 				1D5C23292F150A680055046E /* AIChatSuggestionsView.swift in Sources */,
 				3706FAF0293F65D500E42796 /* YoutubePlayerNavigationHandler.swift in Sources */,
 				37197EA32942441D00394917 /* UserDialogRequest.swift in Sources */,
+				BBD7A1D02F97F0FF00D6AF54 /* AIChatReasoningEffort.swift in Sources */,
 				566B736A2BECC02D00FF1959 /* SyncAlertsPresenter.swift in Sources */,
 				3706FAF1293F65D500E42796 /* PreferencesAboutView.swift in Sources */,
 				3706FAF2293F65D500E42796 /* ContentBlocking.swift in Sources */,
@@ -17081,6 +17086,7 @@
 				37CEFCA92A6737A2001EF741 /* CredentialsCleanupErrorHandling.swift in Sources */,
 				317307272CD248DB00C492AB /* AutofillToolbarOnboardingPopover.swift in Sources */,
 				4BB99D0326FE191E001E4761 /* SafariBookmarksReader.swift in Sources */,
+				BBD7A1D12F97F0FF00D6AF54 /* AIChatReasoningEffort.swift in Sources */,
 				316913292BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift in Sources */,
 				1DA6D0FD2A1FF9A100540406 /* HTTPCookie.swift in Sources */,
 				BBDFAD2B2E98F41D00418F3E /* WinBackOfferDebugMenu.swift in Sources */,

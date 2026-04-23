@@ -199,6 +199,14 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         }
     }
 
+    var isImageGenerationEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpImageGeneration)
+    }
+
+    var isWebSearchEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpWebSearch)
+    }
+
     var showCustomizePopover: Bool {
         get {
             // We no longer present the tooltip

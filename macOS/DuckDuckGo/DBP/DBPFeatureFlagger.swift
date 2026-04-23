@@ -44,10 +44,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         return false
     }
 
-    var isClickActionDelayReductionOptimizationOn: Bool {
-        featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
-    }
-
     var isContinuedProcessingFeatureOn: Bool {
         // Continued processing is iOS-only.
         false

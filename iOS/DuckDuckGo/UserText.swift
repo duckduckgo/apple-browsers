@@ -89,6 +89,11 @@ public struct UserText {
     public static let fireModeNTPPromotionPrimaryAction = NSLocalizedString("fire.mode.ntp.promotion.primary.action", value: "Try Fire Tabs", comment: "Primary action button on the Fire Mode promotion card that opens Fire Mode")
     public static let fireModeNTPPromotionDismiss = NSLocalizedString("fire.mode.ntp.promotion.dismiss", value: "Not Now", comment: "Dismiss button on the Fire Mode promotion card on the new tab page")
 
+    // MARK: Fire Mode Tab Switcher Tip
+
+    public static let fireModeTabSwitcherTipTitle = NotLocalizedString("fire.mode.tab.switcher.tip.title", value: "New: Fire Tabs", comment: "Title for the Fire Tabs popover tip shown on the tab switcher picker")
+    public static let fireModeTabSwitcherTipDescription = NotLocalizedString("fire.mode.tab.switcher.tip.description", value: "Try Fire Tabs to browse without saving local history.", comment: "Description for the Fire Tabs popover tip shown on the tab switcher picker")
+
     // MARK: Fire Mode Menu Promotion
 
     public static let fireModeMenuPromotionBadge = NSLocalizedString("fire.mode.menu.promotion.badge", value: "New", comment: "Badge label on the Fire Mode promotion entry in the browsing menu")
@@ -596,6 +601,8 @@ public struct UserText {
     public static let autofillOnboardingKeyFeaturesSyncTitle = NSLocalizedString("autofill.onboarding.key-features.sync.title", value: "Sync between devices", comment: "Title of autofill onboarding prompt's sync feature")
     public static let autofillOnboardingKeyFeaturesSyncDescription = NSLocalizedString("autofill.onboarding.key-features.sync.description", value: "End-to-end encrypted and easy to set up when you’re ready.", comment: "Description of autofill onboarding prompt's sync feature")
     public static let autofillSaveLoginNoThanksCTA = NSLocalizedString("autofill.save-login.no-thanks.CTA", value: "No Thanks", comment: "CTA displayed on modal asking if the user wants to dismiss the save login action for now")
+
+    public static let autofillSaveLoginNotNowCTA = NSLocalizedString("autofill.save-login.not-now.CTA", value: "Not Now", comment: "CTA displayed on modal allowing the user to dismiss the save login prompt for now")
 
     public static let autofillSavePasswordSaveCTA = NSLocalizedString("autofill.save-password.save.CTA", value: "Save Password", comment: "Confirm CTA displayed on modal asking for the user to save the password")
     public static let autofillUpdatePasswordSaveCTA = NSLocalizedString("autofill.update-password.save.CTA", value: "Update Password", comment: "Confirm CTA displayed on modal asking for the user to update the password")

@@ -173,15 +173,9 @@ final class OnboardingPixelReporter {
         self.calendar = calendar
         self.dateProvider = dateProvider
         self.userDefaults = userDefaults
-        self.sharedPixelHandler = onboardingSharedPixelHandler ?? Self.makeDefaultSharedPixelHandler(statisticsStore: statisticsStore, dateProvider: dateProvider)
-    }
-
-    private static func makeDefaultSharedPixelHandler(statisticsStore: StatisticsStore, dateProvider: @escaping () -> Date) -> OnboardingSharedPixelHandling {
-        let onboardingManager = OnboardingManager()
-        let installType: OnboardingSharedPixelHandler.InstallType? = onboardingManager.isNewUser ? .reinstall : .newInstall
-        return OnboardingSharedPixelHandler(
+        self.sharedPixelHandler = onboardingSharedPixelHandler ?? OnboardingSharedPixelHandler(
             platform: .iOS,
-            installType: installType,
+            installTypeProvider: { OnboardingManager().isNewUser ? .newInstall : .reinstall },
             installDateProvider: { statisticsStore.installDate }
         )
     }

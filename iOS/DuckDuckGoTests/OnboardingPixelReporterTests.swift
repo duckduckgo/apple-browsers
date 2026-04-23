@@ -20,6 +20,8 @@
 import XCTest
 import Core
 import Onboarding
+import PixelKit
+import PixelKitTestingUtilities
 import PrivacyConfig
 @testable import DuckDuckGo
 

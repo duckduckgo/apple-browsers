@@ -91,7 +91,7 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     }
 
     private let platform: Platform
-    private let installType: InstallType?
+    private let installTypeProvider: () -> InstallType?
     private let installDateProvider: () -> Date?
     private let currentDateProvider: () -> Date
     private let pixelFiring: PixelFiring?
@@ -104,7 +104,7 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     private var installParameters: [String: String] {
         var additionalParameters: [String: String] = [:]
 
-        if let installType {
+        if let installType = installTypeProvider() {
             additionalParameters[ParameterKeys.installType] = installType.rawValue
         }
 
@@ -116,12 +116,12 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     }
 
     public init(platform: Platform,
-                installType: InstallType?,
+                installTypeProvider: @escaping () -> InstallType?,
                 installDateProvider: @escaping () -> Date?,
                 currentDateProvider: @escaping () -> Date = { Date() },
                 pixelFiring: PixelFiring? = PixelKit.shared) {
         self.platform = platform
-        self.installType = installType
+        self.installTypeProvider = installTypeProvider
         self.installDateProvider = installDateProvider
         self.currentDateProvider = currentDateProvider
         self.pixelFiring = pixelFiring

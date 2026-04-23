@@ -66,7 +66,7 @@ final class TabSuspensionService {
     private let windowControllersManager: WindowControllersManagerProtocol
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let memoryUsageMonitor: MemoryUsageMonitoring
+    private let memoryProvider: (pid_t) -> UInt64?
     private let pixelFiring: PixelFiring?
     private let notificationCenter: NotificationCenter
     private let dateProvider: () -> Date
@@ -100,18 +100,18 @@ final class TabSuspensionService {
         windowControllersManager: WindowControllersManagerProtocol,
         featureFlagger: FeatureFlagger,
         privacyConfigurationManager: PrivacyConfigurationManaging,
-        memoryUsageMonitor: MemoryUsageMonitoring,
         pixelFiring: PixelFiring?,
         keyValueStore: ThrowingKeyValueStoring,
+        memoryProvider: @escaping (pid_t) -> UInt64?,
         notificationCenter: NotificationCenter = .default,
         dateProvider: @escaping () -> Date = { Date() }
     ) {
         self.windowControllersManager = windowControllersManager
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
-        self.memoryUsageMonitor = memoryUsageMonitor
         self.pixelFiring = pixelFiring
         self.keyValueStore = keyValueStore
+        self.memoryProvider = memoryProvider
         self.notificationCenter = notificationCenter
         self.dateProvider = dateProvider
 
@@ -125,24 +125,27 @@ final class TabSuspensionService {
     private func handleMemoryPressure(_ notification: Notification) {
         guard featureFlagger.isFeatureOn(.tabSuspension) else { return }
 
-        let initialMemoryBytes: UInt64
-        if let context = notification.userInfo?[MemoryPressureNotification.contextKey] as? MemoryReportingContext {
-            initialMemoryBytes = context.totalMemoryBytes
-        } else {
-            let report = memoryUsageMonitor.getCurrentMemoryUsage()
-            initialMemoryBytes = report.physFootprintBytes + (report.webContentBytes ?? 0)
-        }
-
         Logger.tabSuspension.info("Critical memory pressure event received, starting tab suspension")
 
         let cutoffDate = dateProvider().addingTimeInterval(-minimumInactiveInterval)
         var suspendedCount = 0
+        var reclaimedBytes: UInt64 = 0
 
         for viewModel in windowControllersManager.allTabCollectionViewModels where !viewModel.isBurner {
             for (index, tab) in viewModel.tabCollection.tabs.enumerated() where !tab.isSuspended {
                 if tab.lastSelectedAt == nil || tab.lastSelectedAt! < cutoffDate {
+                    let webProcessMemory: UInt64 = {
+                        guard case let .loaded(loadedTab) = tab,
+                              let pid = loadedTab.webView.webProcessIdentifier,
+                              let memory = memoryProvider(pid)
+                        else {
+                            return 0
+                        }
+                        return memory
+                    }()
                     if viewModel.suspendTab(at: .unpinned(index)) {
                         suspendedCount += 1
+                        reclaimedBytes += webProcessMemory
                     }
                 }
             }
@@ -153,28 +156,20 @@ final class TabSuspensionService {
             return
         }
 
-        let memoryUsageMonitor = self.memoryUsageMonitor
         let pixelFiring = self.pixelFiring
 
-        Task.detached {
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
+        let reclaimedMB = Double(reclaimedBytes) / 1_048_576.0
 
-            let postReport = memoryUsageMonitor.getCurrentMemoryUsage()
-            let postMemoryBytes = postReport.physFootprintBytes + (postReport.webContentBytes ?? 0)
-            let reclaimedBytes = initialMemoryBytes > postMemoryBytes ? initialMemoryBytes - postMemoryBytes : 0
-            let reclaimedMB = Double(reclaimedBytes) / 1_048_576.0
+        Logger.tabSuspension.info("Suspended \(suspendedCount) tab(s), memory reclaimed: \(String(format: "%.1f", reclaimedMB)) MB")
 
-            Logger.tabSuspension.info("Suspended \(suspendedCount) tab(s), memory reclaimed: \(String(format: "%.1f", reclaimedMB)) MB (before: \(initialMemoryBytes / 1_048_576) MB, after: \(postMemoryBytes / 1_048_576) MB)")
-
-            pixelFiring?.fire(
-                TabSuspensionPixel.tabSuspension(
-                    trigger: .criticalMemoryPressure,
-                    tabsSuspended: suspendedCount,
-                    memoryReclaimedMB: reclaimedMB
-                ),
-                frequency: .dailyAndCount
-            )
-        }
+        pixelFiring?.fire(
+            TabSuspensionPixel.tabSuspension(
+                trigger: .criticalMemoryPressure,
+                tabsSuspended: suspendedCount,
+                memoryReclaimedMB: reclaimedMB
+            ),
+            frequency: .dailyAndCount
+        )
     }
 }
 

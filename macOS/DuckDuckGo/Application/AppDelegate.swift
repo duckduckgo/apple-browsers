@@ -1192,9 +1192,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            memoryUsageMonitor: memoryUsageMonitor,
             pixelFiring: PixelKit.shared,
-            keyValueStore: keyValueStore
+            keyValueStore: keyValueStore,
+            memoryProvider: MemoryUsageMonitor.residentMemorySize(forPID:)
         )
 
         super.init()

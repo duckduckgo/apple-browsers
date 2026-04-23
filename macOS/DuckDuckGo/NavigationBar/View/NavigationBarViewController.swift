@@ -2019,7 +2019,7 @@ extension NavigationBarViewController: NSMenuDelegate {
         button.target = self
         button.action = #selector(quickFeedbackButtonClicked)
 
-        let icon = DesignSystemImages.Color.Size16.feedback
+        let icon = DesignSystemImages.Color.Size16.feedback.copy() as! NSImage
         icon.isTemplate = false
         button.image = icon
         button.mouseOverColor = theme.colorsProvider.buttonMouseOverColor

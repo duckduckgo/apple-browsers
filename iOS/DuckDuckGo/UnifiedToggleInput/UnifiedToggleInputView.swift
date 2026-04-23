@@ -353,7 +353,8 @@ final class UnifiedToggleInputView: UIView {
             : UIColor(singleUseColor: .unifiedToggleInputCardBackground)
         // cardView keeps the OS trait so `fireModeCardBackground` picks its light variant in light OS; content subviews force `.dark` so their dynamic colors resolve against the dark surface.
         let style: UIUserInterfaceStyle = isFireTab ? .dark : .unspecified
-        [toggleView, textEntryView, attachmentsStrip, toolsToolbar, inlineDismissButton].forEach {
+        // `toolsToolbar` manages its own subtree's trait so the accent submit button keeps OS trait.
+        [toggleView, textEntryView, attachmentsStrip, inlineDismissButton].forEach {
             $0.overrideUserInterfaceStyle = style
         }
     }

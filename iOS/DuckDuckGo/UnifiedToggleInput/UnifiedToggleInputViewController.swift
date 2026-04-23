@@ -35,6 +35,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID)
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -281,6 +282,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         barView.onAttachmentsLayoutDidChange = { [weak self] in
             guard let self else { return }
             delegate?.unifiedToggleInputVCDidChangeAttachments(self)
+        }
+        barView.onInlineDismissTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVCDidTapInlineDismiss(self)
         }
         view = barView
     }

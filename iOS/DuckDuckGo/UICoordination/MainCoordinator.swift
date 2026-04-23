@@ -474,7 +474,8 @@ final class MainCoordinator {
         let normalModel: TabsModel
         let fireModel: TabsModel
 
-        if AutoClearSettingsModel(settings: appSettings) != nil {
+        if let autoClearSettings = AutoClearSettingsModel(settings: appSettings),
+           autoClearSettings.action.contains(.tabs) {
             normalModel = TabsModel(desktop: isPadDevice, mode: .normal)
             fireModel = TabsModel(desktop: isPadDevice, mode: .fire)
             tabsPersistence.clearAll()

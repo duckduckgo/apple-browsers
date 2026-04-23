@@ -223,9 +223,29 @@ final class DuckAiNativeStorageHandlerTests: XCTestCase {
         XCTAssertEqual(mockDataStore.deleteAllChatsCallCount, 1)
     }
 
+    func testWhenGetChatThenDelegatesToDataStore() throws {
+        mockDataStore.stubbedChat = DuckAiChatRecord(chatId: "c1", data: Data("x".utf8))
+        let result = try handler.getChat(chatId: "c1")
+        XCTAssertEqual(mockDataStore.getChatCallCount, 1)
+        XCTAssertEqual(mockDataStore.lastGetChatId, "c1")
+        XCTAssertEqual(result?.chatId, "c1")
+    }
+
+    func testWhenGetChatNotFoundThenReturnsNil() throws {
+        mockDataStore.stubbedChat = nil
+        let result = try handler.getChat(chatId: "missing")
+        XCTAssertNil(result)
+    }
+
     func testWhenPutFileThenDelegatesToDataStore() throws {
         try handler.putFile(uuid: "f1", chatId: "c1", data: Data())
         XCTAssertEqual(mockDataStore.putFileCallCount, 1)
+    }
+
+    func testWhenDeleteFilesByChatIdThenDelegatesToDataStore() throws {
+        try handler.deleteFiles(chatId: "c1")
+        XCTAssertEqual(mockDataStore.deleteFilesByChatIdCallCount, 1)
+        XCTAssertEqual(mockDataStore.lastDeleteFilesChatId, "c1")
     }
 
     func testWhenDeleteAllFilesThenDelegatesToDataStore() throws {
@@ -248,6 +268,10 @@ private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring {
     var putChatsCallCount = 0
     var lastPutChats: [DuckAiChatRecord]?
 
+    var getChatCallCount = 0
+    var lastGetChatId: String?
+    var stubbedChat: DuckAiChatRecord?
+
     var deleteChatCallCount = 0
     var lastDeleteChatId: String?
 
@@ -267,6 +291,9 @@ private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring {
     var deleteFileCallCount = 0
     var lastDeleteFileUuid: String?
 
+    var deleteFilesByChatIdCallCount = 0
+    var lastDeleteFilesChatId: String?
+
     var deleteAllFilesCallCount = 0
 
     func putChat(chatId: String, data: Data) throws {
@@ -278,6 +305,12 @@ private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring {
     func putChats(_ chats: [DuckAiChatRecord]) throws {
         putChatsCallCount += 1
         lastPutChats = chats
+    }
+
+    func getChat(chatId: String) throws -> DuckAiChatRecord? {
+        getChatCallCount += 1
+        lastGetChatId = chatId
+        return stubbedChat
     }
 
     func getAllChats() throws -> [DuckAiChatRecord] {
@@ -314,6 +347,11 @@ private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring {
     func deleteFile(uuid: String) throws {
         deleteFileCallCount += 1
         lastDeleteFileUuid = uuid
+    }
+
+    func deleteFiles(chatId: String) throws {
+        deleteFilesByChatIdCallCount += 1
+        lastDeleteFilesChatId = chatId
     }
 
     func deleteAllFiles() throws {

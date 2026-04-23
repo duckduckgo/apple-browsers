@@ -124,7 +124,7 @@ class SwitchBarTextEntryViewController: UIViewController {
     private func applyContainerBackground(isFireTab: Bool) {
         containerView.backgroundColor = isFireTab
             ? UIColor(singleUseColor: .fireModeBackground)
-            : UIColor(designSystemColor: .urlBar)
+            : UIColor(designSystemColor: .backgroundTertiary)
     }
 
     private func setupConstraints() {

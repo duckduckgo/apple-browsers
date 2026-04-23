@@ -54,11 +54,12 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         self.actionHandler = actionHandler
         super.init()
 
-        Publishers.Merge4(
+        Publishers.MergeMany(
             configProvider.isAIChatShortcutEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.isAIChatSettingVisiblePublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.modePublisher.map { _ in () }.eraseToAnyPublisher(),
-            configProvider.showViewAllAiChatsPublisher.map { _ in () }.eraseToAnyPublisher()
+            configProvider.showViewAllAiChatsPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.selectedModelIdPublisher.map { _ in () }.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in
@@ -118,7 +119,17 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.showCustomizePopover = showCustomizePopover
         }
         if let selectedModelId = config.selectedModelId {
+            // Only refresh the cached short name when the id actually changes. Echoing back the
+            // same id (e.g. on web launch) must not overwrite a valid cache with `nil` just
+            // because `lastFetchedSections` hasn't been populated yet on this side.
+            let didChangeModelId = configProvider.selectedModelId != selectedModelId
             configProvider.selectedModelId = selectedModelId
+            if didChangeModelId {
+                configProvider.selectedModelShortName = modelsProvider?.lastFetchedSections?
+                    .flatMap(\.items)
+                    .first(where: { $0.id == selectedModelId })?
+                    .shortName
+            }
         }
         return nil
     }

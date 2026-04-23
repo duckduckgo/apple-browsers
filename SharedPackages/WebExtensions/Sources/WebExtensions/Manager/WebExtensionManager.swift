@@ -392,6 +392,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     public func loadAndSyncExtensions(enabledTypes: Set<DuckDuckGoWebExtensionType>) async {
         await loadInstalledExtensions()
+        guard !Task.isCancelled else { return }
         await syncEmbeddedExtensions(enabledTypes: enabledTypes)
     }
 

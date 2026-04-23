@@ -535,10 +535,14 @@ final class MainCoordinator {
     // MARK: App Lifecycle handling
 
     func onForeground(isFirstForeground: Bool) {
+        // Apply tracker animation suppression based on launch source
+        // Must be called after launchSourceManager.handleAppAction sets the source
         if isFirstForeground {
             tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
         }
 
+        // Clear external launch flags when app comes to foreground
+        // This ensures flags are reset for subsequent in-app navigations
         tabManager.clearExternalLaunchFlags()
 
         controller.showBars()

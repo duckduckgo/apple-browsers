@@ -142,6 +142,19 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             OnboardingTheme.macOSRebranding2026.colorPalette.background
             illustration(for: type)
         }
+        // Very subtle bottom-edge shadow fading upward — gives the panel a touch of depth
+        // so it separates visually from the content below it. Applied as an overlay so it
+        // doesn't alter the layout of the background ZStack.
+        .overlay(
+            LinearGradient(
+                gradient: Gradient(colors: [Color.black.opacity(0.06), Color.black.opacity(0)]),
+                startPoint: .bottom,
+                endPoint: .top
+            )
+            .frame(height: 8)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            .allowsHitTesting(false)
+        )
     }
 
     /// macOS-only illustrations loaded from the app's asset catalog

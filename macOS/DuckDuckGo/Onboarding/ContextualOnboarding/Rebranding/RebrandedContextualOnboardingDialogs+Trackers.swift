@@ -47,24 +47,31 @@ extension OnboardingRebranding {
         }
 
         var body: some View {
-            // Trackers dialog: tail at bottom-leading (points down-right); Wing Lottie sits
-            // DIRECTLY below the bubble (VStack with small negative spacing so wing's top
-            // overlaps bubble's tail area). The wing's bottom is flush with the panel's
-            // bottom padding — no extra space below.
-            HStack(spacing: 0) {
-                Spacer(minLength: 0)
-                // Negative spacing pulls the wing up so its top overlaps the bubble's tail
-                // area — the "padding between bubble and wing" the reference shows.
-                VStack(spacing: -20) {
-                    OnboardingBubbleView(
-                        tailPosition: .bottom(offset: 0.1, direction: .trailing),
-                        arrowLength: 14,
-                        arrowWidth: 22,
-                        content: {
-                            if showNextScreen {
-                                OnboardingFireDialogContent(viewModel: viewModel)
-                                    .transition(.identity)
-                            } else {
+            // When transitioning to the follow-up fire dialog we render OnboardingFireDialog
+            // directly — it's a plain bubble with no tail and no wing per the Figma, and an
+            // inline content swap inside the trackers bubble would keep the wing visible.
+            if showNextScreen {
+                OnboardingRebranding.OnboardingFireDialog(
+                    viewModel: viewModel,
+                    panelHeight: followUpPanelHeight,
+                    onManualDismiss: onManualDismiss
+                )
+                .transition(.identity)
+            } else {
+                // Trackers dialog: tail at bottom-leading (points down-right); Wing Lottie sits
+                // DIRECTLY below the bubble (VStack with small negative spacing so wing's top
+                // overlaps bubble's tail area). The wing's bottom is flush with the panel's
+                // bottom padding — no extra space below.
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    // Negative spacing pulls the wing up so its top overlaps the bubble's tail
+                    // area — the "padding between bubble and wing" the reference shows.
+                    VStack(spacing: -20) {
+                        OnboardingBubbleView(
+                            tailPosition: .bottom(offset: 0.1, direction: .trailing),
+                            arrowLength: 14,
+                            arrowWidth: 22,
+                            content: {
                                 OnboardingRebranding.ContextualDaxDialogContent(
                                     orientation: .horizontalStack(alignment: .center),
                                     message: message
@@ -80,25 +87,25 @@ extension OnboardingRebranding {
                                     }
                                     .buttonStyle(theme.primaryButtonStyle.style)
                                 }
-                                .transition(.identity)
                             }
-                        }
-                    )
-                    .onboardingDismissable(onManualDismiss)
+                        )
+                        .onboardingDismissable(onManualDismiss)
 
-                    WingPointingAnimation()
-                        .frame(width: 55, height: 62)
-                        .clipped()
-                        .allowsHitTesting(false)
+                        WingPointingAnimation()
+                            .frame(width: 55, height: 62)
+                            .clipped()
+                            .allowsHitTesting(false)
+                    }
+                    .frame(maxWidth: 640)
+                    Spacer(minLength: 0)
                 }
-                .frame(maxWidth: 640)
-                Spacer(minLength: 0)
+                .padding(.top, 24)
+                // No bottom padding — the wing animation IS the bottom of the panel (anchored
+                // directly to the panel edge, no background showing through below it).
+                .padding(.bottom, 0)
+                .frame(maxWidth: .infinity)
+                .transition(.identity)
             }
-            .padding(.top, 24)
-            // No bottom padding — the wing animation IS the bottom of the panel (anchored
-            // directly to the panel edge, no background showing through below it).
-            .padding(.bottom, 0)
-            .frame(maxWidth: .infinity)
         }
     }
 

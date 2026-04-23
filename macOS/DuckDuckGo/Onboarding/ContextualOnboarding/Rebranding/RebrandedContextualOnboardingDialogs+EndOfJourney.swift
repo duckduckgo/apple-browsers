@@ -29,13 +29,34 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         var body: some View {
-            OnboardingBubbleView.withDismissButton(
-                tailPosition: .leading(offset: 0.3, direction: .top),
-                onDismiss: onManualDismiss
-            ) {
-                OnboardingEndOfJourneyDialogContent(highFiveAction: highFiveAction)
+            // High-five dialog mirrors tryASearch / tryASite: Dax waving on the left
+            // overlapping the bubble's top-left, same tail position (offset 0.99, direction .top,
+            // arrowLength 14, arrowWidth 22).
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                OnboardingBubbleView(
+                    tailPosition: .leading(offset: 0.99, direction: .top),
+                    arrowLength: 14,
+                    arrowWidth: 22,
+                    content: {
+                        OnboardingEndOfJourneyDialogContent(highFiveAction: highFiveAction)
+                    }
+                )
+                .onboardingDismissable(onManualDismiss)
+                .frame(maxWidth: 640)
+                .overlay(
+                    DaxWavingAnimation()
+                        .frame(width: 130, height: 154)
+                        .clipped()
+                        .offset(x: -130, y: -21)
+                        .allowsHitTesting(false),
+                    alignment: .topLeading
+                )
+                Spacer(minLength: 0)
             }
-            .contextualOnboardingPanelLayout(height: panelHeight)
+            .padding(.top, 24)
+            .padding(.bottom, 32)
+            .frame(maxWidth: .infinity)
         }
     }
 

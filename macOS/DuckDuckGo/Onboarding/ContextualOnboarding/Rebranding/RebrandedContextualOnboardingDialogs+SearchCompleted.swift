@@ -47,15 +47,22 @@ extension OnboardingRebranding {
         }
 
         var body: some View {
-            // searchDone has no Dax and no bubble tail per the Figma — just a plain bubble.
-            OnboardingBubbleView.withDismissButton(
-                tailPosition: nil,
-                onDismiss: onManualDismiss
-            ) {
-                if showNextScreen {
-                    OnboardingTrySiteDialogContent(viewModel: viewModel)
-                        .transition(.identity)
-                } else {
+            // When transitioning to the follow-up ("try a site!") we render the full
+            // tryASite dialog so the waving-Dax overlay and bubble tail come with it —
+            // the Figma calls for Dax + tail on that screen, which a content-only swap
+            // inside the plain searchDone bubble can't produce.
+            if showNextScreen {
+                OnboardingRebranding.OnboardingTrySiteDialog(
+                    viewModel: viewModel,
+                    onManualDismiss: onManualDismiss
+                )
+                .transition(.identity)
+            } else {
+                // searchDone has no Dax and no bubble tail per the Figma — just a plain bubble.
+                OnboardingBubbleView.withDismissButton(
+                    tailPosition: nil,
+                    onDismiss: onManualDismiss
+                ) {
                     OnboardingRebranding.ContextualDaxDialogContent(
                         orientation: .horizontalStack(alignment: .center),
                         title: title,
@@ -72,10 +79,10 @@ extension OnboardingRebranding {
                         }
                         .buttonStyle(theme.primaryButtonStyle.style)
                     }
-                    .transition(.identity)
                 }
+                .contextualOnboardingPanelLayout(height: panelHeight)
+                .transition(.identity)
             }
-            .contextualOnboardingPanelLayout(height: panelHeight)
         }
     }
 

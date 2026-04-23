@@ -29,8 +29,9 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         var body: some View {
+            // Fire dialog: plain bubble, no tail and no Dax illustration per the Figma.
             OnboardingBubbleView.withDismissButton(
-                tailPosition: .leading(offset: 0.3, direction: .top),
+                tailPosition: nil,
                 onDismiss: onManualDismiss
             ) {
                 OnboardingFireDialogContent(viewModel: viewModel)

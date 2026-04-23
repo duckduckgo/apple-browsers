@@ -47,8 +47,9 @@ extension OnboardingRebranding {
         }
 
         var body: some View {
+            // searchDone has no Dax and no bubble tail per the Figma — just a plain bubble.
             OnboardingBubbleView.withDismissButton(
-                tailPosition: .leading(offset: 0.3, direction: .top),
+                tailPosition: nil,
                 onDismiss: onManualDismiss
             ) {
                 if showNextScreen {

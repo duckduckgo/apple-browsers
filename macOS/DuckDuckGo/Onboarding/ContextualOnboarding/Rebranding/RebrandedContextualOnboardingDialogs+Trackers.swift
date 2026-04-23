@@ -18,6 +18,7 @@
 
 import SwiftUI
 import Onboarding
+import Lottie
 
 // MARK: - Trackers Blocked
 
@@ -46,34 +47,93 @@ extension OnboardingRebranding {
         }
 
         var body: some View {
-            OnboardingBubbleView.withDismissButton(
-                tailPosition: .leading(offset: 0.3, direction: .top),
-                onDismiss: onManualDismiss
-            ) {
-                if showNextScreen {
-                    OnboardingFireDialogContent(viewModel: viewModel)
-                        .transition(.identity)
-                } else {
-                    OnboardingRebranding.ContextualDaxDialogContent(
-                        orientation: .horizontalStack(alignment: .center),
-                        message: message
-                    ) {
-                        Button(cta) {
-                            blockedTrackersCTAAction()
-                            if shouldFollowUp {
-                                onContentTransition?()
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    showNextScreen = true
+            // Trackers dialog: tail at bottom-leading (points down-right); Wing Lottie sits
+            // DIRECTLY below the bubble (VStack with small negative spacing so wing's top
+            // overlaps bubble's tail area). The wing's bottom is flush with the panel's
+            // bottom padding — no extra space below.
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                // Negative spacing pulls the wing up so its top overlaps the bubble's tail
+                // area — the "padding between bubble and wing" the reference shows.
+                VStack(spacing: -30) {
+                    OnboardingBubbleView(
+                        tailPosition: .bottom(offset: 0.1, direction: .trailing),
+                        arrowLength: 14,
+                        arrowWidth: 22,
+                        content: {
+                            if showNextScreen {
+                                OnboardingFireDialogContent(viewModel: viewModel)
+                                    .transition(.identity)
+                            } else {
+                                OnboardingRebranding.ContextualDaxDialogContent(
+                                    orientation: .horizontalStack(alignment: .center),
+                                    message: message
+                                ) {
+                                    Button(cta) {
+                                        blockedTrackersCTAAction()
+                                        if shouldFollowUp {
+                                            onContentTransition?()
+                                            withAnimation(.easeInOut(duration: 0.3)) {
+                                                showNextScreen = true
+                                            }
+                                        }
+                                    }
+                                    .buttonStyle(theme.primaryButtonStyle.style)
                                 }
+                                .transition(.identity)
                             }
                         }
-                        .buttonStyle(theme.primaryButtonStyle.style)
-                    }
-                    .transition(.identity)
+                    )
+                    .onboardingDismissable(onManualDismiss)
+
+                    WingPointingAnimation()
+                        .frame(width: 55, height: 62)
+                        .clipped()
+                        .allowsHitTesting(false)
                 }
+                .frame(maxWidth: 640)
+                Spacer(minLength: 0)
             }
-            .contextualOnboardingPanelLayout(height: panelHeight)
+            .padding(.top, 24)
+            // No bottom padding — the wing animation IS the bottom of the panel (anchored
+            // directly to the panel edge, no background showing through below it).
+            .padding(.bottom, 0)
+            .frame(maxWidth: .infinity)
         }
     }
 
+}
+
+// MARK: - Wing Pointing Lottie
+
+/// Hand/wing pointer Lottie loaded from the OnboardingContextual asset catalog. Plays once on
+/// appear and holds on the final frame.
+struct WingPointingAnimation: NSViewRepresentable {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func makeNSView(context: Context) -> NSView {
+        let container = NSView()
+        container.wantsLayer = true
+        container.layer?.masksToBounds = true
+        attachAnimation(to: container)
+        return container
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private func attachAnimation(to container: NSView) {
+        guard let animation = LottieAnimation.asset("wing-pointing", bundle: .main) else {
+            return
+        }
+        let view = LottieAnimationView(animation: animation)
+        view.contentMode = .scaleAspectFit
+        view.loopMode = .playOnce
+        view.animationSpeed = 1.0
+        view.wantsLayer = true
+        view.layer?.masksToBounds = true
+        view.autoresizingMask = [.width, .height]
+        view.frame = container.bounds
+        container.addSubview(view)
+        view.play()
+    }
 }

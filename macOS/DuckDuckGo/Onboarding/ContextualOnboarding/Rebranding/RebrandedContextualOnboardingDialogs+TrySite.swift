@@ -28,13 +28,33 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         var body: some View {
-            OnboardingBubbleView.withDismissButton(
-                tailPosition: .leading(offset: 0.3, direction: .top),
-                onDismiss: onManualDismiss
-            ) {
-                OnboardingTrySiteDialogContent(viewModel: viewModel)
+            // Mirrors tryASearch layout: Dax waving on the left overlapping the bubble's
+            // top-left; bubble keeps its normal 640pt max width.
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                OnboardingBubbleView(
+                    tailPosition: .leading(offset: 0.85, direction: .top),
+                    arrowLength: 14,
+                    arrowWidth: 22,
+                    content: {
+                        OnboardingTrySiteDialogContent(viewModel: viewModel)
+                    }
+                )
+                .onboardingDismissable(onManualDismiss)
+                .frame(maxWidth: 640)
+                .overlay(
+                    DaxWavingAnimation()
+                        .frame(width: 130, height: 154)
+                        .clipped()
+                        .offset(x: -130, y: -21)
+                        .allowsHitTesting(false),
+                    alignment: .topLeading
+                )
+                Spacer(minLength: 0)
             }
-            .contextualOnboardingPanelLayout(height: RebrandedContextualDaxDialogsFactory.ContextualPanelMetrics.trySitePanelHeight)
+            .padding(.top, 24)
+            .padding(.bottom, 32)
+            .frame(maxWidth: .infinity)
         }
     }
 

@@ -81,8 +81,8 @@ extension OnboardingRebranding {
 
 /// Waving-Dax Lottie loaded from the app's asset catalog as an `NSDataAsset`, so adding the
 /// JSON didn't require touching the Xcode project file. Plays once on appear and holds on the
-/// final frame.
-private struct DaxWavingAnimation: NSViewRepresentable {
+/// final frame. Used by both tryASearch and tryASite dialogs.
+struct DaxWavingAnimation: NSViewRepresentable {
     @Environment(\.colorScheme) private var colorScheme
 
     func makeNSView(context: Context) -> NSView {
@@ -103,8 +103,10 @@ private struct DaxWavingAnimation: NSViewRepresentable {
 
     private func attachAnimation(to container: NSView, for colorScheme: ColorScheme) {
         let assetName = colorScheme == .dark ? "dax-waving-dark" : "dax-waving-light"
-        guard let data = NSDataAsset(name: assetName)?.data,
-              let animation = try? JSONDecoder().decode(LottieAnimation.self, from: data) else {
+        // Loads the Lottie JSON from the OnboardingContextual data set in
+        // `Assets.xcassets`. Lottie's `asset(_:bundle:)` handles the NSDataAsset lookup and
+        // JSON decoding internally — no manual `NSDataAsset` + `JSONDecoder` plumbing here.
+        guard let animation = LottieAnimation.asset(assetName, bundle: .main) else {
             return
         }
         let view = LottieAnimationView(animation: animation)

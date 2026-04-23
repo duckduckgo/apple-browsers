@@ -373,20 +373,6 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockUserScript.submitOpenSettingsActionCallCount, 1)
     }
 
-    func testSubmitToggleSidebarActionCallsUserScriptWhenFrontendReady() throws {
-        // Given
-        let mockUserScript = MockAIChatUserScript()
-        let mockWebView = WKWebView()
-        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
-        handler.aiChatUserScript(makeTestUserScript(), didReceiveMessage: .setAIChatHistoryEnabled)
-
-        // When
-        handler.submitToggleSidebarAction()
-
-        // Then
-        XCTAssertEqual(mockUserScript.submitToggleSidebarActionCallCount, 1)
-    }
-
     func testSubmitToggleSidebarActionCallsThroughDirectly() throws {
         // Given
         let mockUserScript = MockAIChatUserScript()

@@ -282,5 +282,10 @@
         "type": "string",
         "description": "Location selection for the VPN latency test",
         "enum": ["nearest", "custom"]
+    },
+    "is_eligible_for_free_trial": {
+        "key": "is_eligible_for_free_trial",
+        "type": "boolean",
+        "description": "Whether the user is eligible for a free trial"
     }
 }

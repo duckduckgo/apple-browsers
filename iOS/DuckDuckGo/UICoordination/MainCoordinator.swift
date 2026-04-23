@@ -366,11 +366,10 @@ final class MainCoordinator {
             // Already initialized, just reload extensions and re-register tabs
             webExtensionLoadTask?.cancel()
             webExtensionLoadTask = Task { @MainActor [weak self] in
-                await self?.webExtensionManager?.loadInstalledExtensions()
+                guard let self, let manager = self.webExtensionManager as? WebExtensionManager else { return }
+                await self.loadAndSyncEmbeddedExtensions(manager)
                 guard !Task.isCancelled else { return }
-                await self?.syncEmbeddedExtensions()
-                guard !Task.isCancelled else { return }
-                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+                self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
             }
             return
         }
@@ -398,11 +397,10 @@ final class MainCoordinator {
 
         // Load extensions asynchronously - the controller is already attached to tabs
         webExtensionLoadTask = Task { @MainActor [weak self] in
-            await webExtensionManager.loadInstalledExtensions()
+            guard let self else { return }
+            await self.loadAndSyncEmbeddedExtensions(webExtensionManager)
             guard !Task.isCancelled else { return }
-            await self?.syncEmbeddedExtensions()
-            guard !Task.isCancelled else { return }
-            self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+            self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
         }
     }
 
@@ -430,6 +428,17 @@ final class MainCoordinator {
         isSyncingEmbeddedExtensions = true
         defer { isSyncingEmbeddedExtensions = false }
 
+        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+    }
+
+    @available(iOS 18.4, *)
+    @MainActor
+    private func loadAndSyncEmbeddedExtensions(_ webExtensionManager: WebExtensionManager) async {
+        await webExtensionManager.loadAndSyncExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+    }
+
+    @available(iOS 18.4, *)
+    private func enabledEmbeddedExtensionTypes() -> Set<DuckDuckGoWebExtensionType> {
         var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
         if featureFlagger.isFeatureOn(.embeddedExtension) {
             enabledTypes.insert(.embedded)
@@ -440,7 +449,7 @@ final class MainCoordinator {
         if controller.adBlockingAvailability.isEnabled {
             enabledTypes.insert(.adBlockingExtension)
         }
-        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
+        return enabledTypes
     }
 
     private func clearWebExtensionReferences() {

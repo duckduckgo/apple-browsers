@@ -89,6 +89,11 @@ public struct UserText {
     public static let fireModeNTPPromotionPrimaryAction = NSLocalizedString("fire.mode.ntp.promotion.primary.action", value: "Try Fire Tabs", comment: "Primary action button on the Fire Mode promotion card that opens Fire Mode")
     public static let fireModeNTPPromotionDismiss = NSLocalizedString("fire.mode.ntp.promotion.dismiss", value: "Not Now", comment: "Dismiss button on the Fire Mode promotion card on the new tab page")
 
+    // MARK: Fire Mode Tab Switcher Tip
+
+    public static let fireModeTabSwitcherTipTitle = NotLocalizedString("fire.mode.tab.switcher.tip.title", value: "New: Fire Tabs", comment: "Title for the Fire Tabs popover tip shown on the tab switcher picker")
+    public static let fireModeTabSwitcherTipDescription = NotLocalizedString("fire.mode.tab.switcher.tip.description", value: "Try Fire Tabs to browse without saving local history.", comment: "Description for the Fire Tabs popover tip shown on the tab switcher picker")
+
     // MARK: Fire Mode Menu Promotion
 
     public static let fireModeMenuPromotionBadge = NSLocalizedString("fire.mode.menu.promotion.badge", value: "New", comment: "Badge label on the Fire Mode promotion entry in the browsing menu")
@@ -596,6 +601,8 @@ public struct UserText {
     public static let autofillOnboardingKeyFeaturesSyncTitle = NSLocalizedString("autofill.onboarding.key-features.sync.title", value: "Sync between devices", comment: "Title of autofill onboarding prompt's sync feature")
     public static let autofillOnboardingKeyFeaturesSyncDescription = NSLocalizedString("autofill.onboarding.key-features.sync.description", value: "End-to-end encrypted and easy to set up when you’re ready.", comment: "Description of autofill onboarding prompt's sync feature")
     public static let autofillSaveLoginNoThanksCTA = NSLocalizedString("autofill.save-login.no-thanks.CTA", value: "No Thanks", comment: "CTA displayed on modal asking if the user wants to dismiss the save login action for now")
+
+    public static let autofillSaveLoginNotNowCTA = NSLocalizedString("autofill.save-login.not-now.CTA", value: "Not Now", comment: "CTA displayed on modal allowing the user to dismiss the save login prompt for now")
 
     public static let autofillSavePasswordSaveCTA = NSLocalizedString("autofill.save-password.save.CTA", value: "Save Password", comment: "Confirm CTA displayed on modal asking for the user to save the password")
     public static let autofillUpdatePasswordSaveCTA = NSLocalizedString("autofill.update-password.save.CTA", value: "Update Password", comment: "Confirm CTA displayed on modal asking for the user to update the password")
@@ -2152,25 +2159,24 @@ public struct UserText {
     
     public static let aiChatSettingsAllowFollowUpQuestionsDescription = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.description", value: "Show Duck.ai buttons and links in DuckDuckGo search results.", comment: "Description text explaining what the 'Ask Follow-up Questions' toggle does")
 
-    public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask privately", comment: "Placeholder text for the duck.ai input field")
-    public static let searchInputFieldPlaceholderDuckAIV2 = NotLocalizedString("input.field.placeholder.duckai.v2", value: "Ask anything privately", comment: "Updated placeholder text for the duck.ai input field")
+    public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask anything privately", comment: "Placeholder text for the duck.ai input field")
 
     public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Ask a follow-up question...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
 
     // MARK: - AI Chat Welcome Message
-    public static let aiChatWelcomeAskAnything = NotLocalizedString("duckai.welcome.ask.anything", value: "All chats are ", comment: "First part of the welcome message in Duck.ai contextual sheet, before the shield icon")
-    public static let aiChatWelcomePrivately = NotLocalizedString("duckai.welcome.privately", value: " private", comment: "Second part of the welcome message in Duck.ai contextual sheet, after the shield icon, shown in green")
+    public static let aiChatWelcomeMessage = NSLocalizedString("duckai.welcome.message", value: "All chats are %@ private", comment: "Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green.")
+    public static let aiChatWelcomePrivateWord = NSLocalizedString("duckai.welcome.private.word", value: "private", comment: "The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message.")
 
     // MARK: - AI Chat Quick Actions
-    public static let aiChatQuickActionAskAboutPage = NotLocalizedString("duckai.quick.action.ask.about.page", value: "Ask about page", comment: "Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content.")
+    public static let aiChatQuickActionAskAboutPage = NSLocalizedString("duckai.quick.action.ask.about.page", value: "Ask about page", comment: "Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content.")
     public static let aiChatQuickActionSummarize = NSLocalizedString("duckai.quick.action.summarize", value: "Summarize This Page", comment: "Title for the summarize quick action chip in Duck.ai contextual sheet")
-    public static let aiChatQuickActionSummarizePage = NotLocalizedString("duckai.quick.action.summarize.page", value: "Summarize Page", comment: "Title for the summarize page quick action chip in the improved Duck.ai contextual sheet")
+    public static let aiChatQuickActionSummarizePage = NSLocalizedString("duckai.quick.action.summarize.page", value: "Summarize page", comment: "Title for the summarize page quick action chip in the improved Duck.ai contextual sheet")
     public static let aiChatQuickActionAttach = NSLocalizedString("duckai.quick.action.attach", value: "Attach Page Content", comment: "Title for the attach page content quick action chip in Duck.ai contextual sheet")
 
     // MARK: - AI Chat Recent Chats Popup
-    public static let aiChatRecentChatsButtonAccessibility = NotLocalizedString("duckai.contextual.recent.chats.button", value: "Recent Chats", comment: "Accessibility label for the recent chats button in the Duck.ai contextual sheet header")
-    public static let aiChatRecentChatsSectionTitle = NotLocalizedString("duckai.contextual.recent.chats.section", value: "Recent Chats", comment: "Section header in the recent chats popup")
-    public static let aiChatViewAllChats = NotLocalizedString("duckai.contextual.view.all.chats", value: "View all chats", comment: "Action to view all chats in the recent chats popup")
+    public static let aiChatRecentChatsButtonAccessibility = NSLocalizedString("duckai.contextual.recent.chats.button", value: "Recent Chats", comment: "Accessibility label for the recent chats button in the Duck.ai contextual sheet header")
+    public static let aiChatRecentChatsSectionTitle = NSLocalizedString("duckai.contextual.recent.chats.section", value: "Recent Chats", comment: "Section header in the recent chats popup")
+    public static let aiChatViewAllChats = NSLocalizedString("duckai.contextual.view.all.chats", value: "View all chats", comment: "Action to view all chats in the recent chats popup")
 
     // MARK: - AI Chat Context Chip
     public static let aiChatAttachPageContent = NSLocalizedString("duckai.attach.page.content", value: "Attach Page Content", comment: "Menu option to attach current page content to Duck.ai chat")
@@ -2324,7 +2330,7 @@ public struct UserText {
             )
             public static let aiPlaceholder = NotLocalizedString(
                 "onboarding.highlights.duckAIQueryExperiment.placeholder.ai",
-                value: "Ask privately",
+                value: "Ask anything privately",
                 comment: "Placeholder for AI query input in onboarding Duck.ai query experiment screen."
             )
             public static let searchPlaceholder = NotLocalizedString(

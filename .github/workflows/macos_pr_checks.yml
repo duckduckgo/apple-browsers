@@ -348,12 +348,36 @@ jobs:
           fi
         fi
 
+    - name: Process unit test results
+      if: always()
+      uses: ./.github/actions/process-test-results
+      with:
+        working-directory: macOS
+        junit-path: ${{ matrix.flavor }}-unittests.xml
+        log-path: ${{ matrix.flavor }}-unittests-xcodebuild.log
+        xcresult-glob: ${{ matrix.flavor }}-unittests.xcresult
+        title: macOS ${{ matrix.flavor }} Unit Tests
+        test-outcome: ${{ steps.run-unit-tests.outcome }}
+
+    - name: Process integration test results
+      if: always()
+      uses: ./.github/actions/process-test-results
+      with:
+        working-directory: macOS
+        junit-path: ${{ matrix.flavor }}-integrationtests.xml
+        log-path: ${{ matrix.flavor }}-integrationtests-xcodebuild.log
+        xcresult-glob: ${{ matrix.flavor }}-integrationtests.xcresult
+        title: macOS ${{ matrix.flavor }} Integration Tests
+        test-outcome: ${{ steps.run-integration-tests.outcome }}
+
     - name: Upload JUnit XML as artifact
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: macos-${{ matrix.flavor }}-unittests.xml
-        path: macOS/${{ matrix.flavor }}*.xml
+        path: |
+          macOS/${{ matrix.flavor }}*.xml
+          macOS/${{ matrix.flavor }}*-crash-details.json
         retention-days: 7
 
     - name: Publish unit tests report
@@ -363,6 +387,7 @@ jobs:
         check_name: "Test Report: ${{ matrix.flavor }}"
         report_paths: 'macOS/${{ matrix.flavor }}*.xml'
         check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+        job_summary: 'false'
 
     - name: Update Asana with failed unit tests
       if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')

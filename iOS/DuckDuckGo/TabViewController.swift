@@ -2573,7 +2573,10 @@ extension TabViewController: WKNavigationDelegate {
                                 completion: @escaping (WKNavigationActionPolicy) -> Void) {
         httpsUpgradeTask = Task {
             let result = await PrivacyFeatures.httpsUpgrade.upgrade(url: url)
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled else {
+                completion(.cancel)
+                return
+            }
             switch result {
             case let .success(upgradedUrl):
                 if lastUpgradedURL != upgradedUrl {

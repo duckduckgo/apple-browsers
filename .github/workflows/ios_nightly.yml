@@ -62,6 +62,7 @@ jobs:
         ios-version: ${{ steps.select-simulator.outputs.ios-version }}
 
     - name: Build and test
+      id: run-unit-tests
       run: |
         set -o pipefail && xcodebuild test \
           -scheme "iOS ATB UI Tests" \
@@ -91,11 +92,34 @@ jobs:
           ${{ steps.collect-logs.outputs.log-path }}
         retention-days: 7
 
+    - name: Upload crash reports
+      uses: actions/upload-artifact@v4
+      if: failure() || cancelled()
+      with:
+        name: ios-nightly-crash-reports
+        path: |
+          ~/Library/Logs/DiagnosticReports/*.ips
+          ~/Library/Logs/DiagnosticReports/*.crash
+        if-no-files-found: ignore
+        retention-days: 7
+
+    - name: Process test results
+      if: always()
+      uses: ./.github/actions/process-test-results
+      with:
+        working-directory: iOS
+        junit-path: unittests.xml
+        log-path: xcodebuild.log
+        title: iOS Nightly
+        test-outcome: ${{ steps.run-unit-tests.outcome }}
+
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v3
+      if: always()
       with:
         report_paths: iOS/unittests.xml
         check_retries: true
+        job_summary: 'false'
 
   notify-failure:
     name: Notify on failure

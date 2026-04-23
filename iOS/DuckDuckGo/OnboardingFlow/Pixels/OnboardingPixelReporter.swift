@@ -75,6 +75,7 @@ protocol OnboardingIntroImpressionReporting {
 }
 
 protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
+    func measureContinueOnboardingCTAAction()
     func measureSkipOnboardingCTAAction()
     func measureConfirmSkipOnboardingCTAAction()
     func measureResumeOnboardingCTAAction()
@@ -94,6 +95,8 @@ protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureDuckAIQueryExperimentChooseSearchOnly()
     func measureDuckAIQueryExperimentChooseAIChat()
     func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource)
+    func measureSkipOnboardingScreenImpression()
+    func measureSetDefaultBrowserSkipped()
 }
 
 
@@ -106,8 +109,17 @@ protocol OnboardingCustomInteractionPixelReporting {
 
 protocol OnboardingDaxDialogsReporting {
     func measureScreenImpression(event: Pixel.Event)
+    func measureSharedOnboardingScreenImpression(_ event: OnboardingSharedPixelEvent)
+    func measureSearchResultsDialogGotItAction()
+    func measureTrackersDialogGotItAction()
+    func measureSubscriptionPromoDialogShown()
+    func measureSubscriptionPromoEngageCTAAction()
+    func measureFireButtonOnboardingDeleteConfirmed()
+    func measureFireButtonOnboardingDismissButtonTapped()
+    func measureTrySearchDialogSuggestedSearchTapped()
     func measureTrySearchDialogNewTabDismissButtonTapped()
     func measureSearchResultDialogDismissButtonTapped()
+    func measureTryVisitSiteDialogSuggestedSiteTapped()
     func measureTryVisitSiteDialogNewTabDismissButtonTapped()
     func measureTryVisitSiteDialogDismissButtonTapped()
     func measureTrackersDialogDismissButtonTapped()
@@ -251,6 +263,10 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
         }
     }
 
+    func measureContinueOnboardingCTAAction() {
+        sharedPixelHandler.fire(.welcome(.clicked(.engage)))
+    }
+
     func measureSkipOnboardingCTAAction() {
         fire(event: .onboardingIntroSkipOnboardingCTAPressed, unique: false)
         sharedPixelHandler.fire(.welcome(.clicked(.dismiss)))
@@ -272,10 +288,12 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
     func measureAutoRestoreOnboardingRestoreCTAAction() {
         fire(event: .syncAutoRestoreOnboardingRestoreTappedUnique, unique: true)
+        sharedPixelHandler.fire(.welcome(.clicked(.engage)))
     }
 
     func measureAutoRestoreOnboardingSkipCTAAction() {
         fire(event: .syncAutoRestoreOnboardingSkipTappedUnique, unique: true)
+        sharedPixelHandler.fire(.welcome(.clicked(.dismiss)))
     }
 
     func measureOnboardingIntroImpression() {
@@ -338,6 +356,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     func measureDuckAIQueryExperimentSelectionImpression() {
         fire(event: .onboardingIntroDuckAIExperimentToggleImpressionUnique, unique: true)
         fireExperimentScreenImpressionPixel(value: .toggleScreen)
+        sharedPixelHandler.fire(.search(.shown))
     }
 
     func measureDuckAIQueryExperimentChooseSearchOnly() {
@@ -367,6 +386,21 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
                 value: promptSource.rawValue
             )
         }
+
+        switch promptSource {
+        case .custom:
+            sharedPixelHandler.fire(.search(.clicked(.custom)))
+        case .option1, .option2, .option3:
+            sharedPixelHandler.fire(.search(.clicked(.suggested)))
+        }
+    }
+
+    func measureSkipOnboardingScreenImpression() {
+        sharedPixelHandler.fire(.skipOnboarding(.shown))
+    }
+
+    func measureSetDefaultBrowserSkipped() {
+        sharedPixelHandler.fire(.setDefault(.clicked(.dismiss)))
     }
 
 }
@@ -407,12 +441,44 @@ extension OnboardingPixelReporter: OnboardingCustomInteractionPixelReporting {
 // MARK: - OnboardingPixelReporter + Screen Impression
 
 extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
-    
+
     func measureScreenImpression(event: Pixel.Event) {
         fire(event: event, unique: true)
         if case .onboardingDuckAIExperimentFireDialogShownUnique = event {
             fireExperimentScreenImpressionPixel(value: .fireDialog)
         }
+    }
+
+    func measureSharedOnboardingScreenImpression(_ event: OnboardingSharedPixelEvent) {
+        sharedPixelHandler.fire(event)
+    }
+
+    func measureSearchResultsDialogGotItAction() {
+        sharedPixelHandler.fire(.searchResults(.clicked(.engage)))
+    }
+
+    func measureTrackersDialogGotItAction() {
+        sharedPixelHandler.fire(.trackersBlocked(.clicked(.engage)))
+    }
+
+    func measureSubscriptionPromoDialogShown() {
+        sharedPixelHandler.fire(.subscriptionPromo(.shown))
+    }
+
+    func measureSubscriptionPromoEngageCTAAction() {
+        sharedPixelHandler.fire(.subscriptionPromo(.clicked(.engage)))
+    }
+
+    func measureFireButtonOnboardingDeleteConfirmed() {
+        sharedPixelHandler.fire(.fireButton(.clicked(.engage)))
+    }
+
+    func measureFireButtonOnboardingDismissButtonTapped() {
+        sharedPixelHandler.fire(.fireButton(.clicked(.dismiss)))
+    }
+
+    func measureTrySearchDialogSuggestedSearchTapped() {
+        sharedPixelHandler.fire(.search(.clicked(.suggested)))
     }
 
     func measureTrySearchDialogNewTabDismissButtonTapped() {
@@ -423,6 +489,10 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
     func measureSearchResultDialogDismissButtonTapped() {
         fire(event: .onboardingSearchResultDialogDismissButtonTapped, unique: false)
         sharedPixelHandler.fire(.searchResults(.clicked(.dismiss)))
+    }
+
+    func measureTryVisitSiteDialogSuggestedSiteTapped() {
+        sharedPixelHandler.fire(.visitSite(.clicked(.suggested)))
     }
 
     func measureTryVisitSiteDialogNewTabDismissButtonTapped() {
@@ -448,6 +518,7 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
     func measureDuckAIExperimentFireButtonCTAAction() {
         fire(event: .onboardingDuckAIExperimentFireButtonCTAPressed, unique: false)
         fireExperimentCTAPressedPixel(value: .fireButtonPressed)
+        sharedPixelHandler.fire(.fireButton(.clicked(.engage)))
     }
 
     func measureDuckAIExperimentFinalDialogImpression() {
@@ -499,7 +570,6 @@ extension OnboardingPixelReporter: OnboardingAddToDockReporting {
     
     func measureAddToDockTutorialDismissCTAAction() {
         fire(event: .onboardingAddToDockTutorialDismissCTATapped, unique: false)
-        sharedPixelHandler.fire(.addToDock(.clicked(.dismiss)))
     }
 
 }

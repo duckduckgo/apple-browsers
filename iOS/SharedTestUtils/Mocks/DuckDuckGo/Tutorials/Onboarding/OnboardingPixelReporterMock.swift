@@ -51,6 +51,8 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var secondSiteVisitCounter = 0
     private(set) var didCallMeasureScreenImpressionCalled = false
     private(set) var capturedScreenImpression: Pixel.Event?
+    private(set) var didCallMeasureSharedOnboardingScreenImpression = false
+    private(set) var capturedSharedOnboardingScreenImpression: OnboardingSharedPixelEvent?
     private(set) var didCallMeasurePrivacyDashboardOpenedForFirstTime = false
     private(set) var didCallMeasureEndOfJourneyDialogDismiss = false
 
@@ -80,13 +82,36 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureEndOfJourneyDialogNewTabDismissButtonTapped = false
     private(set) var didCallMeasureEndOfJourneyDialogDismissButtonTapped = false
     private(set) var didCallMeasureSubscriptionPromoDialogNewTabDismissButtonTapped = false
+    private(set) var didCallMeasureContinueOnboardingCTAAction = false
+    private(set) var didCallMeasureSkipOnboardingScreenImpression = false
+    private(set) var didCallMeasureSetDefaultBrowserSkipped = false
+    private(set) var didCallMeasureTrySearchDialogSuggestedSearchTapped = false
+    private(set) var didCallMeasureTryVisitSiteDialogSuggestedSiteTapped = false
+    private(set) var didCallMeasureSearchResultsDialogGotItAction = false
+    private(set) var didCallMeasureTrackersDialogGotItAction = false
+    private(set) var didCallMeasureSubscriptionPromoDialogShown = false
+    private(set) var didCallMeasureSubscriptionPromoEngageCTAAction = false
+    private(set) var didCallMeasureFireButtonOnboardingDeleteConfirmed = false
+    private(set) var didCallMeasureFireButtonOnboardingDismissButtonTapped = false
 
     func measureOnboardingIntroImpression() {
         didCallMeasureOnboardingIntroImpression = true
     }
 
+    func measureContinueOnboardingCTAAction() {
+        didCallMeasureContinueOnboardingCTAAction = true
+    }
+
     func measureSkipOnboardingCTAAction() {
         didCallMeasureSkipOnboardingCTAAction = true
+    }
+
+    func measureSkipOnboardingScreenImpression() {
+        didCallMeasureSkipOnboardingScreenImpression = true
+    }
+
+    func measureSetDefaultBrowserSkipped() {
+        didCallMeasureSetDefaultBrowserSkipped = true
     }
 
     func measureConfirmSkipOnboardingCTAAction() {
@@ -164,6 +189,35 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         capturedScreenImpression = event
     }
 
+    func measureSharedOnboardingScreenImpression(_ event: OnboardingSharedPixelEvent) {
+        didCallMeasureSharedOnboardingScreenImpression = true
+        capturedSharedOnboardingScreenImpression = event
+    }
+
+    func measureSearchResultsDialogGotItAction() {
+        didCallMeasureSearchResultsDialogGotItAction = true
+    }
+
+    func measureTrackersDialogGotItAction() {
+        didCallMeasureTrackersDialogGotItAction = true
+    }
+
+    func measureSubscriptionPromoDialogShown() {
+        didCallMeasureSubscriptionPromoDialogShown = true
+    }
+
+    func measureSubscriptionPromoEngageCTAAction() {
+        didCallMeasureSubscriptionPromoEngageCTAAction = true
+    }
+
+    func measureFireButtonOnboardingDeleteConfirmed() {
+        didCallMeasureFireButtonOnboardingDeleteConfirmed = true
+    }
+
+    func measureFireButtonOnboardingDismissButtonTapped() {
+        didCallMeasureFireButtonOnboardingDismissButtonTapped = true
+    }
+
     func measurePrivacyDashboardOpenedForFirstTime() {
         didCallMeasurePrivacyDashboardOpenedForFirstTime = true
     }
@@ -214,12 +268,20 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCaptureDuckAIQueryExperimentSelection = selection
     }
 
+    func measureTrySearchDialogSuggestedSearchTapped() {
+        didCallMeasureTrySearchDialogSuggestedSearchTapped = true
+    }
+
     func measureTrySearchDialogNewTabDismissButtonTapped() {
         didCallMeasureTrySearchDialogNewTabDismissButtonTapped = true
     }
 
     func measureSearchResultDialogDismissButtonTapped() {
         didCallMeasureSearchResultDialogDismissButtonTapped = true
+    }
+
+    func measureTryVisitSiteDialogSuggestedSiteTapped() {
+        didCallMeasureTryVisitSiteDialogSuggestedSiteTapped = true
     }
 
     func measureTryVisitSiteDialogNewTabDismissButtonTapped() {

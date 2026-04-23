@@ -91,13 +91,7 @@ struct WideEventFeatureFlagAdapter: WideEventFeatureFlagProviding {
     }
 
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-#if DEBUG || ALPHA || EXPERIMENTAL
-            return false
-#else
-            return featureFlagger.isFeatureOn(.wideEventPostEndpoint)
-#endif
-        }
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }

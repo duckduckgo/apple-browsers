@@ -73,6 +73,8 @@ class TabSwitcherPageViewController: UIViewController {
     private var trackerInfoModel: InfoPanelView.Model?
     private var fireModeEmptyStateHostingController: UIHostingController<FireModeEmptyStateView>?
 
+    var canUpdateCollection = true
+
     var selectedIndexPaths: [IndexPath] {
         collectionView.indexPathsForSelectedItems ?? []
     }
@@ -165,7 +167,8 @@ class TabSwitcherPageViewController: UIViewController {
             .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.reloadData()
+                guard let self, self.canUpdateCollection else { return }
+                self.reloadData()
             }
     }
 

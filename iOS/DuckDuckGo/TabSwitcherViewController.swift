@@ -32,6 +32,7 @@ import DesignResourcesKitIcons
 import BrowserServicesKit
 import PrivacyConfig
 import AIChat
+import TipKit
 import UIComponents
 
 class TabSwitcherViewController: UIViewController {
@@ -92,7 +93,7 @@ class TabSwitcherViewController: UIViewController {
 
     lazy var borderView = StyledTopBottomBorderView()
 
-    @IBOutlet weak var titleBarView: UINavigationBar!
+    let titleBarView = TabSwitcherTitleBarView()
     @IBOutlet weak var toolbar: UIToolbar!
 
     private(set) var pagingScrollView: UIScrollView!
@@ -130,7 +131,13 @@ class TabSwitcherViewController: UIViewController {
 
     let tabSwitcherSettings: TabSwitcherSettings
     var isProcessingUpdates = false
-    private var canUpdateCollection = true
+
+    private var canUpdateCollection = true {
+        didSet {
+            normalPageController?.canUpdateCollection = canUpdateCollection
+            firePageController?.canUpdateCollection = canUpdateCollection
+        }
+    }
 
     let favicons: FaviconManaging
 
@@ -169,8 +176,11 @@ class TabSwitcherViewController: UIViewController {
     private let pickerItems: [ImageSegmentedPickerItem]
     private let tabCountModel: TabCountModel
     private(set) var selectedBrowsingMode: BrowsingMode
-    private(set) var segmentedPickerHostingController: UIHostingController<TabSwitcherPickerWrapper>?
+    private(set) var segmentedPickerHostingController: UIHostingController<ImageSegmentedPickerView>?
     private var pickerSelectionCancellable: AnyCancellable?
+    private var fireTabsTipTask: Task<Void, Never>?
+    var fireModePromotionsCoordinator: FireModePromotionCoordinating?
+    var shouldForceShowFireTabsTip = false
     private var fireModeCapability: FireModeCapable {
         FireModeCapability.create()
     }
@@ -228,38 +238,70 @@ class TabSwitcherViewController: UIViewController {
     required init?(coder: NSCoder) {
         fatalError("Not implemented")
     }
-
-    fileprivate func createTitleBar() {
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithTransparentBackground()
-        titleBarView.standardAppearance = appearance
-        titleBarView.scrollEdgeAppearance = appearance
-
-        let heightConstraint = titleBarView.heightAnchor.constraint(greaterThanOrEqualToConstant: 44)
-        heightConstraint.priority = .required - 1
-        heightConstraint.isActive = true
-    }
     
     private func setupModeToggle() {
         guard fireModeCapability.isFireModeEnabled else {
             return
         }
-        let wrapper = TabSwitcherPickerWrapper(viewModel: pickerViewModel)
-        let hostingController = UIHostingController(rootView: wrapper)
+        let pickerView = ImageSegmentedPickerView(viewModel: pickerViewModel)
+        let hostingController = UIHostingController(rootView: pickerView)
         hostingController.view.backgroundColor = .clear
         segmentedPickerHostingController = hostingController
 
         addChild(hostingController)
         hostingController.didMove(toParent: self)
 
-        hostingController.view.frame = CGRect(x: 0, y: 0, width: Constants.modePickerWidth, height: 44)
-        titleBarView.topItem?.titleView = hostingController.view
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            hostingController.view.widthAnchor.constraint(equalToConstant: Constants.modePickerWidth),
+        ])
+        titleBarView.setCenterView(hostingController.view)
 
         pickerSelectionCancellable = pickerViewModel.$selectedItem
             .receive(on: DispatchQueue.main)
             .sink { [weak self] selectedItem in
                 self?.modeToggleSelectionChanged(selectedItem)
             }
+    }
+
+    // MARK: - Fire Tabs Tip
+
+    func showFireTabsTipIfNeeded() {
+        guard #available(iOS 17.0, *) else { return }
+        guard fireModeCapability.isFireModeEnabled else { return }
+        guard selectedBrowsingMode != .fire else { return }
+        guard let sourceView = segmentedPickerHostingController?.view else { return }
+
+        fireTabsTipTask?.cancel()
+
+        let tip = FireTabsTip()
+
+        if shouldForceShowFireTabsTip {
+            shouldForceShowFireTabsTip = false
+            let popoverController = TipUIPopoverViewController(tip, sourceItem: sourceView)
+            popoverController.popoverPresentationController?.permittedArrowDirections = [.up, .down]
+            present(popoverController, animated: true)
+            return
+        }
+
+        if fireModePromotionsCoordinator?.isTabSwitcherTipExpired == true {
+            tip.invalidate(reason: .displayCountExceeded)
+            return
+        }
+
+        fireTabsTipTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await shouldDisplay in tip.shouldDisplayUpdates {
+                if shouldDisplay {
+                    self.fireModePromotionsCoordinator?.markTabSwitcherTipShown()
+                    let popoverController = TipUIPopoverViewController(tip, sourceItem: sourceView)
+                    popoverController.popoverPresentationController?.permittedArrowDirections = [.up, .down]
+                    self.present(popoverController, animated: true)
+                } else if let tipVC = self.presentedViewController as? TipUIPopoverViewController {
+                    tipVC.dismiss(animated: true)
+                }
+            }
+        }
     }
 
     private func modeToggleSelectionChanged(_ selectedItem: ImageSegmentedPickerItem) {
@@ -277,6 +319,10 @@ class TabSwitcherViewController: UIViewController {
         syncPagingScrollViewToCurrentMode(animated: true)
         scrollToInitialTab()
         updateUIForSelectionMode()
+
+        if newMode == .fire {
+            fireModePromotionsCoordinator?.markFireModeVisited()
+        }
     }
 
     private func activateLayoutConstraintsBasedOnBarPosition() {
@@ -294,26 +340,33 @@ class TabSwitcherViewController: UIViewController {
         }
 
         // Changing this?  Best change MainView too
-        let topOffset = isiOS26 ? 4.0 : -6.0
-        let bottomOffset = 8.0
-        let navHPadding = isiOS26 ? -6.0 : -2.0
         let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
+
+        // On iOS 26 iPad, use the margins layout guide to avoid the native window ornaments
+        // (traffic-light buttons). Mirrors the approach in MainView.constrainNavigationBarContainer()
+        // and MainView.constrainTabBarContainer().
+        let topGuide: UILayoutGuide
+        if #available(iOS 26, *), UIDevice.current.userInterfaceIdiom == .pad {
+            topGuide = view.layoutGuide(for: .margins(cornerAdaptation: .vertical))
+        } else {
+            topGuide = view.safeAreaLayoutGuide
+        }
 
         // The constants here are to force the ai button to align between the tab switcher and this view
         NSLayoutConstraint.activate([
-            titleBarView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: navHPadding),
-            titleBarView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -navHPadding),
-            isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor, constant: topOffset) : nil,
-            !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: bottomOffset) : nil,
+            titleBarView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            titleBarView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor) : nil,
+            !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: topGuide.topAnchor) : nil,
 
-            pagingScrollView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
+            pagingScrollView.topAnchor.constraint(equalTo: isBottomBar ? topGuide.topAnchor : titleBarView.bottomAnchor),
             pagingScrollView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             pagingScrollView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 
             interfaceMode.isLarge ? pagingScrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor) :
                 pagingScrollView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
 
-            borderView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
+            borderView.topAnchor.constraint(equalTo: isBottomBar ? topGuide.topAnchor : titleBarView.bottomAnchor),
             borderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             borderView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
@@ -351,6 +404,7 @@ class TabSwitcherViewController: UIViewController {
         toolbar.standardAppearance = toolbarAppearance
         toolbar.compactAppearance = toolbarAppearance
         borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        titleBarView.updateForAddressBarPosition(isBottom: appSettings.currentAddressBarPosition.isBottom)
         // On large ipad view don't show the bottom divider
         borderView.isBottomVisible = !interfaceMode.isLarge
         activateLayoutConstraintsBasedOnBarPosition()
@@ -359,7 +413,6 @@ class TabSwitcherViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        createTitleBar()
         setupModeToggle()
         setupPagingScrollView()
 
@@ -472,6 +525,16 @@ class TabSwitcherViewController: UIViewController {
             self?.addNewTab()
         }
 
+        barsHandler.onNewFireTabTapped = { [weak self] in
+            self?.addNewFireTab()
+        }
+
+        barsHandler.onNewNormalTabTapped = { [weak self] in
+            self?.addNewNormalTab()
+        }
+
+        barsHandler.configurePlusButtonLongPressMenu(isFireModeEnabled: fireModeCapability.isFireModeEnabled)
+
         barsHandler.onFireButtonTapped = { [weak self] in
             self?.burn(sender: self!.barsHandler.fireButton)
         }
@@ -518,6 +581,7 @@ class TabSwitcherViewController: UIViewController {
         super.viewDidAppear(animated)
         productSurfaceTelemetry.tabManagerUsed()
         showFireButtonPulseIfNeeded()
+        showFireTabsTipIfNeeded()
     }
 
     private func showFireButtonPulseIfNeeded() {
@@ -580,7 +644,7 @@ class TabSwitcherViewController: UIViewController {
         // title is always required.
         let tabsCountTitle = (fireModeEnabled && !isEditing) ? nil : UserText.numberOfTabs(tabsModel.count)
         let title = selectedTabs.isEmpty ? tabsCountTitle : UserText.numberOfSelectedTabs(withCount: selectedTabs.count)
-        titleBarView.topItem?.title = title
+        titleBarView.titleLabel.text = title
         tabCountModel.count = tabManager.normalTabsModel.count
     }
 
@@ -624,6 +688,28 @@ class TabSwitcherViewController: UIViewController {
         // to present on top of MainVC instead of TabSwitcher.
         // If these calls are switched it'll be immediately dismissed along with this controller.
         delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
+    }
+
+    func addNewFireTab() {
+        guard !isProcessingUpdates else { return }
+        canUpdateCollection = false
+
+        Pixel.fire(pixel: .tabSwitcherNewTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: BrowsingMode.fire.pixelParamValue
+        ])
+        dismissIfPossible(forceDismissOnEmpty: true)
+        delegate.tabSwitcherDidRequestNewFireTab(tabSwitcher: self)
+    }
+
+    func addNewNormalTab() {
+        guard !isProcessingUpdates else { return }
+        canUpdateCollection = false
+
+        Pixel.fire(pixel: .tabSwitcherNewTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: BrowsingMode.normal.pixelParamValue
+        ])
+        dismissIfPossible(forceDismissOnEmpty: true)
+        delegate.tabSwitcherDidRequestNewNormalTab(tabSwitcher: self)
     }
     
     func addNewAIChatTab() {
@@ -690,6 +776,15 @@ class TabSwitcherViewController: UIViewController {
     }
 
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
+        // When a presented child (e.g. TipKit popover) is being dismissed, skip
+        // tab-switcher teardown — only forward to super so the child is removed.
+        if presentedViewController != nil {
+            super.dismiss(animated: animated, completion: completion)
+            return
+        }
+
+        fireTabsTipTask?.cancel()
+        fireTabsTipTask = nil
         canUpdateCollection = false
         if let firePC = firePageController {
             tabManager.tabsModel(for: .fire).tabs.forEach { $0.removeObserver(firePC) }
@@ -722,9 +817,6 @@ extension TabSwitcherViewController {
         refreshDisplayModeButton()
         
         titleBarView.tintColor = theme.barTintColor
-        if #available(iOS 26.0, *) {
-            titleBarView.backItem?.rightBarButtonItem?.hidesSharedBackground = true
-        }
 
         toolbar.barTintColor = theme.barBackgroundColor
         toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
@@ -834,15 +926,6 @@ extension TabSwitcherViewController: TabSwitcherPageDelegate {
 
     func pageCellDidEndDrag(_ page: TabSwitcherPageViewController) {
         pagingScrollView.isScrollEnabled = firePageController != nil && !isEditing
-    }
-}
-
-struct TabSwitcherPickerWrapper: View {
-    @ObservedObject var viewModel: ImageSegmentedPickerViewModel
-
-    var body: some View {
-        ImageSegmentedPickerView(viewModel: viewModel)
-            .frame(width: TabSwitcherViewController.Constants.modePickerWidth)
     }
 }
 

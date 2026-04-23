@@ -69,7 +69,7 @@ class SwitchBarViewController: UIViewController {
     private let pickerItems = [
         ImageSegmentedPickerItem(
             text: UserText.searchInputToggleSearchButtonTitle,
-            selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearchGradientColor),
+            selectedImage: Image(uiImage: DesignSystemImages.Color.Size16.searchFindToggle),
             unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearch)
         ),
         ImageSegmentedPickerItem(

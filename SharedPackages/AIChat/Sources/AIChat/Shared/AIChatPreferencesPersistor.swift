@@ -27,6 +27,8 @@ public protocol AIChatPreferencesPersisting {
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { get }
     /// The short display name of the last selected model, used to show the button before models are fetched.
     var selectedModelShortName: String? { get set }
+    /// The last selected reasoning effort (e.g. "none", "minimal", "low", "medium").
+    var selectedReasoningEffort: String? { get set }
 }
 
 /// Reference type so that a single instance can be shared across components (e.g. the native address-bar
@@ -36,6 +38,7 @@ public final class AIChatPreferencesPersistor: AIChatPreferencesPersisting {
     enum Key: String {
         case selectedModelId = "aichat.omnibar.selected-model-id"
         case selectedModelShortName = "aichat.omnibar.selected-model-short-name"
+        case selectedReasoningEffort = "aichat.omnibar.selected-reasoning-effort"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -70,6 +73,17 @@ public final class AIChatPreferencesPersistor: AIChatPreferencesPersisting {
                 try? keyValueStore.set(value, forKey: Key.selectedModelShortName.rawValue)
             } else {
                 try? keyValueStore.removeObject(forKey: Key.selectedModelShortName.rawValue)
+            }
+        }
+    }
+
+    public var selectedReasoningEffort: String? {
+        get { try? keyValueStore.object(forKey: Key.selectedReasoningEffort.rawValue) as? String }
+        set {
+            if let value = newValue {
+                try? keyValueStore.set(value, forKey: Key.selectedReasoningEffort.rawValue)
+            } else {
+                try? keyValueStore.removeObject(forKey: Key.selectedReasoningEffort.rawValue)
             }
         }
     }

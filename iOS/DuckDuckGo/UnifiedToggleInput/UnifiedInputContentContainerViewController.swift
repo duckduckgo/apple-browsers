@@ -126,6 +126,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private(set) var daxLogoManager: DaxLogoManager
+    private var isDaxLogoForcedHidden = false
     private var notificationCancellable: AnyCancellable?
 
     private weak var contentAnimator: UIViewPropertyAnimator?
@@ -196,6 +197,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func setLogoHidden(_ hidden: Bool) {
+        isDaxLogoForcedHidden = hidden
         daxLogoManager.setForcedHidden(hidden)
     }
 
@@ -207,6 +209,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func rebuildDaxLogoManager(isFireTab: Bool) {
         daxLogoManager.tearDown()
         daxLogoManager = DaxLogoManager(isFireTab: isFireTab)
+        // Replay cached forcedHidden so rebuilds don't silently un-hide the dax logo / fire empty state.
+        daxLogoManager.setForcedHidden(isDaxLogoForcedHidden)
         guard isViewLoaded else { return }
         installDaxLogoView()
         applyRequestedContentInset()

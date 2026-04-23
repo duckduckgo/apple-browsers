@@ -2015,7 +2015,7 @@ extension NavigationBarViewController: NSMenuDelegate {
         button.isBordered = false
         button.imagePosition = .imageOnly
         button.imageScaling = .scaleProportionallyDown
-        button.toolTip = "Send Internal Feedback"
+        button.toolTip = UserText.feedbackShortcutTooltip
         button.target = self
         button.action = #selector(quickFeedbackButtonClicked)
 

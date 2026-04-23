@@ -24,7 +24,7 @@ import XCTest
 @MainActor
 final class QuickFeedbackTipControllerTests: XCTestCase {
 
-    private var storage: any KeyedStoring<QuickFeedbackTipSettings>!
+    private var storage: (any KeyedStoring<QuickFeedbackTipSettings>)!
 
     override func setUp() {
         super.setUp()

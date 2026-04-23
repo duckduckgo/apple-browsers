@@ -694,8 +694,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         guard duckAIChromeDividerShowsFullHeight != showFullHeight else { return }
         duckAIChromeDividerShowsFullHeight = showFullHeight
 
-        duckAIChromeDividerFullConstraint?.setActive(showFullHeight)
-        duckAIChromeDividerInsetConstraint?.setActive(!showFullHeight)
+        // Always deactivate the outgoing constraint before activating the incoming one so that
+        // both height constraints on the divider are never simultaneously active.
+        if showFullHeight {
+            duckAIChromeDividerInsetConstraint?.setActive(false)
+            duckAIChromeDividerFullConstraint?.setActive(true)
+        } else {
+            duckAIChromeDividerFullConstraint?.setActive(false)
+            duckAIChromeDividerInsetConstraint?.setActive(true)
+        }
 
         let colorsProvider = theme.colorsProvider
         duckAIChromeDivider?.backgroundColor = showFullHeight ?

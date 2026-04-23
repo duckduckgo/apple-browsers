@@ -3240,7 +3240,6 @@ extension TabViewController: UserContentControllerDelegate {
                                updateEvent: ContentBlockerRulesManager.UpdateEvent) {
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 
-        userScripts.debugScript.instrumentation = instrumentation
         userScripts.trackerProtectionSubfeature.delegate = self
         userScripts.autofillUserScript.emailDelegate = emailManager
         userScripts.autofillUserScript.vaultDelegate = vaultManager

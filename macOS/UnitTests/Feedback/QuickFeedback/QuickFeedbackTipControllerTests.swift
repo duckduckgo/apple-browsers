@@ -16,33 +16,32 @@
 //  limitations under the License.
 //
 
+import Persistence
+import PersistenceTestingUtils
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
 final class QuickFeedbackTipControllerTests: XCTestCase {
 
-    private var defaults: UserDefaults!
+    private var storage: any KeyedStoring<QuickFeedbackTipSettings>!
 
     override func setUp() {
         super.setUp()
-        defaults = UserDefaults(suiteName: "QuickFeedbackTipControllerTests")!
-        defaults.removePersistentDomain(forName: "QuickFeedbackTipControllerTests")
+        storage = InMemoryKeyValueStore().keyedStoring()
     }
 
     override func tearDown() {
-        defaults.removePersistentDomain(forName: "QuickFeedbackTipControllerTests")
-        defaults = nil
+        storage = nil
         super.tearDown()
     }
 
     // MARK: - First session
 
     func testWhenNeverShownBeforeThenTipIsScheduled() {
-        XCTAssertEqual(defaults.double(forKey: "feedbackTip.lastShown"), 0,
-                       "Fresh defaults should have no lastShown timestamp")
+        XCTAssertNil(storage.lastShown, "Fresh storage should have no lastShown timestamp")
 
-        let controller = QuickFeedbackTipController(defaults: defaults)
+        let controller = QuickFeedbackTipController(storage: storage)
         let anchor = NSView(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
 
         autoreleasepool {
@@ -55,18 +54,16 @@ final class QuickFeedbackTipControllerTests: XCTestCase {
             controller.scheduleIfNeeded(anchoredTo: anchor)
         }
 
-        // lastShown is 0 (never shown), so shouldShow returns true and tip is scheduled.
-        // The timestamp is not updated synchronously — it updates in showTip after the delay.
-        XCTAssertEqual(defaults.double(forKey: "feedbackTip.lastShown"), 0,
-                       "Timestamp should not change synchronously when scheduling is deferred")
+        XCTAssertNil(storage.lastShown,
+                     "Timestamp should not change synchronously when scheduling is deferred")
     }
 
     // MARK: - Cooldown
 
     func testWhenShownRecentlyThenScheduleIfNeededWillNotSchedule() {
-        defaults.set(Date().timeIntervalSince1970 - 1, forKey: "feedbackTip.lastShown")
+        storage.lastShown = Date().timeIntervalSince1970 - 1
 
-        let controller = QuickFeedbackTipController(defaults: defaults)
+        let controller = QuickFeedbackTipController(storage: storage)
         let anchor = NSView(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
 
         autoreleasepool {
@@ -79,16 +76,15 @@ final class QuickFeedbackTipControllerTests: XCTestCase {
             controller.scheduleIfNeeded(anchoredTo: anchor)
         }
 
-        let lastShown = defaults.double(forKey: "feedbackTip.lastShown")
+        let lastShown = storage.lastShown ?? 0
         XCTAssertGreaterThan(lastShown, 0, "lastShown should retain the prior value")
     }
 
     func testWhenCooldownExceededThenScheduleIfNeededDoesNotReturnEarly() {
-        // Set lastShown well beyond the cooldown interval (30s in DEBUG)
         let oldTimestamp = Date().timeIntervalSince1970 - 60
-        defaults.set(oldTimestamp, forKey: "feedbackTip.lastShown")
+        storage.lastShown = oldTimestamp
 
-        let controller = QuickFeedbackTipController(defaults: defaults)
+        let controller = QuickFeedbackTipController(storage: storage)
         let anchor = NSView(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
 
         autoreleasepool {
@@ -101,7 +97,7 @@ final class QuickFeedbackTipControllerTests: XCTestCase {
             controller.scheduleIfNeeded(anchoredTo: anchor)
         }
 
-        let currentTimestamp = defaults.double(forKey: "feedbackTip.lastShown")
+        let currentTimestamp = storage.lastShown ?? 0
         XCTAssertEqual(currentTimestamp, oldTimestamp, accuracy: 0.001,
                        "Timestamp should not change synchronously when scheduling is deferred")
     }
@@ -109,32 +105,32 @@ final class QuickFeedbackTipControllerTests: XCTestCase {
     // MARK: - dismissTip
 
     func testWhenDismissTipCalledThenPopoverIsClosed() {
-        let controller = QuickFeedbackTipController(defaults: defaults)
+        let controller = QuickFeedbackTipController(storage: storage)
 
         controller.dismissTip()
     }
 
     func testWhenRecordButtonClickCalledThenTipIsDismissed() {
-        let controller = QuickFeedbackTipController(defaults: defaults)
+        let controller = QuickFeedbackTipController(storage: storage)
 
         controller.recordButtonClick()
     }
 
-    func testWhenRecordButtonClickCalledThenButtonClickedIsPersistedInDefaults() {
-        let controller = QuickFeedbackTipController(defaults: defaults)
-        XCTAssertFalse(defaults.bool(forKey: "feedbackTip.buttonClicked"))
+    func testWhenRecordButtonClickCalledThenButtonClickedIsPersistedInStorage() {
+        let controller = QuickFeedbackTipController(storage: storage)
+        XCTAssertNil(storage.buttonClicked)
 
         controller.recordButtonClick()
 
-        XCTAssertTrue(defaults.bool(forKey: "feedbackTip.buttonClicked"))
+        XCTAssertEqual(storage.buttonClicked, true)
     }
 
     func testWhenButtonClickedAndPreClickIntervalExceededThenTipIsNotYetShown() {
         // 45s ago exceeds preClickInterval (30s DEBUG) but not postClickInterval (60s DEBUG)
-        defaults.set(Date().timeIntervalSince1970 - 45, forKey: "feedbackTip.lastShown")
-        defaults.set(true, forKey: "feedbackTip.buttonClicked")
+        storage.lastShown = Date().timeIntervalSince1970 - 45
+        storage.buttonClicked = true
 
-        let controller = QuickFeedbackTipController(defaults: defaults)
+        let controller = QuickFeedbackTipController(storage: storage)
         let anchor = NSView(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
 
         autoreleasepool {
@@ -147,7 +143,7 @@ final class QuickFeedbackTipControllerTests: XCTestCase {
             controller.scheduleIfNeeded(anchoredTo: anchor)
         }
 
-        let lastShown = defaults.double(forKey: "feedbackTip.lastShown")
+        let lastShown = storage.lastShown ?? 0
         XCTAssertLessThan(Date().timeIntervalSince1970 - lastShown, 50,
                           "lastShown should not have been updated — tip should not have been scheduled")
     }
@@ -155,10 +151,10 @@ final class QuickFeedbackTipControllerTests: XCTestCase {
     func testWhenButtonClickedAndPostClickIntervalExceededThenTipIsScheduled() {
         // 90s ago exceeds postClickInterval (60s DEBUG)
         let oldTimestamp = Date().timeIntervalSince1970 - 90
-        defaults.set(oldTimestamp, forKey: "feedbackTip.lastShown")
-        defaults.set(true, forKey: "feedbackTip.buttonClicked")
+        storage.lastShown = oldTimestamp
+        storage.buttonClicked = true
 
-        let controller = QuickFeedbackTipController(defaults: defaults)
+        let controller = QuickFeedbackTipController(storage: storage)
         let anchor = NSView(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
 
         autoreleasepool {
@@ -171,7 +167,7 @@ final class QuickFeedbackTipControllerTests: XCTestCase {
             controller.scheduleIfNeeded(anchoredTo: anchor)
         }
 
-        let currentTimestamp = defaults.double(forKey: "feedbackTip.lastShown")
+        let currentTimestamp = storage.lastShown ?? 0
         XCTAssertEqual(currentTimestamp, oldTimestamp, accuracy: 0.001,
                        "Timestamp should not change synchronously when scheduling is deferred")
     }

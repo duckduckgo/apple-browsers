@@ -16,17 +16,21 @@
 //  limitations under the License.
 //
 
-import AppKit
+import Common
 import Foundation
-import Metal
+import IOKit
 
 final class QuickFeedbackDiagnosticsCollector {
 
-    private weak var tabCountProvider: TabCountProviding?
+    private weak var tabAndWindowCountProvider: TabAndWindowCountProviding?
+    private let memoryUsageMonitor: MemoryUsageMonitoring
     private let launchDate: Date
 
-    init(tabCountProvider: TabCountProviding? = nil, launchDate: Date = Date()) {
-        self.tabCountProvider = tabCountProvider
+    init(tabAndWindowCountProvider: TabAndWindowCountProviding?,
+         memoryUsageMonitor: MemoryUsageMonitoring,
+         launchDate: Date) {
+        self.tabAndWindowCountProvider = tabAndWindowCountProvider
+        self.memoryUsageMonitor = memoryUsageMonitor
         self.launchDate = launchDate
     }
 
@@ -38,57 +42,95 @@ final class QuickFeedbackDiagnosticsCollector {
         let appVersionModel = AppVersionModel()
         lines.append("App Version: \(appVersionModel.versionLabelShort) (\(appVersionModel.distributionLabel))")
 
-        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-        lines.append("macOS: \(osVersion.majorVersion).\(osVersion.minorVersion).\(osVersion.patchVersion)")
+        lines.append("macOS: \(AppVersion.shared.osVersionMajorMinorPatch)")
 
-        #if arch(arm64)
-        lines.append("Architecture: Apple Silicon (arm64)")
-        #elseif arch(x86_64)
-        lines.append("Architecture: Intel (x86_64)")
-        #else
-        lines.append("Architecture: unknown")
-        #endif
+        lines.append("Architecture: \(compiledArchitecture)")
 
-        lines.append("GPU: \(gpuSummary())")
-        lines.append("Memory: \(memorySummary())")
-        lines.append("Disk: \(diskSummary())")
+        lines.append("GPU: \(gpuDevices)")
+        lines.append("Memory: \(memorySummary)")
+        lines.append("Disk: \(freeDiskSpace)")
 
-        if let provider = tabCountProvider {
+        if let provider = tabAndWindowCountProvider {
             lines.append("Tabs: \(provider.tabCount) tabs / \(provider.windowCount) windows")
         }
 
-        lines.append("Session: \(sessionLength())")
+        lines.append("Session: \(sessionLength)")
 
         return lines.joined(separator: "\n")
     }
 
     // MARK: - Private
 
-    private func gpuSummary() -> String {
-        let devices = MTLCopyAllDevices()
-        guard !devices.isEmpty else { return "unknown" }
-        return devices.map(\.name).joined(separator: ", ")
+    private var compiledArchitecture: String {
+        #if arch(arm64)
+        "arm64"
+        #elseif arch(x86_64)
+        "x86_64"
+        #else
+        "unknown"
+        #endif
     }
 
-    private func memorySummary() -> String {
-        let physicalGB = Double(ProcessInfo.processInfo.physicalMemory) / 1_073_741_824.0
+    /// Queries IOKit for GPU/display device model names.
+    private var gpuDevices: String {
+        var iterator: io_iterator_t = 0
+        let matchingDict = IOServiceMatching("IOPCIDevice")
 
-        var info = mach_task_basic_info()
-        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / MemoryLayout<natural_t>.size)
-        let result = withUnsafeMutablePointer(to: &info) {
-            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
-                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+        let mainPort: mach_port_t
+        if #available(macOS 12.0, *) {
+            mainPort = kIOMainPortDefault
+        } else {
+            mainPort = kIOMasterPortDefault
+        }
+
+        guard IOServiceGetMatchingServices(mainPort, matchingDict, &iterator) == KERN_SUCCESS else {
+            return "unknown"
+        }
+        defer { IOObjectRelease(iterator) }
+
+        var names = [String]()
+        var entry: io_registry_entry_t = IOIteratorNext(iterator)
+        while entry != 0 {
+            defer {
+                IOObjectRelease(entry)
+                entry = IOIteratorNext(iterator)
+            }
+
+            guard let classCode = IORegistryEntryCreateCFProperty(entry, "class-code" as CFString, kCFAllocatorDefault, 0)?
+                .takeRetainedValue() as? Data,
+                  classCode.count >= 3,
+                  classCode[2] == 0x03 else { continue }
+
+            if let modelData = IORegistryEntryCreateCFProperty(entry, "model" as CFString, kCFAllocatorDefault, 0)?
+                .takeRetainedValue() as? Data,
+               let name = String(data: modelData, encoding: .utf8)?.trimmingCharacters(in: .controlCharacters) {
+                names.append(name)
             }
         }
 
-        if result == KERN_SUCCESS {
-            let browserMB = info.resident_size / (1024 * 1024)
-            return String(format: "%llu MB browser, %.0f GB total", browserMB, physicalGB)
+        #if arch(arm64)
+        if names.isEmpty {
+            var size: size_t = 0
+            sysctlbyname("machdep.cpu.brand_string", nil, &size, nil, 0)
+            if size > 0 {
+                var buffer = [CChar](repeating: 0, count: size)
+                sysctlbyname("machdep.cpu.brand_string", &buffer, &size, nil, 0)
+                let chipName = String(cString: buffer)
+                names.append("\(chipName) (integrated)")
+            }
         }
-        return String(format: "%.0f GB total", physicalGB)
+        #endif
+
+        return names.isEmpty ? "unknown" : names.joined(separator: ", ")
     }
 
-    private func diskSummary() -> String {
+    private var memorySummary: String {
+        let report = memoryUsageMonitor.getCurrentMemoryUsage()
+        let physicalGB = Double(ProcessInfo.processInfo.physicalMemory) / 1_073_741_824.0
+        return "\(report.footprintMemoryString) browser, \(String(format: "%.0f", physicalGB)) GB total"
+    }
+
+    private var freeDiskSpace: String {
         guard let homeURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
               let values = try? homeURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
               let freeBytes = values.volumeAvailableCapacityForImportantUsage else {
@@ -98,16 +140,18 @@ final class QuickFeedbackDiagnosticsCollector {
         return "\(freeGB) GB free"
     }
 
-    private func sessionLength() -> String {
+    private var sessionLength: String {
         let uptime = Date().timeIntervalSince(launchDate)
         if uptime < 60 { return "under a minute" }
-        if uptime < 3600 { return "\(Int(uptime / 60)) minutes" }
-        if uptime < 86400 { return "\(Int(uptime / 3600)) hours" }
-        return "\(Int(uptime / 86400)) days"
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.day, .hour, .minute]
+        formatter.maximumUnitCount = 1
+        formatter.unitsStyle = .full
+        return formatter.string(from: uptime) ?? "unknown"
     }
 }
 
-protocol TabCountProviding: AnyObject {
+protocol TabAndWindowCountProviding: AnyObject {
     var tabCount: Int { get }
     var windowCount: Int { get }
 }

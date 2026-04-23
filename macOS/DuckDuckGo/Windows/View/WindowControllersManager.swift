@@ -679,7 +679,7 @@ extension WindowControllersManager: OnboardingNavigating {
     }
 }
 
-extension WindowControllersManager: TabCountProviding {
+extension WindowControllersManager: TabAndWindowCountProviding {
     var tabCount: Int {
         mainWindowControllers.reduce(0) { total, controller in
             total + controller.mainViewController.tabCollectionViewModel.allTabsCount

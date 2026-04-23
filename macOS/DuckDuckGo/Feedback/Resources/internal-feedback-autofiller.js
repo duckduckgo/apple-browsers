@@ -1,6 +1,8 @@
 var quickMode = %QUICK_MODE%;
 var diagnosticsText = '%DIAGNOSTICS%';
 var screenshotBase64 = '%SCREENSHOT_BASE64%';
+var osVersion = '%OS_VERSION%';
+var appVersion = '%APP_VERSION%';
 
 function openDropdown(label) {
     const dropdown = document.querySelector(`[aria-label^="${label}"]`);
@@ -391,8 +393,8 @@ function fillOutFormAfterNativeAppsSelected() {
 
             waitForElement('label', 'Which macOS version?')
                 .then(() => {
-                    setInputAfterLabel('label', 'Which macOS version?', '%OS_VERSION%');
-                    setInputAfterLabel('label', 'Which version of the DuckDuckGo Browser?', '%APP_VERSION%');
+                    setInputAfterLabel('label', 'Which macOS version?', osVersion);
+                    setInputAfterLabel('label', 'Which version of the DuckDuckGo Browser?', appVersion);
 
                     if (quickMode) {
                         setTimeout(hideIrrelevantFields, 50);
@@ -420,6 +422,19 @@ function handleNativeAppsDropdown() {
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 }
 
-waitForElement('h1', 'Internal Product Feedback Form')
-    .then(_ => handleNativeAppsDropdown())
-    .catch(_ => console.error('Internal Product Feedback Form is not loaded after 5s'));
+window.__ddgQuickFeedbackAutofill = function(data) {
+    quickMode = data.quickMode;
+    diagnosticsText = data.diagnostics || '';
+    screenshotBase64 = data.screenshotBase64 || '';
+    osVersion = data.osVersion || '';
+    appVersion = data.appVersion || '';
+    waitForElement('h1', 'Internal Product Feedback Form')
+        .then(function() { handleNativeAppsDropdown(); })
+        .catch(function() { console.error('Internal Product Feedback Form is not loaded after 5s'); });
+};
+
+if (quickMode !== null) {
+    waitForElement('h1', 'Internal Product Feedback Form')
+        .then(_ => handleNativeAppsDropdown())
+        .catch(_ => console.error('Internal Product Feedback Form is not loaded after 5s'));
+}

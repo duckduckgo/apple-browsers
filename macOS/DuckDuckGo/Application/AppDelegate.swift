@@ -131,7 +131,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor private(set) lazy var quickFeedbackService: QuickFeedbackService = {
         let diagnosticsCollector = QuickFeedbackDiagnosticsCollector(
-            tabCountProvider: windowControllersManager,
+            tabAndWindowCountProvider: windowControllersManager,
+            memoryUsageMonitor: memoryUsageMonitor,
             launchDate: appLaunchDate
         )
         return QuickFeedbackService(

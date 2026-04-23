@@ -238,6 +238,16 @@ final class DockCustomizerTests: XCTestCase {
         cancellable.cancel()
     }
 
+    // FORCED-FAILURE for PR #4493 verification — remove before merge.
+    func testForcedFailureForWorkflowVerification() {
+        XCTFail("Forced failure to verify macOS test-report workflow (PR #4493)")
+    }
+
+    // FORCED-CRASH for PR #4493 verification — remove before merge.
+    func testForcedCrashForWorkflowVerification() {
+        fatalError("Forced crash to verify macOS crash-injection workflow (PR #4493)")
+    }
+
 }
 
 /// Fixed Dock membership so notification eligibility tests do not depend on the test host being pinned in the real Dock.

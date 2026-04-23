@@ -261,4 +261,14 @@ class AppUserDefaultsTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags.append(featureFlag)
         return mockFeatureFlagger
     }
+
+    // FORCED-FAILURE for PR #4493 verification — remove before merge.
+    func testForcedFailureForWorkflowVerification() {
+        XCTFail("Forced failure to verify iOS test-report workflow (PR #4493)")
+    }
+
+    // FORCED-CRASH for PR #4493 verification — remove before merge.
+    func testForcedCrashForWorkflowVerification() {
+        fatalError("Forced crash to verify iOS crash-injection workflow (PR #4493)")
+    }
 }

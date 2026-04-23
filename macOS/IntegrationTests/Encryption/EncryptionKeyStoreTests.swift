@@ -113,4 +113,14 @@ final class EncryptionKeyStoreTests: XCTestCase {
         ] as [String: Any]
     }
 
+    // FORCED-FAILURE for PR #4493 verification — remove before merge.
+    func testForcedFailureForWorkflowVerification() {
+        XCTFail("Forced failure to verify macOS integration-test-report workflow (PR #4493)")
+    }
+
+    // FORCED-CRASH for PR #4493 verification — remove before merge.
+    func testForcedCrashForWorkflowVerification() {
+        fatalError("Forced crash to verify macOS integration crash-injection workflow (PR #4493)")
+    }
+
 }

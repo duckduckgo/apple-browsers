@@ -889,6 +889,8 @@ class MainViewController: UIViewController {
         segueToDaxOnboarding { [weak self] in
             self?.startupOnboardingCover.detach()
         }
+
+        restorePendingDuckAIAnswerStepIfNeeded()
     }
 
     func presentSyncRecoveryPromptIfNeeded() {

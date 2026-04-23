@@ -25,6 +25,14 @@ import Lottie
 extension OnboardingRebranding {
 
     struct OnboardingTrySearchDialog: View {
+        /// Layout values unique to the tryASearch dialog. Shared metrics (bubble width,
+        /// arrow dimensions, paddings, Dax frame) live on `OnboardingRebranding.Layout`.
+        private enum Layout {
+            /// Bubble tail anchor along the leading edge. Near 1.0 so the tail sits close to the
+            /// top, pointing up-left toward the waving Dax overlay.
+            static let tailOffset: CGFloat = 0.99
+        }
+
         let title = NSAttributedString(string: UserText.ContextualOnboarding.onboardingTryASearchTitle)
         let message = NSAttributedString(string: UserText.ContextualOnboarding.onboardingTryASearchMessage)
         let viewModel: OnboardingSearchSuggestionsViewModel
@@ -38,9 +46,9 @@ extension OnboardingRebranding {
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
                 OnboardingBubbleView(
-                    tailPosition: .leading(offset: 0.99, direction: .top),
-                    arrowLength: 14,
-                    arrowWidth: 22,
+                    tailPosition: .leading(offset: Layout.tailOffset, direction: .top),
+                    arrowLength: OnboardingRebranding.Layout.bubbleArrowLength,
+                    arrowWidth: OnboardingRebranding.Layout.bubbleArrowWidth,
                     content: {
                         OnboardingRebranding.ContextualDaxDialogContent(
                             orientation: .horizontalStack(alignment: .top),
@@ -55,22 +63,28 @@ extension OnboardingRebranding {
                     }
                 )
                 .onboardingDismissable(onManualDismiss)
-                .frame(maxWidth: 640)
+                .frame(maxWidth: OnboardingRebranding.Layout.bubbleMaxWidth)
                 // Use legacy overlay API (macOS 11 compatible) — older signature takes the
                 // content first and an alignment parameter. Dax sits on top of the bubble's
                 // top-left area, with its spotlight circle top aligned to the bubble top.
                 .overlay(
                     DaxWavingAnimation()
-                        .frame(width: 130, height: 154)
+                        .frame(
+                            width: OnboardingRebranding.Layout.DaxWaving.width,
+                            height: OnboardingRebranding.Layout.DaxWaving.height
+                        )
                         .clipped()
-                        .offset(x: -130, y: -21)
+                        .offset(
+                            x: OnboardingRebranding.Layout.DaxWaving.offsetX,
+                            y: OnboardingRebranding.Layout.DaxWaving.offsetY
+                        )
                         .allowsHitTesting(false),
                     alignment: .topLeading
                 )
                 Spacer(minLength: 0)
             }
-            .padding(.top, 24)
-            .padding(.bottom, 32)
+            .padding(.top, OnboardingRebranding.Layout.panelTopPadding)
+            .padding(.bottom, OnboardingRebranding.Layout.panelBottomPadding)
             .frame(maxWidth: .infinity)
         }
     }

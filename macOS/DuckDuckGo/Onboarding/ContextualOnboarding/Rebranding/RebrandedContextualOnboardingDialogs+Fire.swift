@@ -41,6 +41,17 @@ extension OnboardingRebranding {
     }
 
     struct OnboardingFireDialogContent: View {
+        /// Layout values unique to the fire dialog content.
+        fileprivate enum Layout {
+            /// Paragraph spacing between the collapsed title line and the italic custom message.
+            static let paragraphSpacing: CGFloat = 8
+            /// Vertical spacing between the primary "Try it" button and the skip button.
+            static let buttonStackSpacing: CGFloat = 8
+            /// Background opacity for the skip button in its normal/pressed states.
+            static let skipButtonBackgroundOpacity: Double = 0.12
+            static let skipButtonPressedBackgroundOpacity: Double = 0.2
+        }
+
         @Environment(\.onboardingTheme) private var theme
 
         // The localized title has `\n\n` to separate the headline and the custom message part,
@@ -57,7 +68,7 @@ extension OnboardingRebranding {
                 customFontSize: OnboardingDialogsContants.messageFontSize
             )
             let paragraph = NSMutableParagraphStyle()
-            paragraph.paragraphSpacing = 8
+            paragraph.paragraphSpacing = Layout.paragraphSpacing
             base.addAttribute(.paragraphStyle, value: paragraph, range: NSRange(location: 0, length: base.length))
             return base
         }()
@@ -69,7 +80,7 @@ extension OnboardingRebranding {
                 orientation: .horizontalStack(alignment: .center),
                 message: attributedMessage
             ) {
-                VStack(spacing: 8) {
+                VStack(spacing: Layout.buttonStackSpacing) {
                     Button(UserText.ContextualOnboarding.onboardingTryFireButtonButton) {
                         viewModel.tryFireButton()
                     }
@@ -89,8 +100,8 @@ extension OnboardingRebranding {
 
         func makeBody(configuration: Configuration) -> some View {
             OnboardingRebranding.OnboardingStyles.CTAButtonStyle(
-                backgroundColor: Color.secondary.opacity(0.12),
-                pressedBackgroundColor: Color.secondary.opacity(0.2),
+                backgroundColor: Color.secondary.opacity(OnboardingFireDialogContent.Layout.skipButtonBackgroundOpacity),
+                pressedBackgroundColor: Color.secondary.opacity(OnboardingFireDialogContent.Layout.skipButtonPressedBackgroundOpacity),
                 foregroundColor: theme.colorPalette.textPrimary,
                 font: theme.typography.contextual.body
             ).makeBody(configuration: configuration)

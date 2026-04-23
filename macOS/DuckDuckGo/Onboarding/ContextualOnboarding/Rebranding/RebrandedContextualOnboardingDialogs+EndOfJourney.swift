@@ -24,38 +24,50 @@ import Onboarding
 extension OnboardingRebranding {
 
     struct OnboardingEndOfJourneyDialog: View {
+        /// Layout values unique to the highFive dialog. Shared metrics live on
+        /// `OnboardingRebranding.Layout`.
+        private enum Layout {
+            /// Bubble tail anchor — matches tryASearch so the tail points toward the Dax overlay.
+            static let tailOffset: CGFloat = 0.99
+        }
+
         let panelHeight: CGFloat
         let highFiveAction: () -> Void
         let onManualDismiss: () -> Void
 
         var body: some View {
             // High-five dialog mirrors tryASearch / tryASite: Dax waving on the left
-            // overlapping the bubble's top-left, same tail position (offset 0.99, direction .top,
-            // arrowLength 14, arrowWidth 22).
+            // overlapping the bubble's top-left, same tail position as tryASearch.
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
                 OnboardingBubbleView(
-                    tailPosition: .leading(offset: 0.99, direction: .top),
-                    arrowLength: 14,
-                    arrowWidth: 22,
+                    tailPosition: .leading(offset: Layout.tailOffset, direction: .top),
+                    arrowLength: OnboardingRebranding.Layout.bubbleArrowLength,
+                    arrowWidth: OnboardingRebranding.Layout.bubbleArrowWidth,
                     content: {
                         OnboardingEndOfJourneyDialogContent(highFiveAction: highFiveAction)
                     }
                 )
                 .onboardingDismissable(onManualDismiss)
-                .frame(maxWidth: 640)
+                .frame(maxWidth: OnboardingRebranding.Layout.bubbleMaxWidth)
                 .overlay(
                     DaxWavingAnimation()
-                        .frame(width: 130, height: 154)
+                        .frame(
+                            width: OnboardingRebranding.Layout.DaxWaving.width,
+                            height: OnboardingRebranding.Layout.DaxWaving.height
+                        )
                         .clipped()
-                        .offset(x: -130, y: -21)
+                        .offset(
+                            x: OnboardingRebranding.Layout.DaxWaving.offsetX,
+                            y: OnboardingRebranding.Layout.DaxWaving.offsetY
+                        )
                         .allowsHitTesting(false),
                     alignment: .topLeading
                 )
                 Spacer(minLength: 0)
             }
-            .padding(.top, 24)
-            .padding(.bottom, 32)
+            .padding(.top, OnboardingRebranding.Layout.panelTopPadding)
+            .padding(.bottom, OnboardingRebranding.Layout.panelBottomPadding)
             .frame(maxWidth: .infinity)
         }
     }

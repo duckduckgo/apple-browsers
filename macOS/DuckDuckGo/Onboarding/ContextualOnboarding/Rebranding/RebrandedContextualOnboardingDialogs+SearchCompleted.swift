@@ -72,7 +72,7 @@ extension OnboardingRebranding {
                             gotItAction()
                             if shouldFollowUp {
                                 onContentTransition?()
-                                withAnimation(.easeInOut(duration: 0.3)) {
+                                withAnimation(.easeInOut(duration: OnboardingRebranding.Layout.inlineTransitionDuration)) {
                                     showNextScreen = true
                                 }
                             }

@@ -20,6 +20,41 @@ import Foundation
 import SwiftUI
 import Onboarding
 
+// MARK: - Shared Layout
+
+extension OnboardingRebranding {
+    /// Layout metrics shared across every rebranded contextual onboarding dialog. Values unique
+    /// to a single dialog live in that dialog's private `Layout` struct at the top of its file,
+    /// so per-screen tweaks stay local.
+    enum Layout {
+        /// Maximum bubble width before the dialog stops growing horizontally.
+        static let bubbleMaxWidth: CGFloat = 640
+        /// Uniform vertical padding applied to every panel that wraps a bubble.
+        static let panelTopPadding: CGFloat = 24
+        static let panelBottomPadding: CGFloat = 32
+        /// Bubble tail (arrow) dimensions used by every dialog that shows a tail.
+        static let bubbleArrowLength: CGFloat = 14
+        static let bubbleArrowWidth: CGFloat = 22
+        /// Duration for in-place content transitions (searchDone→tryASite, trackers→fire).
+        static let inlineTransitionDuration: Double = 0.3
+
+        /// Waving-Dax overlay metrics — shared by the tryASearch, tryASite, and highFive dialogs.
+        /// The offset places Dax to the left of the bubble and slightly above its top edge.
+        enum DaxWaving {
+            static let width: CGFloat = 130
+            static let height: CGFloat = 154
+            static let offsetX: CGFloat = -130
+            static let offsetY: CGFloat = -21
+        }
+
+        /// Bottom-edge shadow applied to the panel background for subtle depth.
+        enum PanelShadow {
+            static let opacity: Double = 0.06
+            static let height: CGFloat = 8
+        }
+    }
+}
+
 struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     /// Kept only for API compatibility with the existing dialog signatures —
     /// all panels now size themselves to their bubble content plus uniform vertical
@@ -147,11 +182,14 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         // doesn't alter the layout of the background ZStack.
         .overlay(
             LinearGradient(
-                gradient: Gradient(colors: [Color.black.opacity(0.06), Color.black.opacity(0)]),
+                gradient: Gradient(colors: [
+                    Color.black.opacity(OnboardingRebranding.Layout.PanelShadow.opacity),
+                    Color.black.opacity(0)
+                ]),
                 startPoint: .bottom,
                 endPoint: .top
             )
-            .frame(height: 8)
+            .frame(height: OnboardingRebranding.Layout.PanelShadow.height)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             .allowsHitTesting(false)
         )
@@ -268,11 +306,11 @@ extension View {
         HStack(spacing: 0) {
             Spacer()
             self
-                .frame(maxWidth: 640)
+                .frame(maxWidth: OnboardingRebranding.Layout.bubbleMaxWidth)
             Spacer()
         }
-        .padding(.top, 24)
-        .padding(.bottom, 32)
+        .padding(.top, OnboardingRebranding.Layout.panelTopPadding)
+        .padding(.bottom, OnboardingRebranding.Layout.panelBottomPadding)
         .frame(maxWidth: .infinity)
     }
 }

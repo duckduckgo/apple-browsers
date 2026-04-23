@@ -25,6 +25,22 @@ import Lottie
 extension OnboardingRebranding {
 
     struct OnboardingTrackersBlockedDialog: View {
+        /// Layout values unique to the trackers dialog. Shared metrics live on
+        /// `OnboardingRebranding.Layout`.
+        private enum Layout {
+            /// Bubble tail near the bottom-leading edge, pointing down-right toward the wing.
+            static let tailOffset: CGFloat = 0.1
+            /// Wing Lottie dimensions — small pointer wing directly below the bubble.
+            static let wingWidth: CGFloat = 55
+            static let wingHeight: CGFloat = 62
+            /// Negative VStack spacing pulls the wing up so its top overlaps the bubble's tail
+            /// area — the "padding between bubble and wing" the reference shows.
+            static let wingOverlapSpacing: CGFloat = -20
+            /// No bottom padding — the wing animation IS the bottom of the panel (anchored
+            /// directly to the panel edge, no background showing through below it).
+            static let panelBottomPadding: CGFloat = 0
+        }
+
         @Environment(\.onboardingTheme) private var theme
 
         let cta = UserText.ContextualOnboarding.onboardingGotItButton
@@ -64,13 +80,11 @@ extension OnboardingRebranding {
                 // bottom padding — no extra space below.
                 HStack(spacing: 0) {
                     Spacer(minLength: 0)
-                    // Negative spacing pulls the wing up so its top overlaps the bubble's tail
-                    // area — the "padding between bubble and wing" the reference shows.
-                    VStack(spacing: -20) {
+                    VStack(spacing: Layout.wingOverlapSpacing) {
                         OnboardingBubbleView(
-                            tailPosition: .bottom(offset: 0.1, direction: .trailing),
-                            arrowLength: 14,
-                            arrowWidth: 22,
+                            tailPosition: .bottom(offset: Layout.tailOffset, direction: .trailing),
+                            arrowLength: OnboardingRebranding.Layout.bubbleArrowLength,
+                            arrowWidth: OnboardingRebranding.Layout.bubbleArrowWidth,
                             content: {
                                 OnboardingRebranding.ContextualDaxDialogContent(
                                     orientation: .horizontalStack(alignment: .center),
@@ -80,7 +94,7 @@ extension OnboardingRebranding {
                                         blockedTrackersCTAAction()
                                         if shouldFollowUp {
                                             onContentTransition?()
-                                            withAnimation(.easeInOut(duration: 0.3)) {
+                                            withAnimation(.easeInOut(duration: OnboardingRebranding.Layout.inlineTransitionDuration)) {
                                                 showNextScreen = true
                                             }
                                         }
@@ -92,17 +106,15 @@ extension OnboardingRebranding {
                         .onboardingDismissable(onManualDismiss)
 
                         WingPointingAnimation()
-                            .frame(width: 55, height: 62)
+                            .frame(width: Layout.wingWidth, height: Layout.wingHeight)
                             .clipped()
                             .allowsHitTesting(false)
                     }
-                    .frame(maxWidth: 640)
+                    .frame(maxWidth: OnboardingRebranding.Layout.bubbleMaxWidth)
                     Spacer(minLength: 0)
                 }
-                .padding(.top, 24)
-                // No bottom padding — the wing animation IS the bottom of the panel (anchored
-                // directly to the panel edge, no background showing through below it).
-                .padding(.bottom, 0)
+                .padding(.top, OnboardingRebranding.Layout.panelTopPadding)
+                .padding(.bottom, Layout.panelBottomPadding)
                 .frame(maxWidth: .infinity)
                 .transition(.identity)
             }

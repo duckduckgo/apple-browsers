@@ -24,36 +24,50 @@ import Onboarding
 extension OnboardingRebranding {
 
     struct OnboardingTrySiteDialog: View {
+        /// Layout values unique to the tryASite dialog. Shared metrics live on
+        /// `OnboardingRebranding.Layout`.
+        private enum Layout {
+            /// Bubble tail anchor — sits slightly lower than tryASearch's 0.99 so the tail
+            /// aligns with the Dax's pointing beak on this dialog's shorter content.
+            static let tailOffset: CGFloat = 0.85
+        }
+
         let viewModel: OnboardingSiteSuggestionsViewModel
         let onManualDismiss: () -> Void
 
         var body: some View {
             // Mirrors tryASearch layout: Dax waving on the left overlapping the bubble's
-            // top-left; bubble keeps its normal 640pt max width.
+            // top-left; bubble keeps its normal max width.
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
                 OnboardingBubbleView(
-                    tailPosition: .leading(offset: 0.85, direction: .top),
-                    arrowLength: 14,
-                    arrowWidth: 22,
+                    tailPosition: .leading(offset: Layout.tailOffset, direction: .top),
+                    arrowLength: OnboardingRebranding.Layout.bubbleArrowLength,
+                    arrowWidth: OnboardingRebranding.Layout.bubbleArrowWidth,
                     content: {
                         OnboardingTrySiteDialogContent(viewModel: viewModel)
                     }
                 )
                 .onboardingDismissable(onManualDismiss)
-                .frame(maxWidth: 640)
+                .frame(maxWidth: OnboardingRebranding.Layout.bubbleMaxWidth)
                 .overlay(
                     DaxWavingAnimation()
-                        .frame(width: 130, height: 154)
+                        .frame(
+                            width: OnboardingRebranding.Layout.DaxWaving.width,
+                            height: OnboardingRebranding.Layout.DaxWaving.height
+                        )
                         .clipped()
-                        .offset(x: -130, y: -21)
+                        .offset(
+                            x: OnboardingRebranding.Layout.DaxWaving.offsetX,
+                            y: OnboardingRebranding.Layout.DaxWaving.offsetY
+                        )
                         .allowsHitTesting(false),
                     alignment: .topLeading
                 )
                 Spacer(minLength: 0)
             }
-            .padding(.top, 24)
-            .padding(.bottom, 32)
+            .padding(.top, OnboardingRebranding.Layout.panelTopPadding)
+            .padding(.bottom, OnboardingRebranding.Layout.panelBottomPadding)
             .frame(maxWidth: .infinity)
         }
     }

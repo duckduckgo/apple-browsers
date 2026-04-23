@@ -319,7 +319,7 @@ private struct AIChatStorageServerSection: View {
                     Text("Server running")
                         .foregroundColor(.green)
                     if let ip = serverState.localIPAddress {
-                        Text("http://\(ip):8080")
+                        Text("http://\(ip):8473")
                             .font(.system(.body, design: .monospaced))
                             .textSelection(.enabled)
                     }

@@ -32,25 +32,35 @@ public final class DuckAiNativeStorageProvider {
 
     public let handler: DuckAiNativeStorageHandling
 
-    public init(containerURL: URL, keyStoreProvider: DuckAiKeyStoreProvider) throws {
-        let fileManager = FileManager.default
-        try fileManager.createDirectory(at: containerURL, withIntermediateDirectories: true)
+    public init(
+        containerURL: URL,
+        keyStoreProvider: DuckAiKeyStoreProvider,
+        pixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring()
+    ) throws {
+        do {
+            let fileManager = FileManager.default
+            try fileManager.createDirectory(at: containerURL, withIntermediateDirectories: true)
 
-        let encryptionKey = try keyStoreProvider.getOrCreateKey()
+            let encryptionKey = try keyStoreProvider.getOrCreateKey()
 
-        let settingsStore = try KeyValueFileStore(
-            location: containerURL,
-            name: "settings.plist"
-        )
-        let dataStore = try DuckAiNativeDataStore(
-            databaseURL: containerURL.appendingPathComponent("chats.db"),
-            filesDirectoryURL: containerURL.appendingPathComponent("files"),
-            key: encryptionKey
-        )
-        self.handler = DuckAiNativeStorageHandler(
-            settingsStore: settingsStore.throwingKeyedStoring(),
-            dataStore: dataStore
-        )
-        Logger.aiChat.debug("DuckAiNativeStorageProvider: Initialized at \(containerURL.path)")
+            let settingsStore = try KeyValueFileStore(
+                location: containerURL,
+                name: "settings.plist"
+            )
+            let dataStore = try DuckAiNativeDataStore(
+                databaseURL: containerURL.appendingPathComponent("chats.db"),
+                filesDirectoryURL: containerURL.appendingPathComponent("files"),
+                key: encryptionKey
+            )
+            self.handler = DuckAiNativeStorageHandler(
+                settingsStore: settingsStore.throwingKeyedStoring(),
+                dataStore: dataStore
+            )
+            Logger.aiChat.debug("DuckAiNativeStorageProvider: Initialized at \(containerURL.path)")
+            pixelFiring.fire(.initSuccess)
+        } catch {
+            pixelFiring.fire(.initError(error))
+            throw error
+        }
     }
 }

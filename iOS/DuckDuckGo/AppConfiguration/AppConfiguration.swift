@@ -207,12 +207,7 @@ struct AppConfiguration {
 
     private func onVariantAssigned(reportingService: ReportingService) {
         onboardingConfiguration.adjustDialogsForUITesting()
-        hideHistoryMessageForNewUsers()
         reportingService.setupStorageForMarketPlacePostback()
-    }
-
-    private func hideHistoryMessageForNewUsers() {
-        HistoryMessageManager().dismiss()
     }
 
 }

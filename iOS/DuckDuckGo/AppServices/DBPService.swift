@@ -102,7 +102,7 @@ final class DBPService: NSObject {
     }
 }
 
-final class DBPFeatureFlagger: DBPFeatureFlagging {
+final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     
     private let appDependencies: DependencyProvider
 
@@ -122,16 +122,16 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningWhenDashboardOpen)
     }
 
-    var isClickActionDelayReductionOptimizationOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
-    }
-
     var isContinuedProcessingFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpContinuedProcessing)
     }
 
     var isWebViewUserAgentOn: Bool {
         false
+    }
+
+    var isFreemiumPIREnabled: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpFreemiumPIR)
     }
 
     init(appDependencies: DependencyProvider) {

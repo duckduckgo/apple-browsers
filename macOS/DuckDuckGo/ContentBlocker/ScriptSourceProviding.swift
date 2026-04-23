@@ -25,6 +25,7 @@ import History
 import HistoryView
 import NewTabPage
 import TrackerRadarKit
+import Persistence
 import PixelKit
 import PrivacyConfig
 import enum UserScript.UserScriptError
@@ -85,7 +86,9 @@ protocol ScriptSourceProviding {
         },
         syncErrorHandler: Application.appDelegate.syncErrorHandler,
         webExtensionAvailability: Application.appDelegate.webExtensionAvailability,
-        dockCustomization: Application.appDelegate.dockCustomization
+        dockCustomization: Application.appDelegate.dockCustomization,
+        reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore),
+        installDateProvider: { AppDelegate.firstLaunchDate }
     )
 }
 
@@ -144,7 +147,9 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          syncServiceProvider: @escaping () -> DDGSyncing?,
          syncErrorHandler: SyncErrorHandling,
          webExtensionAvailability: WebExtensionAvailabilityProviding?,
-         dockCustomization: DockCustomization
+         dockCustomization: DockCustomization,
+         reinstallUserDetection: ReinstallingUserDetecting,
+         installDateProvider: @escaping () -> Date
     ) {
 
         self.configStorage = configStorage
@@ -173,7 +178,13 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.sessionKey = generateSessionKey()
         self.messageSecret = generateSessionKey()
         self.autofillSourceProvider = buildAutofillSource()
-        self.onboardingActionsManager = buildOnboardingActionsManager(onboardingNavigationDelegate, appearancePreferences, startupPreferences)
+        self.onboardingActionsManager = buildOnboardingActionsManager(
+            onboardingNavigationDelegate,
+            appearancePreferences,
+            startupPreferences,
+            reinstallUserDetection,
+            installDateProvider
+        )
         self.historyViewActionsManager = HistoryViewActionsManager(
             historyCoordinator: historyCoordinator,
             bookmarksHandler: bookmarkManager,
@@ -261,7 +272,13 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         }
     }
 
-    private func buildOnboardingActionsManager(_ navigationDelegate: OnboardingNavigating, _ appearancePreferences: AppearancePreferences, _ startupPreferences: StartupPreferences) -> OnboardingActionsManaging {
+    private func buildOnboardingActionsManager(
+        _ navigationDelegate: OnboardingNavigating,
+        _ appearancePreferences: AppearancePreferences,
+        _ startupPreferences: StartupPreferences,
+        _ reinstallUserDetection: ReinstallingUserDetecting,
+        _ installDateProvider: @escaping () -> Date
+    ) -> OnboardingActionsManaging {
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -270,7 +287,9 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             startupPreferences: startupPreferences,
             bookmarkManager: bookmarkManager,
             pinningManager: pinningManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            reinstallUserDetection: reinstallUserDetection,
+            installDateProvider: installDateProvider
         )
     }
 

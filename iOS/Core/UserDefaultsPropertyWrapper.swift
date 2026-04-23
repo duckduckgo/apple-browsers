@@ -167,9 +167,6 @@ public struct UserDefaultsWrapper<T> {
         case pixelExperimentCohort = "com.duckduckgo.ios.pixel.experiment.cohort"
         case pixelExperimentEnrollmentDate = "com.duckduckgo.ios.pixel.experiment.enrollment.date"
 
-        case historyMessageDisplayCount = "com.duckduckgo.ios.historyMessage.displayCount"
-        case historyMessageDismissed = "com.duckduckgo.ios.historyMessage.dismissed"
-        
         // Legacy DuckPlayer
         case duckPlayerMode = "com.duckduckgo.ios.duckPlayerMode"
         case duckPlayerAskModeOverlayHidden = "com.duckduckgo.ios.duckPlayerAskModeOverlayHidden"

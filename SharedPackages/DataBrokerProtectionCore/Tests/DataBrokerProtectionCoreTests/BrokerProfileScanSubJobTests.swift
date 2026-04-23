@@ -568,8 +568,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
             brokerProfileQueryData: brokerData,
             database: mockDatabase,
             pixelHandler: mockPixelHandler,
-            eventsHandler: mockEventsHandler,
-            featureFlagger: MockDBPFeatureFlagger()
+            eventsHandler: mockEventsHandler
         )
 
         let firedNames = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.map(\.name)
@@ -593,8 +592,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
             brokerProfileQueryData: brokerData,
             database: mockDatabase,
             pixelHandler: mockPixelHandler,
-            eventsHandler: mockEventsHandler,
-            featureFlagger: MockDBPFeatureFlagger()
+            eventsHandler: mockEventsHandler
         )
 
         let firedNames = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.map(\.name)

@@ -43,6 +43,7 @@ struct SyncAnotherDevicePromptView: View {
                 Text(UserText.simplifiedSyncAnotherDeviceBody)
                     .daxBodyRegular()
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .foregroundStyle(Color(designSystemColor: .textPrimary))
             .padding(.horizontal, 24)

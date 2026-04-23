@@ -351,4 +351,3 @@ private final class MockSuspensionPixelFiring: PixelFiring {
         onComplete(true, nil)
     }
 }
-

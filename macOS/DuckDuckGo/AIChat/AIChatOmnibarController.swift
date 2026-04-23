@@ -46,6 +46,12 @@ final class AIChatOmnibarController {
     @Published private(set) var activeToolMode: ToolMode?
     @Published var hasImageAttachments: Bool = false
 
+    /// The last selected reasoning effort, persisted across sessions. `nil` if no selection has
+    /// been made, or the persisted raw value doesn't map to a known `AIChatReasoningEffort` case.
+    var selectedReasoningEffort: AIChatReasoningEffort? {
+        preferences.selectedReasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
+    }
+
     var isImageGenerationMode: Bool { activeToolMode == .imageGeneration }
     var isWebSearchMode: Bool { activeToolMode == .webSearch }
     weak var delegate: AIChatOmnibarControllerDelegate?
@@ -106,6 +112,11 @@ final class AIChatOmnibarController {
     /// Whether the web search tool is available.
     var isWebSearchEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarWebSearch)
+    }
+
+    /// Whether the reasoning effort picker is available.
+    var isReasoningEffortEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarReasoningEffort)
     }
 
     func toggleImageGenerationMode() {
@@ -202,6 +213,7 @@ final class AIChatOmnibarController {
                 self.hasActiveSubscription = userTier != .free
                 self.models = remoteModels.map { AIChatModel(remoteModel: $0, userTier: userTier) }
                 self.clearStaleModelSelectionIfNeeded()
+                self.clearStaleReasoningEffortIfNeeded()
             } catch is CancellationError {
                 return
             } catch {
@@ -274,6 +286,23 @@ final class AIChatOmnibarController {
         }
     }
 
+    /// Clears the persisted reasoning effort if the current model no longer supports it, or if
+    /// the persisted raw value doesn't map to a known `AIChatReasoningEffort` case. Runs after
+    /// models are fetched, so a stale value persisted against an older model list doesn't linger
+    /// and get attached to future prompts.
+    private func clearStaleReasoningEffortIfNeeded() {
+        guard let effort = selectedReasoningEffort else {
+            // Wipe any unknown raw value we couldn't decode into the enum.
+            if preferences.selectedReasoningEffort != nil {
+                preferences.selectedReasoningEffort = nil
+            }
+            return
+        }
+        if !selectedModelReasoningEfforts.contains(effort) {
+            preferences.selectedReasoningEffort = nil
+        }
+    }
+
     /// The model ID to include in the prompt. Returns nil if the user has never
     /// explicitly selected a model, so the backend uses its default.
     var currentModelId: String? {
@@ -299,6 +328,19 @@ final class AIChatOmnibarController {
         return models.first(where: { $0.id == persistedModelId })?.supportedImageFormats ?? ["png", "jpeg", "webp"]
     }
 
+    /// Supported reasoning effort levels for the currently selected model. Unknown raw values
+    /// returned by the backend are silently filtered out — the picker only shows efforts the app
+    /// knows how to render.
+    var selectedModelReasoningEfforts: [AIChatReasoningEffort] {
+        (models.first(where: { $0.id == persistedModelId })?.supportedReasoningEffort ?? [])
+            .compactMap(AIChatReasoningEffort.init(rawValue:))
+    }
+
+    /// Updates the selected reasoning effort and persists it for future sessions.
+    func updateSelectedReasoningEffort(_ effort: AIChatReasoningEffort?) {
+        preferences.selectedReasoningEffort = effort?.rawValue
+    }
+
     /// The model ID to use for the current submission.
     /// Returns nil when image generation mode is active — the mode field handles routing.
     var effectiveModelId: String? {
@@ -315,10 +357,24 @@ final class AIChatOmnibarController {
         isWebSearchMode ? [AIChatRAGTool.webSearch.rawValue] : nil
     }
 
+    /// The reasoning effort to include in the prompt payload as a raw server-contract value.
+    /// Returns nil when the feature flag is off, image generation mode is active, or the current
+    /// model doesn't list the persisted effort as supported — so we never send a stale value that
+    /// no longer applies to the active request.
+    var effectiveReasoningEffort: String? {
+        guard isReasoningEffortEnabled, !isImageGenerationMode else { return nil }
+        guard let effort = selectedReasoningEffort,
+              selectedModelReasoningEfforts.contains(effort) else { return nil }
+        return effort.rawValue
+    }
+
     /// Updates the selected model ID and persists it (along with its short name) for future sessions.
     func updateSelectedModel(_ modelId: String) {
         preferences.selectedModelId = modelId
         preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
+        // The newly selected model may not support the previously persisted reasoning effort.
+        // Clearing here keeps stale-effort handling in one place (see `clearStaleReasoningEffortIfNeeded`).
+        clearStaleReasoningEffortIfNeeded()
     }
 
     /// Updates the current text being typed by the user
@@ -454,10 +510,11 @@ final class AIChatOmnibarController {
             PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
 
-        // Capture mode/model/toolChoice before async work — cleanup() may reset activeToolMode
+        // Capture mode/model/toolChoice/reasoning before async work — cleanup() may reset state
         let modelId = effectiveModelId
         let mode = effectiveMode
         let toolChoice = effectiveToolChoice
+        let reasoningEffort = effectiveReasoningEffort
 
         Task { @MainActor in
             // Wait for any pending image resizes to complete
@@ -476,7 +533,7 @@ final class AIChatOmnibarController {
                 behavior: .currentTab
             )
             // Re-set prompt after tab opener to include images, model selection, and mode (tab opener overwrites with a plain query)
-            let prompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true, toolChoice: toolChoice, images: images, modelId: modelId, mode: mode)
+            let prompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true, toolChoice: toolChoice, images: images, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)
             promptHandler.setData(prompt)
 
             self.activeToolMode = nil

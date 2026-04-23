@@ -299,8 +299,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
-    case onboardingExperiment
-
+    case onboardingDismissExperiment
     case autofillPasswordsStatusBar
 }
 
@@ -316,11 +315,11 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case emailConfirmationDecoupling
     case foregroundRunningOnAppActive
     case foregroundRunningWhenDashboardOpen
-    case clickActionDelayReductionOptimization
     case continuedProcessing
     case pirRollout
     case goToMarket
     case webViewUserAgent
+    case freemiumPIR
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -468,6 +467,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables web search tool in the Duck.ai omnibar
     case omnibarWebSearch
+
+    /// Enables the reasoning effort picker in the Duck.ai omnibar
+    case omnibarReasoningEffort
 
     /// Enables querying AI Chat data directly from local storage instead of via webview
     case nativeDataAccess

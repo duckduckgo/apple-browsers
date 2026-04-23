@@ -150,4 +150,75 @@ final class OnboardingUserScriptTests: XCTestCase {
         XCTAssertNil(result)
     }
 
+    @MainActor
+    func testStepCompleted_CallsStepShown_ForNextStep() async throws {
+        let randomStep = OnboardingSteps.allCases.randomElement()!
+        let params = ["next": randomStep.rawValue]
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "stepCompleted"))
+
+        let result = try await handler(params, WKScriptMessage.mock())
+        XCTAssertEqual(mockManager.shownStep, randomStep)
+        XCTAssertNil(result)
+    }
+
+    @MainActor
+    func testRowShownTelemetryEvent_CallsReportTelemetryEvent_WithExpectedEvent() async throws {
+        let rowShown = OnboardingRow.dataImport
+        let params = [
+            "attributes": [
+                "name": "row_shown",
+                "value": rowShown.rawValue
+            ]
+        ]
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "telemetryEvent"))
+
+        let result = try await handler(params, WKScriptMessage.mock())
+        XCTAssertEqual(mockManager.reportedTelemetryEvent, .rowShown(rowShown))
+        XCTAssertNil(result)
+    }
+
+    @MainActor
+    func testRowSkippedTelemetryEvent_CallsReportTelemetryEvent_WithExpectedEvent() async throws {
+        let rowSkipped = OnboardingRow.dataImport
+        let params = [
+            "attributes": [
+                "name": "row_skipped",
+                "value": rowSkipped.rawValue
+            ]
+        ]
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "telemetryEvent"))
+
+        let result = try await handler(params, WKScriptMessage.mock())
+        XCTAssertEqual(mockManager.reportedTelemetryEvent, .rowSkipped(rowSkipped))
+        XCTAssertNil(result)
+    }
+
+    @MainActor
+    func testDockInstructionsShownTelemetryEvent_CallsReportTelemetryEvent_WithExpectedEvent() async throws {
+        let params = [
+            "attributes": [
+                "name": "dock_instructions_shown"
+            ]
+        ]
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "telemetryEvent"))
+
+        let result = try await handler(params, WKScriptMessage.mock())
+        XCTAssertEqual(mockManager.reportedTelemetryEvent, .dockInstructionsShown)
+        XCTAssertNil(result)
+    }
+
+    @MainActor
+    func testDuckPlayerToggledTelemetryEvent_CallsReportTelemetryEvent_WithExpectedEvent() async throws {
+        let params = [
+            "attributes": [
+                "name": "duck_player_toggled"
+            ]
+        ]
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "telemetryEvent"))
+
+        let result = try await handler(params, WKScriptMessage.mock())
+        XCTAssertEqual(mockManager.reportedTelemetryEvent, .duckPlayerToggled)
+        XCTAssertNil(result)
+    }
+
 }

@@ -386,12 +386,16 @@ extension TabViewController {
     }
 
     private func onNewTabAction() {
-        Pixel.fire(pixel: .browsingMenuNewTab)
+        Pixel.fire(pixel: .browsingMenuNewTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: BrowsingMode.normal.pixelParamValue
+        ])
         delegate?.tabDidRequestNewTab(self)
     }
-    
+
     private func onNewFireTabAction() {
-        // TODO: - Add pixel
+        Pixel.fire(pixel: .browsingMenuNewTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: BrowsingMode.fire.pixelParamValue
+        ])
         delegate?.tabDidRequestNewTab(self)
     }
 
@@ -983,7 +987,6 @@ extension TabViewController: BrowsingMenuEntryBuilding {
                         detailBadge: UserText.fireModeMenuPromotionBadge) { [weak self] in
             self?.fireModePromotionCoordinator?.markMenuPromotionEngaged()
             guard let self else { return }
-            // TODO: fire menu promotion engaged pixel
             self.delegate?.tabDidRequestFireMode(tab: self)
         }
     }

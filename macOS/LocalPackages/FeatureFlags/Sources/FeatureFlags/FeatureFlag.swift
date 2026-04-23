@@ -86,9 +86,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616923544
     case dbpEmailConfirmationDecoupling
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397941080401
-    case dbpClickActionDelayReductionOptimization
-
     /// https://app.asana.com/1/137249556945/project/1206873150423133/task/1213344522599586
     case dbpWebViewUserAgent
 
@@ -273,6 +270,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the web search tool in the Duck.ai omnibar
     case aiChatOmnibarWebSearch
 
+    /// Enables the reasoning effort picker in the Duck.ai omnibar
+    case aiChatOmnibarReasoningEffort
+
     /// Enables attaching content from multiple open tabs to Duck.ai chat
     case aiChatAttachMoreTabs
 
@@ -438,8 +438,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery)), category: .dbp)
         case .dbpEmailConfirmationDecoupling:
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling)), category: .dbp)
-        case .dbpClickActionDelayReductionOptimization:
-            Config(source: .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization)), category: .dbp)
         case .dbpWebViewUserAgent:
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.webViewUserAgent)), category: .dbp)
         case .syncSetupBarcodeIsUrlBased:
@@ -554,6 +552,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarImageGeneration)), category: .duckAI)
         case .aiChatOmnibarWebSearch:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarWebSearch)), category: .duckAI)
+        case .aiChatOmnibarReasoningEffort:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarReasoningEffort)), category: .duckAI)
         case .aiChatAttachMoreTabs:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.attachMoreTabs)), category: .duckAI)
         case .aiChatSidebarResizable:

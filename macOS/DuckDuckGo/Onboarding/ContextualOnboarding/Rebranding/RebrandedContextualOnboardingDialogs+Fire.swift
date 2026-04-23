@@ -42,8 +42,6 @@ extension OnboardingRebranding {
     struct OnboardingFireDialogContent: View {
         /// Layout values unique to the fire dialog content.
         fileprivate enum Layout {
-            /// Paragraph spacing between the collapsed title line and the italic custom message.
-            static let paragraphSpacing: CGFloat = 8
             /// Vertical spacing between the primary "Try it" button and the skip button.
             static let buttonStackSpacing: CGFloat = 8
             /// Background opacity for the skip button in its normal/pressed states.
@@ -53,24 +51,14 @@ extension OnboardingRebranding {
 
         @Environment(\.onboardingTheme) private var theme
 
-        // The localized title uses `\n\n` to separate headline from body, which renders as an
-        // oversized gap in the compact bubble. Collapse to one newline and add paragraph
-        // spacing so the secondary line still reads as a distinct sentence.
         static let firstString = String(format: UserText.ContextualOnboarding.onboardingTryFireButtonTitle, UserText.ContextualOnboarding.onboardingTryFireButtonMessage)
-            .replacingOccurrences(of: "\n\n", with: "\n")
-        private let attributedMessage: NSAttributedString = {
-            let base = NSMutableAttributedString.attributedString(
-                from: firstString,
-                defaultFontSize: OnboardingDialogsContants.titleFontSize,
-                boldFontSize: OnboardingDialogsContants.titleFontSize,
-                customPart: UserText.ContextualOnboarding.onboardingTryFireButtonMessage,
-                customFontSize: OnboardingDialogsContants.messageFontSize
-            )
-            let paragraph = NSMutableParagraphStyle()
-            paragraph.paragraphSpacing = Layout.paragraphSpacing
-            base.addAttribute(.paragraphStyle, value: paragraph, range: NSRange(location: 0, length: base.length))
-            return base
-        }()
+        private let attributedMessage = NSMutableAttributedString.attributedString(
+            from: Self.firstString,
+            defaultFontSize: OnboardingDialogsContants.titleFontSize,
+            boldFontSize: OnboardingDialogsContants.titleFontSize,
+            customPart: UserText.ContextualOnboarding.onboardingTryFireButtonMessage,
+            customFontSize: OnboardingDialogsContants.messageFontSize
+        )
 
         let viewModel: OnboardingFireButtonDialogViewModel
 

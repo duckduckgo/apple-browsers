@@ -249,27 +249,12 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             shouldFollowUp: shouldFollowUp,
             initialPanelHeight: ContextualPanelMetrics.trackersPanelHeight,
             followUpPanelHeight: ContextualPanelMetrics.firePanelHeight,
-            message: Self.collapseDoubleNewlines(message),
+            message: message,
             blockedTrackersCTAAction: gotIt,
             viewModel: viewModel,
             onManualDismiss: onDismiss,
             onContentTransition: { onInlineTransition?(.tryFireButton) }
         )
-    }
-
-    /// The localized tracker copy uses `\n\n` to separate the main message from the shield hint,
-    /// which renders as a large gap in the rebranded bubble. Collapse to a single newline and
-    /// add a small paragraph spacing so the secondary line is visually distinct without the
-    /// exaggerated blank line the double newline produces.
-    private static func collapseDoubleNewlines(_ source: NSAttributedString) -> NSAttributedString {
-        let mutable = NSMutableAttributedString(attributedString: source)
-        let fullRange = NSRange(location: 0, length: mutable.length)
-        mutable.mutableString.replaceOccurrences(of: "\n\n", with: "\n", range: fullRange)
-
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.paragraphSpacing = 8
-        mutable.addAttribute(.paragraphStyle, value: paragraph, range: NSRange(location: 0, length: mutable.length))
-        return mutable
     }
 
     private func tryFireButtonDialog(onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {

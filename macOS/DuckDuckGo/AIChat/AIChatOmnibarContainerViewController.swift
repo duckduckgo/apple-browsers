@@ -1089,7 +1089,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             return
         }
         let efforts = omnibarController.selectedModelReasoningEfforts
-        reasoningPickerButton.isHidden = efforts.isEmpty || omnibarController.isImageGenerationMode
+        reasoningPickerButton.isHidden = efforts.count <= 1 || omnibarController.isImageGenerationMode
         guard let fallback = efforts.first else { return }
         // Display only. The controller owns stale-effort cleanup (on model switch and on models
         // refetch) so we never write to persistence from here — a saved value that isn't supported

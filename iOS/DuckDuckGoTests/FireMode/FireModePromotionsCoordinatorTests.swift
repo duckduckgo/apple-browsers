@@ -19,25 +19,26 @@
 
 import XCTest
 import Core
+import Persistence
+import PersistenceTestingUtils
 @testable import DuckDuckGo
 
 final class FireModePromotionsCoordinatorTests: XCTestCase {
 
     private var sut: FireModePromotionsCoordinator!
     private var mockCapability: MockFireModeCapability!
-    private var userDefaults: UserDefaults!
+    private var keyValueStore: InMemoryKeyValueStore!
+    private var storage: any KeyedStoring<FireModePromotionKeys> { keyValueStore.keyedStoring() }
 
     override func setUp() {
         super.setUp()
         mockCapability = MockFireModeCapability()
-        userDefaults = UserDefaults(suiteName: "\(type(of: self))")!
-        userDefaults.removePersistentDomain(forName: "\(type(of: self))")
+        keyValueStore = InMemoryKeyValueStore()
         sut = makeSUT()
     }
 
     override func tearDown() {
-        userDefaults.removePersistentDomain(forName: "\(type(of: self))")
-        userDefaults = nil
+        keyValueStore = nil
         mockCapability = nil
         sut = nil
         super.tearDown()
@@ -110,7 +111,7 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
     func testWhenPromotionShownMoreThanThreeDaysAgoThenNotEligible() {
         setNTPEligibleState()
         let fourDaysAgo = Date().addingTimeInterval(-4 * 24 * 60 * 60)
-        userDefaults.set(fourDaysAgo, forKey: "com.duckduckgo.ios.firePromotion.ntp.firstSeenDate")
+        storage.ntpFirstSeenDate = fourDaysAgo
 
         XCTAssertFalse(sut.isNTPPromotionEligible)
     }
@@ -126,16 +127,15 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
     func testWhenMarkShownCalledFirstTimeThenSetsFirstSeenDate() {
         sut.markNTPPromotionShown()
 
-        let storedDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.ntp.firstSeenDate") as? Date
-        XCTAssertNotNil(storedDate)
+        XCTAssertNotNil(storage.ntpFirstSeenDate)
     }
 
     func testWhenMarkShownCalledMultipleTimesThenDoesNotOverwriteFirstSeenDate() {
         sut.markNTPPromotionShown()
-        let firstDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.ntp.firstSeenDate") as? Date
+        let firstDate = storage.ntpFirstSeenDate
 
         sut.markNTPPromotionShown()
-        let secondDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.ntp.firstSeenDate") as? Date
+        let secondDate = storage.ntpFirstSeenDate
 
         XCTAssertEqual(firstDate, secondDate)
     }
@@ -151,16 +151,15 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
     func testWhenMarkTabSwitcherTipShownCalledFirstTimeThenSetsFirstSeenDate() {
         sut.markTabSwitcherTipShown()
 
-        let storedDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.tabSwitcherTip.firstSeenDate") as? Date
-        XCTAssertNotNil(storedDate)
+        XCTAssertNotNil(storage.tabSwitcherTipFirstSeenDate)
     }
 
     func testWhenMarkTabSwitcherTipShownCalledMultipleTimesThenDoesNotOverwriteFirstSeenDate() {
         sut.markTabSwitcherTipShown()
-        let firstDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.tabSwitcherTip.firstSeenDate") as? Date
+        let firstDate = storage.tabSwitcherTipFirstSeenDate
 
         sut.markTabSwitcherTipShown()
-        let secondDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.tabSwitcherTip.firstSeenDate") as? Date
+        let secondDate = storage.tabSwitcherTipFirstSeenDate
 
         XCTAssertEqual(firstDate, secondDate)
     }
@@ -175,7 +174,7 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
 
     func testWhenTipShownMoreThanThreeDaysAgoThenExpired() {
         let fourDaysAgo = Date().addingTimeInterval(-4 * 24 * 60 * 60)
-        userDefaults.set(fourDaysAgo, forKey: "com.duckduckgo.ios.firePromotion.tabSwitcherTip.firstSeenDate")
+        storage.tabSwitcherTipFirstSeenDate = fourDaysAgo
 
         XCTAssertTrue(sut.isTabSwitcherTipExpired)
     }
@@ -183,7 +182,7 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
     // MARK: - Helpers
 
     private func makeSUT() -> FireModePromotionsCoordinator {
-        FireModePromotionsCoordinator(fireModeCapability: mockCapability, userDefaults: userDefaults)
+        FireModePromotionsCoordinator(fireModeCapability: mockCapability, storage: storage)
     }
 
     private func setNTPEligibleState() {

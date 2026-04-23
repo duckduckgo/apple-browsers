@@ -19,7 +19,34 @@
 
 import Core
 import Foundation
+import Persistence
 import TipKit
+
+/// Key namespace for fire mode promotion storage (typed storage, no dotted keys).
+enum FireModePromotionStorageKeys: String, StorageKeyDescribing {
+    case hasBurnedTabs = "fire-promotion-has-burned-tabs"
+    case hasVisitedFireMode = "fire-promotion-has-visited-fire-mode"
+    case ntpFirstSeenDate = "fire-promotion-ntp-first-seen-date"
+    case ntpDismissed = "fire-promotion-ntp-dismissed"
+    case ntpEngaged = "fire-promotion-ntp-engaged"
+    case menuFirstShownDate = "fire-promotion-menu-first-shown-date"
+    case menuShownCount = "fire-promotion-menu-shown-count"
+    case menuEngaged = "fire-promotion-menu-engaged"
+    case tabSwitcherTipFirstSeenDate = "fire-promotion-tab-switcher-tip-first-seen-date"
+}
+
+/// StoringKeys for fire mode promotion state.
+struct FireModePromotionKeys: StoringKeys {
+    let hasBurnedTabs = StorageKey<Bool>(FireModePromotionStorageKeys.hasBurnedTabs)
+    let hasVisitedFireMode = StorageKey<Bool>(FireModePromotionStorageKeys.hasVisitedFireMode)
+    let ntpFirstSeenDate = StorageKey<Date>(FireModePromotionStorageKeys.ntpFirstSeenDate)
+    let ntpDismissed = StorageKey<Bool>(FireModePromotionStorageKeys.ntpDismissed)
+    let ntpEngaged = StorageKey<Bool>(FireModePromotionStorageKeys.ntpEngaged)
+    let menuFirstShownDate = StorageKey<Date>(FireModePromotionStorageKeys.menuFirstShownDate)
+    let menuShownCount = StorageKey<Int>(FireModePromotionStorageKeys.menuShownCount)
+    let menuEngaged = StorageKey<Bool>(FireModePromotionStorageKeys.menuEngaged)
+    let tabSwitcherTipFirstSeenDate = StorageKey<Date>(FireModePromotionStorageKeys.tabSwitcherTipFirstSeenDate)
+}
 
 /// Injectable protocol for coordinating fire mode promotions.
 /// Tracks eligibility state and user interactions for promotion surfaces.
@@ -43,47 +70,33 @@ protocol FireModePromotionCoordinating {
 /// Coordinates fire mode promotion eligibility and state.
 final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
 
-    private enum Keys {
-        static let hasBurnedTabs = "com.duckduckgo.ios.firePromotion.hasBurnedTabs"
-        static let hasVisitedFireMode = "com.duckduckgo.ios.firePromotion.hasVisitedFireMode"
-        static let firstSeenDate = "com.duckduckgo.ios.firePromotion.ntp.firstSeenDate"
-        static let isDismissed = "com.duckduckgo.ios.firePromotion.ntp.isDismissed"
-        static let isEngaged = "com.duckduckgo.ios.firePromotion.ntp.isEngaged"
-        static let menuPromotionFirstShownDate = "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate"
-        static let menuPromotionShownCount = "com.duckduckgo.ios.firePromotion.menu.promotionShownCount"
-        static let menuPromotionEngaged = "com.duckduckgo.ios.firePromotion.menu.engaged"
-        static let tabSwitcherTipFirstSeenDate = "com.duckduckgo.ios.firePromotion.tabSwitcherTip.firstSeenDate"
-    }
-
     static let ntpExpirationInterval: TimeInterval = 3 * 24 * 60 * 60
     static let menuExpirationInterval: TimeInterval = 14 * 24 * 60 * 60
     static let menuMaxOpenCount = 5
     static let tabSwitcherTipExpirationInterval: TimeInterval = 3 * 24 * 60 * 60
 
     private let fireModeCapability: FireModeCapable
-    private let userDefaults: UserDefaults
+    private let storage: any KeyedStoring<FireModePromotionKeys>
 
+    /// When `storage` is nil, defaults to `UserDefaults.app.keyedStoring()`.
     init(fireModeCapability: FireModeCapable,
-         userDefaults: UserDefaults = .app) {
+         storage: (any KeyedStoring<FireModePromotionKeys>) = UserDefaults.app.keyedStoring()) {
         self.fireModeCapability = fireModeCapability
-        self.userDefaults = userDefaults
+        self.storage = storage
     }
 
-    static func resetState(userDefaults: UserDefaults = .app) {
-        let allKeys = [
-            Keys.hasBurnedTabs,
-            Keys.hasVisitedFireMode,
-            Keys.firstSeenDate,
-            Keys.isDismissed,
-            Keys.isEngaged,
-            Keys.menuPromotionFirstShownDate,
-            Keys.menuPromotionShownCount,
-            Keys.menuPromotionEngaged,
-            Keys.tabSwitcherTipFirstSeenDate
-        ]
-        for key in allKeys {
-            userDefaults.removeObject(forKey: key)
-        }
+    /// When `storage` is nil, defaults to `UserDefaults.app.keyedStoring()`.
+    static func resetState() {
+        let storage = UserDefaults.app.keyedStoring() as any KeyedStoring<FireModePromotionKeys>
+        storage.removeValue(for: \.hasBurnedTabs)
+        storage.removeValue(for: \.hasVisitedFireMode)
+        storage.removeValue(for: \.ntpFirstSeenDate)
+        storage.removeValue(for: \.ntpDismissed)
+        storage.removeValue(for: \.ntpEngaged)
+        storage.removeValue(for: \.menuFirstShownDate)
+        storage.removeValue(for: \.menuShownCount)
+        storage.removeValue(for: \.menuEngaged)
+        storage.removeValue(for: \.tabSwitcherTipFirstSeenDate)
     }
 
     // MARK: - State Triggers
@@ -176,47 +189,47 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
     // MARK: - Private
 
     private var hasBurnedTabs: Bool {
-        get { userDefaults.bool(forKey: Keys.hasBurnedTabs) }
-        set { userDefaults.set(newValue, forKey: Keys.hasBurnedTabs) }
+        get { storage.hasBurnedTabs ?? false }
+        set { storage.hasBurnedTabs = newValue }
     }
 
     private var hasVisitedFireMode: Bool {
-        get { userDefaults.bool(forKey: Keys.hasVisitedFireMode) }
-        set { userDefaults.set(newValue, forKey: Keys.hasVisitedFireMode) }
+        get { storage.hasVisitedFireMode ?? false }
+        set { storage.hasVisitedFireMode = newValue }
     }
 
     private var firstSeenDate: Date? {
-        get { userDefaults.object(forKey: Keys.firstSeenDate) as? Date }
-        set { userDefaults.set(newValue, forKey: Keys.firstSeenDate) }
+        get { storage.ntpFirstSeenDate }
+        set { storage.ntpFirstSeenDate = newValue }
     }
 
     private var isDismissed: Bool {
-        get { userDefaults.bool(forKey: Keys.isDismissed) }
-        set { userDefaults.set(newValue, forKey: Keys.isDismissed) }
+        get { storage.ntpDismissed ?? false }
+        set { storage.ntpDismissed = newValue }
     }
 
     private var isEngaged: Bool {
-        get { userDefaults.bool(forKey: Keys.isEngaged) }
-        set { userDefaults.set(newValue, forKey: Keys.isEngaged) }
+        get { storage.ntpEngaged ?? false }
+        set { storage.ntpEngaged = newValue }
     }
 
     private var menuPromotionFirstShownDate: Date? {
-        get { userDefaults.object(forKey: Keys.menuPromotionFirstShownDate) as? Date }
-        set { userDefaults.set(newValue, forKey: Keys.menuPromotionFirstShownDate) }
+        get { storage.menuFirstShownDate }
+        set { storage.menuFirstShownDate = newValue }
     }
 
     private var menuPromotionShownCount: Int {
-        get { userDefaults.integer(forKey: Keys.menuPromotionShownCount) }
-        set { userDefaults.set(newValue, forKey: Keys.menuPromotionShownCount) }
+        get { storage.menuShownCount ?? 0 }
+        set { storage.menuShownCount = newValue }
     }
 
     private var menuPromotionEngaged: Bool {
-        get { userDefaults.bool(forKey: Keys.menuPromotionEngaged) }
-        set { userDefaults.set(newValue, forKey: Keys.menuPromotionEngaged) }
+        get { storage.menuEngaged ?? false }
+        set { storage.menuEngaged = newValue }
     }
 
     private var tabSwitcherTipFirstSeenDate: Date? {
-        get { userDefaults.object(forKey: Keys.tabSwitcherTipFirstSeenDate) as? Date }
-        set { userDefaults.set(newValue, forKey: Keys.tabSwitcherTipFirstSeenDate) }
+        get { storage.tabSwitcherTipFirstSeenDate }
+        set { storage.tabSwitcherTipFirstSeenDate = newValue }
     }
 }

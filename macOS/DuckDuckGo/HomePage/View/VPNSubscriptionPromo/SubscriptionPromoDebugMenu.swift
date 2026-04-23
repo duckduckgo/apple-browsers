@@ -121,7 +121,6 @@ final class SubscriptionPromoDebugMenu: NSMenuItem {
 
     @objc func resetPromoDisplayWindowStart() {
         var p = persistor
-        p.promoDisplayCount = 0
         p.promoDisplayWindowStart = nil
     }
 

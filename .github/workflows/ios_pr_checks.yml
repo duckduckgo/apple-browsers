@@ -208,6 +208,7 @@ jobs:
         key: xcode-compilation-cache-ios-unit-tests-${{ steps.compilation-cache-hash.outputs.hash }}
 
     - name: Process test results
+      if: always()
       uses: ./.github/actions/process-test-results
       with:
         working-directory: iOS

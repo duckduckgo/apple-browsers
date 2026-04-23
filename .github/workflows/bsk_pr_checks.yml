@@ -121,6 +121,7 @@ jobs:
             runner: ${{ env.RUNS_ON }}
 
       - name: Process test results
+        if: always()
         uses: ./.github/actions/process-test-results
         with:
           working-directory: SharedPackages/BrowserServicesKit
@@ -292,6 +293,7 @@ jobs:
           pixel-name: m_ci_apple_status_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}
 
       - name: Process test results
+        if: always()
         uses: ./.github/actions/process-test-results
         with:
           working-directory: SharedPackages/BrowserServicesKit

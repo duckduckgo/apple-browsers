@@ -349,6 +349,7 @@ jobs:
         fi
 
     - name: Process unit test results
+      if: always()
       uses: ./.github/actions/process-test-results
       with:
         working-directory: macOS
@@ -359,6 +360,7 @@ jobs:
         test-outcome: ${{ steps.run-unit-tests.outcome }}
 
     - name: Process integration test results
+      if: always()
       uses: ./.github/actions/process-test-results
       with:
         working-directory: macOS

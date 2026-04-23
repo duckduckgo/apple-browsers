@@ -114,6 +114,7 @@ jobs:
             runner: ${{ env.RUNS_ON }}
 
       - name: Process test results
+        if: always()
         uses: ./.github/actions/process-test-results
         with:
           working-directory: SharedPackages/DataBrokerProtectionCore
@@ -268,6 +269,7 @@ jobs:
             runner: ${{ env.RUNS_ON }}
 
       - name: Process test results
+        if: always()
         uses: ./.github/actions/process-test-results
         with:
           working-directory: SharedPackages/DataBrokerProtectionCore

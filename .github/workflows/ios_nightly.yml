@@ -104,6 +104,7 @@ jobs:
         retention-days: 7
 
     - name: Process test results
+      if: always()
       uses: ./.github/actions/process-test-results
       with:
         working-directory: iOS

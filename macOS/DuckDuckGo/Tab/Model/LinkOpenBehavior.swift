@@ -66,7 +66,12 @@ enum LinkOpenBehavior: Equatable {
         let shouldOpenNewTab = button == .middle || modifierFlags.contains(.command)
         let isShiftPressed = modifierFlags.contains(.shift)
 
-        guard shouldOpenNewTab || !canOpenLinkInCurrentTab else {
+        // ⌥-click without ⌘: "save link as" / download gesture.
+        // Treat as current-tab so the caller / WebKit can handle it as a download,
+        // even when canOpenLinkInCurrentTab is false (e.g. pinned-tab cross-domain link).
+        let isOptionOnlyGesture = modifierFlags.contains(.option) && !modifierFlags.contains(.command)
+
+        guard shouldOpenNewTab || (!canOpenLinkInCurrentTab && !isOptionOnlyGesture) else {
             self = .currentTab
             return
         }
@@ -83,7 +88,7 @@ enum LinkOpenBehavior: Equatable {
         }
 
         // ⌘+⌥+click: New Window
-        if modifierFlags.contains(.option) {
+        if shouldOpenNewTab && modifierFlags.contains(.option) {
             self = .newWindow(selected: isSelected)
         } else {
             // ⌘+click: New Tab

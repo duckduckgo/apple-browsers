@@ -114,7 +114,7 @@ class SwitchBarTextEntryViewController: UIViewController {
         
         containerView.backgroundColor = handler.isFireTab ?
         UIColor(singleUseColor: .fireModeBackground) :
-        UIColor(designSystemColor: .urlBar)
+        UIColor(designSystemColor: .backgroundTertiary)
         containerView.applyActiveShadow()
     }
 

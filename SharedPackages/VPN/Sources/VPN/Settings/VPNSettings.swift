@@ -213,7 +213,6 @@ public final class VPNSettings {
         defaults.resetNetworkProtectionSettingSelectedServer()
         defaults.resetDNSSettings()
         defaults.resetNetworkProtectionSettingShowInMenuBar()
-        defaults.resetNetworkProtectionSettingWideEventPostEndpointEnabled()
     }
 
     // MARK: - Applying Changes
@@ -466,16 +465,4 @@ public final class VPNSettings {
         }
     }
 
-    public var wideEventPostEndpointEnabledPublisher: AnyPublisher<Bool, Never> {
-        defaults.networkProtectionSettingWideEventPostEndpointEnabledPublisher
-    }
-
-    public var wideEventPostEndpointEnabled: Bool {
-        get {
-            defaults.networkProtectionSettingWideEventPostEndpointEnabled
-        }
-        set {
-            defaults.networkProtectionSettingWideEventPostEndpointEnabled = newValue
-        }
-    }
 }

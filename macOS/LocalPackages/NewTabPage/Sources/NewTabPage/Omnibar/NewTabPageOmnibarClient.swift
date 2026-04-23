@@ -103,6 +103,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled,
             showViewAllAiChats: configProvider.showViewAllAiChats,
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
+            enableImageGeneration: configProvider.isImageGenerationEnabled,
+            enableWebSearch: configProvider.isWebSearchEnabled,
             selectedModelId: configProvider.selectedModelId,
             aiModelSections: aiModelSections
         )
@@ -150,6 +152,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled,
             showViewAllAiChats: configProvider.showViewAllAiChats,
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
+            enableImageGeneration: configProvider.isImageGenerationEnabled,
+            enableWebSearch: configProvider.isWebSearchEnabled,
             selectedModelId: configProvider.selectedModelId,
             aiModelSections: modelsProvider?.lastFetchedSections
         )
@@ -183,7 +187,12 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         guard let action: NewTabPageDataModel.SubmitChatAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        await actionHandler.submitChat(action.chat, target: action.target, modelId: action.modelId, images: action.images)
+        await actionHandler.submitChat(action.chat,
+                                       target: action.target,
+                                       modelId: action.modelId,
+                                       images: action.images,
+                                       mode: action.mode,
+                                       toolChoice: action.toolChoice)
         return nil
     }
 

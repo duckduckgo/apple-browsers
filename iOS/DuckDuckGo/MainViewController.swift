@@ -2060,7 +2060,7 @@ class MainViewController: UIViewController {
 
         refreshUnifiedToggleInput(for: tab)
 
-        if minimalChromeSettings.isFeatureEnabled && !AppWidthObserver.shared.isPad {
+        if isInMinimalChromeLayout != isMinimalChromeMode() {
             applyWidth()
         }
 

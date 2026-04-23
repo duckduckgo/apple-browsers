@@ -109,10 +109,14 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Vahekaardid ja andmed kustutatud";
 
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Ava taustal";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Uus Fire vahekaart";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Ava Fire vahekaardil";
 /* Create New Tab action */
 "action.title.newTabAction" = "Uus vaheleht";
 
@@ -361,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Otsi DuckDuckGo'st";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Otsingusoovitused hõlmavad nüüd sinu hiljuti külastatud saite. Saad selle välja lülitada seadetes või tühjendada igal ajal nupu 🔥 Fire Button abil.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Sama privaatsus.\nParemad otsingusoovitused!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Vaheta vahekaardile";
@@ -878,6 +876,9 @@
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Ei aitäh";
 
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Mitte praegu";
+
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Salvesta oma parool turvaliselt seadmesse DuckDuckGo paroolide ja automaatse täitmisega.";
 
@@ -943,6 +944,15 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Kas värskendada kasutajanime?";
+
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Luba heli ja video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Blokeeri heli ja video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Blokeeri heli";
 
 /* No comment provided by engineer. */
 "Available Products" = "Saadaolevad tooted";
@@ -1235,8 +1245,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Kohandatud URL: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Impordi järjehoidjate fail...";
 
@@ -1483,6 +1491,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Saadetud koos sinu sõnumiga Duck.ai-le";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Hiljutised vestlused";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Hiljutised vestlused";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Vaata kõiki vestlusi";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Lisa Duck.ai häälvestluse otsetee juhtimiskeskusesse";
 
@@ -1492,8 +1509,20 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Lisa lehe sisu";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Küsi lehe kohta";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Loo lehekülje kokkuvõte";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Kokkuvõte lehelt";
+
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Lisa Duck.ai juhtimiskeskusesse";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Lisa Duck.ai vidin avalehele";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Kuva Duck.ai nupud ja lingid DuckDuckGo otsingutulemustes.";
@@ -1503,12 +1532,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Küsi lisaküsimusi";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Lisa Duck.ai juhtimiskeskusesse";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Lisa Duck.ai vidin avalehele";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Brauseri otseteed";
@@ -1534,9 +1557,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "DuckDuckGo iOS-ile";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Otseteed";
 
@@ -1554,6 +1574,15 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Vestle Duck.ai-ga Siri abil!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Kõik vestlused on %@ privaatsed";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "privaatsed";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "DuckDuckGo iOS-ile";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Lisa sellesse seadmesse oma DuckDuckGo tellimus";
@@ -1630,11 +1659,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Duck Playeris avatud videote taasesitus algab automaatselt. Lülitage see välja, kui soovite Duck Playeris avatud videote taasesitust käsitsi alustada.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Videote automaatne esitamine";
+/* Label for the autoplay toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Automaatne videote esitamine";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Avab videod privaatses kinorežiimis, mis takistab YouTube'i voo mõjutamist vaadatava sisu poolt.";
+"duckplayer.settings.enable-footer" = "Avab videod kinorežiimis, mis takistab vaadataval sisul sinu YouTube'i voogu mõjutamast.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Luba Duck Player";
@@ -1831,6 +1860,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Lülitub sellele vahekaardile";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Viimati kasutatud Fire vahekaart";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Tagasi %@ juurde";
 
@@ -2140,6 +2171,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Vali, mida kustutada";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Logi saidile sisse teise kontoga";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Sirvi kohalikku ajalugu salvestamata";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Tõrkeotsing veebilehtedel";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire vahekaardid on teistest brauseriandmetest isoleeritud ja nende andmed põletatakse pärast seda, kui sa need kõik sulged. Neil on sama jälgimiskaitse kui teistel vahekaardil.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Uus Fire vahekaart";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire vahekaardid";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Uus";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Sirvi kohalikku ajalugu salvestamata või logi saitidele sisse teise kontoga.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Mitte praegu";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Proovi Fire vahekaarte";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Proovi Fire vahekaarte";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire vahekaart";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
 
@@ -2204,7 +2270,7 @@
 "import.passwords.promo.title" = "Impordi paroolid DuckDuckGosse";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Küsi privaatselt";
+"input.field.placeholder.duckai" = "Küsi ükskõik mida privaatselt";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Küsi lisaküsimus...";
@@ -2666,8 +2732,6 @@
 "No active subscriptions" = "Aktiivseid tellimusi ei ole";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Olemasolevat tellimust ei leitud";
 
 /* No comment provided by engineer. */
@@ -2709,8 +2773,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "App Store'i versioonides kuvatakse see kuva ainult siis, kui oled sisse logitud sisekasutajana aadressi **use-login.duckduckgo.com** kaudu.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "YouTube’i reklaamiblokeerija on sees";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Sain aru";
@@ -2897,9 +2961,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Loobumine...";
-
-/* No comment provided by engineer. */
-"Override" = "Tühista";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Ei pääse ainult tellijatele mõeldud Duck.ai mudelitele ligi";
@@ -3159,6 +3220,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skaneerimine...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Kas kustutada Fire vahekaardid ja nende andmed?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Kas kustutada vahekaardid ja saidi andmed?";
 
@@ -3351,8 +3414,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Tühjenda";
 
-
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Sule kõik avatud vahekaardid";
 
@@ -3413,16 +3474,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Andmete automaatne kustutamine";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automaatne esitamine";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Duck Playeri seaded";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Automaatse esitamise seaded kehtivad ainult äsjaavatud vahelehtedele. Muudatusi ei saa olemasolevatele vahekaartidele rakendada enne rakenduse taaskäivitamist. Duck Playeris automaatse esitamise haldamiseks valige suvand ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Brauseri tagasiside";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button kustutab ka Duck.ai ajaloo, sealhulgas kinnitatud vestlused.";
 
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Kustuta sirvimisandmed";
-
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Vii seadistamine lõpule";
@@ -3442,8 +3510,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Kohanda";
 
-
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Andmete kustutamine";
 
@@ -3453,10 +3519,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Vaikebrauser";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Lüliti vaikeasend uutel vahekaartidel.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Lüliti asend";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Viimati kasutatud";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Otsi";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Kustuta Duck.ai vestlused";
 
@@ -3502,7 +3579,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Tulenupu animatsioon";
 
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Tulekindlad saidid";
 
@@ -3544,6 +3620,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Halda kontot";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Meedia";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Veel DuckDuckGo'lt";
@@ -4190,15 +4269,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Vahekaart lugemata";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Sulge Fire vahekaart";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Sulge vaheleht";
 /* Accessibility label on remove button */
 "tab.close.home" = "Sulge avalehe vahekaart";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Sulge \"%1$@\" aadressil %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire vahekaart";
+
+/* New tab title */
+"tab.new.title" = "Uus vaheleht";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Ava avalehe vahekaart";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Ava uuel vahekaardil";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Ava Fire vahekaart";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Ava \"%1$@\" aadressil %2$@";
 
@@ -4637,12 +4731,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mida soovite importida?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Luba heli ja video";
-"autoplay.mode.blockAll" = "Blokeeri heli ja video";
-"autoplay.mode.blockAudio" = "Blokeeri heli";
-"settings.autoplay" = "Automaatne esitamine";
-"settings.autoplay.duck.player.link" = "Duck Playeri seaded";
-"settings.autoplay.footer" = "Automaatse esitamise seaded kehtivad ainult äsjaavatud vahelehtedele. Muudatusi ei saa olemasolevatele vahekaartidele rakendada enne rakenduse taaskäivitamist. Duck Playeris automaatse esitamise haldamiseks valige suvand ";
-"settings.media.section" = "Meedia";

@@ -488,6 +488,7 @@ private class AIChatMockSearchPreferencesPersistor: SearchPreferencesPersistor {
 private class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
     var selectedModelId: String?
     var selectedModelShortName: String?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
 // MARK: - Mock Models Service

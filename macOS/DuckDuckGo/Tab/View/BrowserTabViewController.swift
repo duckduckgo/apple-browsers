@@ -33,6 +33,7 @@ import PrivacyConfig
 import Subscription
 import SwiftUI
 import UserScript
+import WebExtensions
 import WebKit
 
 protocol BrowserTabViewControllerDelegate: AnyObject {
@@ -102,6 +103,7 @@ final class BrowserTabViewController: NSViewController {
     private let subscriptionManager: any SubscriptionManager
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let pinningManager: PinningManager
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding
 
     private let tld: TLD
 
@@ -177,6 +179,7 @@ final class BrowserTabViewController: NSViewController {
          subscriptionManager: any SubscriptionManager = NSApp.delegateTyped.subscriptionManager,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          pinningManager: PinningManager,
+         adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
          tld: TLD = NSApp.delegateTyped.tld
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -204,6 +207,7 @@ final class BrowserTabViewController: NSViewController {
         self.subscriptionManager = subscriptionManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.pinningManager = pinningManager
+        self.adBlockingAvailability = adBlockingAvailability
 
         self.tld = tld
         containerStackView = NSStackView()
@@ -675,40 +679,23 @@ final class BrowserTabViewController: NSViewController {
         // once a dialog is presented we reset the is dismissed flag
         self.wasContextualOnboardingDialogDismissed = false
 
-        let onDismissAction: () -> Void = { [weak self] in
-            guard let self else { return }
-            // we mark the flag for dialog dismissed
-            wasContextualOnboardingDialogDismissed = true
-            delegate?.dismissViewHighlight()
-            self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
-            if let lastDialog = onboardingDialogTypeProvider.lastDialog {
-                self.onboardingPixelReporter.measureDialogDismissed(dialogType: lastDialog)
-            }
-        }
-
-        let onGotItPressed = { [weak self] in
-            guard let self else { return }
-
-            onboardingDialogTypeProvider.gotItPressed()
-
-            let currentState = onboardingDialogTypeProvider.lastDialog
-
-            // Reset highlight animations
-            delegate?.dismissViewHighlight()
-
-            // Process state
-            if case .tryFireButton = currentState {
-                delegate?.highlightFireButton()
-            }
-        }
-
         let daxView = onboardingDialogFactory.makeView(
             for: dialogType,
             delegate: tab,
-            onDismiss: onDismissAction,
-            onGotItPressed: onGotItPressed,
+            onDismiss: { [weak self] in
+                self?.handleContextualOnboardingOnDismiss()
+            },
+            onManualDismiss: { [weak self] in
+                self?.handleContextualOnboardingOnManualDismiss()
+            },
+            onGotItPressed: { [weak self] in
+                self?.handleContextualOnboardingOnGotItPressed(dialogType: dialogType)
+            },
             onFireButtonPressed: { [weak delegate] in
                 delegate?.dismissViewHighlight()
+            },
+            onSuggestionPressed: { [weak onboardingPixelReporter] in
+                onboardingPixelReporter?.measureSuggestionPressed()
             })
         let hostingController = NSHostingController(rootView: AnyView(daxView))
         insertChild(hostingController, in: containerStackView, at: 0)
@@ -726,6 +713,32 @@ final class BrowserTabViewController: NSViewController {
             delegate?.highlightFireButton()
         } else if case .trackers = dialogType {
             delegate?.highlightPrivacyShield()
+        }
+    }
+
+    private func handleContextualOnboardingOnDismiss() {
+        wasContextualOnboardingDialogDismissed = true
+        delegate?.dismissViewHighlight()
+        removeChild(in: containerStackView, webViewContainer: webViewContainer)
+        if let lastDialog = onboardingDialogTypeProvider.lastDialog {
+            onboardingPixelReporter.measureDialogDismissed(dialogType: lastDialog)
+        }
+    }
+
+    private func handleContextualOnboardingOnManualDismiss() {
+        if let lastDialog = onboardingDialogTypeProvider.lastDialog {
+            onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: lastDialog)
+        }
+        handleContextualOnboardingOnDismiss()
+    }
+
+    private func handleContextualOnboardingOnGotItPressed(dialogType: ContextualDialogType) {
+        onboardingDialogTypeProvider.gotItPressed()
+        onboardingPixelReporter.measureGotItPressed(dialogType: dialogType)
+        let currentState = onboardingDialogTypeProvider.lastDialog
+        delegate?.dismissViewHighlight()
+        if case .tryFireButton = currentState {
+            delegate?.highlightFireButton()
         }
     }
 
@@ -1263,10 +1276,11 @@ final class BrowserTabViewController: NSViewController {
                 dockPreferences: dockPreferences,
                 accessibilityPreferences: accessibilityPreferences,
                 duckPlayerPreferences: duckPlayer.preferences,
-                youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences(duckPlayerPreferences: duckPlayer.preferences),
+                youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences(duckPlayerPreferences: duckPlayer.preferences, pixelFiring: PixelKit.shared),
                 subscriptionManager: subscriptionManager,
                 winBackOfferVisibilityManager: winBackOfferVisibilityManager,
-                pinningManager: pinningManager
+                pinningManager: pinningManager,
+                adBlockingAvailability: adBlockingAvailability
             )
             preferencesViewController.delegate = self
             self.preferencesViewController = preferencesViewController

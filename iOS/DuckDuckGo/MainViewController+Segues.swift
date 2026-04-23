@@ -149,7 +149,7 @@ extension MainViewController {
                                                         entryPoint: entryPoint,
                                                         privacyConfigurationManager: self.privacyConfigurationManager,
                                                         contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                                        breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo())
+                                                        breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo(webExtensionManager: webExtensionManager))
 
         currentTab?.privacyDashboard = controller
 
@@ -184,15 +184,10 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let storyboard = UIStoryboard(name: "Downloads", bundle: nil)
-        guard let controller = storyboard.instantiateInitialViewController() else {
-            assertionFailure()
-            return
-        }
-        present(controller, animated: true)
+        present(DownloadsListHostingController(), animated: true)
     }
 
-    func segueToTabSwitcher() async {
+    func segueToTabSwitcher(forceFireTabsTip: Bool = false) async {
         Logger.lifecycle.debug(#function)
 
         // Guard against concurrent presentations
@@ -242,6 +237,8 @@ extension MainViewController {
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
         controller.previewsSource = previewsSource
+        controller.fireModePromotionsCoordinator = fireModePromotionEligibility
+        controller.shouldForceShowFireTabsTip = forceFireTabsTip
         controller.modalPresentationStyle = .overCurrentContext
 
         tabSwitcherController = controller
@@ -457,7 +454,8 @@ extension MainViewController {
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
                                                   whatsNewCoordinator: whatsNewCoordinator,
-                                                  darkReaderFeatureSettings: darkReaderFeatureSettings)
+                                                  darkReaderFeatureSettings: darkReaderFeatureSettings,
+                                                  adBlockingAvailability: adBlockingAvailability)
 
         settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)

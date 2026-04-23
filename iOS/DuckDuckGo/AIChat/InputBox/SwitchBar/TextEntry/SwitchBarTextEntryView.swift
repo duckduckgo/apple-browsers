@@ -161,6 +161,7 @@ class SwitchBarTextEntryView: UIView {
         textView.delegate = self
         textView.isScrollEnabled = false
         textView.showsVerticalScrollIndicator = false
+        textView.accessibilityIdentifier = "searchEntry"
 
         placeholderLabel.font = textFont
         placeholderLabel.adjustsFontForContentSizeCategory = true
@@ -293,7 +294,7 @@ class SwitchBarTextEntryView: UIView {
         case .aiChat:
             textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
             textView.returnKeyType = .default
-            if handler.isUsingFadeOutAnimation && textView.text.isEmpty {
+            if handler.shouldDisableAutocorrectOnEmpty && textView.text.isEmpty {
                 disableAutoCorrectionAndSpellChecking()
             } else {
                 enableAutoCorrectionAndSpellChecking()
@@ -516,7 +517,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateAutoCorrectionSetupForAIChat(for text: String) {
-        guard handler.isUsingFadeOutAnimation && currentMode == .aiChat else { return }
+        guard handler.shouldDisableAutocorrectOnEmpty, currentMode == .aiChat else { return }
 
         let isTextEmpty = text.isEmpty
         let stateChanged = isTextEmpty != wasTextEmptyForAutocorrection
@@ -588,7 +589,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         updatePlaceholderVisibility()
         updateButtonState()
         updateTextViewHeight()
-        handler.updateCurrentText(textView.text ?? "")
+        handler.updateCurrentText((textView.text ?? "").strippingDictationPlaceholder)
         handler.markUserInteraction()
 
         // On iPad, reload input views on each keystroke (old behavior, without fade-out animation)

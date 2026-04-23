@@ -109,10 +109,14 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Tabbladen en gegevens gewist";
 
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Openen op de achtergrond";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Nieuw Fire Window";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Openen in nieuw Fire-tabblad";
 /* Create New Tab action */
 "action.title.newTabAction" = "Nieuw tabblad";
 
@@ -361,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Zoek in DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Zoekopdrachtsuggesties bevatten nu ook je recent bezochte sites. Je kunt suggesties uitschakelen in de instellingen of ze op elk gewenst moment wissen met de 🔥 Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Dezelfde privacy.\nBetere zoeksuggesties!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Overschakelen naar tabblad";
@@ -878,6 +876,9 @@
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Nee, bedankt";
 
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Niet nu";
+
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Sla je wachtwoord veilig op je apparaat op met DuckDuckGo wachtwoorden en automatisch invullen.";
 
@@ -943,6 +944,15 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Gebruikersnaam bijwerken?";
+
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Audio en video toestaan";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Audio en video blokkeren";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Audio blokkeren";
 
 /* No comment provided by engineer. */
 "Available Products" = "Beschikbare producten";
@@ -1235,8 +1245,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Aangepaste URL: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Bladwijzerbestand importeren...";
 
@@ -1483,6 +1491,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Wordt samen met je bericht naar Duck.ai gestuurd";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Recente chats";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Recente chats";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Bekijk alle chats";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Voeg de Duck.ai spraaksneltoets toe aan je controlecentrum";
 
@@ -1492,8 +1509,20 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Pagina-inhoud bijvoegen";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Stel een vraag over de pagina";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Deze pagina samenvatten";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Pagina samenvatten";
+
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Duck.ai toevoegen aan het controlecentrum";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Duck.ai-widget toevoegen aan startscherm";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Toon Duck.ai-knoppen en -links in de zoekresultaten van DuckDuckGo.";
@@ -1503,12 +1532,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Stel vervolgvragen";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Duck.ai toevoegen aan het controlecentrum";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Duck.ai-widget toevoegen aan startscherm";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Browsersnelkoppelingen";
@@ -1534,9 +1557,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "DuckDuckGo voor iOS";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Sneltoetsen";
 
@@ -1554,6 +1574,15 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Praat met Duck.ai met behulp van Siri!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Alle chats zijn %@ privé";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "privé";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "DuckDuckGo voor iOS";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Voeg je DuckDuckGo-abonnement toe aan dit apparaat";
@@ -1630,11 +1659,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Video's die je in Duck Player opent, worden automatisch afgespeeld. Schakel deze functie uit als je het afspelen van video's in Duck Player handmatig wilt starten.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Video's automatisch afspelen";
+/* Label for the autoplay toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Automatisch afspelen van video's";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Opent video's in een privébioscoopmodus die voorkomt dat wat je bekijkt je YouTube-feed beïnvloedt.";
+"duckplayer.settings.enable-footer" = "Opent video's in een bioscoopmodus die voorkomt dat wat je bekijkt je YouTube-feed beïnvloedt.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Duck Player inschakelen";
@@ -1831,6 +1860,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Schakelt over naar dit tabblad";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Laatst gebruikte Fire Tab";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Keer terug naar %@";
 
@@ -2140,6 +2171,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Kies wat je wilt verwijderen";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Meld je aan bij een website met een ander account";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Bladeren zonder lokale geschiedenis op te slaan";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Problemen met websites oplossen";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire Tabs staan los van andere browsergegevens en de gegevens worden verwijderd wanneer je ze allemaal sluit. Ze hebben dezelfde trackingbeveiliging als andere tabbladen.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Nieuw Fire Window";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire-tabbladen";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Nieuw";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Blader zonder je lokale geschiedenis op te slaan of log in op sites met een ander account.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Niet nu";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Probeer Fire Tabs";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Probeer Fire Tabs";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire-tabblad";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luchtstroom";
 
@@ -2204,7 +2270,7 @@
 "import.passwords.promo.title" = "Je wachtwoorden importeren in DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Vraag privé";
+"input.field.placeholder.duckai" = "Vraag iets privé";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Stel een vervolgvraag ...";
@@ -2666,8 +2732,6 @@
 "No active subscriptions" = "Geen actieve abonnementen";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Geen bestaand abonnement gevonden";
 
 /* No comment provided by engineer. */
@@ -2709,8 +2773,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "Op App Store builds wordt dit scherm alleen getoond als je ingelogd bent als interne gebruiker via **use-login.duckduckgo.com**.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "Blokkering van YouTube-advertenties aan";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Ik snap het";
@@ -2897,9 +2961,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Afmelden...";
-
-/* No comment provided by engineer. */
-"Override" = "Overschrijven";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Geen toegang tot de alleen voor abonnees beschikbare Duck.ai-modellen";
@@ -3159,6 +3220,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Scannen...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Fire Tabs en hun gegevens verwijderen?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Tabbladen en sitegegevens verwijderen?";
 
@@ -3351,8 +3414,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Wissen";
 
-
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Alle open tabbladen sluiten";
 
@@ -3413,16 +3474,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Gegevens automatisch verwijderen";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automatisch afspelen";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Duck Player-instellingen";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Autoplay-instellingen gelden alleen voor nieuw geopende tabbladen. Wijzigingen kunnen niet worden toegepast op bestaande tabbladen, tenzij de applicatie opnieuw wordt opgestart. Ga om de automatische afspeelfunctie in Duck Player te beheren naar ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browserfeedback";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button verwijdert ook de Duck.ai-geschiedenis, inclusief vastgepinde chats.";
 
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Browsegegevens verwijderen";
-
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Je instelling voltooien";
@@ -3442,8 +3510,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Aanpassen";
 
-
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Gegevens wissen";
 
@@ -3453,10 +3519,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standaardbrowser";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Standaardpositie van de schakelaar op nieuwe tabbladen.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Schakelpositie";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Laatst gebruikt";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Zoeken";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Duck.ai-chats verwijderen";
 
@@ -3502,7 +3579,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animatie vuurknop";
 
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Brandveilige websites";
 
@@ -3544,6 +3620,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Account beheren";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Media";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Meer over DuckDuckGo";
@@ -4190,15 +4269,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Ongelezen tabblad";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Fire-tabblad sluiten";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Tabblad sluiten";
 /* Accessibility label on remove button */
 "tab.close.home" = "Starttabblad sluiten";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "'%1$@' op %2$@ sluiten";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire-tabblad";
+
+/* New tab title */
+"tab.new.title" = "Nieuw tabblad";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Starttabblad openen";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Nieuw tabblad openen";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Fire-tabblad openen";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "'%1$@' op %2$@ openen";
 
@@ -4637,12 +4731,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Wat wil je importeren?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Audio en video toestaan";
-"autoplay.mode.blockAll" = "Audio en video blokkeren";
-"autoplay.mode.blockAudio" = "Audio blokkeren";
-"settings.autoplay" = "Automatisch afspelen";
-"settings.autoplay.duck.player.link" = "Duck Player-instellingen";
-"settings.autoplay.footer" = "Autoplay-instellingen gelden alleen voor nieuw geopende tabbladen. Wijzigingen kunnen niet worden toegepast op bestaande tabbladen, tenzij de applicatie opnieuw wordt opgestart. Ga om de automatische afspeelfunctie in Duck Player te beheren naar ";
-"settings.media.section" = "Media";

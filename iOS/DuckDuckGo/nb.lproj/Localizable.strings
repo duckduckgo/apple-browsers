@@ -109,10 +109,14 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Faner lukket og data slettet";
 
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Åpne i bakgrunnen";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Ny Fire-fane";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Åpne i en Fire-fane";
 /* Create New Tab action */
 "action.title.newTabAction" = "Ny fane";
 
@@ -361,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Søk i DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Søkeforslag inkluderer nå nylig besøkte nettsteder. Slå dem av i innstillingene, eller slett dem når som helst med Fire Button 🔥.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Samme personvern.\nBedre søkeforslag!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Bytt til fane";
@@ -878,6 +876,9 @@
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Nei takk";
 
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Ikke nå";
+
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Lagre passordet ditt trygt på enheten med DuckDuckGos passord og autofyll.";
 
@@ -943,6 +944,15 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Vil du oppdatere brukernavnet?";
+
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Tillat lyd og video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Blokker lyd og video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Blokker lyd";
 
 /* No comment provided by engineer. */
 "Available Products" = "Tilgjengelige produkter";
@@ -1235,8 +1245,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Egendefinert URL-adresse: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importer bokmerkefil ...";
 
@@ -1483,6 +1491,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Sendt med meldingen din til Duck.ai";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Nylige chatter";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Nylige chatter";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Vis alle chatter";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Legg til Duck.ai Voice-snarveien i kontrollsenteret ditt";
 
@@ -1492,8 +1509,20 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Legg ved sideinnhold";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Spør om siden";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Oppsummer denne siden";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Oppsummer siden";
+
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Legg til Duck.ai i kontrollsenteret";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Legg til Duck.ai-widgeten på startskjermen";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Vis Duck.ai-knapper og -lenker i søkeresultatene i DuckDuckGo.";
@@ -1503,12 +1532,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Still oppfølgingsspørsmål";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Legg til Duck.ai i kontrollsenteret";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Legg til Duck.ai-widgeten på startskjermen";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Snarveier i nettleseren";
@@ -1534,9 +1557,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "DuckDuckGo for iOS";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Snarveier";
 
@@ -1554,6 +1574,15 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Snakk med Duck.ai ved hjelp av Siri!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Alle chatter er %@ private";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "private";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "DuckDuckGo for iOS";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Legg til DuckDuckGo-abonnementet ditt på denne enheten";
@@ -1630,11 +1659,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videoer som åpnes i Duck Player, begynner automatisk å spille av. Slå av dette hvis du vil starte avspilling av videoer åpnet i Duck Player manuelt.";
 
-/* Label for the auto-play toggle in Duck Player settings */
+/* Label for the autoplay toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatisk avspilling av videoer";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Åpner videoer i en privat kinomodus som hindrer at det du ser på, har innflytelse på YouTube-feeden din.";
+"duckplayer.settings.enable-footer" = "Åpner videoer i en kinomodus som hindrer at det du ser på, påvirker YouTube-feeden din.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Aktiver Duck Player";
@@ -1831,6 +1860,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Bytter til denne fanen";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Sist brukte Fire-fane";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Gå tilbake til %@";
 
@@ -2140,6 +2171,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Velg hva som skal slettes";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Logg inn på et nettsted med en annen konto";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Surf uten å lagre lokal historikk";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Feilsøk nettsteder";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire-faner er isolert fra andre nettleserdata, og dataene i dem blir brent når du lukker alle sammen. De har samme sporingsbeskyttelse som andre faner.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Ny Fire-fane";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire-faner";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Ny";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Surf uten å lagre lokal historikk eller logg inn på nettsteder med en annen konto.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Ikke nå";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Prøv Fire-faner";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Prøv Fire-faner";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire-fane";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luftstrøm";
 
@@ -2204,7 +2270,7 @@
 "import.passwords.promo.title" = "Importer passordene dine til DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Spør privat";
+"input.field.placeholder.duckai" = "Spør om hva som helst, privat";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Still et oppfølgingsspørsmål ...";
@@ -2666,8 +2732,6 @@
 "No active subscriptions" = "Ingen aktive abonnementer";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Ingen eksisterende abonnementer er funnet";
 
 /* No comment provided by engineer. */
@@ -2709,8 +2773,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "På App Store-versjoner vises dette skjermbildet bare hvis du er logget på som en intern bruker via **use-login.duckduckgo.com**.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "Annonseblokkering på YouTube er på";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Den er grei";
@@ -2897,9 +2961,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Velger bort...";
-
-/* No comment provided by engineer. */
-"Override" = "Overstyre";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Får ikke tilgang til Duck.ai-modeller som må abonneres på";
@@ -3159,6 +3220,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skanner...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Vil du slette Fire-faner og dataene i dem?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Vil du slette faner og nettstedsdata?";
 
@@ -3351,8 +3414,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Tilbakestill";
 
-
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Lukk alle åpne faner";
 
@@ -3413,16 +3474,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Slett data automatisk";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Autoplay";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Duck Player-innstillinger";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Innstillingene for automatisk avspilling gjelder kun for nylig åpnede faner. Endringer kan ikke gjøres på eksisterende faner med mindre programmet startes på nytt. For å administrere automatisk avspilling i Duck Player kan du gå til ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Nettlesertilbakemelding";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button sletter også Duck.ai-historikken, inkludert festede chatter.";
 
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Fjern nettleserdata";
-
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Fullfør oppsettet";
@@ -3442,8 +3510,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Tilpass";
 
-
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Sletting av data";
 
@@ -3453,10 +3519,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardnettleser";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Standard bryterposisjon på nye faner.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Bryterposisjon";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Sist brukt";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Søk";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Slett Duck.ai-chatter";
 
@@ -3502,7 +3579,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animasjon for brannknappen";
 
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Nettsteder med Fireproof";
 
@@ -3544,6 +3620,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Administrer konto";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Media";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Mer fra DuckDuckGo";
@@ -4190,15 +4269,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Fane ulest";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Lukk Fire-fane";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Lukk fane";
 /* Accessibility label on remove button */
 "tab.close.home" = "Lukk hjem-fane";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Lukk \"%1$@\" på %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire-fane";
+
+/* New tab title */
+"tab.new.title" = "Ny fane";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Åpne hjem-fane";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Åpne ny fane";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Åpne Fire-fane";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Åpne \"%1$@\" på %2$@";
 
@@ -4637,12 +4731,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hva vil du importere?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Tillat lyd og video";
-"autoplay.mode.blockAll" = "Blokker lyd og video";
-"autoplay.mode.blockAudio" = "Blokker lyd";
-"settings.autoplay" = "Autoplay";
-"settings.autoplay.duck.player.link" = "Duck Player-innstillinger";
-"settings.autoplay.footer" = "Innstillingene for automatisk avspilling gjelder kun for nylig åpnede faner. Endringer kan ikke gjøres på eksisterende faner med mindre programmet startes på nytt. For å administrere automatisk avspilling i Duck Player kan du gå til ";
-"settings.media.section" = "Media";

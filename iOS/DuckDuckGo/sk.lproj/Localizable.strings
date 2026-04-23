@@ -109,10 +109,14 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Karty a údaje boli vymazané";
 
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otvoriť na pozadí";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Nová karta Fire";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Otvoriť na karte Fire";
 /* Create New Tab action */
 "action.title.newTabAction" = "Nová karta";
 
@@ -361,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Vyhľadávajte cez DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Návrhy vyhľadávania teraz zahŕňajú vaše nedávno navštívené stránky. Vypnite ich v nastaveniach alebo ich kedykoľvek zrušte pomocou tlačidla 🔥Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Rovnaké súkromie.\nLepšie návrhy vyhľadávania!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Prepnúť na kartu";
@@ -878,6 +876,9 @@
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Nie, ďakujem";
 
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Teraz nie";
+
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Heslo bezpečne uložte do zariadenia pomocou aplikácie DuckDuckGo Passwords & Autofill.";
 
@@ -943,6 +944,15 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Aktualizovať meno používateľa?";
+
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Povoľ zvuk a video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Blokovať zvuk a video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Blokovať zvuk";
 
 /* No comment provided by engineer. */
 "Available Products" = "Dostupné produkty";
@@ -1235,8 +1245,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Vlastná URL adresa: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importovať súbor so záložkami...";
 
@@ -1483,6 +1491,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Odoslané s tvojou správou na Duck.ai";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Nedávne chaty";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Nedávne chaty";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Zobraziť všetky chaty";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Pridaj si skratku pre Duck.ai hlas do ovládacieho centra";
 
@@ -1492,8 +1509,20 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Pripoj obsah stránky";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Opýtaj sa na stránku";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Zhrň túto stránku";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Zhrnutie stránky";
+
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Pridať Duck.ai do ovládacieho centra";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Pridať miniaplikáciu Duck.ai na úvodnú obrazovku";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Zobraziť tlačidlá a odkazy Duck.ai vo výsledkoch vyhľadávania DuckDuckGo.";
@@ -1503,12 +1532,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Pýtaj sa doplňujúce otázky";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Pridať Duck.ai do ovládacieho centra";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Pridať miniaplikáciu Duck.ai na úvodnú obrazovku";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Skratky prehliadača";
@@ -1534,9 +1557,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "DuckDuckGo pre iOS";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Skratky";
 
@@ -1554,6 +1574,15 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Hovor s Duck.ai pomocou Siri!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Všetky chaty sú %@ súkromné";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "súkromné";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "DuckDuckGo pre iOS";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Pridaj si do tohto zariadenia predplatné DuckDuckGo";
@@ -1630,11 +1659,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videá otvorené v Duck Player sa začnú automaticky prehrávať. Túto možnosť vypni, ak chceš prehrávanie videí otvorených v Duck Player spúšťať manuálne.";
 
-/* Label for the auto-play toggle in Duck Player settings */
+/* Label for the autoplay toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatické prehrávanie videí";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Otvára videá v režime súkromného kina, ktorý zabraňuje tomu, aby sledované položky ovplyvňovali tvoj YouTube kanál.";
+"duckplayer.settings.enable-footer" = "Otvára videá v režime prehrávania so súkromím, ktorý zabraňuje tomu, aby sledované položky ovplyvňovali tvoj YouTube kanál.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Povoliť Duck Player";
@@ -1653,6 +1682,7 @@
 
 /* Button that takes the user to learn more about Duck Player. */
 "duckplayer.settings.learn-more" = "Zistite viac";
+
 /* Settings screen cell text for DuckPlayer settings to open in new tab */
 "duckplayer.settings.open-new-tab-label" = "Otvoriť Duck Player na novej karte";
 
@@ -1664,6 +1694,7 @@
 
 /* Label for the search results toggle in Duck Player settings */
 "duckplayer.settings.search.results.label" = "Výsledky vyhľadávania DuckDuckGo";
+
 /* Message for the alert when changing Duck Player variant */
 "duckplayer.settings.tab.alert.message" = "Na použitie tohto nastavenia zatvor všetky karty.";
 
@@ -1829,6 +1860,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Prepína na túto kartu";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Naposledy použitá karta Fire";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Vráť sa na %@";
 
@@ -2138,6 +2171,41 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Vyber, čo chceš odstrániť";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Prihlás sa na stránku s iným účtom";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Prehliadaj bez lokálneho ukladania histórie";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Riešenie problémov s webovými stránkami";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Karty Fire sú izolované od ostatných dát prehliadača a ich dáta sa spália, keď ich všetky zatvoríte. Majú rovnakú ochranu proti sledovaniu ako ostatné karty.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Nová karta Fire";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Karty Fire";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Nové";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Prehliadaj bez lokálneho ukladania histórie alebo sa prihlasuj na stránky s iným účtom.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Teraz nie";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Vyskúšaj karty Fire";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Vyskúšaj karty Fire";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Karta Fire";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Prúd vzduchu";
 
@@ -2202,7 +2270,7 @@
 "import.passwords.promo.title" = "Importuj si svoje heslá do DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Spýtaj sa súkromne";
+"input.field.placeholder.duckai" = "Spýtaj sa na čokoľvek súkromne";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Polož doplňujúcu otázku...";
@@ -2664,8 +2732,6 @@
 "No active subscriptions" = "Žiadne aktívne predplatné";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Nebolo nájdené žiadne existujúce predplatné";
 
 /* No comment provided by engineer. */
@@ -2707,8 +2773,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "V zostavách z App Store sa táto obrazovka zobrazí iba v prípade, že ste prihlásení ako interný používateľ prostredníctvom **use-login.duckduckgo.com**.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "Blokovanie reklám na YouTube je zapnuté";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Rozumiem";
@@ -2895,9 +2961,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Odhlásenie...";
-
-/* No comment provided by engineer. */
-"Override" = "Prepísať";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nepodarilo sa získať prístup k modelom Duck.ai, ktoré sú určené výhradne pre predplatiteľov.";
@@ -3157,6 +3220,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skenovanie...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Vymazať karty Fire a ich údaje?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Odstrániť karty a údaje stránok?";
 
@@ -3349,8 +3414,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Vymazať";
 
-
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Zatvor všetky otvorené karty";
 
@@ -3411,16 +3474,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Automatické odstránenie údajov";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automatické prehrávanie";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Nastavenia Duck Player";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Nastavenia automatického prehrávania sa použijú iba na novo otvorené karty. Zmeny nie je možné použiť na existujúce karty, pokiaľ sa aplikácia nereštartuje. Ak chceš spravovať automatické prehrávanie v Duck Player, prejdi na ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Spätná väzba prehliadača";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button tiež vymaže históriu Duck.ai vrátane pripnutých rozhovorov.";
 
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Vymaž údaje o prehliadaní";
-
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Dokonči svoje nastavenie";
@@ -3440,8 +3510,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Prispôsobiť";
 
-
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Vymazanie údajov";
 
@@ -3451,10 +3519,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Predvolený prehliadač";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Predvolená poloha prepínača na nových kartách.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Poloha prepínača";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Naposledy použité";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Vyhľadávať";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Odstrániť chaty Duck.ai";
 
@@ -3500,7 +3579,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animácia tlačidla ohňa";
 
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Stránky s ochranou Fireproof";
 
@@ -3542,6 +3620,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Spravovať účet";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Médiá";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Viac od DuckDuckGo";
@@ -4188,15 +4269,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Neprečítaná karta";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Zatvoriť Fire kartu";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Zatvoriť karta";
 /* Accessibility label on remove button */
 "tab.close.home" = "Zatvorte kartu domovskej stránky";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Zatvoriť „%1$@“ na adrese %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Karta Fire";
+
+/* New tab title */
+"tab.new.title" = "Nová karta";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Otvorte kartu Domovská stránka";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Otvoriť novú kartu";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Otvoriť kartu Fire";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Otvoriť „%1$@“ na adrese %2$@";
 
@@ -4635,12 +4731,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Čo chceš importovať?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Povoľ zvuk a video";
-"autoplay.mode.blockAll" = "Blokovať zvuk a video";
-"autoplay.mode.blockAudio" = "Blokovať zvuk";
-"settings.autoplay" = "Automatické prehrávanie";
-"settings.autoplay.duck.player.link" = "Nastavenia Duck Player";
-"settings.autoplay.footer" = "Nastavenia automatického prehrávania sa použijú iba na novo otvorené karty. Zmeny nie je možné použiť na existujúce karty, pokiaľ sa aplikácia nereštartuje. Ak chceš spravovať automatické prehrávanie v Duck Player, prejdi na ";
-"settings.media.section" = "Médiá";

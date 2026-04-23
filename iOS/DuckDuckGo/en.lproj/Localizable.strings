@@ -82,6 +82,12 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Open in Background";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "New Fire Tab";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Open in a Fire Tab";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "New Tab";
 
@@ -330,12 +336,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Search DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Search suggestions now include your recently visited sites. Turn off in Settings, or clear anytime with the 🔥 Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Same privacy.\nBetter search suggestions!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Switch to Tab";
@@ -846,6 +846,9 @@
 
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "No Thanks";
+
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Not Now";
 
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Securely store your password on device with DuckDuckGo Passwords & Autofill.";
@@ -1396,17 +1399,32 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Sent with your message to Duck.ai";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Recent Chats";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Recent Chats";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "View all chats";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Add Duck.ai Voice Shortcut to Your Control Center";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI features are private and optional. Your data is not used to train AI.";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Ask about page";
+
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Attach Page Content";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Summarize This Page";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Summarize page";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Add Duck.ai to Control Center";
@@ -1464,6 +1482,12 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Talk with Duck.ai using Siri!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "All chats are %@ private";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "private";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Add your DuckDuckGo subscription to this device";
@@ -1544,7 +1568,7 @@
 "duckplayer.settings.autoplay.label" = "Autoplay Videos";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Opens videos in a private theatre mode that prevents what you watch from influencing your YouTube feed.";
+"duckplayer.settings.enable-footer" = "Opens videos in theater mode that prevents what you watch from influencing your YouTube feed.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Enable Duck Player";
@@ -1731,6 +1755,9 @@
 
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Switches to this tab";
+
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Last used Fire Tab";
 
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Return to %@";
@@ -2029,6 +2056,42 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Choose What To Delete";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Sign in to a site with a different account";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Browse without saving local history";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Troubleshoot websites";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire Tabs are isolated from other browser data, and their data is burned when you close them all. They have the same tracking protection as other tabs.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "New Fire Tab";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire Tabs";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "New";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Browse without saving local history or sign in to sites with a different account.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Not Now";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Try Fire Tabs";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Try Fire Tabs";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire Tab";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
 
@@ -2087,7 +2150,7 @@
 "import.passwords.promo.title" = "Import your passwords to DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Ask privately";
+"input.field.placeholder.duckai" = "Ask anything privately";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Ask a follow-up question...";
@@ -2521,6 +2584,9 @@ https://duckduckgo.com/mac";
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "YouTube Ad Block On";
+
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Got It";
 
@@ -2919,6 +2985,9 @@ https://duckduckgo.com/mac";
 
 /* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
 "prompt.x-safari-https.try-open.title" = "This site wants to open in Safari.";
+
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Delete Fire Tabs and their data?";
 
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Delete tabs and site data?";
@@ -3946,14 +4015,32 @@ Take back control of your personal information with the browser designed for dat
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Tab Unread";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Close fire tab";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Close tab";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Close home tab";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Close \"%1$@\" at %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire Tab";
+
+/* New tab title */
+"tab.new.title" = "New Tab";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Open home tab";
+
+/* Accessibility label on tab cell */
+"tab.open.new" = "Open new tab";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Open fire tab";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Open \"%1$@\" at %2$@";

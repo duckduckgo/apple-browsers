@@ -87,6 +87,7 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsAIChatSync: Bool
     public let supportsMultipleContexts: Bool
     public let supportsTabPicker: Bool
+    public let supportsNativeStorage: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -105,7 +106,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsHomePageEntryPoint: true,
                                         supportsOpenAIChatLink: true,
                                         supportsAIChatSync: false,
-                                        supportsMultipleContexts: false)
+                                        supportsMultipleContexts: false,
+                                        supportsNativeStorage: false)
 #endif
 
 #if os(macOS)
@@ -124,7 +126,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsHomePageEntryPoint: true,
                                         supportsOpenAIChatLink: true,
                                         supportsAIChatSync: false,
-                                        supportsMultipleContexts: false)
+                                        supportsMultipleContexts: false,
+                                        supportsNativeStorage: false)
 #endif
     }
 
@@ -144,7 +147,8 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsOpenAIChatLink: Bool = true,
                 supportsAIChatSync: Bool,
                 supportsMultipleContexts: Bool = false,
-                supportsTabPicker: Bool = false) {
+                supportsTabPicker: Bool = false,
+                supportsNativeStorage: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -163,6 +167,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsAIChatSync = supportsAIChatSync
         self.supportsMultipleContexts = supportsMultipleContexts
         self.supportsTabPicker = supportsTabPicker
+        self.supportsNativeStorage = supportsNativeStorage
     }
 }
 

@@ -30,6 +30,7 @@ public enum DuckAiNativeStorageUserScriptMessages: String, CaseIterable {
     // Chats
     case putChat
     case putChats
+    case getChat
     case getAllChats
     case deleteChat
     case deleteAllChats
@@ -39,6 +40,7 @@ public enum DuckAiNativeStorageUserScriptMessages: String, CaseIterable {
     case getFile
     case listFiles
     case deleteFile
+    case deleteFiles
     case deleteAllFiles
 
     // Migration

@@ -217,16 +217,16 @@ private extension NewTabDaxDialogFactory {
                 dismissText: UserText.SubscriptionPromotionOnboarding.Buttons.skip,
                 proceedAction: { [weak self] in
                     self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
-                    if isChatPath {
-                        self?.delegate?.navigateFromOnboarding(to: SubscriptionURL.StaticURLs.proPageURL)
-                    } else {
+//                    if isChatPath {
+//                        self?.delegate?.navigateFromOnboarding(to: SubscriptionURL.StaticURLs.proPageURL)
+//                    } else {
                         let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
                         NotificationCenter.default.post(
                             name: .settingsDeepLinkNotification,
                             object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
                             userInfo: nil
                         )
-                    }
+//                    }
                     onDismiss(false)
                 },
                 onManualDismiss: { [weak self] in

@@ -2030,7 +2030,7 @@ class MainViewController: UIViewController {
     func refreshOmniBar() {
         updateOmniBarLoadingState()
         viewCoordinator.omniBar.refreshFireMode(fireMode: isCurrentTabFireTab())
-        // Mirror omnibar fire-mode: drive UTI from the tab model so a freshly attached NTP (no `TabViewController`) still updates.
+        // A fresh NTP has no `TabViewController` yet; drive UTI from the tab model so fire-mode still applies.
         unifiedToggleInputCoordinator?.updateIsFireTab(isCurrentTabFireTab())
 
         guard let tab = currentTab, tab.link != nil else {

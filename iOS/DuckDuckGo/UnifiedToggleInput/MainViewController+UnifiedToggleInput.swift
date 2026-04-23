@@ -79,8 +79,6 @@ extension MainViewController {
             return
         }
 
-        // Fire-mode is model-driven from `refreshOmniBar`; here we only handle VC-bound state.
-
         let action = refreshAction(for: tab, coordinator: coordinator)
 
         switch action {

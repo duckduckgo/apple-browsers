@@ -281,9 +281,9 @@ class MainViewCoordinator {
         }
         animator.addCompletion { [weak self] position in
             guard let self else { return }
+            self.omnibarDismissAnimator = nil
             // Skip cleanup if the animation was superseded — otherwise it stomps fresh state from a concurrent show.
             guard position == .end else { return }
-            self.omnibarDismissAnimator = nil
             self.finishUnifiedToggleInputOmnibarDismiss()
         }
         omnibarDismissAnimator = animator

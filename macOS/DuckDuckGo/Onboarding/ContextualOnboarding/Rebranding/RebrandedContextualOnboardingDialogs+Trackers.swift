@@ -55,7 +55,7 @@ extension OnboardingRebranding {
                 Spacer(minLength: 0)
                 // Negative spacing pulls the wing up so its top overlaps the bubble's tail
                 // area — the "padding between bubble and wing" the reference shows.
-                VStack(spacing: -30) {
+                VStack(spacing: -20) {
                     OnboardingBubbleView(
                         tailPosition: .bottom(offset: 0.1, direction: .trailing),
                         arrowLength: 14,

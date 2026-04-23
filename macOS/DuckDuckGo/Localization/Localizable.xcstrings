@@ -72496,6 +72496,18 @@
         }
       }
     },
+    "pinning.hide-feedback-shortcut" : {
+      "comment" : "Menu item for hiding the internal feedback shortcut",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Feedback Shortcut"
+          }
+        }
+      }
+    },
     "pinning.hide-netp-shortcut" : {
       "comment" : "Menu item for hiding the NetP shortcut",
       "extractionState" : "extracted_with_value",
@@ -72792,6 +72804,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показать ярлык для загрузок"
+          }
+        }
+      }
+    },
+    "pinning.show-feedback-shortcut" : {
+      "comment" : "Menu item for showing the internal feedback shortcut",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Feedback Shortcut"
           }
         }
       }

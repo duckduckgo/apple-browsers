@@ -36,8 +36,6 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         var body: some View {
-            // Mirrors tryASearch layout: Dax waving on the left overlapping the bubble's
-            // top-left; bubble keeps its normal max width.
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
                 OnboardingBubbleView(

@@ -36,8 +36,6 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         var body: some View {
-            // High-five dialog mirrors tryASearch / tryASite: Dax waving on the left
-            // overlapping the bubble's top-left, same tail position as tryASearch.
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
                 OnboardingBubbleView(

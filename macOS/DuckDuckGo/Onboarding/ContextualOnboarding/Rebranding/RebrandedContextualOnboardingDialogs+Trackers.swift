@@ -30,14 +30,11 @@ extension OnboardingRebranding {
         private enum Layout {
             /// Bubble tail near the bottom-leading edge, pointing down-right toward the wing.
             static let tailOffset: CGFloat = 0.1
-            /// Wing Lottie dimensions — small pointer wing directly below the bubble.
             static let wingWidth: CGFloat = 55
             static let wingHeight: CGFloat = 62
-            /// Negative VStack spacing pulls the wing up so its top overlaps the bubble's tail
-            /// area — the "padding between bubble and wing" the reference shows.
+            /// Negative spacing so the wing's top overlaps the bubble's tail area.
             static let wingOverlapSpacing: CGFloat = -20
-            /// No bottom padding — the wing animation IS the bottom of the panel (anchored
-            /// directly to the panel edge, no background showing through below it).
+            /// The wing animation is the bottom of the panel; no extra padding below it.
             static let panelBottomPadding: CGFloat = 0
         }
 
@@ -63,9 +60,9 @@ extension OnboardingRebranding {
         }
 
         var body: some View {
-            // When transitioning to the follow-up fire dialog we render OnboardingFireDialog
-            // directly — it's a plain bubble with no tail and no wing per the Figma, and an
-            // inline content swap inside the trackers bubble would keep the wing visible.
+            // The fire dialog is a plain tail-less bubble — an inline content swap inside the
+            // trackers bubble would leave its tail and wing in place, so render OnboardingFireDialog
+            // directly instead.
             if showNextScreen {
                 OnboardingRebranding.OnboardingFireDialog(
                     viewModel: viewModel,
@@ -74,10 +71,6 @@ extension OnboardingRebranding {
                 )
                 .transition(.identity)
             } else {
-                // Trackers dialog: tail at bottom-leading (points down-right); Wing Lottie sits
-                // DIRECTLY below the bubble (VStack with small negative spacing so wing's top
-                // overlaps bubble's tail area). The wing's bottom is flush with the panel's
-                // bottom padding — no extra space below.
                 HStack(spacing: 0) {
                     Spacer(minLength: 0)
                     VStack(spacing: Layout.wingOverlapSpacing) {
@@ -125,8 +118,8 @@ extension OnboardingRebranding {
 
 // MARK: - Wing Pointing Lottie
 
-/// Hand/wing pointer Lottie loaded from the OnboardingContextual asset catalog. Plays once on
-/// appear and holds on the final frame.
+/// Pointer-wing Lottie shown directly below the trackers bubble. Plays once on appear
+/// and holds on the final frame.
 struct WingPointingAnimation: NSViewRepresentable {
     @Environment(\.colorScheme) private var colorScheme
 

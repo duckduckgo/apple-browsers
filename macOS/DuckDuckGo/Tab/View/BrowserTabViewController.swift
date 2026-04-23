@@ -652,7 +652,6 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private func removeExistingDialog() {
-        // Tear down the layered panel if present.
         teardownLayeredDialogPanel()
 
         containerStackView.arrangedSubviews.filter({ $0 != webViewContainer }).forEach {
@@ -785,7 +784,6 @@ final class BrowserTabViewController: NSViewController {
         guard let backgroundContainer = layeredDialogBackgroundContainer,
               let bubbleContainer = layeredDialogBubbleContainer else { return }
 
-        // Insert panel into stack view if not already present.
         if panel.superview !== containerStackView {
             insertLayeredDialogPanelInStackView(panel)
         }

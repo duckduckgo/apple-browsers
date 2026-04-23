@@ -29,7 +29,6 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         var body: some View {
-            // Fire dialog: plain bubble, no tail and no Dax illustration per the Figma.
             OnboardingBubbleView.withDismissButton(
                 tailPosition: nil,
                 onDismiss: onManualDismiss
@@ -54,9 +53,9 @@ extension OnboardingRebranding {
 
         @Environment(\.onboardingTheme) private var theme
 
-        // The localized title has `\n\n` to separate the headline and the custom message part,
-        // which renders as an oversized gap in the compact bubble. Collapse to one newline and
-        // add paragraph spacing so the secondary line still reads as a separate sentence.
+        // The localized title uses `\n\n` to separate headline from body, which renders as an
+        // oversized gap in the compact bubble. Collapse to one newline and add paragraph
+        // spacing so the secondary line still reads as a distinct sentence.
         static let firstString = String(format: UserText.ContextualOnboarding.onboardingTryFireButtonTitle, UserText.ContextualOnboarding.onboardingTryFireButtonMessage)
             .replacingOccurrences(of: "\n\n", with: "\n")
         private let attributedMessage: NSAttributedString = {

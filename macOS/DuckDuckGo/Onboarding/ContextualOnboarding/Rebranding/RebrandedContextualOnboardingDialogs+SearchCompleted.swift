@@ -47,10 +47,8 @@ extension OnboardingRebranding {
         }
 
         var body: some View {
-            // When transitioning to the follow-up ("try a site!") we render the full
-            // tryASite dialog so the waving-Dax overlay and bubble tail come with it —
-            // the Figma calls for Dax + tail on that screen, which a content-only swap
-            // inside the plain searchDone bubble can't produce.
+            // The follow-up tryASite screen needs its own Dax overlay and bubble tail, so render
+            // OnboardingTrySiteDialog directly rather than swapping content inside this plain bubble.
             if showNextScreen {
                 OnboardingRebranding.OnboardingTrySiteDialog(
                     viewModel: viewModel,
@@ -58,7 +56,6 @@ extension OnboardingRebranding {
                 )
                 .transition(.identity)
             } else {
-                // searchDone has no Dax and no bubble tail per the Figma — just a plain bubble.
                 OnboardingBubbleView.withDismissButton(
                     tailPosition: nil,
                     onDismiss: onManualDismiss

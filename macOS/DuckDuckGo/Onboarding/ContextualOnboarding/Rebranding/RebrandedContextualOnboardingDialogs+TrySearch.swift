@@ -39,10 +39,6 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         var body: some View {
-            // First dialog pairs the bubble with the waving Dax animation on the left, with
-            // Dax overlapping the bubble's bounding box (circle partly on top of the bubble's
-            // tail side). We use ZStack-style `.overlay` so the duck can render outside the
-            // bubble's frame without affecting its layout or width.
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
                 OnboardingBubbleView(
@@ -64,9 +60,6 @@ extension OnboardingRebranding {
                 )
                 .onboardingDismissable(onManualDismiss)
                 .frame(maxWidth: OnboardingRebranding.Layout.bubbleMaxWidth)
-                // Use legacy overlay API (macOS 11 compatible) — older signature takes the
-                // content first and an alignment parameter. Dax sits on top of the bubble's
-                // top-left area, with its spotlight circle top aligned to the bubble top.
                 .overlay(
                     DaxWavingAnimation()
                         .frame(
@@ -93,33 +86,28 @@ extension OnboardingRebranding {
 
 // MARK: - Dax Waving Lottie
 
-/// Waving-Dax Lottie loaded from the app's asset catalog as an `NSDataAsset`, so adding the
-/// JSON didn't require touching the Xcode project file. Plays once on appear and holds on the
-/// final frame. Used by both tryASearch and tryASite dialogs.
+/// Waving-Dax Lottie shared by the tryASearch, tryASite, and highFive dialogs. Plays once
+/// on appear and holds on the final frame. Swapped for the correct light/dark asset when
+/// the effective appearance changes.
 struct DaxWavingAnimation: NSViewRepresentable {
     @Environment(\.colorScheme) private var colorScheme
 
     func makeNSView(context: Context) -> NSView {
         let container = NSView()
         container.wantsLayer = true
-        // Lottie draws outside its bounds by default; clip so the animation honors the
-        // SwiftUI .frame we give it rather than spilling over the bubble.
+        // Lottie draws outside its bounds by default; clip so it honors the SwiftUI frame.
         container.layer?.masksToBounds = true
         attachAnimation(to: container, for: colorScheme)
         return container
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
-        // Swap the animation if the user switches appearance while the dialog is visible.
         nsView.subviews.forEach { $0.removeFromSuperview() }
         attachAnimation(to: nsView, for: colorScheme)
     }
 
     private func attachAnimation(to container: NSView, for colorScheme: ColorScheme) {
         let assetName = colorScheme == .dark ? "dax-waving-dark" : "dax-waving-light"
-        // Loads the Lottie JSON from the OnboardingContextual data set in
-        // `Assets.xcassets`. Lottie's `asset(_:bundle:)` handles the NSDataAsset lookup and
-        // JSON decoding internally — no manual `NSDataAsset` + `JSONDecoder` plumbing here.
         guard let animation = LottieAnimation.asset(assetName, bundle: .main) else {
             return
         }
@@ -129,10 +117,8 @@ struct DaxWavingAnimation: NSViewRepresentable {
         view.animationSpeed = 1.0
         view.wantsLayer = true
         view.layer?.masksToBounds = true
-        // Let the container resize the Lottie view via autoresizing rather than constraints —
-        // LottieAnimationView returns its animation canvas as intrinsicContentSize, which was
-        // fighting our layout constraints and forcing the view to render at 557×659. With
-        // autoresizing the view tracks container.bounds exactly.
+        // Use autoresizing instead of constraints — LottieAnimationView's intrinsic content size
+        // reflects the animation canvas (557×659 here) and fights the SwiftUI frame.
         view.autoresizingMask = [.width, .height]
         view.frame = container.bounds
         container.addSubview(view)

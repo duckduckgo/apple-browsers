@@ -34,9 +34,11 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureBrowserComparisonImpression = false
     private(set) var didCallMeasureChooseBrowserCTAAction = false
     private(set) var didCallMeasureChooseAppIconImpression = false
-    private(set) var didCallMeasureChooseCustomAppIconColor = false
+    private(set) var didCallMeasureChooseAppIconColor = false
+    private(set) var didCaptureAppIconColorSelection: AppIcon?
     private(set) var didCallMeasureAddressBarPositionSelectionImpression = false
-    private(set) var didCallMeasureChooseBottomAddressBarPosition = false
+    private(set) var didCallMeasureChooseAddressBarPosition = false
+    private(set) var didCaptureAddressBarPositionSelection: AddressBarPosition?
     private(set) var didCallMeasureSearchOptionTapped = false
     private(set) var didCallMeasureSiteOptionTapped = false
     private(set) var didCallMeasureCustomSearch = false
@@ -119,16 +121,18 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureChooseAppIconImpression = true
     }
 
-    func measureChooseCustomAppIconColor() {
-        didCallMeasureChooseCustomAppIconColor = true
+    func measureChooseAppIconColor(_ color: AppIcon) {
+        didCallMeasureChooseAppIconColor = true
+        didCaptureAppIconColorSelection = color
     }
 
     func measureAddressBarPositionSelectionImpression() {
         didCallMeasureAddressBarPositionSelectionImpression = true
     }
 
-    func measureChooseBottomAddressBarPosition() {
-        didCallMeasureChooseBottomAddressBarPosition = true
+    func measureChooseAddressBarPosition(_ position: AddressBarPosition) {
+        didCallMeasureChooseAddressBarPosition = true
+        didCaptureAddressBarPositionSelection = position
     }
 
     func measureEndOfJourneyDialogCTAAction() {

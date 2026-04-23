@@ -488,30 +488,32 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureChooseAppIconImpression)
     }
 
-    func testWhenAppIconPickerContinueActionIsCalledAndIconIsCustomColorThenPixelReporterMeasureCustomAppIconColor() {
+    func testWhenAppIconPickerContinueActionIsCalledAndIconIsCustomColorThenPixelReporterMeasureAppIconColor() {
         // GIVEN
         appIconProvider = { .purple }
         let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseCustomAppIconColor)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseAppIconColor)
 
         // WHEN
         sut.appIconPickerContinueAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseCustomAppIconColor)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseAppIconColor)
+        XCTAssertEqual(pixelReporterMock.didCaptureAppIconColorSelection, .purple)
     }
 
-    func testWhenAppIconPickerContinueActionIsCalledAndIconIsDefaultColorThenPixelReporterDoNotMeasureCustomAppIconColor() {
+    func testWhenAppIconPickerContinueActionIsCalledAndIconIsDefaultColorThenPixelReporterMeasureAppIconColor() {
         // GIVEN
         appIconProvider = { .defaultAppIcon }
         let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseCustomAppIconColor)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseAppIconColor)
 
         // WHEN
         sut.appIconPickerContinueAction()
 
         // THEN
-        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseCustomAppIconColor)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseAppIconColor)
+        XCTAssertEqual(pixelReporterMock.didCaptureAppIconColorSelection, .red)
     }
 
     func testWhenStateChangesToChooseAddressBarPositionThenPixelReporterMeasureAddressBarSelectionImpression() {
@@ -527,30 +529,32 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureAddressBarPositionSelectionImpression)
     }
 
-    func testWhenSelectAddressBarPositionActionIsCalledAndAddressBarPositionIsBottomThenPixelReporterMeasureChooseBottomAddressBarPosition() {
+    func testWhenSelectAddressBarPositionActionIsCalledAndAddressBarPositionIsBottomThenPixelReporterMeasureChooseAddressBarPosition() {
         // GIVEN
         addressBarPositionProvider = { .bottom }
         let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBottomAddressBarPosition)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseAddressBarPosition)
 
         // WHEN
         sut.selectAddressBarPositionAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseBottomAddressBarPosition)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseAddressBarPosition)
+        XCTAssertEqual(pixelReporterMock.didCaptureAddressBarPositionSelection, .bottom)
     }
 
-    func testWhenSelectAddressBarPositionActionIsCalledAndAddressBarPositionIsTopThenPixelReporterDoNotMeasureChooseBottomAddressBarPosition() {
+    func testWhenSelectAddressBarPositionActionIsCalledAndAddressBarPositionIsTopThenPixelReporterMeasureChooseAddressBarPosition() {
         // GIVEN
         addressBarPositionProvider = { .top }
         let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBottomAddressBarPosition)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseAddressBarPosition)
 
         // WHEN
         sut.selectAddressBarPositionAction()
 
         // THEN
-        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBottomAddressBarPosition)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseAddressBarPosition)
+        XCTAssertEqual(pixelReporterMock.didCaptureAddressBarPositionSelection, .top)
     }
 
     // MARK: - Pixels Skip Onboarding

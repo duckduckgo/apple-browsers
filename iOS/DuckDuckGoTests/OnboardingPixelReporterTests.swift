@@ -37,6 +37,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
         userDefaultsMock = UserDefaults(suiteName: Self.suiteName)
+        sharedPixelHandlerMock = MockOnboardingSharedPixelHandling()
         sut = OnboardingPixelReporter(pixel: OnboardingPixelFireMock.self, uniquePixel: OnboardingUniquePixelFireMock.self, experimentPixel: OnboardingExperimentPixelFireMock.self, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock, onboardingSharedPixelHandler: sharedPixelHandlerMock)
         try super.setUpWithError()
     }
@@ -507,14 +508,33 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
 
+        let expectedSharedPixel = OnboardingSharedPixelEvent.appIconColor(.clicked(.green))
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
+
         // WHEN
-        sut.measureChooseCustomAppIconColor()
+        sut.measureChooseAppIconColor(.green)
 
         // THEN
         XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
         XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [expectedSharedPixel])
+    }
+
+    func testWhenMeasureChooseDefaultAppIconIsCalledThenOnlySharedOnboardingPixelFires() {
+        // GIVEN
+        let expectedPixel = OnboardingSharedPixelEvent.appIconColor(.clicked(.red))
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
+
+        // WHEN
+        sut.measureChooseAppIconColor(.defaultAppIcon)
+
+        // THEN
+        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
+        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [expectedPixel])
     }
 
     func testWhenMeasureAddressBarPositionSelectionImpressionIsCalledThenOnboardingIntroChooseAddressBarImpressionUniquePixelFires() {
@@ -541,14 +561,33 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
 
+        let expectedSharedPixel = OnboardingSharedPixelEvent.addressBarPosition(.clicked(.bottom))
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
+
         // WHEN
-        sut.measureChooseBottomAddressBarPosition()
+        sut.measureChooseAddressBarPosition(.bottom)
 
         // THEN
         XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
         XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [expectedSharedPixel])
+    }
+
+    func testWhenMeasureChooseTopAddressBarPositionIsCalledThenOnlySharedOnboardingPixelFires() {
+        // GIVEN
+        let expectedPixel = OnboardingSharedPixelEvent.addressBarPosition(.clicked(.top))
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
+
+        // WHEN
+        sut.measureChooseAddressBarPosition(.top)
+
+        // THEN
+        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
+        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [expectedPixel])
     }
 
     // MARK: Add To Dock Experiment

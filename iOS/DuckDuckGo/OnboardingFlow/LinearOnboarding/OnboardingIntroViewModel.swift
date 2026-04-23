@@ -222,17 +222,12 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func appIconPickerContinueAction() {
-        if appIconProvider() != .defaultAppIcon {
-            pixelReporter.measureChooseCustomAppIconColor()
-        }
-
+        pixelReporter.measureChooseAppIconColor(appIconProvider())
         makeNextViewState()
     }
 
     func selectAddressBarPositionAction() {
-        if addressBarPositionProvider() == .bottom {
-            pixelReporter.measureChooseBottomAddressBarPosition()
-        }
+        pixelReporter.measureChooseAddressBarPosition(addressBarPositionProvider())
         makeNextViewState()
     }
 

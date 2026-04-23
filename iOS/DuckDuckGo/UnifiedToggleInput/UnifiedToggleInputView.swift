@@ -351,9 +351,9 @@ final class UnifiedToggleInputView: UIView {
         cardView.backgroundColor = isFireTab
             ? UIColor(singleUseColor: .fireModeCardBackground)
             : UIColor(singleUseColor: .unifiedToggleInputCardBackground)
-        // cardView keeps the OS trait so `fireModeBackground` picks its light variant in light OS; content subviews force `.dark` so their dynamic colors resolve against the dark surface.
+        // cardView keeps the OS trait so `fireModeCardBackground` picks its light variant in light OS; content subviews force `.dark` so their dynamic colors resolve against the dark surface.
         let style: UIUserInterfaceStyle = isFireTab ? .dark : .unspecified
-        [toggleView, textEntryView, attachmentsStrip, toolsToolbar].forEach {
+        [toggleView, textEntryView, attachmentsStrip, toolsToolbar, inlineDismissButton].forEach {
             $0.overrideUserInterfaceStyle = style
         }
     }
@@ -695,7 +695,7 @@ private extension UnifiedToggleInputView {
         let image = UIImage(systemName: "xmark")?
             .withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium))
         button.setImage(image, for: .normal)
-        button.tintColor = UIColor(designSystemColor: .textPrimary)
+        button.tintColor = UIColor(designSystemColor: .icons)
         button.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
         button.layer.cornerRadius = Constants.inlineDismissSize / 2
         button.translatesAutoresizingMaskIntoConstraints = false

@@ -89,6 +89,7 @@ final class BurnerHomePageViewController: NSViewController {
             backing: .buffered,
             defer: true
         )
+        offscreenWindow.isReleasedWhenClosed = false
         offscreenWindow.alphaValue = 0
         offscreenWindow.level = .init(-1)
         offscreenWindow.ignoresMouseEvents = true

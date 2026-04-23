@@ -52,6 +52,9 @@ final class DaxLogoManager {
 
     private(set) var containerYCenterConstraint: NSLayoutConstraint?
 
+    private weak var centeringGuideOwner: UIView?
+    private var centeringGuide: UILayoutGuide?
+
     // MARK: - Initialization
 
     init(isFireTab: Bool = false) {
@@ -135,6 +138,11 @@ final class DaxLogoManager {
         fireTabHostingController?.removeFromParent()
         fireTabHostingController = nil
         logoContainerView.removeFromSuperview()
+        if let centeringGuide {
+            centeringGuideOwner?.removeLayoutGuide(centeringGuide)
+        }
+        centeringGuide = nil
+        centeringGuideOwner = nil
     }
 
     // MARK: - Private Methods
@@ -169,6 +177,8 @@ final class DaxLogoManager {
         let centeringGuide = UILayoutGuide()
         centeringGuide.identifier = "DaxLogoCenteringGuide"
         parentView.addLayoutGuide(centeringGuide)
+        self.centeringGuide = centeringGuide
+        self.centeringGuideOwner = parentView
 
         containerYCenterConstraint = logoContainerView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor)
 

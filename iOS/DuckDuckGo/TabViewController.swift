@@ -4086,6 +4086,13 @@ extension TabViewController: ContextualOnboardingEventDelegate {
         contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
     }
 
+    func didAcknowledgeChatPathContextualOnboardingTrackersDialog() {
+        contextualOnboardingLogic.setDaxDialogDismiss()
+        contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+        // Open a new tab so the NTP can surface the "You've got this!" end-of-journey dialog.
+        delegate?.tabDidRequestNewTab(self)
+    }
+
 }
 
 extension WKWebView {

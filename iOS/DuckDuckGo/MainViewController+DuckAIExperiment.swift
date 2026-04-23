@@ -58,9 +58,6 @@ struct ExperimentDuckAIFireOnboardingFlowContext {
     var controlsLocked = false
     /// Pending retry or failsafe trigger used when the dialog cannot be shown immediately.
     var triggerWorkItem: DispatchWorkItem?
-    /// Completion copy captured before the final dialog can safely be presented.
-    var pendingCompletionDialogMessage: String?
-
     /// True while the flow is in progress and owns the current UI state.
     var isRunning: Bool {
         switch state {
@@ -119,7 +116,9 @@ extension MainViewController {
         duckAIOnboardingResumeStepStore.resumeStep = .duckAIAnswerStep
         applyExperimentDuckAIFireChromeState()
         setExperimentFireControlsLocked(true)
-        showFireButtonPulse()
+        if presentedViewController == nil {
+            showFireButtonPulse()
+        }
         currentTab?.presentExperimentContextualDaxFireDialog()
     }
 
@@ -174,9 +173,14 @@ extension MainViewController {
         experimentDuckAIFireOnboardingFlow.state = .completed
         experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
         experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
+        // The experiment path skips fireButtonPulseStarted() so no timer auto-hides the highlight.
+        // Dismiss it explicitly now that the fire step is complete.
+        ViewHighlighter.hideAll()
         daxDialogsManager.setFireEducationMessageSeen()
         setExperimentFireControlsLocked(false)
-        experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = UserText.Onboarding.DuckAIQueryExperiment.completionOnboardingMessage
+        if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
+        }
         if let tabToClose = currentTab?.tabModel {
             closeTab(tabToClose, behavior: .createEmptyTabAtSamePosition, clearTabHistory: false)
         } else {
@@ -186,29 +190,20 @@ extension MainViewController {
         restorePostFireAddressBarPickerIfNeeded()
     }
 
-    func presentPendingExperimentCompletionDialogIfNeeded() {
-        guard experimentDuckAIFireOnboardingFlow.state == .completed,
-              let message = experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage,
-              let newTabPageViewController else {
-            return
-        }
-
-        ensureExperimentCompletionDialogPresentationPrerequisites()
-        DispatchQueue.main.async {
-            newTabPageViewController.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message)
-        }
-    }
-
     func markSearchContextualOnboardingAsSeenForExperiment() {
         daxDialogsManager.setTryAnonymousSearchMessageSeen()
         daxDialogsManager.setSearchMessageSeen()
-        experimentDuckAIFireOnboardingFlow.pendingCompletionDialogMessage = nil
         DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
         ensureExperimentCompletionDialogPresentationPrerequisites()
     }
 
     private func ensureExperimentCompletionDialogPresentationPrerequisites() {
-        daxDialogsManager.disableContextualDaxDialogs()
+        // Defer disabling dialogs when a subscription promo is still pending: the NTP's
+        // showNextDaxDialogNew will call dialogProvider.dismiss() (equivalent) after the
+        // promo is dismissed, so contextual dialogs are disabled at the right time.
+        if !daxDialogsManager.subscriptionPromotionPending {
+            daxDialogsManager.disableContextualDaxDialogs()
+        }
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
         }

@@ -45,6 +45,7 @@ public enum SubscriptionURL: Equatable {
 
     public enum StaticURLs {
         public static let defaultBaseSubscriptionURL = URL(string: "https://duckduckgo.com/subscriptions")!
+        public static let proPageURL = URL(string: "https://duckduckgo.com/pro")!
         static let manageSubscriptionsInMacAppStoreURL = URL(string: "macappstores://apps.apple.com/account/subscriptions")!
         static let helpPagesURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/")!
         static let privacyPolicyURL = URL(string: "https://duckduckgo.com/pro/privacy-terms/")!

@@ -314,9 +314,18 @@ extension NewTabPageViewController {
             guard let self else { return }
             let finishDismissal = {
                 editingController?.setLogoHidden(false)
-                self.daxDialogsManager.dismiss()
-                self.dismissHostingController(didFinishNTPOnboarding: true)
-                ViewHighlighter.hideAll()
+                // Check for subscription promo before ending onboarding, mirroring
+                // the same check in showNextDaxDialogNew's onDismiss.
+                let nextSpec = self.daxDialogsManager.nextHomeScreenMessageNew()
+                if nextSpec == .subscriptionPromotion {
+                    self.dismissHostingController(didFinishNTPOnboarding: true)
+                    self.chromeDelegate?.omniBar.endEditing()
+                    self.showNextDaxDialog()
+                } else {
+                    self.daxDialogsManager.dismiss()
+                    self.dismissHostingController(didFinishNTPOnboarding: true)
+                    ViewHighlighter.hideAll()
+                }
             }
 
             guard let hostingView = self.hostingController?.view else {
@@ -434,8 +443,14 @@ extension NewTabPageViewController {
 
     func dismissDuckAICompletionDialogIfNeededOnEditingEnd() {
         guard isShowingDuckAICompletionDialog else { return }
-        daxDialogsManager.dismiss()
+        let promoPending = daxDialogsManager.subscriptionPromotionPending
         dismissHostingController(didFinishNTPOnboarding: true)
+        if !promoPending {
+            daxDialogsManager.dismiss()
+        }
+        // When promoPending, the state machine is left intact: the subscription promo
+        // will surface naturally on the next NTP open via viewDidAppear → presentNextDaxDialog().
+        ViewHighlighter.hideAll()
     }
 
     private func notifyDuckAICompletionDismissedIfNeeded() {

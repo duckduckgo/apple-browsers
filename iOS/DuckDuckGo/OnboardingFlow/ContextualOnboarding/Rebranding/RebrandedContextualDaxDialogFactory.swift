@@ -212,9 +212,13 @@ private extension RebrandedContextualDaxDialogFactory {
                 shouldFollowUp: shouldFollowUpToFireDialog,
                 message: attributedMessage,
                 blockedTrackersCTAAction: { [weak self, weak delegate] in
-                    // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
                     if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
-                        delegate?.didTapDismissContextualOnboardingAction()
+                        if self?.contextualOnboardingSettings.isChatPathTrackerStep == true {
+                            // Chat-first path: open a new tab to show the end-of-journey dialog.
+                            delegate?.didAcknowledgeChatPathContextualOnboardingTrackersDialog()
+                        } else {
+                            delegate?.didTapDismissContextualOnboardingAction()
+                        }
                     } else {
                         onSizeUpdate()
                         delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
@@ -230,6 +234,9 @@ private extension RebrandedContextualDaxDialogFactory {
         }
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: spec.pixelName)
+            if self?.contextualOnboardingSettings.isChatPathTrackerStep == true {
+                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingChatPathTrackersBlockedUnique)
+            }
         }
     }
 

@@ -111,14 +111,124 @@ final class DaxDialogsNewTabTests: XCTestCase {
     }
 
     func testIfFireDialogShow_OnNextHomeScreenMessageNew_ReturnsFinal() {
-        // GIVEN
+        // GIVEN – search path: user browsed a site before fire (nonDDGBrowsingMessageSeen = true)
         settings.fireMessageExperimentShown = true
+        settings.browsingWithTrackersShown = true
 
         // WHEN
         let homeScreenMessage = daxDialogs.nextHomeScreenMessageNew()
 
         // THEN
         XCTAssertEqual(homeScreenMessage, .final)
+    }
+
+    // MARK: - Chat Path – peekNextHomeScreenMessageExperiment
+
+    func testWhenFireShownAndNoBrowsingAndChatPathVisitSiteNotSeen_OnNextHomeScreenMessageNew_ReturnsSubsequent() {
+        // GIVEN – chat path: fire was seen before visiting any site
+        settings.fireMessageExperimentShown = true
+        settings.chatPathVisitSiteSeen = false
+        // nonDDGBrowsingMessageSeen = false by default
+
+        // WHEN
+        let homeScreenMessage = daxDialogs.nextHomeScreenMessageNew()
+
+        // THEN
+        XCTAssertEqual(homeScreenMessage, .subsequent)
+    }
+
+    func testWhenFireShownAndChatPathVisitSiteSeen_AndNoBrowsing_OnNextHomeScreenMessageNew_ReturnsNil() {
+        // GIVEN – chat path: visit-site dialog was shown; waiting for user to browse
+        settings.fireMessageExperimentShown = true
+        settings.chatPathVisitSiteSeen = true
+        // nonDDGBrowsingMessageSeen = false by default
+
+        // WHEN
+        let homeScreenMessage = daxDialogs.nextHomeScreenMessageNew()
+
+        // THEN – no NTP dialog; tracker dialog will surface when user browses
+        XCTAssertNil(homeScreenMessage)
+    }
+
+    // MARK: - Chat Path – isInChatPathPostFireState
+
+    func testWhenFireShownAndNoBrowsing_IsInChatPathPostFireState_IsTrue() {
+        // GIVEN
+        settings.fireMessageExperimentShown = true
+        // browsingWithTrackersShown = false by default
+
+        // THEN
+        XCTAssertTrue(daxDialogs.isInChatPathPostFireState)
+    }
+
+    func testWhenFireNotShown_IsInChatPathPostFireState_IsFalse() {
+        // GIVEN
+        settings.fireMessageExperimentShown = false
+
+        // THEN
+        XCTAssertFalse(daxDialogs.isInChatPathPostFireState)
+    }
+
+    func testWhenFireShownAndBrowsingDialogSeen_IsInChatPathPostFireState_IsFalse() {
+        // GIVEN – search path: fire + browsing already happened
+        settings.fireMessageExperimentShown = true
+        settings.browsingWithTrackersShown = true
+
+        // THEN
+        XCTAssertFalse(daxDialogs.isInChatPathPostFireState)
+    }
+
+    // MARK: - Chat Path – isChatPathEOJState
+
+    func testWhenFireAndVisitSiteSeenAndFinalNotShown_IsChatPathEOJState_IsTrue() {
+        // GIVEN
+        settings.fireMessageExperimentShown = true
+        settings.chatPathVisitSiteSeen = true
+        settings.browsingFinalDialogShown = false
+
+        // THEN
+        XCTAssertTrue(daxDialogs.isChatPathEOJState)
+    }
+
+    func testWhenFireShownButChatPathVisitSiteNotSeen_IsChatPathEOJState_IsFalse() {
+        // GIVEN
+        settings.fireMessageExperimentShown = true
+        settings.chatPathVisitSiteSeen = false
+
+        // THEN
+        XCTAssertFalse(daxDialogs.isChatPathEOJState)
+    }
+
+    func testWhenFireAndVisitSiteSeenButFinalAlreadyShown_IsChatPathEOJState_IsFalse() {
+        // GIVEN
+        settings.fireMessageExperimentShown = true
+        settings.chatPathVisitSiteSeen = true
+        settings.browsingFinalDialogShown = true
+
+        // THEN
+        XCTAssertFalse(daxDialogs.isChatPathEOJState)
+    }
+
+    func testWhenFireNotShown_IsChatPathEOJState_IsFalse() {
+        // GIVEN
+        settings.fireMessageExperimentShown = false
+        settings.chatPathVisitSiteSeen = true
+
+        // THEN
+        XCTAssertFalse(daxDialogs.isChatPathEOJState)
+    }
+
+    // MARK: - Chat Path – setChatPathVisitSiteSeen
+
+    func testWhenSetChatPathVisitSiteSeen_ThenFlagIsPersisted() {
+        // GIVEN
+        settings.chatPathVisitSiteSeen = false
+
+        // WHEN
+        daxDialogs.setChatPathVisitSiteSeen()
+
+        // THEN
+        XCTAssertTrue(settings.chatPathVisitSiteSeen)
     }
 
     // MARK: - Zombie State Recovery
@@ -192,4 +302,6 @@ class MockDaxDialogsSettings: DaxDialogsSettings {
     var browsingFinalDialogShown: Bool = false
 
     var subscriptionPromotionDialogShown: Bool = false
+
+    var chatPathVisitSiteSeen: Bool = false
 }

@@ -115,6 +115,8 @@ extension RebrandedNewTabDaxDialogFactory {
 private extension RebrandedNewTabDaxDialogFactory {
 
     private func createSubsequentDialog(onManualDismiss: @escaping () -> Void) -> some View {
+        let isChatPath = daxDialogsFlowCoordinator.isInChatPathPostFireState
+
         let viewModel = OnboardingSiteSuggestionsViewModel(
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle,
             suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
@@ -131,8 +133,13 @@ private extension RebrandedNewTabDaxDialogFactory {
         }
         .applyNewTabOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
         .onFirstAppear { [weak self] in
-            self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
-            self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+            if isChatPath {
+                self?.daxDialogsFlowCoordinator.setChatPathVisitSiteSeen()
+                self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingChatPathTryVisitSiteUnique)
+            } else {
+                self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
+                self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+            }
         }
     }
 
@@ -151,15 +158,23 @@ private extension RebrandedNewTabDaxDialogFactory {
 
 }
 
-// MARK: - Final Dialog (You've Got This!)
+// MARK: - Final Dialog (You've Got This! / Chat-Path Completion)
 
 private extension RebrandedNewTabDaxDialogFactory {
-    
+
     func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
+        let isChatPath = daxDialogsFlowCoordinator.isChatPathEOJState
+
+        let message = isChatPath
+            ? UserText.Onboarding.DuckAIQueryExperiment.completionOnboardingMessage
+            : UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage
+
+        let backgroundType: ContextualOnboardingBackgroundType = isChatPath ? .endOfJourneyNTPChat : .endOfJourneyNTP
+
         return FadeInView {
             ScrollView(.vertical, showsIndicators: false) {
                 OnboardingRebranding.OnboardingEndOfJourneyDialog(
-                    message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
+                    message: message,
                     cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
                     dismissAction: { [weak self] in
                         self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
@@ -173,13 +188,17 @@ private extension RebrandedNewTabDaxDialogFactory {
             }
             .scrollIfNeeded()
         }
-        .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTP)
+        .applyNewTabOnboardingBackground(backgroundType: backgroundType)
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-            self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
+            if isChatPath {
+                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
+            } else {
+                self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
+            }
         }
     }
-    
+
 }
 
 // MARK: - Subscription Promotion (Oh before I forget...)
@@ -211,6 +230,9 @@ private extension RebrandedNewTabDaxDialogFactory {
         let title = UserText.SubscriptionPromotionOnboarding.Promo.title
         let message = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ? createSubscriptionPromoMessage() : createSubscriptionPromoMessageDeprecated()
         let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.skip
+        // Capture now — subscriptionPromotionDialogSeen is set true in onFirstAppear, which would
+        // make isChatPathSubscriptionPromo return false by the time proceedAction fires.
+        let isChatPath = daxDialogsFlowCoordinator.isChatPathSubscriptionPromo
 
         return FadeInView {
             OnboardingRebranding.OnboardingSubscriptionPromoDialog(
@@ -220,12 +242,16 @@ private extension RebrandedNewTabDaxDialogFactory {
                 dismissText: dismissText,
                 proceedAction: { [weak self] in
                     self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
-                    let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
-                    NotificationCenter.default.post(
-                        name: .settingsDeepLinkNotification,
-                        object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
-                        userInfo: nil
-                    )
+                    if isChatPath {
+                        self?.delegate?.navigateFromOnboarding(to: SubscriptionURL.StaticURLs.proPageURL)
+                    } else {
+                        let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
+                        NotificationCenter.default.post(
+                            name: .settingsDeepLinkNotification,
+                            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
+                            userInfo: nil
+                        )
+                    }
                     onDismiss(false)
                 },
                 dismissAction: {

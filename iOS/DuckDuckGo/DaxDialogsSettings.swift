@@ -49,6 +49,9 @@ protocol DaxDialogsSettings: AnyObject {
     var browsingFinalDialogShown: Bool { get set }
 
     var subscriptionPromotionDialogShown: Bool { get set }
+
+    /// Whether the user has seen the "try visiting a site" dialog in the chat-first (Duck.ai) onboarding path.
+    var chatPathVisitSiteSeen: Bool { get set }
 }
 
 class DefaultDaxDialogsSettings: DaxDialogsSettings {
@@ -94,4 +97,7 @@ class DefaultDaxDialogsSettings: DaxDialogsSettings {
 
     @UserDefaultsWrapper(key: .daxSubscriptionPromotionDialogShown, defaultValue: false)
     var subscriptionPromotionDialogShown: Bool
+
+    @UserDefaultsWrapper(key: .daxChatPathVisitSiteSeen, defaultValue: false)
+    var chatPathVisitSiteSeen: Bool
 }

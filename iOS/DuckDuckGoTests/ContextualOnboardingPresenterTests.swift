@@ -180,6 +180,8 @@ final class TabViewControllerMock: UIViewController, TabViewOnboardingDelegate {
         didCallDidAcknowledgeTrackersDialog = true
     }
 
+    func didAcknowledgeChatPathContextualOnboardingTrackersDialog() {}
+
     func didTapDismissContextualOnboardingAction() {
         didCallDidTapDismissAction = true
     }

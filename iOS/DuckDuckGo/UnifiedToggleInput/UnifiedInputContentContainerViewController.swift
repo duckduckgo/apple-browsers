@@ -125,7 +125,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         aiChatHistoryManager?.hasSuggestions ?? false
     }
 
-    private var daxLogoManager: DaxLogoManager
+    private(set) var daxLogoManager: DaxLogoManager
     private var notificationCancellable: AnyCancellable?
 
     private weak var contentAnimator: UIViewPropertyAnimator?

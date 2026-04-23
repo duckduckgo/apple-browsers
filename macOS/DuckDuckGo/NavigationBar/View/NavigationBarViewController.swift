@@ -1839,7 +1839,7 @@ final class NavigationBarViewController: NSViewController {
         case .feedback:
             let icon = DesignSystemImages.Color.Size16.feedback
             icon.isTemplate = false
-            return NSMenuItem(title: "Send Internal Feedback", action: #selector(quickFeedbackButtonClicked), keyEquivalent: "")
+            return NSMenuItem(title: UserText.sendInternalFeedback, action: #selector(quickFeedbackButtonClicked), keyEquivalent: "")
                 .targetting(self)
                 .withImage(icon)
         case .share:
@@ -2047,7 +2047,7 @@ extension NavigationBarViewController: NSMenuDelegate {
         button.isBordered = false
         button.imagePosition = .imageOnly
         button.imageScaling = .scaleProportionallyDown
-        button.toolTip = "Send Internal Feedback"
+        button.toolTip = UserText.sendInternalFeedback
         button.target = self
         button.action = #selector(quickFeedbackButtonClicked)
 

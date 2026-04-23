@@ -22,19 +22,15 @@ import XCTest
 final class PinningManagerFeedbackTests: XCTestCase {
 
     private var pinningManager: LocalPinningManager!
-    private let suiteName = "PinningManagerFeedbackTests"
 
     override func setUp() {
         super.setUp()
-        UserDefaults(suiteName: suiteName)?.removePersistentDomain(forName: suiteName)
-        UserDefaults.standard.removeObject(forKey: "pinning.pinned-views")
-        UserDefaults.standard.removeObject(forKey: "pinning.manually-toggled-pinned-views")
+        UserDefaultsWrapper<Any>.clearAll()
         pinningManager = LocalPinningManager()
     }
 
     override func tearDown() {
-        UserDefaults.standard.removeObject(forKey: "pinning.pinned-views")
-        UserDefaults.standard.removeObject(forKey: "pinning.manually-toggled-pinned-views")
+        UserDefaultsWrapper<Any>.clearAll()
         pinningManager = nil
         super.tearDown()
     }

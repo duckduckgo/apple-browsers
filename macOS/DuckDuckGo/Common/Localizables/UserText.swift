@@ -1795,6 +1795,7 @@ struct UserText {
 
     static let showFeedbackShortcut = NSLocalizedString("pinning.show-feedback-shortcut", value: "Show Feedback Shortcut", comment: "Menu item for showing the internal feedback shortcut")
     static let hideFeedbackShortcut = NSLocalizedString("pinning.hide-feedback-shortcut", value: "Hide Feedback Shortcut", comment: "Menu item for hiding the internal feedback shortcut")
+    static let sendInternalFeedback = NSLocalizedString("feedback.send-internal-feedback", value: "Send Internal Feedback", comment: "Title for the internal feedback toolbar button and overflow menu item")
 
     // MARK: - Tooltips
 

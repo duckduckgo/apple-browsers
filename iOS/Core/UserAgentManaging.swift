@@ -32,6 +32,7 @@ public protocol UserAgentManaging {
     func update(webView: WKWebView, isDesktop: Bool, url: URL?)
     func userAgent(isDesktop: Bool) -> String
     func userAgent(isDesktop: Bool, url: URL?) -> String
+    var applicationNameForUserAgent: String { get }
 
 }
 
@@ -81,6 +82,10 @@ public class DefaultUserAgentManager: UserAgentManaging {
     public func update(webView: WKWebView, isDesktop: Bool, url: URL?) {
         let agent = userAgent.agent(forUrl: url, isDesktop: isDesktop)
         webView.customUserAgent = agent
+    }
+
+    public var applicationNameForUserAgent: String {
+        userAgent.applicationNameForUserAgent
     }
 
     public static var duckDuckGoUserAgent: String { duckduckGoUserAgent(for: AppVersion.shared) }
@@ -226,6 +231,10 @@ struct UserAgent {
         let fixedUserAgent = uaSettings[Constants.ddgFixedUserAgentConfigKey] as? [String: Any] ?? [:]
         let versions = fixedUserAgent[Constants.uaVersionsKey] as? [String] ?? []
         return versions
+    }
+
+    var applicationNameForUserAgent: String {
+        "\(versionComponent) \(safariComponent)"
     }
 
     public func agent(forUrl url: URL?,

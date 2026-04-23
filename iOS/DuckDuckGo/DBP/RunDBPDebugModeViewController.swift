@@ -37,8 +37,8 @@ import enum UserScript.UserScriptError
 final class RunDBPDebugModeViewController: UIHostingController<RunDBPDebugModeView> {
     private var viewModel: RunDBPDebugModeViewModel
     
-    init() {
-        let viewModel = RunDBPDebugModeViewModel()
+    init(userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared) {
+        let viewModel = RunDBPDebugModeViewModel(userAgentManager: userAgentManager)
         let contentView = RunDBPDebugModeView(viewModel: viewModel)
         self.viewModel = viewModel
         super.init(rootView: contentView)
@@ -381,6 +381,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     private var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let executionConfig: BrokerJobExecutionConfig
     private let featureFlagger: DBPFeatureFlagging
+    private let userAgentManager: UserAgentManaging
 
     var hasValidInput: Bool {
         !firstName.isEmpty && !lastName.isEmpty && !city.isEmpty && !state.isEmpty && !birthYear.isEmpty
@@ -398,7 +399,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
     }
     
-    init() {
+    init(userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared) {
+        self.userAgentManager = userAgentManager
         let features = ContentScopeFeatureToggles(
             emailProtection: false,
             emailProtectionIncontextSignup: false,
@@ -555,7 +557,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                         emailConfirmationDataService: emailConfirmationDataService,
                         captchaService: captchaService,
                         featureFlagger: featureFlagger,
-                        applicationNameForUserAgent: nil,
+                        applicationNameForUserAgent: userAgentManager.applicationNameForUserAgent,
                         stageDurationCalculator: FakeStageDurationCalculator(),
                         pixelHandler: fakePixelHandler,
                         executionConfig: executionConfig
@@ -687,7 +689,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     emailConfirmationDataService: emailConfirmationDataService,
                     captchaService: captchaService,
                     featureFlagger: featureFlagger,
-                    applicationNameForUserAgent: nil,
+                    applicationNameForUserAgent: userAgentManager.applicationNameForUserAgent,
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: executionConfig,
@@ -860,7 +862,7 @@ extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
                     emailConfirmationDataService: emailConfirmationDataService,
                     captchaService: captchaService,
                     featureFlagger: featureFlagger,
-                    applicationNameForUserAgent: nil,
+                    applicationNameForUserAgent: userAgentManager.applicationNameForUserAgent,
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: executionConfig,

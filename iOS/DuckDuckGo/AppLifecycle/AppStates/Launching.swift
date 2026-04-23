@@ -130,7 +130,9 @@ struct Launching: LaunchingHandling {
                                                             webExtensionAvailability: webExtensionAvailability,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
-        let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
+        let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,
+                                    contentBlocking: contentBlockingService.common,
+                                    userAgentManager: DefaultUserAgentManager.shared)
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
         let statisticsService = StatisticsService()

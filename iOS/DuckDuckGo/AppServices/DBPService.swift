@@ -31,7 +31,9 @@ final class DBPService: NSObject {
         return dbpIOSManager
     }
 
-    init(appDependencies: DependencyProvider, contentBlocking: ContentBlocking) {
+    init(appDependencies: DependencyProvider,
+         contentBlocking: ContentBlocking,
+         userAgentManager: UserAgentManaging) {
         guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
             self.dbpIOSManager = nil
             super.init()
@@ -82,6 +84,7 @@ final class DBPService: NSObject {
                     return view
                 },
                 eventsHandler: eventsHandler,
+                applicationNameForUserAgent: userAgentManager.applicationNameForUserAgent,
                 isWebViewInspectable: isWebViewInspectable,
                 freeTrialConversionService: appDependencies.freeTrialConversionService)
         } else {
@@ -127,7 +130,7 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     }
 
     var isWebViewUserAgentOn: Bool {
-        false
+        appDependencies.featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
     }
 
     var isFreemiumPIREnabled: Bool {

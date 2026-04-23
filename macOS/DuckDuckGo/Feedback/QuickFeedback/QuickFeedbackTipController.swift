@@ -18,20 +18,23 @@
 
 import AppKit
 import Foundation
+import Persistence
+
+struct QuickFeedbackTipSettings: StoringKeys {
+    let lastShown = StorageKey<Double>(.feedbackTipLastShown)
+    let buttonClicked = StorageKey<Bool>(.feedbackTipButtonClicked)
+}
 
 @MainActor
 final class QuickFeedbackTipController {
 
     private static let messages = [
-        "Dax wants YOU to report problems!",
-        "Only YOU can prevent regressions!",
-        "Spotted a bug? Dax wants to hear about it!",
-        "Help Dax squash bugs, share your feedback!",
-        "Deliver delight the Dax way, report a problem today!",
+        NSLocalizedString("feedback.tip.report", value: "Dax wants YOU to report problems!", comment: "Feedback tooltip message"),
+        NSLocalizedString("feedback.tip.regressions", value: "Only YOU can prevent regressions!", comment: "Feedback tooltip message"),
+        NSLocalizedString("feedback.tip.spotted", value: "Spotted a bug? Dax wants to hear about it!", comment: "Feedback tooltip message"),
+        NSLocalizedString("feedback.tip.squash", value: "Help Dax squash bugs, share your feedback!", comment: "Feedback tooltip message"),
+        NSLocalizedString("feedback.tip.delight", value: "Deliver delight the Dax way, report a problem today!", comment: "Feedback tooltip message"),
     ]
-
-    private static let lastShownKey = "feedbackTip.lastShown"
-    private static let buttonClickedKey = "feedbackTip.buttonClicked"
 
     #if DEBUG
     private static let showDelay: TimeInterval = 3
@@ -48,10 +51,10 @@ final class QuickFeedbackTipController {
     private var popover: NSPopover?
     private var autoDismissTimer: Timer?
     private weak var anchorView: NSView?
-    private let defaults: UserDefaults
+    private let storage: any KeyedStoring<QuickFeedbackTipSettings>
 
-    init(defaults: UserDefaults = .standard) {
-        self.defaults = defaults
+    init(storage: (any KeyedStoring<QuickFeedbackTipSettings>)? = nil) {
+        self.storage = if let storage { storage } else { UserDefaults.standard.keyedStoring() }
     }
 
     func scheduleIfNeeded(anchoredTo view: NSView) {
@@ -65,7 +68,7 @@ final class QuickFeedbackTipController {
     }
 
     func recordButtonClick() {
-        defaults.set(true, forKey: Self.buttonClickedKey)
+        storage.buttonClicked = true
         dismissTip()
     }
 
@@ -77,10 +80,10 @@ final class QuickFeedbackTipController {
     }
 
     private func shouldShow() -> Bool {
-        let lastShown = defaults.double(forKey: Self.lastShownKey)
+        let lastShown = storage.lastShown ?? 0
         guard lastShown > 0 else { return true }
 
-        let hasClicked = defaults.bool(forKey: Self.buttonClickedKey)
+        let hasClicked = storage.buttonClicked ?? false
         let interval = hasClicked ? Self.postClickInterval : Self.preClickInterval
         let elapsed = Date().timeIntervalSince1970 - lastShown
         return elapsed >= interval
@@ -103,7 +106,7 @@ final class QuickFeedbackTipController {
 
         tip.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .maxY)
 
-        defaults.set(Date().timeIntervalSince1970, forKey: Self.lastShownKey)
+        storage.lastShown = Date().timeIntervalSince1970
 
         autoDismissTimer = Timer.scheduledTimer(withTimeInterval: Self.autoDismissDelay, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in

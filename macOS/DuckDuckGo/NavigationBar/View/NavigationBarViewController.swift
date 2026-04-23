@@ -1839,7 +1839,7 @@ final class NavigationBarViewController: NSViewController {
         case .feedback:
             let icon = DesignSystemImages.Color.Size16.feedback
             icon.isTemplate = false
-            return NSMenuItem(title: UserText.sendInternalFeedback, action: #selector(quickFeedbackButtonClicked), keyEquivalent: "")
+            return NSMenuItem(title: UserText.feedbackShortcutTooltip, action: #selector(quickFeedbackButtonClicked), keyEquivalent: "")
                 .targetting(self)
                 .withImage(icon)
         case .share:
@@ -2047,13 +2047,15 @@ extension NavigationBarViewController: NSMenuDelegate {
         button.isBordered = false
         button.imagePosition = .imageOnly
         button.imageScaling = .scaleProportionallyDown
-        button.toolTip = UserText.sendInternalFeedback
+        button.toolTip = UserText.feedbackShortcutTooltip
         button.target = self
         button.action = #selector(quickFeedbackButtonClicked)
 
         let icon = DesignSystemImages.Color.Size16.feedback
         icon.isTemplate = false
         button.image = icon
+        button.mouseOverColor = theme.colorsProvider.buttonMouseOverColor
+        button.setCornerRadius(theme.toolbarButtonsCornerRadius)
 
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: 28),

@@ -207,34 +207,44 @@ final class QuickFeedbackService: NSObject {
     private func injectQuickModeScript() {
         guard let webView = windowController?.webView else { return }
 
-        let diagnostics = diagnosticsCollector.collectDiagnostics()
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "'", with: "\\'")
-            .replacingOccurrences(of: "\n", with: "\\n")
-
-        let appVersionModel = AppVersionModel()
-
-        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-        let osVersionString = "\(osVersion.majorVersion).\(osVersion.minorVersion).\(osVersion.patchVersion)"
-
         guard let url = Bundle.main.url(forResource: "internal-feedback-autofiller", withExtension: "js"),
               let template = try? String(contentsOf: url, encoding: .utf8) else {
             Logger.general.error("Failed to load internal-feedback-autofiller.js from bundle")
             return
         }
 
-        let screenshotBase64 = screenshotData?.base64EncodedString() ?? ""
+        let bootstrapScript = template
+            .replacingOccurrences(of: "%QUICK_MODE%", with: "null")
+            .replacingOccurrences(of: "%DIAGNOSTICS%", with: "")
+            .replacingOccurrences(of: "%SCREENSHOT_BASE64%", with: "")
+            .replacingOccurrences(of: "%OS_VERSION%", with: "")
+            .replacingOccurrences(of: "%APP_VERSION%", with: "")
 
-        let script = template
-            .replacingOccurrences(of: "%OS_VERSION%", with: osVersionString)
-            .replacingOccurrences(of: "%APP_VERSION%", with: "\(appVersionModel.versionLabelShort) (\(appVersionModel.distributionLabel))")
-            .replacingOccurrences(of: "%QUICK_MODE%", with: "true")
-            .replacingOccurrences(of: "%DIAGNOSTICS%", with: diagnostics)
-            .replacingOccurrences(of: "%SCREENSHOT_BASE64%", with: screenshotBase64)
+        let appVersionModel = AppVersionModel()
 
-        webView.evaluateJavaScript(script) { _, error in
+        let payload: [String: Any] = [
+            "osVersion": AppVersion.shared.osVersionMajorMinorPatch,
+            "appVersion": "\(appVersionModel.versionLabelShort) (\(appVersionModel.distributionLabel))",
+            "quickMode": true,
+            "diagnostics": diagnosticsCollector.collectDiagnostics(),
+            "screenshotBase64": screenshotData?.base64EncodedString() ?? "",
+        ]
+
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: payload),
+              let json = String(data: jsonData, encoding: .utf8) else {
+            Logger.general.error("Failed to serialize quick feedback payload")
+            return
+        }
+
+        webView.evaluateJavaScript(bootstrapScript) { [weak self] _, error in
             if let error {
-                Logger.general.error("Quick feedback JS evaluation failed: \(error.localizedDescription)")
+                Logger.general.error("Quick feedback JS bootstrap failed: \(error.localizedDescription)")
+                return
+            }
+            self?.windowController?.webView.evaluateJavaScript("window.__ddgQuickFeedbackAutofill(\(json))") { _, error in
+                if let error {
+                    Logger.general.error("Quick feedback autofill failed: \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -257,13 +267,7 @@ extension QuickFeedbackService: WKNavigationDelegate {
         windowController?.setSignOutVisible(true)
         injectQuickModeScript()
     }
-
-    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
-        return .allow
-    }
 }
-
-// MARK: - WKScriptMessageHandler
 
 // MARK: - NSWindowDelegate
 

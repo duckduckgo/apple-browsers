@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import AppKit
 import Common
 import PrivacyConfig
 
@@ -75,7 +74,7 @@ final class AppVersionModel {
 
     /// Distribution channel label (e.g. "App Store", "DMG", "DMG Alpha").
     var distributionLabel: String {
-        var label = NSApp.isSandboxed ? "App Store" : "DMG"
+        var label = buildType.isAppStoreBuild ? "App Store" : "DMG"
         if buildType.isAlphaBuild {
             label.append(" Alpha")
         }

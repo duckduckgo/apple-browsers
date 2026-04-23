@@ -35623,6 +35623,66 @@
         }
       }
     },
+    "feedback.tip.delight" : {
+      "comment" : "Feedback tooltip message",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Deliver delight the Dax way, report a problem today!"
+          }
+        }
+      }
+    },
+    "feedback.tip.regressions" : {
+      "comment" : "Feedback tooltip message",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Only YOU can prevent regressions!"
+          }
+        }
+      }
+    },
+    "feedback.tip.report" : {
+      "comment" : "Feedback tooltip message",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dax wants YOU to report problems!"
+          }
+        }
+      }
+    },
+    "feedback.tip.spotted" : {
+      "comment" : "Feedback tooltip message",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Spotted a bug? Dax wants to hear about it!"
+          }
+        }
+      }
+    },
+    "feedback.tip.squash" : {
+      "comment" : "Feedback tooltip message",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Help Dax squash bugs, share your feedback!"
+          }
+        }
+      }
+    },
     "find-in-page.text-field.placeholder" : {
       "comment" : "Placeholder text for the text field where the user inputs strings to searcg in the web page",
       "extractionState" : "extracted_with_value",

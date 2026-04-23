@@ -21,10 +21,21 @@ import XCTest
 
 final class QuickFeedbackDiagnosticsCollectorTests: XCTestCase {
 
+    private func makeCollector(
+        tabAndWindowCountProvider: TabAndWindowCountProviding? = nil,
+        launchDate: Date = Date()
+    ) -> QuickFeedbackDiagnosticsCollector {
+        QuickFeedbackDiagnosticsCollector(
+            tabAndWindowCountProvider: tabAndWindowCountProvider,
+            memoryUsageMonitor: StubMemoryUsageMonitor(),
+            launchDate: launchDate
+        )
+    }
+
     // MARK: - Header
 
     func testWhenCollectingDiagnosticsThenOutputStartsWithSentinelHeader() {
-        let collector = QuickFeedbackDiagnosticsCollector()
+        let collector = makeCollector()
         let result = collector.collectDiagnostics()
 
         XCTAssertTrue(result.hasPrefix("--- Diagnostics (auto-collected) ---"))
@@ -33,14 +44,14 @@ final class QuickFeedbackDiagnosticsCollectorTests: XCTestCase {
     // MARK: - Required Fields
 
     func testWhenCollectingDiagnosticsThenOutputContainsAppVersion() {
-        let collector = QuickFeedbackDiagnosticsCollector()
+        let collector = makeCollector()
         let result = collector.collectDiagnostics()
 
         XCTAssertTrue(result.contains("App Version:"), "Diagnostics should include the app version line")
     }
 
     func testWhenCollectingDiagnosticsThenOutputContainsMacOSVersion() {
-        let collector = QuickFeedbackDiagnosticsCollector()
+        let collector = makeCollector()
         let result = collector.collectDiagnostics()
 
         let osVersion = ProcessInfo.processInfo.operatingSystemVersion
@@ -49,19 +60,19 @@ final class QuickFeedbackDiagnosticsCollectorTests: XCTestCase {
     }
 
     func testWhenCollectingDiagnosticsThenOutputContainsArchitecture() {
-        let collector = QuickFeedbackDiagnosticsCollector()
+        let collector = makeCollector()
         let result = collector.collectDiagnostics()
 
         XCTAssertTrue(result.contains("Architecture:"), "Diagnostics should include the architecture line")
         #if arch(arm64)
-        XCTAssertTrue(result.contains("Apple Silicon (arm64)"))
+        XCTAssertTrue(result.contains("arm64"))
         #elseif arch(x86_64)
-        XCTAssertTrue(result.contains("Intel (x86_64)"))
+        XCTAssertTrue(result.contains("x86_64"))
         #endif
     }
 
     func testWhenCollectingDiagnosticsThenOutputContainsMemory() {
-        let collector = QuickFeedbackDiagnosticsCollector()
+        let collector = makeCollector()
         let result = collector.collectDiagnostics()
 
         XCTAssertTrue(result.contains("Memory:"), "Diagnostics should include the memory line")
@@ -69,21 +80,21 @@ final class QuickFeedbackDiagnosticsCollectorTests: XCTestCase {
     }
 
     func testWhenCollectingDiagnosticsThenOutputContainsGPU() {
-        let collector = QuickFeedbackDiagnosticsCollector()
+        let collector = makeCollector()
         let result = collector.collectDiagnostics()
 
         XCTAssertTrue(result.contains("GPU:"), "Diagnostics should include the GPU line")
     }
 
     func testWhenCollectingDiagnosticsThenOutputContainsDisk() {
-        let collector = QuickFeedbackDiagnosticsCollector()
+        let collector = makeCollector()
         let result = collector.collectDiagnostics()
 
         XCTAssertTrue(result.contains("Disk:"), "Diagnostics should include the disk line")
     }
 
     func testWhenCollectingDiagnosticsThenOutputContainsSession() {
-        let collector = QuickFeedbackDiagnosticsCollector()
+        let collector = makeCollector()
         let result = collector.collectDiagnostics()
 
         XCTAssertTrue(result.contains("Session:"), "Diagnostics should include the session line")
@@ -92,38 +103,38 @@ final class QuickFeedbackDiagnosticsCollectorTests: XCTestCase {
     // MARK: - Tab Count
 
     func testWhenTabCountProviderIsNilThenOutputDoesNotContainTabsLine() {
-        let collector = QuickFeedbackDiagnosticsCollector(tabCountProvider: nil)
+        let collector = makeCollector(tabAndWindowCountProvider: nil)
         let result = collector.collectDiagnostics()
 
         XCTAssertFalse(result.contains("Tabs:"))
     }
 
     func testWhenTabCountProviderExistsThenOutputContainsTabsAndWindows() {
-        let mockProvider = MockTabCountProvider(tabCount: 42, windowCount: 3)
-        let collector = QuickFeedbackDiagnosticsCollector(tabCountProvider: mockProvider)
+        let mockProvider = MockTabAndWindowCountProvider(tabCount: 42, windowCount: 3)
+        let collector = makeCollector(tabAndWindowCountProvider: mockProvider)
         let result = collector.collectDiagnostics()
 
         XCTAssertTrue(result.contains("Tabs: 42 tabs / 3 windows"))
     }
 
     func testWhenTabCountIsZeroThenOutputContainsZeroCounts() {
-        let mockProvider = MockTabCountProvider(tabCount: 0, windowCount: 0)
-        let collector = QuickFeedbackDiagnosticsCollector(tabCountProvider: mockProvider)
+        let mockProvider = MockTabAndWindowCountProvider(tabCount: 0, windowCount: 0)
+        let collector = makeCollector(tabAndWindowCountProvider: mockProvider)
         let result = collector.collectDiagnostics()
 
         XCTAssertTrue(result.contains("Tabs: 0 tabs / 0 windows"))
     }
 
     func testWhenCollectingDiagnosticsThenMemoryIncludesBrowserUsage() {
-        let collector = QuickFeedbackDiagnosticsCollector()
+        let collector = makeCollector()
         let result = collector.collectDiagnostics()
 
-        XCTAssertTrue(result.contains("MB browser"), "Memory line should include browser memory usage from mach_task_basic_info")
+        XCTAssertTrue(result.contains("browser"), "Memory line should include browser memory usage")
     }
 
     func testWhenTabCountProviderIsDeallocatedThenOutputDoesNotContainTabsLine() {
-        var mockProvider: MockTabCountProvider? = MockTabCountProvider(tabCount: 5, windowCount: 2)
-        let collector = QuickFeedbackDiagnosticsCollector(tabCountProvider: mockProvider!)
+        var mockProvider: MockTabAndWindowCountProvider? = MockTabAndWindowCountProvider(tabCount: 5, windowCount: 2)
+        let collector = makeCollector(tabAndWindowCountProvider: mockProvider!)
         mockProvider = nil
 
         let result = collector.collectDiagnostics()
@@ -134,8 +145,8 @@ final class QuickFeedbackDiagnosticsCollectorTests: XCTestCase {
     // MARK: - Field Ordering
 
     func testWhenCollectingDiagnosticsWithProviderThenFieldsAreInExpectedOrder() {
-        let mockProvider = MockTabCountProvider(tabCount: 3, windowCount: 1)
-        let collector = QuickFeedbackDiagnosticsCollector(tabCountProvider: mockProvider)
+        let mockProvider = MockTabAndWindowCountProvider(tabCount: 3, windowCount: 1)
+        let collector = makeCollector(tabAndWindowCountProvider: mockProvider)
         let lines = collector.collectDiagnostics().components(separatedBy: "\n")
 
         guard lines.count >= 9 else {
@@ -157,7 +168,7 @@ final class QuickFeedbackDiagnosticsCollectorTests: XCTestCase {
     // MARK: - Line Structure
 
     func testWhenCollectingDiagnosticsThenOutputIsNewlineSeparated() {
-        let collector = QuickFeedbackDiagnosticsCollector()
+        let collector = makeCollector()
         let lines = collector.collectDiagnostics().components(separatedBy: "\n")
 
         XCTAssertGreaterThanOrEqual(lines.count, 8, "Should have at least sentinel + version + OS + arch + GPU + memory + disk + session")
@@ -166,12 +177,23 @@ final class QuickFeedbackDiagnosticsCollectorTests: XCTestCase {
 
 // MARK: - Mocks
 
-private final class MockTabCountProvider: TabCountProviding {
+private final class MockTabAndWindowCountProvider: TabAndWindowCountProviding {
     let tabCount: Int
     let windowCount: Int
 
     init(tabCount: Int, windowCount: Int = 1) {
         self.tabCount = tabCount
         self.windowCount = windowCount
+    }
+}
+
+private struct StubMemoryUsageMonitor: MemoryUsageMonitoring {
+    func getCurrentMemoryUsage() -> MemoryUsageMonitor.MemoryReport {
+        MemoryUsageMonitor.MemoryReport(
+            residentBytes: 500 * 1_048_576,
+            physFootprintBytes: 400 * 1_048_576,
+            webContentBytes: nil,
+            webContentProcessCount: nil
+        )
     }
 }

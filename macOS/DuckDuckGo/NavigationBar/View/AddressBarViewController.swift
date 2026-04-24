@@ -692,7 +692,8 @@ final class AddressBarViewController: NSViewController {
         /// Without this the glow reappears after ESC closes the suggestions window (where it had been
         /// visually masked by the merged suggestions background) even though the bar still holds the
         /// user's draft.
-        let hasUserTypedContent = (textFieldValue?.isUserTyped == true) && (textFieldValue?.isEmpty == false)
+        let currentTextFieldValue = addressBarTextField.value
+        let hasUserTypedContent = currentTextFieldValue.isUserTyped && !currentTextFieldValue.isEmpty
         activeOuterBorderView.alphaValue = isKey && selectionState.isSelected && !isToggleFocused && !hasUserTypedContent && theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
         activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
 

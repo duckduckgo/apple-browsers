@@ -369,11 +369,8 @@ private extension OnboardingIntroViewModel {
                 return
             }
             if !introSteps.contains(.duckAIQueryExperimentSelection) {
-                if let searchExperienceIndex = introSteps.firstIndex(of: .searchExperienceSelection) {
-                    introSteps.insert(.duckAIQueryExperimentSelection, at: searchExperienceIndex + 1)
-                } else {
-                    introSteps.append(.duckAIQueryExperimentSelection)
-                }
+                let insertIndex = introSteps.firstIndex(of: .searchExperienceSelection).map { $0 + 1 } ?? introSteps.count
+                introSteps.insert(.duckAIQueryExperimentSelection, at: insertIndex)
             }
             currentIntroStep = .duckAIQueryExperimentSelection
 

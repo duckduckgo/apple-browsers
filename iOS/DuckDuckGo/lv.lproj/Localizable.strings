@@ -2329,6 +2329,9 @@
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Meklē vai ievadi adresi";
 
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Jauna Fire cilne";
+
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Jauna cilne";
 

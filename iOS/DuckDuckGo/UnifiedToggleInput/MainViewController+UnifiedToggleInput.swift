@@ -289,8 +289,9 @@ private extension MainViewController {
         let hasExistingChat = tab.url?.duckAIChatID != nil
         let tabURL = tab.url ?? tab.link?.url
         let isVoiceMode = tabURL?.isDuckAIVoiceMode == true || tab.isVoiceModeRequested
+        let isSidebarOpen = tabURL?.isDuckAISidebarOpen == true
         tab.isVoiceModeRequested = false
-        let shouldExpandAfterRefresh = !hasExistingChat && !coordinator.hasSubmittedPrompt && !isVoiceMode
+        let shouldExpandAfterRefresh = !hasExistingChat && !coordinator.hasSubmittedPrompt && !isVoiceMode && !isSidebarOpen
         return .refreshAITab(.showCollapsed(expandAfterRefresh: shouldExpandAfterRefresh))
     }
 

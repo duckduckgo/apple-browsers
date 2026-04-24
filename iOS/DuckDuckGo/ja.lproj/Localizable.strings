@@ -2329,6 +2329,9 @@
 /* No comment provided by engineer. */
 "keyCommandLocation" = "検索または住所を入力";
 
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "新しいFireタブ";
+
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "新しいタブ";
 

@@ -88,7 +88,6 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.keyCommandNewTab, image: DesignSystemImages.Glyphs.Size24.add) { [weak self] in
             self?.onPlusButtonTapped?()
         }
-        Self.applyIconConstraints(to: item)
         return item
     }()
 
@@ -96,7 +95,6 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         let item = BrowserChromeButton.createToolbarButtonItem(title: "Close all tabs and clear data", image: DesignSystemImages.Glyphs.Size24.fireSolid) { [weak self] in
             self?.onFireButtonTapped?()
         }
-        Self.applyIconConstraints(to: item)
         return item
     }()
 
@@ -104,7 +102,6 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: DesignSystemImages.Glyphs.Size24.arrowLeft) { [weak self] in
             self?.onDoneButtonTapped?()
         }
-        Self.applyIconConstraints(to: item)
         return item
     }()
 
@@ -127,7 +124,6 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
     lazy var menuButton: UIBarButtonItem = {
         let item = BrowserChromeButton.createToolbarButtonItem(title: "More Menu", image: DesignSystemImages.Glyphs.Size24.moreApple)
-        Self.applyIconConstraints(to: item)
         return item
     }()
 
@@ -135,13 +131,11 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         let item = BrowserChromeButton.createToolbarButtonItem(title: "", image: nil) { [weak self] in
             self?.onTabStyleButtonTapped?()
         }
-        Self.applyIconConstraints(to: item)
         return item
     }()
 
     lazy var editButton: UIBarButtonItem = {
         let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.actionGenericEdit, image: DesignSystemImages.Glyphs.Size24.menuDotsVertical)
-        Self.applyIconConstraints(to: item)
         return item
     }()
 
@@ -165,7 +159,6 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.duckAiFeatureName, image: DesignSystemImages.Glyphs.Size24.aiChat) { [weak self] in
             self?.onDuckChatTapped?()
         }
-        Self.applyIconConstraints(to: item)
         return item
     }()
 
@@ -194,14 +187,6 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     private static let buttonSize: CGFloat = 44
 
     init() { }
-
-    private static func applyIconConstraints(to item: UIBarButtonItem) {
-        guard let view = item.customView else { return }
-        NSLayoutConstraint.activate([
-            view.widthAnchor.constraint(equalTo: view.heightAnchor),
-            view.widthAnchor.constraint(equalToConstant: buttonSize),
-        ])
-    }
 
     private static func applyTextConstraints(to item: UIBarButtonItem) {
         guard let view = item.customView else { return }

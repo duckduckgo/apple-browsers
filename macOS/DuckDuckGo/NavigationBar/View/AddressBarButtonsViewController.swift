@@ -1013,7 +1013,10 @@ final class AddressBarButtonsViewController: NSViewController {
         let isNewTab = [.newtab].contains(tabViewModel.tab.content)
         let isHypertextUrl = url?.navigationalScheme?.isHypertextScheme == true && url?.isDuckPlayer == false
         let isEditingMode = controllerMode?.isEditing ?? false
-        let isTextFieldValueText = textFieldValue?.isText ?? false
+        /// `isUserTyped` covers both `.text(userTyped: true)` and `.url(userTyped: true)` — i.e. any pending
+        /// edit the user hasn't submitted. Without the URL case, typing `test.com` (which parses as a URL)
+        /// and unfocusing would leave the shield rendering over the draft value.
+        let isTextFieldValueUserTyped = textFieldValue?.isUserTyped ?? false
         let isLocalUrl = url?.isLocalURL ?? false
 
         // Privacy entry point button
@@ -1027,7 +1030,7 @@ final class AddressBarButtonsViewController: NSViewController {
         && !isTextFieldEditorFirstResponder
         && isHypertextUrl
         && !tabViewModel.isShowingErrorPage
-        && !isTextFieldValueText
+        && !isTextFieldValueUserTyped
         && !isLocalUrl
         && !isAIChatPanelActive
 
@@ -1045,9 +1048,14 @@ final class AddressBarButtonsViewController: NSViewController {
     /// Whether the privacy shield indicators should be suppressed because the user is interacting with
     /// the address bar, or because the duck.ai panel is covering it (its prompt overlay would otherwise
     /// clash with shield rendering at the overlay edges).
+    ///
+    /// The `isUserTyped` branch (not just `isText`) covers the "unfocus while a pending edit is visible"
+    /// case: if the user typed a URL-like string (e.g. `test.com`) the value parses as `.url(userTyped: true)`
+    /// rather than `.text`, so `isText` alone would leave the shield rendering on top of the draft — the
+    /// shield belongs to the loaded page, not to the edited value.
     private var shouldHideShieldsForInputOrAIChat: Bool {
         if isAIChatPanelActive { return true }
-        if textFieldValue?.isText ?? false { return true }
+        if textFieldValue?.isUserTyped ?? false { return true }
         if isTextFieldEditorFirstResponder { return true }
         return false
     }

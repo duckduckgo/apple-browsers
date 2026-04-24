@@ -687,7 +687,13 @@ final class AddressBarViewController: NSViewController {
         let isKey = self.view.window?.isKeyWindow == true
         let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
 
-        activeOuterBorderView.alphaValue = isKey && selectionState.isSelected && !isToggleFocused && theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
+        /// The outer blue glow is a "prompt the user to type" state — once the user has actually typed
+        /// something, drop it so the bar reads as editing-in-progress rather than empty-and-inviting.
+        /// Without this the glow reappears after ESC closes the suggestions window (where it had been
+        /// visually masked by the merged suggestions background) even though the bar still holds the
+        /// user's draft.
+        let hasUserTypedContent = (textFieldValue?.isUserTyped == true) && (textFieldValue?.isEmpty == false)
+        activeOuterBorderView.alphaValue = isKey && selectionState.isSelected && !isToggleFocused && !hasUserTypedContent && theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
         activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
 
         if isToggleFocused {

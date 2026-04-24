@@ -375,9 +375,14 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         focusTextView()
         isUpdatingProgrammatically = true
         defer { isUpdatingProgrammatically = false }
+        /// `saved.location` is a UTF-16 offset (it came from an `NSRange`), so compare it against the
+        /// UTF-16 length of the string rather than `String.count` (grapheme-cluster count). For prompts
+        /// containing emoji or other non-BMP characters the two differ and valid saved positions would
+        /// otherwise fail the bounds check and fall through to `moveCursorToEnd`.
+        let utf16Length = (textView.string as NSString).length
         if let saved = omnibarController.currentSelectionRange,
-           saved.location <= textView.string.count {
-            let clampedLength = min(saved.length, max(0, textView.string.count - saved.location))
+           saved.location <= utf16Length {
+            let clampedLength = min(saved.length, max(0, utf16Length - saved.location))
             textView.selectedRange = NSRange(location: saved.location, length: clampedLength)
         } else {
             moveCursorToEnd()

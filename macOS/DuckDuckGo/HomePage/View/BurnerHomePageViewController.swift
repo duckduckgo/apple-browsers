@@ -68,40 +68,6 @@ final class BurnerHomePageViewController: NSViewController {
         self.view = NSHostingView(rootView: rootView)
     }
 
-    func createSnapshotView(promoState: TabPromoState, size: NSSize) -> NSView {
-        let snapshotViewModel = SubscriptionPromoViewModel(
-            subscriptionManager: subscriptionManager,
-            featureFlagger: featureFlagger,
-            pixelFiring: nil
-        )
-        snapshotViewModel.updateForTabPreview(promoState, isEligibleForFreeTrial: subscriptionPromoViewModel.isEligibleForFreeTrial)
-
-        let rootView = BurnerHomePageView(promoViewModel: snapshotViewModel)
-            .environmentObject(appearancePreferences)
-            .environmentObject(themeManager)
-
-        let hostingView = NSHostingView(rootView: rootView)
-        hostingView.frame = NSRect(origin: .zero, size: size)
-
-        let offscreenWindow = NSWindow(
-            contentRect: NSRect(origin: NSPoint(x: -10000, y: -10000), size: size),
-            styleMask: .borderless,
-            backing: .buffered,
-            defer: true
-        )
-        offscreenWindow.isReleasedWhenClosed = false
-        offscreenWindow.alphaValue = 0
-        offscreenWindow.level = .init(-1)
-        offscreenWindow.ignoresMouseEvents = true
-        offscreenWindow.isExcludedFromWindowsMenu = true
-        offscreenWindow.collectionBehavior = [.transient, .ignoresCycle]
-        offscreenWindow.contentView = hostingView
-        offscreenWindow.orderBack(nil)
-        hostingView.layoutSubtreeIfNeeded()
-
-        return hostingView
-    }
-
     func updatePromoState(for tab: Tab) {
         let tabPromo = tab.subscriptionPromo
 
@@ -113,6 +79,41 @@ final class BurnerHomePageViewController: NSViewController {
         }
 
         subscriptionPromoViewModel.updateForTab(tabPromo?.promoState ?? .notEvaluated)
+    }
+
+}
+
+// MARK: - Tab Preview Snapshotting
+
+extension BurnerHomePageViewController {
+
+    /// Renders a disposable `BurnerHomePageContentView` for tab-preview capture.
+    ///
+    /// All burner tabs share one home page view, so snapshotting it directly would race with the
+    /// promo-state update of the incoming tab. This builds a fresh view with an isolated view model
+    /// reflecting the outgoing tab's promo state. The content view (not `BurnerHomePageView`) is used
+    /// because the outer `GeometryReader` + `ScrollView` wrapper is not needed for a static thumbnail.
+    func createSnapshotView(promoState: TabPromoState, size: NSSize) -> NSView {
+        let snapshotViewModel = SubscriptionPromoViewModel(
+            subscriptionManager: subscriptionManager,
+            featureFlagger: featureFlagger,
+            pixelFiring: nil
+        )
+        snapshotViewModel.updateForTabPreview(promoState, isEligibleForFreeTrial: subscriptionPromoViewModel.isEligibleForFreeTrial)
+
+        let backgroundColor = Color(designSystemColor: .surfaceCanvas, palette: themeManager.designColorPalette)
+        let rootView = ZStack {
+            backgroundColor
+            BurnerHomePageContentView(promoViewModel: snapshotViewModel)
+                .environmentObject(appearancePreferences)
+                .environmentObject(themeManager)
+        }
+
+        let hostingView = NSHostingView(rootView: rootView)
+        hostingView.frame = NSRect(origin: .zero, size: size)
+        hostingView.layoutSubtreeIfNeeded()
+
+        return hostingView
     }
 
 }

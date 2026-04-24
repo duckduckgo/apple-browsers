@@ -81,39 +81,20 @@ final class BurnerHomePageViewController: NSViewController {
         subscriptionPromoViewModel.updateForTab(tabPromo?.promoState ?? .notEvaluated)
     }
 
-}
-
-// MARK: - Tab Preview Snapshotting
-
-extension BurnerHomePageViewController {
-
-    /// Renders a disposable `BurnerHomePageContentView` for tab-preview capture.
+    /// A SwiftUI view tree suitable for tab-preview snapshot rendering.
     ///
-    /// All burner tabs share one home page view, so snapshotting it directly would race with the
-    /// promo-state update of the incoming tab. This builds a fresh view with an isolated view model
-    /// reflecting the outgoing tab's promo state. The content view (not `BurnerHomePageView`) is used
-    /// because the outer `GeometryReader` + `ScrollView` wrapper is not needed for a static thumbnail.
-    func createSnapshotView(promoState: TabPromoState, size: NSSize) -> NSView {
-        let snapshotViewModel = SubscriptionPromoViewModel(
-            subscriptionManager: subscriptionManager,
-            featureFlagger: featureFlagger,
-            pixelFiring: nil
-        )
-        snapshotViewModel.updateForTabPreview(promoState, isEligibleForFreeTrial: subscriptionPromoViewModel.isEligibleForFreeTrial)
-
-        let backgroundColor = Color(designSystemColor: .surfaceCanvas, palette: themeManager.designColorPalette)
-        let rootView = ZStack {
-            backgroundColor
-            BurnerHomePageContentView(promoViewModel: snapshotViewModel)
+    /// Uses `BurnerHomePageContentView` instead of `BurnerHomePageView` because the outer
+    /// `GeometryReader` + `ScrollView` wrapper is unneeded for a static thumbnail and — critically —
+    /// breaks `ImageRenderer`, which cannot resolve content inside those containers and would return
+    /// a blank image. References the *live* `subscriptionPromoViewModel` so the snapshot reflects the
+    /// currently-displayed state at the moment of capture.
+    var snapshotRenderableView: some View {
+        ZStack {
+            Color(designSystemColor: .surfaceCanvas, palette: themeManager.designColorPalette)
+            BurnerHomePageContentView(promoViewModel: subscriptionPromoViewModel)
                 .environmentObject(appearancePreferences)
                 .environmentObject(themeManager)
         }
-
-        let hostingView = NSHostingView(rootView: rootView)
-        hostingView.frame = NSRect(origin: .zero, size: size)
-        hostingView.layoutSubtreeIfNeeded()
-
-        return hostingView
     }
 
 }

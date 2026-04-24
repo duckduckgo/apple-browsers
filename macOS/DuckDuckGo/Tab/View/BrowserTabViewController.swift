@@ -1218,34 +1218,50 @@ final class BrowserTabViewController: NSViewController {
             containsHostingView = false
         }
 
-        let viewForRendering: NSView
-        if let burnerSnapshotView = burnerHomePageSnapshotView(for: tabViewModel) {
-            viewForRendering = burnerSnapshotView
-        } else {
-            guard let contentSubview = browserTabView.findContentSubview(containsHostingView: containsHostingView) else {
-                assertionFailure("No view for rendering of the snapshot")
-                return
+        if #available(macOS 13.0, *),
+           case .newtab = tabViewModel.tab.content,
+           let burnerHomePage = burnerHomePageViewController,
+           let capturedImage = burnerHomePageSnapshotImage(from: burnerHomePage, size: browserTabView.bounds.size) {
+            Task { @MainActor [weak tabViewModel] in
+                guard let tabSnapshots = tabViewModel?.tab.tabSnapshots else { return }
+                await tabSnapshots.renderSnapshot(from: capturedImage)
             }
-            viewForRendering = contentSubview
+            return
         }
 
-        Task { @MainActor [weak tabViewModel] in
+        guard let contentSubview = browserTabView.findContentSubview(containsHostingView: containsHostingView) else {
+            assertionFailure("No view for rendering of the snapshot")
+            return
+        }
+        let viewForRendering: NSView = contentSubview
+
+        Task { @MainActor [weak tabViewModel, weak viewForRendering] in
             guard let tabSnapshots = tabViewModel?.tab.tabSnapshots else { return }
-            await tabSnapshots.renderSnapshot { viewForRendering }
+            await tabSnapshots.renderSnapshot { [weak viewForRendering] in viewForRendering }
         }
-    }
-
-    private func burnerHomePageSnapshotView(for tabViewModel: TabViewModel) -> NSView? {
-        guard case .newtab = tabViewModel.tab.content,
-              let burnerHomePage = burnerHomePageViewController else { return nil }
-        let promoState = tabViewModel.tab.subscriptionPromo?.promoState ?? .notEvaluated
-        return burnerHomePage.createSnapshotView(
-            promoState: promoState,
-            size: browserTabView.bounds.size
-        )
     }
 
     // MARK: - New Tab page
+
+    /// Captures the live burner home page as an `NSImage` via `ImageRenderer` (macOS 13+).
+    ///
+    /// `ImageRenderer` returns synchronously, so the image reflects the outgoing tab's state at the
+    /// moment of capture — before the tab-switch flow calls `updatePromoState` for the incoming tab.
+    /// This is why we can safely reference the shared `subscriptionPromoViewModel` via
+    /// `snapshotRenderableView` rather than building a disposable one.
+    ///
+    /// Uses `scale = 1.0` since the downstream pipeline resizes the image to the tab-preview
+    /// thumbnail width — Retina-scale rendering would just be wasted pixels.
+    @available(macOS 13.0, *)
+    private func burnerHomePageSnapshotImage(from burnerHomePage: BurnerHomePageViewController, size: NSSize) -> NSImage? {
+        let rootView = burnerHomePage.snapshotRenderableView
+            .frame(width: size.width, height: size.height)
+
+        let renderer = ImageRenderer(content: rootView)
+        renderer.proposedSize = .init(width: size.width, height: size.height)
+        renderer.scale = 1.0
+        return renderer.nsImage
+    }
 
     var burnerHomePageViewController: BurnerHomePageViewController?
     private func burnerHomePageViewControllerCreatingIfNeeded() -> BurnerHomePageViewController {

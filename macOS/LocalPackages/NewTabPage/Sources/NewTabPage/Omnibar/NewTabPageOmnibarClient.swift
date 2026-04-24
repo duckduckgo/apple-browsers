@@ -104,6 +104,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled,
             showViewAllAiChats: configProvider.showViewAllAiChats,
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
+            enableImageGeneration: configProvider.isImageGenerationEnabled,
+            enableWebSearch: configProvider.isWebSearchEnabled,
             selectedModelId: configProvider.selectedModelId,
             aiModelSections: sectionsForWeb(aiModelSections),
             selectedReasoningEffort: configProvider.selectedReasoningEffort
@@ -173,6 +175,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled,
             showViewAllAiChats: configProvider.showViewAllAiChats,
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
+            enableImageGeneration: configProvider.isImageGenerationEnabled,
+            enableWebSearch: configProvider.isWebSearchEnabled,
             selectedModelId: configProvider.selectedModelId,
             aiModelSections: sectionsForWeb(modelsProvider?.lastFetchedSections),
             selectedReasoningEffort: configProvider.selectedReasoningEffort
@@ -236,6 +240,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             target: action.target,
             modelId: action.modelId,
             images: action.images,
+            mode: action.mode,
+            toolChoice: action.toolChoice,
             reasoningEffort: reasoningEffortForSubmission(action: action)
         )
         return nil

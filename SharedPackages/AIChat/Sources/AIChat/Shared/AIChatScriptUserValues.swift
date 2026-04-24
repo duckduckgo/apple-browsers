@@ -172,6 +172,9 @@ public struct AIChatNativeConfigValues: Codable {
 }
 
 public struct AIChatNativePrompt: Codable, Equatable {
+    /// Mode value for image generation prompts.
+    public static let imageGenerationMode = "image-generation"
+
     public let platform: String
     public let tool: Tool?
     public let pageContext: AIChatPageContextData?

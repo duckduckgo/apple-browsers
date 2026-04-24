@@ -145,16 +145,13 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func setupView() {
-        if handler.isFireTab {
-            overrideUserInterfaceStyle = .dark
-        }
-        
+        applyFireModeAppearance(isFireTab: handler.isFireTab)
+
         let fontMetrics = UIFontMetrics(forTextStyle: .body)
         let textFont = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
         textView.font = textFont
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = UIColor.clear
-        textView.tintColor = handler.isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
         textView.textColor = UIColor(designSystemColor: .textPrimary)
         textView.autocorrectionType = .no
         textView.autocapitalizationType = .none
@@ -450,6 +447,17 @@ class SwitchBarTextEntryView: UIView {
         if let range {
             textView.scrollRangeToVisible(range)
         }
+    }
+
+    func refreshFireMode(fireMode: Bool) {
+        applyFireModeAppearance(isFireTab: fireMode)
+    }
+
+    private func applyFireModeAppearance(isFireTab: Bool) {
+        overrideUserInterfaceStyle = isFireTab ? .dark : .unspecified
+        textView.tintColor = isFireTab
+            ? UIColor(singleUseColor: .fireModeAccent)
+            : UIColor(designSystemColor: .accent)
     }
 
     private func setupSubscriptions() {

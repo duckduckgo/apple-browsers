@@ -181,6 +181,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     init(
         isToggleEnabled: Bool,
+        isFireTab: Bool = false,
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
         modelsService: AIChatModelsProviding = AIChatModelsService(),
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
@@ -194,12 +195,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             preferences: preferences,
             subscriptionManager: subscriptionManager
         )
-        viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled)
+        viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled, isFireTab: isFireTab)
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler
         )
         floatingSubmitViewController = UnifiedToggleInputFloatingSubmitViewController()
+        floatingSubmitViewController.refreshFireMode(fireMode: isFireTab)
         super.init()
         viewController.delegate = self
         attachmentPresenter.onExpandIfNeeded = { [weak self] in
@@ -536,6 +538,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func updateVoiceSearchAvailability(_ enabled: Bool) {
         viewController.isVoiceSearchAvailable = enabled
+    }
+
+    func updateIsFireTab(_ isFireTab: Bool) {
+        guard viewController.handler.isFireTab != isFireTab else { return }
+        viewController.handler.isFireTab = isFireTab
+        viewController.refreshFireMode(fireMode: isFireTab)
+        floatingSubmitViewController.refreshFireMode(fireMode: isFireTab)
+        contentViewController.refreshFireMode(fireMode: isFireTab)
     }
 
     private func cancelTopOmnibarKeyboardPresentationFallback() {

@@ -54,12 +54,15 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     let isToggleEnabled: Bool
-    lazy var handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isToggleEnabled: isToggleEnabled)
+    let handler: UnifiedToggleInputHandler
 
     // MARK: - Public API
 
-    init(isToggleEnabled: Bool) {
+    init(isToggleEnabled: Bool, isFireTab: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
+        self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
+                                                 isToggleEnabled: isToggleEnabled,
+                                                 isFireTab: isFireTab)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -252,6 +255,10 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func deactivateInput() {
         inputBarView.resignFirstResponder()
+    }
+
+    func refreshFireMode(fireMode: Bool) {
+        inputBarView.refreshFireMode(fireMode: fireMode)
     }
 
     // MARK: - Lifecycle

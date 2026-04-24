@@ -224,6 +224,14 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         aiChatPreferencesPersistor.selectedReasoningEffortPublisher
     }
 
+    var isImageGenerationEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpImageGeneration)
+    }
+
+    var isWebSearchEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpWebSearch)
+    }
+
     var showCustomizePopover: Bool {
         get {
             // We no longer present the tooltip

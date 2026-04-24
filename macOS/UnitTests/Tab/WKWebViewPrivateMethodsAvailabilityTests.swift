@@ -31,6 +31,10 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
         XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_fullScreenPlaceholderView")))
     }
 
+    func testWebViewRespondsTo_webProcessIdentifier() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_webProcessIdentifier")))
+    }
+
     func testWebViewRespondsTo_loadAlternateHTMLString() {
         XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_loadAlternateHTMLString:baseURL:forUnreachableURL:")))
     }

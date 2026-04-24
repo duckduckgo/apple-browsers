@@ -349,7 +349,7 @@ final class AIChatOmnibarController {
 
     /// The mode to include in the prompt payload (e.g., "image-generation").
     var effectiveMode: String? {
-        isImageGenerationMode ? "image-generation" : nil
+        isImageGenerationMode ? AIChatNativePrompt.imageGenerationMode : nil
     }
 
     /// The tool choice to include in the prompt payload (e.g., ["WebSearch"]).

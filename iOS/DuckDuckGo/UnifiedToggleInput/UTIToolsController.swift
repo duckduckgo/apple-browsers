@@ -66,7 +66,6 @@ final class UTIToolsController {
 
     func presentation(
         displayState: UnifiedToggleInputDisplayState,
-        inputMode: TextEntryMode,
         modelStore: UTIModelStore
     ) -> Presentation {
         guard canShowTools(displayState: displayState) else {

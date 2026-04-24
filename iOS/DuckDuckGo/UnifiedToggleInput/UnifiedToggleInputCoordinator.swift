@@ -984,7 +984,6 @@ private extension UnifiedToggleInputCoordinator {
     func refreshToolsPresentation() {
         let presentation = toolsController.presentation(
             displayState: displayState,
-            inputMode: inputMode,
             modelStore: modelStore
         )
         let toolsMenu = presentation.toolsMenu.map { [weak self] menu in

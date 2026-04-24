@@ -32,7 +32,6 @@ final class TabSuspensionServiceTests: XCTestCase {
     private var now: Date!
     private var tabExtensionsBuilder: TestTabExtensionsBuilder!
     private var notificationCenter: NotificationCenter!
-    private var mockMemoryUsageMonitor: MockSuspensionMemoryMonitor!
     private var mockPixelFiring: MockSuspensionPixelFiring!
 
     private var sut: TabSuspensionService!
@@ -43,7 +42,6 @@ final class TabSuspensionServiceTests: XCTestCase {
         now = Date()
         tabExtensionsBuilder = TestTabExtensionsBuilder(load: [TabSuspensionExtension.self])
         notificationCenter = NotificationCenter()
-        mockMemoryUsageMonitor = MockSuspensionMemoryMonitor()
         mockPixelFiring = MockSuspensionPixelFiring()
     }
 
@@ -54,23 +52,23 @@ final class TabSuspensionServiceTests: XCTestCase {
         now = nil
         tabExtensionsBuilder = nil
         notificationCenter = nil
-        mockMemoryUsageMonitor = nil
         mockPixelFiring = nil
         super.tearDown()
     }
 
     private func makeSUT(
         tabCollectionViewModels: [TabCollectionViewModel],
-        privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager()
+        privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager(),
+        memoryProvider: @escaping (pid_t) -> UInt64? = { _ in nil }
     ) -> TabSuspensionService {
         windowControllersManager = WindowControllersManagerMock(tabCollectionViewModels: tabCollectionViewModels)
         return TabSuspensionService(
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager,
-            memoryUsageMonitor: mockMemoryUsageMonitor,
             pixelFiring: mockPixelFiring,
             keyValueStore: InMemoryKeyValueStore(),
+            memoryProvider: memoryProvider,
             notificationCenter: notificationCenter,
             dateProvider: { [unowned self] in self.now }
         )
@@ -81,24 +79,8 @@ final class TabSuspensionServiceTests: XCTestCase {
         return TabCollectionViewModel(tabCollection: tabCollection, selectionIndex: selectionIndex, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
     }
 
-    private func postMemoryPressure(totalMemoryBytes: UInt64 = 0) {
-        let context = MemoryReportingContext(
-            browserMemoryMB: 0,
-            windows: nil,
-            standardTabs: nil,
-            pinnedTabs: nil,
-            architecture: "ARM",
-            syncEnabled: nil,
-            usedAllocationMB: nil,
-            wcTotalMemoryMB: nil,
-            uptimeMinutes: 0,
-            totalMemoryBytes: totalMemoryBytes
-        )
-        notificationCenter.post(
-            name: .memoryPressureCritical,
-            object: nil,
-            userInfo: [MemoryPressureNotification.contextKey: context]
-        )
+    private func postMemoryPressure() {
+        notificationCenter.post(name: .memoryPressureCritical, object: nil)
     }
 
     // MARK: - Feature Flag
@@ -224,23 +206,15 @@ final class TabSuspensionServiceTests: XCTestCase {
         sut = makeSUT(tabCollectionViewModels: [vm])
         tab.lastSelectedAt = now.addingTimeInterval(-20 * 60)
 
-        // Set up memory: 500 MB before, 400 MB after → 100 MB reclaimed
-        let beforeBytes: UInt64 = 500 * 1_048_576
-        let afterBytes: UInt64 = 400 * 1_048_576
-        mockMemoryUsageMonitor.currentPhysFootprintBytes = afterBytes
-
-        let pixelExpectation = expectation(description: "Pixel fired")
-        mockPixelFiring.onFireCalled = { pixelExpectation.fulfill() }
-
-        postMemoryPressure(totalMemoryBytes: beforeBytes)
-
-        wait(for: [pixelExpectation], timeout: 3)
+        postMemoryPressure()
 
         XCTAssertEqual(mockPixelFiring.fireCalls.count, 1)
         let call = mockPixelFiring.fireCalls.first
         XCTAssertEqual(call?.pixel.name, "m_mac_tab_suspension")
         XCTAssertEqual(call?.pixel.parameters?["trigger"], "critical_memory_pressure")
         XCTAssertEqual(call?.pixel.parameters?["tabs_suspended"], "1")
+        // Test tabs have no active web process, so memoryProvider is never consulted
+        // and reclaimed bytes stay at 0.
         XCTAssertEqual(call?.pixel.parameters?["memory_reclaimed_mb"], "0")
     }
 
@@ -252,7 +226,7 @@ final class TabSuspensionServiceTests: XCTestCase {
         let vm = makeTabCollectionViewModel(tabs: [.loaded(tab), .loaded(selectedTab)], selectionIndex: .unpinned(1))
         sut = makeSUT(tabCollectionViewModels: [vm])
 
-        postMemoryPressure(totalMemoryBytes: 500 * 1_048_576)
+        postMemoryPressure()
 
         XCTAssertTrue(mockPixelFiring.fireCalls.isEmpty)
     }
@@ -264,7 +238,7 @@ final class TabSuspensionServiceTests: XCTestCase {
         let vm = makeTabCollectionViewModel(tabs: [.loaded(tab), .loaded(selectedTab)], selectionIndex: .unpinned(1))
         sut = makeSUT(tabCollectionViewModels: [vm])
 
-        postMemoryPressure(totalMemoryBytes: 500 * 1_048_576)
+        postMemoryPressure()
 
         XCTAssertTrue(mockPixelFiring.fireCalls.isEmpty)
     }
@@ -354,28 +328,6 @@ final class TabSuspensionServiceTests: XCTestCase {
         XCTAssertEqual(tab.tabSnapshots?.shouldClearSnapshotOnDeinit, false)
     }
 
-    // MARK: - Memory Reclaimed
-
-    func testWhenPostMemoryIsHigher_ThenMemoryReclaimedIsZero() {
-        featureFlagger.enabledFeatureFlags = [.tabSuspension]
-        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger)
-        let selectedTab = Tab(content: .newtab, extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now)
-        let vm = makeTabCollectionViewModel(tabs: [.loaded(tab), .loaded(selectedTab)], selectionIndex: .unpinned(1))
-        sut = makeSUT(tabCollectionViewModels: [vm])
-        tab.lastSelectedAt = nil
-
-        // Post-suspension memory is higher than before
-        mockMemoryUsageMonitor.currentPhysFootprintBytes = 600 * 1_048_576
-
-        let pixelExpectation = expectation(description: "Pixel fired")
-        mockPixelFiring.onFireCalled = { pixelExpectation.fulfill() }
-
-        postMemoryPressure(totalMemoryBytes: 500 * 1_048_576)
-
-        wait(for: [pixelExpectation], timeout: 3)
-
-        XCTAssertEqual(mockPixelFiring.fireCalls.first?.pixel.parameters?["memory_reclaimed_mb"], "0")
-    }
 }
 
 private final class MockSuspensionPixelFiring: PixelFiring {
@@ -385,7 +337,6 @@ private final class MockSuspensionPixelFiring: PixelFiring {
     }
 
     var fireCalls = [FireCall]()
-    var onFireCalled: (() -> Void)?
 
     func fire(_ event: PixelKitEvent) {
         fire(event, frequency: .standard)
@@ -397,21 +348,6 @@ private final class MockSuspensionPixelFiring: PixelFiring {
 
     func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, includeAppVersionParameter: Bool, withAdditionalParameters: [String: String]?, withNamePrefix: String?, onComplete: @escaping PixelKit.CompletionBlock) {
         fireCalls.append(FireCall(pixel: event, frequency: frequency))
-        onFireCalled?()
         onComplete(true, nil)
-    }
-}
-
-private class MockSuspensionMemoryMonitor: MemoryUsageMonitoring {
-    var currentPhysFootprintBytes: UInt64 = 0
-    var currentWebContentBytes: UInt64?
-
-    func getCurrentMemoryUsage() -> MemoryUsageMonitor.MemoryReport {
-        MemoryUsageMonitor.MemoryReport(
-            residentBytes: 0,
-            physFootprintBytes: currentPhysFootprintBytes,
-            webContentBytes: currentWebContentBytes,
-            webContentProcessCount: nil
-        )
     }
 }

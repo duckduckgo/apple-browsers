@@ -358,7 +358,7 @@ class MainViewController: UIViewController {
     }
 
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings
-    private let fireModePromotionEligibility: FireModePromotionCoordinating?
+    private(set) var fireModePromotionEligibility: FireModePromotionCoordinating?
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -1551,6 +1551,20 @@ class MainViewController: UIViewController {
             lastActiveTabStore.recordActiveTab(uid: tabModel.uid)
         }
 
+        if let hatch {
+            let targetTab = hatch.targetTab
+            unifiedToggleInputCoordinator?.setEscapeHatch(hatch, onTapped: { [weak self] in
+                guard let self else { return }
+                guard tabManager.tabsModel(for: targetTab.mode).tabExists(tab: targetTab) else {
+                    clearEscapeHatch()
+                    return
+                }
+                onSwitchToTab(targetTab)
+            })
+        } else {
+            clearEscapeHatch()
+        }
+
         addToContentContainer(controller: controller)
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
@@ -1593,7 +1607,7 @@ class MainViewController: UIViewController {
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
-        currentNTPEscapeHatch = nil
+        clearEscapeHatch()
     }
 
     @IBAction func onFirePressed() {
@@ -2062,7 +2076,7 @@ class MainViewController: UIViewController {
 
         refreshUnifiedToggleInput(for: tab)
 
-        if minimalChromeSettings.isFeatureEnabled && !AppWidthObserver.shared.isPad {
+        if isInMinimalChromeLayout != isMinimalChromeMode() {
             applyWidth()
         }
 
@@ -4152,6 +4166,12 @@ extension MainViewController: OmniBarDelegate {
         return currentNTPEscapeHatch
     }
 
+    private func clearEscapeHatch() {
+        newTabPageViewController?.setEscapeHatch(nil)
+        currentNTPEscapeHatch = nil
+        unifiedToggleInputCoordinator?.setEscapeHatch(nil, onTapped: nil)
+    }
+
     func useNewOmnibarTransitionBehaviour() -> Bool {
         escapeHatchForEditingState() != nil
     }
@@ -4159,6 +4179,7 @@ extension MainViewController: OmniBarDelegate {
     func onSwitchToTab(_ tab: Tab) {
         let targetTabsModel = tabManager.tabsModel(for: tab.mode)
         guard targetTabsModel.tabExists(tab: tab) else {
+            clearEscapeHatch()
             viewCoordinator.omniBar.endEditing()
             return
         }
@@ -4219,8 +4240,8 @@ extension MainViewController: OmniBarDelegate {
         toggleModeStorage.save(mode)
     }
     
-    func onFireModeRequested() {
-        navigateToFireMode(source: .ntpPromotion)
+    func onTryFireModeRequested() {
+        showTabSwitcher(forceFireTabsTip: true)
     }
 
     func isCurrentTabFireTab() -> Bool {
@@ -4326,8 +4347,7 @@ extension MainViewController: NewTabPageControllerDelegate {
     func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
         let targetTabsModel = tabManager.tabsModel(for: tab.mode)
         guard targetTabsModel.tabExists(tab: tab) else {
-            controller.setEscapeHatch(nil)
-            currentNTPEscapeHatch = nil
+            clearEscapeHatch()
             return
         }
         let currentTab = tabManager.currentTabsModel.currentTab
@@ -4338,15 +4358,15 @@ extension MainViewController: NewTabPageControllerDelegate {
             closeTab(currentTab)
         }
         selectTab(tab)
-        currentNTPEscapeHatch = nil
+        clearEscapeHatch()
     }
 
     func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {
         markSearchContextualOnboardingAsSeenForExperiment()
     }
 
-    func newTabPageDidRequestFireMode(_ controller: NewTabPageViewController) {
-        navigateToFireMode(source: .ntpPromotion)
+    func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
+        showTabSwitcher(forceFireTabsTip: true)
     }
 }
 
@@ -4933,7 +4953,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         showTabSwitcher()
     }
 
-    func showTabSwitcher() {
+    func showTabSwitcher(forceFireTabsTip: Bool = false) {
         if !tabManager.currentTabsModel.allowsEmpty
             && tabManager.current(createIfNeeded: true) == nil {
             fatalError("Unable to get current tab")
@@ -4946,7 +4966,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         updatePreviewForCurrentTab {
             ViewHighlighter.hideAll()
             Task { @MainActor in
-                await self.segueToTabSwitcher()
+                await self.segueToTabSwitcher(forceFireTabsTip: forceFireTabsTip)
             }
         }
     }

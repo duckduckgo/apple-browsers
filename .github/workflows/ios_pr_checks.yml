@@ -207,6 +207,16 @@ jobs:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-unit-tests-${{ steps.compilation-cache-hash.outputs.hash }}
 
+    - name: Process test results
+      if: always()
+      uses: ./.github/actions/process-test-results
+      with:
+        working-directory: iOS
+        junit-path: unittests.xml
+        log-path: xcodebuild.log
+        title: iOS PR Checks
+        test-outcome: ${{ steps.run-unit-tests.outcome }}
+
     - name: Upload JUnit XML as artifact
       uses: actions/upload-artifact@v4
       if: always()
@@ -214,6 +224,7 @@ jobs:
         name: ios-unittests.xml
         path: |
           iOS/unittests.xml
+          iOS/unittests-crash-details.json
         retention-days: 7
 
     - name: Upload logs if workflow failed
@@ -226,11 +237,24 @@ jobs:
           iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
 
+    - name: Upload crash reports
+      uses: actions/upload-artifact@v4
+      if: failure() || cancelled()
+      with:
+        name: ios-pr-crash-reports
+        path: |
+          ~/Library/Logs/DiagnosticReports/*.ips
+          ~/Library/Logs/DiagnosticReports/*.crash
+        if-no-files-found: ignore
+        retention-days: 7
+
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v3
+      if: always()
       with:
         report_paths: iOS/unittests.xml
         check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+        job_summary: 'false'
 
     - name: Update Asana with failed unit tests
       if: always() && steps.run-unit-tests.outcome == 'failure'

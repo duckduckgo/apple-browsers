@@ -315,7 +315,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.apply(renderState.viewConfig, animated: false)
         applyToolbarPresentation()
         viewController.deactivateInput()
-        contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+        contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         intentSubject.send(.hide)
     }
 
@@ -347,7 +347,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             textState = .prefilledSelected
         }
 
-        contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+        contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         let expandedHeight = omnibarEditingHeight()
 
         if cardPosition == .top && isToggleEnabled {
@@ -394,12 +394,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.apply(renderState.viewConfig, animated: false)
             applyToolbarPresentation()
             viewController.deactivateInput()
-            contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+            contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         } else {
             applyToolbarPresentation()
             viewController.deactivateInput()
             let renderState = computeRenderState()
-            contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+            contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         }
         intentSubject.send(.hideOmnibarEditing(animated: animateDismiss))
     }
@@ -499,7 +499,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             displayState = .omnibar(.active)
             let renderState = computeRenderState()
             viewController.apply(renderState.viewConfig, animated: false)
-            contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+            contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
             intentSubject.send(.showOmnibarActive)
         case (.omnibar(.active), true):
             cancelTopOmnibarKeyboardPresentationFallback()
@@ -507,11 +507,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         case (.aiTab(.expanded), false) where isAITabSearch:
             let renderState = computeRenderState()
             viewController.apply(renderState.viewConfig, animated: false)
-            contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+            contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         case (.aiTab(.expanded), true) where isAITabSearch:
             let renderState = computeRenderState()
             viewController.apply(renderState.viewConfig, animated: false)
-            contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+            contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         default:
             break
         }
@@ -528,6 +528,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         default:
             return
         }
+    }
+
+    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
+        contentViewController.setEscapeHatch(model, onTapped: onTapped)
     }
 
     func updateVoiceSearchAvailability(_ enabled: Bool) {
@@ -565,7 +569,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState = .omnibar(.inactive)
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
-        contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+        contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         intentSubject.send(.showOmnibarInactive)
     }
 
@@ -641,7 +645,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func applyDismissButtonVisibility() {
         let renderState = computeRenderState()
-        contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+        contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
     }
 
     // MARK: - Render State
@@ -700,6 +704,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isToolbarSubmitHidden: cardPosition == .top && isOmnibarSession,
             inactiveAppearance: inactiveAppearance,
             isFloatingSubmitVisible: isFloatingSubmitVisible,
+            isToggleEnabled: isToggleEnabled,
             contentInputMode: inputMode,
             inputMode: inputMode
         )
@@ -901,6 +906,12 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {
         delegate?.unifiedToggleInputDidChangeHeight()
+    }
+
+    func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController) {
+        // The inline X dismisses the same way the floating X does — forward to the
+        // content container's shared handler so both controls route through one path.
+        contentViewController.onDismissRequested?()
     }
 }
 

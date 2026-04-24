@@ -51,7 +51,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
     func testWhenFetchingModelsThenFieldsAreMappedCorrectly() async {
         mockModelsService.modelsToReturn = [
             makeRemoteModel(id: "gpt-4o-mini", name: "GPT-4o mini", shortName: "4o-mini",
-                            supportsImageUpload: true, accessTier: ["free"])
+                            supportsImageUpload: true, supportedTools: ["WebSearch", "NewsSearch"], accessTier: ["free"])
         ]
 
         let sections = await provider.fetchAIModelSections()
@@ -62,6 +62,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertEqual(item?.shortName, "4o-mini")
         XCTAssertTrue(item?.isEnabled == true)
         XCTAssertTrue(item?.supportsImageUpload == true)
+        XCTAssertEqual(item?.supportedTools, ["WebSearch", "NewsSearch"])
     }
 
     func testWhenFreeUserThenPremiumModelsAreDisabled() async {
@@ -190,6 +191,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         name: String = "Model",
         shortName: String? = nil,
         supportsImageUpload: Bool = false,
+        supportedTools: [String] = [],
         accessTier: [String]
     ) -> AIChatRemoteModel {
         AIChatRemoteModel(
@@ -199,7 +201,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
             provider: "openai",
             entityHasAccess: true,
             supportsImageUpload: supportsImageUpload,
-            supportedTools: [],
+            supportedTools: supportedTools,
             accessTier: accessTier
         )
     }

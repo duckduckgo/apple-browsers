@@ -24,10 +24,20 @@ struct LoginFaviconView: View {
     let domain: String
     let generatedIconLetters: String
     let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
+    let osVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
+
+    private var displayableFaviconImage: NSImage? {
+        // Workaround for favicon rendering crashes on macOS 13.7.8.
+        guard (osVersion.majorVersion, osVersion.minorVersion, osVersion.patchVersion) != (13, 7, 8) else {
+            return nil
+        }
+
+        return faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image
+    }
 
     var body: some View {
         Group {
-            if let image = faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image {
+            if let image = displayableFaviconImage {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -42,7 +52,7 @@ struct LoginFaviconView: View {
     }
 
     var favicon: NSImage? {
-        return faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image ?? .login
+        return displayableFaviconImage ?? .login
     }
 
 }

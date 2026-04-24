@@ -14,9 +14,9 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "3735FD4C2F9B894C00D0719B"
-               BuildableName = "UI Tests App Store.xctest"
-               BlueprintName = "UI Tests App Store"
+               BlueprintIdentifier = "7B4CE8D926F02108009134B1"
+               BuildableName = "UI Tests.xctest"
+               BlueprintName = "UI Tests"
                ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -26,20 +26,13 @@
       buildConfiguration = "Review"
       selectedDebuggerIdentifier = ""
       selectedLauncherIdentifier = "Xcode.IDEFoundation.Launcher.PosixSpawn"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      shouldAutocreateTestPlan = "YES">
-      <Testables>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "3735FD4C2F9B894C00D0719B"
-               BuildableName = "UI Tests App Store.xctest"
-               BlueprintName = "UI Tests App Store"
-               ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-      </Testables>
+      shouldUseLaunchSchemeArgsEnv = "YES">
+      <TestPlans>
+         <TestPlanReference
+            reference = "container:UITests/UI Tests App Store.xctestplan"
+            default = "YES">
+         </TestPlanReference>
+      </TestPlans>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Review"

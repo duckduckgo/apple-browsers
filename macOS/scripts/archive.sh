@@ -265,6 +265,15 @@ archive_and_export() {
 		2>&1 \
 		| ${log_formatter}
 
+	if [[ "${release_type}" == "sandbox-review" ]]; then
+		# App Store entitlements (non-systemextension networkextension values) can't
+		# be re-signed with Developer ID provisioning profiles, so sandbox-review
+		# keeps the archived App Store signatures and is used unsigned-for-DMG
+		# purposes (local UI tests only; Gatekeeper will require manual approval).
+		copy_app_from_archive
+		return
+	fi
+
 	echo "Exporting archive ..."
 
 	prepare_export_options_plist
@@ -278,6 +287,18 @@ archive_and_export() {
 		"${extra_xcargs}" \
 		2>&1 \
 		| ${log_formatter}
+}
+
+copy_app_from_archive() {
+	local archived_app
+	archived_app=$(find "${archive}/Products/Applications" -maxdepth 1 -name "*.app" -type d | head -1)
+	if [[ -z "${archived_app}" ]]; then
+		die "Could not find .app bundle in ${archive}/Products/Applications"
+	fi
+
+	echo "Copying ${archived_app} to ${app_path}"
+	ditto "${archived_app}" "${app_path}"
+	xattr -dr com.apple.quarantine "${app_path}" 2>/dev/null || true
 }
 
 notarize() {
@@ -415,8 +436,10 @@ main() {
 
 	clear_working_directory
 	archive_and_export
-	notarize
-	staple_notarized_app
+	if [[ "${release_type}" != "sandbox-review" ]]; then
+		notarize
+		staple_notarized_app
+	fi
 	compress_app_and_dsym
 
 	if [[ ${create_dmg} ]]; then

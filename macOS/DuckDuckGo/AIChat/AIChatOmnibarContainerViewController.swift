@@ -498,6 +498,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         reasoningPickerButton.translatesAutoresizingMaskIntoConstraints = false
         reasoningPickerButton.target = self
         reasoningPickerButton.action = #selector(reasoningPickerButtonClicked)
+        reasoningPickerButton.font = .systemFont(ofSize: 12, weight: .regular)
         reasoningPickerButton.toolTip = UserText.aiChatReasoningEffortPickerButtonTooltip
         reasoningPickerButton.setAccessibilityLabel(UserText.aiChatReasoningEffortPickerButtonTooltip)
         reasoningPickerButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.reasoningPickerButton) }

@@ -518,6 +518,11 @@ final class AddressBarViewController: NSViewController {
                 addressBarButtonsViewController?.textFieldValue = value
                 updateView()
                 updateSwitchToTabBoxAppearance()
+                /// Refresh the merged-background flip so the `showMergedBackground` branch in
+                /// `updateShadowView` picks up a change from empty → typed (or back) without waiting
+                /// for a suggestion-window event. Covers the case where typing doesn't open the
+                /// suggestions window (e.g. it's disabled or deliberately dismissed).
+                updateShadowView(addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
             }
             .store(in: &cancellables)
     }
@@ -818,8 +823,17 @@ final class AddressBarViewController: NSViewController {
 
         let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
         activeOuterBorderView.isHidden = isSuggestionsWindowVisible || view.window?.isKeyWindow != true || isToggleFocused
-        activeBackgroundView.isHidden = isSuggestionsWindowVisible
-        activeBackgroundViewWithSuggestions.isHidden = !isSuggestionsWindowVisible
+
+        /// Keep the merged (bordered-less) background variant when the user has a draft even after the
+        /// suggestions window closes (e.g. after ESC). Without this the bar swaps back to `activeBackgroundView`
+        /// and its 2pt accent border + outer glow reappear over the still-typed text, which doesn't match
+        /// the clean "suggestions-loading" look the user sees while typing. Gated on `isSelected` so the
+        /// unfocused variants (including `.inactiveWithAIChat`) aren't affected.
+        let currentValue = addressBarTextField.value
+        let hasUserTypedContent = currentValue.isUserTyped && !currentValue.isEmpty
+        let showMergedBackground = isSuggestionsWindowVisible || (selectionState.isSelected && hasUserTypedContent)
+        activeBackgroundView.isHidden = showMergedBackground
+        activeBackgroundViewWithSuggestions.isHidden = !showMergedBackground
         inactiveAddressBarShadowView.isHidden = isSuggestionsWindowVisible
     }
 

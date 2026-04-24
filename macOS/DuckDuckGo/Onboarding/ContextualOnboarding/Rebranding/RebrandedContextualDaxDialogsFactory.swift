@@ -110,23 +110,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                 .applyOnboardingTheme(.macOSRebranding2026)
         )
 
-        #if DEBUG
-        return AnyView(
-            viewWithBackground.overlay(
-                Text("REBRANDED")
-                    .font(.caption2)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.red)
-                    .cornerRadius(4)
-                    .padding(8),
-                alignment: .topTrailing
-            )
-        )
-        #else
         return viewWithBackground
-        #endif
     }
 
     /// Returns just the bubble view (no background) for layered composition.
@@ -159,24 +143,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                 .applyOnboardingTheme(.macOSRebranding2026)
         )
 
-        #if DEBUG
-        let debugBubble = AnyView(
-            themedBubble.overlay(
-                Text("REBRANDED")
-                    .font(.caption2)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.red)
-                    .cornerRadius(4)
-                    .padding(8),
-                alignment: .topTrailing
-            )
-        )
-        return LayeredDialogViews(bubble: debugBubble, background: themedBackground)
-        #else
         return LayeredDialogViews(bubble: themedBubble, background: themedBackground)
-        #endif
     }
 
     // MARK: - Background

@@ -789,24 +789,37 @@ final class BrowserTabViewController: NSViewController {
         }
 
         let oldBubble = layeredDialogBubbleHostingController
+        let oldBackground = layeredDialogBackgroundHostingController
         layeredDialogBubbleHostingController = nil
-
-        // Background swaps instantly — no animation
-        layeredDialogBackgroundHostingController?.view.removeFromSuperview()
         layeredDialogBackgroundHostingController = nil
-        installBackgroundHostingController(layered.background, in: backgroundContainer, alpha: 1)
 
         let phase = OnboardingRebranding.Layout.screenTransitionPhaseDuration
 
-        if let oldBubble {
+        if oldBubble != nil || oldBackground != nil {
+            // Fade out old bubble and background together
             NSAnimationContext.runAnimationGroup({ context in
                 context.duration = phase
-                oldBubble.view.animator().alphaValue = 0
+                oldBubble?.view.animator().alphaValue = 0
+                oldBackground?.view.animator().alphaValue = 0
             }, completionHandler: { [weak self] in
-                oldBubble.view.removeFromSuperview()
-                self?.slideInBubble(layered.bubble, in: bubbleContainer, duration: phase)
+                oldBubble?.view.removeFromSuperview()
+                oldBackground?.view.removeFromSuperview()
+                guard let self else { return }
+                // Fade in new background and slide in new bubble simultaneously
+                let background = self.installBackgroundHostingController(layered.background, in: backgroundContainer, alpha: 0)
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = phase
+                    background.view.animator().alphaValue = 1
+                }
+                self.slideInBubble(layered.bubble, in: bubbleContainer, duration: phase)
             })
         } else {
+            // First appearance — fade in background, slide in bubble
+            let background = installBackgroundHostingController(layered.background, in: backgroundContainer, alpha: 0)
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = phase
+                background.view.animator().alphaValue = 1
+            }
             slideInBubble(layered.bubble, in: bubbleContainer, duration: phase)
         }
     }
@@ -917,9 +930,32 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private func transitionLayeredBackground(_ backgroundView: AnyView, in container: NSView) {
-        layeredDialogBackgroundHostingController?.view.removeFromSuperview()
+        let oldController = layeredDialogBackgroundHostingController
         layeredDialogBackgroundHostingController = nil
-        installBackgroundHostingController(backgroundView, in: container, alpha: 1)
+
+        let phase = OnboardingRebranding.Layout.screenTransitionPhaseDuration
+
+        guard let oldController else {
+            let controller = installBackgroundHostingController(backgroundView, in: container, alpha: 0)
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = phase
+                controller.view.animator().alphaValue = 1
+            }
+            return
+        }
+
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = phase
+            oldController.view.animator().alphaValue = 0
+        }, completionHandler: { [weak self] in
+            oldController.view.removeFromSuperview()
+            guard let self else { return }
+            let newController = self.installBackgroundHostingController(backgroundView, in: container, alpha: 0)
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = phase
+                newController.view.animator().alphaValue = 1
+            }
+        })
     }
 
     private func teardownLayeredDialogPanel() {

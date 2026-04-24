@@ -222,6 +222,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a model from the model picker menu
     case aiChatAddressBarModelSelected
 
+    /// Event Trigger: User selects a reasoning effort from the native omnibar picker
+    case aiChatAddressBarReasoningEffortSelected
+
     // MARK: - Image Generation Mode
 
     /// Event Trigger: User activates image generation mode via the Tools menu
@@ -474,6 +477,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_submit_with_image"
         case .aiChatAddressBarModelSelected:
             return "aichat_addressbar_model_selected"
+        case .aiChatAddressBarReasoningEffortSelected:
+            return "aichat_addressbar_reasoning_effort_selected"
         case .aiChatAddressBarImageGenerationActivated:
             return "aichat_addressbar_image_generation_activated"
         case .aiChatAddressBarImageGenerationDeactivated:
@@ -588,6 +593,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageAttached,
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarModelSelected,
+                .aiChatAddressBarReasoningEffortSelected,
                 .aiChatAddressBarImageGenerationActivated,
                 .aiChatAddressBarImageGenerationDeactivated,
                 .aiChatAddressBarImageGenerationSubmitted,
@@ -715,6 +721,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarSubmitWithImage,
                 .aiChatAddressBarModelSelected,
+                .aiChatAddressBarReasoningEffortSelected,
                 .aiChatNtpSubmitWithImage,
                 .aiChatNtpModelSelected,
                 .aiChatNtpReasoningEffortSelected,

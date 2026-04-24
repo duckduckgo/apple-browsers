@@ -1082,6 +1082,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         guard let effort = sender.representedObject as? AIChatReasoningEffort else { return }
         omnibarController.updateSelectedReasoningEffort(effort)
         updateReasoningPickerAppearance(effort)
+        PixelKit.fire(AIChatPixel.aiChatAddressBarReasoningEffortSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
     private func updateReasoningPickerVisibility() {

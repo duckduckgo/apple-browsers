@@ -521,5 +521,5 @@ final class ContextualOnboardingSettingsMock: ContextualOnboardingSettings {
     var userHasSeenTrackersDialog: Bool = false
     var userHasSeenFireDialog: Bool = false
     var userHasSeenTryVisitSiteDialog: Bool = false
-    var isChatPathTrackerStep: Bool = false
+    var chatPathPhase: DaxDialogs.ChatPathPhase = .none
 }

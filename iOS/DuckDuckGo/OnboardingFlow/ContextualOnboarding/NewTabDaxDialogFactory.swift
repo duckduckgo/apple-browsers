@@ -108,7 +108,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
     }
 
     private func createSubsequentDialog(onManualDismiss: @escaping () -> Void) -> some View {
-        let isChatPath = daxDialogsFlowCoordinator.isInChatPathPostFireState
+        let isChatPath = daxDialogsFlowCoordinator.chatPathPhase == .visitSite
 
         let viewModel = OnboardingSiteSuggestionsViewModel(
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle,
@@ -151,7 +151,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
     }
 
     private func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
-        let isChatPath = daxDialogsFlowCoordinator.isChatPathEOJState
+        let isChatPath = daxDialogsFlowCoordinator.chatPathPhase == .trackerToEOJ
 
         let message = isChatPath
             ? UserText.Onboarding.DuckAIQueryExperiment.completionOnboardingMessage
@@ -204,10 +204,6 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
 
 private extension NewTabDaxDialogFactory {
     private func createSubscriptionPromoDialog(proceedButtonText: String, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
-        // Capture now — subscriptionPromotionDialogSeen is set true in onFirstAppear, which would
-        // make isChatPathSubscriptionPromo return false by the time proceedAction fires.
-        let isChatPath = daxDialogsFlowCoordinator.isChatPathSubscriptionPromo
-
         return FadeInView {
             SubscriptionPromotionView(
                 title: UserText.SubscriptionPromotionOnboarding.Promo.title,
@@ -217,16 +213,12 @@ private extension NewTabDaxDialogFactory {
                 dismissText: UserText.SubscriptionPromotionOnboarding.Buttons.skip,
                 proceedAction: { [weak self] in
                     self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
-//                    if isChatPath {
-//                        self?.delegate?.navigateFromOnboarding(to: SubscriptionURL.StaticURLs.proPageURL)
-//                    } else {
-                        let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
-                        NotificationCenter.default.post(
-                            name: .settingsDeepLinkNotification,
-                            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
-                            userInfo: nil
-                        )
-//                    }
+                    let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
+                    NotificationCenter.default.post(
+                        name: .settingsDeepLinkNotification,
+                        object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
+                        userInfo: nil
+                    )
                     onDismiss(false)
                 },
                 onManualDismiss: { [weak self] in

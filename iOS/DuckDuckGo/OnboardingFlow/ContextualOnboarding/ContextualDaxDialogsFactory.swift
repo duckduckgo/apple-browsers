@@ -32,10 +32,6 @@ protocol ContextualOnboardingEventDelegate: AnyObject {
     func didAcknowledgeContextualOnboardingTrackersDialog()
     /// Inform the delegate that the user dismissed the contextual dialog.
     func didTapDismissContextualOnboardingAction()
-    /// Inform the delegate that the user tapped "Got it!" on the trackers-blocked dialog in the
-    /// chat-first (Duck.ai) onboarding path. The delegate should open a new tab to reveal the
-    /// end-of-journey "You've got this!" dialog.
-    func didAcknowledgeChatPathContextualOnboardingTrackersDialog()
 }
 
 // Composed delegate for Contextual Onboarding to decorate events also needed in New Tab Page.
@@ -225,11 +221,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             message: attributedMessage,
             blockedTrackersCTAAction: { [weak self, weak delegate] in
                 if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
-                    if self?.contextualOnboardingSettings.isChatPathTrackerStep == true {
-                        delegate?.didAcknowledgeChatPathContextualOnboardingTrackersDialog()
-                    } else {
-                        delegate?.didTapDismissContextualOnboardingAction()
-                    }
+                    delegate?.didTapDismissContextualOnboardingAction()
                 } else {
                     onSizeUpdate()
                     delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
@@ -243,7 +235,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         }
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: spec.pixelName)
-            if self?.contextualOnboardingSettings.isChatPathTrackerStep == true {
+            if self?.contextualOnboardingSettings.chatPathPhase == .trackerToEOJ {
                 self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingChatPathTrackersBlockedUnique)
             }
         }
@@ -302,10 +294,7 @@ protocol ContextualOnboardingSettings {
     var userHasSeenTrackersDialog: Bool { get }
     var userHasSeenFireDialog: Bool { get }
     var userHasSeenTryVisitSiteDialog: Bool { get }
-    /// True when the current trackers-blocked dialog is part of the chat-first (Duck.ai) onboarding path.
-    /// In this path the fire step was completed before visiting any site, so "Got it!" should open a new
-    /// tab with the "You've got this!" end-of-journey dialog rather than triggering the fire pulse.
-    var isChatPathTrackerStep: Bool { get }
+    var chatPathPhase: DaxDialogs.ChatPathPhase { get }
 }
 
 extension DefaultDaxDialogsSettings: ContextualOnboardingSettings {
@@ -324,10 +313,11 @@ extension DefaultDaxDialogsSettings: ContextualOnboardingSettings {
         tryVisitASiteShown
     }
 
-    var isChatPathTrackerStep: Bool {
-        // Fire was completed before browsing (chat-first path), the "try visiting a site" step
-        // on the NTP was shown, a tracker dialog has just been surfaced, and EOJ hasn't been shown yet.
-        fireMessageExperimentShown && chatPathVisitSiteSeen && !browsingFinalDialogShown
+    var chatPathPhase: DaxDialogs.ChatPathPhase {
+        guard fireMessageExperimentShown else { return .none }
+        if !chatPathVisitSiteSeen { return .visitSite }
+        if !browsingFinalDialogShown { return .trackerToEOJ }
+        return .none
     }
 
 }

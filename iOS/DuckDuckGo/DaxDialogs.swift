@@ -74,14 +74,8 @@ protocol ContextualOnboardingLogic {
     /// Marks that the "try visiting a site" step has been shown in the chat-first (Duck.ai) onboarding path.
     func setChatPathVisitSiteSeen()
 
-    /// True when the user completed the Duck.ai fire step but has not yet seen any browsing tracker/no-tracker dialog.
-    /// Used to gate the chat-path "try visiting a site" and "trackers blocked" steps.
-    var isInChatPathPostFireState: Bool { get }
-
-    /// True when the user is at the end-of-journey step in the chat-first path:
-    /// fire seen, visit-site step shown, trackers-blocked seen, but final EOJ not yet shown.
-    /// Used to select the chat-specific EOJ content and background.
-    var isChatPathEOJState: Bool { get }
+    /// The current phase of the Duck.ai chat-first onboarding path.
+    var chatPathPhase: DaxDialogs.ChatPathPhase { get }
 
     func enableAddFavoriteFlow()
     func resumeRegularFlow()
@@ -107,10 +101,6 @@ protocol SubscriptionPromotionCoordinating {
     /// True when the subscription promotion dialog is eligible to be shown but hasn't been shown yet.
     /// Used to defer `disableContextualDaxDialogs()` until after the promo is dismissed.
     var subscriptionPromotionPending: Bool { get }
-
-    /// True when the subscription promotion is being shown as part of the chat-first (Duck.ai) onboarding path.
-    /// When true the "Try it free" button should open duckduckgo.com/pro in the browser instead of the in-app purchase flow.
-    var isChatPathSubscriptionPromo: Bool { get }
 }
 
 extension ContentBlockerRulesManager: EntityProviding {
@@ -122,6 +112,16 @@ extension ContentBlockerRulesManager: EntityProviding {
 }
 
 final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, ContextualDaxDialogStatusProvider {
+
+    /// Represents the current phase of the Duck.ai chat-first onboarding path.
+    enum ChatPathPhase {
+        /// Not in the chat-first path, or the path has been completed.
+        case none
+        /// Fire step done; the "try visiting a site" NTP prompt is pending.
+        case visitSite
+        /// Visit-site step shown; the user needs to see the trackers-blocked dialog and then the EOJ dialog.
+        case trackerToEOJ
+    }
 
     struct MajorTrackers {
         
@@ -511,12 +511,11 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         settings.chatPathVisitSiteSeen = true
     }
 
-    var isInChatPathPostFireState: Bool {
-        settings.fireMessageExperimentShown && !nonDDGBrowsingMessageSeen
-    }
-
-    var isChatPathEOJState: Bool {
-        settings.fireMessageExperimentShown && settings.chatPathVisitSiteSeen && !settings.browsingFinalDialogShown
+    var chatPathPhase: ChatPathPhase {
+        guard settings.fireMessageExperimentShown else { return .none }
+        if !settings.chatPathVisitSiteSeen { return .visitSite }
+        if !settings.browsingFinalDialogShown { return .trackerToEOJ }
+        return .none
     }
 
     func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyInfo) -> BrowsingSpec? {
@@ -783,11 +782,6 @@ extension DaxDialogs: SubscriptionPromotionCoordinating {
         finalDaxDialogSeen && onboardingSubscriptionPromotionHelper.shouldDisplay && !subscriptionPromotionDialogSeen
     }
 
-    var isChatPathSubscriptionPromo: Bool {
-        // chatPathVisitSiteSeen is only set in the Duck.ai experiment path (never in the control path),
-        // making it a reliable distinguisher even after the user has browsed a non-DDG site.
-        settings.fireMessageExperimentShown && settings.chatPathVisitSiteSeen && subscriptionPromotionPending
-    }
 }
 
 extension DaxDialogs: ContextualDaxDialogDisabling {

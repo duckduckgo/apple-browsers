@@ -23,7 +23,6 @@ import Foundation
 final class ContextualOnboardingDelegateMock: ContextualOnboardingDelegate {
     private(set) var didCallDidShowContextualOnboardingTrackersDialog = false
     private(set) var didCallDidAcknowledgeContextualOnboardingTrackersDialog = false
-    private(set) var didCallDidAcknowledgeChatPathContextualOnboardingTrackersDialog = false
     private(set) var didCallDidTapDismissContextualOnboardingAction = false
     private(set) var didCallSearchForQuery = false
     private(set) var didCallNavigateToURL = false
@@ -36,10 +35,6 @@ final class ContextualOnboardingDelegateMock: ContextualOnboardingDelegate {
 
     func didAcknowledgeContextualOnboardingTrackersDialog() {
         didCallDidAcknowledgeContextualOnboardingTrackersDialog = true
-    }
-
-    func didAcknowledgeChatPathContextualOnboardingTrackersDialog() {
-        didCallDidAcknowledgeChatPathContextualOnboardingTrackersDialog = true
     }
 
     func didTapDismissContextualOnboardingAction() {

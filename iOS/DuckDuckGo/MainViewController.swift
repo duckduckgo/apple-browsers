@@ -4410,7 +4410,7 @@ extension MainViewController: TabDelegate {
     }
 
     private func presentChatPathOnboardingCompletionIfNeeded() {
-        guard daxDialogsManager.isChatPathEOJState else { return }
+        guard daxDialogsManager.chatPathPhase == .trackerToEOJ else { return }
         let message = UserText.Onboarding.DuckAIQueryExperiment.completionOnboardingMessage
         DispatchQueue.main.async { [weak self] in
             self?.newTabPageViewController?.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message)

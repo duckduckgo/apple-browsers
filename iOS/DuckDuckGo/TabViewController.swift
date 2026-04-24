@@ -4084,13 +4084,11 @@ extension TabViewController: ContextualOnboardingEventDelegate {
         contextualOnboardingLogic.setDaxDialogDismiss()
 
         contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
-    }
 
-    func didAcknowledgeChatPathContextualOnboardingTrackersDialog() {
-        contextualOnboardingLogic.setDaxDialogDismiss()
-        contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
-        // Open a new tab so the NTP can surface the "You've got this!" end-of-journey dialog.
-        delegate?.tabDidRequestNewTab(self)
+        // Chat-first path: open a new tab so the NTP can surface the "You've got this!" end-of-journey dialog.
+        if contextualOnboardingLogic.chatPathPhase == .trackerToEOJ {
+            delegate?.tabDidRequestNewTab(self)
+        }
     }
 
 }

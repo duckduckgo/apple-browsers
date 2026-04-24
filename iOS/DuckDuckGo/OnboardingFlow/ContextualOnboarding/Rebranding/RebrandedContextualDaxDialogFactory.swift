@@ -213,12 +213,7 @@ private extension RebrandedContextualDaxDialogFactory {
                 message: attributedMessage,
                 blockedTrackersCTAAction: { [weak self, weak delegate] in
                     if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
-                        if self?.contextualOnboardingSettings.isChatPathTrackerStep == true {
-                            // Chat-first path: open a new tab to show the end-of-journey dialog.
-                            delegate?.didAcknowledgeChatPathContextualOnboardingTrackersDialog()
-                        } else {
-                            delegate?.didTapDismissContextualOnboardingAction()
-                        }
+                        delegate?.didTapDismissContextualOnboardingAction()
                     } else {
                         onSizeUpdate()
                         delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
@@ -234,7 +229,7 @@ private extension RebrandedContextualDaxDialogFactory {
         }
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: spec.pixelName)
-            if self?.contextualOnboardingSettings.isChatPathTrackerStep == true {
+            if self?.contextualOnboardingSettings.chatPathPhase == .trackerToEOJ {
                 self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingChatPathTrackersBlockedUnique)
             }
         }

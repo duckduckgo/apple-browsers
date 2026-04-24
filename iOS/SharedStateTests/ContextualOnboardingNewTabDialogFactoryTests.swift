@@ -171,7 +171,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
 
     func testWhenChatPathPostFireState_AndSubsequentDialogAppears_ThenFiresChatPathVisitSitePixel() {
         // GIVEN
-        contextualOnboardingLogicMock.isInChatPathPostFireState = true
+        contextualOnboardingLogicMock.chatPathPhase = .visitSite
         let spec = DaxDialogs.HomeScreenSpec.subsequent
         let pixelEvent = Pixel.Event.onboardingChatPathTryVisitSiteUnique
         // TEST
@@ -180,7 +180,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
 
     func testWhenChatPathPostFireState_AndSubsequentDialogAppears_ThenSetsChatPathVisitSiteSeen() {
         // GIVEN
-        contextualOnboardingLogicMock.isInChatPathPostFireState = true
+        contextualOnboardingLogicMock.chatPathPhase = .visitSite
         XCTAssertFalse(contextualOnboardingLogicMock.didCallSetChatPathVisitSiteSeen)
 
         // WHEN
@@ -193,7 +193,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
 
     func testWhenNotChatPath_AndSubsequentDialogAppears_ThenFiresStandardVisitSitePixel() {
         // GIVEN
-        contextualOnboardingLogicMock.isInChatPathPostFireState = false
+        contextualOnboardingLogicMock.chatPathPhase = .none
         let spec = DaxDialogs.HomeScreenSpec.subsequent
         let pixelEvent = Pixel.Event.onboardingContextualTryVisitSiteUnique
         // TEST
@@ -202,7 +202,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
 
     func testWhenNotChatPath_AndSubsequentDialogAppears_ThenSetsStandardVisitSiteSeen() {
         // GIVEN
-        contextualOnboardingLogicMock.isInChatPathPostFireState = false
+        contextualOnboardingLogicMock.chatPathPhase = .none
         XCTAssertFalse(contextualOnboardingLogicMock.didCallSetTryVisitSiteMessageSeen)
 
         // WHEN
@@ -217,7 +217,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
 
     func testWhenChatPathEOJState_AndFinalDialogAppears_ThenFiresDuckAIExperimentFinalDialogPixel() {
         // GIVEN
-        contextualOnboardingLogicMock.isChatPathEOJState = true
+        contextualOnboardingLogicMock.chatPathPhase = .trackerToEOJ
         XCTAssertFalse(pixelReporterMock.didCallMeasureDuckAIExperimentFinalDialogImpression)
 
         // WHEN
@@ -230,7 +230,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
 
     func testWhenNotChatPathEOJState_AndFinalDialogAppears_ThenFiresStandardEOJPixel() {
         // GIVEN
-        contextualOnboardingLogicMock.isChatPathEOJState = false
+        contextualOnboardingLogicMock.chatPathPhase = .none
         let spec = DaxDialogs.HomeScreenSpec.final
         let pixelEvent = Pixel.Event.daxDialogsEndOfJourneyNewTabUnique
         // TEST
@@ -239,7 +239,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
 
     func testWhenChatPathEOJState_AndFinalDialogAppears_ThenSetsFinalOnboardingDialogSeen() {
         // GIVEN
-        contextualOnboardingLogicMock.isChatPathEOJState = true
+        contextualOnboardingLogicMock.chatPathPhase = .trackerToEOJ
         contextualOnboardingLogicMock.expectation = expectation(description: "setFinalOnboardingDialogSeen called")
 
         // WHEN

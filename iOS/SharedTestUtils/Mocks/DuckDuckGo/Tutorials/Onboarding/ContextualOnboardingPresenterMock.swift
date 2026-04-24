@@ -88,9 +88,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
         didCallSetChatPathVisitSiteSeen = true
     }
 
-    var isInChatPathPostFireState: Bool = false
-
-    var isChatPathEOJState: Bool = false
+    var chatPathPhase: DaxDialogs.ChatPathPhase = .none
 
     func setSearchMessageSeen() {
         didCallSetSearchMessageSeen = true
@@ -119,7 +117,6 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 
     var subscriptionPromotionDialogSeen: Bool = false
     var subscriptionPromotionPending: Bool = false
-    var isChatPathSubscriptionPromo: Bool = false
 
     func disableContextualDaxDialogs() {
         didCallDisableDaxDialogs = true
@@ -173,7 +170,6 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
     var isShowingSubscriptionPromotion: Bool = false
     var subscriptionPromotionDialogSeen: Bool = false
     var subscriptionPromotionPending: Bool = false
-    var isChatPathSubscriptionPromo: Bool = false
 
     var isDismissedPublisher = PassthroughSubject<Bool, Never>()
 
@@ -193,9 +189,7 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
 
     func setChatPathVisitSiteSeen() {}
 
-    var isInChatPathPostFireState: Bool { false }
-
-    var isChatPathEOJState: Bool { false }
+    var chatPathPhase: DaxDialogs.ChatPathPhase { .none }
 
     func setPrivacyButtonPulseSeen() { }
 

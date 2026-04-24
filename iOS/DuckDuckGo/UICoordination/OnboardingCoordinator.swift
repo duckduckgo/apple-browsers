@@ -26,6 +26,7 @@ protocol OnboardingCoordinating: AnyObject {
     func startOnboardingFlowIfNotSeenBefore(url: URL?)
 }
 
+@MainActor
 protocol OnboardingPresenting: AnyObject {
     func presentOnboardingFlowIfNotSeenBefore()
 }

@@ -1,5 +1,6 @@
 //
 //  OnboardingFlowEvaluatorTests.swift
+//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +19,8 @@
 
 import Foundation
 import Testing
-@testable import Onboarding
+import Onboarding
+@testable import DuckDuckGo
 
 @Suite("Onboarding - Flow Evaluator")
 struct OnboardingFlowEvaluatorTests {
@@ -28,7 +30,7 @@ struct OnboardingFlowEvaluatorTests {
     @Test("Returns default flow when URL is nil")
     func nilURLReturnsDefaultFlow() {
         // GIVEN
-        let evaluator = OnboardingFlowEvaluator()
+        let evaluator = AppStoreCustomProductPageEvaluator()
 
         // WHEN
         let result = evaluator.evaluateOnboardingFlow(from: nil)
@@ -40,7 +42,7 @@ struct OnboardingFlowEvaluatorTests {
     @Test("Returns default flow for valid CPP URL with default identifier")
     func validCPPURLWithDefaultIdentifierReturnsDefaultFlow() {
         // GIVEN
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: "ddgCPP")
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
         let url = URL(string: "ddgCPP://default")
 
         // WHEN
@@ -53,7 +55,7 @@ struct OnboardingFlowEvaluatorTests {
     @Test("Returns duckAI flow for valid CPP URL with duckAI identifier")
     func validCPPURLWithDuckAIIdentifierReturnsDuckAIFlow() {
         // GIVEN
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: "ddgCPP")
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
         let url = URL(string: "ddgCPP://duckAI")
 
         // WHEN
@@ -68,7 +70,7 @@ struct OnboardingFlowEvaluatorTests {
     @Test("Returns default flow when URL scheme does not match CPP scheme")
     func wrongSchemeReturnsDefaultFlow() {
         // GIVEN
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: "ddgCPP")
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
         let url = URL(string: "ddgOpen://duckAI")
 
         // WHEN
@@ -81,7 +83,7 @@ struct OnboardingFlowEvaluatorTests {
     @Test("Returns default flow when URL has no host")
     func missingHostReturnsDefaultFlow() {
         // GIVEN
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: "ddgCPP")
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
         let url = URL(string: "ddgCPP://")
 
         // WHEN
@@ -94,7 +96,7 @@ struct OnboardingFlowEvaluatorTests {
     @Test("Returns default flow when URL host is not a valid flow type")
     func invalidFlowTypeIdentifierReturnsDefaultFlow() {
         // GIVEN
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: "ddgCPP")
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
         let url = URL(string: "ddgCPP://unknown-flow")
 
         // WHEN
@@ -107,7 +109,7 @@ struct OnboardingFlowEvaluatorTests {
     @Test("Returns default flow when URL has invalid format")
     func malformedURLReturnsDefaultFlow() {
         // GIVEN
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: "ddgCPP")
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
         let url = URL(string: "ddgOpenAIChat://test-something")
 
         // WHEN
@@ -120,7 +122,7 @@ struct OnboardingFlowEvaluatorTests {
     @Test("Returns default flow when URL has query parameters but invalid host")
     func queryParametersWithInvalidHostReturnsDefaultFlow() {
         // GIVEN
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: "ddgCPP")
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
         let url = URL(string: "ddgCPP://invalid")
 
         // WHEN
@@ -133,7 +135,7 @@ struct OnboardingFlowEvaluatorTests {
     @Test("Returns default flow when URL has path components instead of host")
     func pathComponentsInsteadOfHostReturnsDefaultFlow() {
         // GIVEN
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: "ddgCPP")
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
         let url = URL(string: "ddgCPP:///duckAI")
 
         // WHEN
@@ -149,7 +151,7 @@ struct OnboardingFlowEvaluatorTests {
     func customSchemeWithDuckAIIdentifierReturnsDuckAIFlow() {
         // GIVEN
         let customScheme = "customScheme"
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: customScheme)
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: customScheme)
         let url = URL(string: "\(customScheme)://duckAI")
 
         // WHEN
@@ -163,7 +165,7 @@ struct OnboardingFlowEvaluatorTests {
     func customSchemeWithDefaultIdentifierReturnsDefaultFlow() {
         // GIVEN
         let customScheme = "customScheme"
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: customScheme)
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: customScheme)
         let url = URL(string: "\(customScheme)://default")
 
         // WHEN
@@ -177,7 +179,7 @@ struct OnboardingFlowEvaluatorTests {
     func customSchemeMismatchReturnsDefaultFlow() {
         // GIVEN
         let customScheme = "customScheme"
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: customScheme)
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: customScheme)
         let url = URL(string: "ddgCPP://duckAI")
 
         // WHEN
@@ -192,7 +194,7 @@ struct OnboardingFlowEvaluatorTests {
     @Test("Returns default flow when scheme has uppercase letters")
     func uppercaseSchemeReturnsDefaultFlow() {
         // GIVEN
-        let evaluator = OnboardingFlowEvaluator()
+        let evaluator = AppStoreCustomProductPageEvaluator()
         let url = URL(string: "DDGCPP://duckAI")
 
         // WHEN
@@ -207,7 +209,7 @@ struct OnboardingFlowEvaluatorTests {
     @Test("Returns duckAI flow when URL has query parameters")
     func validURLWithQueryParametersReturnsDuckAIFlow() {
         // GIVEN
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: "ddgCPP")
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
         let url = URL(string: "ddgCPP://duckAI?campaign=something")
 
         // WHEN
@@ -220,7 +222,7 @@ struct OnboardingFlowEvaluatorTests {
     @Test("Returns duckAI flow when URL has fragment")
     func validURLWithFragmentReturnsDuckAIFlow() {
         // GIVEN
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: "ddgCPP")
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
         let url = URL(string: "ddgCPP://duckAI#section")
 
         // WHEN
@@ -233,7 +235,7 @@ struct OnboardingFlowEvaluatorTests {
     @Test("Returns default flow when identifier contains only whitespace")
     func whitespaceIdentifierReturnsDefaultFlow() {
         // GIVEN
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: "ddgCPP")
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
         let url = URL(string: "ddgCPP://%20")
 
         // WHEN
@@ -246,7 +248,7 @@ struct OnboardingFlowEvaluatorTests {
     @Test("Returns default flow when URL is empty string")
     func emptyStringURLReturnsDefaultFlow() {
         // GIVEN
-        let evaluator = OnboardingFlowEvaluator(customProductPageScheme: "ddgCPP")
+        let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
         let url = URL(string: "")
 
         // WHEN

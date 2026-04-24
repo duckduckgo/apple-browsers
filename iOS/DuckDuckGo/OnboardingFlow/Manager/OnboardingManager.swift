@@ -86,7 +86,7 @@ final class OnboardingManager {
         appDefaults: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings,
         variantManager: VariantManager = DefaultVariantManager(),
         isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone,
-        onboardingFlowEvaluator: OnboardingFlowEvaluating = OnboardingFlowEvaluator(),
+        onboardingFlowEvaluator: OnboardingFlowEvaluating = AppStoreCustomProductPageEvaluator(),
         tutorialSettings: TutorialSettings = DefaultTutorialSettings()
     ) {
         self.appDefaults = appDefaults

@@ -788,21 +788,43 @@ final class BrowserTabViewController: NSViewController {
             insertLayeredDialogPanelInStackView(panel)
         }
 
-        layeredDialogBubbleHostingController?.view.removeFromSuperview()
+        let oldBubble = layeredDialogBubbleHostingController
         layeredDialogBubbleHostingController = nil
+
+        // Background swaps instantly — no animation
         layeredDialogBackgroundHostingController?.view.removeFromSuperview()
         layeredDialogBackgroundHostingController = nil
+        installBackgroundHostingController(layered.background, in: backgroundContainer, alpha: 1)
 
-        installLayeredContent(layered, in: bubbleContainer, backgroundContainer: backgroundContainer)
+        let phase = OnboardingRebranding.Layout.screenTransitionPhaseDuration
+
+        if let oldBubble {
+            NSAnimationContext.runAnimationGroup({ context in
+                context.duration = phase
+                oldBubble.view.animator().alphaValue = 0
+            }, completionHandler: { [weak self] in
+                oldBubble.view.removeFromSuperview()
+                self?.slideInBubble(layered.bubble, in: bubbleContainer, duration: phase)
+            })
+        } else {
+            slideInBubble(layered.bubble, in: bubbleContainer, duration: phase)
+        }
     }
 
-    private func installLayeredContent(_ layered: LayeredDialogViews,
-                                       in bubbleContainer: NSView,
-                                       backgroundContainer: NSView) {
-        installBubbleHostingController(layered.bubble, in: bubbleContainer, alpha: 1)
-        installBackgroundHostingController(layered.background, in: backgroundContainer, alpha: 1)
+    private func slideInBubble(_ bubbleView: AnyView, in container: NSView, duration: TimeInterval) {
+        let bubble = installBubbleHostingController(bubbleView, in: container, alpha: 0)
+        bubble.view.wantsLayer = true
+        bubble.view.layer?.transform = CATransform3DMakeTranslation(0, -16, 0)
         containerStackView.layoutSubtreeIfNeeded()
         webViewContainer?.layoutSubtreeIfNeeded()
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = duration
+            context.allowsImplicitAnimation = true
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            bubble.view.animator().alphaValue = 1
+            bubble.view.layer?.transform = CATransform3DIdentity
+        }
     }
 
     private func ensureLayeredDialogPanel() -> NSView {

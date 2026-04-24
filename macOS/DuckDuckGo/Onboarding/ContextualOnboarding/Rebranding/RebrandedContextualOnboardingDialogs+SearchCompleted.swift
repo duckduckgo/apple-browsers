@@ -54,7 +54,7 @@ extension OnboardingRebranding {
                     viewModel: viewModel,
                     onManualDismiss: onManualDismiss
                 )
-                .transition(.identity)
+                .transition(.opacity)
             } else {
                 OnboardingBubbleView.withDismissButton(
                     tailPosition: nil,
@@ -78,7 +78,7 @@ extension OnboardingRebranding {
                     }
                 }
                 .contextualOnboardingPanelLayout(height: panelHeight)
-                .transition(.identity)
+                .transition(.opacity)
             }
         }
     }

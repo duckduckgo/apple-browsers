@@ -69,7 +69,7 @@ extension OnboardingRebranding {
                     panelHeight: followUpPanelHeight,
                     onManualDismiss: onManualDismiss
                 )
-                .transition(.identity)
+                .transition(.opacity)
             } else {
                 HStack(spacing: 0) {
                     Spacer(minLength: 0)
@@ -109,7 +109,7 @@ extension OnboardingRebranding {
                 .padding(.top, OnboardingRebranding.Layout.panelTopPadding)
                 .padding(.bottom, Layout.panelBottomPadding)
                 .frame(maxWidth: .infinity)
-                .transition(.identity)
+                .transition(.opacity)
             }
         }
     }

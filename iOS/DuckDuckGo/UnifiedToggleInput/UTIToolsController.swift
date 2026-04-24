@@ -69,7 +69,7 @@ final class UTIToolsController {
         inputMode: TextEntryMode,
         modelStore: UTIModelStore
     ) -> Presentation {
-        guard canShowTools(displayState: displayState, inputMode: inputMode) else {
+        guard canShowTools(displayState: displayState) else {
             return .hidden
         }
 
@@ -83,12 +83,9 @@ final class UTIToolsController {
 
 private extension UTIToolsController {
 
-    func canShowTools(
-        displayState: UnifiedToggleInputDisplayState,
-        inputMode: TextEntryMode
-    ) -> Bool {
-        guard displayState != .hidden else { return false }
-        return inputMode == .aiChat
+    // Mode-gating lives at the toolbar-container level; toggling `isHidden` per-button would step-vanish before the toolbar's alpha fade completes.
+    func canShowTools(displayState: UnifiedToggleInputDisplayState) -> Bool {
+        return displayState != .hidden
     }
 
     func buildToolsMenu(

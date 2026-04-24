@@ -57,6 +57,12 @@ protocol AIChatUserScriptHandling {
     var syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
+
+    /// Returns whether the current context is a fire window. Set by the owning tab
+    /// at wiring time — avoids walking the view hierarchy from a script message,
+    /// which is unreliable (webview may be detached, or hosted in a non-MainWindow).
+    var isFireWindowProvider: (() -> Bool)? { get set }
+
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
 
@@ -108,6 +114,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let migrationStore = AIChatMigrationStore()
 
+    var isFireWindowProvider: (() -> Bool)?
+
     init(
         storage: AIChatPreferencesStorage,
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
@@ -152,7 +160,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
-        let isFireWindow = await isFireWindowMessage(message)
+        let isFireWindow = isFireWindowProvider?() ?? false
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
     }
 
@@ -623,15 +631,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
         return AIChatSyncHandler(sync: sync, httpRequestErrorHandler: syncErrorHandler.handleAiChatsError)
-    }
-
-    @MainActor
-    private func isFireWindowMessage(_ message: UserScriptMessage) -> Bool {
-        guard let windowController = message.messageWebView?.window?.windowController as? MainWindowController else {
-            return false
-        }
-
-        return windowController.mainViewController.isBurner
     }
 
     @MainActor

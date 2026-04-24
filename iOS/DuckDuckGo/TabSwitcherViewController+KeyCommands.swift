@@ -63,7 +63,11 @@ extension TabSwitcherViewController {
                          modifierFlags: [], discoverabilityTitle: UserText.keyCommandCloseTab)
         ]
 
-        return [closeCommands, newTabCommands, newFireTabCommands, selectionCommands].flatMap { $0 }
+        let commands = [closeCommands, newTabCommands, newFireTabCommands, selectionCommands].flatMap { $0 }
+        commands.forEach {
+            $0.wantsPriorityOverSystemBehavior = true
+        }
+        return commands
     }
     
     @objc func keyboardNewTab() {

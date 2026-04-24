@@ -217,9 +217,9 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             throw DataBrokerProtectionError.dataNotInDatabase
         }
 
-        let applicationNameForUserAgent: String? = jobDependencies.featureFlagger.isWebViewUserAgentOn
+        let applicationNameForUserAgent: () -> String? = jobDependencies.featureFlagger.isWebViewUserAgentOn
             ? jobDependencies.applicationNameForUserAgent
-            : nil
+            : { nil }
 
         let webRunner: BrokerProfileOptOutSubJobWebProtocol
         if let webRunnerForTesting = self.webRunnerForTesting {

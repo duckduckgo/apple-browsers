@@ -55,7 +55,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig
     public let featureFlagger: DBPFeatureFlagging
-    public let applicationNameForUserAgent: String?
+    public let applicationNameForUserAgent: () -> String?
 
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,
@@ -63,7 +63,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
-                applicationNameForUserAgent: String?,
+                applicationNameForUserAgent: @escaping () -> String?,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
                 stageDurationCalculator: StageDurationCalculator,

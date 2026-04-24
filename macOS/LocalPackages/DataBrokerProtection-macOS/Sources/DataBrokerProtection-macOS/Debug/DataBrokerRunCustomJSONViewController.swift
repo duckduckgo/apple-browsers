@@ -23,11 +23,11 @@ import DataBrokerProtectionCore
 public final class DataBrokerRunCustomJSONViewController: NSViewController {
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let featureFlagger: DBPFeatureFlagging
-    private let applicationNameForUserAgent: String?
+    private let applicationNameForUserAgent: () -> String?
 
     public init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 featureFlagger: DBPFeatureFlagging,
-                applicationNameForUserAgent: String?) {
+                applicationNameForUserAgent: @escaping () -> String?) {
         self.authenticationManager = authenticationManager
         self.featureFlagger = featureFlagger
         self.applicationNameForUserAgent = applicationNameForUserAgent

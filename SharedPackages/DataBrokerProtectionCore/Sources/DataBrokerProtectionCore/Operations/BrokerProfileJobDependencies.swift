@@ -37,7 +37,7 @@ public protocol BrokerProfileJobDependencyProviding {
     var vpnBypassService: VPNBypassFeatureProvider? { get }
     var jobSortPredicate: BrokerJobDataComparators.Predicate { get }
     var featureFlagger: DBPFeatureFlagging { get }
-    var applicationNameForUserAgent: String? { get }
+    var applicationNameForUserAgent: () -> String? { get }
     var wideEvent: WideEventManaging? { get }
 
     func isAuthenticatedUser() async -> Bool
@@ -65,7 +65,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let vpnBypassService: VPNBypassFeatureProvider?
     public let jobSortPredicate: BrokerJobDataComparators.Predicate
     public let featureFlagger: DBPFeatureFlagging
-    public let applicationNameForUserAgent: String?
+    public let applicationNameForUserAgent: () -> String?
     public let wideEvent: WideEventManaging?
     public let isAuthenticatedUserProvider: () async -> Bool
 
@@ -80,7 +80,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
-                applicationNameForUserAgent: String?,
+                applicationNameForUserAgent: @escaping () -> String?,
                 vpnBypassService: VPNBypassFeatureProvider? = nil,
                 jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default,
                 wideEvent: WideEventManaging? = nil,

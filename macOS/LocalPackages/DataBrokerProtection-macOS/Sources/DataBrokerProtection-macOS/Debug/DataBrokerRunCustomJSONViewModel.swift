@@ -211,7 +211,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     let contentScopeProperties: ContentScopeProperties
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     let featureFlagger: DBPFeatureFlagging
-    let applicationNameForUserAgent: String?
+    let applicationNameForUserAgent: () -> String?
 
     private var isSyncingAgeFields = false
 
@@ -231,7 +231,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
          featureFlagger: DBPFeatureFlagging,
-         applicationNameForUserAgent: String?) {
+         applicationNameForUserAgent: @escaping () -> String?) {
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
         self.featureFlagger = featureFlagger
         self.applicationNameForUserAgent = applicationNameForUserAgent
@@ -580,7 +580,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     }
 
     var applicationNameForUserAgentDisplayValue: String {
-        applicationNameForUserAgent ?? "nil"
+        applicationNameForUserAgent() ?? "nil"
     }
 
     func addDebugEvent(kind: DebugEventKind, summary: String, profileQueryLabel: String, details: String, progressText: String) {

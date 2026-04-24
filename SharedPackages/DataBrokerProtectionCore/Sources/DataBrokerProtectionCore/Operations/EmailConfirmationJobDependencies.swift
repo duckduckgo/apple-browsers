@@ -32,7 +32,7 @@ public protocol EmailConfirmationJobDependencyProviding {
     var captchaService: CaptchaServiceProtocol { get }
     var vpnBypassService: VPNBypassFeatureProvider? { get }
     var featureFlagger: DBPFeatureFlagging { get }
-    var applicationNameForUserAgent: String? { get }
+    var applicationNameForUserAgent: () -> String? { get }
     var wideEvent: WideEventManaging? { get }
 }
 
@@ -46,7 +46,7 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
     public let captchaService: CaptchaServiceProtocol
     public let vpnBypassService: VPNBypassFeatureProvider?
     public let featureFlagger: DBPFeatureFlagging
-    public let applicationNameForUserAgent: String?
+    public let applicationNameForUserAgent: () -> String?
     public let wideEvent: WideEventManaging?
 
     public init(from brokerDependencies: BrokerProfileJobDependencyProviding) {
@@ -72,7 +72,7 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
                 captchaService: CaptchaServiceProtocol,
                 vpnBypassService: VPNBypassFeatureProvider?,
                 featureFlagger: DBPFeatureFlagging,
-                applicationNameForUserAgent: String?,
+                applicationNameForUserAgent: @escaping () -> String?,
                 wideEvent: WideEventManaging? = nil) {
         self.database = database
         self.contentScopeProperties = contentScopeProperties

@@ -31,9 +31,7 @@ final class DBPService: NSObject {
         return dbpIOSManager
     }
 
-    init(appDependencies: DependencyProvider,
-         contentBlocking: ContentBlocking,
-         userAgentManager: UserAgentManaging) {
+    init(appDependencies: DependencyProvider, contentBlocking: ContentBlocking) {
         guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
             self.dbpIOSManager = nil
             super.init()
@@ -84,7 +82,7 @@ final class DBPService: NSObject {
                     return view
                 },
                 eventsHandler: eventsHandler,
-                applicationNameForUserAgent: userAgentManager.applicationNameForUserAgent,
+                applicationNameForUserAgent: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
                 isWebViewInspectable: isWebViewInspectable,
                 freeTrialConversionService: appDependencies.freeTrialConversionService)
         } else {

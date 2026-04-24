@@ -48,7 +48,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                                         emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                                         captchaService: CaptchaServiceMock(),
                                                         featureFlagger: MockDBPFeatureFlagger(),
-                                                        applicationNameForUserAgent: nil)
+                                                        applicationNameForUserAgent: { nil })
     }
 
     func testWhenBuildOperations_andBrokerQueryDataHasDuplicateBrokers_thenDuplicatesAreIgnored() throws {

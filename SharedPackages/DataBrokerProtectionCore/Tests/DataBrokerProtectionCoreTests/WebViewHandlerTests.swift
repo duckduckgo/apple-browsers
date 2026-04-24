@@ -78,7 +78,7 @@ final class WebViewHandlerTests: XCTestCase {
             delegate: MockWebViewCommunicationDelegate(),
             executionConfig: BrokerJobExecutionConfig(),
             shouldContinueActionHandler: { true },
-            applicationNameForUserAgent: nil
+            applicationNameForUserAgent: { nil }
         )
     }
 }

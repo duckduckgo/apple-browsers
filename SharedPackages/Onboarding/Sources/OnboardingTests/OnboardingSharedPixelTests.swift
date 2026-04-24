@@ -104,6 +104,16 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.pixel.parameters?["value"], "suggested")
     }
 
+    func testWhenSuggestedOrCustomToggleEventClickedThenUsesSuggestedOrCustomValue() throws {
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        pixelHandler.fire(.searchChatToggle(.clicked(.suggestedChat)))
+
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.pixel.parameters?["value"], "suggested_chat")
+    }
+
     func testWhenCustomizeEventClickedWithValuesThenUsesValues() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)

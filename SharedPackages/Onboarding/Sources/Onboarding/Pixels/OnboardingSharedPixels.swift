@@ -111,6 +111,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
 
     // Contextual onboarding events
     case search(SuggestedOrCustomEvent)
+    case searchChatToggle(SuggestionOrCustomToggleEvent) // iOS only
     case searchResults(EngagementEvent)
     case visitSite(SuggestedOrCustomEvent)
     case trackersBlocked(EngagementEvent)
@@ -144,6 +145,18 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
             case suggested
             case custom
             case dismiss
+        }
+
+        case shown
+        case clicked(Value)
+    }
+
+    public enum SuggestionOrCustomToggleEvent: Equatable {
+        public enum Value: String {
+            case suggestedChat = "suggested_chat"
+            case suggestedSearch = "suggested_search"
+            case customChat = "custom_chat"
+            case customSearch = "custom_search"
         }
 
         case shown
@@ -235,6 +248,7 @@ private extension OnboardingSharedPixelEvent {
         case .customization: return "customization"
         case .searchExperience: return "search-experience"
         case .search: return "search"
+        case .searchChatToggle: return "search-chat-toggle"
         case .searchResults: return "search-results"
         case .visitSite: return "visit-site"
         case .trackersBlocked: return "trackers-blocked"
@@ -308,6 +322,13 @@ private extension OnboardingSharedPixelEvent {
             case .clicked:
                 return ParameterValues.clicked
             }
+        case .searchChatToggle(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            }
         }
     }
 
@@ -369,6 +390,13 @@ private extension OnboardingSharedPixelEvent {
                 } else {
                     return value.map { $0.rawValue }.joined(separator: ",")
                 }
+            }
+        case .searchChatToggle(let event):
+            switch event {
+            case .shown:
+                return nil
+            case .clicked(let value):
+                return value.rawValue
             }
         }
     }

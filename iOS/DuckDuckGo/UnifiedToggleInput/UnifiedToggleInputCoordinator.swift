@@ -578,7 +578,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .omnibar(.inactive)
         let renderState = computeRenderState()
-        viewController.apply(renderState.viewConfig, animated: false)
+        // Animated so a concurrent mode change doesn't get snapped to final layout non-animatedly.
+        viewController.apply(renderState.viewConfig, animated: true)
         contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         intentSubject.send(.showOmnibarInactive)
     }

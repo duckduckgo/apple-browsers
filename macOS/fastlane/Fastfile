@@ -76,7 +76,33 @@ platform :mac do
   #
   desc 'Fetches and updates certificates and provisioning profiles for Sandbox Review builds'
   lane :sync_signing_sandbox_review do |options|
-    do_sync_signing(options.merge({readonly: true}))
+    readonly = options[:readonly] || !is_ci
+
+    # Sandbox-review is mixed-signed: the main app bundle is re-signed with
+    # Developer ID (so the DMG can be installed locally for UI tests), while
+    # the embedded agents and extensions keep their App Store signatures — their
+    # network-extension entitlements can't be expressed in a Developer ID profile.
+    sync_code_signing(
+      api_key: get_api_key,
+      username: get_username(options),
+      readonly: readonly,
+      type: "appstore",
+      app_identifier: [
+        "com.duckduckgo.mobile.ios.DBP.backgroundAgent.review",
+        "com.duckduckgo.mobile.ios.vpn.agent.review",
+        "com.duckduckgo.mobile.ios.vpn.agent.review.network-protection-extension",
+        "com.duckduckgo.mobile.ios.vpn.agent.network-extension.review",
+        "com.duckduckgo.mobile.ios.vpn.agent.review.proxy",
+      ]
+    )
+
+    sync_code_signing(
+      api_key: get_api_key,
+      username: get_username(options),
+      readonly: readonly,
+      type: "developer_id",
+      app_identifier: ["com.duckduckgo.mobile.ios.review"]
+    )
   end
 
   # Fetches and updates certificates and provisioning profiles for CI builds

@@ -245,8 +245,8 @@ private extension OnboardingRebranding {
 
         #if os(iOS)
         @ViewBuilder
-        private func titleTypingView(_ title: AttributedString, alignment: TextAlignment) -> some View {
-            AnimatableTypingText(NSAttributedString(title), startAnimating: $startTypingTitle, onTypingFinished: {
+        private func titleTypingView(_ title: NSAttributedString, alignment: TextAlignment) -> some View {
+            AnimatableTypingText(title, startAnimating: $startTypingTitle, onTypingFinished: {
                 startTypingMessage = true
             })
             .font(theme.typography.contextual.title)
@@ -256,7 +256,7 @@ private extension OnboardingRebranding {
 
         @ViewBuilder
         private func messageTypingView(alignment: TextAlignment) -> some View {
-            AnimatableTypingText(NSAttributedString(message), startAnimating: $startTypingMessage, onTypingFinished: onTypingFinished)
+            AnimatableTypingText(message, startAnimating: $startTypingMessage, onTypingFinished: onTypingFinished)
                 .font(theme.typography.contextual.body)
                 .multilineTextAlignment(alignment)
                 .frame(maxWidth: .infinity, alignment: Alignment(alignment))

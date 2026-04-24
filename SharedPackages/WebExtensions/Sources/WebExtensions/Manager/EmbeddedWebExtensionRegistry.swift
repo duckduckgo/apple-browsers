@@ -50,6 +50,7 @@ public enum EmbeddedWebExtensionRegistry {
     public static let all: [EmbeddedWebExtensionDescriptor] = [
         EmbeddedWebExtensionDescriptor(type: .embedded, resourceFilename: "duckduckgo-embedded-web-extension.zip"),
         EmbeddedWebExtensionDescriptor(type: .darkReader, resourceFilename: "darkreader.zip"),
+        EmbeddedWebExtensionDescriptor(type: .adBlockingExtension, resourceFilename: "content-blocker-extension-apple.zip"),
     ]
 
     /// Find descriptor for a given extension type.

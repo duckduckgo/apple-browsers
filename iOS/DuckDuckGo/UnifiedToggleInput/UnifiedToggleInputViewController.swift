@@ -30,10 +30,12 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
     func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapAttach(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID)
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -52,12 +54,15 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     let isToggleEnabled: Bool
-    lazy var handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isToggleEnabled: isToggleEnabled)
+    let handler: UnifiedToggleInputHandler
 
     // MARK: - Public API
 
-    init(isToggleEnabled: Bool) {
+    init(isToggleEnabled: Bool, isFireTab: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
+        self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
+                                                 isToggleEnabled: isToggleEnabled,
+                                                 isFireTab: isFireTab)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -136,9 +141,24 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.modelPickerMenu = newValue }
     }
 
+    var toolsMenu: UIMenu? {
+        get { inputBarView.toolsMenu }
+        set { inputBarView.toolsMenu = newValue }
+    }
+
     var isModelChipHidden: Bool {
         get { inputBarView.isModelChipHidden }
         set { inputBarView.isModelChipHidden = newValue }
+    }
+
+    var selectedTool: AIChatRAGTool? {
+        get { inputBarView.selectedTool }
+        set { inputBarView.selectedTool = newValue }
+    }
+
+    var isToolsButtonHidden: Bool {
+        get { inputBarView.isToolsButtonHidden }
+        set { inputBarView.isToolsButtonHidden = newValue }
     }
 
     var isImageButtonHidden: Bool {
@@ -154,11 +174,6 @@ final class UnifiedToggleInputViewController: UIViewController {
     var modelSupportsImageAttachments: Bool {
         get { inputBarView.modelSupportsImageAttachments }
         set { inputBarView.modelSupportsImageAttachments = newValue }
-    }
-
-    var isCustomizeResponsesButtonHidden: Bool {
-        get { inputBarView.isCustomizeResponsesButtonHidden }
-        set { inputBarView.isCustomizeResponsesButtonHidden = newValue }
     }
 
     var isAttachmentsFull: Bool {
@@ -189,6 +204,16 @@ final class UnifiedToggleInputViewController: UIViewController {
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
         setExpanded(config.isExpanded, animated: animated)
+    }
+
+    func applyToolsPresentation(
+        isToolsButtonHidden: Bool,
+        selectedTool: AIChatRAGTool?,
+        toolsMenu: UIMenu?
+    ) {
+        self.isToolsButtonHidden = isToolsButtonHidden
+        self.selectedTool = selectedTool
+        self.toolsMenu = toolsMenu
     }
 
     func setExpanded(_ expanded: Bool, animated: Bool) {
@@ -232,6 +257,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.resignFirstResponder()
     }
 
+    func refreshFireMode(fireMode: Bool) {
+        inputBarView.refreshFireMode(fireMode: fireMode)
+    }
+
     // MARK: - Lifecycle
 
     override func loadView() {
@@ -253,6 +282,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         barView.onAttachmentsLayoutDidChange = { [weak self] in
             guard let self else { return }
             delegate?.unifiedToggleInputVCDidChangeAttachments(self)
+        }
+        barView.onInlineDismissTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVCDidTapInlineDismiss(self)
         }
         view = barView
     }
@@ -280,5 +313,9 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidTapSearchGoTo(self)
+    }
+
+    func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidClearSelectedTool(self)
     }
 }

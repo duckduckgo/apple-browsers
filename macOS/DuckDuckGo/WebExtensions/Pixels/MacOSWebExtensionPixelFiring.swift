@@ -57,6 +57,20 @@ enum WebExtensionPixel: PixelKitEvent {
     case adBlockingExtensionInstalled
     case adBlockingExtensionUpgraded(fromVersion: String?, toVersion: String?)
     case adBlockingExtensionInstallError(error: Error)
+    case adBlockingExtensionEnabled
+    case adBlockingExtensionDisabled
+
+    // MARK: - Scriptlet Lifecycle
+
+    case scriptletFetchSuccess(extensionType: String, version: String, count: Int)
+    case scriptletFetchError(extensionType: String, error: Error)
+    case scriptletValidationError(extensionType: String, error: Error)
+    case scriptletInstalled(extensionType: String, version: String)
+    case scriptletInstallError(extensionType: String, error: Error)
+
+    // MARK: - Daily State
+
+    case dailyAdBlockingState(isEnabled: Bool)
 
     // MARK: - PixelKitEvent
 
@@ -100,6 +114,22 @@ enum WebExtensionPixel: PixelKitEvent {
             return "m_mac_web_extension_ad_blocking_upgraded"
         case .adBlockingExtensionInstallError:
             return "m_mac_web_extension_ad_blocking_install_error"
+        case .adBlockingExtensionEnabled:
+            return "m_mac_web_extension_ad_blocking_enabled"
+        case .adBlockingExtensionDisabled:
+            return "m_mac_web_extension_ad_blocking_disabled"
+        case .scriptletFetchSuccess:
+            return "m_mac_web_extension_scriptlet_fetch_success"
+        case .scriptletFetchError:
+            return "m_mac_web_extension_scriptlet_fetch_error"
+        case .scriptletValidationError:
+            return "m_mac_web_extension_scriptlet_validation_error"
+        case .scriptletInstalled:
+            return "m_mac_web_extension_scriptlet_installed"
+        case .scriptletInstallError:
+            return "m_mac_web_extension_scriptlet_install_error"
+        case .dailyAdBlockingState:
+            return "m_mac_web_extension_daily_ad_blocking_state"
         }
     }
 
@@ -116,6 +146,16 @@ enum WebExtensionPixel: PixelKitEvent {
                 params["to_version"] = toVersion
             }
             return params.isEmpty ? nil : params
+        case .scriptletFetchSuccess(let extensionType, let version, let count):
+            return ["extension_type": extensionType, "version": version, "count": "\(count)"]
+        case .scriptletFetchError(let extensionType, _),
+             .scriptletValidationError(let extensionType, _),
+             .scriptletInstallError(let extensionType, _):
+            return ["extension_type": extensionType]
+        case .scriptletInstalled(let extensionType, let version):
+            return ["extension_type": extensionType, "version": version]
+        case .dailyAdBlockingState(let isEnabled):
+            return ["is_enabled": isEnabled ? "true" : "false"]
         default:
             return nil
         }
@@ -187,6 +227,16 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         case .embeddedInstallError(let type, let error):
             guard let macPixel = type.installErrorPixel(error: error) else { return }
             pixel = macPixel
+        case .scriptletFetchSuccess(let type, let version, let count):
+            pixel = .scriptletFetchSuccess(extensionType: type.rawValue, version: version, count: count)
+        case .scriptletFetchError(let type, let error):
+            pixel = .scriptletFetchError(extensionType: type.rawValue, error: error)
+        case .scriptletValidationError(let type, let error):
+            pixel = .scriptletValidationError(extensionType: type.rawValue, error: error)
+        case .scriptletInstalled(let type, let version):
+            pixel = .scriptletInstalled(extensionType: type.rawValue, version: version)
+        case .scriptletInstallError(let type, let error):
+            pixel = .scriptletInstallError(extensionType: type.rawValue, error: error)
         }
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
     }

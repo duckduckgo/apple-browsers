@@ -20,6 +20,7 @@
 import Foundation
 import UIKit
 import SwiftUI
+import DesignResourcesKitIcons
 
 protocol OmniBarNotificationAnimated: UIViewController {
     func startAnimation(_ completion: @escaping () -> Void)
@@ -80,6 +81,7 @@ final class OmniBarNotificationContainerView: UIView {
         let notificationAnimationName: String
         var eventCount: Int = 0
         var textGenerator: ((Int) -> String)?
+        var staticIconImage: UIImage?
 
         switch type {
         case .cookiePopupManaged:
@@ -94,10 +96,15 @@ final class OmniBarNotificationContainerView: UIView {
             // Only animate counting for 5+ trackers, show directly for fewer
             eventCount = count >= 5 ? count : 0
             textGenerator = count >= 5 ? { UserText.omnibarNotificationTrackersBlocked(count: $0) } : nil
+        case .youTubeAdBlockOn:
+            notificationText = UserText.omnibarNotificationYouTubeAdBlockOn
+            notificationAnimationName = ""
+            staticIconImage = DesignSystemImages.Color.Size24.videoPlayerBlocked
         }
 
         return OmniBarNotificationViewModel(text: notificationText,
                                             animationName: notificationAnimationName,
+                                            staticIconImage: staticIconImage,
                                             eventCount: eventCount,
                                             textGenerator: textGenerator)
     }

@@ -19,17 +19,18 @@
 import Foundation
 
 public enum DuckAiNativeStorageUserScriptMessages: String, CaseIterable {
-    // Settings
-    case putSetting
-    case getSetting
-    case getAllSettings
-    case deleteSetting
-    case deleteAllSettings
-    case replaceAllSettings
+    // Entries
+    case putEntry
+    case getEntry
+    case getAllEntries
+    case deleteEntry
+    case deleteAllEntries
+    case replaceAllEntries
 
     // Chats
     case putChat
     case putChats
+    case getChat
     case getAllChats
     case deleteChat
     case deleteAllChats
@@ -39,9 +40,11 @@ public enum DuckAiNativeStorageUserScriptMessages: String, CaseIterable {
     case getFile
     case listFiles
     case deleteFile
+    case deleteFiles
     case deleteAllFiles
 
     // Migration
     case isMigrationDone
     case markMigrationDone
+    case migrateChats
 }

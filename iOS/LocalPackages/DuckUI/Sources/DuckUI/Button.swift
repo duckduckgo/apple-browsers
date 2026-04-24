@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import UIComponents
 
 private struct PrimaryButtonColors {
     let standard: Color

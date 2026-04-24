@@ -177,7 +177,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     // MARK: - Fire
     func test_WhenMakeViewFire_ThenReturnViewOnboardingFireDialog() throws {
         // GIVEN
-        let spec = DaxDialogs.BrowsingSpec(type: .fire, pixelName: .onboardingIntroShownUnique)
+        let spec = DaxDialogs.BrowsingSpec(type: .fire(.standard), pixelName: .onboardingIntroShownUnique)
 
         // WHEN
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
@@ -406,7 +406,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
 
         // WHEN
-        view.onManualDismiss()
+        view.onManualDismiss!()
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureFireDialogDismissButtonTapped)
@@ -478,7 +478,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
 
         // WHEN
-        view.onManualDismiss()
+        view.onManualDismiss!()
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismissButtonTapped)

@@ -24,6 +24,7 @@ import Foundation
 
 @MainActor
 protocol AIChatRecentChatsPopupViewModelDelegate: AnyObject {
+    func recentChatsPopupDidSelectNewChat()
     func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion)
     func recentChatsPopupDidSelectViewAll()
     func recentChatsPopupDidDismiss()
@@ -41,8 +42,8 @@ final class AIChatRecentChatsPopupViewModel {
 
     weak var delegate: AIChatRecentChatsPopupViewModelDelegate?
 
-    /// Whether the "View all chats" footer should be shown.
-    let showViewAll: Bool
+    /// Whether the "New chat" row should be shown at the top.
+    let showNewChat: Bool
 
     /// The chat suggestions (up to maxVisibleChats).
     let suggestions: [AIChatSuggestion]
@@ -52,13 +53,17 @@ final class AIChatRecentChatsPopupViewModel {
     /// Creates a view model from raw fetched data.
     /// - Parameters:
     ///   - suggestions: The chat suggestions to display (will be capped at maxVisibleChats).
-    ///   - hasMore: Whether there are more chats beyond the displayed ones.
-    init(suggestions: [AIChatSuggestion], hasMore: Bool) {
+    ///   - showNewChat: Whether the "New chat" row should be shown (true when there's an active chat).
+    init(suggestions: [AIChatSuggestion], showNewChat: Bool = false) {
         self.suggestions = Array(suggestions.prefix(Self.maxVisibleChats))
-        self.showViewAll = hasMore
+        self.showNewChat = showNewChat
     }
 
     // MARK: - Actions
+
+    func didSelectNewChat() {
+        delegate?.recentChatsPopupDidSelectNewChat()
+    }
 
     func didSelectChat(at index: Int) {
         guard let suggestion = suggestion(at: index) else { return }
@@ -86,14 +91,13 @@ final class AIChatRecentChatsPopupViewModel {
 extension AIChatRecentChatsPopupViewModel {
 
     /// Fetches recent chats from the reader and creates a view model.
-    /// Returns nil if the reader is nil or there are no suggestions.
-    static func fetch(using reader: AIChatSuggestionsReading?) async -> AIChatRecentChatsPopupViewModel? {
+    /// Returns nil only if the reader is nil.
+    /// When there are no recent suggestions, the popup shows just the "View all chats" link.
+    static func fetch(using reader: AIChatSuggestionsReading?, showNewChat: Bool = false) async -> AIChatRecentChatsPopupViewModel? {
         guard let reader else { return nil }
         let result = await reader.fetchSuggestions(query: nil, maxChats: maxVisibleChats + 1)
         let all = result.pinned + result.recent
-        let hasMore = all.count > maxVisibleChats
         let capped = Array(all.prefix(maxVisibleChats))
-        guard !capped.isEmpty else { return nil }
-        return AIChatRecentChatsPopupViewModel(suggestions: capped, hasMore: hasMore)
+        return AIChatRecentChatsPopupViewModel(suggestions: capped, showNewChat: showNewChat)
     }
 }

@@ -120,3 +120,14 @@ final class MockContinuedProcessingCoordinatorDelegate: DBPContinuedProcessingDe
         optOutPlanError = nil
     }
 }
+
+final class MockFreemiumDBPUserStateManager: FreemiumDBPUserStateManaging {
+    var didActivate: Bool = false
+}
+
+final class MockBGTask: DBPIOSInterface.BGTaskHandling {
+    var completedSuccess: Bool?
+    let identifier: String = "mock.task"
+    var expirationHandler: (() -> Void)?
+    func setTaskCompleted(success: Bool) { completedSuccess = success }
+}

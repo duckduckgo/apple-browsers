@@ -279,21 +279,26 @@ private extension AIChatContextualInputViewController {
             .paragraphStyle: paragraphStyle
         ]
 
-        let mutableText = NSMutableAttributedString(string: UserText.aiChatWelcomeAskAnything, attributes: defaultAttributes)
-
         let shieldImage = DesignSystemImages.Color.Size42.shieldUtility
         let iconAttachment = NSTextAttachment()
         iconAttachment.image = shieldImage
         let iconVerticalOffset = (font.capHeight - shieldImage.size.height) / 2
         iconAttachment.bounds = CGRect(x: 0, y: iconVerticalOffset, width: shieldImage.size.width, height: shieldImage.size.height)
-        mutableText.append(NSAttributedString(attachment: iconAttachment))
+        let iconString = NSAttributedString(attachment: iconAttachment)
 
-        let privatelyAttributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: privatelyColor,
-            .paragraphStyle: paragraphStyle
-        ]
-        mutableText.append(NSAttributedString(string: UserText.aiChatWelcomePrivately, attributes: privatelyAttributes))
+        let placeholder = "%@"
+        let fullText = UserText.aiChatWelcomeMessage
+        let mutableText = NSMutableAttributedString(string: fullText, attributes: defaultAttributes)
+
+        if let placeholderRange = fullText.range(of: placeholder) {
+            let nsRange = NSRange(placeholderRange, in: fullText)
+            mutableText.replaceCharacters(in: nsRange, with: iconString)
+
+            if let privateRange = mutableText.string.range(of: UserText.aiChatWelcomePrivateWord) {
+                let privateNSRange = NSRange(privateRange, in: mutableText.string)
+                mutableText.addAttribute(.foregroundColor, value: privatelyColor, range: privateNSRange)
+            }
+        }
 
         welcomeLabel.attributedText = mutableText
     }

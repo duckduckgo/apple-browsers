@@ -98,6 +98,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let fireModeAccentDark = DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin40)
     private static let fireModeAccentTertiary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Mandarin.mandarin60)
     private static let fireModeBackground = DynamicColor(lightColor: x3D3D3D, darkColor: x080808)
+    private static let fireModeCardBackground = DynamicColor(lightColor: x3D3D3D, darkColor: x1C1C1C)
 
     // Highlight
     private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
@@ -283,6 +284,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .fireModeAccentDark: return fireModeAccentDark
         case .fireModeAccentTertiary: return fireModeAccentTertiary
         case .fireModeBackground: return fireModeBackground
+        case .fireModeCardBackground: return fireModeCardBackground
         }
     }
 }

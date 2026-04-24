@@ -683,6 +683,14 @@ struct UserText {
     static let aiChatImageGenWithAttachmentPlaceholder = NSLocalizedString("aichat.omnibar.image-gen-with-attachment-placeholder", value: "Describe changes based on the image", comment: "Placeholder text in AI chat input when image generation mode is active and an image is attached")
     static let aiChatImageGenDeactivateTooltip = NSLocalizedString("aichat.image-gen-button.deactivate-tooltip", value: "Deactivate image generation", comment: "Tooltip for the image generation button when image generation mode is active")
     static let aiChatAttachmentsLimitError = NSLocalizedString("aichat.attachments.limit-error", value: "You can only attach 3 images at a time", comment: "Error message shown when the user tries to attach more than 3 images in AI chat")
+    static let aiChatReasoningEffortFastTitle = NSLocalizedString("aichat.reasoning-effort.fast.title", value: "Fast", comment: "Title of the 'Fast' option in the reasoning effort picker menu in AI chat omnibar")
+    static let aiChatReasoningEffortFastSubtitle = NSLocalizedString("aichat.reasoning-effort.fast.subtitle", value: "Answers right away", comment: "Subtitle of the 'Fast' option in the reasoning effort picker menu in AI chat omnibar")
+    static let aiChatReasoningEffortLowTitle = NSLocalizedString("aichat.reasoning-effort.low.title", value: "Reasoning", comment: "Title of the 'Reasoning' option in the reasoning effort picker menu in AI chat omnibar")
+    static let aiChatReasoningEffortLowSubtitle = NSLocalizedString("aichat.reasoning-effort.low.subtitle", value: "Takes a moment to respond", comment: "Subtitle of the 'Reasoning' option in the reasoning effort picker menu in AI chat omnibar")
+    static let aiChatReasoningEffortMediumTitle = NSLocalizedString("aichat.reasoning-effort.medium.title", value: "Extended Reasoning", comment: "Title of the 'Extended Reasoning' option in the reasoning effort picker menu in AI chat omnibar")
+    static let aiChatReasoningEffortMediumSubtitle = NSLocalizedString("aichat.reasoning-effort.medium.subtitle", value: "Researches before responding", comment: "Subtitle of the 'Extended Reasoning' option in the reasoning effort picker menu in AI chat omnibar")
+    static let aiChatReasoningEffortPickerButtonTooltip = NSLocalizedString("aichat.reasoning-effort-picker-button.tooltip", value: "Choose reasoning effort", comment: "Tooltip and accessibility label for the reasoning effort picker button in AI chat omnibar")
+
     static let aiChatModelPickerButtonTooltip = NSLocalizedString("aichat.model-picker-button.tooltip", value: "Choose model", comment: "Tooltip for the model picker button in AI chat omnibar")
     static let aiChatModelPickerAdvancedSectionHeader = NSLocalizedString("aichat.model-picker.advanced-section-header", value: "Advanced Models - DuckDuckGo subscription", comment: "Section header in the model picker menu for premium models that require a subscription")
     static let aiChatModelPickerAdvancedModelsSectionHeader = NSLocalizedString("aichat.model-picker.advanced-models-section-header", value: "Advanced Models", comment: "Section header in the model picker menu for advanced models when user has an active subscription")
@@ -736,7 +744,7 @@ struct UserText {
     static let duckPlayerShowPlayerButtons = NSLocalizedString("duck-player.show-buttons", value: "Show option to use Duck Player over YouTube previews on hover", comment: "Private YouTube Player option")
     static let duckPlayerOff = NSLocalizedString("duck-player.off", value: "Never use Duck Player", comment: "Private YouTube Player option")
     static let duckPlayerExplanation = NSLocalizedString("duck-player.explanation", value: "Duck Player provides a clean viewing experience without personalized ads and prevents viewing activity from influencing your YouTube recommendations.", comment: "Private YouTube Player explanation in settings")
-    static let duckPlayerYouTubeAdBlockingExplanation = NSLocalizedString("duck-player.youtube-ad-blocking.explanation", value: "Opens videos in a private theatre mode that prevents what you watch from influencing your YouTube feed.", comment: "Duck Player explanation shown in YouTube Ad Blocking settings")
+    static let duckPlayerYouTubeAdBlockingExplanation = NSLocalizedString("duck-player.youtube-ad-blocking.explanation", value: "Opens videos in theater mode that prevents what you watch from influencing your YouTube feed.", comment: "Duck Player explanation shown in YouTube Ad Blocking settings")
     static let duckPlayerAutoplayPreference = NSLocalizedString("duck-player.video-autoplay-preference", value: "Autoplay videos when opened in Duck Player", comment: "Autoplay preference in settings")
     static let duckPlayerNewTabPreference = NSLocalizedString("duck-player.newtab-preference", value: "Open Duck Player in a new tab whenever possible", comment: "New tab preference in settings")
     static let duckPlayerNewTabPreferenceExtraInfo = NSLocalizedString("duck-player.newtab.info-preference", value: "When browsing YouTube on the web", comment: "New tab preference extra info in settings")
@@ -1156,9 +1164,10 @@ struct UserText {
     static let permissionCenterReloadButton = NSLocalizedString("permission.center.reload.button", value: "Reload", comment: "Button to reload the page to apply permission changes")
 
     static let permissionsSection = NSLocalizedString("preferences.permissions.section", value: "Permissions", comment: "Section header for the Permissions section in General preferences")
-    static let autoplayLabel = NSLocalizedString("preferences.autoplay.label", value: "Allow websites to autoplay", comment: "Label for the autoplay blocking preference picker in General preferences")
+    static let autoplayLabel = NSLocalizedString("preferences.autoplay.label", value: "Autoplay website media", comment: "Label for the autoplay blocking preference picker in General preferences")
+    static let autoplayCaption = NSLocalizedString("preferences.autoplay.caption", value: "Doesn't apply to videos opened in Duck Player when 'Autoplay videos when opened in Duck Player' is on.", comment: "Caption for the autoplay blocking preference picker in General preferences")
     static let autoplayModeAllowAll = NSLocalizedString("preferences.autoplay.mode.allow-all", value: "Video and audio", comment: "Autoplay mode: allow all media to autoplay")
-    static let autoplayModeBlockAudio = NSLocalizedString("preferences.autoplay.mode.block-audio", value: "Video with audio muted", comment: "Autoplay mode: allow video but block audio autoplay (default)")
+    static let autoplayModeBlockAudio = NSLocalizedString("preferences.autoplay.mode.block-audio", value: "Stop videos with sound", comment: "Autoplay mode: allow video but block audio autoplay (default)")
     static let autoplayModeBlockAll = NSLocalizedString("preferences.autoplay.mode.block-all", value: "Never", comment: "Autoplay mode: block all media autoplay")
     static let permissionAutoplay = NSLocalizedString("permission.autoplay", value: "Autoplay", comment: "Display name for the autoplay permission type in Permission Center")
 
@@ -1992,7 +2001,7 @@ struct UserText {
     static let fireproofExplanation = NSLocalizedString("fireproof.explanation", value: "When you Fireproof a site, cookies won't be erased and you'll stay signed in, even after using the Fire Button.", comment: "Fireproofing mechanism explanation")
     static let manageFireproofSites = NSLocalizedString("fireproof.manage-sites", value: "Manage Fireproof Sites…", comment: "Fireproof settings button caption")
 
-    static let autoClear = NSLocalizedString("auto.clear", value: "Auto-Clear", comment: "Header of a section in Settings. The setting configures clearing data automatically after quitting the app.")
+    static let autoClear = NSLocalizedString("auto.delete", value: "Automatically Delete Data", comment: "Header of a section in Settings. The setting configures deleting data automatically after quitting the app.")
     static let automaticallyClearData = NSLocalizedString("automatically.clear.data", value: "Automatically delete tabs and browsing data when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.")
     static let autoClearAIChatHistory = NSLocalizedString("automatically.clear.chats", value: "Delete Duck.ai chat history when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing Duck.ai chat history automatically after quitting the app.")
     static func warnBeforeQuit(_ clearChats: Bool) -> String {
@@ -2010,9 +2019,9 @@ struct UserText {
         }
     }
     static let warnBeforeQuitDialogCheckboxMessage = NSLocalizedString("warn.before.quit.dialog.checkbox.message", value: "Warn me every time", comment: "A label after checkbox to configure the warning before clearing data on the application termination.")
-    static let disableAutoClearToEnableSessionRestore = NSLocalizedString("disable.auto.clear.to.enable.session.restore",
-                                                                          value: "Your session won't be restored if Auto-Clear is turned on. Fire Windows also won’t be restored.",
-                                                                          comment: "Information label in Settings. It tells user that to enable session restoration setting they have to disable burn on quit. Auto-Clear should match the string with 'auto.clear' key")
+    static let disableAutoDeleteToEnableSessionRestore = NSLocalizedString("disable.auto.delete.to.enable.session.restore",
+                                                                           value: "Your session won't be restored if Automatically Delete Data is turned on. Fire Windows also won’t be restored.",
+                                                                           comment: "Information label in Settings. It tells user that to enable session restoration setting they have to disable burn on quit. Automatically Delete Data should match the string with 'auto.delete' key")
     static let showDataClearingSettings = NSLocalizedString("show.data.clearing.settings",
                                                             value: "Go to Data Clearing Settings",
                                                             comment: "Button in Settings. It navigates user to Data Clearing Settings. The Data Clearing string should match the string with the preferences.data-clearing key")
@@ -2323,6 +2332,7 @@ struct UserText {
     // MARK: - OmniBar Notifications
     static let omnibarNotificationCookiesManaged = NSLocalizedString("omnibar.notification.cookies.managed", value: "Cookies Managed", comment: "Text displayed when cookies are managed by DuckDuckGo")
     static let omnibarNotificationPopupHidden = NSLocalizedString("omnibar.notification.popup.hidden", value: "Pop-up Hidden", comment: "Text displayed when a pop-up is hidden by DuckDuckGo")
+    static let omnibarNotificationYouTubeAdBlockOn = NSLocalizedString("omnibar.notification.youtube-ad-block-on", value: "YouTube Ad Block On", comment: "Text displayed on notification appearing in the address bar when YouTube ad blocking is active")
 
     static func omnibarNotificationTrackersBlocked(_ count: Int) -> String {
         let template = NSLocalizedString(

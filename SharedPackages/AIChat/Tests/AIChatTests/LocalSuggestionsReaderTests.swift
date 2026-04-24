@@ -231,21 +231,27 @@ private final class CapturingStorageHandler: DuckAiNativeStorageHandling {
         return chatsToReturn
     }
 
-    func putSetting(key: String, value: Any) throws {}
-    func getSetting(key: String) throws -> Any? { nil }
-    func getAllSettings() throws -> [String: Any] { [:] }
-    func deleteSetting(key: String) throws {}
-    func deleteAllSettings() throws {}
-    func replaceAllSettings(_ settings: [String: Any]) throws {}
+    func putEntry(key: String, value: Any) throws {}
+    func getEntry(key: String) throws -> Any? { nil }
+    func getAllEntries() throws -> [String: Any] { [:] }
+    func deleteEntry(key: String) throws {}
+    func deleteAllEntries() throws {}
+    func replaceAllEntries(_ entries: [String: Any]) throws {}
     func putChat(chatId: String, data: Data) throws {}
     func putChats(_ chats: [DuckAiChatRecord]) throws {}
+    func getChat(chatId: String) throws -> DuckAiChatRecord? {
+        if let error = errorToThrow { throw error }
+        return chatsToReturn.first { $0.chatId == chatId }
+    }
     func deleteChat(chatId: String) throws {}
     func deleteAllChats() throws {}
     func putFile(uuid: String, chatId: String, data: Data) throws {}
     func getFile(uuid: String) throws -> DuckAiFileContent? { nil }
     func listFiles() throws -> [DuckAiFileMetadata] { [] }
     func deleteFile(uuid: String) throws {}
+    func deleteFiles(chatId: String) throws {}
     func deleteAllFiles() throws {}
     func isMigrationDone() throws -> Bool { false }
-    func markMigrationDone() throws {}
+    func isMigrationDone(key: String) throws -> Bool { false }
+    func markMigrationDone(key: String) throws {}
 }

@@ -17,11 +17,12 @@
 //  limitations under the License.
 //
 
-import SwiftUI
+import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
-import Core
+import SwiftUI
+import UIComponents
 
 struct DataImportView: View {
 

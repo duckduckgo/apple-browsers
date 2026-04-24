@@ -23,6 +23,7 @@ import NetworkExtension
 import Networking
 import os.log
 import PixelKit
+import PrivacyConfig
 import Subscription
 import VPN
 import WireGuard
@@ -124,7 +125,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
     // MARK: - PacketTunnelProvider.Event reporting
 
-    private static var packetTunnelProviderEvents: EventMapping<PacketTunnelProvider.Event> = .init { event, _, _, _ in
+    private static func packetTunnelProviderEvents(loopDetector: ConnectionFailureLoopDetector) -> EventMapping<PacketTunnelProvider.Event> { .init { event, _, _, _ in
 
 #if NETP_SYSTEM_EXTENSION
         let defaults = UserDefaults.standard
@@ -188,6 +189,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
             switch attempt {
             case .connecting:
+                if loopDetector.connectionLoopDetected { return }
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionEnableAttemptConnecting,
                     frequency: .legacyDailyAndCount,
@@ -198,6 +200,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                     frequency: .legacyDailyAndCount,
                     includeAppVersionParameter: true)
             case .failure:
+                if loopDetector.connectionLoopDetected { return }
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionEnableAttemptFailure,
                     frequency: .legacyDailyAndCount,
@@ -288,11 +291,13 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
             switch step {
             case .begin:
+                if loopDetector.connectionLoopDetected { return }
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionTunnelStartAttempt,
                     frequency: .legacyDailyAndCount,
                     includeAppVersionParameter: true)
             case .failure(let error):
+                if loopDetector.connectionLoopDetected { return }
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionTunnelStartFailure(error),
                     frequency: .legacyDailyAndCount,
@@ -445,6 +450,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             }
         case .tunnelStartOnDemandWithoutAccessToken:
             Logger.networkProtection.error("🔴 Starting tunnel without an auth token")
+            if loopDetector.connectionLoopDetected { return }
 
             PixelKit.fire(
                 NetworkProtectionPixelEvent.networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
@@ -462,8 +468,13 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure(error),
                           frequency: PixelKit.Frequency.dailyAndCount,
                           includeAppVersionParameter: true)
+        case .connectionFailureLoopDetected(let error):
+            PixelKit.fire(
+                NetworkProtectionPixelEvent.networkProtectionConnectionFailureLoopDetected(error),
+                frequency: .legacyDailyAndCount,
+                includeAppVersionParameter: true)
         }
-    }
+    } }
 
     static var tokenServiceName: String {
 #if NETP_SYSTEM_EXTENSION
@@ -558,6 +569,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         // MARK: -
 
+        let loopDetector = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: true)
+
         let tunnelHealthStore = NetworkProtectionTunnelHealthStore(notificationCenter: notificationCenter)
         let notificationsPresenter = NetworkProtectionNotificationsPresenterFactory().make(settings: settings, defaults: defaults)
 
@@ -569,11 +582,12 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                    keychainType: Bundle.keychainType,
                    tokenHandlerProvider: subscriptionManager,
                    debugEvents: debugEvents,
-                   providerEvents: Self.packetTunnelProviderEvents,
+                   providerEvents: Self.packetTunnelProviderEvents(loopDetector: loopDetector),
                    settings: settings,
                    defaults: defaults,
                    wideEvent: wideEvent,
-                   entitlementCheck: entitlementsCheck)
+                   entitlementCheck: entitlementsCheck,
+                   loopDetector: loopDetector)
 
         setupPixels()
         Logger.networkProtection.log("[+] MacPacketTunnelProvider Initialised")
@@ -685,11 +699,14 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         source = "vpnAppExtension"
 #endif
 
+        let internalUserDecider = DefaultInternalUserDecider(store: UserDefaults.appConfiguration)
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: internalUserDecider.isInternalUser)
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: source,
+                       channel: channel,
                        defaultHeaders: defaultHeaders,
                        defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
@@ -710,15 +727,8 @@ private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
     let settings: VPNSettings
 
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-            let buildType = StandardApplicationBuildType()
-            if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
-                return false
-            } else {
-                return settings.wideEventPostEndpointEnabled
-            }
-        }
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }
 

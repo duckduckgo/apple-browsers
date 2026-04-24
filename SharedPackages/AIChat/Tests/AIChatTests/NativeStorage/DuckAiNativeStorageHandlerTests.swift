@@ -45,57 +45,57 @@ final class DuckAiNativeStorageHandlerTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - Settings
+    // MARK: - Entries
 
-    func testWhenPutSettingThenGetSettingReturnsValue() throws {
-        try handler.putSetting(key: "theme", value: "dark")
+    func testWhenPutEntryThenGetEntryReturnsValue() throws {
+        try handler.putEntry(key: "theme", value: "dark")
 
-        let result = try handler.getSetting(key: "theme") as? String
+        let result = try handler.getEntry(key: "theme") as? String
         XCTAssertEqual(result, "dark")
     }
 
-    func testWhenGetAllSettingsThenReturnsDictionary() throws {
-        try handler.putSetting(key: "theme", value: "dark")
-        try handler.putSetting(key: "lang", value: "en")
+    func testWhenGetAllEntriesThenReturnsDictionary() throws {
+        try handler.putEntry(key: "theme", value: "dark")
+        try handler.putEntry(key: "lang", value: "en")
 
-        let all = try handler.getAllSettings()
+        let all = try handler.getAllEntries()
         XCTAssertEqual(all["theme"] as? String, "dark")
         XCTAssertEqual(all["lang"] as? String, "en")
     }
 
-    func testWhenDeleteSettingThenItIsRemoved() throws {
-        try handler.putSetting(key: "theme", value: "dark")
-        try handler.deleteSetting(key: "theme")
+    func testWhenDeleteEntryThenItIsRemoved() throws {
+        try handler.putEntry(key: "theme", value: "dark")
+        try handler.deleteEntry(key: "theme")
 
-        let result = try handler.getSetting(key: "theme")
+        let result = try handler.getEntry(key: "theme")
         XCTAssertNil(result)
     }
 
-    func testWhenReplaceAllSettingsThenPreviousSettingsCleared() throws {
-        try handler.putSetting(key: "theme", value: "dark")
-        try handler.replaceAllSettings(["lang": "fr"])
+    func testWhenReplaceAllEntriesThenPreviousEntriesCleared() throws {
+        try handler.putEntry(key: "theme", value: "dark")
+        try handler.replaceAllEntries(["lang": "fr"])
 
-        let all = try handler.getAllSettings()
+        let all = try handler.getAllEntries()
         XCTAssertNil(all["theme"])
         XCTAssertEqual(all["lang"] as? String, "fr")
     }
 
-    func testWhenDeleteAllSettingsThenAllCleared() throws {
-        try handler.putSetting(key: "theme", value: "dark")
-        try handler.deleteAllSettings()
+    func testWhenDeleteAllEntriesThenAllCleared() throws {
+        try handler.putEntry(key: "theme", value: "dark")
+        try handler.deleteAllEntries()
 
-        let all = try handler.getAllSettings()
+        let all = try handler.getAllEntries()
         XCTAssertTrue(all.isEmpty)
     }
 
-    func testWhenGetSettingOnEmptyStoreThenReturnsNil() throws {
-        let result = try handler.getSetting(key: "nonexistent")
+    func testWhenGetEntryOnEmptyStoreThenReturnsNil() throws {
+        let result = try handler.getEntry(key: "nonexistent")
         XCTAssertNil(result)
     }
 
     // MARK: - Concurrency
 
-    func testWhenConcurrentPutSettingsThenNoUpdatesAreLost() throws {
+    func testWhenConcurrentPutEntriesThenNoUpdatesAreLost() throws {
         let iterations = 100
         let queue1 = DispatchQueue(label: "test.queue1", qos: .userInitiated)
         let queue2 = DispatchQueue(label: "test.queue2", qos: .userInitiated)
@@ -104,19 +104,19 @@ final class DuckAiNativeStorageHandlerTests: XCTestCase {
         for i in 0..<iterations {
             group.enter()
             queue1.async {
-                try? self.handler.putSetting(key: "q1_\(i)", value: i)
+                try? self.handler.putEntry(key: "q1_\(i)", value: i)
                 group.leave()
             }
             group.enter()
             queue2.async {
-                try? self.handler.putSetting(key: "q2_\(i)", value: i)
+                try? self.handler.putEntry(key: "q2_\(i)", value: i)
                 group.leave()
             }
         }
 
         group.wait()
 
-        let all = try handler.getAllSettings()
+        let all = try handler.getAllEntries()
         XCTAssertEqual(all.count, iterations * 2, "Expected \(iterations * 2) keys but got \(all.count) — updates were lost")
         for i in 0..<iterations {
             XCTAssertNotNil(all["q1_\(i)"], "Missing key q1_\(i)")
@@ -124,11 +124,11 @@ final class DuckAiNativeStorageHandlerTests: XCTestCase {
         }
     }
 
-    func testWhenConcurrentDeleteSettingsThenNoUpdatesAreLost() throws {
-        // Pre-populate settings that should survive
+    func testWhenConcurrentDeleteEntriesThenNoUpdatesAreLost() throws {
+        // Pre-populate entries that should survive
         for i in 0..<100 {
-            try handler.putSetting(key: "keep_\(i)", value: i)
-            try handler.putSetting(key: "delete_\(i)", value: i)
+            try handler.putEntry(key: "keep_\(i)", value: i)
+            try handler.putEntry(key: "delete_\(i)", value: i)
         }
 
         let queue1 = DispatchQueue(label: "test.delete1", qos: .userInitiated)
@@ -138,20 +138,20 @@ final class DuckAiNativeStorageHandlerTests: XCTestCase {
         for i in 0..<100 {
             group.enter()
             queue1.async {
-                try? self.handler.deleteSetting(key: "delete_\(i)")
+                try? self.handler.deleteEntry(key: "delete_\(i)")
                 group.leave()
             }
-            // Concurrently add new settings while deleting others
+            // Concurrently add new entries while deleting others
             group.enter()
             queue2.async {
-                try? self.handler.putSetting(key: "new_\(i)", value: i)
+                try? self.handler.putEntry(key: "new_\(i)", value: i)
                 group.leave()
             }
         }
 
         group.wait()
 
-        let all = try handler.getAllSettings()
+        let all = try handler.getAllEntries()
         for i in 0..<100 {
             XCTAssertNotNil(all["keep_\(i)"], "Surviving key keep_\(i) was lost")
             XCTAssertNil(all["delete_\(i)"], "Deleted key delete_\(i) still present")
@@ -162,15 +162,22 @@ final class DuckAiNativeStorageHandlerTests: XCTestCase {
     // MARK: - Migration
 
     func testWhenMigrationNotDoneThenReturnsFalse() throws {
-        let result = try handler.isMigrationDone()
+        let result = try handler.isMigrationDone(key: DuckAiMigrationKey.chats)
         XCTAssertFalse(result)
     }
 
     func testWhenMarkMigrationDoneThenReturnsTrue() throws {
-        try handler.markMigrationDone()
+        try handler.markMigrationDone(key: DuckAiMigrationKey.chats)
 
-        let result = try handler.isMigrationDone()
+        let result = try handler.isMigrationDone(key: DuckAiMigrationKey.chats)
         XCTAssertTrue(result)
+    }
+
+    func testWhenMarkMigrationDoneForKeyThenOtherKeyStillFalse() throws {
+        try handler.markMigrationDone(key: DuckAiMigrationKey.chats)
+
+        XCTAssertTrue(try handler.isMigrationDone(key: DuckAiMigrationKey.chats))
+        XCTAssertFalse(try handler.isMigrationDone(key: DuckAiMigrationKey.files))
     }
 
     // MARK: - Chat delegation
@@ -216,9 +223,29 @@ final class DuckAiNativeStorageHandlerTests: XCTestCase {
         XCTAssertEqual(mockDataStore.deleteAllChatsCallCount, 1)
     }
 
+    func testWhenGetChatThenDelegatesToDataStore() throws {
+        mockDataStore.stubbedChat = DuckAiChatRecord(chatId: "c1", data: Data("x".utf8))
+        let result = try handler.getChat(chatId: "c1")
+        XCTAssertEqual(mockDataStore.getChatCallCount, 1)
+        XCTAssertEqual(mockDataStore.lastGetChatId, "c1")
+        XCTAssertEqual(result?.chatId, "c1")
+    }
+
+    func testWhenGetChatNotFoundThenReturnsNil() throws {
+        mockDataStore.stubbedChat = nil
+        let result = try handler.getChat(chatId: "missing")
+        XCTAssertNil(result)
+    }
+
     func testWhenPutFileThenDelegatesToDataStore() throws {
         try handler.putFile(uuid: "f1", chatId: "c1", data: Data())
         XCTAssertEqual(mockDataStore.putFileCallCount, 1)
+    }
+
+    func testWhenDeleteFilesByChatIdThenDelegatesToDataStore() throws {
+        try handler.deleteFiles(chatId: "c1")
+        XCTAssertEqual(mockDataStore.deleteFilesByChatIdCallCount, 1)
+        XCTAssertEqual(mockDataStore.lastDeleteFilesChatId, "c1")
     }
 
     func testWhenDeleteAllFilesThenDelegatesToDataStore() throws {
@@ -241,6 +268,10 @@ private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring {
     var putChatsCallCount = 0
     var lastPutChats: [DuckAiChatRecord]?
 
+    var getChatCallCount = 0
+    var lastGetChatId: String?
+    var stubbedChat: DuckAiChatRecord?
+
     var deleteChatCallCount = 0
     var lastDeleteChatId: String?
 
@@ -260,6 +291,9 @@ private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring {
     var deleteFileCallCount = 0
     var lastDeleteFileUuid: String?
 
+    var deleteFilesByChatIdCallCount = 0
+    var lastDeleteFilesChatId: String?
+
     var deleteAllFilesCallCount = 0
 
     func putChat(chatId: String, data: Data) throws {
@@ -271,6 +305,12 @@ private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring {
     func putChats(_ chats: [DuckAiChatRecord]) throws {
         putChatsCallCount += 1
         lastPutChats = chats
+    }
+
+    func getChat(chatId: String) throws -> DuckAiChatRecord? {
+        getChatCallCount += 1
+        lastGetChatId = chatId
+        return stubbedChat
     }
 
     func getAllChats() throws -> [DuckAiChatRecord] {
@@ -307,6 +347,11 @@ private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring {
     func deleteFile(uuid: String) throws {
         deleteFileCallCount += 1
         lastDeleteFileUuid = uuid
+    }
+
+    func deleteFiles(chatId: String) throws {
+        deleteFilesByChatIdCallCount += 1
+        lastDeleteFilesChatId = chatId
     }
 
     func deleteAllFiles() throws {

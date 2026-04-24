@@ -1412,6 +1412,7 @@ private final class MockAIChatPreferences: AIChatPreferencesPersisting {
     var selectedModelId: String?
     var selectedModelShortName: String?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
 private final class MockToggleModeStorage: ToggleModeStoring {

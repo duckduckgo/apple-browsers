@@ -24,6 +24,7 @@ import BrowserServicesKit
 import Common
 import PrivacyDashboard
 import Combine
+import AIChat
 import os.log
 
 protocol EntityProviding {
@@ -76,6 +77,10 @@ protocol ContextualOnboardingLogic {
 
     /// The current phase of the Duck.ai chat-first onboarding path.
     var chatPathPhase: DaxDialogs.ChatPathPhase { get }
+
+    /// Whether Duck.ai is currently enabled in app settings.
+    /// When false, chat-path onboarding UI should fall back to the standard search-path equivalent.
+    var isAIChatEnabled: Bool { get }
 
     func enableAddFavoriteFlow()
     func resumeRegularFlow()
@@ -279,7 +284,8 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     private var currentHomeSpec: HomeScreenSpec?
 
     private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
-    
+    private let aiChatSettings: AIChatSettingsProvider
+
     public let isDismissedPublisher: PassthroughSubject<Bool, Never>
 
     /// Use singleton accessor, this is only accessible for tests
@@ -287,13 +293,15 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
          entityProviding: EntityProviding,
          variantManager: VariantManager = DefaultVariantManager(),
          launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(),
-         onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper()
+         onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper(),
+         aiChatSettings: AIChatSettingsProvider = AIChatSettings()
     ) {
         self.settings = settings
         self.entityProviding = entityProviding
         self.variantManager = variantManager
         self.launchOptionsHandler = launchOptionsHandler
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
+        self.aiChatSettings = aiChatSettings
         self.isDismissedPublisher = PassthroughSubject<Bool, Never>()
     }
 
@@ -516,6 +524,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         if !settings.chatPathVisitSiteSeen { return .visitSite }
         if !settings.browsingFinalDialogShown { return .trackerToEOJ }
         return .none
+    }
+
+    var isAIChatEnabled: Bool {
+        aiChatSettings.isAIChatEnabled
     }
 
     func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyInfo) -> BrowsingSpec? {

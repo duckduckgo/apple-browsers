@@ -152,6 +152,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
 
     private func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         let isChatPath = daxDialogsFlowCoordinator.chatPathPhase == .trackerToEOJ
+                      && daxDialogsFlowCoordinator.isAIChatEnabled
 
         let message = isChatPath
             ? UserText.Onboarding.DuckAIQueryExperiment.completionOnboardingMessage

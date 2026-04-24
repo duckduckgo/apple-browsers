@@ -152,6 +152,23 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenReasoningEffortDisabledThenSupportedToolsPreservedInGetConfig() async throws {
+        configProvider.isReasoningEffortEnabled = false
+        modelsProvider.lastFetchedSections = [
+            NewTabPageDataModel.AIModelSection(header: nil, items: [
+                NewTabPageDataModel.AIModelItem(id: "reasoning-model", name: "Reasoning", shortName: "R",
+                                                 isEnabled: true, supportsImageUpload: false,
+                                                 supportedTools: ["WebSearch"],
+                                                 supportedReasoningEffort: ["none", "low", "medium"])
+            ])
+        ]
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.supportedTools, ["WebSearch"])
+    }
+
+    @MainActor
     func testWhenReasoningEffortEnabledThenSupportedReasoningEffortPreservedInGetConfig() async throws {
         configProvider.isReasoningEffortEnabled = true
         modelsProvider.lastFetchedSections = [
@@ -190,7 +207,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
                                                  supportedReasoningEffort: ["none", "low", "medium"])
             ])
         ]
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, selectedModelId: "reasoning-model", aiModelSections: nil, selectedReasoningEffort: "low")
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "reasoning-model", aiModelSections: nil, selectedReasoningEffort: "low")
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
@@ -209,7 +226,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
                                                  supportedReasoningEffort: ["low"])
             ])
         ]
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, selectedModelId: "limited-model", aiModelSections: nil, selectedReasoningEffort: "medium")
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "limited-model", aiModelSections: nil, selectedReasoningEffort: "medium")
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
@@ -227,7 +244,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
                                                  supportedReasoningEffort: ["low"])
             ])
         ]
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, selectedModelId: "reasoning-model", aiModelSections: nil, selectedReasoningEffort: "low")
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "reasoning-model", aiModelSections: nil, selectedReasoningEffort: "low")
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 

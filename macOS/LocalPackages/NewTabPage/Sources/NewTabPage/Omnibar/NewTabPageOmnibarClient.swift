@@ -201,6 +201,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
                         shortName: item.shortName,
                         isEnabled: item.isEnabled,
                         supportsImageUpload: item.supportsImageUpload,
+                        supportedTools: item.supportedTools,
                         supportedReasoningEffort: []
                     )
                 }

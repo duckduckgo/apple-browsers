@@ -96,10 +96,7 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
     ///
     /// This property checks if the feature flag is enabled and if the user can purchase a subscription.
     var shouldDisplay: Bool {
-        // TODO: Remove override before shipping — forces subscription promo to always show for testing.
-        return true
-        // swiftlint:disable:next unreachable_code
-        return featureFlagger.isFeatureOn(for: FeatureFlag.privacyProOnboardingPromotion, allowOverride: true) && subscriptionManager.hasAppStoreProductsAvailable
+        featureFlagger.isFeatureOn(for: FeatureFlag.privacyProOnboardingPromotion, allowOverride: true) && subscriptionManager.hasAppStoreProductsAvailable
     }
 
     /// Provides the URL components for redirecting as part of the onboarding promotion experiment.

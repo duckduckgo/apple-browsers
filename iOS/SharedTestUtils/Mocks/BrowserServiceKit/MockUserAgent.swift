@@ -61,4 +61,8 @@ class MockUserAgentManager: UserAgentManaging {
         webView.customUserAgent = agent
     }
 
+    var applicationNameForUserAgent: String {
+        userAgent.applicationNameForUserAgent
+    }
+
 }

@@ -1347,8 +1347,16 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     /// re-shows the Duck.ai panel and returns focus to the prompt editor with the preserved draft / cursor position.
     func refocusInAIChatMode() {
         guard selectionState == .inactiveWithAIChat else { return }
-        selectionState = .activeWithAIChat
+        /// Flip `isAIChatOmnibarVisible` BEFORE `selectionState`. `selectionState`'s didSet calls
+        /// `updateView`, which reads `isAIChatOmnibarVisible` to decide `activeBackgroundView.alphaValue`
+        /// (`(selectionState.isSelected && !isAIChatOmnibarVisible) ? 1 : 0`). Doing it in the other order
+        /// leaves the accent-bordered active background visible behind the Duck.ai panel until the next
+        /// `updateView` run, because `isAIChatOmnibarVisible`'s didSet doesn't re-invoke `updateView`.
+        /// The other entry paths into `.activeWithAIChat` (`setAIChatOmnibarVisible`,
+        /// `addressBarButtonsViewControllerSearchModeToggleChanged`) already sequence it this way, and
+        /// `resignFocusKeepingAIChatMode` has the symmetric comment on exit.
         isAIChatOmnibarVisible = true
+        selectionState = .activeWithAIChat
         mode = .editing(.aiChat)
         delegate?.resizeAddressBarForHomePage(self)
         delegate?.addressBarViewControllerDidRefocusInAIChatMode(self)

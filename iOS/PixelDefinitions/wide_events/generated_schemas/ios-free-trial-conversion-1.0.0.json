@@ -1,0 +1,101 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Wide pixel sent at the end of a free trial conversion flow, tracking whether the user activated VPN/PIR and converted to a paid subscription",
+    "$comment": "{\"owners\":[\"jozsef-vesza\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "ios-free-trial-conversion" }, "version": { "const": "1.0.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the application",
+                    "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental"]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+                "form_factor": { "type": "string", "description": "The form factor of the device", "enum": ["phone", "tablet"] }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["iOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["free-trial-conversion"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "status_reason": { "type": "string", "description": "Optional reason accompanying the feature status" },
+                                "step": {
+                                    "type": "object",
+                                    "description": "Free trial activation steps",
+                                    "properties": {
+                                        "vpn_activated_d1": {
+                                            "type": "boolean",
+                                            "description": "Whether VPN was activated on Day 1 of the free trial"
+                                        },
+                                        "vpn_activated_d2_to_d7": {
+                                            "type": "boolean",
+                                            "description": "Whether VPN was activated between Day 2 and Day 7 of the free trial"
+                                        },
+                                        "pir_activated_d1": {
+                                            "type": "boolean",
+                                            "description": "Whether PIR was activated on Day 1 of the free trial"
+                                        },
+                                        "pir_activated_d2_to_d7": {
+                                            "type": "boolean",
+                                            "description": "Whether PIR was activated between Day 2 and Day 7 of the free trial"
+                                        },
+                                        "duck_ai_activated_d1": {
+                                            "type": "boolean",
+                                            "description": "Whether Duck.ai was activated on Day 1 of the free trial"
+                                        },
+                                        "duck_ai_activated_d2_to_d7": {
+                                            "type": "boolean",
+                                            "description": "Whether Duck.ai was activated between Day 2 and Day 7 of the free trial"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

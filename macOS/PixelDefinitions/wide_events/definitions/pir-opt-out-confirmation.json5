@@ -1,0 +1,40 @@
+{
+    "macos-pir-opt-out-confirmation": {
+        "description": "Wide pixel sent when an opt-out confirmation flow completes",
+        "owners": ["quanganhdo"],
+        "meta": {
+            "type": "macos-pir-opt-out-confirmation",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "pir-opt-out-confirmation",
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Optional reason accompanying the feature status"
+                    },
+                    "data_broker": {
+                        "type": "string",
+                        "description": "The name of the data broker associated with this confirmation flow"
+                    },
+                    "data_broker_version": {
+                        "type": "string",
+                        "description": "Version of the broker JSON file reported via wide pixels"
+                    },
+                    "confirmation_latency_ms": {
+                        "type": "string",
+                        "description": "Duration in milliseconds between the record being found and the opt-out confirmation"
+                    }
+                },
+                "error": {
+                    "domain": { "type": "string", "description": "Error domain for the failure" },
+                    "code": { "type": "integer", "description": "Error code for the failure" },
+                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                }
+            }
+        }
+    }
+}

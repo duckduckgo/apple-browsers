@@ -1,0 +1,114 @@
+{
+    "macos-sparkle-update": {
+        "description": "Wide pixel tracking the complete Sparkle update cycle from check to installation",
+        "owners": ["diegoreymendez"],
+        "meta": {
+            "type": "macos-sparkle-update",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "sparkle-update",
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Optional reason accompanying the feature status"
+                    },
+                    "from_version": {
+                        "type": "string",
+                        "description": "App version before update"
+                    },
+                    "from_build": {
+                        "type": "string",
+                        "description": "App build number before update"
+                    },
+                    "to_version": {
+                        "type": "string",
+                        "description": "Target update version"
+                    },
+                    "to_build": {
+                        "type": "string",
+                        "description": "Target update build number"
+                    },
+                    "update_type": {
+                        "type": "string",
+                        "description": "Type of update",
+                        "enum": ["regular", "critical"]
+                    },
+                    "initiation_type": {
+                        "type": "string",
+                        "description": "How the update was initiated",
+                        "enum": ["automatic", "manual"]
+                    },
+                    "update_configuration": {
+                        "type": "string",
+                        "description": "User's automatic update setting",
+                        "enum": ["automatic", "manual"]
+                    },
+                    "last_known_step": {
+                        "type": "string",
+                        "description": "Last step reached in the update process",
+                        "enum": [
+                            "updateCheckStarted",
+                            "updateFound",
+                            "noUpdateFound",
+                            "downloadStarted",
+                            "downloadCompleted",
+                            "extractionStarted",
+                            "extractionCompleted",
+                            "restartingToUpdate"
+                        ]
+                    },
+                    "internal_user": {
+                        "type": "boolean",
+                        "description": "Whether the event was sent by an internal user. Only included when true."
+                    },
+                    "os_version": {
+                        "type": "string",
+                        "description": "macOS version string"
+                    },
+                    "cancellation_reason": {
+                        "type": "string",
+                        "description": "Reason for update cancellation, when applicable",
+                        "enum": ["appQuit", "userDismissed", "settingsChanged", "buildExpired", "newCheckStarted"]
+                    },
+                    "disk_space_remaining_bytes": {
+                        "type": "string",
+                        "description": "Available disk space in bytes"
+                    },
+                    "time_since_last_update": {
+                        "type": "string",
+                        "description": "Time since last successful update (bucketed for privacy)",
+                        "enum": ["<30m", "<2h", "<6h", "<1d", "<2d", "<1w", "<1M", ">=1M"]
+                    },
+                    "update_check_duration_ms": {
+                        "type": "string",
+                        "description": "Duration of update check phase in milliseconds"
+                    },
+                    "download_duration_ms": {
+                        "type": "string",
+                        "description": "Duration of download phase in milliseconds"
+                    },
+                    "extraction_duration_ms": {
+                        "type": "string",
+                        "description": "Duration of extraction phase in milliseconds"
+                    },
+                    "total_duration_ms": {
+                        "type": "string",
+                        "description": "Total duration of update cycle in milliseconds"
+                    }
+                },
+                "error": {
+                    "domain": { "type": "string", "description": "Error domain for the failure" },
+                    "code": { "type": "integer", "description": "Error code for the failure" },
+                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                }
+            }
+        },
+        "context": {
+            "name": ["sparkle_update"]
+        }
+    }
+}

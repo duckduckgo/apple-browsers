@@ -1,0 +1,421 @@
+{
+    "macos-data-clearing": {
+        "description": "Wide pixel sent at the end of a data clearing flow",
+        "owners": ["hanyutang-sandra"],
+        "meta": {
+            "type": "macos-data-clearing",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "data-clearing",
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Reason for the current status",
+                        "enum": ["partial_data", "timeout"]
+                    },
+                    "options": {
+                        "type": "string",
+                        "description": "What data the user selected for clearing",
+                        "enum": ["currentTab", "currentWindow", "allData"]
+                    },
+                    "trigger": {
+                        "type": "string",
+                        "description": "What initiated the clearing flow",
+                        "enum": ["manual", "autoClear"]
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Execution path during clearing",
+                        "enum": ["burnEntity", "burnAll", "burnVisits"]
+                    },
+                    "included_domains": {
+                        "type": "string",
+                        "description": "Comma-separated list of domain categories included",
+                        "enum": [
+                            "History",
+                            "TabsAndWindows",
+                            "History,TabsAndWindows",
+                            "CookiesAndSiteData",
+                            "History,CookiesAndSiteData",
+                            "TabsAndWindows,CookiesAndSiteData",
+                            "History,TabsAndWindows,CookiesAndSiteData",
+                            "ChatHistory",
+                            "History,ChatHistory",
+                            "TabsAndWindows,ChatHistory",
+                            "History,TabsAndWindows,ChatHistory",
+                            "CookiesAndSiteData,ChatHistory",
+                            "History,CookiesAndSiteData,ChatHistory",
+                            "TabsAndWindows,CookiesAndSiteData,ChatHistory",
+                            "History,TabsAndWindows,CookiesAndSiteData,ChatHistory"
+                        ]
+                    },
+                    "overall_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of clearing attempt to end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_tabs_status": { "type": "string", "description": "Final status of clear_tabs action", "enum": ["SUCCESS", "FAILURE"] },
+                    "clear_tabs_latency_ms": { "type": "integer", "description": "Latency for clear_tabs action (in ms)" },
+                    "clear_tabs_error": {
+                        "type": "object",
+                        "description": "Error details for clear_tabs action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "clear_website_data": {
+                        "type": "object",
+                        "description": "Website data clearing sub-actions",
+                        "properties": {
+                            "clear_safely_removable_website_data_status": {
+                                "type": "string",
+                                "description": "Final status of clear_safely_removable_website_data action",
+                                "enum": ["SUCCESS", "FAILURE"]
+                            },
+                            "clear_safely_removable_website_data_latency_ms": {
+                                "type": "integer",
+                                "description": "Latency for clear_safely_removable_website_data action (in ms)"
+                            },
+                            "clear_safely_removable_website_data_error": {
+                                "type": "object",
+                                "description": "Error details for clear_safely_removable_website_data action",
+                                "properties": {
+                                    "domain": { "type": "string", "description": "Top level error domain" },
+                                    "code": { "type": "integer", "description": "Top level error code" },
+                                    "description": { "type": "string", "description": "Human-readable error description" },
+                                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                                }
+                            },
+                            "clear_fireproofable_data_for_nonFireproof_domains_status": {
+                                "type": "string",
+                                "description": "Final status of clear_fireproofable_data_for_nonFireproof_domains action",
+                                "enum": ["SUCCESS", "FAILURE"]
+                            },
+                            "clear_fireproofable_data_for_nonFireproof_domains_latency_ms": {
+                                "type": "integer",
+                                "description": "Latency for clear_fireproofable_data_for_nonFireproof_domains action (in ms)"
+                            },
+                            "clear_fireproofable_data_for_nonFireproof_domains_error": {
+                                "type": "object",
+                                "description": "Error details for clear_fireproofable_data_for_nonFireproof_domains action",
+                                "properties": {
+                                    "domain": { "type": "string", "description": "Top level error domain" },
+                                    "code": { "type": "integer", "description": "Top level error code" },
+                                    "description": { "type": "string", "description": "Human-readable error description" },
+                                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                                }
+                            },
+                            "clear_cookies_for_nonFireproofed_domains_status": {
+                                "type": "string",
+                                "description": "Final status of clear_cookies_for_nonFireproofed_domains action",
+                                "enum": ["SUCCESS", "FAILURE"]
+                            },
+                            "clear_cookies_for_nonFireproofed_domains_latency_ms": {
+                                "type": "integer",
+                                "description": "Latency for clear_cookies_for_nonFireproofed_domains action (in ms)"
+                            },
+                            "clear_cookies_for_nonFireproofed_domains_error": {
+                                "type": "object",
+                                "description": "Error details for clear_cookies_for_nonFireproofed_domains action",
+                                "properties": {
+                                    "domain": { "type": "string", "description": "Top level error domain" },
+                                    "code": { "type": "integer", "description": "Top level error code" },
+                                    "description": { "type": "string", "description": "Human-readable error description" },
+                                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                                }
+                            },
+                            "clear_file_cache_status": {
+                                "type": "string",
+                                "description": "Final status of clear_file_cache action",
+                                "enum": ["SUCCESS", "FAILURE"]
+                            },
+                            "clear_file_cache_latency_ms": {
+                                "type": "integer",
+                                "description": "Latency for clear_file_cache action (in ms)"
+                            },
+                            "clear_file_cache_error": {
+                                "type": "object",
+                                "description": "Error details for clear_file_cache action",
+                                "properties": {
+                                    "domain": { "type": "string", "description": "Top level error domain" },
+                                    "code": { "type": "integer", "description": "Top level error code" },
+                                    "description": { "type": "string", "description": "Human-readable error description" },
+                                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                                }
+                            },
+                            "clear_device_hash_salts_status": {
+                                "type": "string",
+                                "description": "Final status of clear_device_hash_salts action",
+                                "enum": ["SUCCESS", "FAILURE"]
+                            },
+                            "clear_device_hash_salts_latency_ms": {
+                                "type": "integer",
+                                "description": "Latency for clear_device_hash_salts action (in ms)"
+                            },
+                            "clear_device_hash_salts_error": {
+                                "type": "object",
+                                "description": "Error details for clear_device_hash_salts action",
+                                "properties": {
+                                    "domain": { "type": "string", "description": "Top level error domain" },
+                                    "code": { "type": "integer", "description": "Top level error code" },
+                                    "description": { "type": "string", "description": "Human-readable error description" },
+                                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                                }
+                            },
+                            "clear_remove_resource_load_statistics_database_status": {
+                                "type": "string",
+                                "description": "Final status of clear_remove_resource_load_statistics_database action",
+                                "enum": ["SUCCESS", "FAILURE"]
+                            },
+                            "clear_remove_resource_load_statistics_database_latency_ms": {
+                                "type": "integer",
+                                "description": "Latency for clear_remove_resource_load_statistics_database action (in ms)"
+                            },
+                            "clear_remove_resource_load_statistics_database_error": {
+                                "type": "object",
+                                "description": "Error details for clear_remove_resource_load_statistics_database action",
+                                "properties": {
+                                    "domain": { "type": "string", "description": "Top level error domain" },
+                                    "code": { "type": "integer", "description": "Top level error code" },
+                                    "description": { "type": "string", "description": "Human-readable error description" },
+                                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                                }
+                            }
+                        }
+                    },
+                    "clear_all_history_status": { "type": "string", "description": "Final status of clear_all_history action", "enum": ["SUCCESS", "FAILURE"] },
+                    "clear_all_history_latency_ms": { "type": "integer", "description": "Latency for clear_all_history action (in ms)" },
+                    "clear_all_history_error": {
+                        "type": "object",
+                        "description": "Error details for clear_all_history action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "clear_aiChat_history_status": { "type": "string", "description": "Final status of clear_aiChat_history action", "enum": ["SUCCESS", "FAILURE"] },
+                    "clear_aiChat_history_latency_ms": { "type": "integer", "description": "Latency for clear_aiChat_history action (in ms)" },
+                    "clear_aiChat_history_error": {
+                        "type": "object",
+                        "description": "Error details for clear_aiChat_history action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "clear_autoconsent_management_cache_status": {
+                        "type": "string",
+                        "description": "Final status of clear_autoconsent_management_cache action",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_autoconsent_management_cache_latency_ms": {
+                        "type": "integer",
+                        "description": "Latency for clear_autoconsent_management_cache action (in ms)"
+                    },
+                    "clear_autoconsent_management_cache_error": {
+                        "type": "object",
+                        "description": "Error details for clear_autoconsent_management_cache action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "clear_favicon_cache_status": { "type": "string", "description": "Final status of clear_favicon_cache action", "enum": ["SUCCESS", "FAILURE"] },
+                    "clear_favicon_cache_latency_ms": { "type": "integer", "description": "Latency for clear_favicon_cache action (in ms)" },
+                    "clear_favicon_cache_error": {
+                        "type": "object",
+                        "description": "Error details for clear_favicon_cache action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "cancel_all_downloads_status": { "type": "string", "description": "Final status of cancel_all_downloads action", "enum": ["SUCCESS", "FAILURE"] },
+                    "cancel_all_downloads_latency_ms": { "type": "integer", "description": "Latency for cancel_all_downloads action (in ms)" },
+                    "cancel_all_downloads_error": {
+                        "type": "object",
+                        "description": "Error details for cancel_all_downloads action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "clear_bookmark_database_status": { "type": "string", "description": "Final status of clear_bookmark_database action", "enum": ["SUCCESS", "FAILURE"] },
+                    "clear_bookmark_database_latency_ms": { "type": "integer", "description": "Latency for clear_bookmark_database action (in ms)" },
+                    "clear_bookmark_database_error": {
+                        "type": "object",
+                        "description": "Error details for clear_bookmark_database action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "forget_text_zoom_status": { "type": "string", "description": "Final status of forget_text_zoom action", "enum": ["SUCCESS", "FAILURE"] },
+                    "forget_text_zoom_latency_ms": { "type": "integer", "description": "Latency for forget_text_zoom action (in ms)" },
+                    "forget_text_zoom_error": {
+                        "type": "object",
+                        "description": "Error details for forget_text_zoom action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "clear_privacy_stats_status": { "type": "string", "description": "Final status of clear_privacy_stats action", "enum": ["SUCCESS", "FAILURE"] },
+                    "clear_privacy_stats_latency_ms": { "type": "integer", "description": "Latency for clear_privacy_stats action (in ms)" },
+                    "clear_privacy_stats_error": {
+                        "type": "object",
+                        "description": "Error details for clear_privacy_stats action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "clear_permissions_status": { "type": "string", "description": "Final status of clear_permissions action", "enum": ["SUCCESS", "FAILURE"] },
+                    "clear_permissions_latency_ms": { "type": "integer", "description": "Latency for clear_permissions action (in ms)" },
+                    "clear_permissions_error": {
+                        "type": "object",
+                        "description": "Error details for clear_permissions action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "clear_visited_links_status": { "type": "string", "description": "Final status of clear_visited_links action", "enum": ["SUCCESS", "FAILURE"] },
+                    "clear_visited_links_latency_ms": { "type": "integer", "description": "Latency for clear_visited_links action (in ms)" },
+                    "clear_visited_links_error": {
+                        "type": "object",
+                        "description": "Error details for clear_visited_links action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "clear_recently_closed_status": { "type": "string", "description": "Final status of clear_recently_closed action", "enum": ["SUCCESS", "FAILURE"] },
+                    "clear_recently_closed_latency_ms": { "type": "integer", "description": "Latency for clear_recently_closed action (in ms)" },
+                    "clear_recently_closed_error": {
+                        "type": "object",
+                        "description": "Error details for clear_recently_closed action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "clear_last_session_state_status": { "type": "string", "description": "Final status of clear_last_session_state action", "enum": ["SUCCESS", "FAILURE"] },
+                    "clear_last_session_state_latency_ms": { "type": "integer", "description": "Latency for clear_last_session_state action (in ms)" },
+                    "clear_last_session_state_error": {
+                        "type": "object",
+                        "description": "Error details for clear_last_session_state action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "reset_cookie_popup_blocked_flag_status": {
+                        "type": "string",
+                        "description": "Final status of reset_cookie_popup_blocked_flag action",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "reset_cookie_popup_blocked_flag_latency_ms": {
+                        "type": "integer",
+                        "description": "Latency for reset_cookie_popup_blocked_flag action (in ms)"
+                    },
+                    "reset_cookie_popup_blocked_flag_error": {
+                        "type": "object",
+                        "description": "Error details for reset_cookie_popup_blocked_flag action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "clear_autoconsent_stats_status": { "type": "string", "description": "Final status of clear_autoconsent_stats action", "enum": ["SUCCESS", "FAILURE"] },
+                    "clear_autoconsent_stats_latency_ms": { "type": "integer", "description": "Latency for clear_autoconsent_stats action (in ms)" },
+                    "clear_autoconsent_stats_error": {
+                        "type": "object",
+                        "description": "Error details for clear_autoconsent_stats action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    },
+                    "clear_visits_status": { "type": "string", "description": "Final status of clear_visits action", "enum": ["SUCCESS", "FAILURE"] },
+                    "clear_visits_latency_ms": { "type": "integer", "description": "Latency for clear_visits action (in ms)" },
+                    "clear_visits_error": {
+                        "type": "object",
+                        "description": "Error details for clear_visits action",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Top level error domain" },
+                            "code": { "type": "integer", "description": "Top level error code" },
+                            "description": { "type": "string", "description": "Human-readable error description" },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                        }
+                    }
+                },
+                "error": {
+                    "domain": { "type": "string", "description": "Error domain for the failure" },
+                    "code": { "type": "integer", "description": "Error code for the failure" },
+                    "description": { "type": "string", "description": "Error description for the failure" },
+                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                }
+            }
+        },
+        "context": {
+            "name": ["funnel_default_macos"]
+        }
+    }
+}

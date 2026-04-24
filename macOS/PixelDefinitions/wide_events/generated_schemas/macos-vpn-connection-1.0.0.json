@@ -1,0 +1,228 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Wide pixel sent at the end of a vpn connection flow",
+    "$comment": "{\"owners\":[\"hanyutang-sandra\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app", "context"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "macos-vpn-connection" }, "version": { "const": "1.0.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the app sending the event, taken from CFBundleName. Varies across build configurations and the target (main app, VPN agent, network extension). Extend this enum when adding wide events fired from other macOS targets.",
+                    "enum": [
+                        "DuckDuckGo",
+                        "DuckDuckGo Alpha",
+                        "DuckDuckGo Review",
+                        "DuckDuckGo App Store",
+                        "DuckDuckGo VPN",
+                        "DuckDuckGo VPN Alpha",
+                        "DuckDuckGo VPN Review",
+                        "DuckDuckGo VPN App Store",
+                        "com.duckduckgo.macos.vpn.network-extension",
+                        "com.duckduckgo.macos.vpn.network-extension.debug",
+                        "com.duckduckgo.macos.vpn.network-extension.review",
+                        "com.duckduckgo.macos.vpn.network-extension.alpha",
+                        "com.duckduckgo.mobile.ios.vpn.agent.network-extension"
+                    ]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["macOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["vpn-connection"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "Reason string for the current status",
+                                    "enum": ["partial_data", "timeout", "retried"]
+                                },
+                                "extension_type": {
+                                    "type": "string",
+                                    "description": "VPN extension type used",
+                                    "enum": ["app", "system", "unknown"]
+                                },
+                                "startup_method": {
+                                    "type": "string",
+                                    "description": "How the VPN setup or connection was initiated",
+                                    "enum": ["automatic_on_demand", "manual_by_main_app", "manual_by_the_system"]
+                                },
+                                "is_setup": {
+                                    "type": "string",
+                                    "description": "Is the current flow setup or reconnection",
+                                    "enum": ["yes", "no", "unknown", "true", "false"]
+                                },
+                                "onboarding_status": {
+                                    "type": "string",
+                                    "description": "The current onboarding status, if applicable",
+                                    "enum": ["needs_to_allow_extension", "needs_to_allow_vpn_configuration", "unknown", "completed"]
+                                },
+                                "latency_ms": { "type": "integer", "description": "Overall VPN connection latency (in ms)" },
+                                "browser_start_latency_ms": { "type": "integer", "description": "Latency for browser start step (in ms)" },
+                                "controller_start_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Latency for controller start step (in ms)"
+                                },
+                                "oauth_latency_ms": { "type": "integer", "description": "Latency for oauth step (in ms)" },
+                                "tunnel_start_latency_ms": { "type": "integer", "description": "Latency for tunnel start step (in ms)" },
+                                "browser_start_error": {
+                                    "type": "object",
+                                    "description": "Error details for browser start step failure",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "Error domain for browser start step failure" },
+                                        "code": { "type": "integer", "description": "Error code for browser start step failure" },
+                                        "description": {
+                                            "type": "string",
+                                            "description": "Human-readable error description for browser start step failure",
+                                            "examples": ["simulateControllerFailureError", "loadFromPreferencesFailed"]
+                                        },
+                                        "underlying_domain": {
+                                            "type": "string",
+                                            "description": "Underlying error domain for browser start step failure"
+                                        },
+                                        "underlying_code": {
+                                            "type": "integer",
+                                            "description": "Underlying error code for browser start step failure"
+                                        }
+                                    }
+                                },
+                                "controller_start_error": {
+                                    "type": "object",
+                                    "description": "Error details for controller start step failure",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "Error domain for controller start step failure" },
+                                        "code": { "type": "integer", "description": "Error code for controller start step failure" },
+                                        "description": {
+                                            "type": "string",
+                                            "description": "Human-readable error description for controller start step failure",
+                                            "examples": ["simulateControllerFailureError", "loadFromPreferencesFailed"]
+                                        },
+                                        "underlying_domain": {
+                                            "type": "string",
+                                            "description": "Underlying error domain for controller start step failure"
+                                        },
+                                        "underlying_code": {
+                                            "type": "integer",
+                                            "description": "Underlying error code for controller start step failure"
+                                        }
+                                    }
+                                },
+                                "oauth_error": {
+                                    "type": "object",
+                                    "description": "Error details for oauth step failure",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "Error domain for oauth step failure" },
+                                        "code": { "type": "integer", "description": "Error code for oauth step failure" },
+                                        "description": {
+                                            "type": "string",
+                                            "description": "Human-readable error description for oauth step failure",
+                                            "examples": ["simulateControllerFailureError", "loadFromPreferencesFailed"]
+                                        },
+                                        "underlying_domain": {
+                                            "type": "string",
+                                            "description": "Underlying error domain for oauth step failure"
+                                        },
+                                        "underlying_code": {
+                                            "type": "integer",
+                                            "description": "Underlying error code for oauth step failure"
+                                        }
+                                    }
+                                },
+                                "tunnel_start_error": {
+                                    "type": "object",
+                                    "description": "Error details for tunnel start step failure",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "Error domain for tunnel start step failure" },
+                                        "code": { "type": "integer", "description": "Error code for tunnel start step failure" },
+                                        "description": {
+                                            "type": "string",
+                                            "description": "Human-readable error description for tunnel start step failure",
+                                            "examples": ["simulateControllerFailureError", "loadFromPreferencesFailed"]
+                                        },
+                                        "underlying_domain": {
+                                            "type": "string",
+                                            "description": "Underlying error domain for tunnel start step failure"
+                                        },
+                                        "underlying_code": {
+                                            "type": "integer",
+                                            "description": "Underlying error code for tunnel start step failure"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "error": {
+                            "type": "object",
+                            "required": ["domain", "code"],
+                            "additionalProperties": false,
+                            "properties": {
+                                "domain": { "type": "string", "description": "Error domain for the failure" },
+                                "code": { "type": "integer", "description": "Error code for the failure" },
+                                "description": {
+                                    "type": "string",
+                                    "description": "Error description for the failure",
+                                    "examples": ["saveToPreferencesFailed", "startVPNFailed"]
+                                },
+                                "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                                "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "context": {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Context name for the event",
+                    "enum": ["funnel_appsettings_macos", "funnel_agent_macos", "funnel_systemsettings_multiple", "funnel_others_multiple"]
+                }
+            }
+        }
+    }
+}

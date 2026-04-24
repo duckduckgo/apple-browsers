@@ -1,0 +1,49 @@
+{
+    "macos-authv2-token-refresh": {
+        "description": "Wide pixel sent after an AuthV2 token refresh",
+        "owners": ["samsymons"],
+        "meta": {
+            "type": "macos-authv2-token-refresh",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "authv2-token-refresh",
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status events",
+                        "enum": ["partial_data"]
+                    },
+                    "refresh_trigger": {
+                        "type": "string",
+                        "description": "String representing what caused the token refresh to begin",
+                        "enum": ["backend", "client", "token_adoption"]
+                    },
+                    "failing_step": {
+                        "type": "string",
+                        "description": "The step at which the flow failed, when applicable",
+                        "enum": ["token_read", "refresh_access_token", "fetch_jwks", "verify_access_token", "verify_refresh_token", "token_write"]
+                    },
+                    "refresh_token_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "Bucketed latency for token refresh step (ms)",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    },
+                    "fetch_jwks_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "Bucketed latency for fetch JWKS step (ms)",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    }
+                },
+                "error": {
+                    "domain": { "type": "string", "description": "Error domain for the failure" },
+                    "code": { "type": "integer", "description": "Error code for the failure" },
+                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                }
+            }
+        }
+    }
+}

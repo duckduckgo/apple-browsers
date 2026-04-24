@@ -1,0 +1,149 @@
+{
+    "macos-data-import": {
+        "description": "Wide pixel sent at the end of a data import flow",
+        "owners": ["hanyutang-sandra"],
+        "meta": {
+            "type": "macos-data-import",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "data-import",
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Optional reason accompanying the feature status"
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": "Import source",
+                        "enum": [
+                            "chrome",
+                            "safari",
+                            "brave",
+                            "chromium",
+                            "coccoc",
+                            "edge",
+                            "firefox",
+                            "opera",
+                            "operaGX",
+                            "safariTechnologyPreview",
+                            "tor",
+                            "vivaldi",
+                            "yandex",
+                            "fileImport",
+                            "csv",
+                            "bookmarksHTML",
+                            "onePassword8",
+                            "onePassword7",
+                            "bitwarden",
+                            "lastPass"
+                        ]
+                    },
+                    "bookmarks_status": {
+                        "type": "string",
+                        "description": "Final status of bookmarks import",
+                        "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+                    },
+                    "passwords_status": {
+                        "type": "string",
+                        "description": "Final status of passwords import",
+                        "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+                    },
+                    "creditCards_status": {
+                        "type": "string",
+                        "description": "Final status of creditCards import",
+                        "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+                    },
+                    "bookmarks_status_reason": {
+                        "type": "string",
+                        "description": "Optional reason accompanying the bookmarks import status",
+                        "enum": ["partial_data", "timeout", "document_picker_cancelled"]
+                    },
+                    "passwords_status_reason": {
+                        "type": "string",
+                        "description": "Optional reason accompanying the passwords import status",
+                        "enum": ["partial_data", "timeout", "document_picker_cancelled"]
+                    },
+                    "creditCards_status_reason": {
+                        "type": "string",
+                        "description": "Optional reason accompanying the creditCards import status",
+                        "enum": ["partial_data", "timeout", "document_picker_cancelled"]
+                    },
+                    "latency_ms": {
+                        "type": "integer",
+                        "description": "Overall data import latency (in ms)"
+                    },
+                    "bookmarks_importer_latency_ms": {
+                        "type": "integer",
+                        "description": "Latency for bookmarks importer (in ms)"
+                    },
+                    "passwords_importer_latency_ms": {
+                        "type": "integer",
+                        "description": "Latency for passwords importer (in ms)"
+                    },
+                    "creditCards_importer_latency_ms": {
+                        "type": "integer",
+                        "description": "Latency for creditCards importer (in ms)"
+                    },
+                    "bookmarks_error": {
+                        "type": "object",
+                        "description": "Error details for bookmarks import failure",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Error domain for bookmarks import failure" },
+                            "code": { "type": "integer", "description": "Error code for bookmarks import failure" },
+                            "description": {
+                                "type": "string",
+                                "description": "Human-readable error description for bookmarks import failure",
+                                "examples": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
+                            },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain for bookmarks import failure" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code for bookmarks import failure" }
+                        }
+                    },
+                    "passwords_error": {
+                        "type": "object",
+                        "description": "Error details for passwords import failure",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Error domain for passwords import failure" },
+                            "code": { "type": "integer", "description": "Error code for passwords import failure" },
+                            "description": {
+                                "type": "string",
+                                "description": "Human-readable error description for passwords import failure",
+                                "examples": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
+                            },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain for passwords import failure" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code for passwords import failure" }
+                        }
+                    },
+                    "creditCards_error": {
+                        "type": "object",
+                        "description": "Error details for creditCards import failure",
+                        "properties": {
+                            "domain": { "type": "string", "description": "Error domain for creditCards import failure" },
+                            "code": { "type": "integer", "description": "Error code for creditCards import failure" },
+                            "description": {
+                                "type": "string",
+                                "description": "Human-readable error description for creditCards import failure",
+                                "examples": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
+                            },
+                            "underlying_domain": { "type": "string", "description": "Underlying error domain for creditCards import failure" },
+                            "underlying_code": { "type": "integer", "description": "Underlying error code for creditCards import failure" }
+                        }
+                    }
+                },
+                "error": {
+                    "domain": { "type": "string", "description": "Error domain for the failure" },
+                    "code": { "type": "integer", "description": "Error code for the failure" },
+                    "description": { "type": "string", "description": "Error description for the failure" },
+                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                }
+            }
+        },
+        "context": {
+            "name": ["funnel_default_macos"]
+        }
+    }
+}

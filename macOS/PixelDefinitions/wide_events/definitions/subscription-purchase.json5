@@ -1,0 +1,68 @@
+{
+    "macos-subscription-purchase": {
+        "description": "Wide pixel sent at the end of a subscription purchase flow",
+        "owners": ["samsymons"],
+        "meta": {
+            "type": "macos-subscription-purchase",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "subscription-purchase",
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status pixels",
+                        "enum": ["partial_data", "missing_entitlements", "missing_entitlements_delayed_activation"]
+                    },
+                    "purchase_platform": {
+                        "type": "string",
+                        "description": "Platform used to complete the purchase",
+                        "enum": ["app_store", "stripe"]
+                    },
+                    "failing_step": {
+                        "type": "string",
+                        "description": "The step at which the flow failed, when applicable",
+                        "enum": ["FLOW_START", "ACCOUNT_CREATE", "ACCOUNT_PAYMENT", "ACCOUNT_ACTIVATION"]
+                    },
+                    "subscription_identifier": {
+                        "type": "string",
+                        "description": "Subscription product identifier from the payment provider, e.g. ddg.privacy.pro.monthly.renews.us"
+                    },
+                    "free_trial_eligible": {
+                        "type": "string",
+                        "description": "Whether a free trial was available",
+                        "enum": ["true", "false"]
+                    },
+                    "account_creation_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "Bucketed latency for account creation step (ms)",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    },
+                    "account_payment_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "Bucketed latency for purchase completion step (ms)",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    },
+                    "account_activation_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "Bucketed latency for account activation step (ms)",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    },
+                    "funnel_name": {
+                        "type": "string",
+                        "description": "The funnel that led to the subscription flow",
+                        "pattern": "^funnel_"
+                    }
+                },
+                "error": {
+                    "domain": { "type": "string", "description": "Error domain for the failure" },
+                    "code": { "type": "integer", "description": "Error code for the failure" },
+                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                }
+            }
+        }
+    }
+}

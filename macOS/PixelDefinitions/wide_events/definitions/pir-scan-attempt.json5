@@ -1,0 +1,60 @@
+{
+    "macos-pir-scan-attempt": {
+        "description": "Wide pixel representing a broker scan attempt",
+        "owners": ["quanganhdo"],
+        "meta": {
+            "type": "macos-pir-scan-attempt",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "pir-scan-attempt",
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Optional reason accompanying the feature status"
+                    },
+                    "data_broker": {
+                        "type": "string",
+                        "description": "The name of the data broker associated with this scan"
+                    },
+                    "data_broker_version": {
+                        "type": "string",
+                        "description": "Version of the broker JSON file reported via wide pixels"
+                    },
+                    "scan": {
+                        "type": "object",
+                        "description": "Scan attempt details",
+                        "properties": {
+                            "attempt_type": {
+                                "type": "string",
+                                "description": "Category of the scan attempt",
+                                "enum": ["new-data", "regular-check", "removal-verification"]
+                            },
+                            "attempt_number": {
+                                "type": "string",
+                                "description": "Ordinal number for attempts within the current scan cycle"
+                            },
+                            "free_scan": {
+                                "type": "string",
+                                "description": "Whether this scan attempt belongs to a free (unauthenticated) user",
+                                "enum": ["true", "false"]
+                            },
+                            "latency_ms": {
+                                "type": "string",
+                                "description": "Duration in milliseconds between the scan attempt start and completion"
+                            }
+                        }
+                    }
+                },
+                "error": {
+                    "domain": { "type": "string", "description": "Error domain for the failure" },
+                    "code": { "type": "integer", "description": "Error code for the failure" },
+                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                }
+            }
+        }
+    }
+}

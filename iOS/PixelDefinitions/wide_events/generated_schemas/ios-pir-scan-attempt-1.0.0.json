@@ -1,0 +1,111 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Wide pixel representing a broker scan attempt",
+    "$comment": "{\"owners\":[\"quanganhdo\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "ios-pir-scan-attempt" }, "version": { "const": "1.0.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the application",
+                    "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental"]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+                "form_factor": { "type": "string", "description": "The form factor of the device", "enum": ["phone", "tablet"] }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["iOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["pir-scan-attempt"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "status_reason": { "type": "string", "description": "Optional reason accompanying the feature status" },
+                                "data_broker": { "type": "string", "description": "The name of the data broker associated with this scan" },
+                                "data_broker_version": {
+                                    "type": "string",
+                                    "description": "Version of the broker JSON file reported via wide pixels"
+                                },
+                                "scan": {
+                                    "type": "object",
+                                    "description": "Scan attempt details",
+                                    "properties": {
+                                        "attempt_type": {
+                                            "type": "string",
+                                            "description": "Category of the scan attempt",
+                                            "enum": ["new-data", "regular-check", "removal-verification"]
+                                        },
+                                        "attempt_number": {
+                                            "type": "string",
+                                            "description": "Ordinal number for attempts within the current scan cycle"
+                                        },
+                                        "free_scan": {
+                                            "type": "string",
+                                            "description": "Whether this scan attempt belongs to a free (unauthenticated) user",
+                                            "enum": ["true", "false"]
+                                        },
+                                        "latency_ms": {
+                                            "type": "string",
+                                            "description": "Duration in milliseconds between the scan attempt start and completion"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "error": {
+                            "type": "object",
+                            "required": ["domain", "code"],
+                            "additionalProperties": false,
+                            "properties": {
+                                "domain": { "type": "string", "description": "Error domain for the failure" },
+                                "code": { "type": "integer", "description": "Error code for the failure" },
+                                "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                                "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

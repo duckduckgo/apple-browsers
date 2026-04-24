@@ -1,0 +1,40 @@
+{
+    "macos-pir-opt-out-submission": {
+        "description": "Wide pixel sent at the end of a Data Broker Protection opt-out submission flow",
+        "owners": ["quanganhdo"],
+        "meta": {
+            "type": "macos-pir-opt-out-submission",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "pir-opt-out-submission",
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Optional reason accompanying the feature status"
+                    },
+                    "data_broker": {
+                        "type": "string",
+                        "description": "The name of the data broker associated with this opt-out submission"
+                    },
+                    "data_broker_version": {
+                        "type": "string",
+                        "description": "Version of the broker JSON file reported via wide pixels"
+                    },
+                    "submission_latency_ms": {
+                        "type": "string",
+                        "description": "Duration in milliseconds between the record being found and submission completing"
+                    }
+                },
+                "error": {
+                    "domain": { "type": "string", "description": "Error domain for the failure" },
+                    "code": { "type": "integer", "description": "Error code for the failure" },
+                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                }
+            }
+        }
+    }
+}

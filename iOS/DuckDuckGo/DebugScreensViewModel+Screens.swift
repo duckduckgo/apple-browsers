@@ -91,7 +91,8 @@ extension DebugScreensViewModel {
 
             // MARK: SwiftUI Views
             .view(title: "AI Chat", { dependencies in
-                AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
+                AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
+                                isInternalUser: dependencies.internalUserDecider.isInternalUser)
             }),
             .view(title: "Data Audit", { _ in
                 DataAuditDebugScreen()

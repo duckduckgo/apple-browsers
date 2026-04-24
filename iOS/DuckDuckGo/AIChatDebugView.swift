@@ -21,24 +21,25 @@
 import SwiftUI
 import Combine
 import AIChat
-#if DEBUG
 import AIChatDebugServer
 import DebugServer
-#endif
+import Core
 
 struct AIChatDebugView: View {
     @StateObject private var viewModel = AIChatDebugViewModel()
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let isInternalUser: Bool
 
-    init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+    init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil, isInternalUser: Bool = false) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.isInternalUser = isInternalUser
     }
 
     var body: some View {
         List {
-            #if DEBUG
-            AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
-            #endif
+            if isInternalUser || isDebugBuild {
+                AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+            }
 
             Section(footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
                 NavigationLink(destination: AIChatDebugHostnameEntryView(viewModel: viewModel)) {
@@ -307,7 +308,6 @@ private struct AIChatDebugSessionTimerEntryView: View {
     }
 }
 
-#if DEBUG
 private struct AIChatStorageServerSection: View {
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     @StateObject private var serverState = StorageServerState()
@@ -418,7 +418,6 @@ private final class StorageServerState: ObservableObject {
         return address
     }
 }
-#endif
 
 #Preview {
     AIChatDebugView()

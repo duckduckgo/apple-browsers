@@ -1095,7 +1095,7 @@ final class MainMenu: NSMenu {
             }
 
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
-            NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
+            NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu(internalUserDecider: internalUserDecider))
             NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
             if StandardApplicationBuildType().isSparkleBuild {
                 NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard, internalUserDecider: internalUserDecider))

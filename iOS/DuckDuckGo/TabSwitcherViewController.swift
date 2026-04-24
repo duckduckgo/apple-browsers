@@ -177,7 +177,7 @@ class TabSwitcherViewController: UIViewController {
     private(set) var selectedBrowsingMode: BrowsingMode
     private(set) var segmentedPickerHostingController: UIHostingController<ImageSegmentedPickerView>?
     private var pickerSelectionCancellable: AnyCancellable?
-    private var fireModeCapability: FireModeCapable {
+    var fireModeCapability: FireModeCapable {
         FireModeCapability.create()
     }
 
@@ -481,7 +481,7 @@ class TabSwitcherViewController: UIViewController {
         }
 
         barsHandler.onNewFireTabTapped = { [weak self] in
-            self?.addNewFireTab()
+            self?.addNewFireTab(source: .tabSwitcherLongPress)
         }
 
         barsHandler.onNewNormalTabTapped = { [weak self] in
@@ -644,7 +644,7 @@ class TabSwitcherViewController: UIViewController {
         delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
 
-    func addNewFireTab() {
+    func addNewFireTab(source: FireModeSwitchSource) {
         guard !isProcessingUpdates else { return }
         canUpdateCollection = false
 
@@ -652,7 +652,7 @@ class TabSwitcherViewController: UIViewController {
             PixelParameters.browsingMode: BrowsingMode.fire.pixelParamValue
         ])
         dismissIfPossible(forceDismissOnEmpty: true)
-        delegate.tabSwitcherDidRequestNewFireTab(tabSwitcher: self)
+        delegate.tabSwitcherDidRequestNewFireTab(tabSwitcher: self, source: source)
     }
 
     func addNewNormalTab() {

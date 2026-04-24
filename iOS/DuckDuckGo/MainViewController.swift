@@ -180,7 +180,7 @@ class MainViewController: UIViewController {
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
-    private let fireModeCapability: FireModeCapable
+    let fireModeCapability: FireModeCapable
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -4771,8 +4771,8 @@ extension MainViewController: TabSwitcherDelegate {
         tabSwitcherNewTabWithAnimation()
     }
 
-    func tabSwitcherDidRequestNewFireTab(tabSwitcher: TabSwitcherViewController) {
-        tabManager.setBrowsingMode(.fire, source: .tabSwitcherLongPress)
+    func tabSwitcherDidRequestNewFireTab(tabSwitcher: TabSwitcherViewController, source: FireModeSwitchSource) {
+        tabManager.setBrowsingMode(.fire, source: source)
         tabSwitcherNewTabWithAnimation()
     }
 

@@ -2228,12 +2228,6 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
     func addressBarViewControllerDidRefocusInAIChatMode(_ addressBarViewController: AddressBarViewController) {
         (parent as? MainViewController)?.showAIChatOmnibarPanelForRefocus()
     }
-
-    func addressBarViewControllerShouldActivateDuckAIForTabSwitch(_ addressBarViewController: AddressBarViewController) {
-        (parent as? MainViewController)?.updateAIChatOmnibarContainerVisibility(visible: true,
-                                                                                shouldKeepSelection: false,
-                                                                                shouldFetchSuggestions: false)
-    }
 }
 
 extension NavigationBarViewController: MemoryUsagePresenting {

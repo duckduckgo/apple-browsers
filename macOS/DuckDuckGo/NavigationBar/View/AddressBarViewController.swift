@@ -35,10 +35,6 @@ protocol AddressBarViewControllerDelegate: AnyObject {
     /// Called when the user refocuses the address bar while duck.ai mode is the persistent mode for the current tab.
     /// The suggestions row should re-expand and the prompt editor should become first responder.
     func addressBarViewControllerDidRefocusInAIChatMode(_ addressBarViewController: AddressBarViewController)
-    /// Called on tab switch when the incoming tab has duck.ai as its persistent mode. Presents the AI chat panel
-    /// focused but skips the async suggestions fetch — the fetch's completion otherwise causes a visible panel
-    /// expansion right after it appears. User typing will still trigger suggestions via the debounced subscription.
-    func addressBarViewControllerShouldActivateDuckAIForTabSwitch(_ addressBarViewController: AddressBarViewController)
 }
 
 final class AddressBarViewController: NSViewController {

@@ -463,17 +463,17 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         return connector.code
     }
 
-    func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey) async throws {
+    func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws {
         let registeredDevices = try await syncService.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
-        presentSyncCompletionAfterDelay(isRecovery: false)
+        presentSyncCompletionAfterDelay(isRecovery: isRecovery)
     }
 
-    func presentSyncCompletionAfterDelay(isRecovery: Bool) {
+    func presentSyncCompletionAfterDelay(isRecovery _: Bool) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if self.useSimplifiedLayout, !isRecovery {
+            if self.useSimplifiedLayout {
                 self.dismissVCAndShowDeviceSyncedToast()
             } else {
                 self.dismissVCAndShowRecoveryPDF()
@@ -487,7 +487,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
                 if let recoveryKey = try await connector?.pollForRecoveryKey() {
                     dismissPresentedViewController()
                     showPreparingSync(nil)
-                    try await loginAndShowDeviceConnected(recoveryKey: recoveryKey)
+                    try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: false)
                 } else {
                     // Likely cancelled elsewhere
                     return

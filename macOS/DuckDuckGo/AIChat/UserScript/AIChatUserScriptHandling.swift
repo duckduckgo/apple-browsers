@@ -33,7 +33,7 @@ protocol AIChatMetricReportingHandling {
 }
 
 // swiftlint:disable inclusive_language
-protocol AIChatUserScriptHandling {
+protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?

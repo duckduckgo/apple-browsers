@@ -39,17 +39,17 @@ public extension OnboardingTheme {
         // Light: existing orange scheme (default → pressed, hover falls back to pressed).
         // Dark: cream/yellow scheme per Figma (#FFD986 default, #FFC95D hover, #FFC95D pressed).
         let ctaButtonBackground = Color(NSColor(name: nil, dynamicProvider: { appearance in
-            appearance.name == .darkAqua
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
                 ? NSColor(red: 0xFF/255.0, green: 0xD9/255.0, blue: 0x86/255.0, alpha: 1)
                 : NSColor(red: 0xF0/255.0, green: 0x5F/255.0, blue: 0x2B/255.0, alpha: 1)
         }))
         let ctaButtonHover = Color(NSColor(name: nil, dynamicProvider: { appearance in
-            appearance.name == .darkAqua
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
                 ? NSColor(red: 0xFF/255.0, green: 0xC9/255.0, blue: 0x5D/255.0, alpha: 1)
                 : NSColor(red: 0xCC/255.0, green: 0x3B/255.0, blue: 0x0A/255.0, alpha: 1)
         }))
         let ctaButtonPressed = Color(NSColor(name: nil, dynamicProvider: { appearance in
-            appearance.name == .darkAqua
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
                 ? NSColor(red: 0xFF/255.0, green: 0xC9/255.0, blue: 0x5D/255.0, alpha: 1)
                 : NSColor(red: 0xCC/255.0, green: 0x3B/255.0, blue: 0x0A/255.0, alpha: 1)
         }))
@@ -57,7 +57,7 @@ public extension OnboardingTheme {
         let ctaButtonDisabled = ctaButtonBackground.opacity(0.4)
         // Text on CTA — white on orange (light), dark navy on yellow (dark).
         let ctaButtonText = Color(NSColor(name: nil, dynamicProvider: { appearance in
-            appearance.name == .darkAqua
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
                 ? NSColor(red: 0x01/255.0, green: 0x1D/255.0, blue: 0x34/255.0, alpha: 1)
                 : .white
         }))
@@ -65,19 +65,19 @@ public extension OnboardingTheme {
         // Panel/banner background behind the bubble (where the illustration sits).
         // Light: white. Dark: rebranding dark navy (#133E7C).
         let adaptiveBanner = Color(NSColor(name: nil, dynamicProvider: { appearance in
-            appearance.name == .darkAqua
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
                 ? NSColor(red: 0x13/255.0, green: 0x3E/255.0, blue: 0x7C/255.0, alpha: 1)
                 : .white
         }))
         // Bubble fill. Light: white. Dark: deeper navy (#011D34).
         let adaptiveBubbleBackground = Color(NSColor(name: nil, dynamicProvider: { appearance in
-            appearance.name == .darkAqua
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
                 ? NSColor(red: 0x01/255.0, green: 0x1D/255.0, blue: 0x34/255.0, alpha: 1)
                 : .white
         }))
         // Bubble border. Light: pale blue. Dark: pure black (per Figma).
         let adaptiveBubbleBorder = Color(NSColor(name: nil, dynamicProvider: { appearance in
-            appearance.name == .darkAqua
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
                 ? .black
                 : NSColor(red: 0xCB/255.0, green: 0xEA/255.0, blue: 0xFF/255.0, alpha: 1)
         }))

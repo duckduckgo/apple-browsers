@@ -139,12 +139,19 @@ final class TabSwitcherTitleBarView: UIView {
 
     private func applyButtonConstraints(to view: UIView) {
         guard managedButtonConstraints[view] == nil else { return }
+        // Only icon buttons should be forced to a square 44×44.
+        guard isIconButton(view) else { return }
         let constraints = [
             view.widthAnchor.constraint(equalToConstant: Metrics.buttonSize),
             view.widthAnchor.constraint(equalTo: view.heightAnchor),
         ]
         NSLayoutConstraint.activate(constraints)
         managedButtonConstraints[view] = constraints
+    }
+
+    private func isIconButton(_ view: UIView) -> Bool {
+        guard let button = view as? BrowserChromeButton else { return true }
+        return button.hasImage && !button.hasTitle
     }
 
     private func removeButtonConstraints(from stack: UIStackView) {

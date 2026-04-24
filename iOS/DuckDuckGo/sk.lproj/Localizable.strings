@@ -2329,6 +2329,9 @@
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Vyhľadajte alebo zadajte adresu";
 
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Nová karta Fire";
+
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Nová karta";
 

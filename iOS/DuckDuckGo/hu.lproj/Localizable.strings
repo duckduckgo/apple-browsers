@@ -2329,6 +2329,9 @@
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Keresés vagy cím megadása";
 
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Új Fire lap";
+
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Új lap";
 

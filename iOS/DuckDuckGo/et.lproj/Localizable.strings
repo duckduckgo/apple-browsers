@@ -2329,6 +2329,9 @@
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Otsi või sisesta aadress";
 
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Uus Fire vahekaart";
+
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Uus vaheleht";
 

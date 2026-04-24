@@ -101,32 +101,28 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     }
 
     func makeView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> AnyView {
-        let bubble = makeBubbleView(for: type, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed, onInlineTransition: nil)
-
-        let viewWithBackground = AnyView(
-            bubble
-                .background(Self.backgroundView(for: type))
-                .clipped()
-                .applyOnboardingTheme(.macOSRebranding2026)
+        AnyView(
+            ContextualDialogView(
+                type: type,
+                delegate: delegate,
+                onDismiss: onDismiss,
+                onGotItPressed: onGotItPressed,
+                onFireButtonPressed: onFireButtonPressed,
+                factory: self
+            )
         )
-
-        return viewWithBackground
     }
 
-    /// Returns just the bubble view (no background) for layered composition.
-    /// `onInlineTransition` is invoked with the follow-up dialog type when a dialog performs
-    /// an in-place content swap (e.g. searchDone → tryASite). The host uses this to swap the
-    /// background illustration so it matches the displayed bubble content.
-    func makeBubbleView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onInlineTransition: ((ContextualDialogType) -> Void)?) -> AnyView {
+    fileprivate func makeBubbleView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> AnyView {
         switch type {
         case .tryASearch:
             return AnyView(tryASearchDialog(delegate: delegate, onDismiss: onDismiss))
         case .searchDone(shouldFollowUp: let shouldFollowUp):
-            return AnyView(searchDoneDialog(shouldFollowUp: shouldFollowUp, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onInlineTransition: onInlineTransition))
+            return AnyView(searchDoneDialog(shouldFollowUp: shouldFollowUp, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onInlineTransition: nil))
         case .tryASite:
             return AnyView(tryASiteDialog(delegate: delegate, onDismiss: onDismiss))
         case .trackers(message: let message, shouldFollowUp: let shouldFollowUp):
-            return AnyView(trackersDialog(message: message, shouldFollowUp: shouldFollowUp, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed, onInlineTransition: onInlineTransition))
+            return AnyView(trackersDialog(message: message, shouldFollowUp: shouldFollowUp, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed, onInlineTransition: nil))
         case .tryFireButton:
             return AnyView(tryFireButtonDialog(onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
         case .highFive:
@@ -135,25 +131,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         }
     }
 
-    func makeLayeredViews(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onInlineTransition: ((ContextualDialogType) -> Void)?) -> LayeredDialogViews? {
-        let bubble = makeBubbleView(for: type, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed, onInlineTransition: onInlineTransition)
-        let themedBubble = AnyView(bubble.applyOnboardingTheme(.macOSRebranding2026))
-        let themedBackground = AnyView(
-            Self.backgroundView(for: type)
-                .applyOnboardingTheme(.macOSRebranding2026)
-        )
-
-        return LayeredDialogViews(bubble: themedBubble, background: themedBackground)
-    }
-
     // MARK: - Background
-
-    func makeBackgroundView(for type: ContextualDialogType) -> AnyView? {
-        AnyView(
-            Self.backgroundView(for: type)
-                .applyOnboardingTheme(.macOSRebranding2026)
-        )
-    }
 
     static func backgroundView(for type: ContextualDialogType) -> AnyView {
         AnyView(
@@ -272,6 +250,49 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             highFiveAction: action,
             onManualDismiss: onDismiss
         )
+    }
+}
+
+// MARK: - Animated Dialog Wrapper
+
+private struct ContextualDialogView: View {
+    @State private var opacity: Double = 0
+    @State private var isDismissing = false
+
+    let type: ContextualDialogType
+    let delegate: any OnboardingNavigationDelegate
+    let onDismiss: () -> Void
+    let onGotItPressed: () -> Void
+    let onFireButtonPressed: () -> Void
+    let factory: RebrandedContextualDaxDialogsFactory
+
+    private let duration = OnboardingRebranding.Layout.screenTransitionPhaseDuration
+
+    var body: some View {
+        factory.makeBubbleView(
+            for: type,
+            delegate: delegate,
+            onDismiss: fadeDismiss,
+            onGotItPressed: onGotItPressed,
+            onFireButtonPressed: onFireButtonPressed
+        )
+        .background(RebrandedContextualDaxDialogsFactory.backgroundView(for: type))
+        .clipped()
+        .applyOnboardingTheme(.macOSRebranding2026)
+        .opacity(opacity)
+        .onAppear {
+            withAnimation(.easeOut(duration: duration)) { opacity = 1 }
+        }
+    }
+
+    private func fadeDismiss() {
+        guard !isDismissing else { return }
+        isDismissing = true
+        withAnimation(.easeOut(duration: duration)) { opacity = 0 }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+            onDismiss()
+        }
     }
 }
 

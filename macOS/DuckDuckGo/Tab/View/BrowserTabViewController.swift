@@ -1203,15 +1203,21 @@ final class BrowserTabViewController: NSViewController {
     func generateNativePreviewIfNeeded() {
         guard let tabViewModel = tabViewModel, !tabViewModel.tab.content.displaysContentInWebView, !tabViewModel.isShowingErrorPage else { return }
 
-        var containsHostingView: Bool
+        let containsHostingView: Bool
         switch tabViewModel.tab.content {
         case .onboarding:
             return
         case .newtab:
-            guard tabCollectionViewModel.isBurner else {
+            guard tabCollectionViewModel.isBurner,
+                  let burnerHomePage = burnerHomePageViewController,
+                  let capturedImage = Self.snapshotImage(of: burnerHomePage.view) else {
                 return
             }
-            containsHostingView = false
+            Task { @MainActor [weak tabViewModel] in
+                guard let tabSnapshots = tabViewModel?.tab.tabSnapshots else { return }
+                await tabSnapshots.renderSnapshot(from: capturedImage)
+            }
+            return
         case .settings:
             containsHostingView = true
         default:
@@ -1230,6 +1236,24 @@ final class BrowserTabViewController: NSViewController {
     }
 
     // MARK: - New Tab page
+
+    /// Rasterizes a view's already-rendered pixels into an `NSImage`.
+    ///
+    /// `cacheDisplay(in:to:)` asks the view to paint its current contents into a bitmap synchronously,
+    /// bypassing the window's display cycle. For the burner tab preview, this means the image reflects
+    /// the outgoing tab's state at the moment of capture — before the tab-switch flow calls
+    /// `updatePromoState` for the incoming tab. No fresh SwiftUI view, no disposable viewmodel,
+    /// no `NSHostingView`, no window needed.
+    ///
+    /// Returns `nil` when the view's bounds are zero-sized or AppKit declines to produce a bitmap rep.
+    static func snapshotImage(of view: NSView) -> NSImage? {
+        guard view.bounds.width > 0, view.bounds.height > 0 else { return nil }
+        guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return nil }
+        view.cacheDisplay(in: view.bounds, to: rep)
+        let image = NSImage(size: view.bounds.size)
+        image.addRepresentation(rep)
+        return image
+    }
 
     var burnerHomePageViewController: BurnerHomePageViewController?
     private func burnerHomePageViewControllerCreatingIfNeeded() -> BurnerHomePageViewController {

@@ -463,15 +463,15 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         return connector.code
     }
 
-    func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws {
+    func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey) async throws {
         let registeredDevices = try await syncService.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
-        presentSyncCompletionAfterDelay(isRecovery: isRecovery)
+        presentSyncCompletionAfterDelay()
     }
 
-    func presentSyncCompletionAfterDelay(isRecovery _: Bool) {
+    func presentSyncCompletionAfterDelay() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             if self.useSimplifiedLayout {
                 self.dismissVCAndShowDeviceSyncedToast()
@@ -487,7 +487,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
                 if let recoveryKey = try await connector?.pollForRecoveryKey() {
                     dismissPresentedViewController()
                     showPreparingSync(nil)
-                    try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: false)
+                    try await loginAndShowDeviceConnected(recoveryKey: recoveryKey)
                 } else {
                     // Likely cancelled elsewhere
                     return
@@ -606,11 +606,11 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         }
     }
     
-    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole) {
+    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery _: Bool, setupRole: SyncSetupRole) {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
-        presentSyncCompletionAfterDelay(isRecovery: isRecovery)
+        presentSyncCompletionAfterDelay()
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
             return
         }

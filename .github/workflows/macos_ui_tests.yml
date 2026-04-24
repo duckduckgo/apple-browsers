@@ -15,6 +15,13 @@ on:
         description: "Run one or more UITestCases (optional, space-separated, e.g. 'AutocompleteTests' or 'AutocompleteTests BookmarksTests')"
         type: string
         required: false
+      build-type:
+        description: "Build type (product review or sandbox review)"
+        type: choice
+        default: review
+        options:
+        - dmg
+        - appstore
   workflow_call:
     inputs:
       all_os_versions:
@@ -66,7 +73,7 @@ jobs:
 
     uses: ./.github/workflows/macos_build_notarized.yml
     with:
-      release-type: review
+      release-type: "${{ inputs.build-type == 'dmg' && 'review' || 'sandbox-review' }}"
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true

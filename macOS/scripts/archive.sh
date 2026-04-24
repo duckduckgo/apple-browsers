@@ -20,7 +20,7 @@ print_usage_and_exit() {
 
 	cat <<- EOF
 	Usage:
-	  $ $(basename "$0") <review|release|alpha> [-a <asana_task_url>] [-d] [-s] [-r] [-v <version>]
+	  $ $(basename "$0") <review|sandbox-review|release|alpha> [-a <asana_task_url>] [-d] [-s] [-r] [-v <version>]
 
 	Options:
 	 -a <asana_task_url>  Update Asana task after building the app (implies -d)
@@ -51,6 +51,13 @@ read_command_line_arguments() {
 			app_name="DuckDuckGo Review"
 			scheme="macOS Browser Review"
 			configuration="Review"
+			;;
+		sandbox-review)
+			release_type="sandbox-review"
+			app_name="DuckDuckGo App Store Review"
+			scheme="macOS Browser Review App Store"
+			configuration="Review"
+			extra_xcargs="UI_TESTS_TARGET_APP=sandbox"
 			;;
 		release)
 			release_type="release"
@@ -254,6 +261,7 @@ archive_and_export() {
 		MARKETING_VERSION="${app_version}" \
 		CURRENT_PROJECT_VERSION="${build_number}" \
 		RELEASE_PRODUCT_NAME_OVERRIDE=DuckDuckGo \
+		"${extra_xcargs}" \
 		2>&1 \
 		| ${log_formatter}
 
@@ -266,7 +274,8 @@ archive_and_export() {
 		-exportPath "${workdir}" \
 		-exportOptionsPlist "${export_options_plist}" \
 		-configuration "${configuration}" \
-		-skipPackagePluginValidation -skipMacroValidation \
+		-skipPackagePluginValidation -skipMacroValidation \ \
+		"${extra_xcargs}" \
 		2>&1 \
 		| ${log_formatter}
 }

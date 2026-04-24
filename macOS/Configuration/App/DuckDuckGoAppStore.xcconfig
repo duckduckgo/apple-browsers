@@ -22,8 +22,8 @@
 // the Review App Store app is built for Test Flight (when UI Tests are run against
 // the DMG, non-sandbox app) or for running locally (when UI Tests are run agains
 // the App Store, sandbox app).
-REVIEW_BUILD_DESTINATION_sandbox = appstore
-REVIEW_BUILD_DESTINATION_non_sandbox = dmg
+REVIEW_BUILD_DESTINATION_sandbox = dmg
+REVIEW_BUILD_DESTINATION_non_sandbox = appstore
 REVIEW_BUILD_DESTINATION = $(REVIEW_BUILD_DESTINATION_$(UI_TESTS_TARGET_APP))
 
 PRODUCT_BUNDLE_IDENTIFIER = $(MAIN_BUNDLE_IDENTIFIER)

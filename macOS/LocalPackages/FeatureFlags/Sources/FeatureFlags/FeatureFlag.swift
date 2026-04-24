@@ -248,10 +248,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213076052926663?focus=true
     case nextStepsListAdvancedCardOrdering
 
-    /// Whether the wide event POST endpoint is enabled
-    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
-    case wideEventPostEndpoint
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
     case crashCollectionLimitCallStackTreeDepth
 
@@ -544,8 +540,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.nextStepsListWidget)))
         case .nextStepsListAdvancedCardOrdering:
             Config(source: .disabled)
-        case .wideEventPostEndpoint:
-            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint)))
         case .crashCollectionLimitCallStackTreeDepth:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth)), supportsLocalOverriding: false)
         case .freeTrialConversionWideEvent:

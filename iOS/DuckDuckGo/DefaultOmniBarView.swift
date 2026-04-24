@@ -704,7 +704,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func updateFireModeAppearance() {
         if fireMode {
-            searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeBackground)
+            searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeCardBackground)
             activeOutlineView.layer.borderColor = UIColor(singleUseColor: .fireModeAccent).cgColor
         } else {
             searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)

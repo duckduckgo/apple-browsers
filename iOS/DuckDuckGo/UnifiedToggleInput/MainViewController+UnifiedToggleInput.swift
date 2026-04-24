@@ -40,6 +40,7 @@ extension MainViewController {
 
         let coordinator = UnifiedToggleInputCoordinator(
             isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            isFireTab: isCurrentTabFireTab(),
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             toggleModeStorage: toggleModeStorage
         )

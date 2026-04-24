@@ -1203,30 +1203,25 @@ final class BrowserTabViewController: NSViewController {
     func generateNativePreviewIfNeeded() {
         guard let tabViewModel = tabViewModel, !tabViewModel.tab.content.displaysContentInWebView, !tabViewModel.isShowingErrorPage else { return }
 
-        var containsHostingView: Bool
+        let containsHostingView: Bool
         switch tabViewModel.tab.content {
         case .onboarding:
             return
         case .newtab:
-            guard tabCollectionViewModel.isBurner else {
+            guard tabCollectionViewModel.isBurner,
+                  let burnerHomePage = burnerHomePageViewController,
+                  let capturedImage = Self.snapshotImage(of: burnerHomePage.view) else {
                 return
             }
-            containsHostingView = false
-        case .settings:
-            containsHostingView = true
-        default:
-            containsHostingView = false
-        }
-
-        if #available(macOS 13.0, *),
-           case .newtab = tabViewModel.tab.content,
-           let burnerHomePage = burnerHomePageViewController,
-           let capturedImage = burnerHomePageSnapshotImage(from: burnerHomePage, size: browserTabView.bounds.size) {
             Task { @MainActor [weak tabViewModel] in
                 guard let tabSnapshots = tabViewModel?.tab.tabSnapshots else { return }
                 await tabSnapshots.renderSnapshot(from: capturedImage)
             }
             return
+        case .settings:
+            containsHostingView = true
+        default:
+            containsHostingView = false
         }
 
         guard let contentSubview = browserTabView.findContentSubview(containsHostingView: containsHostingView) else {
@@ -1243,24 +1238,22 @@ final class BrowserTabViewController: NSViewController {
 
     // MARK: - New Tab page
 
-    /// Captures the live burner home page as an `NSImage` via `ImageRenderer` (macOS 13+).
+    /// Rasterizes a view's already-rendered pixels into an `NSImage`.
     ///
-    /// `ImageRenderer` returns synchronously, so the image reflects the outgoing tab's state at the
-    /// moment of capture — before the tab-switch flow calls `updatePromoState` for the incoming tab.
-    /// This is why we can safely reference the shared `subscriptionPromoViewModel` via
-    /// `snapshotRenderableView` rather than building a disposable one.
+    /// `cacheDisplay(in:to:)` asks the view to paint its current contents into a bitmap synchronously,
+    /// bypassing the window's display cycle. For the burner tab preview, this means the image reflects
+    /// the outgoing tab's state at the moment of capture — before the tab-switch flow calls
+    /// `updatePromoState` for the incoming tab. No fresh SwiftUI view, no disposable viewmodel,
+    /// no `NSHostingView`, no window needed.
     ///
-    /// Uses `scale = 1.0` since the downstream pipeline resizes the image to the tab-preview
-    /// thumbnail width — Retina-scale rendering would just be wasted pixels.
-    @available(macOS 13.0, *)
-    private func burnerHomePageSnapshotImage(from burnerHomePage: BurnerHomePageViewController, size: NSSize) -> NSImage? {
-        let rootView = burnerHomePage.snapshotRenderableView
-            .frame(width: size.width, height: size.height)
-
-        let renderer = ImageRenderer(content: rootView)
-        renderer.proposedSize = .init(width: size.width, height: size.height)
-        renderer.scale = 1.0
-        return renderer.nsImage
+    /// Returns `nil` when the view's bounds are zero-sized or AppKit declines to produce a bitmap rep.
+    static func snapshotImage(of view: NSView) -> NSImage? {
+        guard view.bounds.width > 0, view.bounds.height > 0 else { return nil }
+        guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return nil }
+        view.cacheDisplay(in: view.bounds, to: rep)
+        let image = NSImage(size: view.bounds.size)
+        image.addRepresentation(rep)
+        return image
     }
 
     var burnerHomePageViewController: BurnerHomePageViewController?

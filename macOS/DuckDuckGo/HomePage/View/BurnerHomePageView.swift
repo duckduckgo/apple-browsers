@@ -41,58 +41,49 @@ struct BurnerHomePageView: View {
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
-                BurnerHomePageContentView(promoViewModel: promoViewModel)
-                    .frame(maxWidth: .infinity, minHeight: geometry.size.height)
+                VStack(spacing: Const.contentGap) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.homeFavoritesGhost, style: StrokeStyle(lineWidth: 1.0))
+                            .background(Color(designSystemColor: .surfaceTertiary))
+                            .cornerRadius(12)
+
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                Image(.updatedBurnerWindowHome)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 64, height: 48)
+                                    .padding(.leading, -15)
+                                    .padding(.top, -5)
+
+                                Text(UserText.burnerWindowHeader)
+                                    .font(.system(size: 22, weight: .bold))
+                                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                                    .padding(.leading, -6)
+                            }
+
+                            FeaturesBox()
+                                .padding(.top, 10)
+                        }
+                        .padding(.horizontal, 40)
+                    }
+                    .frame(width: Self.targetWidth, height: Self.height)
+
+                    if promoViewModel.shouldShowPromo {
+                        SubscriptionPromoView(
+                            actionType: promoViewModel.isEligibleForFreeTrial ? .tryForFree : .learnMore,
+                            promoCardWidth: Self.targetWidth,
+                            onButtonTap: { promoViewModel.onPromoButtonTapped() },
+                            onClose: { promoViewModel.dismiss() }
+                        )
+                    }
+                }
+                .padding(.vertical, Const.verticalPadding)
+                .frame(maxWidth: .infinity, minHeight: geometry.size.height)
             }
             .background(backgroundColor)
         }
-    }
-}
-
-struct BurnerHomePageContentView: View {
-
-    @ObservedObject var promoViewModel: SubscriptionPromoViewModel
-
-    var body: some View {
-        VStack(spacing: BurnerHomePageView.Const.contentGap) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.homeFavoritesGhost, style: StrokeStyle(lineWidth: 1.0))
-                    .background(Color(designSystemColor: .surfaceTertiary))
-                    .cornerRadius(12)
-
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack {
-                        Image(.updatedBurnerWindowHome)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 64, height: 48)
-                            .padding(.leading, -15)
-                            .padding(.top, -5)
-
-                        Text(UserText.burnerWindowHeader)
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                            .padding(.leading, -6)
-                    }
-
-                    FeaturesBox()
-                        .padding(.top, 10)
-                }
-                .padding(.horizontal, 40)
-            }
-            .frame(width: BurnerHomePageView.targetWidth, height: BurnerHomePageView.height)
-
-            if promoViewModel.shouldShowPromo {
-                SubscriptionPromoView(
-                    actionType: promoViewModel.isEligibleForFreeTrial ? .tryForFree : .learnMore,
-                    promoCardWidth: BurnerHomePageView.targetWidth,
-                    onButtonTap: { promoViewModel.onPromoButtonTapped() },
-                    onClose: { promoViewModel.dismiss() }
-                )
-            }
-        }
-        .padding(.vertical, BurnerHomePageView.Const.verticalPadding)
     }
 }
 

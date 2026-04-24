@@ -144,16 +144,6 @@ final class SubscriptionPromoViewModel: ObservableObject {
         promoDelegate?.updateVisibility(false)
     }
 
-    func updateForTabPreview(_ state: TabPromoState, isEligibleForFreeTrial: Bool = false) {
-        self.isEligibleForFreeTrial = isEligibleForFreeTrial
-        switch state {
-        case .dismissed, .notEvaluated:
-            shouldShowPromo = false
-        case .evaluated(let shouldShow):
-            shouldShowPromo = shouldShow
-        }
-    }
-
     func updateForTab(_ state: TabPromoState) {
         switch state {
         case .dismissed:

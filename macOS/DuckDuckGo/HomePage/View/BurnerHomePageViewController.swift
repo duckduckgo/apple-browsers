@@ -81,20 +81,4 @@ final class BurnerHomePageViewController: NSViewController {
         subscriptionPromoViewModel.updateForTab(tabPromo?.promoState ?? .notEvaluated)
     }
 
-    /// A SwiftUI view tree suitable for tab-preview snapshot rendering.
-    ///
-    /// Uses `BurnerHomePageContentView` instead of `BurnerHomePageView` because the outer
-    /// `GeometryReader` + `ScrollView` wrapper is unneeded for a static thumbnail and — critically —
-    /// breaks `ImageRenderer`, which cannot resolve content inside those containers and would return
-    /// a blank image. References the *live* `subscriptionPromoViewModel` so the snapshot reflects the
-    /// currently-displayed state at the moment of capture.
-    var snapshotRenderableView: some View {
-        ZStack {
-            Color(designSystemColor: .surfaceCanvas, palette: themeManager.designColorPalette)
-            BurnerHomePageContentView(promoViewModel: subscriptionPromoViewModel)
-                .environmentObject(appearancePreferences)
-                .environmentObject(themeManager)
-        }
-    }
-
 }

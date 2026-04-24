@@ -314,6 +314,43 @@ class TabSnapshotExtensionTests: XCTestCase {
         XCTAssertEqual(mockWebViewSnapshotRenderer.lastDelay, 0.1)
     }
 
+    // MARK: - renderSnapshot(from image:)
+
+    @MainActor
+    func testWhenRenderSnapshotFromImage_AndImageHasValidSize_ThenSnapshotIsSetAndResizedToPreviewWidth() async throws {
+        let image = NSImage(size: NSSize(width: 1200, height: 800))
+
+        await tabSnapshotExtension.renderSnapshot(from: image)
+
+        let stored = try XCTUnwrap(tabSnapshotExtension.snapshot)
+        XCTAssertEqual(stored.size.width, CGFloat(TabPreviewWindowController.width))
+    }
+
+    @MainActor
+    func testWhenRenderSnapshotFromImage_AndImageHasZeroWidth_ThenSnapshotIsCleared() async {
+        tabSnapshotExtension.setIdentifier(UUID())
+        let priming = NSImage(size: NSSize(width: 1200, height: 800))
+        await tabSnapshotExtension.renderSnapshot(from: priming)
+        XCTAssertNotNil(tabSnapshotExtension.snapshot)
+
+        let degenerate = NSImage(size: NSSize(width: 0, height: 800))
+        await tabSnapshotExtension.renderSnapshot(from: degenerate)
+
+        XCTAssertNil(tabSnapshotExtension.snapshot)
+    }
+
+    @MainActor
+    func testWhenRenderSnapshotFromImage_AndImageHasZeroHeight_ThenSnapshotIsCleared() async {
+        let priming = NSImage(size: NSSize(width: 1200, height: 800))
+        await tabSnapshotExtension.renderSnapshot(from: priming)
+        XCTAssertNotNil(tabSnapshotExtension.snapshot)
+
+        let degenerate = NSImage(size: NSSize(width: 1200, height: 0))
+        await tabSnapshotExtension.renderSnapshot(from: degenerate)
+
+        XCTAssertNil(tabSnapshotExtension.snapshot)
+    }
+
     // MARK: - shouldClearSnapshotOnDeinit
 
     @MainActor

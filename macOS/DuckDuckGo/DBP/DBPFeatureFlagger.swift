@@ -53,10 +53,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
     }
 
-    var isWideEventPOSTEndpointOn: Bool {
-        featureFlagger.isFeatureOn(.wideEventPostEndpoint)
-    }
-
     init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
     }
@@ -79,14 +75,7 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
 
 extension DBPFeatureFlagger: WideEventFeatureFlagProviding {
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-            let buildType = StandardApplicationBuildType()
-            if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
-                return false
-            } else {
-                return featureFlagger.isFeatureOn(.wideEventPostEndpoint)
-            }
-        }
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }

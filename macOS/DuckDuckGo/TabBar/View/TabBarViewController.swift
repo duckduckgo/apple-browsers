@@ -89,7 +89,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var aiChatButtonHoverCancellable: AnyCancellable?
     private var duckAIChromeButtonsVisibilityCancellable: AnyCancellable?
     private var didPerformInitialChromeSidebarApply = false
-    private var duckAIChromeDividerShowsFullHeight: Bool?
     private var duckAIChromeDividerInsetConstraint: NSLayoutConstraint?
     private var duckAIChromeDividerFullConstraint: NSLayoutConstraint?
     private var currentAIChatPresentationMode: AIChatPresentationMode = .hidden
@@ -691,8 +690,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                             duckAIChromeSidebarButton?.isMouseDown == true
         )
         let showFullHeight = isInteracting || currentAIChatPresentationMode != .hidden
-        guard duckAIChromeDividerShowsFullHeight != showFullHeight else { return }
-        duckAIChromeDividerShowsFullHeight = showFullHeight
 
         // Always deactivate the outgoing constraint before activating the incoming one so that
         // both height constraints on the divider are never simultaneously active.
@@ -763,7 +760,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         self.aiChatButtonHoverCancellable = nil
         self.duckAIChromeDividerInsetConstraint = nil
         self.duckAIChromeDividerFullConstraint = nil
-        self.duckAIChromeDividerShowsFullHeight = nil
     }
 
     private func enableDuckAIChromeContextMenuOnTabBar() {

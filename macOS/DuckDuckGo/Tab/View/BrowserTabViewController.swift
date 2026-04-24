@@ -788,79 +788,21 @@ final class BrowserTabViewController: NSViewController {
             insertLayeredDialogPanelInStackView(panel)
         }
 
-        let oldBubble = layeredDialogBubbleHostingController
-        let oldBackground = layeredDialogBackgroundHostingController
+        layeredDialogBubbleHostingController?.view.removeFromSuperview()
+        layeredDialogBubbleHostingController = nil
+        layeredDialogBackgroundHostingController?.view.removeFromSuperview()
+        layeredDialogBackgroundHostingController = nil
 
-        if oldBubble != nil || oldBackground != nil {
-            // Detach refs now so a re-entrant present/teardown call doesn't touch the old
-            // controllers again mid-animation.
-            layeredDialogBubbleHostingController = nil
-            layeredDialogBackgroundHostingController = nil
-
-            let phase = OnboardingRebranding.Layout.screenTransitionPhaseDuration
-            NSAnimationContext.runAnimationGroup({ context in
-                context.duration = phase
-                oldBubble?.view.animator().alphaValue = 0
-                oldBackground?.view.animator().alphaValue = 0
-            }, completionHandler: { [weak self] in
-                oldBubble?.view.removeFromSuperview()
-                oldBackground?.view.removeFromSuperview()
-                self?.installLayeredContent(layered,
-                                            in: bubbleContainer,
-                                            backgroundContainer: backgroundContainer,
-                                            fadeIn: true)
-            })
-        } else {
-            installLayeredContent(layered,
-                                  in: bubbleContainer,
-                                  backgroundContainer: backgroundContainer,
-                                  fadeIn: false)
-        }
+        installLayeredContent(layered, in: bubbleContainer, backgroundContainer: backgroundContainer)
     }
 
     private func installLayeredContent(_ layered: LayeredDialogViews,
                                        in bubbleContainer: NSView,
-                                       backgroundContainer: NSView,
-                                       fadeIn: Bool) {
-        let initialAlpha: CGFloat = fadeIn ? 0 : 1
-        let bubble = installBubbleHostingController(layered.bubble, in: bubbleContainer, alpha: initialAlpha)
-        let background = installBackgroundHostingController(layered.background, in: backgroundContainer, alpha: initialAlpha)
-
-        if fadeIn {
-            let phase = OnboardingRebranding.Layout.screenTransitionPhaseDuration
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = phase
-                context.allowsImplicitAnimation = true
-                bubble.view.animator().alphaValue = 1
-                background.view.animator().alphaValue = 1
-                self.containerStackView.layoutSubtreeIfNeeded()
-                self.webViewContainer?.layoutSubtreeIfNeeded()
-            }
-            playBackgroundSlideUp(on: background.view, in: backgroundContainer, duration: phase)
-        } else {
-            containerStackView.layoutSubtreeIfNeeded()
-            webViewContainer?.layoutSubtreeIfNeeded()
-        }
-    }
-
-    /// Slides the background layer up from below its final position while its alpha is fading in,
-    /// producing a bottom-up reveal. Applied consistently to Flow A (screen swaps via
-    /// `installLayeredContent`) and Flow B (inline background crossfades via
-    /// `transitionLayeredBackground`) so the motion is identical everywhere.
-    private func playBackgroundSlideUp(on view: NSView, in container: NSView, duration: CFTimeInterval) {
-        view.wantsLayer = true
-        guard let layer = view.layer else { return }
-        // Layout first so we can read the container's height; fall back to a reasonable offset
-        // if the container hasn't been sized yet.
-        container.layoutSubtreeIfNeeded()
-        let offset = max(container.bounds.height, 120)
-        let startTransform = CATransform3DMakeTranslation(0, -offset, 0)
-        let animation = CABasicAnimation(keyPath: "transform")
-        animation.fromValue = NSValue(caTransform3D: startTransform)
-        animation.toValue = NSValue(caTransform3D: CATransform3DIdentity)
-        animation.duration = duration
-        animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        layer.add(animation, forKey: "backgroundSlideUp")
+                                       backgroundContainer: NSView) {
+        installBubbleHostingController(layered.bubble, in: bubbleContainer, alpha: 1)
+        installBackgroundHostingController(layered.background, in: backgroundContainer, alpha: 1)
+        containerStackView.layoutSubtreeIfNeeded()
+        webViewContainer?.layoutSubtreeIfNeeded()
     }
 
     private func ensureLayeredDialogPanel() -> NSView {
@@ -952,33 +894,10 @@ final class BrowserTabViewController: NSViewController {
         return controller
     }
 
-    /// Swaps the background layer with a fade-out → fade-in sequence. Used when a dialog
-    /// performs an inline content swap (searchDone→tryASite, trackers→fire) — the bubble
-    /// hosting controller stays put and handles its own SwiftUI transition, and this runs
-    /// alongside it to match timing.
     private func transitionLayeredBackground(_ backgroundView: AnyView, in container: NSView) {
-        let oldController = layeredDialogBackgroundHostingController
+        layeredDialogBackgroundHostingController?.view.removeFromSuperview()
         layeredDialogBackgroundHostingController = nil
-
-        guard let oldController else {
-            installBackgroundHostingController(backgroundView, in: container, alpha: 1)
-            return
-        }
-
-        let phase = OnboardingRebranding.Layout.screenTransitionPhaseDuration
-        NSAnimationContext.runAnimationGroup({ context in
-            context.duration = phase
-            oldController.view.animator().alphaValue = 0
-        }, completionHandler: { [weak self] in
-            oldController.view.removeFromSuperview()
-            guard let self else { return }
-            let newController = self.installBackgroundHostingController(backgroundView, in: container, alpha: 0)
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = phase
-                newController.view.animator().alphaValue = 1
-            }
-            self.playBackgroundSlideUp(on: newController.view, in: container, duration: phase)
-        })
+        installBackgroundHostingController(backgroundView, in: container, alpha: 1)
     }
 
     private func teardownLayeredDialogPanel() {

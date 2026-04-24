@@ -252,7 +252,10 @@ extension MainViewController {
 
     func restorePendingDuckAIAnswerStepIfNeeded() {
         guard featureFlagger.isFeatureOn(.onboardingDuckAIQueryExperiment) else {
-            DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
+            // Experiment steps are stale when the flag is off, so clear them to avoid resuming into a dead screen.
+            if [.duckAIAnswerStep, .duckAIQueryExperimentSelection].contains(duckAIOnboardingResumeStepStore.resumeStep) {
+                DuckAIOnboardingResumeCheckpointStore.clearAll(in: duckAIOnboardingResumeStepStore)
+            }
             return
         }
         guard duckAIOnboardingResumeStepStore.resumeStep == .duckAIAnswerStep,

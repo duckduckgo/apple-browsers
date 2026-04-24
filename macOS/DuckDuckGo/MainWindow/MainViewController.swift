@@ -314,7 +314,8 @@ final class MainViewController: NSViewController {
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,
             tabCollectionViewModel: tabCollectionViewModel,
-            suggestionsReader: suggestionsReader
+            suggestionsReader: suggestionsReader,
+            preferences: NSApp.delegateTyped.aiChatPreferencesPersistor
         )
 
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(

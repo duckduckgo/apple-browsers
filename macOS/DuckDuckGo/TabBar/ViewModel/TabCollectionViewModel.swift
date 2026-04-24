@@ -787,13 +787,14 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        let tabCopy = AnyTab.unloaded(UnloadedTab(
+        let tabCopy = Tab(
             content: tab.content.loadedFromCache(),
             title: tab.title,
             favicon: tab.favicon,
-            burnerMode: tab.burnerMode,
-            interactionStateData: tab.interactionStateData
-        ))
+            interactionStateData: tab.interactionStateData,
+            shouldLoadInBackground: true,
+            burnerMode: tab.burnerMode
+        )
         let newIndex = tabIndex.makeNext()
 
         tabCollection(for: tabIndex)?.insert(tabCopy, at: newIndex.item)

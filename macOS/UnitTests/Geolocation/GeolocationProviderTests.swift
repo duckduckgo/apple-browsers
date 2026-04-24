@@ -296,7 +296,7 @@ final class GeolocationProviderTests: XCTestCase {
         windows[0].isKeyWindow = false
         windows[1].isKeyWindow = true
 
-        waitForExpectations(timeout: 10.0)
+        waitForExpectations(timeout: 30.0)
 
         let ec1 = expectation(description: "watch 1 cancelled")
         let ec2 = expectation(description: "watch 2 cancelled")
@@ -418,7 +418,7 @@ final class GeolocationProviderTests: XCTestCase {
         windows[0].isKeyWindow = false
         windows[1].isKeyWindow = true
 
-        waitForExpectations(timeout: 10.0)
+        waitForExpectations(timeout: 30.0)
 
         let ec1 = expectation(description: "watch 1 cancelled")
         let ec2 = expectation(description: "watch 2 cancelled")

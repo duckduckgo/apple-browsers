@@ -1,0 +1,160 @@
+// Native storage pixels for Duck.ai.
+// The migration_done_{key}_u/_count/_blank_count set mirrors Android's
+// per-key migration telemetry. The duck-ai_native-storage_* set tracks init,
+// migration lifecycle, and error events across Settings (Entries), Chats, and Files.
+{
+    "m_mac_duck-ai_native-storage_migration_done_chats_u": {
+        "description": "Fires once per install when Duck.ai migration from web to native storage completes for chats",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_duck-ai_native-storage_migration_done_chats_count": {
+        "description": "Count of Duck.ai chats migration completion notifications from the web frontend",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_duck-ai_native-storage_migration_done_files_u": {
+        "description": "Fires once per install when Duck.ai migration from web to native storage completes for files",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_duck-ai_native-storage_migration_done_files_count": {
+        "description": "Count of Duck.ai files migration completion notifications from the web frontend",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_duck-ai_native-storage_migration_done_entries_u": {
+        "description": "Fires once per install when Duck.ai migration from web to native storage completes for entries (general-purpose key-value store)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_duck-ai_native-storage_migration_done_entries_count": {
+        "description": "Count of Duck.ai entries migration completion notifications from the web frontend",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_duck-ai_native-storage_migration_done_blank_count": {
+        "description": "Count of Duck.ai markMigrationDone messages received with a missing or blank key, indicating a protocol error from the frontend",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_duck-ai_native-storage_init_success": {
+        "description": "Fires when DuckAiNativeStorageProvider initializes successfully",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_duck-ai_native-storage_init_error": {
+        "description": "Fires when DuckAiNativeStorageProvider init fails (DB or directory creation)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_duck-ai_native-storage_migration_started": {
+        "description": "Fires when the web layer calls markMigrationDone (migration was attempted)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_duck-ai_native-storage_migration_already-done": {
+        "description": "Fires when isMigrationDone returns true (page load found migration already complete)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_duck-ai_native-storage_migration_error": {
+        "description": "Fires when isMigrationDone or markMigrationDone throws",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_duck-ai_native-storage_settings-put_error": {
+        "description": "Fires when putEntry (Settings) fails",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_duck-ai_native-storage_settings-get_error": {
+        "description": "Fires when getEntry or getAllEntries (Settings) fails",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_duck-ai_native-storage_settings-delete_error": {
+        "description": "Fires when deleteEntry, deleteAllEntries, or replaceAllEntries (Settings) fails",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_duck-ai_native-storage_chat-put_error": {
+        "description": "Fires when putChat or putChats fails",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_duck-ai_native-storage_chat-get_error": {
+        "description": "Fires when getChat or getAllChats fails",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_duck-ai_native-storage_chat-delete_error": {
+        "description": "Fires when deleteChat or deleteAllChats fails",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_duck-ai_native-storage_file-put_error": {
+        "description": "Fires when putFile fails",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_duck-ai_native-storage_file-get_error": {
+        "description": "Fires when getFile fails",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_duck-ai_native-storage_file-list_error": {
+        "description": "Fires when listFiles fails",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_duck-ai_native-storage_file-delete_error": {
+        "description": "Fires when deleteFile, deleteFiles (by chatId), or deleteAllFiles fails",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    }
+}

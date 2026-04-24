@@ -1164,6 +1164,11 @@ final class AddressBarViewController: NSViewController {
 
         guard !selectionState.isInAIChatMode else { return event }
 
+        if self.view.window?.firstResponder !== addressBarTextField.currentEditor() {
+            self.addressBarButtonsViewController?.bookmarkButton.isHidden = true
+            self.addressBarTextField.makeMeFirstResponder()
+        }
+
         // The event location is not a button so we can forward the event to the textfield
         addressBarTextField.rightMouseDown(with: event)
         return nil

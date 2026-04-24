@@ -50,6 +50,7 @@ let package = Package(
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "BrowserServicesKit"),
                 "DesignResourcesKit",
                 "DesignResourcesKitIcons",
                 "UIComponents",
@@ -66,7 +67,9 @@ let package = Package(
             name: "OnboardingTests",
             dependencies: [
                 "Onboarding",
-                "DesignResourcesKit"
+                "DesignResourcesKit",
+                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKitTestingUtilities", package: "BrowserServicesKit")
             ]
         )
     ]

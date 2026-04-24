@@ -59,6 +59,9 @@ final class SaveLoginViewModel: ObservableObject {
     private let featureFlagger: FeatureFlagger
     private let biometryType: LABiometryType
 
+    private(set) var dismissExperimentCohort: FeatureFlag.AutofillOnboardingDismissExperimentCohort?
+    private let experimentPixels: AutofillOnboardingExperimentPixelFiring
+
     private var dismissButtonWasPressed = false
     var didSave = false
     
@@ -66,10 +69,14 @@ final class SaveLoginViewModel: ObservableObject {
 
     var minHeight: CGFloat {
         switch layoutType {
-        case .newUser, .newUserVariant1, .newUserVariant2, .newUserVariant3, .saveLogin:
+        case .newUser:
+            return AutofillViews.newUserMinHeight
+        case .saveLogin:
             return AutofillViews.saveLoginMinHeight
-        case .savePassword, .updatePassword:
+        case .savePassword:
             return AutofillViews.savePasswordMinHeight
+        case .updatePassword:
+            return AutofillViews.updatePasswordMinHeight
         case .updateUsername:
             return AutofillViews.updateUsernameMinHeight
         }
@@ -131,19 +138,8 @@ final class SaveLoginViewModel: ObservableObject {
         }
         
         if autofillFirstTimeUser {
-            guard let cohort = featureFlagger.resolveCohort(for: FeatureFlag.autofillOnboardingExperiment) as? FeatureFlag.AutofillOnboardingExperimentCohort else {
-                return .newUser
-            }
-            switch cohort {
-            case .control:
-                return .newUser
-            case .variant1:
-                return .newUserVariant1
-            case .variant2:
-                return .newUserVariant2
-            case .variant3:
-                return .newUserVariant3
-            }
+            resolveDismissExperimentCohort()
+            return .newUser
         }
         
         if credentialManager.isPasswordOnlyAccount {
@@ -166,17 +162,23 @@ final class SaveLoginViewModel: ObservableObject {
     internal init(credentialManager: SaveAutofillLoginManagerProtocol,
                   appSettings: AppSettings,
                   featureFlagger: FeatureFlagger,
+                  experimentPixels: AutofillOnboardingExperimentPixelFiring = AutofillOnboardingExperimentPixelReporter(),
                   layoutType: SaveLoginView.LayoutType? = nil,
                   domainLastShownOn: String? = nil,
                   biometryType: LABiometryType = LAContext().biometryType) {
         self.credentialManager = credentialManager
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
+        self.experimentPixels = experimentPixels
         self.attributedLayoutType = layoutType
         self.domainLastShownOn = domainLastShownOn
         self.biometryType = biometryType
     }
-    
+
+    private func resolveDismissExperimentCohort() {
+        dismissExperimentCohort = featureFlagger.resolveCohort(for: FeatureFlag.autofillOnboardingDismissExperiment) as? FeatureFlag.AutofillOnboardingDismissExperimentCohort
+    }
+
     private func updateRejectionCountIfNeeded() {
         // If the prompt has already been shown on this domain (that we know of), we don't want to increment the rejection count
         if let domainLastShownOn = domainLastShownOn, domainLastShownOn == accountDomain {
@@ -223,6 +225,7 @@ final class SaveLoginViewModel: ObservableObject {
     func neverPrompt() {
         didSave = true
         updateRejectionCountIfNeeded()
+        experimentPixels.fireDismissTap()
         delegate?.saveLoginViewModelNeverPrompt(self)
         showDisableAutofillPromptIfNeeded()
     }

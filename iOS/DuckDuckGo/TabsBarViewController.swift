@@ -79,6 +79,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     var fireModeCapability: FireModeCapable? {
         didSet {
             configureTabSwitcherLongPressMenu()
+            configureAddTabButtonLongPressMenu()
         }
     }
     private weak var tabsModel: TabsModelManaging?
@@ -311,6 +312,40 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         tabSwitcherButton.showMenuOnLongPress = fireModeCapability?.isFireModeEnabled ?? false
     }
 
+    private func configureAddTabButtonLongPressMenu() {
+        guard fireModeCapability?.isFireModeEnabled ?? false else {
+            addTabButton.menu = nil
+            return
+        }
+
+        let menu = UIMenu(children: [
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                Pixel.fire(pixel: .tabLongPressMenuDisplayed, withAdditionalParameters: [
+                    PixelParameters.source: "tabs_bar"
+                ])
+                completion([
+                    UIAction(title: UserText.actionNewFireTab,
+                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
+                                 Pixel.fire(pixel: .tabLongPressMenuNewFireTab, withAdditionalParameters: [
+                                     PixelParameters.source: "tabs_bar"
+                                 ])
+                                 self?.requestNewTab(type: .fire)
+                             },
+                    UIAction(title: UserText.actionNewTab,
+                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
+                                 Pixel.fire(pixel: .tabLongPressMenuNewNormalTab, withAdditionalParameters: [
+                                     PixelParameters.source: "tabs_bar"
+                                 ])
+                                 self?.requestNewTab(type: .normal)
+                             }
+                ])
+            }
+        ])
+
+        addTabButton.menu = menu
+        addTabButton.showsMenuAsPrimaryAction = false
+    }
+
     private func createButton(image: UIImage) -> UIButton {
         let button = BrowserChromeButton()
         button.setImage(image)
@@ -463,12 +498,12 @@ extension MainViewController: TabsBarDelegate {
     }
 
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController) {
-        tabManager.setBrowsingMode(.fire)
+        tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
         newTab()
     }
-    
+
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController) {
-        tabManager.setBrowsingMode(.normal)
+        tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         newTab()
     }
 

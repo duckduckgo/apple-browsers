@@ -106,7 +106,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             }
             duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
                 handler: duckAiNativeStorageHandler,
-                originRules: originRules
+                originRules: originRules,
+                pixelFiring: DuckAiNativeStoragePixelAdapter()
             )
         } else {
             duckAiNativeStorageUserScript = nil

@@ -385,6 +385,9 @@ class TabSwitcherViewController: UIViewController {
         pagingScrollView.delegate = self
         pagingScrollView.translatesAutoresizingMaskIntoConstraints = false
         pagingScrollView.contentInsetAdjustmentBehavior = .never
+        if #available(iOS 17.0, *) {
+            pagingScrollView.allowsKeyboardScrolling = false
+        }
 
         normalPageContainer = UIView()
         normalPageContainer.translatesAutoresizingMaskIntoConstraints = false

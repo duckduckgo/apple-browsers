@@ -16,9 +16,15 @@
 #include "AppTargetsBase.xcconfig"
 #include "../AppStore.xcconfig"
 #include "ManualAppStoreRelease.xcconfig"
+#include "../UITestsTargetBinary.xcconfig"
 
-REVIEW_BUILD_DESTINATION = appstore
-#include? "../../LocalOverridesReviewBuildDestination.xcconfig"
+// UI_TESTS_TARGET_APP, defined in UITestsTargetBinary.xcconfig controls whether
+// the Review App Store app is built for Test Flight (when UI Tests are run against
+// the DMG, non-sandbox app) or for running locally (when UI Tests are run agains
+// the App Store, sandbox app).
+REVIEW_BUILD_DESTINATION_sandbox = appstore
+REVIEW_BUILD_DESTINATION_non_sandbox = dmg
+REVIEW_BUILD_DESTINATION = $(REVIEW_BUILD_DESTINATION_$(UI_TESTS_TARGET_APP))
 
 PRODUCT_BUNDLE_IDENTIFIER = $(MAIN_BUNDLE_IDENTIFIER)
 
@@ -27,16 +33,16 @@ CODE_SIGN_ENTITLEMENTS[config=Debug][arch=*][sdk=*] = DuckDuckGo/DuckDuckGoAppSt
 CODE_SIGN_ENTITLEMENTS[config=CI][arch=*][sdk=*] = DuckDuckGo/DuckDuckGoAppStoreCI.entitlements
 CODE_SIGN_ENTITLEMENTS[config=Alpha][arch=*][sdk=*] = DuckDuckGo/DuckDuckGoAppStoreAlpha.entitlements
 
-CODE_SIGN_ENTITLEMENTS_review_dmg = DuckDuckGo/DuckDuckGoAppStoreReviewDMG.entitlements
 CODE_SIGN_ENTITLEMENTS_review_appstore = DuckDuckGo/DuckDuckGoAppStoreReview.entitlements
+CODE_SIGN_ENTITLEMENTS_review_dmg = DuckDuckGo/DuckDuckGoAppStoreReviewDMG.entitlements
 CODE_SIGN_ENTITLEMENTS[config=Review][arch=*][sdk=*] = $(CODE_SIGN_ENTITLEMENTS_review_$(REVIEW_BUILD_DESTINATION))
 
 CODE_SIGN_IDENTITY[sdk=macosx*] = 3rd Party Mac Developer Application
 CODE_SIGN_IDENTITY[config=Debug][sdk=macosx*] = Apple Development
 CODE_SIGN_IDENTITY[config=CI][sdk=macosx*] = Developer ID Application
 
-CODE_SIGN_IDENTITY_review_dmg = Developer ID Application
 CODE_SIGN_IDENTITY_review_appstore = 3rd Party Mac Developer Application
+CODE_SIGN_IDENTITY_review_dmg = Developer ID Application
 CODE_SIGN_IDENTITY[config=Review][sdk=macosx*] = $(CODE_SIGN_IDENTITY_review_$(REVIEW_BUILD_DESTINATION))
 
 ENABLE_APP_SANDBOX = YES
@@ -54,8 +60,8 @@ PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] = match Direct com.duckdu
 PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match AppStore com.duckduckgo.mobile.ios macos
 PROVISIONING_PROFILE_SPECIFIER[config=Alpha][sdk=macosx*] = match AppStore com.duckduckgo.mobile.ios.alpha macos
 
-PROVISIONING_PROFILE_SPECIFIER_review_dmg = match Direct com.duckduckgo.mobile.ios.review macos
 PROVISIONING_PROFILE_SPECIFIER_review_appstore = match AppStore com.duckduckgo.mobile.ios.review macos
+PROVISIONING_PROFILE_SPECIFIER_review_dmg = match Direct com.duckduckgo.mobile.ios.review macos
 PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = $(PROVISIONING_PROFILE_SPECIFIER_review_$(REVIEW_BUILD_DESTINATION))
 
 // To install to /Applications/DEBUG/ for VPN testing, set DEPLOYMENT_LOCATION to YES

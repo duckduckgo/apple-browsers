@@ -265,12 +265,12 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         ]
         let expectation = expectation(description: "submitChatCalled")
         var forwardedEffort: String?
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, reasoningEffort in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, _, _, reasoningEffort in
             forwardedEffort = reasoningEffort
             expectation.fulfill()
         }
 
-        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "reasoning-model", images: nil, reasoningEffort: "medium")
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "reasoning-model", images: nil, mode: nil, toolChoice: nil, reasoningEffort: "medium")
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
         await fulfillment(of: [expectation], timeout: 1)
 
@@ -289,12 +289,12 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         ]
         let expectation = expectation(description: "submitChatCalled")
         var forwardedEffort: String?
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, reasoningEffort in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, _, _, reasoningEffort in
             forwardedEffort = reasoningEffort
             expectation.fulfill()
         }
 
-        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "limited-model", images: nil, reasoningEffort: "medium")
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "limited-model", images: nil, mode: nil, toolChoice: nil, reasoningEffort: "medium")
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
         await fulfillment(of: [expectation], timeout: 1)
 
@@ -313,12 +313,12 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         ]
         let expectation = expectation(description: "submitChatCalled")
         var forwardedEffort: String?
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, reasoningEffort in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, _, _, reasoningEffort in
             forwardedEffort = reasoningEffort
             expectation.fulfill()
         }
 
-        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "reasoning-model", images: nil, reasoningEffort: "low")
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "reasoning-model", images: nil, mode: nil, toolChoice: nil, reasoningEffort: "low")
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
         await fulfillment(of: [expectation], timeout: 1)
 

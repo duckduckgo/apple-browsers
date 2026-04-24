@@ -58,9 +58,6 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     var messageHandling: AIChatMessageHandling { get }
 
-    /// Returns whether the current context is a fire window. Set by the owning tab
-    /// at wiring time — avoids walking the view hierarchy from a script message,
-    /// which is unreliable (webview may be detached, or hosted in a non-MainWindow).
     var isFireWindowProvider: (() -> Bool)? { get set }
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)

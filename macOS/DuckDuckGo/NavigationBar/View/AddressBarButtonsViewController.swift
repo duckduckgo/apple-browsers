@@ -1029,6 +1029,16 @@ final class AddressBarButtonsViewController: NSViewController {
         && !isAIChatPanelActive
     }
 
+    /// Whether the privacy shield indicators should be suppressed because the user is interacting with
+    /// the address bar, or because the duck.ai panel is covering it (its prompt overlay would otherwise
+    /// clash with shield rendering at the overlay edges).
+    private var shouldHideShieldsForInputOrAIChat: Bool {
+        if isAIChatPanelActive { return true }
+        if textFieldValue?.isText ?? false { return true }
+        if isTextFieldEditorFirstResponder { return true }
+        return false
+    }
+
     private func updatePrivacyEntryPointIcon() {
         let privacyShieldStyle = theme.addressBarStyleProvider.privacyShieldStyleProvider
         guard AppVersion.runType.requiresEnvironment else { return }
@@ -1039,23 +1049,9 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        /// Hide shields while the duck.ai panel is up — the panel's own prompt overlay takes the address
-        /// bar area and any shield rendering would bleed through at the overlay edges.
-        if isAIChatPanelActive {
-            shieldAnimationView.isHidden = true
-            shieldDotAnimationView.isHidden = true
-            return
-        }
-
-        // Hide shields when user is typing in the address bar
-        if textFieldValue?.isText ?? false {
-            shieldAnimationView.isHidden = true
-            shieldDotAnimationView.isHidden = true
-            return
-        }
-
-        // Hide shields when address bar is focused
-        if isTextFieldEditorFirstResponder {
+        // Hide shields when the duck.ai panel is up (its prompt overlay would clash with shield rendering),
+        // when the user is typing in the address bar, or when the address bar is focused.
+        if shouldHideShieldsForInputOrAIChat {
             shieldAnimationView.isHidden = true
             shieldDotAnimationView.isHidden = true
             return

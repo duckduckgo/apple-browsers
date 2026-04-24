@@ -300,10 +300,10 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func restoreValueIfPossible(newSelectedTabViewModel: TabViewModel) {
-        /// Tab-switch restore must not wipe the incoming tab's duck.ai mode / tool mode / attachments — the controller
-        /// sink that fires earlier in this same emission chain just restored those from the tab's shared state, and the
-        /// `updateValue` path below (via `sharedTextState?.reset()`) would otherwise clear them again right afterwards
-        /// whenever the incoming tab had no user-typed address-bar value to restore.
+        // Tab-switch restore must not wipe the incoming tab's duck.ai mode / tool mode / attachments — the controller
+        // sink that fires earlier in this same emission chain just restored those from the tab's shared state, and the
+        // `updateValue` path below (via `sharedTextState?.reset()`) would otherwise clear them again right afterwards
+        // whenever the incoming tab had no user-typed address-bar value to restore.
         // save current (possibly modified) value into the old TabViewModel when selecting another Tab
         if let oldSelectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel {
             guard oldSelectedTabViewModel !== newSelectedTabViewModel else {

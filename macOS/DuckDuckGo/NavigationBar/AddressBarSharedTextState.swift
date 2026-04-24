@@ -82,13 +82,14 @@ final class AddressBarSharedTextState: ObservableObject {
         aiChatToolMode = mode
     }
 
-    /// Replaces the duck.ai attachment list for this tab. Skips the write when the attachments are
-    /// already equivalent by id to avoid subscription churn when a tab-switch restore hands back the
-    /// same list we just wrote.
+    /// Replaces the duck.ai attachment list for this tab. Skips the write when both the id AND the
+    /// image instance are unchanged — id alone isn't enough because `replaceAttachment` swaps in a
+    /// resized `NSImage` while keeping the same id, and we need that resized version to land in
+    /// shared state so a subsequent tab switch restores the resized image, not the placeholder.
     func setAIChatAttachments(_ attachments: [AIChatImageAttachment]) {
-        let sameIds = attachments.count == aiChatAttachments.count
-            && zip(attachments, aiChatAttachments).allSatisfy { $0.id == $1.id }
-        guard !sameIds else { return }
+        let unchanged = attachments.count == aiChatAttachments.count
+            && zip(attachments, aiChatAttachments).allSatisfy { $0.id == $1.id && $0.image === $1.image }
+        guard !unchanged else { return }
         aiChatAttachments = attachments
     }
 

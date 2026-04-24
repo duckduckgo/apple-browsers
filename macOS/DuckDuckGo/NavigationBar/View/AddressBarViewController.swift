@@ -1096,14 +1096,7 @@ final class AddressBarViewController: NSViewController {
             // In focused AI chat mode, only block clicks specifically on the address bar text fields
             // Allow clicks elsewhere (like on the AI chat text view).
             if selectionState == .activeWithAIChat {
-                let isClickOnAddressBarTextField = hitView === addressBarTextField ||
-                hitView?.isDescendant(of: addressBarTextField) == true ||
-                hitView === passiveTextField ||
-                hitView?.isDescendant(of: passiveTextField) == true
-                if isClickOnAddressBarTextField {
-                    return nil
-                }
-                return event
+                return isHitViewInsideAddressBarTextFields(hitView) ? nil : event
             }
 
             // Unfocused duck.ai renders as a single-line `passiveTextField`; clicking it should refocus into
@@ -1327,6 +1320,16 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         view.window?.makeFirstResponder(nil)
         delegate?.resizeAddressBarForHomePage(self)
         delegate?.addressBarViewControllerDidResignFocusKeepingAIChatMode(self)
+    }
+
+    /// Whether a hit-test result points at one of the address bar's text fields (active or passive).
+    /// Used by `mouseDown` in focused AI-chat mode to block clicks on the address bar while letting
+    /// clicks on the AI chat text view through.
+    private func isHitViewInsideAddressBarTextFields(_ hitView: NSView?) -> Bool {
+        hitView === addressBarTextField
+            || hitView?.isDescendant(of: addressBarTextField) == true
+            || hitView === passiveTextField
+            || hitView?.isDescendant(of: passiveTextField) == true
     }
 
     /// Transitions from unfocused duck.ai mode (`.inactiveWithAIChat`) back to focused duck.ai mode (`.activeWithAIChat`):

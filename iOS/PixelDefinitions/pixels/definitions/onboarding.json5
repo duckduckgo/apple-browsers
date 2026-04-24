@@ -61,5 +61,19 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_onboarding_chat-path_try-visit-site_unique": {
+        "description": "Fires when the Duck.ai chat-path 'try visiting a site' NTP prompt is shown for the first time",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_onboarding_chat-path_trackers-blocked_unique": {
+        "description": "Fires when the Duck.ai chat-path trackers-blocked browsing dialog is shown for the first time",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

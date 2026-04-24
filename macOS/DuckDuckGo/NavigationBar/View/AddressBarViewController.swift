@@ -927,7 +927,11 @@ final class AddressBarViewController: NSViewController {
         let isAddressBarFocused = view.window?.firstResponder == addressBarTextField.currentEditor()
         let adjustedMinX: CGFloat = (!self.isSelected || self.mode.isEditing) ? minX : Constants.defaultActiveTextFieldMinX
 
-        if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
+        /// The `-5 / -6` offset compensates for the leading padding of the search icon so the typed text sits
+        /// flush against it. With the redesign, editing states (`.text`, `.url`, `.openTabSuggestion`, `.aiChat`)
+        /// no longer render a leading icon regardless of the `aiChatOmnibarToggle` flag — skip the offset so the
+        /// text isn't pushed past the (now-narrower) buttons container's left edge on that path.
+        if theme.addressBarStyleProvider.shouldShowNewSearchIcon && !self.mode.isEditing {
             self.activeTextFieldMinXConstraint.constant = isAddressBarFocused ? adjustedMinX - 5 : adjustedMinX - 6
         } else {
             self.activeTextFieldMinXConstraint.constant = adjustedMinX

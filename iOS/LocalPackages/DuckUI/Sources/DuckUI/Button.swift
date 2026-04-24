@@ -145,7 +145,7 @@ public struct SecondaryDestructiveButtonStyle: ButtonStyle {
                     .stroke(borderColor, lineWidth: 1)
             )
             .cornerRadius(Consts.cornerRadius)
-            .contentShape(Rectangle())
+            .contentShape(RoundedRectangle(cornerRadius: Consts.cornerRadius))
     }
 }
 

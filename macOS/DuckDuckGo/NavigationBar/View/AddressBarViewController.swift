@@ -487,6 +487,11 @@ final class AddressBarViewController: NSViewController {
             /// now-unfocused duck.ai bar and renders the suffix + selected text on top of our plain-looking bar.
             /// `applyDuckAIUnfocusedValue` pushes the incoming tab's preserved prompt onto the bar — otherwise
             /// on a URL-loaded tab the value would still be the URL and the bar would render the URL + shield.
+            /// `addressBarViewControllerDidResignFocusKeepingAIChatMode` drives `hideAIChatOmnibarPanelKeepingTabState`
+            /// to close the panel container if the outgoing tab had it open (e.g. NTP with Duck.ai, where the focused
+            /// panel is the default UX). Without this the incoming tab inherits the expanded panel while `selectionState`
+            /// already reads `.inactiveWithAIChat`, rendering a broken focused-looking view. The delegate target guards
+            /// on `mainView.isAIChatOmnibarContainerShown`, so it no-ops when the panel was already hidden.
             addressBarButtonsViewController?.syncToggleSegmentToAIChatMode()
             isAIChatOmnibarVisible = false
             addressBarTextField.applyDuckAIUnfocusedValue()
@@ -494,6 +499,7 @@ final class AddressBarViewController: NSViewController {
             updateMode()
             view.window?.makeFirstResponder(nil)
             delegate?.resizeAddressBarForHomePage(self)
+            delegate?.addressBarViewControllerDidResignFocusKeepingAIChatMode(self)
         case (true, false):
             /// Incoming tab is in search mode — fully dismiss the duck.ai panel (in case it was up) and reset the toggle.
             delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
@@ -927,12 +933,17 @@ final class AddressBarViewController: NSViewController {
         let isAddressBarFocused = view.window?.firstResponder == addressBarTextField.currentEditor()
         let adjustedMinX: CGFloat = (!self.isSelected || self.mode.isEditing) ? minX : Constants.defaultActiveTextFieldMinX
 
-        /// The `-5 / -6` offset compensates for the leading padding of the search icon so the typed text sits
-        /// flush against it. With the redesign, editing states (`.text`, `.url`, `.openTabSuggestion`, `.aiChat`)
-        /// no longer render a leading icon regardless of the `aiChatOmnibarToggle` flag — skip the offset so the
-        /// text isn't pushed past the (now-narrower) buttons container's left edge on that path.
+        /// The negative offset compensates for the leading padding of the search icon so the typed text sits
+        /// flush against it (the buttons side sets a matching positive pad on the privacy-shield constraint —
+        /// see `AddressBarButtonsViewController.IconLeadingTuning`). With the redesign, editing states
+        /// (`.text`, `.url`, `.openTabSuggestion`, `.aiChat`) no longer render a leading icon regardless of
+        /// the `aiChatOmnibarToggle` flag — skip the offset so the text isn't pushed past the (now-narrower)
+        /// buttons container's left edge on that path.
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon && !self.mode.isEditing {
-            self.activeTextFieldMinXConstraint.constant = isAddressBarFocused ? adjustedMinX - 5 : adjustedMinX - 6
+            let pullback = isAddressBarFocused
+                ? AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.focused
+                : AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.unfocused
+            self.activeTextFieldMinXConstraint.constant = adjustedMinX - pullback
         } else {
             self.activeTextFieldMinXConstraint.constant = adjustedMinX
         }

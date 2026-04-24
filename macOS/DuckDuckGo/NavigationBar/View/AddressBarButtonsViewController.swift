@@ -65,6 +65,17 @@ final class AddressBarButtonsViewController: NSViewController {
         static let askAiChatButtonAnimationDuration: TimeInterval = 0.2
     }
 
+    /// Design-tuning offsets that position the address-bar text field relative to the leading icon under
+    /// the new-search-icon theme. `setupButtonPaddings` uses `buttonLeadingPad` as a positive inset on the
+    /// privacy-shield constraint; `AddressBarViewController.layoutTextFields` uses `textFieldPullback` as a
+    /// negative offset on the text field's min-X constraint, so the typed text sits flush with the icon's
+    /// visible leading edge. Focused / unfocused values differ by 1pt to absorb the focus ring shifting the
+    /// icon's visible center — and the two sets are intentionally inverted between focus states.
+    enum IconLeadingTuning {
+        static let buttonLeadingPad = (focused: CGFloat(6), unfocused: CGFloat(5))
+        static let textFieldPullback = (focused: CGFloat(5), unfocused: CGFloat(6))
+    }
+
     /// Struct to keep track of some Toggle conditions to avoid expensive operations like checking user defaults
     private struct AIChatOmnibarToggleConditions {
         let isFeatureOn: Bool
@@ -480,7 +491,9 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if let superview = privacyDashboardButton.superview {
             privacyDashboardButton.translatesAutoresizingMaskIntoConstraints = false
-            privacyShieldLeadingConstraint.constant = isFocused ? 6 : 5
+            privacyShieldLeadingConstraint.constant = isFocused
+                ? IconLeadingTuning.buttonLeadingPad.focused
+                : IconLeadingTuning.buttonLeadingPad.unfocused
             NSLayoutConstraint.activate([
                 privacyDashboardButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
                 privacyDashboardButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)

@@ -27,8 +27,6 @@ final class BurnerHomePageViewController: NSViewController {
     let appearancePreferences: AppearancePreferences
     let themeManager: ThemeManager
     let subscriptionPromoViewModel: SubscriptionPromoViewModel
-    private let subscriptionManager: any SubscriptionManager
-    private let featureFlagger: FeatureFlagger
 
     var openSubscriptionPage: (() -> Void)?
 
@@ -42,8 +40,6 @@ final class BurnerHomePageViewController: NSViewController {
          featureFlagger: FeatureFlagger,
          promoDelegate: FireWindowSubscriptionPromoDelegate?,
          dateProvider: @escaping () -> Date = Date.init) {
-        self.subscriptionManager = subscriptionManager
-        self.featureFlagger = featureFlagger
         self.appearancePreferences = appearancePreferences ?? NSApp.delegateTyped.appearancePreferences
         self.themeManager = themeManager ?? NSApp.delegateTyped.themeManager
         self.subscriptionPromoViewModel = SubscriptionPromoViewModel(

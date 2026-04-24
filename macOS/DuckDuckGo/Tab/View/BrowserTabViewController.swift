@@ -1224,11 +1224,10 @@ final class BrowserTabViewController: NSViewController {
             containsHostingView = false
         }
 
-        guard let contentSubview = browserTabView.findContentSubview(containsHostingView: containsHostingView) else {
+        guard let viewForRendering = browserTabView.findContentSubview(containsHostingView: containsHostingView) else {
             assertionFailure("No view for rendering of the snapshot")
             return
         }
-        let viewForRendering: NSView = contentSubview
 
         Task { @MainActor [weak tabViewModel, weak viewForRendering] in
             guard let tabSnapshots = tabViewModel?.tab.tabSnapshots else { return }

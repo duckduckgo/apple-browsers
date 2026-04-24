@@ -27,12 +27,15 @@ struct LoginFaviconView: View {
     let osVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
 
     private var displayableFaviconImage: NSImage? {
-        // Workaround for favicon rendering crashes on macOS 13.7.8.
-        guard (osVersion.majorVersion, osVersion.minorVersion, osVersion.patchVersion) != (13, 7, 8) else {
+        // Workaround for favicon rendering crashes on Ventura 13.7.8 and newer 13.x patches.
+        switch (osVersion.majorVersion, osVersion.minorVersion, osVersion.patchVersion) {
+        case let (13, minor, _) where minor > 7:
             return nil
+        case let (13, 7, patch) where patch >= 8:
+            return nil
+        default:
+            return faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image
         }
-
-        return faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image
     }
 
     var body: some View {

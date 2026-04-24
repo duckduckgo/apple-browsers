@@ -36,7 +36,7 @@ final class SubscriptionWideEventTests: XCTestCase {
         wideEvent = WideEvent(
             useMockRequests: true,
             storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
-            featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)
+            featureFlagProvider: MockWideEventFeatureFlagProvider()
         )
         firedPixels.removeAll()
     }
@@ -472,12 +472,8 @@ final class SubscriptionWideEventTests: XCTestCase {
 }
 
 struct MockWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
-    let isPostEndpointEnabled: Bool
-
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-            return isPostEndpointEnabled
-        }
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }

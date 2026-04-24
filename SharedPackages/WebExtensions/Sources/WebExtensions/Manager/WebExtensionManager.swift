@@ -54,6 +54,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// The scriptlet configuration, if scriptlet support is enabled.
     private let scriptletConfiguration: ScriptletConfiguration?
 
+    /// Tracks whether `loadInstalledExtensions()` is currently running.
+    /// Used to prevent `syncEmbeddedExtensions` from interleaving during load,
+    /// which can cause race conditions where sync deletes files that load still needs.
+    @MainActor
+    private(set) var isLoadingInstalledExtensions = false
+
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
 
@@ -319,6 +325,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public func loadInstalledExtensions() async {
+        isLoadingInstalledExtensions = true
+        defer { isLoadingInstalledExtensions = false }
+
         eventsListener.controller = controller
 
         lifecycleDelegate?.webExtensionManagerWillLoadExtensions(self)
@@ -375,6 +384,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
 
         notifyUpdate()
+    }
+
+    /// Loads installed extensions and then syncs embedded extensions as an atomic sequence.
+    /// This prevents race conditions where a concurrent sync could delete extension files
+    /// that the loader still needs.
+    @MainActor
+    public func loadAndSyncExtensions(enabledTypes: Set<DuckDuckGoWebExtensionType>) async {
+        await loadInstalledExtensions()
+        guard !Task.isCancelled else { return }
+        await syncEmbeddedExtensions(enabledTypes: enabledTypes)
     }
 
     // MARK: - Lookups

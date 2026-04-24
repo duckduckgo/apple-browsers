@@ -228,6 +228,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatPreferences: AIChatPreferences
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
 
+    /// Shared across the native address-bar omnibar and the New Tab Page omnibar so that model-selection
+    /// changes in either propagate through `selectedModelIdPublisher` to the other.
+    let aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor()
+
     private(set) lazy var aiChatSuggestionsReader: AIChatSuggestionsReading = MainActor.assumeMainThread {
         AIChatSuggestionsReader(
             suggestionsReader: SuggestionsReader(
@@ -472,8 +476,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             didCrashDuringCrashHandlersSetUp.wrappedValue = false
         }
 
+        do {
+            let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
+            fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
+        } catch {
+            Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
+            fileStore = EncryptedFileStore()
+        }
+
+        let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
+        internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
+
         if AppVersion.runType.requiresEnvironment {
-            Self.configurePixelKit()
+            Self.configurePixelKit(isInternalUser: internalUserDecider.isInternalUser)
         }
 
         do {
@@ -486,18 +501,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fatalError("Could not prepare key value store: \(error.localizedDescription)")
         }
 
-        do {
-            let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
-            fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
-        } catch {
-            Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
-            fileStore = EncryptedFileStore()
-        }
-
         bookmarkDatabase = BookmarkDatabase()
-
-        let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
-        internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
 
         if AppVersion.runType.requiresEnvironment {
             let commonDatabase = Database()
@@ -846,7 +850,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
             do {
                 let keyStoreProvider = DuckAiKeyStoreProvider()
-                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(containerURL: nativeStorageContainerURL, keyStoreProvider: keyStoreProvider).handler
+                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(
+                    containerURL: nativeStorageContainerURL,
+                    keyStoreProvider: keyStoreProvider,
+                    pixelFiring: DuckAiNativeStoragePixelAdapter()
+                ).handler
             } catch {
                 Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
                 duckAiNativeStorageHandler = nil
@@ -934,7 +942,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 contentScopePreferences: contentScopePreferences,
                 syncErrorHandler: syncErrorHandler,
                 webExtensionAvailability: webExtensionAvailability,
-                dockCustomization: dockCustomization
+                dockCustomization: dockCustomization,
+                reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
+                installDateProvider: { AppDelegate.firstLaunchDate }
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
             appContentBlocking = contentBlocking
@@ -967,7 +977,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             contentScopePreferences: contentScopePreferences,
             syncErrorHandler: syncErrorHandler,
             webExtensionAvailability: webExtensionAvailability,
-            dockCustomization: dockCustomization
+            dockCustomization: dockCustomization,
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
+            installDateProvider: { AppDelegate.firstLaunchDate }
         )
         privacyFeatures = AppPrivacyFeatures(
             contentBlocking: contentBlocking,
@@ -1188,9 +1200,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            memoryUsageMonitor: memoryUsageMonitor,
             pixelFiring: PixelKit.shared,
-            keyValueStore: keyValueStore
+            keyValueStore: keyValueStore,
+            memoryProvider: MemoryUsageMonitor.residentMemorySize(forPID:)
         )
 
         super.init()
@@ -1900,8 +1912,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             // Load extensions asynchronously - the controller is already attached to tabs
             Task {
-                await webExtensionManager.loadInstalledExtensions()
-                await syncEmbeddedExtensions()
+                await self.loadAndSyncEmbeddedExtensions(webExtensionManager)
             }
         } else {
             webExtensionManager = nil
@@ -1912,9 +1923,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func initializeWebExtensions() async {
         guard webExtensionManager == nil else {
-            // Already initialized, just load extensions
-            await (webExtensionManager as? WebExtensionManager)?.loadInstalledExtensions()
-            await syncEmbeddedExtensions()
+            if let manager = webExtensionManager as? WebExtensionManager {
+                await loadAndSyncEmbeddedExtensions(manager)
+            }
             return
         }
 
@@ -1926,8 +1937,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.webExtensionManager = webExtensionManager
 
-        await webExtensionManager.loadInstalledExtensions()
-        await syncEmbeddedExtensions()
+        await loadAndSyncEmbeddedExtensions(webExtensionManager)
     }
 
     @available(macOS 15.4, *)
@@ -1939,6 +1949,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         isSyncingEmbeddedExtensions = true
         defer { isSyncingEmbeddedExtensions = false }
 
+        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    private func loadAndSyncEmbeddedExtensions(_ webExtensionManager: WebExtensionManager) async {
+        await webExtensionManager.loadAndSyncExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+    }
+
+    @available(macOS 15.4, *)
+    private func enabledEmbeddedExtensionTypes() -> Set<DuckDuckGoWebExtensionType> {
         var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
         if featureFlagger.isFeatureOn(.embeddedExtension) {
             enabledTypes.insert(.embedded)
@@ -1949,7 +1970,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if adBlockingAvailability.isEnabled {
             enabledTypes.insert(.adBlockingExtension)
         }
-        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
+        return enabledTypes
     }
 
     @available(macOS 15.4, *)
@@ -1969,17 +1990,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - PixelKit
 
-    static func configurePixelKit() {
-        Self.setUpPixelKit(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild))
+    static func configurePixelKit(isInternalUser: Bool) {
+        Self.setUpPixelKit(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
+                           isInternalUser: isInternalUser)
     }
 
-    private static func setUpPixelKit(dryRun: Bool) {
+    private static func setUpPixelKit(dryRun: Bool, isInternalUser: Bool) {
         let source = NSApp.isSandboxed ? "browser-appstore" : "browser-dmg"
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: isInternalUser)
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: dryRun,
                        appVersion: AppVersion.shared.versionNumber,
                        source: source,
+                       channel: channel,
                        defaultHeaders: [:],
                        defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
@@ -2316,4 +2340,47 @@ private extension FeatureFlagLocalOverrides {
         }
     }
 
+}
+
+struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
+
+    func fire(_ event: DuckAiNativeStorageEvent) {
+        switch event {
+        case .initSuccess:
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageInitSuccess)
+        case .initError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageInitError, error: error))
+        case .migrationDone(let key):
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationDoneUnique(key: key), frequency: .uniqueByName)
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationDoneCount(key: key))
+        case .migrationDoneBlankKey:
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationDoneBlankCount)
+        case .migrationStarted:
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationStarted)
+        case .migrationAlreadyDone:
+            PixelKit.fire(GeneralPixel.duckAiNativeStorageMigrationAlreadyDone)
+        case .migrationError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageMigrationError, error: error))
+        case .settingsPutError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageSettingsPutError, error: error))
+        case .settingsGetError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageSettingsGetError, error: error))
+        case .settingsDeleteError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageSettingsDeleteError, error: error))
+        case .chatPutError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageChatPutError, error: error))
+        case .chatGetError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageChatGetError, error: error))
+        case .chatDeleteError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageChatDeleteError, error: error))
+        case .filePutError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFilePutError, error: error))
+        case .fileGetError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileGetError, error: error))
+        case .fileListError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileListError, error: error))
+        case .fileDeleteError(let error):
+            PixelKit.fire(DebugEvent(GeneralPixel.duckAiNativeStorageFileDeleteError, error: error))
+        }
+    }
 }

@@ -234,7 +234,7 @@ struct UserAgent {
     }
 
     var applicationNameForUserAgent: String {
-        "\(versionComponent) \(safariComponent)"
+        "\(versionComponent) Mobile/15E148 \(safariComponent)"
     }
 
     public func agent(forUrl url: URL?,

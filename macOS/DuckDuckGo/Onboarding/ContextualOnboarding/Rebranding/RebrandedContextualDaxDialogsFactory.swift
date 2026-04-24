@@ -37,6 +37,9 @@ extension OnboardingRebranding {
         static let bubbleArrowWidth: CGFloat = 22
         /// Duration for in-place content transitions (searchDone→tryASite, trackers→fire).
         static let inlineTransitionDuration: Double = 0.3
+        /// Duration of a single fade phase (out or in) when swapping layered bubble/background.
+        /// Fade-out and fade-in run back-to-back so the whole swap takes 2× this value.
+        static let screenTransitionPhaseDuration: Double = 0.2
 
         /// Waving-Dax overlay metrics — shared by the tryASearch, tryASite, and highFive dialogs.
         /// The offset places Dax to the left of the bubble and slightly above its top edge.
@@ -52,6 +55,27 @@ extension OnboardingRebranding {
             static let opacity: Double = 0.06
             static let height: CGFloat = 8
         }
+
+        /// 1px hairline rule along the bottom of the panel to separate it from content below.
+        enum PanelBorder {
+            static let height: CGFloat = 1
+            static let lightColor = Color(red: 0.85, green: 0.85, blue: 0.85)
+            static let darkColor = Color(red: 0.25, green: 0.25, blue: 0.25)
+        }
+    }
+}
+
+/// 1px hairline rule applied along the bottom edge of the panel background.
+/// Uses `Color`s switched by `colorScheme` because `Color(nsColor:)` with a
+/// dynamic provider requires macOS 12+ and can't be stored in a `static let`.
+private struct PanelBottomBorder: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        (colorScheme == .dark
+            ? OnboardingRebranding.Layout.PanelBorder.darkColor
+            : OnboardingRebranding.Layout.PanelBorder.lightColor)
+            .frame(height: OnboardingRebranding.Layout.PanelBorder.height)
     }
 }
 
@@ -191,6 +215,11 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             .frame(height: OnboardingRebranding.Layout.PanelShadow.height)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             .allowsHitTesting(false)
+        )
+        .overlay(
+            PanelBottomBorder()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .allowsHitTesting(false)
         )
     }
 

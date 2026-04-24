@@ -343,7 +343,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func updateToolButtonsVisibility(isEnabled: Bool) {
         toolsButton.isHidden = !shouldShowToolsButton
         imageGenActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isImageGenerationMode
-        webSearchActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isWebSearchMode
+        webSearchActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isWebSearchMode || !omnibarController.selectedModelSupportsWebSearch
         imageUploadButton.isHidden = !shouldShowAttachments || !shouldShowImageUpload
         imageUploadButton.isEnabled = !attachmentsContainerView.isFull
         modelPickerButton.isHidden = !shouldShowModelPicker
@@ -794,7 +794,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             menu.addItem(createImageItem)
         }
 
-        if omnibarController.isWebSearchEnabled {
+        if omnibarController.isWebSearchEnabled && omnibarController.selectedModelSupportsWebSearch {
             let webSearchItem = NSMenuItem()
             webSearchItem.attributedTitle = toolsMenuItemAttributedTitle(
                 title: UserText.aiChatWebSearchButtonLabel,
@@ -1002,6 +1002,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 modelPickerButton.modelName = persistedModelShortName
                 // Refresh image upload visibility with updated supportsImageUpload
                 updateImageUploadVisibility(supportsImageUpload: omnibarController.selectedModelSupportsImageUpload)
+                // Refresh tool button visibility so the Web Search chip reflects the loaded
+                // model's `supportedTools` (belt-and-braces — the controller also clears
+                // `activeToolMode` when the persisted model doesn't support web search).
+                updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
                 updateReasoningPickerVisibility()
             }
     }

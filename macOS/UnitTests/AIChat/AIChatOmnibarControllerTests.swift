@@ -424,6 +424,100 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertTrue(controller.models.isEmpty)
     }
 
+    // MARK: - Web Search Model Support Tests
+
+    func testWhenModelsNotLoaded_ThenSelectedModelSupportsWebSearchDefaultsToTrue() {
+        // Then — conservative default keeps the Tools menu item visible until we know otherwise
+        XCTAssertTrue(controller.models.isEmpty)
+        XCTAssertTrue(controller.selectedModelSupportsWebSearch)
+    }
+
+    func testWhenSelectedModelSupportsWebSearch_ThenSelectedModelSupportsWebSearchReturnsTrue() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "ws-model", supportedTools: ["WebSearch"])
+        ]
+        mockPreferences.selectedModelId = "ws-model"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertTrue(controller.selectedModelSupportsWebSearch)
+    }
+
+    func testWhenSelectedModelDoesNotSupportWebSearch_ThenSelectedModelSupportsWebSearchReturnsFalse() async {
+        // Given — model advertises other tools but not WebSearch
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "no-ws-model", supportedTools: ["NewsSearch"])
+        ]
+        mockPreferences.selectedModelId = "no-ws-model"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertFalse(controller.selectedModelSupportsWebSearch)
+    }
+
+    func testWhenSwitchingToUnsupportedModel_ThenWebSearchModeIsDeactivated() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "ws-supported", supportedTools: ["WebSearch"]),
+            makeRemoteModel(id: "ws-unsupported", supportedTools: [])
+        ]
+        mockPreferences.selectedModelId = "ws-supported"
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.toggleWebSearchMode()
+        XCTAssertTrue(controller.isWebSearchMode)
+
+        // When
+        controller.updateSelectedModel("ws-unsupported")
+
+        // Then
+        XCTAssertFalse(controller.isWebSearchMode)
+    }
+
+    func testWhenSwitchingBetweenSupportingModels_ThenWebSearchModeIsPreserved() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "ws-a", supportedTools: ["WebSearch"]),
+            makeRemoteModel(id: "ws-b", supportedTools: ["WebSearch"])
+        ]
+        mockPreferences.selectedModelId = "ws-a"
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.toggleWebSearchMode()
+        XCTAssertTrue(controller.isWebSearchMode)
+
+        // When
+        controller.updateSelectedModel("ws-b")
+
+        // Then
+        XCTAssertTrue(controller.isWebSearchMode)
+    }
+
+    func testWhenFetchModelsRevealsUnsupportedPersistedModel_ThenWebSearchModeIsDeactivated() async {
+        // Given — user toggled Web Search before models loaded (conservative default allowed it),
+        // persisted model turns out not to support it
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "no-ws", supportedTools: [])
+        ]
+        mockPreferences.selectedModelId = "no-ws"
+        controller.toggleWebSearchMode()
+        XCTAssertTrue(controller.isWebSearchMode)
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertFalse(controller.isWebSearchMode)
+    }
+
     // MARK: - Reasoning Effort Tests
 
     func testWhenReasoningEffortFeatureFlagEnabled_ThenIsReasoningEffortEnabledIsTrue() {
@@ -671,6 +765,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         id: String,
         supportsImageUpload: Bool = false,
         entityHasAccess: Bool = true,
+        supportedTools: [String] = [],
         supportedReasoningEffort: [String] = []
     ) -> AIChatRemoteModel {
         AIChatRemoteModel(
@@ -680,7 +775,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             provider: "openai",
             entityHasAccess: entityHasAccess,
             supportsImageUpload: supportsImageUpload,
-            supportedTools: [],
+            supportedTools: supportedTools,
             supportedReasoningEffort: supportedReasoningEffort,
             accessTier: entityHasAccess ? ["free"] : ["plus", "pro"]
         )

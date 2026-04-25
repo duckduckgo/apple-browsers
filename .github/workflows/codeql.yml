@@ -78,6 +78,33 @@ jobs:
         with:
           preferred-versions: "26.4"
 
+      - name: Resolve iOS package dependencies
+        if: matrix.destination == 'ios-simulator'
+        working-directory: ${{ matrix.working-directory }}
+        run: |
+          echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
+          echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
+
+          xcodebuild -resolvePackageDependencies \
+            -scheme "${{ matrix.scheme }}" \
+            -destination "${{ steps.select-simulator.outputs.destination }}" \
+            -derivedDataPath "DerivedData" \
+            -configuration "${{ matrix.configuration }}" \
+            -skipPackagePluginValidation \
+            -skipMacroValidation
+
+      - name: Resolve macOS package dependencies
+        if: matrix.destination != 'ios-simulator'
+        working-directory: ${{ matrix.working-directory }}
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -scheme "${{ matrix.scheme }}" \
+            -destination "${{ matrix.destination }}" \
+            -derivedDataPath "DerivedData" \
+            -configuration "${{ matrix.configuration }}" \
+            -skipPackagePluginValidation \
+            -skipMacroValidation
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:

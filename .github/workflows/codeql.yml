@@ -108,11 +108,11 @@ jobs:
             -skipMacroValidation
 
       - name: Setup Ruby and dependencies
-        if: matrix.destination == 'ios-simulator'
+        if: matrix.destination == 'ios-simulator' || matrix.working-directory == 'macOS'
         uses: ./.github/actions/setup-ruby
         with:
           working-directory: ${{ matrix.working-directory }}
-          cache-key-prefix: ios-ruby
+          cache-key-prefix: ${{ matrix.spm-cache-prefix }}-ruby
 
       - name: Sync iOS code signing assets
         if: matrix.destination == 'ios-simulator'
@@ -123,6 +123,32 @@ jobs:
           APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: bundle exec fastlane sync_signing
+
+      - name: Sync macOS code signing assets
+        if: matrix.working-directory == 'macOS'
+        id: sync-macos-signing-first-attempt
+        continue-on-error: true
+        working-directory: ${{ matrix.working-directory }}
+        env:
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+        run: bundle exec fastlane sync_signing_ci
+
+      - name: Retry syncing macOS code signing assets
+        if: matrix.working-directory == 'macOS' && steps.sync-macos-signing-first-attempt.outcome == 'failure'
+        working-directory: ${{ matrix.working-directory }}
+        env:
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+        run: |
+          echo "First attempt to sync macOS code signing assets failed. Retrying..."
+          bundle exec fastlane sync_signing_ci
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
@@ -151,15 +177,15 @@ jobs:
         if: matrix.destination != 'ios-simulator'
         working-directory: ${{ matrix.working-directory }}
         run: |
-          xcodebuild build \
+          xcodebuild build-for-testing \
             -scheme "${{ matrix.scheme }}" \
             -destination "${{ matrix.destination }}" \
             -derivedDataPath "DerivedData" \
             -configuration "${{ matrix.configuration }}" \
             -skipPackagePluginValidation \
             -skipMacroValidation \
-            ONLY_ACTIVE_ARCH=YES \
-            CODE_SIGNING_ALLOWED=NO
+            ENABLE_TESTABILITY=true \
+            ONLY_ACTIVE_ARCH=YES
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4

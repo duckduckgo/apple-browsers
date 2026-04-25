@@ -99,6 +99,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     var onConfirmAndDeleteAllData: (() -> Void)?
 
     let useSimplifiedLayout: Bool
+    let syncSetupExperimentPixels: SyncSetupExperimentPixelFiring
 
     // For some reason, on iOS 14, the viewDidLoad wasn't getting called so do some setup here
     init(
@@ -112,7 +113,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         pairingInfo: PairingInfo? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
-        syncSettingsStore: KeyValueStoring = UserDefaults.standard
+        syncSettingsStore: KeyValueStoring = UserDefaults.standard,
+        syncSetupExperimentPixels: SyncSetupExperimentPixelFiring = SyncSetupExperimentPixelReporter()
     ) {
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
@@ -124,6 +126,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         self.featureFlagger = featureFlagger
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.syncSettingsStore = syncSettingsStore
+        self.syncSetupExperimentPixels = syncSetupExperimentPixels
 
         let viewModel = SyncSettingsViewModel(
             isOnDevEnvironment: { syncService.serverEnvironment == .development },
@@ -433,11 +436,13 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     private func handlePairingConfirmation() {
         askForAuthThenStartPairing()
         Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted, includedParameters: [.appVersion])
+        syncSetupExperimentPixels.fireDeepLinkFlowStarted()
     }
 
     private func handlePairingCancellation() {
         pairingInfo = nil
         Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned, includedParameters: [.appVersion])
+        syncSetupExperimentPixels.fireDeepLinkFlowAbandoned()
     }
 }
 
@@ -467,6 +472,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         let registeredDevices = try await syncService.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
+        syncSetupExperimentPixels.fireLogin()
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         presentSyncCompletionAfterDelay()
     }
@@ -534,6 +540,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         autoRestorePromptSource = nil
         dismissPresentedViewController()
         Pixel.fire(pixel: .syncSetupEndedAbandoned)
+        syncSetupExperimentPixels.fireSetupEndedAbandoned()
     }
 
     func gotoSettings() {
@@ -565,6 +572,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     func controllerDidCreateSyncAccount() {
         let additionalParameters = source.map { ["source": $0] } ?? [:]
         Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
+        syncSetupExperimentPixels.fireSignupConnect()
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         if useSimplifiedLayout {
             dismissVCAndShowDeviceSyncedToast()
@@ -580,6 +588,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
     
     func controllerDidFinishTransmittingRecoveryKey() {
+        syncSetupExperimentPixels.fireSetupEndedSuccessful()
         dismissPresentedViewController()
     }
     
@@ -609,6 +618,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery _: Bool, setupRole: SyncSetupRole) {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
+        syncSetupExperimentPixels.fireLogin()
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         presentSyncCompletionAfterDelay()
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
@@ -624,12 +634,27 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             sendCodeParsingFailedPixel(setupRole: setupRole)
             await handleError(.unableToRecognizeCode, error: underlyingError, event: nil)
         case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
+            fireCodeHandlingFailedExperimentPixel(setupRole: setupRole)
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
         case .failedToCreateAccount:
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
         case .pollingForRecoveryKeyTimedOut:
             dismissPresentedViewController()
             handleRecoveryKeyPollingTimeout(setupRole: setupRole)
+        }
+
+        syncSetupExperimentPixels.fireSetupEndedAbandoned()
+    }
+
+    private func fireCodeHandlingFailedExperimentPixel(setupRole: SyncSetupRole) {
+        guard case .receiver(_, let codeSource) = setupRole else { return }
+        switch codeSource {
+        case .qrCode:
+            syncSetupExperimentPixels.fireBarcodeScannerFailed()
+        case .pastedCode:
+            syncSetupExperimentPixels.fireManualCodeEnteredFailed()
+        case .deepLink:
+            syncSetupExperimentPixels.fireDeepLinkFlowAbandoned()
         }
     }
 
@@ -639,8 +664,10 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         switch codeSource {
         case .qrCode:
             Pixel.fire(pixel: .syncSetupBarcodeScannerSuccess, withAdditionalParameters: parameters, includedParameters: [.appVersion])
+            syncSetupExperimentPixels.fireBarcodeScannerSuccess()
         case .pastedCode:
             Pixel.fire(pixel: .syncSetupManualCodeEnteredSuccess, withAdditionalParameters: parameters, includedParameters: [.appVersion])
+            syncSetupExperimentPixels.fireManualCodeEnteredSuccess()
         case .deepLink:
             break
         }
@@ -654,8 +681,10 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         switch codeSource {
         case .qrCode:
             Pixel.fire(pixel: .syncSetupBarcodeScannerFailed, includedParameters: [.appVersion])
+            syncSetupExperimentPixels.fireBarcodeScannerFailed()
         case .pastedCode:
             Pixel.fire(pixel: .syncSetupManualCodeEnteredFailed, includedParameters: [.appVersion])
+            syncSetupExperimentPixels.fireManualCodeEnteredFailed()
         case .deepLink:
             break
         }
@@ -667,9 +696,24 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         switch codeSource {
         case .pastedCode, .qrCode:
             Pixel.fire(pixel: .syncSetupEndedSuccessful, withAdditionalParameters: parameters, includedParameters: [.appVersion])
+            syncSetupExperimentPixels.fireSetupEndedSuccessful()
         case .deepLink:
             Pixel.fire(pixel: .syncSetupDeepLinkFlowSuccess, includedParameters: [.appVersion])
+            syncSetupExperimentPixels.fireDeepLinkFlowSuccess()
         }
+    }
+
+    func fireBarcodeCodeCopiedPixel(for code: String) {
+        guard let decoded = try? SyncCode.decodeBase64String(code) else { return }
+        let source: SyncSetupSource
+        if decoded.connect != nil {
+            source = .connect
+        } else if decoded.exchangeKey != nil {
+            source = .exchange
+        } else {
+            return
+        }
+        syncSetupExperimentPixels.fireBarcodeCodeCopied()
     }
 
     private func handleRecoveryKeyPollingTimeout(setupRole: SyncSetupRole) {
@@ -680,6 +724,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             return
         }
         Pixel.fire(pixel: .syncSetupDeepLinkFlowTimeout, includedParameters: [.appVersion])
+        syncSetupExperimentPixels.fireDeepLinkTimeout()
     }
 }
 

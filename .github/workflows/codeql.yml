@@ -27,7 +27,7 @@ jobs:
             spm-cache-prefix: ios
             scheme: iOS Browser
             destination: ios-simulator
-            configuration: Release
+            configuration: Debug
           - name: macOS
             category: swift/macos-browser
             runs-on: macos-26

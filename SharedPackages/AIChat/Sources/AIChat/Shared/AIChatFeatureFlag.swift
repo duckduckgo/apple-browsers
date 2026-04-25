@@ -22,4 +22,6 @@ public protocol AIChatFeatureFlagProviding {
     func isAIChatSyncEnabled() -> Bool
     func supportsSyncChatsDeletion() -> Bool
     func isNativeDataAccessEnabled() -> Bool
+    func isNativeDataStorageEnabled() -> Bool
+
 }

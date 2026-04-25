@@ -87,6 +87,9 @@ extension Pixel {
         case tabSwitcherClickCloseTab
         case tabSwitcherSwipeCloseTab
         case tabSwitchLongPressNewTab
+        case tabLongPressMenuDisplayed
+        case tabLongPressMenuNewFireTab
+        case tabLongPressMenuNewNormalTab
         case tabSwitcherOpenedDaily
         case tabManagerSwitchToAITab
         case tabManagerSwitchToWebTab
@@ -231,8 +234,8 @@ extension Pixel {
         case autocompleteDisplayedLocalFavorite
         case autocompleteDisplayedLocalHistory
         case autocompleteDisplayedOpenedTab
-        case autocompleteSwipeToDelete
-        case autocompleteSwipeToDeleteDaily
+        case autocompleteDeleteHistoryEntry
+        case autocompleteDeleteHistoryEntryDaily
 
         case feedbackPositive
         case feedbackNegativePrefix(category: String)
@@ -1857,6 +1860,9 @@ extension Pixel.Event {
         case .tabSwitcherClickCloseTab: return "m_tab_manager_close_tab_click"
         case .tabSwitcherSwipeCloseTab: return "m_tab_manager_close_tab_swipe"
         case .tabSwitchLongPressNewTab: return "m_tab_manager_long_press_new_tab"
+        case .tabLongPressMenuDisplayed: return "m_tab_long_press_menu_displayed"
+        case .tabLongPressMenuNewFireTab: return "m_tab_long_press_menu_new_fire_tab"
+        case .tabLongPressMenuNewNormalTab: return "m_tab_long_press_menu_new_normal_tab"
         case .tabSwitcherOpenedDaily: return "m_tab_manager_opened_daily"
         case .tabManagerSwitchToAITab: return "m_tab_manager_switch_to_ai_tab"
         case .tabManagerSwitchToWebTab: return "m_tab_manager_switch_to_web_tab"
@@ -1994,8 +2000,8 @@ extension Pixel.Event {
         case .autocompleteDisplayedLocalFavorite: return "m_autocomplete_display_local_favorite"
         case .autocompleteDisplayedLocalHistory: return "m_autocomplete_display_local_history"
         case .autocompleteDisplayedOpenedTab: return "m_autocomplete_display_switch_to_tab"
-        case .autocompleteSwipeToDelete: return "m_autocomplete_result_deleted"
-        case .autocompleteSwipeToDeleteDaily: return "m_autocomplete_result_deleted_daily"
+        case .autocompleteDeleteHistoryEntry: return "m_autocomplete_result_deleted"
+        case .autocompleteDeleteHistoryEntryDaily: return "m_autocomplete_result_deleted_daily"
 
         case .feedbackPositive: return "mfbs_positive_submit"
         case .feedbackNegativePrefix(category: let category): return "mfbs_negative_\(category)"

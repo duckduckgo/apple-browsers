@@ -88,6 +88,42 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsAIChatSync, false)
     }
     
+    func testWhenNativeStorageFeatureIsOnAndNotInFireModeThenSupportsNativeStorageIsTrue() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeStorage]
+        aiChatUserScriptHandler.isFireModeProvider = { false }
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertEqual(configValues?.supportsNativeStorage, true)
+    }
+
+    func testWhenNativeStorageFeatureIsOnAndInFireModeThenSupportsNativeStorageIsFalse() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeStorage]
+        aiChatUserScriptHandler.isFireModeProvider = { true }
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertEqual(configValues?.supportsNativeStorage, false)
+    }
+
+    func testWhenNativeStorageFeatureIsOffAndNotInFireModeThenSupportsNativeStorageIsFalse() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+        aiChatUserScriptHandler.isFireModeProvider = { false }
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertEqual(configValues?.supportsNativeStorage, false)
+    }
+
     func testGetAIChatNativeConfigValuesWithFullModeFeatureAvailable() {
         // Given
         mockAIChatFullModeFeature.isAvailable = true

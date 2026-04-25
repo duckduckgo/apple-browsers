@@ -275,15 +275,10 @@ enum GeneralPixel: PixelKitEvent {
     case defaultRequestedFromHomepage
     case defaultRequestedFromHomepageSetupView
     case defaultRequestedFromSettings
-    case defaultRequestedFromOnboarding
     case defaultRequestedFromMainMenu
     case defaultRequestedFromMoreOptionsMenu
 
     // Adding to the Dock
-    case addToDockOnboardingStepPresented
-    case userAddedToDockDuringOnboarding
-    case userSkippedAddingToDockFromOnboarding
-    case startBrowsingOnboardingStepPresented
     case addToDockNewTabPageCardPresented
     case userAddedToDockFromNewTabPageCard
     case userAddedToDockFromSettings
@@ -1013,14 +1008,9 @@ enum GeneralPixel: PixelKitEvent {
         case .defaultRequestedFromHomepage: return "m_mac_default_requested_from_homepage"
         case .defaultRequestedFromHomepageSetupView: return "m_mac_default_requested_from_homepage_setup_view"
         case .defaultRequestedFromSettings: return "m_mac_default_requested_from_settings"
-        case .defaultRequestedFromOnboarding: return "m_mac_default_requested_from_onboarding"
         case .defaultRequestedFromMainMenu: return "m_mac_default_requested_from_main_menu"
         case .defaultRequestedFromMoreOptionsMenu: return "m_mac_default_requested_from_more_options_menu"
 
-        case .addToDockOnboardingStepPresented: return "m_mac_add_to_dock_onboarding_step_presented"
-        case .userAddedToDockDuringOnboarding: return "m_mac_user_added_to_dock_during_onboarding"
-        case .userSkippedAddingToDockFromOnboarding: return "m_mac_user_skipped_adding_to_dock_from_onboarding"
-        case .startBrowsingOnboardingStepPresented: return "m_mac_start_browsing_onboarding_step_presented"
         case .addToDockNewTabPageCardPresented: return "m_mac_add_to_dock_new_tab_page_card_presented_u"
         case .userAddedToDockFromNewTabPageCard: return "m_mac_user_added_to_dock_from_new_tab_page_card"
         case .userAddedToDockFromSettings: return "m_mac_user_added_to_dock_from_settings"
@@ -1744,13 +1734,8 @@ enum GeneralPixel: PixelKitEvent {
                 .defaultRequestedFromHomepage,
                 .defaultRequestedFromHomepageSetupView,
                 .defaultRequestedFromSettings,
-                .defaultRequestedFromOnboarding,
                 .defaultRequestedFromMainMenu,
                 .defaultRequestedFromMoreOptionsMenu,
-                .addToDockOnboardingStepPresented,
-                .userAddedToDockDuringOnboarding,
-                .userSkippedAddingToDockFromOnboarding,
-                .startBrowsingOnboardingStepPresented,
                 .addToDockNewTabPageCardPresented,
                 .userAddedToDockFromNewTabPageCard,
                 .userAddedToDockFromSettings,

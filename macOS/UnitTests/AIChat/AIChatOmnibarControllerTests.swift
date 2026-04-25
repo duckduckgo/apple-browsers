@@ -424,6 +424,244 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertTrue(controller.models.isEmpty)
     }
 
+    // MARK: - Reasoning Effort Tests
+
+    func testWhenReasoningEffortFeatureFlagEnabled_ThenIsReasoningEffortEnabledIsTrue() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+
+        // Then
+        XCTAssertTrue(controller.isReasoningEffortEnabled)
+    }
+
+    func testWhenReasoningEffortFeatureFlagDisabled_ThenIsReasoningEffortEnabledIsFalse() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = false
+
+        // Then
+        XCTAssertFalse(controller.isReasoningEffortEnabled)
+    }
+
+    func testWhenUpdateSelectedReasoningEffort_ThenValueIsPersistedToPreferences() {
+        // When
+        controller.updateSelectedReasoningEffort(.low)
+
+        // Then
+        XCTAssertEqual(mockPreferences.selectedReasoningEffort, "low")
+    }
+
+    func testWhenReasoningEffortIsPersisted_ThenSelectedReasoningEffortReturnsPersistedValue() {
+        // Given
+        mockPreferences.selectedReasoningEffort = "medium"
+
+        // Then
+        XCTAssertEqual(controller.selectedReasoningEffort, .medium)
+    }
+
+    func testWhenPersistedReasoningEffortRawValueIsUnknown_ThenSelectedReasoningEffortIsNil() {
+        // Given — backend or older build stored a raw value this app version doesn't know about
+        mockPreferences.selectedReasoningEffort = "high"
+
+        // Then — safely surfaces as nil rather than leaking the raw string through the typed API
+        XCTAssertNil(controller.selectedReasoningEffort)
+    }
+
+    func testWhenUpdateSelectedReasoningEffortToNil_ThenPreferencesValueIsCleared() {
+        // Given
+        mockPreferences.selectedReasoningEffort = "low"
+
+        // When
+        controller.updateSelectedReasoningEffort(nil)
+
+        // Then
+        XCTAssertNil(mockPreferences.selectedReasoningEffort)
+    }
+
+    func testWhenCleanupCalled_ThenSelectedReasoningEffortIsPreserved() {
+        // Given
+        mockPreferences.selectedReasoningEffort = "medium"
+
+        // When
+        controller.cleanup()
+
+        // Then — persisted preference is not reset by cleanup
+        XCTAssertEqual(controller.selectedReasoningEffort, .medium)
+    }
+
+    func testWhenModelSupportsReasoningEfforts_ThenSelectedModelReasoningEffortsReturnsList() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "reasoning-model", entityHasAccess: true, supportedReasoningEffort: ["none", "low", "medium"])
+        ]
+        mockPreferences.selectedModelId = "reasoning-model"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertEqual(controller.selectedModelReasoningEfforts, [.none, .low, .medium])
+    }
+
+    func testWhenModelSupportsUnknownReasoningEffort_ThenUnknownValueIsFilteredOut() async {
+        // Given — backend includes a value the app doesn't know about yet
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "forward-compat-model", entityHasAccess: true, supportedReasoningEffort: ["none", "low", "high"])
+        ]
+        mockPreferences.selectedModelId = "forward-compat-model"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then — "high" is dropped, known values pass through
+        XCTAssertEqual(controller.selectedModelReasoningEfforts, [.none, .low])
+    }
+
+    func testWhenModelDoesNotSupportReasoningEfforts_ThenSelectedModelReasoningEffortsIsEmpty() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "plain-model", entityHasAccess: true)
+        ]
+        mockPreferences.selectedModelId = "plain-model"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertTrue(controller.selectedModelReasoningEfforts.isEmpty)
+    }
+
+    func testWhenFeatureFlagEnabledAndEffortSupportedByModel_ThenEffectiveReasoningEffortReturnsSelection() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "reasoning-model", entityHasAccess: true, supportedReasoningEffort: ["none", "low", "medium"])
+        ]
+        mockPreferences.selectedModelId = "reasoning-model"
+        mockPreferences.selectedReasoningEffort = "low"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertEqual(controller.effectiveReasoningEffort, "low")
+    }
+
+    func testWhenFeatureFlagDisabled_ThenEffectiveReasoningEffortIsNilEvenIfSelected() {
+        // Given — user previously selected an effort while flag was on
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = false
+        mockPreferences.selectedReasoningEffort = "medium"
+
+        // Then — nothing is sent when the flag is off, even if a value is persisted
+        XCTAssertNil(controller.effectiveReasoningEffort)
+    }
+
+    func testWhenImageGenerationModeActive_ThenEffectiveReasoningEffortIsNil() async {
+        // Given — a valid persisted effort on a model that supports reasoning
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "reasoning-model", entityHasAccess: true, supportedReasoningEffort: ["low"])
+        ]
+        mockPreferences.selectedModelId = "reasoning-model"
+        mockPreferences.selectedReasoningEffort = "low"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When — image generation mode is turned on
+        controller.toggleImageGenerationMode()
+
+        // Then — reasoning is not attached to image-generation submissions
+        XCTAssertNil(controller.effectiveReasoningEffort)
+    }
+
+    func testWhenPersistedEffortNotSupportedByCurrentModel_ThenEffectiveReasoningEffortIsNil() async {
+        // Given — persisted "medium" but current model only lists "low"
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "limited-model", entityHasAccess: true, supportedReasoningEffort: ["low"])
+        ]
+        mockPreferences.selectedModelId = "limited-model"
+        mockPreferences.selectedReasoningEffort = "medium"
+
+        // When — stale-clear runs on model load
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then — nothing is sent (persisted value was stale)
+        XCTAssertNil(controller.effectiveReasoningEffort)
+    }
+
+    func testWhenModelsLoaded_ThenStalePersistedReasoningEffortIsCleared() async {
+        // Given — persisted effort that doesn't match the new model's supported list
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "limited-model", entityHasAccess: true, supportedReasoningEffort: ["low"])
+        ]
+        mockPreferences.selectedModelId = "limited-model"
+        mockPreferences.selectedReasoningEffort = "medium"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then — stale preference is wiped from persistence
+        XCTAssertNil(mockPreferences.selectedReasoningEffort)
+    }
+
+    func testWhenModelsLoadedAndPersistedEffortSupported_ThenSelectionIsPreserved() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "reasoning-model", entityHasAccess: true, supportedReasoningEffort: ["none", "low", "medium"])
+        ]
+        mockPreferences.selectedModelId = "reasoning-model"
+        mockPreferences.selectedReasoningEffort = "low"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then — valid preference is kept
+        XCTAssertEqual(mockPreferences.selectedReasoningEffort, "low")
+    }
+
+    func testWhenUpdateSelectedModelToIncompatibleOne_ThenStalePersistedReasoningEffortIsCleared() async {
+        // Given — two models loaded, user has picked a reasoning effort valid on the first
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "reasoning-model", entityHasAccess: true, supportedReasoningEffort: ["none", "low", "medium"]),
+            makeRemoteModel(id: "limited-model", entityHasAccess: true, supportedReasoningEffort: ["low"])
+        ]
+        mockPreferences.selectedModelId = "reasoning-model"
+        mockPreferences.selectedReasoningEffort = "medium"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When — user switches to a model that doesn't support "medium"
+        controller.updateSelectedModel("limited-model")
+
+        // Then — controller clears the stale preference; nothing is silently retained
+        XCTAssertNil(mockPreferences.selectedReasoningEffort)
+    }
+
+    func testWhenUpdateSelectedModelToCompatibleOne_ThenPersistedReasoningEffortIsPreserved() async {
+        // Given — two models that both support "low"
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "model-a", entityHasAccess: true, supportedReasoningEffort: ["none", "low", "medium"]),
+            makeRemoteModel(id: "model-b", entityHasAccess: true, supportedReasoningEffort: ["low", "medium"])
+        ]
+        mockPreferences.selectedModelId = "model-a"
+        mockPreferences.selectedReasoningEffort = "low"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When — switching to another model that still supports "low"
+        controller.updateSelectedModel("model-b")
+
+        // Then — the preference is kept
+        XCTAssertEqual(mockPreferences.selectedReasoningEffort, "low")
+    }
+
     // MARK: - Helpers
 
     /// Creates a remote model for testing. Access is resolved locally from `accessTier`
@@ -432,7 +670,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     private func makeRemoteModel(
         id: String,
         supportsImageUpload: Bool = false,
-        entityHasAccess: Bool = true
+        entityHasAccess: Bool = true,
+        supportedReasoningEffort: [String] = []
     ) -> AIChatRemoteModel {
         AIChatRemoteModel(
             id: id,
@@ -442,6 +681,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             entityHasAccess: entityHasAccess,
             supportsImageUpload: supportsImageUpload,
             supportedTools: [],
+            supportedReasoningEffort: supportedReasoningEffort,
             accessTier: entityHasAccess ? ["free"] : ["plus", "pro"]
         )
     }
@@ -488,6 +728,7 @@ private class AIChatMockSearchPreferencesPersistor: SearchPreferencesPersistor {
 private class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
     var selectedModelId: String?
     var selectedModelShortName: String?
+    var selectedReasoningEffort: String?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 

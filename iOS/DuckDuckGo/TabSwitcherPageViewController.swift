@@ -73,6 +73,8 @@ class TabSwitcherPageViewController: UIViewController {
     private var trackerInfoModel: InfoPanelView.Model?
     private var fireModeEmptyStateHostingController: UIHostingController<FireModeEmptyStateView>?
 
+    var canUpdateCollection = true
+
     var selectedIndexPaths: [IndexPath] {
         collectionView.indexPathsForSelectedItems ?? []
     }
@@ -111,6 +113,9 @@ class TabSwitcherPageViewController: UIViewController {
         collectionView.backgroundColor = .clear
         collectionView.clipsToBounds = true
         collectionView.isMultipleTouchEnabled = true
+        if #available(iOS 17.0, *) {
+            collectionView.allowsKeyboardScrolling = false
+        }
         collectionView.dataSource = self
         collectionView.delegate = self
         collectionView.dragDelegate = self
@@ -165,7 +170,8 @@ class TabSwitcherPageViewController: UIViewController {
             .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.reloadData()
+                guard let self, self.canUpdateCollection else { return }
+                self.reloadData()
             }
     }
 

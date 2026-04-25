@@ -876,6 +876,9 @@
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Nein, danke";
 
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Jetzt nicht";
+
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Speichere dein Passwort mit DuckDuckGo Passwörter & Autovervollständigen sicher auf dem Gerät.";
 
@@ -2325,6 +2328,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Suchen oder Adresse eingeben";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Neues Fire-Tab";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Neuer Tab";

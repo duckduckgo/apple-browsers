@@ -2181,7 +2181,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "ウェブサイトのトラブルシューティング";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Fireタブは他のブラウザデータから切り離されており、タブをすべて閉じるとそのデータは完全に消去されます。他のタブと同様のトラッキング防止機能も備えています。";
+"fire.mode.empty.state.description" = "Fireタブは他のブラウザデータから隔離されており、すべてのアカウントを閉じると、そのデータは焼却されます。他のタブと同様のトラッキング防止機能も備えています。";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "新しいFireタブ";
@@ -2193,7 +2193,7 @@
 "fire.mode.menu.promotion.badge" = "新規";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "履歴を残さずにブラウジングしたり、別のカウントでサイトにサインインしたりできます。";
+"fire.mode.ntp.promotion.description" = "新機能！履歴を残さずに閲覧したり、別のWebサイトに別のアカウントでサインインしたりできます。";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "後で";
@@ -2203,6 +2203,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Fireタブを試してみる";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "履歴を保存せずに閲覧するには、Fireタブをお試しください。";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "新機能：Fireタブ";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fireタブ";

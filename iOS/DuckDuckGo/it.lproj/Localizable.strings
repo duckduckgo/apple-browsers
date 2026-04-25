@@ -2181,7 +2181,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Risolvi i problemi dei siti web";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Le Fire Tabs sono isolate dagli altri dati del browser e i loro dati vengono eliminati quando le chiudi tutte. Hanno la stessa protezione dal tracciamento delle altre schede.";
+"fire.mode.empty.state.description" = "Le schede Fire sono isolate dagli altri dati del browser. I dati vengono eliminati quando le chiudi tutte. Ti offrono la stessa protezione dal tracciamento delle altre schede.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Nuova scheda Fire";
@@ -2193,7 +2193,7 @@
 "fire.mode.menu.promotion.badge" = "Nuova";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Naviga senza salvare la cronologia locale o accedi a siti con un account diverso.";
+"fire.mode.ntp.promotion.description" = "Novità! Naviga senza salvare la cronologia locale o accedi ai siti con un account diverso.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Non adesso";
@@ -2203,6 +2203,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Prova le schede Fire";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Prova Fire Tabs per navigare senza salvare la cronologia locale.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Novità: schede Fire";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Scheda Fire";

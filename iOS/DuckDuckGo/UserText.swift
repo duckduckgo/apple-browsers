@@ -254,6 +254,7 @@ public struct UserText {
 
     public static let keyCommandShowAllTabs = NSLocalizedString("keyCommandShowAllTabs", value: "Show All Tabs", comment: "")
     public static let keyCommandNewTab = NSLocalizedString("keyCommandNewTab", value: "New Tab", comment: "")
+    public static let keyCommandNewFireTab = NSLocalizedString("keyCommandNewFireTab", value: "New Fire Tab", comment: "Discoverability title for the keyboard command that opens a new Fire Tab")
     public static let keyCommandCloseTab = NSLocalizedString("keyCommandCloseTab", value: "Close Tab", comment: "")
     public static let keyCommandNextTab = NSLocalizedString("keyCommandNextTab", value: "Next Tab", comment: "")
     public static let keyCommandPreviousTab = NSLocalizedString("keyCommandPreviousTab", value: "Previous Tab", comment: "")

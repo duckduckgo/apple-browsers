@@ -653,9 +653,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .supportsSyncChatsDeletion:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion)))
         case .fireMode:
-            Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireMode)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireMode)))
         case .fireButtonRefinements:
-            Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireButtonRefinements)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireButtonRefinements)))
         case .autoplayBlocking:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.autoplayBlocking)))
         case .simplifiedSyncSetupExperiment:

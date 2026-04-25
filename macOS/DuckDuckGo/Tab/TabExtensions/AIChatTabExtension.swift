@@ -38,6 +38,7 @@ final class AIChatTabExtension {
     private var cancellables = Set<AnyCancellable>()
     private var userScriptCancellables = Set<AnyCancellable>()
     private let isLoadedInSidebar: Bool
+    private let isTabBurner: Bool
     private weak var webView: WKWebView?
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
@@ -52,11 +53,13 @@ final class AIChatTabExtension {
     init(scriptsPublisher: some Publisher<some AIChatUserScriptProvider, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>,
          isLoadedInSidebar: Bool,
+         isTabBurner: Bool,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
         self.isLoadedInSidebar = isLoadedInSidebar
+        self.isTabBurner = isTabBurner
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
         let debugSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
@@ -79,6 +82,9 @@ final class AIChatTabExtension {
             Task { @MainActor in
                 self?.aiChatUserScript = scripts.aiChatUserScript
                 self?.aiChatUserScript?.webView = self?.webView
+                if let isTabBurner = self?.isTabBurner {
+                    self?.aiChatUserScript?.handler.isFireWindowProvider = { isTabBurner }
+                }
 
                 // Pass the handoff payload in case it was provided before the user script was loaded
                 if let payload = self?.temporaryAIChatNativeHandoffData {

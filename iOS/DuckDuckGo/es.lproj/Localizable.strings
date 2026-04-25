@@ -2329,6 +2329,9 @@
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Buscar o introducir dirección";
 
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Nueva Fire Tab";
+
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Nueva pestaña";
 

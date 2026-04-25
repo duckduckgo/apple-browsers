@@ -339,6 +339,26 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
+    // MARK: - Fire Mode
+
+    func refreshFireMode(fireMode: Bool) {
+        applyFireModeAppearance(isFireTab: fireMode)
+        textEntryView.refreshFireMode(fireMode: fireMode)
+        toolsToolbar.refreshFireMode(fireMode: fireMode)
+    }
+
+    private func applyFireModeAppearance(isFireTab: Bool) {
+        cardView.backgroundColor = isFireTab
+            ? UIColor(singleUseColor: .fireModeCardBackground)
+            : UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+        // cardView keeps the OS trait so `fireModeCardBackground` picks its light variant in light OS; content subviews force `.dark` so their dynamic colors resolve against the dark surface.
+        let style: UIUserInterfaceStyle = isFireTab ? .dark : .unspecified
+        // `toolsToolbar` manages its own subtree's trait so the accent submit button keeps OS trait.
+        [toggleView, textEntryView, attachmentsStrip, inlineDismissButton].forEach {
+            $0.overrideUserInterfaceStyle = style
+        }
+    }
+
     // MARK: - First Responder
 
     @discardableResult
@@ -676,7 +696,7 @@ private extension UnifiedToggleInputView {
         let image = UIImage(systemName: "xmark")?
             .withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium))
         button.setImage(image, for: .normal)
-        button.tintColor = UIColor(designSystemColor: .textPrimary)
+        button.tintColor = UIColor(designSystemColor: .icons)
         button.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
         button.layer.cornerRadius = Constants.inlineDismissSize / 2
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -699,7 +719,6 @@ private extension UnifiedToggleInputView {
         layer.insertSublayer(expandedShadow1, at: 1)
 
         cardView.translatesAutoresizingMaskIntoConstraints = false
-        cardView.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
         cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
         cardView.layer.shadowColor = cardShadowColor
         cardView.layer.shadowOpacity = 1.0
@@ -764,6 +783,7 @@ private extension UnifiedToggleInputView {
             delegate?.unifiedToggleInputViewDidClearSelectedTool(self)
         }
         addSubview(toolsToolbar)
+        toolsToolbar.refreshFireMode(fireMode: handler.isFireTab)
 
         textEntryView.onTextInputActivated = { [weak self] in
             guard let self, !self.isExpanded else { return }
@@ -771,6 +791,7 @@ private extension UnifiedToggleInputView {
         }
 
         setupConstraints()
+        applyFireModeAppearance(isFireTab: handler.isFireTab)
     }
 
     func setupConstraints() {

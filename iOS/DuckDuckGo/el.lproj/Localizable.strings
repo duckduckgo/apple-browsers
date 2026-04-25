@@ -2329,6 +2329,9 @@
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Αναζήτηση ή εισαγωγή διεύθυνσης";
 
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Νέα καρτέλα Fire";
+
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Νέα καρτέλα";
 

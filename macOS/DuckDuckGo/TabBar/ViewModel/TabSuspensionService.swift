@@ -158,6 +158,14 @@ final class TabSuspensionService {
 
         guard suspendedCount > 0 else {
             Logger.tabSuspension.info("No tabs were eligible for suspension")
+            pixelFiring?.fire(
+                TabSuspensionPixel.tabSuspension(
+                    trigger: .criticalMemoryPressure,
+                    tabsSuspended: 0,
+                    memoryReclaimedMB: 0
+                ),
+                frequency: .dailyAndCount
+            )
             return
         }
 

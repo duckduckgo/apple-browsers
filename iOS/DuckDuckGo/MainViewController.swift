@@ -180,7 +180,7 @@ class MainViewController: UIViewController {
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
-    private let fireModeCapability: FireModeCapable
+    let fireModeCapability: FireModeCapable
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -1486,7 +1486,7 @@ class MainViewController: UIViewController {
 
     fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, previousTab: TabViewController? = nil, openedAfterIdle: Bool = false) {
         guard !autoClearInProgress else { return }
-        
+
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
             return
@@ -2030,6 +2030,8 @@ class MainViewController: UIViewController {
     func refreshOmniBar() {
         updateOmniBarLoadingState()
         viewCoordinator.omniBar.refreshFireMode(fireMode: isCurrentTabFireTab())
+        // A fresh NTP has no `TabViewController` yet; drive UTI from the tab model so fire-mode still applies.
+        unifiedToggleInputCoordinator?.updateIsFireTab(isCurrentTabFireTab())
 
         guard let tab = currentTab, tab.link != nil else {
             viewCoordinator.omniBar.stopBrowsing()
@@ -4637,10 +4639,6 @@ extension MainViewController: TabDelegate {
         showFireButtonPulse()
     }
 
-    func tabDidRequestToggleSidebarOnCurrentTab(_ tab: TabViewController) {
-        currentTab?.submitToggleSidebarAction()
-    }
-
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String) {
         let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
                                      privacyConfig: privacyConfigurationManager,
@@ -4791,8 +4789,8 @@ extension MainViewController: TabSwitcherDelegate {
         tabSwitcherNewTabWithAnimation()
     }
 
-    func tabSwitcherDidRequestNewFireTab(tabSwitcher: TabSwitcherViewController) {
-        tabManager.setBrowsingMode(.fire, source: .tabSwitcherLongPress)
+    func tabSwitcherDidRequestNewFireTab(tabSwitcher: TabSwitcherViewController, source: FireModeSwitchSource) {
+        tabManager.setBrowsingMode(.fire, source: source)
         tabSwitcherNewTabWithAnimation()
     }
 

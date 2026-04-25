@@ -2200,6 +2200,9 @@
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Search or Enter Address";
 
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "New Fire Tab";
+
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "New Tab";
 

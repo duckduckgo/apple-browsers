@@ -14428,7 +14428,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [[ -z \"${SYSEX_BUNDLE_ID}\" ]]; then\n    echo \"Required build settings are not defined, please check xcconfig files\"\n    exit 1\nfi\n\n\necho \"ditto ${BUILT_PRODUCTS_DIR}/${SYSEX_BUNDLE_ID}.systemextension $BUILT_PRODUCTS_DIR/${CONTENTS_FOLDER_PATH}/Library/SystemExtensions/${SYSEX_BUNDLE_ID}.systemextension\"\n\nditto \"${BUILT_PRODUCTS_DIR}/${SYSEX_BUNDLE_ID}.systemextension\" \"$BUILT_PRODUCTS_DIR/${CONTENTS_FOLDER_PATH}/Library/SystemExtensions/${SYSEX_BUNDLE_ID}.systemextension\" || exit 1\n";
+			shellScript = "if [[ -z \"${SYSEX_BUNDLE_ID}\" ]]; then\n    echo \"Required build settings are not defined, please check xcconfig files\"\n    exit 1\nfi\n\nDEST=\"${BUILT_PRODUCTS_DIR}/${CONTENTS_FOLDER_PATH}/Library/SystemExtensions/${SYSEX_BUNDLE_ID}.systemextension\"\n\n# Guard against catastrophic expansion if Xcode env vars are unexpectedly unset.\nif [[ -z \"${BUILT_PRODUCTS_DIR}\" || -z \"${CONTENTS_FOLDER_PATH}\" || \"${DEST}\" != *\"/${SYSEX_BUNDLE_ID}.systemextension\" ]]; then\n    echo \"Refusing to clean unexpected destination path: ${DEST}\"\n    exit 1\nfi\n\n# Clear stale contents (e.g. orphaned frameworks from a previous build with different SPM deps)\n# so the bundle's resource seal stays consistent with what is on disk after ditto.\n# See errSecCSBadResource (-67054).\nrm -rf \"${DEST}\"\n\necho \"ditto ${BUILT_PRODUCTS_DIR}/${SYSEX_BUNDLE_ID}.systemextension ${DEST}\"\nditto \"${BUILT_PRODUCTS_DIR}/${SYSEX_BUNDLE_ID}.systemextension\" \"${DEST}\" || exit 1\n";
 		};
 		7B31FD922AD126C40086AA24 /* Embed System Network Extension */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14447,7 +14447,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [[ -z \"${SYSEX_BUNDLE_ID}\" ]]; then\n    echo \"Required build settings are not defined, please check xcconfig files\"\n    exit 1\nfi\n\n\necho \"ditto ${BUILT_PRODUCTS_DIR}/${SYSEX_BUNDLE_ID}.systemextension $BUILT_PRODUCTS_DIR/${CONTENTS_FOLDER_PATH}/Library/SystemExtensions/${SYSEX_BUNDLE_ID}.systemextension\"\n\nditto \"${BUILT_PRODUCTS_DIR}/${SYSEX_BUNDLE_ID}.systemextension\" \"$BUILT_PRODUCTS_DIR/${CONTENTS_FOLDER_PATH}/Library/SystemExtensions/${SYSEX_BUNDLE_ID}.systemextension\" || exit 1\n";
+			shellScript = "if [[ -z \"${SYSEX_BUNDLE_ID}\" ]]; then\n    echo \"Required build settings are not defined, please check xcconfig files\"\n    exit 1\nfi\n\nDEST=\"${BUILT_PRODUCTS_DIR}/${CONTENTS_FOLDER_PATH}/Library/SystemExtensions/${SYSEX_BUNDLE_ID}.systemextension\"\n\n# Guard against catastrophic expansion if Xcode env vars are unexpectedly unset.\nif [[ -z \"${BUILT_PRODUCTS_DIR}\" || -z \"${CONTENTS_FOLDER_PATH}\" || \"${DEST}\" != *\"/${SYSEX_BUNDLE_ID}.systemextension\" ]]; then\n    echo \"Refusing to clean unexpected destination path: ${DEST}\"\n    exit 1\nfi\n\n# Clear stale contents (e.g. orphaned frameworks from a previous build with different SPM deps)\n# so the bundle's resource seal stays consistent with what is on disk after ditto.\n# See errSecCSBadResource (-67054).\nrm -rf \"${DEST}\"\n\necho \"ditto ${BUILT_PRODUCTS_DIR}/${SYSEX_BUNDLE_ID}.systemextension ${DEST}\"\nditto \"${BUILT_PRODUCTS_DIR}/${SYSEX_BUNDLE_ID}.systemextension\" \"${DEST}\" || exit 1\n";
 		};
 		7BB34F502AD98394005691AE /* Copy Swift Package resources */ = {
 			isa = PBXShellScriptBuildPhase;

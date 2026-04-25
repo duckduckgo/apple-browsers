@@ -36,14 +36,12 @@
             {
                 "key": "is_internal",
                 "description": "Whether the user is flagged as an internal user",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "feature_state_enabled",
                 "description": "Whether the widgetReporting subfeature is enabled in the current privacy configuration",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             }
         ]
     },

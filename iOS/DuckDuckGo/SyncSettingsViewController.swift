@@ -713,6 +713,8 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         } else {
             return
         }
+        Pixel.fire(pixel: .syncSetupBarcodeCodeCopied,
+                   withAdditionalParameters: [PixelParameters.source: source.rawValue])
         syncSetupExperimentPixels.fireBarcodeCodeCopied()
     }
 

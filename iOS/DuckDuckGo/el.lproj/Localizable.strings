@@ -2181,7 +2181,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Αντιμετώπιση προβλημάτων ιστοτόπων";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Οι καρτέλες Fire είναι απομονωμένες από άλλα δεδομένα του προγράμματος περιήγησης και τα δεδομένα τους καίγονται όταν τις κλείνεις όλες. Έχουν την ίδια προστασία παρακολούθησης με τις άλλες καρτέλες.";
+"fire.mode.empty.state.description" = "Οι καρτέλες Fire είναι απομονωμένες από άλλα δεδομένα του προγράμματος περιήγησης. Τα δεδομένα τους καίγονται όταν τις κλείσεις όλες. Παρέχουν την ίδια προστασία παρακολούθησης με άλλες καρτέλες.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Νέα καρτέλα Fire";
@@ -2193,7 +2193,7 @@
 "fire.mode.menu.promotion.badge" = "Νέο";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Περιηγήσου χωρίς να αποθηκεύσεις το τοπικό ιστορικό ή συνδέσου σε ιστότοπους με διαφορετικό λογαριασμό.";
+"fire.mode.ntp.promotion.description" = "Νέο! Περιηγήσου χωρίς να αποθηκεύσεις το τοπικό ιστορικό ή συνδέσου σε ιστότοπους με διαφορετικό λογαριασμό.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Όχι τώρα";
@@ -2203,6 +2203,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Δοκίμασε τις καρτέλες Fire";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Δοκίμασε τις Καρτέλες Fire για περιήγηση χωρίς να αποθηκεύεις το τοπικό ιστορικό.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Νέο: Καρτέλες Fire";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Καρτέλα Fire";

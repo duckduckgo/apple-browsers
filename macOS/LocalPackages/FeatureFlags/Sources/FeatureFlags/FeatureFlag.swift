@@ -92,6 +92,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382557
     case syncSetupBarcodeIsUrlBased
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214232292928824
+    case allowSingleDeviceOnConnectScreen
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615684438
     case exchangeKeysToSyncWithAnotherDevice
 
@@ -444,6 +447,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.webViewUserAgent)), category: .dbp)
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased)), category: .sync)
+        case .allowSingleDeviceOnConnectScreen:
+            Config(source: .remoteReleasable(.subfeature(SyncSubfeature.allowSingleDeviceOnConnectScreen)), category: .sync)
         case .exchangeKeysToSyncWithAnotherDevice:
             Config(source: .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice)), category: .sync)
         case .canScanUrlBasedSyncSetupBarcodes:

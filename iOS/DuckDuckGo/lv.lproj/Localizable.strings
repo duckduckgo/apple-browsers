@@ -2181,7 +2181,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Tīmekļa vietņu problēmu novēršana";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Fire cilnes ir izolētas no citiem pārlūkprogrammas datiem, un to dati tiek dzēsti, kad tās visas aizver. Tām ir tāda pati izsekošanas aizsardzība kā citām cilnēm.";
+"fire.mode.empty.state.description" = "Fire cilnes ir izolētas no citiem pārlūkprogrammas datiem. Tās visas aizverot, to dati tiek iznīcināti. Tām ir tāda pati izsekošanas aizsardzība kā citām cilnēm.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Jauna Fire cilne";
@@ -2193,7 +2193,7 @@
 "fire.mode.menu.promotion.badge" = "Jauns";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Pārlūko, nesaglabājot lokālo vēsturi, vai pieraksties vietnēs ar citu kontu.";
+"fire.mode.ntp.promotion.description" = "Jaunums! Pārlūko vietnes, nesaglabājot vietējo vēsturi, vai pieraksties tajās, izmantojot citu kontu.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Ne tagad";
@@ -2203,6 +2203,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Izmēģini Fire cilnes";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Izmēģini Fire Tabs, lai pārlūkotu, nesaglabājot vietējo vēsturi.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Jaunums: Fire cilnes";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire cilne";

@@ -2181,7 +2181,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Šalink interneto svetainių triktis";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "„Fire“ kortelės izoliuotos nuo kitų naršyklės duomenų. Kai visas jas uždarai, duomenys ištrinami. Joms taikoma tokia pati apsauga nuo sekimo kaip ir kitoms kortelėms.";
+"fire.mode.empty.state.description" = "Skirtukai „Fire“ yra izoliuoti nuo kitų naršyklės duomenų. Jų duomenys sunaikinami, kai tik juos visus uždarote. Jie suteikia tokią pačią apsaugą nuo sekimo kaip ir kiti skirtukai.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Nauja „Fire“ kortelė";
@@ -2193,7 +2193,7 @@
 "fire.mode.menu.promotion.badge" = "Naujas";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Naršyk ir nesaugok vietinės istorijos arba prisijunk prie svetainių su kita paskyra.";
+"fire.mode.ntp.promotion.description" = "Naujiena! Naršyk nesaugant vietinės istorijos arba prisijunk prie svetainių su kita paskyra.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Ne dabar";
@@ -2203,6 +2203,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Išbandyk „Fire“ korteles";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Išbandyk skirtukus „Fire Tabs“, kad naršytum nesaugodamas vietinės istorijos.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Naujiena: skirtukai „Fire Tabs“";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "„Fire“ kortelė";

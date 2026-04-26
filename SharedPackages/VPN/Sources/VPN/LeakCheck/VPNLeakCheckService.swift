@@ -23,9 +23,11 @@ import PixelKit
 
 public actor VPNLeakCheckService {
 
+    public typealias TunnelInterfaceProvider = @Sendable () async -> NWInterface?
+
     private let configuration: LeakCheckConfiguration
     private var egressInfo: LeakCheckEgressInfo
-    private var tunnelInterface: NWInterface?
+    private let tunnelInterface: TunnelInterfaceProvider
     private let httpClient: LeakCheckHTTPClient
     private let stunClient: LeakCheckSTUNClient
     private let wideEvent: WideEventManaging
@@ -35,13 +37,18 @@ public actor VPNLeakCheckService {
     private var periodicTask: Task<Void, Never>?
     private var isStopped = false
 
-    /// `tunnelInterface` is optional at the type level so tests can omit a real `NWInterface`
-    /// (Apple provides no public initializer). Production callers must always pass a non-nil value —
-    /// see `PacketTunnelProvider.scheduleLeakCheck` which refuses to construct the service otherwise.
+    /// The service resolves the tunnel `NWInterface` live at the start of every check via
+    /// `tunnelInterface`. This avoids caching a stale or nil interface from initialization time —
+    /// if the kernel hadn't yet published the utun device when the service was created, subsequent
+    /// checks will pick it up automatically.
+    ///
+    /// When `tunnelInterface` returns nil, the check is skipped entirely — no wide event is fired.
+    /// Running unpinned probes can't distinguish "tunnel is healthy" from "tunnel is leaking",
+    /// so the result would be meaningless either way.
     public init(
         configuration: LeakCheckConfiguration = .default,
         egressInfo: LeakCheckEgressInfo,
-        tunnelInterface: NWInterface?,
+        tunnelInterface: @escaping TunnelInterfaceProvider,
         httpClient: LeakCheckHTTPClient,
         stunClient: LeakCheckSTUNClient,
         wideEvent: WideEventManaging
@@ -76,11 +83,6 @@ public actor VPNLeakCheckService {
     public func updateEgressInfo(_ newInfo: LeakCheckEgressInfo) {
         Logger.networkProtectionIPLeakCheck.log("Updated egress info reference")
         egressInfo = newInfo
-    }
-
-    public func updateTunnelInterface(_ interface: NWInterface?) {
-        Logger.networkProtectionIPLeakCheck.log("Updated tunnel interface reference: \(interface?.name ?? "<nil>", privacy: .public)")
-        tunnelInterface = interface
     }
 
     public static func completeAllPendingFlows(wideEvent: WideEventManaging) {
@@ -132,7 +134,11 @@ public actor VPNLeakCheckService {
         Logger.networkProtectionIPLeakCheck.log("🟢 Starting leak check (trigger: \(trigger.rawValue, privacy: .public))")
 
         let egressInfoSnapshot = egressInfo
-        let tunnelInterfaceSnapshot = tunnelInterface
+        guard let tunnelInterfaceSnapshot = await tunnelInterface() else {
+            Logger.networkProtectionIPLeakCheck.log("🔴 Skipping leak check — tunnel interface unavailable (trigger: \(trigger.rawValue, privacy: .public))")
+            return
+        }
+        Logger.networkProtectionIPLeakCheck.debug("Resolved tunnel interface for leak check: \(tunnelInterfaceSnapshot.name, privacy: .public)")
 
         let data = VPNIPLeakCheckWideEventData(trigger: trigger)
         data.egressServerName = egressInfoSnapshot.name

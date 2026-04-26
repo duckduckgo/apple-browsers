@@ -31,39 +31,43 @@ public enum IPAddressClassifier {
         if let v4 = IPv4Address(address) {
             return classifyIPv4(v4)
         }
+
         if let v6 = IPv6Address(address) {
             return classifyIPv6(v6)
         }
+
         return .unknown
     }
 
     private static func classifyIPv4(_ address: IPv4Address) -> LeakIPType {
+        if address.isLoopback || address.isLinkLocal || address.isMulticast {
+            return .unknown
+        }
+
         let bytes = [UInt8](address.rawValue)
         guard bytes.count == 4 else { return .unknown }
         let (b0, b1) = (bytes[0], bytes[1])
 
+        // RFC1918 private ranges
         if b0 == 10 { return .private }
         if b0 == 172 && (16...31).contains(b1) { return .private }
         if b0 == 192 && b1 == 168 { return .private }
 
-        if b0 == 127 { return .unknown }
-        if b0 == 169 && b1 == 254 { return .unknown }
+        // 0.0.0.0/8, CGNAT 100.64.0.0/10, class E 240.0.0.0/4
+        if b0 == 0 || b0 >= 240 { return .unknown }
         if b0 == 100 && (64...127).contains(b1) { return .unknown }
-        if b0 >= 224 { return .unknown }
-        if b0 == 0 { return .unknown }
 
         return .public
     }
 
     private static func classifyIPv6(_ address: IPv6Address) -> LeakIPType {
-        let bytes = [UInt8](address.rawValue)
-        guard bytes.count == 16 else { return .unknown }
+        if address.isAny || address.isLoopback || address.isLinkLocal || address.isMulticast {
+            return .unknown
+        }
 
-        if bytes == Array(repeating: 0, count: 15) + [1] { return .unknown }
-        if bytes == Array(repeating: 0, count: 16) { return .unknown }
-        if bytes[0] == 0xfe && (bytes[1] & 0xc0) == 0x80 { return .unknown }
-        if bytes[0] == 0xfc || bytes[0] == 0xfd { return .private }
-        if bytes[0] == 0xff { return .unknown }
+        if address.isUniqueLocal {
+            return .private
+        }
 
         return .public
     }

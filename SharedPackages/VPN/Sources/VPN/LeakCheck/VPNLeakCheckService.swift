@@ -265,7 +265,7 @@ public actor VPNLeakCheckService {
         async let v4Https = Self.runLeakTest { try await http.fetchIP(host: cfg.host, port: cfg.httpsPort, usesTLS: true, ipVersion: .v4, timeout: cfg.httpTimeout, requiredInterface: iface) }
         async let v4Stun  = Self.runLeakTest { try await stun.fetchIP(host: cfg.host, port: cfg.stunPort, ipVersion: .v4, timeout: cfg.stunTimeout, requiredInterface: iface) }
         async let v6Http  = Self.runLeakTest { try await http.fetchIP(host: cfg.host, port: cfg.httpPort, usesTLS: false, ipVersion: .v6, timeout: cfg.httpTimeout, requiredInterface: iface) }
-        async let v6Https = Self.runLeakTest { try await http.fetchIP(host: cfg.host, port: cfg.httpsPort,usesTLS: true, ipVersion: .v6, timeout: cfg.httpTimeout, requiredInterface: iface) }
+        async let v6Https = Self.runLeakTest { try await http.fetchIP(host: cfg.host, port: cfg.httpsPort, usesTLS: true, ipVersion: .v6, timeout: cfg.httpTimeout, requiredInterface: iface) }
         async let v6Stun  = Self.runLeakTest { try await stun.fetchIP(host: cfg.host, port: cfg.stunPort, ipVersion: .v6, timeout: cfg.stunTimeout, requiredInterface: iface) }
 
         return await LeakTestResults(

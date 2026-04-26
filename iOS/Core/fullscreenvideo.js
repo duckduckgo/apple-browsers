@@ -27,18 +27,46 @@
 
     // YouTube Mobile won't exit fullscreen correctly if requestFullscreen is overridden. Reference: https://github.com/brave/brave-ios/pull/2002
     const isMobile = /mobile/i.test(navigator.userAgent)
+    const isIPad = /ipad/i.test(navigator.userAgent)
+    const isIPhone = isMobile && !isIPad
 
-    if (!browserHasExistingFullScreenSupport && canEnterFullscreen && !isMobile) {
+    if (!browserHasExistingFullScreenSupport && canEnterFullscreen && !isIPhone) {
         Object.defineProperty(document, 'fullscreenEnabled', {
             value: true
         })
 
-        HTMLElement.prototype.requestFullscreen = function () {
-            const video = this.querySelector('video')
+        // Reddit and similar sites embed the <video> inside a Web Component's shadow root,
+        // which a plain querySelector won't pierce.
+        const findVideo = function (root) {
+            if (root instanceof HTMLVideoElement) return root
+            if (root.shadowRoot) {
+                const inShadow = findVideo(root.shadowRoot)
+                if (inShadow) return inShadow
+            }
+            const direct = root.querySelector('video')
+            if (direct) return direct
+            const descendants = root.querySelectorAll('*')
+            for (let i = 0; i < descendants.length; i++) {
+                if (descendants[i].shadowRoot) {
+                    const found = findVideo(descendants[i].shadowRoot)
+                    if (found) return found
+                }
+            }
+            return null
+        }
 
-            if (video) {
-                video.webkitEnterFullscreen()
-                return true
+        HTMLElement.prototype.requestFullscreen = function () {
+            // The caller may be a sibling of the <video> (e.g. a maximize button in a custom
+            // player's controls), so we walk up from `this` — crossing shadow root boundaries
+            // via host — and search at each level until we find a video.
+            let scope = this
+            while (scope && scope !== document) {
+                const video = findVideo(scope)
+                if (video) {
+                    video.webkitEnterFullscreen()
+                    return true
+                }
+                scope = scope instanceof ShadowRoot ? scope.host : scope.parentNode
             }
 
             return false

@@ -24,7 +24,7 @@ import PixelKit
 final class VPNLeakCheckServiceTests: XCTestCase {
 
     /// `NWInterface` has no public initializer, so tests obtain a real one (typically loopback)
-    /// from `NWPathMonitor`. The mock probe clients ignore the interface, so any non-nil value
+    /// from `NWPathMonitor`. The mock leak-test clients ignore the interface, so any non-nil value
     /// is enough to keep the service from skipping with "tunnel interface unavailable".
     private static let systemInterface: NWInterface = {
         final class Box: @unchecked Sendable {
@@ -56,7 +56,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         LeakCheckEgressInfo(ipAddress: ip, name: name)
     }
 
-    func testAllProbesMatchEgress_allSuccess() async throws {
+    func testAllTestsMatchEgress_allSuccess() async throws {
         let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let wideEvent = MockWideEventManager()
@@ -205,7 +205,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         XCTAssertEqual(data.ipv6Stun?.status, .success)
     }
 
-    func testIPv4ProbeError_recordedAsError() async throws {
+    func testIPv4LeakTestError_recordedAsError() async throws {
         let http = MockLeakCheckHTTPClient(ipv4Error: URLError(.timedOut), ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let wideEvent = MockWideEventManager()
@@ -538,7 +538,7 @@ final class SlowMockHTTPClient: LeakCheckHTTPClient, @unchecked Sendable {
         self.delaySeconds = delaySeconds
         self.returnIP = returnIP
     }
-    func fetchIP(host: String, port: UInt16, scheme: LeakCheckScheme, ipVersion: IPVersion, timeout: TimeInterval, requiredInterface: NWInterface?) async throws -> String {
+    func fetchIP(host: String, port: UInt16, usesTLS: Bool, ipVersion: IPVersion, timeout: TimeInterval, requiredInterface: NWInterface?) async throws -> String {
         try await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
         if ipVersion == .v6 { throw URLError(.cannotFindHost) }
         return returnIP
@@ -563,7 +563,7 @@ final class MockLeakCheckHTTPClient: LeakCheckHTTPClient, @unchecked Sendable {
     func fetchIP(
         host: String,
         port: UInt16,
-        scheme: LeakCheckScheme,
+        usesTLS: Bool,
         ipVersion: IPVersion,
         timeout: TimeInterval,
         requiredInterface: NWInterface?

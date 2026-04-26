@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import Network
 import os.log
@@ -43,7 +44,7 @@ public actor VPNLeakCheckService {
     /// checks will pick it up automatically.
     ///
     /// When `tunnelInterface` returns nil, the check is skipped entirely — no wide event is fired.
-    /// Running unpinned probes can't distinguish "tunnel is healthy" from "tunnel is leaking",
+    /// Running unpinned tests can't distinguish "tunnel is healthy" from "tunnel is leaking",
     /// so the result would be meaningless either way.
     public init(
         configuration: LeakCheckConfiguration = .default,
@@ -146,7 +147,7 @@ public actor VPNLeakCheckService {
 
         let egressIPSnapshot = egressInfoSnapshot.ipAddress
         let startDate = Date()
-        let results = await probeAll(tunnelInterface: tunnelInterfaceSnapshot)
+        let results = await runAllLeakTests(tunnelInterface: tunnelInterfaceSnapshot)
 
         Logger.networkProtectionIPLeakCheck.debug(
             "IP comparison — expected: \(egressIPSnapshot, privacy: .public), got ipv4[http: \(Self.describeIP(results.ipv4Http), privacy: .public), https: \(Self.describeIP(results.ipv4Https), privacy: .public), stun: \(Self.describeIP(results.ipv4Stun), privacy: .public)], ipv6[http: \(Self.describeIP(results.ipv6Http), privacy: .public), https: \(Self.describeIP(results.ipv6Https), privacy: .public), stun: \(Self.describeIP(results.ipv6Stun), privacy: .public)]"
@@ -159,13 +160,13 @@ public actor VPNLeakCheckService {
         data.ipv6Https = classifyIPv6(results.ipv6Https)
         data.ipv6Stun = classifyIPv6(results.ipv6Stun)
 
-        let ipv4Probes: [LeakCheckPerTestResult?] = [data.ipv4Http, data.ipv4Https, data.ipv4Stun]
-        if ipv4Probes.contains(where: { $0?.status == .leak }),
+        let ipv4Tests: [LeakCheckPerTestResult?] = [data.ipv4Http, data.ipv4Https, data.ipv4Stun]
+        if ipv4Tests.contains(where: { $0?.status == .leak }),
            let leakedIP = firstLeakedIP(from: [results.ipv4Http, results.ipv4Https, results.ipv4Stun], egressIP: egressIPSnapshot) {
             data.ipv4LeakIPType = IPAddressClassifier.classify(leakedIP)
         }
-        let ipv6Probes: [LeakCheckPerTestResult?] = [data.ipv6Http, data.ipv6Https, data.ipv6Stun]
-        if ipv6Probes.contains(where: { $0?.status == .leak }),
+        let ipv6Tests: [LeakCheckPerTestResult?] = [data.ipv6Http, data.ipv6Https, data.ipv6Stun]
+        if ipv6Tests.contains(where: { $0?.status == .leak }),
            let leakedIP = firstLeakedIP(from: [results.ipv6Http, results.ipv6Https, results.ipv6Stun], egressIP: egressIPSnapshot) {
             data.ipv6LeakIPType = IPAddressClassifier.classify(leakedIP)
         }
@@ -217,7 +218,7 @@ public actor VPNLeakCheckService {
         return parts.joined(separator: ", ")
     }
 
-    private struct ProbeResults {
+    private struct LeakTestResults {
         var ipv4Http: Result<String, Error>
         var ipv4Https: Result<String, Error>
         var ipv4Stun: Result<String, Error>
@@ -226,53 +227,26 @@ public actor VPNLeakCheckService {
         var ipv6Stun: Result<String, Error>
     }
 
-    private enum ProbeKey: Hashable {
-        case ipv4Http, ipv4Https, ipv4Stun, ipv6Http, ipv6Https, ipv6Stun
-    }
-
-    private func probeAll(tunnelInterface: NWInterface?) async -> ProbeResults {
-        let config = configuration
+    private func runAllLeakTests(tunnelInterface: NWInterface?) async -> LeakTestResults {
+        let cfg = configuration
         let http = httpClient
         let stun = stunClient
         let iface = tunnelInterface
 
-        var collected: [ProbeKey: Result<String, Error>] = [:]
+        async let v4Http  = Self.runLeakTest { try await http.fetchIP(host: cfg.host, port: cfg.httpPort,  usesTLS: false, ipVersion: .v4, timeout: cfg.httpTimeout, requiredInterface: iface) }
+        async let v4Https = Self.runLeakTest { try await http.fetchIP(host: cfg.host, port: cfg.httpsPort, usesTLS: true,  ipVersion: .v4, timeout: cfg.httpTimeout, requiredInterface: iface) }
+        async let v4Stun  = Self.runLeakTest { try await stun.fetchIP(host: cfg.host, port: cfg.stunPort,                  ipVersion: .v4, timeout: cfg.stunTimeout, requiredInterface: iface) }
+        async let v6Http  = Self.runLeakTest { try await http.fetchIP(host: cfg.host, port: cfg.httpPort,  usesTLS: false, ipVersion: .v6, timeout: cfg.httpTimeout, requiredInterface: iface) }
+        async let v6Https = Self.runLeakTest { try await http.fetchIP(host: cfg.host, port: cfg.httpsPort, usesTLS: true,  ipVersion: .v6, timeout: cfg.httpTimeout, requiredInterface: iface) }
+        async let v6Stun  = Self.runLeakTest { try await stun.fetchIP(host: cfg.host, port: cfg.stunPort,                  ipVersion: .v6, timeout: cfg.stunTimeout, requiredInterface: iface) }
 
-        await withTaskGroup(of: (ProbeKey, Result<String, Error>).self) { group in
-            group.addTask {
-                (.ipv4Http, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpPort, scheme: .http, ipVersion: .v4, timeout: config.httpTimeout, requiredInterface: iface) })
-            }
-            group.addTask {
-                (.ipv4Https, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpsPort, scheme: .https, ipVersion: .v4, timeout: config.httpTimeout, requiredInterface: iface) })
-            }
-            group.addTask {
-                (.ipv4Stun, await Self.runProbe { try await stun.fetchIP(host: config.host, port: config.stunPort, ipVersion: .v4, timeout: config.stunTimeout, requiredInterface: iface) })
-            }
-            group.addTask {
-                (.ipv6Http, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpPort, scheme: .http, ipVersion: .v6, timeout: config.httpTimeout, requiredInterface: iface) })
-            }
-            group.addTask {
-                (.ipv6Https, await Self.runProbe { try await http.fetchIP(host: config.host, port: config.httpsPort, scheme: .https, ipVersion: .v6, timeout: config.httpTimeout, requiredInterface: iface) })
-            }
-            group.addTask {
-                (.ipv6Stun, await Self.runProbe { try await stun.fetchIP(host: config.host, port: config.stunPort, ipVersion: .v6, timeout: config.stunTimeout, requiredInterface: iface) })
-            }
-            for await item in group {
-                collected[item.0] = item.1
-            }
-        }
-
-        return ProbeResults(
-            ipv4Http: collected[.ipv4Http] ?? .failure(CancellationError()),
-            ipv4Https: collected[.ipv4Https] ?? .failure(CancellationError()),
-            ipv4Stun: collected[.ipv4Stun] ?? .failure(CancellationError()),
-            ipv6Http: collected[.ipv6Http] ?? .failure(CancellationError()),
-            ipv6Https: collected[.ipv6Https] ?? .failure(CancellationError()),
-            ipv6Stun: collected[.ipv6Stun] ?? .failure(CancellationError())
+        return await LeakTestResults(
+            ipv4Http: v4Http, ipv4Https: v4Https, ipv4Stun: v4Stun,
+            ipv6Http: v6Http, ipv6Https: v6Https, ipv6Stun: v6Stun
         )
     }
 
-    private static func runProbe(_ operation: @Sendable () async throws -> String) async -> Result<String, Error> {
+    private static func runLeakTest(_ operation: @Sendable () async throws -> String) async -> Result<String, Error> {
         do { return .success(try await operation()) } catch { return .failure(error) }
     }
 
@@ -300,12 +274,8 @@ public actor VPNLeakCheckService {
         if let nwError = error as? NWError {
             switch nwError {
             case .posix(let code):
-                switch code {
-                case .EHOSTUNREACH, .ENETUNREACH, .ENETDOWN, .ECONNREFUSED, .ETIMEDOUT, .EADDRNOTAVAIL, .ENOTCONN:
-                    return true
-                default:
-                    return false
-                }
+                let expected: [POSIXErrorCode] = [.EHOSTUNREACH, .ENETUNREACH, .ENETDOWN, .ECONNREFUSED, .ETIMEDOUT, .EADDRNOTAVAIL, .ENOTCONN]
+                return expected.contains(code)
             case .dns:
                 return true
             case .tls:
@@ -350,7 +320,7 @@ public actor VPNLeakCheckService {
         let interval = configuration.periodicInterval
         periodicTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+                try? await Task.sleep(interval: interval)
                 if Task.isCancelled { return }
                 await self?.runCheck(trigger: .periodic)
             }
@@ -358,14 +328,14 @@ public actor VPNLeakCheckService {
     }
 
     private func determineStatus(data: VPNIPLeakCheckWideEventData) -> WideEventStatus {
-        let probes: [LeakCheckPerTestResult?] = [
+        let tests: [LeakCheckPerTestResult?] = [
             data.ipv4Http, data.ipv4Https, data.ipv4Stun,
             data.ipv6Http, data.ipv6Https, data.ipv6Stun
         ]
-        if probes.contains(where: { $0?.status == .leak }) {
+        if tests.contains(where: { $0?.status == .leak }) {
             return .failure
         }
-        if probes.contains(where: { $0?.status == .error }) {
+        if tests.contains(where: { $0?.status == .error }) {
             return .unknown(reason: "checks_errored")
         }
         return .success

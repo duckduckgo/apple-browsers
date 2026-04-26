@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import Network
 
@@ -54,22 +55,17 @@ public struct DefaultLeakCheckSTUNClient: LeakCheckSTUNClient {
 
         let endpoint = NWEndpoint.hostPort(host: .init(host), port: .init(integerLiteral: port))
         let connection = NWConnection(to: endpoint, using: parameters)
-
         defer { connection.cancel() }
 
-        return try await withThrowingTaskGroup(of: String.self) { group in
-            group.addTask {
+        // `perform` is parked in `withCheckedThrowingContinuation` and won't observe Task
+        // cancellation on its own — `withTaskCancellationHandler` cancels the connection so the
+        // state handler resumes the continuation and the timeout doesn't deadlock waiting.
+        return try await withTimeout(timeout, throwing: URLError(.timedOut)) {
+            try await withTaskCancellationHandler {
                 try await Self.perform(connection: connection, request: request, transactionID: transactionID)
+            } onCancel: {
+                connection.cancel()
             }
-            group.addTask {
-                try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-                throw URLError(.timedOut)
-            }
-            guard let first = try await group.next() else {
-                throw URLError(.badServerResponse)
-            }
-            group.cancelAll()
-            return first
         }
     }
 

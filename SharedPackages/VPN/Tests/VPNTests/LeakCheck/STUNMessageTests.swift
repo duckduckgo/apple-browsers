@@ -35,10 +35,10 @@ final class STUNMessageTests: XCTestCase {
         XCTAssertEqual(Array(request[8..<20]), Array(repeating: UInt8(0xAB), count: 12))
     }
 
-    func testBindingRequestGeneratesRandomTransactionID() {
-        let a = STUNMessage.bindingRequest()
-        let b = STUNMessage.bindingRequest()
-        XCTAssertNotEqual(Array(a[8..<20]), Array(b[8..<20]))
+    func testRandomTransactionIDsDiffer() {
+        let a = STUNMessage.randomTransactionID()
+        let b = STUNMessage.randomTransactionID()
+        XCTAssertNotEqual(a, b)
     }
 
     func testDecodeBindingResponse_IPv4() throws {

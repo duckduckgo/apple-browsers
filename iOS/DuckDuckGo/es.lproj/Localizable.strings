@@ -2181,7 +2181,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Solucionar problemas de sitios web";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Las Fire Tabs están aisladas de otros datos del navegador y sus datos se queman cuando las cierras todas. Tienen la misma protección contra el rastreo que otras pestañas.";
+"fire.mode.empty.state.description" = "Las Fire Tabs están aisladas de otros datos del navegador. Sus datos se queman cuando las cierras todas. Tienen la misma protección contra el rastreo que otras pestañas.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Nueva Fire Tab";
@@ -2193,7 +2193,7 @@
 "fire.mode.menu.promotion.badge" = "Nuevo";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Navega sin guardar el historial local o inicia sesión en sitios con una cuenta diferente.";
+"fire.mode.ntp.promotion.description" = "¡Nuevo! Navega sin guardar el historial local o inicia sesión en sitios con una cuenta diferente.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Ahora no";
@@ -2203,6 +2203,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Prueba Fire Tabs";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Prueba Fire Tabs para navegar sin guardar el historial local.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Nuevas: Pestañas Fire";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire tab";

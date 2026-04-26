@@ -63,7 +63,9 @@ struct SyncWithAnotherDeviceView: View {
             .frame(minWidth: Metrics.contentMinWidth)
             .roundedBorder()
 
-            singleDeviceSyncPromo()
+            if model.shouldShowSingleDeviceSyncPromoOnSyncWithAnotherDeviceScreen {
+                singleDeviceSyncPromo()
+            }
         }
         buttons: {
             Button(UserText.cancel) {

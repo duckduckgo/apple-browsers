@@ -36,6 +36,7 @@ public actor VPNLeakCheckService {
     private var currentCheck: Task<Void, Never>?
     private var lastCompletionDate: Date?
     private var periodicTask: Task<Void, Never>?
+    private var scheduledCheck: Task<Void, Never>?
     private var isStopped = false
 
     /// The service resolves the tunnel `NWInterface` live at the start of every check via
@@ -72,12 +73,38 @@ public actor VPNLeakCheckService {
         isStopped = true
         periodicTask?.cancel()
         periodicTask = nil
+        scheduledCheck?.cancel()
+        scheduledCheck = nil
         if let task = currentCheck {
             task.cancel()
             currentCheck = nil
             for data in wideEvent.getAllFlowData(VPNIPLeakCheckWideEventData.self) {
                 wideEvent.discardFlow(data)
             }
+        }
+    }
+
+    /// Schedules a leak check that runs after the trigger's natural delay
+    /// (`tunnelStartDelay` for `.tunnelStart`, immediate for `.reassert`/`.periodic`).
+    ///
+    /// The latest schedule wins: a pending scheduled check is cancelled and replaced. This collapses
+    /// rapid bursts (e.g. manual start → reconnect) into a single check using the freshest trigger,
+    /// and ensures `stop()` can cancel a pending check before it fires.
+    public func scheduleCheck(trigger: LeakCheckTrigger) {
+        guard !isStopped else {
+            Logger.networkProtectionIPLeakCheck.log("Skipping scheduled leak check — service stopped (trigger: \(trigger.rawValue, privacy: .public))")
+            return
+        }
+
+        scheduledCheck?.cancel()
+
+        let delay: TimeInterval = trigger == .tunnelStart ? configuration.tunnelStartDelay : 0
+        scheduledCheck = Task { [weak self] in
+            if delay > 0 {
+                try? await Task.sleep(interval: delay)
+            }
+            guard !Task.isCancelled else { return }
+            await self?.runCheck(trigger: trigger)
         }
     }
 

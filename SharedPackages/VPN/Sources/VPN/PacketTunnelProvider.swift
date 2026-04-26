@@ -1263,18 +1263,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             } else {
                 await leakCheckService?.updateEgressInfo(egressInfo)
             }
-            let service = leakCheckService
-            let delay = LeakCheckConfiguration.default.tunnelStartDelay
-            Task {
-                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-                await service?.runCheck(trigger: .tunnelStart)
-            }
+            await leakCheckService?.scheduleCheck(trigger: .tunnelStart)
         case .reconnected:
             await leakCheckService?.updateEgressInfo(egressInfo)
-            let service = leakCheckService
-            Task {
-                await service?.runCheck(trigger: .reassert)
-            }
+            await leakCheckService?.scheduleCheck(trigger: .reassert)
         case .wake:
             break
         }

@@ -68,42 +68,37 @@ public final class VPNIPLeakCheckWideEventData: WideEventData {
     }
 
     public func jsonParameters() -> [String: Encodable] {
-        var params: [String: Encodable] = [
-            "feature.data.ext.trigger": trigger.rawValue
-        ]
-        if let latency = latencyMsBucketed {
-            params["feature.data.ext.latency_ms_bucketed"] = latency
-        }
-        if let reason = statusReason {
-            params["feature.data.ext.status_reason"] = reason
-        }
-        if let serverName = egressServerName {
-            params["feature.data.ext.egress_server_name"] = serverName
-        }
-        addProbe(ipv4Http, version: .v4, probe: .http, to: &params)
-        addProbe(ipv4Https, version: .v4, probe: .https, to: &params)
-        addProbe(ipv4Stun, version: .v4, probe: .stun, to: &params)
-        addProbe(ipv6Http, version: .v6, probe: .http, to: &params)
-        addProbe(ipv6Https, version: .v6, probe: .https, to: &params)
-        addProbe(ipv6Stun, version: .v6, probe: .stun, to: &params)
-        if let leakType = ipv4LeakIPType {
-            params["feature.data.ext.ipv4.leak_ip_type"] = leakType.rawValue
-        }
-        if let leakType = ipv6LeakIPType {
-            params["feature.data.ext.ipv6.leak_ip_type"] = leakType.rawValue
-        }
+        var params: [String: Encodable] = ["feature.data.ext.trigger": trigger.rawValue]
+
+        if let latency = latencyMsBucketed { params["feature.data.ext.latency_ms_bucketed"] = latency }
+        if let reason = statusReason { params["feature.data.ext.status_reason"] = reason }
+        if let serverName = egressServerName { params["feature.data.ext.egress_server_name"] = serverName }
+        if let leakType = ipv4LeakIPType { params["feature.data.ext.ipv4.leak_ip_type"] = leakType.rawValue }
+        if let leakType = ipv6LeakIPType { params["feature.data.ext.ipv6.leak_ip_type"] = leakType.rawValue }
+
+        add(result: ipv4Http, version: .v4, probe: .http, to: &params)
+        add(result: ipv4Https, version: .v4, probe: .https, to: &params)
+        add(result: ipv4Stun, version: .v4, probe: .stun, to: &params)
+        add(result: ipv6Http, version: .v6, probe: .http, to: &params)
+        add(result: ipv6Https, version: .v6, probe: .https, to: &params)
+        add(result: ipv6Stun, version: .v6, probe: .stun, to: &params)
+
         return params
     }
 
-    private func addProbe(
-        _ result: LeakCheckPerTestResult?,
+    private func add(
+        result: LeakCheckPerTestResult?,
         version: IPVersion,
         probe: LeakCheckProbe,
         to params: inout [String: Encodable]
     ) {
-        guard let result = result else { return }
+        guard let result = result else {
+            return
+        }
+
         let prefix = "feature.data.ext.\(version.rawValue).\(probe.rawValue)"
         params["\(prefix).status"] = result.status.rawValue
+
         if let domain = result.errorDomain { params["\(prefix).error_domain"] = domain }
         if let code = result.errorCode { params["\(prefix).error_code"] = code }
         if let domain = result.underlyingDomain { params["\(prefix).underlying_domain"] = domain }

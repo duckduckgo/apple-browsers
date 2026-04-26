@@ -314,39 +314,29 @@ class TabSnapshotExtensionTests: XCTestCase {
         XCTAssertEqual(mockWebViewSnapshotRenderer.lastDelay, 0.1)
     }
 
-    // MARK: - renderSnapshot(from image:)
+    // MARK: - renderSnapshotSync(from:)
 
     @MainActor
-    func testWhenRenderSnapshotFromImage_AndImageHasValidSize_ThenSnapshotIsSetAndResizedToPreviewWidth() async throws {
-        let image = NSImage(size: NSSize(width: 1200, height: 800))
+    func testWhenRenderSnapshotSync_AndRendererProducesImage_ThenSnapshotIsStored() throws {
+        let view = NSView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
+        let rendered = NSImage(size: NSSize(width: 280, height: 187))
+        mockViewSnapshotRenderer.nextSnapshot = rendered
 
-        await tabSnapshotExtension.renderSnapshot(from: image)
+        tabSnapshotExtension.renderSnapshotSync(from: view)
 
         let stored = try XCTUnwrap(tabSnapshotExtension.snapshot)
-        XCTAssertEqual(stored.size.width, CGFloat(TabPreviewWindowController.width))
+        XCTAssertIdentical(stored, rendered)
     }
 
     @MainActor
-    func testWhenRenderSnapshotFromImage_AndImageHasZeroWidth_ThenSnapshotIsCleared() async {
-        tabSnapshotExtension.setIdentifier(UUID())
-        let priming = NSImage(size: NSSize(width: 1200, height: 800))
-        await tabSnapshotExtension.renderSnapshot(from: priming)
+    func testWhenRenderSnapshotSync_AndRendererReturnsNil_ThenSnapshotIsCleared() {
+        let view = NSView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
+        mockViewSnapshotRenderer.nextSnapshot = NSImage(size: NSSize(width: 280, height: 187))
+        tabSnapshotExtension.renderSnapshotSync(from: view)
         XCTAssertNotNil(tabSnapshotExtension.snapshot)
 
-        let degenerate = NSImage(size: NSSize(width: 0, height: 800))
-        await tabSnapshotExtension.renderSnapshot(from: degenerate)
-
-        XCTAssertNil(tabSnapshotExtension.snapshot)
-    }
-
-    @MainActor
-    func testWhenRenderSnapshotFromImage_AndImageHasZeroHeight_ThenSnapshotIsCleared() async {
-        let priming = NSImage(size: NSSize(width: 1200, height: 800))
-        await tabSnapshotExtension.renderSnapshot(from: priming)
-        XCTAssertNotNil(tabSnapshotExtension.snapshot)
-
-        let degenerate = NSImage(size: NSSize(width: 1200, height: 0))
-        await tabSnapshotExtension.renderSnapshot(from: degenerate)
+        mockViewSnapshotRenderer.nextSnapshot = nil
+        tabSnapshotExtension.renderSnapshotSync(from: view)
 
         XCTAssertNil(tabSnapshotExtension.snapshot)
     }

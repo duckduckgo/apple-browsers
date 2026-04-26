@@ -355,5 +355,5 @@ private class TabSnapshotExtensionMock: TabExtension, TabSnapshotExtensionProtoc
 
     func renderWebViewSnapshot() async {}
     func renderSnapshot(from view: @escaping () -> NSView?) async {}
-    func renderSnapshot(from image: NSImage) async {}
+    func renderSnapshotSync(from view: NSView) {}
 }

@@ -214,23 +214,15 @@ final class TabSnapshotExtension {
         Logger.tabSnapshots.debug("Snapshot of native page rendered")
     }
 
-    /// Stores a pre-captured snapshot, resizing it to the tab-preview thumbnail width.
-    ///
-    /// Use this overload when the caller has already rendered the snapshot to an `NSImage`
-    /// (e.g., via `ImageRenderer`). For view-based capture, use `renderSnapshot(from view:)`.
     @MainActor
-    func renderSnapshot(from image: NSImage) async {
-        let originalSize = image.size
-        guard originalSize.width > 0, originalSize.height > 0 else {
+    func renderSnapshotSync(from view: NSView) {
+        guard let snapshot = viewSnapshotRenderer.renderSnapshotSync(view: view) else {
             clearSnapshot()
             return
         }
-        let targetWidth = CGFloat(TabPreviewWindowController.width)
-        let targetHeight = originalSize.height * (targetWidth / originalSize.width)
-        let resized = image.resized(to: NSSize(width: targetWidth, height: targetHeight))
 
-        snapshotData = SnapshotData.snapshotDataForRegularView(from: resized)
-        Logger.tabSnapshots.debug("Snapshot of native page rendered from pre-captured image")
+        snapshotData = SnapshotData.snapshotDataForRegularView(from: snapshot)
+        Logger.tabSnapshots.debug("Snapshot of native page rendered")
     }
 
     private func isAllowedURL(_ url: URL) -> Bool {
@@ -313,7 +305,7 @@ protocol TabSnapshotExtensionProtocol: AnyObject, NavigationResponder {
     func setIdentifier(_ identifier: UUID)
     func renderWebViewSnapshot() async
     func renderSnapshot(from view: @escaping () -> NSView?) async
-    func renderSnapshot(from image: NSImage) async
+    func renderSnapshotSync(from view: NSView)
 
 }
 

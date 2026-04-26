@@ -1240,7 +1240,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
               let egressServerName = lastSelectedServerInfo?.name else {
             return
         }
-        guard let tunnelInterface = await resolveTunnelInterface() else {
+        guard let tunnelInterface = await resolveTunnelInterface(fallbackInterfaceName: adapter.interfaceName) else {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — unable to resolve tunnel interface")
             return
         }
@@ -1278,26 +1278,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
         case .wake:
             break
-        }
-    }
-
-    private func resolveTunnelInterface() async -> NWInterface? {
-        guard let interfaceName = adapter.interfaceName else {
-            Logger.networkProtectionIPLeakCheck.log("Tunnel interface name unavailable; leak check probes will not be pinned")
-            return nil
-        }
-        return await withCheckedContinuation { continuation in
-            let monitor = NWPathMonitor()
-            var didResume = false
-            monitor.pathUpdateHandler = { path in
-                guard !didResume else { return }
-                didResume = true
-                let match = path.availableInterfaces.first(where: { $0.name == interfaceName })
-                monitor.cancel()
-                monitor.pathUpdateHandler = nil
-                continuation.resume(returning: match)
-            }
-            monitor.start(queue: .global(qos: .utility))
         }
     }
 

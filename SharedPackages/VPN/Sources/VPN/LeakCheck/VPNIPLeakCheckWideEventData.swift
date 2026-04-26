@@ -76,12 +76,12 @@ public final class VPNIPLeakCheckWideEventData: WideEventData {
         if let leakType = ipv4LeakIPType { params["feature.data.ext.ipv4.leak_ip_type"] = leakType.rawValue }
         if let leakType = ipv6LeakIPType { params["feature.data.ext.ipv6.leak_ip_type"] = leakType.rawValue }
 
-        add(result: ipv4Http, version: .v4, probe: .http, to: &params)
-        add(result: ipv4Https, version: .v4, probe: .https, to: &params)
-        add(result: ipv4Stun, version: .v4, probe: .stun, to: &params)
-        add(result: ipv6Http, version: .v6, probe: .http, to: &params)
-        add(result: ipv6Https, version: .v6, probe: .https, to: &params)
-        add(result: ipv6Stun, version: .v6, probe: .stun, to: &params)
+        add(result: ipv4Http, version: .v4, test: .http, to: &params)
+        add(result: ipv4Https, version: .v4, test: .https, to: &params)
+        add(result: ipv4Stun, version: .v4, test: .stun, to: &params)
+        add(result: ipv6Http, version: .v6, test: .http, to: &params)
+        add(result: ipv6Https, version: .v6, test: .https, to: &params)
+        add(result: ipv6Stun, version: .v6, test: .stun, to: &params)
 
         return params
     }
@@ -89,14 +89,14 @@ public final class VPNIPLeakCheckWideEventData: WideEventData {
     private func add(
         result: LeakCheckPerTestResult?,
         version: IPVersion,
-        probe: LeakCheckProbe,
+        test: LeakCheckProtocol,
         to params: inout [String: Encodable]
     ) {
         guard let result = result else {
             return
         }
 
-        let prefix = "feature.data.ext.\(version.rawValue).\(probe.rawValue)"
+        let prefix = "feature.data.ext.\(version.rawValue).\(test.rawValue)"
         params["\(prefix).status"] = result.status.rawValue
 
         if let domain = result.errorDomain { params["\(prefix).error_domain"] = domain }

@@ -24,7 +24,7 @@ public protocol LeakCheckHTTPClient: Sendable {
     func fetchIP(
         host: String,
         port: UInt16,
-        scheme: LeakCheckScheme,
+        usesTLS: Bool,
         ipVersion: IPVersion,
         timeout: TimeInterval,
         requiredInterface: NWInterface?
@@ -80,18 +80,12 @@ public struct DefaultLeakCheckHTTPClient: LeakCheckHTTPClient {
     public func fetchIP(
         host: String,
         port: UInt16,
-        scheme: LeakCheckScheme,
+        usesTLS: Bool,
         ipVersion: IPVersion,
         timeout: TimeInterval,
         requiredInterface: NWInterface?
     ) async throws -> String {
-        let parameters: NWParameters
-        switch scheme {
-        case .http:
-            parameters = NWParameters.tcp
-        case .https:
-            parameters = NWParameters(tls: NWProtocolTLS.Options())
-        }
+        let parameters: NWParameters = usesTLS ? NWParameters(tls: NWProtocolTLS.Options()) : .tcp
         if let ipOptions = parameters.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options {
             switch ipVersion {
             case .v4: ipOptions.version = .v4

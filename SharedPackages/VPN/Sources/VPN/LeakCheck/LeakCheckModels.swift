@@ -39,12 +39,7 @@ public enum IPVersion: String {
     case v6 = "ipv6"
 }
 
-public enum LeakCheckScheme: String {
-    case http
-    case https
-}
-
-public enum LeakCheckProbe: String {
+public enum LeakCheckProtocol: String {
     case http
     case https
     case stun

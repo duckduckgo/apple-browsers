@@ -23,7 +23,34 @@ import PixelKit
 
 final class VPNLeakCheckServiceTests: XCTestCase {
 
-    private let testInterface: NWInterface? = nil
+    /// `NWInterface` has no public initializer, so tests obtain a real one (typically loopback)
+    /// from `NWPathMonitor`. The mock probe clients ignore the interface, so any non-nil value
+    /// is enough to keep the service from skipping with "tunnel interface unavailable".
+    private static let systemInterface: NWInterface = {
+        final class Box: @unchecked Sendable {
+            var interface: NWInterface?
+        }
+        let box = Box()
+        let semaphore = DispatchSemaphore(value: 0)
+        let monitor = NWPathMonitor()
+        monitor.pathUpdateHandler = { path in
+            guard box.interface == nil else { return }
+            if let first = path.availableInterfaces.first {
+                box.interface = first
+                semaphore.signal()
+            }
+        }
+        monitor.start(queue: .global())
+        if semaphore.wait(timeout: .now() + 5) == .timedOut {
+            monitor.cancel()
+            preconditionFailure("Timed out obtaining a system NWInterface for tests")
+        }
+        monitor.cancel()
+        guard let interface = box.interface else {
+            preconditionFailure("No NWInterface available for tests")
+        }
+        return interface
+    }()
 
     private func makeEgressInfo(ip: String = "1.2.3.4", name: String = "test-server") -> LeakCheckEgressInfo {
         LeakCheckEgressInfo(ipAddress: ip, name: name)
@@ -36,7 +63,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -61,7 +88,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -83,7 +110,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -111,7 +138,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -138,7 +165,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -164,7 +191,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -185,7 +212,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -207,7 +234,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -230,7 +257,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -253,7 +280,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -272,7 +299,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -301,7 +328,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: config,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -333,7 +360,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: config,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -360,7 +387,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: config,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -379,7 +406,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -401,7 +428,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -419,7 +446,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
@@ -440,7 +467,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfo(),
-            tunnelInterface: testInterface,
+            tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent

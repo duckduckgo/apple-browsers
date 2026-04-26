@@ -1240,19 +1240,20 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
               let egressServerName = lastSelectedServerInfo?.name else {
             return
         }
-        guard let tunnelInterface = await resolveTunnelInterface(fallbackInterfaceName: adapter.interfaceName) else {
-            Logger.networkProtectionIPLeakCheck.log("Skipping leak check — unable to resolve tunnel interface")
-            return
-        }
         let egressInfo = LeakCheckEgressInfo(ipAddress: egressIP, name: egressServerName)
 
         switch startReason {
         case .manual, .onDemand, .snoozeEnded:
             if leakCheckService == nil {
+                // Capture the interface name on the main actor; the resolver itself
+                // (which may consult NWPathMonitor) is safe to call off-main.
+                let fallbackInterfaceName = adapter.interfaceName
                 let service = VPNLeakCheckService(
                     configuration: .default,
                     egressInfo: egressInfo,
-                    tunnelInterface: tunnelInterface,
+                    tunnelInterface: { [weak self] in
+                        await self?.resolveTunnelInterface(fallbackInterfaceName: fallbackInterfaceName)
+                    },
                     httpClient: DefaultLeakCheckHTTPClient(),
                     stunClient: DefaultLeakCheckSTUNClient(),
                     wideEvent: wideEvent
@@ -1261,7 +1262,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 await service.start()
             } else {
                 await leakCheckService?.updateEgressInfo(egressInfo)
-                await leakCheckService?.updateTunnelInterface(tunnelInterface)
             }
             let service = leakCheckService
             let delay = LeakCheckConfiguration.default.tunnelStartDelay
@@ -1271,7 +1271,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
         case .reconnected:
             await leakCheckService?.updateEgressInfo(egressInfo)
-            await leakCheckService?.updateTunnelInterface(tunnelInterface)
             let service = leakCheckService
             Task {
                 await service?.runCheck(trigger: .reassert)

@@ -45,18 +45,24 @@ extension NEPacketTunnelProvider {
     }
 
     private static func findInterface(named interfaceName: String) async -> NWInterface? {
-        await withCheckedContinuation { continuation in
-            let monitor = NWPathMonitor()
-            var didResume = false
+        let monitor = NWPathMonitor()
+        let paths = AsyncStream<Network.NWPath> { continuation in
             monitor.pathUpdateHandler = { path in
-                guard !didResume else { return }
-                didResume = true
-                let match = path.availableInterfaces.first(where: { $0.name == interfaceName })
-                monitor.cancel()
-                monitor.pathUpdateHandler = nil
-                continuation.resume(returning: match)
+                continuation.yield(path)
+                continuation.finish()
             }
+
+            continuation.onTermination = { _ in
+                monitor.cancel()
+            }
+
             monitor.start(queue: .global(qos: .utility))
         }
+
+        for await path in paths {
+            return path.availableInterfaces.first(where: { $0.name == interfaceName })
+        }
+
+        return nil
     }
 }

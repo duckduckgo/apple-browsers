@@ -544,6 +544,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncIdentities
     case aiChatSync
     case simplifiedSyncSetupExperiment
+    case allowSingleDeviceOnConnectScreen
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

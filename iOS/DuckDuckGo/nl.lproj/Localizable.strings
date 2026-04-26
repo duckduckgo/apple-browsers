@@ -2181,7 +2181,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Problemen met websites oplossen";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Fire Tabs staan los van andere browsergegevens en de gegevens worden verwijderd wanneer je ze allemaal sluit. Ze hebben dezelfde trackingbeveiliging als andere tabbladen.";
+"fire.mode.empty.state.description" = "Fire-tabbladen zijn geïsoleerd van andere browsergegevens. Hun gegevens worden verwijderd als je ze allemaal afsluit. Ze geven je dezelfde trackingbeveiliging als andere tabbladen.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Nieuw Fire Window";
@@ -2193,7 +2193,7 @@
 "fire.mode.menu.promotion.badge" = "Nieuw";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Blader zonder je lokale geschiedenis op te slaan of log in op sites met een ander account.";
+"fire.mode.ntp.promotion.description" = "Nieuw! Blader zonder je lokale geschiedenis op te slaan of log in op sites met een ander account.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Niet nu";
@@ -2203,6 +2203,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Probeer Fire Tabs";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Probeer Fire Tabs om te browsen zonder de lokale geschiedenis op te slaan.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Nieuw: Fire-tabbladen";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire-tabblad";

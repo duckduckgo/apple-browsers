@@ -21,7 +21,6 @@ import Network
 
 enum STUNMessage {
 
-    static let magicCookie: UInt32 = 0x2112A442
     static let magicCookieBytes: [UInt8] = [0x21, 0x12, 0xA4, 0x42]
     static let bindingRequestType: UInt16 = 0x0001
     static let bindingResponseType: UInt16 = 0x0101
@@ -32,7 +31,7 @@ enum STUNMessage {
         case ipv6 = 0x02
     }
 
-    static func bindingRequest(transactionID: Data = randomTransactionID()) -> Data {
+    static func bindingRequest(transactionID: Data) -> Data {
         precondition(transactionID.count == 12)
         var data = Data(capacity: 20)
         data.append(UInt8(bindingRequestType >> 8))
@@ -71,7 +70,7 @@ extension STUNMessage {
         let messageType = (UInt16(bytes[0]) << 8) | UInt16(bytes[1])
         guard messageType == bindingResponseType else { throw DecodeError.wrongMessageType }
 
-        guard Array(data[8..<20]) == [UInt8](transactionID) else {
+        guard data[8..<20] == transactionID else {
             throw DecodeError.transactionIDMismatch
         }
 

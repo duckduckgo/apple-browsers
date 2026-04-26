@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import Network
 
@@ -66,8 +67,6 @@ enum LeakCheckHTTPResponseParser {
             let payload = try JSONDecoder().decode(Payload.self, from: data)
             guard !payload.ip.isEmpty else { throw ParseError.missingIP }
             return payload.ip
-        } catch ParseError.missingIP {
-            throw ParseError.missingIP
         } catch is DecodingError {
             throw ParseError.malformedJSON
         }
@@ -107,19 +106,15 @@ public struct DefaultLeakCheckHTTPClient: LeakCheckHTTPClient {
 
         let request = "GET / HTTP/1.1\r\nHost: \(host)\r\nConnection: close\r\n\r\n"
 
-        return try await withThrowingTaskGroup(of: String.self) { group in
-            group.addTask {
+        // `perform` is parked in `withCheckedThrowingContinuation` and won't observe Task
+        // cancellation on its own — `withTaskCancellationHandler` cancels the connection so the
+        // state handler resumes the continuation and the timeout doesn't deadlock waiting.
+        return try await withTimeout(timeout, throwing: URLError(.timedOut)) {
+            try await withTaskCancellationHandler {
                 try await Self.perform(connection: connection, request: request)
+            } onCancel: {
+                connection.cancel()
             }
-            group.addTask {
-                try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-                throw URLError(.timedOut)
-            }
-            guard let first = try await group.next() else {
-                throw URLError(.badServerResponse)
-            }
-            group.cancelAll()
-            return first
         }
     }
 
@@ -155,7 +150,7 @@ public struct DefaultLeakCheckHTTPClient: LeakCheckHTTPClient {
                 switch nwState {
                 case .ready:
                     connection.send(
-                        content: request.data(using: .utf8),
+                        content: Data(request.utf8),
                         completion: .contentProcessed { sendError in
                             if let sendError = sendError {
                                 state.resume(.failure(sendError))

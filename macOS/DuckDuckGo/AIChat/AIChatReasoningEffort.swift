@@ -28,13 +28,14 @@ enum AIChatReasoningEffort: String, CaseIterable {
     case minimal
     case low
     case medium
+    case high
 
     /// Label shown on the picker chip and as the menu item's primary text.
     var title: String {
         switch self {
         case .none, .minimal: return UserText.aiChatReasoningEffortFastTitle
         case .low: return UserText.aiChatReasoningEffortLowTitle
-        case .medium: return UserText.aiChatReasoningEffortMediumTitle
+        case .medium, .high: return UserText.aiChatReasoningEffortMediumTitle
         }
     }
 
@@ -43,7 +44,7 @@ enum AIChatReasoningEffort: String, CaseIterable {
         switch self {
         case .none, .minimal: return UserText.aiChatReasoningEffortFastSubtitle
         case .low: return UserText.aiChatReasoningEffortLowSubtitle
-        case .medium: return UserText.aiChatReasoningEffortMediumSubtitle
+        case .medium, .high: return UserText.aiChatReasoningEffortMediumSubtitle
         }
     }
 
@@ -52,7 +53,7 @@ enum AIChatReasoningEffort: String, CaseIterable {
         switch self {
         case .none, .minimal: return DesignSystemImages.Glyphs.Size16.thunderbolt
         case .low: return DesignSystemImages.Glyphs.Size16.thinking
-        case .medium: return DesignSystemImages.Glyphs.Size16.timer
+        case .medium, .high: return DesignSystemImages.Glyphs.Size16.timer
         }
     }
 }

@@ -329,11 +329,23 @@ final class AIChatOmnibarController {
     }
 
     /// Supported reasoning effort levels for the currently selected model. Unknown raw values
-    /// returned by the backend are silently filtered out — the picker only shows efforts the app
-    /// knows how to render.
+    /// returned by the backend are silently filtered out. This is the server-truth list — used to
+    /// validate persisted selections and to gate what we attach to submissions, so a value the
+    /// user actually picked still flows through unchanged (e.g. a stored `medium` keeps submitting
+    /// `medium` even after the model gains `high` support).
     var selectedModelReasoningEfforts: [AIChatReasoningEffort] {
         (models.first(where: { $0.id == persistedModelId })?.supportedReasoningEffort ?? [])
             .compactMap(AIChatReasoningEffort.init(rawValue:))
+    }
+
+    /// Display-only variant of `selectedModelReasoningEfforts` for the picker menu. Extended
+    /// Reasoning maps to the first supported effort from `high`, then `medium`: when the model
+    /// advertises both, `medium` is hidden so the menu shows a single Extended Reasoning option
+    /// backed by the higher tier. Submission and validation paths must use the un-deduped list.
+    var pickerReasoningEfforts: [AIChatReasoningEffort] {
+        let efforts = selectedModelReasoningEfforts
+        guard efforts.contains(.high) else { return efforts }
+        return efforts.filter { $0 != .medium }
     }
 
     /// Updates the selected reasoning effort and persists it for future sessions.

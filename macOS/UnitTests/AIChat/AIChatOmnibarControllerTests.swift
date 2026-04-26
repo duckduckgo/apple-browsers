@@ -506,7 +506,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     func testWhenModelSupportsUnknownReasoningEffort_ThenUnknownValueIsFilteredOut() async {
         // Given — backend includes a value the app doesn't know about yet
         mockModelsService.modelsToReturn = [
-            makeRemoteModel(id: "forward-compat-model", entityHasAccess: true, supportedReasoningEffort: ["none", "low", "high"])
+            makeRemoteModel(id: "forward-compat-model", entityHasAccess: true, supportedReasoningEffort: ["none", "low", "extreme"])
         ]
         mockPreferences.selectedModelId = "forward-compat-model"
 
@@ -514,8 +514,93 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         controller.onOmnibarActivated()
         await waitForModels()
 
-        // Then — "high" is dropped, known values pass through
+        // Then — "extreme" is dropped, known values pass through
         XCTAssertEqual(controller.selectedModelReasoningEfforts, [.none, .low])
+    }
+
+    func testWhenModelSupportsHighReasoningEffort_ThenItIsParsed() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "high-model", entityHasAccess: true, supportedReasoningEffort: ["low", "high"])
+        ]
+        mockPreferences.selectedModelId = "high-model"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then — `.high` is recognized and surfaced from the supported list
+        XCTAssertEqual(controller.selectedModelReasoningEfforts, [.low, .high])
+    }
+
+    func testWhenModelSupportsBothMediumAndHigh_ThenPickerDropsMediumButValidationKeepsIt() async {
+        // Given — model advertises both medium and high
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "dual-model", entityHasAccess: true, supportedReasoningEffort: ["low", "medium", "high"])
+        ]
+        mockPreferences.selectedModelId = "dual-model"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then — the picker collapses to a single Extended Reasoning option backed by `.high`
+        XCTAssertEqual(controller.pickerReasoningEfforts, [.low, .high])
+        // …but the un-deduped server-truth list still contains `.medium` for validation/submission
+        XCTAssertEqual(controller.selectedModelReasoningEfforts, [.low, .medium, .high])
+    }
+
+    func testWhenModelSupportsOnlyMediumNotHigh_ThenPickerKeepsMedium() async {
+        // Given — high not in the supported list, so dedup must not trigger
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "medium-model", entityHasAccess: true, supportedReasoningEffort: ["low", "medium"])
+        ]
+        mockPreferences.selectedModelId = "medium-model"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then — picker shows medium as the Extended Reasoning option
+        XCTAssertEqual(controller.pickerReasoningEfforts, [.low, .medium])
+    }
+
+    func testWhenStoredEffortIsMediumAndModelAlsoAdvertisesHigh_ThenMediumIsStillSubmitted() async {
+        // Given — user previously picked `.medium`; model now advertises both medium and high.
+        // The picker no longer surfaces `.medium` (high preferred), but the user's actual choice
+        // must continue to flow through to the backend unchanged.
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "dual-model", entityHasAccess: true, supportedReasoningEffort: ["low", "medium", "high"])
+        ]
+        mockPreferences.selectedModelId = "dual-model"
+        mockPreferences.selectedReasoningEffort = "medium"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then — `medium` is preserved and submitted (not silently reset by the picker dedup)
+        XCTAssertEqual(controller.effectiveReasoningEffort, "medium")
+        XCTAssertEqual(mockPreferences.selectedReasoningEffort, "medium")
+    }
+
+    func testWhenStoredEffortIsHigh_ThenHighIsSubmitted() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "high-model", entityHasAccess: true, supportedReasoningEffort: ["low", "high"])
+        ]
+        mockPreferences.selectedModelId = "high-model"
+        mockPreferences.selectedReasoningEffort = "high"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then — the user's `.high` selection flows through to submission
+        XCTAssertEqual(controller.effectiveReasoningEffort, "high")
     }
 
     func testWhenModelDoesNotSupportReasoningEfforts_ThenSelectedModelReasoningEffortsIsEmpty() async {

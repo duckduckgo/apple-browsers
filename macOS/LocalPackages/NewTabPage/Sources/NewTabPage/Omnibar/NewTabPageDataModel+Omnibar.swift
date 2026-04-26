@@ -33,7 +33,7 @@ public extension NewTabPageDataModel {
         public let isEnabled: Bool
         public let supportsImageUpload: Bool
         public let supportedTools: [String]
-        /// Reasoning effort levels the model supports (e.g. `["none", "low", "medium"]`).
+        /// Reasoning effort levels the model supports (e.g. `["none", "low", "medium", "high"]`).
         /// Empty when the model does not support reasoning, or when the reasoning-effort
         /// feature is disabled natively — in which case the picker is hidden web-side.
         public let supportedReasoningEffort: [String]

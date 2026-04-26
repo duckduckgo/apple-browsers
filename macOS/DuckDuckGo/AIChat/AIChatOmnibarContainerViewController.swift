@@ -1063,7 +1063,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         menu.autoenablesItems = false
 
         let currentEffort = omnibarController.selectedReasoningEffort
-        for effort in omnibarController.selectedModelReasoningEfforts {
+        for effort in omnibarController.pickerReasoningEfforts {
             let item = NSMenuItem(title: "", action: #selector(reasoningEffortSelected(_:)), keyEquivalent: "")
             item.attributedTitle = toolsMenuItemAttributedTitle(title: effort.title, subtitle: effort.subtitle)
             item.target = self
@@ -1090,7 +1090,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             reasoningPickerButton.isHidden = true
             return
         }
-        let efforts = omnibarController.selectedModelReasoningEfforts
+        let efforts = omnibarController.pickerReasoningEfforts
         reasoningPickerButton.isHidden = efforts.count <= 1 || omnibarController.isImageGenerationMode
         guard let fallback = efforts.first else { return }
         // Display only. The controller owns stale-effort cleanup (on model switch and on models

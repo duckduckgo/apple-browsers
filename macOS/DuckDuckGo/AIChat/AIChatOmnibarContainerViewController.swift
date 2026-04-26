@@ -1062,7 +1062,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        let currentEffort = omnibarController.selectedReasoningEffort
+        let currentEffort = omnibarController.displayedReasoningEffort
         for effort in omnibarController.pickerReasoningEfforts {
             let item = NSMenuItem(title: "", action: #selector(reasoningEffortSelected(_:)), keyEquivalent: "")
             item.attributedTitle = toolsMenuItemAttributedTitle(title: effort.title, subtitle: effort.subtitle)
@@ -1096,8 +1096,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // Display only. The controller owns stale-effort cleanup (on model switch and on models
         // refetch) so we never write to persistence from here — a saved value that isn't supported
         // by the current model is ignored for display and not attached to submissions.
-        let validCurrent = omnibarController.selectedReasoningEffort.flatMap { efforts.contains($0) ? $0 : nil }
-        updateReasoningPickerAppearance(validCurrent ?? fallback)
+        // `displayedReasoningEffort` maps stored bucket-equivalents (e.g. `.medium` → `.high`)
+        // to the picker's representation so the chip label/icon stay in sync with what's
+        // actually submitted.
+        updateReasoningPickerAppearance(omnibarController.displayedReasoningEffort ?? fallback)
     }
 
     private func updateReasoningPickerAppearance(_ effort: AIChatReasoningEffort) {

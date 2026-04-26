@@ -586,6 +586,79 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(mockPreferences.selectedReasoningEffort, "medium")
     }
 
+    func testWhenStoredEffortIsMediumAndPickerDedupsToHigh_ThenDisplayedEffortIsHigh() async {
+        // Given — picker dedup hides `.medium` in favor of `.high`, but the user's stored choice
+        // is still `.medium`. The chip should render the bucket-equivalent picker effort so its
+        // label/icon stay consistent with what's actually submitted.
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "dual-model", entityHasAccess: true, supportedReasoningEffort: ["low", "medium", "high"])
+        ]
+        mockPreferences.selectedModelId = "dual-model"
+        mockPreferences.selectedReasoningEffort = "medium"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then — chip resolves to `.high` (same Extended Reasoning UI as `.medium`), and
+        // submission still sends "medium" (preserving the user's actual choice).
+        XCTAssertEqual(controller.displayedReasoningEffort, .high)
+        XCTAssertEqual(controller.effectiveReasoningEffort, "medium")
+    }
+
+    func testWhenStoredEffortIsMinimalAndPickerDedupsToNone_ThenDisplayedEffortIsNone() async {
+        // Given — symmetric to the medium/high case for the Fast bucket
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "fast-dual-model", entityHasAccess: true, supportedReasoningEffort: ["none", "minimal", "low"])
+        ]
+        mockPreferences.selectedModelId = "fast-dual-model"
+        mockPreferences.selectedReasoningEffort = "minimal"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertEqual(controller.displayedReasoningEffort, .none)
+        XCTAssertEqual(controller.effectiveReasoningEffort, "minimal")
+    }
+
+    func testWhenStoredEffortIsInPickerList_ThenDisplayedEffortMatchesStored() async {
+        // Given — no dedup applies (model has only `.high`, not `.medium`)
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "high-model", entityHasAccess: true, supportedReasoningEffort: ["low", "high"])
+        ]
+        mockPreferences.selectedModelId = "high-model"
+        mockPreferences.selectedReasoningEffort = "high"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertEqual(controller.displayedReasoningEffort, .high)
+    }
+
+    func testWhenStoredEffortIsNotSupportedByModel_ThenDisplayedEffortIsNil() async {
+        // Given — stored effort the current model doesn't list at all
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "limited-model", entityHasAccess: true, supportedReasoningEffort: ["low"])
+        ]
+        mockPreferences.selectedModelId = "limited-model"
+        mockPreferences.selectedReasoningEffort = "high"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then — chip falls through to nil so the view layer can use its fallback
+        XCTAssertNil(controller.displayedReasoningEffort)
+    }
+
     func testWhenStoredEffortIsHigh_ThenHighIsSubmitted() async {
         // Given
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true

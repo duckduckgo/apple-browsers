@@ -460,7 +460,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     func testWhenPersistedReasoningEffortRawValueIsUnknown_ThenSelectedReasoningEffortIsNil() {
         // Given — backend or older build stored a raw value this app version doesn't know about
-        mockPreferences.selectedReasoningEffort = "high"
+        mockPreferences.selectedReasoningEffort = "extreme"
 
         // Then — safely surfaces as nil rather than leaking the raw string through the typed API
         XCTAssertNil(controller.selectedReasoningEffort)

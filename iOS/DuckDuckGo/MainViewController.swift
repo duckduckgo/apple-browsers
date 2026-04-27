@@ -3448,6 +3448,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onChatHistorySelected(url: URL) {
+        postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
         loadUrlInNewTab(url, inheritedAttribution: nil)
     }
 
@@ -5973,7 +5974,6 @@ extension MainViewController {
 extension MainViewController: AIChatHistoryManagerDelegate {
 
     func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChatURL url: URL) {
-        postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
         onChatHistorySelected(url: url)
     }
 }

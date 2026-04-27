@@ -32,7 +32,7 @@ final class AppInstallationAttributionPixelHandler: InstallationAttributionsPixe
 
     init(
         originProvider: AttributedMetricOriginProvider = DefaultAttributedMetricOriginProvider(loadOrigin: {
-            getXattr(named: "com.duckduckgo.origin", from: Bundle.main.bundlePath)
+            getXattr(named: AttributionXattr.origin, from: Bundle.main.bundlePath)
         }),
         attributionPixelHandler: AttributionPixelHandler = GenericAttributionPixelHandler()
     ) {

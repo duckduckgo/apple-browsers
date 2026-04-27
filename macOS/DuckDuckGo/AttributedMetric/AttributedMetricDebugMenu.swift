@@ -49,9 +49,9 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
 
             NSMenuItem.separator()
 
-            NSMenuItem(title: "Bundle xattr variant: \(getXattr(named: "com.duckduckgo.variant", from: Bundle.main.bundlePath) ?? "nil")")
+            NSMenuItem(title: "Bundle xattr variant: \(getXattr(named: AttributionXattr.variant, from: Bundle.main.bundlePath) ?? "nil")")
 
-            NSMenuItem(title: "Bundle xattr origin: \(getXattr(named: "com.duckduckgo.origin", from: Bundle.main.bundlePath) ?? "nil")")
+            NSMenuItem(title: "Bundle xattr origin: \(getXattr(named: AttributionXattr.origin, from: Bundle.main.bundlePath) ?? "nil")")
 
             NSMenuItem.separator()
 

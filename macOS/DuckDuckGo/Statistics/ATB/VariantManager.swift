@@ -23,6 +23,11 @@ import Foundation
 import os.log
 import Persistence
 
+enum AttributionXattr {
+    static let variant = "com.duckduckgo.variant"
+    static let origin = "com.duckduckgo.origin"
+}
+
 func getXattr(named name: String, from path: String) -> String? {
     let length = getxattr(path, name, nil, 0, 0, 0)
     guard length > 0 else { return nil }
@@ -167,7 +172,7 @@ final class CampaignVariant {
     private let loadVariant: () -> String?
 
     init(statisticsStore: StatisticsStore = LocalStatisticsStore(), loadVariant: @escaping () -> String? = {
-        getXattr(named: "com.duckduckgo.variant", from: Bundle.main.bundlePath)
+        getXattr(named: AttributionXattr.variant, from: Bundle.main.bundlePath)
     }) {
         self.statisticsStore = statisticsStore
         self.loadVariant = loadVariant

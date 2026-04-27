@@ -1181,7 +1181,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                dataStoring: attributedMetricDataStorage,
                                                                featureFlagger: featureFlagger,
                                                                originProvider: DefaultAttributedMetricOriginProvider(loadOrigin: {
-                                                                   getXattr(named: "com.duckduckgo.origin", from: Bundle.main.bundlePath)
+                                                                   getXattr(named: AttributionXattr.origin, from: Bundle.main.bundlePath)
                                                                }),
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,

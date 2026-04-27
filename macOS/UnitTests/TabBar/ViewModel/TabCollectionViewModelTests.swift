@@ -337,6 +337,71 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssert(tab === tabCollectionViewModel.tabViewModel(at: 2)?.tab)
     }
 
+    // Regression tests for APPLE-MACOS-BD7: setting `selectionIndex` from inside
+    // `insert`/`append` publishes `selectedTabViewModel`, which can synchronously
+    // re-enter and call `reloadItems` on the collection view. The delegate must
+    // be notified before that publication so the collection view's item count
+    // stays in sync with the data source.
+    @MainActor
+    func testWhenInsertWithSelected_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let delegate = TabCollectionViewModelDelegateMock()
+        tabCollectionViewModel.delegate = delegate
+
+        var didInsertCalledWhenSelectionPublished: Bool?
+        let cancellable = tabCollectionViewModel.$selectionIndex
+            .dropFirst()
+            .first()
+            .sink { _ in
+                didInsertCalledWhenSelectionPublished = delegate.didInsertCalled
+            }
+
+        tabCollectionViewModel.insert(Tab(), at: .unpinned(0), selected: true)
+
+        XCTAssertEqual(didInsertCalledWhenSelectionPublished, true)
+        cancellable.cancel()
+    }
+
+    @MainActor
+    func testWhenAppendWithSelected_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let delegate = TabCollectionViewModelDelegateMock()
+        tabCollectionViewModel.delegate = delegate
+
+        var didAppendCalledWhenSelectionPublished: Bool?
+        let cancellable = tabCollectionViewModel.$selectionIndex
+            .dropFirst()
+            .first()
+            .sink { _ in
+                didAppendCalledWhenSelectionPublished = delegate.didAppendCalled
+            }
+
+        tabCollectionViewModel.append(tab: Tab(), selected: true)
+
+        XCTAssertEqual(didAppendCalledWhenSelectionPublished, true)
+        cancellable.cancel()
+    }
+
+    @MainActor
+    func testWhenAppendTabsWithSelectLast_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let delegate = TabCollectionViewModelDelegateMock()
+        tabCollectionViewModel.delegate = delegate
+
+        var didMultipleChangesCalledWhenSelectionPublished: Bool?
+        let cancellable = tabCollectionViewModel.$selectionIndex
+            .dropFirst()
+            .first()
+            .sink { _ in
+                didMultipleChangesCalledWhenSelectionPublished = delegate.didMultipleChangesCalled
+            }
+
+        tabCollectionViewModel.append(tabs: [.loaded(Tab()), .loaded(Tab())], andSelect: true)
+
+        XCTAssertEqual(didMultipleChangesCalledWhenSelectionPublished, true)
+        cancellable.cancel()
+    }
+
     // MARK: - Insert or Append
 
     @MainActor

@@ -29,7 +29,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
     let emailConfirmationDataService = MockEmailConfirmationDataServiceProvider()
     let captchaService = CaptchaServiceMock()
     let pixelHandler = MockDataBrokerProtectionPixelsHandler()
-    let stageCalculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: MockDataBrokerProtectionPixelsHandler(), isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "off", featureFlagger: MockDBPFeatureFlagger())
+    let stageCalculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: MockDataBrokerProtectionPixelsHandler(), isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "off")
 
     override func tearDown() async throws {
         webViewHandler.reset()
@@ -210,8 +210,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             operationAwaitTime: 0,
             stageCalculator: stageCalculator,
             pixelHandler: pixelHandler,
-            executionConfig: BrokerJobExecutionConfig(optimizedClickAwaitTimeForOptOut: 0.0,
-                                                      legacyClickAwaitTimeForOptOut: 0.0,
+            executionConfig: BrokerJobExecutionConfig(clickAwaitTimeForOptOut: 0.0,
                                                       clickAwaitTimeForScan: 0.0),
             actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }

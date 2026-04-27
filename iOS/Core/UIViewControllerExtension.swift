@@ -34,7 +34,7 @@ extension UIViewController {
         return []
     }
 
-    public func presentShareSheet(withItems activityItems: [Any], fromView sourceView: UIView, atPoint point: Point? = nil, overrideInterfaceStyle: UIUserInterfaceStyle? = nil, widthObserver: AppWidthObserver = .shared, completion: UIActivityViewController.CompletionWithItemsHandler? = nil) {
+    public func presentShareSheet(withItems activityItems: [Any], fromView sourceView: UIView, atPoint point: Point? = nil, overrideInterfaceStyle: UIUserInterfaceStyle? = nil, widthObserver: AppWidthObserver = .shared, additionalExcludedActivityTypes: [UIActivity.ActivityType] = [], completion: UIActivityViewController.CompletionWithItemsHandler? = nil) {
         let activities = buildActivities()
         let shareController = UIActivityViewController(activityItems: activityItems, applicationActivities: activities)
         shareController.completionWithItemsHandler = completion
@@ -51,7 +51,7 @@ extension UIViewController {
         if let overrideInterfaceStyle {
             shareController.overrideUserInterfaceStyle = overrideInterfaceStyle
         }
-        shareController.excludedActivityTypes = [.markupAsPDF]
+        shareController.excludedActivityTypes = Array(Set([.markupAsPDF] + additionalExcludedActivityTypes))
         present(controller: shareController, fromView: sourceView, atPoint: point)
     }
 

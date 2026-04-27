@@ -27,6 +27,11 @@ public protocol AIChatPreferencesPersisting {
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { get }
     /// The short display name of the last selected model, used to show the button before models are fetched.
     var selectedModelShortName: String? { get set }
+    /// The last selected reasoning effort (e.g. "none", "minimal", "low", "medium").
+    var selectedReasoningEffort: String? { get set }
+    /// Emits the new value whenever `selectedReasoningEffort` changes through this persistor instance.
+    /// Consumers that need cross-component sync must share the same instance.
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { get }
 }
 
 /// Reference type so that a single instance can be shared across components (e.g. the native address-bar
@@ -36,10 +41,12 @@ public final class AIChatPreferencesPersistor: AIChatPreferencesPersisting {
     enum Key: String {
         case selectedModelId = "aichat.omnibar.selected-model-id"
         case selectedModelShortName = "aichat.omnibar.selected-model-short-name"
+        case selectedReasoningEffort = "aichat.omnibar.selected-reasoning-effort"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
     private let selectedModelIdSubject = PassthroughSubject<String?, Never>()
+    private let selectedReasoningEffortSubject = PassthroughSubject<String?, Never>()
 
     public init(keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) {
         self.keyValueStore = keyValueStore
@@ -72,5 +79,23 @@ public final class AIChatPreferencesPersistor: AIChatPreferencesPersisting {
                 try? keyValueStore.removeObject(forKey: Key.selectedModelShortName.rawValue)
             }
         }
+    }
+
+    public var selectedReasoningEffort: String? {
+        get { try? keyValueStore.object(forKey: Key.selectedReasoningEffort.rawValue) as? String }
+        set {
+            let current = try? keyValueStore.object(forKey: Key.selectedReasoningEffort.rawValue) as? String
+            guard newValue != current else { return }
+            if let value = newValue {
+                try? keyValueStore.set(value, forKey: Key.selectedReasoningEffort.rawValue)
+            } else {
+                try? keyValueStore.removeObject(forKey: Key.selectedReasoningEffort.rawValue)
+            }
+            selectedReasoningEffortSubject.send(newValue)
+        }
+    }
+
+    public var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
+        selectedReasoningEffortSubject.eraseToAnyPublisher()
     }
 }

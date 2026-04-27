@@ -2,8 +2,8 @@
     // This file defines pixels sent by the native experiments framework
     "defaultSuffixes": [],
     "activeExperiments": {
-        "autofillOnboardingExperiment": {
-            "cohorts": ["control", "variant1", "variant2", "variant3"],
+        "onboardingDismissExperiment": {
+            "cohorts": ["control", "variant1", "variant2"],
             "metrics": {
                 "save_tap": {
                     "description": "Fires once per user when they tap Save on the autofill onboarding prompt",

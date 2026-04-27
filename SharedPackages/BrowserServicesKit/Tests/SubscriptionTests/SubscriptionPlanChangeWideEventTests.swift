@@ -36,7 +36,7 @@ final class SubscriptionPlanChangeWideEventTests: XCTestCase {
         wideEvent = WideEvent(
             useMockRequests: true,
             storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
-            featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)
+            featureFlagProvider: MockWideEventFeatureFlagProvider()
         )
         firedPixels.removeAll()
     }

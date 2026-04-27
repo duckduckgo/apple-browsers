@@ -187,7 +187,7 @@ extension MainViewController {
         present(DownloadsListHostingController(), animated: true)
     }
 
-    func segueToTabSwitcher() async {
+    func segueToTabSwitcher(forceFireTabsTip: Bool = false) async {
         Logger.lifecycle.debug(#function)
 
         // Guard against concurrent presentations
@@ -237,6 +237,8 @@ extension MainViewController {
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
         controller.previewsSource = previewsSource
+        controller.fireModePromotionsCoordinator = fireModePromotionEligibility
+        controller.shouldForceShowFireTabsTip = forceFireTabsTip
         controller.modalPresentationStyle = .overCurrentContext
 
         tabSwitcherController = controller

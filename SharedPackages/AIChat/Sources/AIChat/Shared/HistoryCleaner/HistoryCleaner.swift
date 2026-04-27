@@ -77,7 +77,7 @@ public final class HistoryCleaner: HistoryCleaning {
     // MARK: - Local Storage Path
 
     private func clearLocalStorageIfAvailable(chatID: String?) -> Result<Void, Error>? {
-        guard let featureFlagProvider, featureFlagProvider.isNativeDataAccessEnabled(),
+        guard let featureFlagProvider, featureFlagProvider.isNativeDataStorageEnabled(),
               let nativeStorageHandler, (try? nativeStorageHandler.isMigrationDone()) == true else {
             return nil
         }

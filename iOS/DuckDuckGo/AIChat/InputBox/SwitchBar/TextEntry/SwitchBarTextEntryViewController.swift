@@ -83,6 +83,11 @@ class SwitchBarTextEntryViewController: UIViewController {
         setupPasteAndGo()
     }
 
+    func refreshFireMode(fireMode: Bool) {
+        applyContainerBackground(isFireTab: fireMode)
+        textEntryView.refreshFireMode(fireMode: fireMode)
+    }
+
     func focusTextField() {
         textEntryView.becomeFirstResponder()
     }
@@ -111,11 +116,15 @@ class SwitchBarTextEntryViewController: UIViewController {
 
         textEntryView.layer.cornerRadius = Metrics.containerCornerRadius
         textEntryView.layer.masksToBounds = true
-        
-        containerView.backgroundColor = handler.isFireTab ?
-        UIColor(singleUseColor: .fireModeBackground) :
-        UIColor(designSystemColor: .urlBar)
+
+        applyContainerBackground(isFireTab: handler.isFireTab)
         containerView.applyActiveShadow()
+    }
+
+    private func applyContainerBackground(isFireTab: Bool) {
+        containerView.backgroundColor = isFireTab
+            ? UIColor(singleUseColor: .fireModeBackground)
+            : UIColor(designSystemColor: .backgroundTertiary)
     }
 
     private func setupConstraints() {

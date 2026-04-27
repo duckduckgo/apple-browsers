@@ -337,6 +337,31 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssert(tab === tabCollectionViewModel.tabViewModel(at: 2)?.tab)
     }
 
+    // Regression test for APPLE-MACOS-BD7: setting `selectionIndex` from inside
+    // `insert` publishes `selectedTabViewModel`, which can synchronously re-enter
+    // and call `reloadItems` on the collection view. The delegate must be
+    // notified of the insert before that publication so the collection view's
+    // item count stays in sync with the data source.
+    @MainActor
+    func testWhenInsertWithSelected_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let delegate = TabCollectionViewModelDelegateMock()
+        tabCollectionViewModel.delegate = delegate
+
+        var didInsertCalledWhenSelectionPublished: Bool?
+        let cancellable = tabCollectionViewModel.$selectionIndex
+            .dropFirst()
+            .first()
+            .sink { _ in
+                didInsertCalledWhenSelectionPublished = delegate.didInsertCalled
+            }
+
+        tabCollectionViewModel.insert(Tab(), at: .unpinned(0), selected: true)
+
+        XCTAssertEqual(didInsertCalledWhenSelectionPublished, true)
+        cancellable.cancel()
+    }
+
     // MARK: - Insert or Append
 
     @MainActor

@@ -505,10 +505,15 @@ final class TabCollectionViewModel: NSObject {
         }
 
         tabCollection.insert(tab, at: index.item)
+        // Notify the delegate before updating selection: setting `selectionIndex`
+        // publishes `selectedTabViewModel`, which can synchronously re-enter via
+        // `TabLazyLoader` → `materialize` → `replaceTab` → `didReplaceTabAt` and
+        // call `reloadItems` on the collection view while it still has the
+        // pre-insert item count, raising NSInternalInconsistencyException.
+        delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
         if selected {
             select(at: index)
         }
-        delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
     }
 
     func insert(_ tab: Tab, at index: TabIndex, selected: Bool = true) {

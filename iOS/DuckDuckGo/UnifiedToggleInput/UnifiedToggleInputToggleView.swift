@@ -154,8 +154,16 @@ final class UnifiedToggleInputToggleView: UIView {
             }(),
 
             indicatorToDuckAI,
-            indicator.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Constants.horizontalPadding),
-            indicator.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -Constants.horizontalPadding),
+            {
+                let topConstraint = indicator.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Constants.horizontalPadding)
+                topConstraint.priority = .defaultHigh
+                return topConstraint
+            }(),
+            {
+                let bottomConstraint = indicator.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -Constants.horizontalPadding)
+                bottomConstraint.priority = .defaultHigh
+                return bottomConstraint
+            }(),
             indicator.widthAnchor.constraint(equalTo: searchButton.widthAnchor),
         ])
 

@@ -164,22 +164,19 @@ final class CampaignVariant {
     private var isCampaignVariant: Bool
 
     private let statisticsStore: StatisticsStore
-    private let loadFromFile: () -> String?
+    private let loadVariant: () -> String?
 
-    init(statisticsStore: StatisticsStore = LocalStatisticsStore(), loadFromFile: @escaping () -> String? = {
-        if let url = Bundle.main.url(forResource: "variant", withExtension: "txt") {
-            return try? String(contentsOf: url)
-        }
-        return nil
+    init(statisticsStore: StatisticsStore = LocalStatisticsStore(), loadVariant: @escaping () -> String? = {
+        getXattr(named: "com.duckduckgo.variant", from: Bundle.main.bundlePath)
     }) {
         self.statisticsStore = statisticsStore
-        self.loadFromFile = loadFromFile
+        self.loadVariant = loadVariant
     }
 
     // Should only be called during the first installation
     func getAndEnableVariant() -> String? {
         assert(statisticsStore.variant == nil)
-        if let string = loadFromFile() {
+        if let string = loadVariant() {
             isCampaignVariant = true
             return string.trimmingWhitespace()
         }

@@ -31,7 +31,9 @@ final class AppInstallationAttributionPixelHandler: InstallationAttributionsPixe
     private let decoratedAttributionPixelHandler: AttributionPixelHandler
 
     init(
-        originProvider: AttributedMetricOriginProvider = AttributedMetricOriginFileProvider(),
+        originProvider: AttributedMetricOriginProvider = DefaultAttributedMetricOriginProvider(loadOrigin: {
+            getXattr(named: "com.duckduckgo.origin", from: Bundle.main.bundlePath)
+        }),
         attributionPixelHandler: AttributionPixelHandler = GenericAttributionPixelHandler()
     ) {
         self.originProvider = originProvider

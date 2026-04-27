@@ -1492,6 +1492,9 @@ class MainViewController: UIViewController {
             return
         }
 
+        viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
+        refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
+
         viewCoordinator.logoContainer.isHidden = false
         findInPageView?.isHidden = true
         chromeManager.detach()

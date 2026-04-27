@@ -28,7 +28,6 @@ final class UnifiedToggleInputToggleView: UIView {
 
     private enum Constants {
         static let height: CGFloat = 40
-        static let innerHeight: CGFloat = 36
         static let cornerRadius: CGFloat = 20
         static let innerCornerRadius: CGFloat = 18
         static let segmentSpacing: CGFloat = 2
@@ -49,6 +48,7 @@ final class UnifiedToggleInputToggleView: UIView {
         let view = UIView()
         view.backgroundColor = UIColor(designSystemColor: .controlsRaisedBackdrop)
         view.layer.cornerRadius = Constants.cornerRadius
+        view.clipsToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -154,7 +154,7 @@ final class UnifiedToggleInputToggleView: UIView {
 
             indicatorToDuckAI,
             indicator.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Constants.horizontalPadding),
-            indicator.heightAnchor.constraint(equalToConstant: Constants.innerHeight),
+            indicator.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -Constants.horizontalPadding),
             indicator.widthAnchor.constraint(equalTo: searchButton.widthAnchor),
         ])
 

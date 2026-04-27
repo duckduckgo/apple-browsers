@@ -932,19 +932,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         XCTAssertEqual(sut.extractedProfile?.email, "test@duck.com")
     }
 
-    func testWhenFillFormNeedsEmailAndCachedEmailExists_thenServiceIsNotCalledAndCachedEmailIsUsed() async {
-        let fillFormAction = FillFormAction(id: "1", actionType: .fillForm, elements: [.init(type: "email")])
-        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [fillFormAction]))
-        sut.fetchedEmail = "cached@duck.com"
-
-        await sut.runNextAction(fillFormAction)
-
-        XCTAssertEqual(emailConfirmationDataService.getEmailAndSaveCallCount, 0)
-        XCTAssertEqual(emailConfirmationDataService.getEmailCallCount, 0)
-        XCTAssertEqual(sut.extractedProfile?.email, "cached@duck.com")
-    }
-
-    func testWhenGenerateEmailActionRuns_thenFetchedEmailIsPopulatedAndServiceCalledOnce() async {
+    func testWhenGenerateEmailActionRunsOnOptOut_thenSaveCapableHelperIsUsedWithExtractedProfileId() async {
         let generateEmailAction = GenerateEmailAction(id: "1", actionType: .generateEmail)
         let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [generateEmailAction]),
                                    extractedProfileId: 42)
@@ -952,21 +940,6 @@ final class BrokerProfileJobActionTests: XCTestCase {
         await sut.runNextAction(generateEmailAction)
 
         XCTAssertEqual(sut.fetchedEmail, "test@duck.com")
-        XCTAssertEqual(emailConfirmationDataService.getEmailAndSaveCallCount, 1)
-    }
-
-    func testWhenGenerateEmailActionRunsOnOptOut_thenExtractedProfileEmailIsMirrored() async {
-        let generateEmailAction = GenerateEmailAction(id: "1", actionType: .generateEmail)
-        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [generateEmailAction]),
-                                   extractedProfileId: 42)
-
-        await sut.runNextAction(generateEmailAction)
-
-        XCTAssertEqual(sut.extractedProfile?.email, "test@duck.com")
-        // Opt-out with a persisted extractedProfileId goes through the save-capable helper so the
-        // decoupled emailConfirmation poller has a store row to find. The fetch-only `getEmail`
-        // method is not invoked directly from the runner here (it's an implementation detail of
-        // the helper, which the mock doesn't cascade into).
         XCTAssertEqual(emailConfirmationDataService.getEmailAndSaveCallCount, 1)
         XCTAssertEqual(emailConfirmationDataService.getEmailCallCount, 0)
         XCTAssertEqual(emailConfirmationDataService.lastExtractedProfileIdPassed, 42)

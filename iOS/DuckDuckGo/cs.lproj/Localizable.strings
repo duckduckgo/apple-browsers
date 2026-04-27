@@ -4186,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Smazat data ze serveru";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Dojde k odpojení všech zařízení a smazání synchronizovaných dat ze serveru.";
+"sync.delete.all.confirm.message" = "Tvoje záloha bude ze serveru smazána. Všechna zařízení budou odpojena od synchronizace, ale z žádného zařízení nebude nic smazáno.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Smazat data ze serveru?";

@@ -54,7 +54,7 @@ public protocol EmailConfirmationDataServiceProvider {
                       attemptId: UUID,
                       pollingInterval: TimeInterval,
                       totalTimeout: TimeInterval,
-                      shouldRunNextStep: @escaping () -> Bool) async throws -> [String: String]
+                      shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData
 }
 
 public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider {
@@ -135,7 +135,7 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                              attemptId: UUID,
                              pollingInterval: TimeInterval,
                              totalTimeout: TimeInterval,
-                             shouldRunNextStep: @escaping () -> Bool) async throws -> [String: String] {
+                             shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData {
         Logger.service.log("✉️ [EmailConfirmationDataService] Polling email-data for \(email, privacy: .public), attemptId: \(attemptId.uuidString, privacy: .public), totalTimeout: \(totalTimeout, privacy: .public)s")
         let deadline = Date().addingTimeInterval(totalTimeout)
         let pollingTimeInNanoseconds = UInt64(pollingInterval * 1000) * NSEC_PER_MSEC
@@ -154,7 +154,7 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
 
             switch responseItem.status {
             case .ready:
-                var emailData: [String: String] = [:]
+                var emailData: ExtractedEmailData = [:]
                 for datum in responseItem.data {
                     emailData[datum.name] = datum.value
                 }

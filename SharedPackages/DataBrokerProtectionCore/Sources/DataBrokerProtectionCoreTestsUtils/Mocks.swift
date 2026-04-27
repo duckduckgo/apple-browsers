@@ -443,7 +443,7 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
     public private(set) var getEmailCallCount: Int = 0
     public private(set) var lastExtractedProfileIdPassed: Int64?
 
-    public var getEmailDataReturnValue: [String: String] = [:]
+    public var getEmailDataReturnValue: ExtractedEmailData = [:]
     /// Set to a non-nil `EmailError` to have `getEmailData` throw that specific error regardless
     /// of `shouldThrow`. Lets tests exercise timeout / backend-error branches independently.
     public var getEmailDataThrowError: EmailError?
@@ -496,7 +496,7 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
                              attemptId: UUID,
                              pollingInterval: TimeInterval,
                              totalTimeout: TimeInterval,
-                             shouldRunNextStep: @escaping () -> Bool) async throws -> [String: String] {
+                             shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData {
         getEmailDataCallCount += 1
         lastGetEmailDataEmail = email
         lastGetEmailDataPollingInterval = pollingInterval

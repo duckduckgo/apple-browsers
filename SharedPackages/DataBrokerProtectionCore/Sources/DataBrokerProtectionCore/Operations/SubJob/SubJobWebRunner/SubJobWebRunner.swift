@@ -62,7 +62,7 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
 
     /// Keyed bag populated by `getEmailDataAction` and forwarded to C-S-S as `data.emailData` so
     /// downstream actions can reference keys by name.
-    var emailData: [String: String] { get set }
+    var emailData: ExtractedEmailData { get set }
 
     func run(inputValue: InputValue,
              webViewHandler: WebViewHandler?,

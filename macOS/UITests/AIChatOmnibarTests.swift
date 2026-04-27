@@ -250,6 +250,28 @@ class AIChatOmnibarTests: UITestCase {
         waitForAddressBarValue(matching: "value CONTAINS 'preserved across toggle'")
     }
 
+    /// Regression guard for the search-mode draft preservation case. Was previously deleted as flaky —
+    /// the underlying flake (a `.suggestion(.askAIChat)` snapshot path that race-cleared the typed text)
+    /// is sidestepped now that `lastAddressBarTextFieldValue` is mirrored live per keystroke from
+    /// `handleTextDidChange`, always as the canonical `.text(typedText, userTyped: true)` shape.
+    func test_tabSwitch_SearchModeDraft_PreservedAcrossSwitchBack() throws {
+        // Tab 1: type a draft into the address bar in plain Search mode (no Duck.ai).
+        app.activateAddressBar()
+        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Address bar should be reachable for typing the search draft")
+        addressBarTextField.typeText("hello")
+        waitForAddressBarValue(matching: "value CONTAINS 'hello'")
+
+        // Tab 2: open a fresh NTP. Wait for the bar to clear before issuing the next keystroke so
+        // Cmd+Shift+[ doesn't race with tab2's settle.
+        app.openNewTab()
+        waitForAddressBarValue(matching: "NOT (value CONTAINS 'hello')")
+
+        // Switch back to Tab 1 — the search-mode draft must still be there.
+        switchToPreviousTab()
+        waitForAddressBarValue(matching: "value CONTAINS 'hello'")
+    }
+
     /// First ESC unfocuses Duck.ai (panel hidden, draft preserved). Second ESC fully exits Duck.ai
     /// (draft cleared, toggle back to Search).
     func test_twoStepEscape_UnfocusesThenExitsDuckAI() throws {

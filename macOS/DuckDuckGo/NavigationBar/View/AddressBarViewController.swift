@@ -517,6 +517,16 @@ final class AddressBarViewController: NSViewController {
             /// Incoming tab is in search mode — fully dismiss the duck.ai panel (in case it was up) and reset the toggle.
             delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
             setAIChatOmnibarVisible(false)
+            /// On Cmd+T from a Duck.ai tab, the new NTP tab should land in focused search mode (cursor in
+            /// the bar, "Search or enter address" placeholder). MainVC's `adjustFirstResponder` chain
+            /// normally grabs focus for NTP, but the Duck.ai panel's close + AIChatOmnibarTextContainerVC
+            /// resignation race can leave the bar unfocused with `selectionState.isInAIChatMode` lingering
+            /// and the wrong placeholder showing. Explicitly making the address bar first responder here
+            /// converges the new tab to `.active` via `handleFirstResponderChange`. URL-loaded incoming
+            /// tabs are unaffected — they should land unfocused with the URL passively rendered.
+            if tabViewModel?.tab.content == .newtab {
+                addressBarTextField.makeMeFirstResponder()
+            }
         case (false, false):
             break
         }

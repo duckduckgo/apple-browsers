@@ -36,8 +36,6 @@ protocol AutocompleteViewModelDelegate: NSObjectProtocol {
     func onSuggestionSelected(_ suggestion: Suggestion, ddgSuggestionIndex: Int?)
     func onSuggestionHighlighted(_ suggestion: Suggestion, forQuery query: String)
     func onTapAhead(_ suggestion: Suggestion)
-    func onMessageDismissed()
-    func onMessageShown()
     func deleteSuggestion(_ suggestion: Suggestion)
 
 }
@@ -57,7 +55,6 @@ class AutocompleteViewModel: ObservableObject {
     @Published var localResults = [SuggestionModel]()
     @Published var aiChatSuggestions = [SuggestionModel]()
     @Published var query: String?
-    @Published var isMessageVisible = true
     @Published var emptySuggestion: [SuggestionModel]?
     @Published var isPad: Bool = false
     @Published var sectionTitle: String?
@@ -65,14 +62,11 @@ class AutocompleteViewModel: ObservableObject {
 
     let isAddressBarAtBottom: Bool
     let showAskAIChat: Bool
-    let isSwipeToDeleteEnabled: Bool
     var suggestionFilter: AutocompleteSuggestionFilter = .all
 
-    init(isAddressBarAtBottom: Bool, showMessage: Bool, showAskAIChat: Bool, isSwipeToDeleteEnabled: Bool) {
+    init(isAddressBarAtBottom: Bool, showAskAIChat: Bool) {
         self.isAddressBarAtBottom = isAddressBarAtBottom
-        self.isMessageVisible = showMessage
         self.showAskAIChat = showAskAIChat
-        self.isSwipeToDeleteEnabled = isSwipeToDeleteEnabled
     }
 
     func updateSuggestions(_ suggestions: SuggestionResult) {
@@ -93,17 +87,6 @@ class AutocompleteViewModel: ObservableObject {
         case .urlsOnly:
             aiChatSuggestions = []
         }
-    }
-
-    func onDismissMessage() {
-        withAnimation {
-            isMessageVisible = false
-            delegate?.onMessageDismissed()
-        }
-    }
-
-    func onShownToUser() {
-        delegate?.onMessageShown()
     }
 
     func onSuggestionSelected(_ model: SuggestionModel) {

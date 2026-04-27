@@ -48,7 +48,6 @@ final class UnifiedToggleInputToggleView: UIView {
         let view = UIView()
         view.backgroundColor = UIColor(designSystemColor: .controlsRaisedBackdrop)
         view.layer.cornerRadius = Constants.cornerRadius
-        view.clipsToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -86,6 +85,8 @@ final class UnifiedToggleInputToggleView: UIView {
         stack.axis = .horizontal
         stack.distribution = .fillEqually
         stack.spacing = Constants.segmentSpacing
+        stack.layer.cornerRadius = Constants.cornerRadius - Constants.horizontalPadding
+        stack.clipsToBounds = true
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()

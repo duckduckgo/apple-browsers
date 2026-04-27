@@ -37,8 +37,8 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
 ## Workflow
 
 1. **Load MCP tools** via ToolSearch:
-   - `mcp__sentry__find_projects`, `mcp__sentry__find_releases`, `mcp__sentry__list_issues`
-   - `mcp__plugin_asana_asana__asana_get_task`, `mcp__plugin_asana_asana__asana_update_task`
+   - `mcp__sentry__find_projects`, `mcp__sentry__find_releases`, `mcp__sentry__list_issues`, `mcp__sentry__get_sentry_resource`
+   - `mcp__plugin_asana_asana__asana_get_task`, `mcp__plugin_asana_asana__asana_update_task`, `mcp__plugin_asana_asana__asana_search_tasks`, `mcp__plugin_asana_asana__asana_create_task`
 2. **Resolve releases + version filter.** Call `find_releases` with `query="<version>"` (e.g. `1.186`) to enumerate all release strings matching the series — needed for `firstRelease:` in step 3. Keep **all** of them (main app + extensions — do not filter down to a single prefix). For event matching, build the `app_version` filter directly from the user input: a series like `1.186` becomes `app_version:1.186.*`, an exact version like `1.186.0` stays `app_version:1.186.0`.
 3. **Two Sentry queries, sorted by `freq`:**
    - All unresolved in the series: `is:unresolved app_version:1.186.*` (wildcard) or `is:unresolved app_version:1.186.0` (exact) — limit 30+. Pass the value unquoted; quoting (e.g. `app_version:"1.186.*"`) breaks wildcard matching.
@@ -55,8 +55,24 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
    - Capture PR numbers from commit subjects (GitHub auto-appends `(#NNNN)`)
    - If the culprit is too generic (`value`, `NSBundle.module`, `main`, OS symbols) — skip attribution
 6. **Compose URL-rewritten issue links.** Every `https://ddg.sentry.io/issues/<SHORT_ID>` becomes `https://errors.duckduckgo.com/organizations/ddg/issues/<SHORT_ID>/?project=<PROJECT_FILTER>`. Query links use `/organizations/ddg/issues/?project=<PROJECT_FILTER>&query=...&statsPeriod=7d`.
-7. **Write to Asana via `asana_update_task` with `html_notes`.** Structure below.
-8. **PII: initials + PR links only, never full names.** The DDG asana-exfiltration hook scans task writes and blocks full employee names — even when the user approves in chat (the hook can't see chat). Use first-letter-of-first-name + first-letter-of-last-name initials, and link the PR so the author is one click away on GitHub. If even initials get blocked, fall back to PR-number-only attribution.
+7. **Root-cause analysis (subagents) — for each new issue with an informative stacktrace.** Especially worth investigating: unhandled exceptions where the message itself encodes the contract violation (e.g. `NSInternalInconsistencyException: Invalid update: ...`), or app-code culprits with a deep first-party call chain. Skip when the culprit is generic (`value`, `__pthread_kill`, `objc_release`, `main`), when the trace is OS-frames-only, or when the crash is Jetsam OOM. Dispatch one **general-purpose** subagent per qualifying issue **in parallel** (single message, multiple Agent tool calls). Brief each subagent with: short-ID, exception class + message, the full stacktrace from `get_sentry_resource`, the suspect PR(s) from step 5, and a concrete instruction to (a) trace the call chain backward to its origin in this repo, (b) identify the invariant being violated, and (c) return a short structured report (root-cause summary, numbered call chain 4–8 steps, optional fix sketch). Cap responses ("under 250 words"). Use the analyses to populate the per-issue tracking tasks in step 8.
+8. **Per-issue tracking task in `Sentry Crash Reports` (find-or-create).** For every new issue (whether a subagent ran or not), look up an existing task in project `1214294661819890` keyed on the **Sentry Crash Group ID** custom field (GID `1214294661819893`):
+   ```
+   asana_search_tasks(workspace="137249556945",
+     projects.any="1214294661819890",
+     custom_fields.1214294661819893.value="<SHORT_ID>",
+     opt_fields="name,permalink_url,custom_fields,tags,tags.name")
+   ```
+   The `value` filter is substring-match — verify the returned `custom_fields` contains an exact `APPLE-MACOS-XXX` (or `APPLE-IOS-XXX`) match before treating the task as a hit, otherwise consider it not found.
+   - **Found:** capture `permalink_url`; reference it in the main report's per-issue line as `· <a href="...">tracking</a>`. Do not modify the existing task.
+   - **Not found:** create one with `asana_create_task`:
+     - `name`: `<error type> <culprit>` — mirrors the convention in existing tasks (e.g. `EXC_CRASH TabBarViewController.tabCollectionViewModel`, `NSInternalInconsistencyException CollectionView.reloadItems`).
+     - `projects`: `["1214294661819890"]`
+     - `custom_fields`: `{"1214294661819893": "<SHORT_ID>"}` (set the Sentry Crash Group ID so future runs can dedupe)
+     - `html_notes`: per-issue template (see "Per-issue tracking task body" below)
+     - Capture the new task's `permalink_url` and reference it in the main report.
+9. **Write the main report to the user's task** via `asana_update_task` with `html_notes` — structure below. Each per-issue line should end with the per-issue tracking-task link captured in step 8 (find-or-create).
+10. **PII: initials + PR links only, never full names.** The DDG asana-exfiltration hook scans task writes and blocks full employee names — even when the user approves in chat (the hook can't see chat). Use first-letter-of-first-name + first-letter-of-last-name initials, and link the PR so the author is one click away on GitHub. If even initials get blocked, fall back to PR-number-only attribution. This applies to both the main report **and** the per-issue tracking task bodies created in step 8.
 
 ## Asana task structure (html_notes)
 
@@ -78,7 +94,7 @@ New-in-{version}.x only: <a href="...">firstRelease filter</a>
 <hr>
 
 <strong>🔴 HIGH — {cluster name or "new high-volume"}</strong>
-• <a href="...">SHORT-ID</a> — <signal> · <code>culprit</code> (U users, E events) — likely: {INITIALS} (<a href="...">#PR title</a>)
+• <a href="...">SHORT-ID</a> — <signal> · <code>culprit</code> (U users, E events) — likely: {INITIALS} (<a href="...">#PR title</a>) · <a href="...">tracking</a>
 
 <strong>🟡 MEDIUM — Other new issues</strong>
 • ...
@@ -99,6 +115,19 @@ New-in-{version}.x only: <a href="...">firstRelease filter</a>
 <strong>Initials legend</strong>
 {initials} — see PR links for authors.
 </body>
+```
+
+## Per-issue tracking task body (html_notes)
+
+Derived from task `1214265935091414`. Created in step 8 when no existing task is found for the short-ID. Omit the **Pull request** section — these tasks are filed during triage, before any fix is in flight. Include the `Likely caused by` line only if step 5 produced a confident attribution; drop the **Root Cause Analysis** + **Call chain** sections if no subagent ran for this issue (just keep the Sentry link header).
+
+Match the existing-task layout exactly — the leading content has intentional newlines around the `<a>` block; the analysis section is compacted (no newlines between tags) per `asana-rich-text` rules:
+
+```html
+<body>Sentry crash:
+<a href="https://errors.duckduckgo.com/organizations/ddg/issues/<SHORT_ID>/?project=<PROJECT_FILTER>">https://errors.duckduckgo.com/organizations/ddg/issues/<SHORT_ID>/?project=<PROJECT_FILTER></a>
+
+Likely caused by <a href="https://github.com/duckduckgo/apple-browsers/pull/<NNNN>">https://github.com/duckduckgo/apple-browsers/pull/<NNNN></a><hr/><h2>Root Cause Analysis</h2>{1–2 sentence summary of the violated invariant from the subagent}<h2>Call chain</h2><ol><li>{step 1}</li><li>{step 2}</li>...</ol></body>
 ```
 
 ## Quick reference
@@ -123,6 +152,9 @@ New-in-{version}.x only: <a href="...">firstRelease filter</a>
 | Trusting the "culprit" field for blame when generic | Symbols like `value`, `NSBundle.module`, `__pthread_kill`, `objc_release`, `main` are not attributable. Skip them. |
 | Treating every iOS SIGKILL as a bug | Most SIGKILL+`main` crashes on iOS are Jetsam memory kills, not app bugs. LOW severity unless volume spikes or culprit is specific app code. |
 | Forgetting `&project=<filter>` in errors.duckduckgo.com query URLs | The project filter is required for listing pages to render correctly; optional but recommended for single-issue URLs. |
+| Skipping the find-or-create lookup and creating a duplicate tracking task | Always run `asana_search_tasks` against `Sentry Crash Reports` filtered by `custom_fields.1214294661819893.value=<SHORT_ID>` first, and verify the returned custom field value matches **exactly** (substring-match means `APPLE-MACOS-BD7` returns `APPLE-MACOS-BD70` too). |
+| Forgetting to set `custom_fields` on the new tracking task | Without `{"1214294661819893": "<SHORT_ID>"}`, future runs of this skill will create duplicates because the dedupe lookup will miss. |
+| Running root-cause subagents serially | Dispatch them in parallel (single message, multiple Agent tool calls) — they're independent and waiting serially is wasteful. Skip subagents entirely when the culprit is generic or OS-only — there's nothing to analyze. |
 
 ## Example invocation
 
@@ -134,4 +166,6 @@ New-in-{version}.x only: <a href="...">firstRelease filter</a>
 4. `list_issues(query="is:unresolved firstRelease:[DuckDuckGo@1.186.0,DuckDuckGo@1.186.1,com.duckduckgo.macos.vpn.network-extension@1.186.0,com.duckduckgo.macos.vpn.network-extension@1.186.1,...]", sort="freq", limit=50)`.
 5. For each new issue: grep culprit symbol → `git blame` → capture PR from commit `(#NNNN)`.
 6. Rewrite all `ddg.sentry.io` URLs to `errors.duckduckgo.com/organizations/ddg/issues/<SHORT_ID>/?project=6`.
-7. `asana_update_task(task_id="1214175611004136", html_notes="<body>...</body>")`.
+7. For each new issue with an informative stacktrace (e.g. `NSInternalInconsistencyException` with a clear message, or a deep first-party call chain), dispatch a parallel general-purpose subagent (single message, multiple Agent tool calls) to produce a root-cause summary + numbered call chain. Skip when the culprit is generic or OS-only.
+8. For each new issue: `asana_search_tasks(workspace="137249556945", projects.any="1214294661819890", custom_fields.1214294661819893.value="<SHORT_ID>", opt_fields="name,permalink_url,custom_fields,tags,tags.name")`. If a task exists with an exact custom-field match, capture its `permalink_url`. If not, `asana_create_task` with `name`, `projects=["1214294661819890"]`, `custom_fields={"1214294661819893":"<SHORT_ID>"}`, and `html_notes` from the per-issue template.
+9. `asana_update_task(task_id="1214175611004136", html_notes="<body>...</body>")` with the main report; each per-issue line ends with `· <a href="...">tracking</a>` linking to the task from step 8.

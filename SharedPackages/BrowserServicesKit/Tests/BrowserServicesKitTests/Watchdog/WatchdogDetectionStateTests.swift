@@ -55,7 +55,7 @@ final class WatchdogDetectionStateTests: XCTestCase {
         state = nextState(state, sinceLastHeartbeat: 0.5, sinceHangStarted: 4.0)
         XCTAssertEqual(state, .recovery(after: .hanging, heartbeatCount: 0))
 
-        for _ in 1...settings.requiredRecoveryHeartbeats {
+        for _ in 0...settings.requiredRecoveryHeartbeats {
             state = nextState(state, sinceLastHeartbeat: 0.3, sinceHangStarted: 4.0)
         }
         XCTAssertEqual(state, .recovered(after: .hanging))
@@ -76,7 +76,7 @@ final class WatchdogDetectionStateTests: XCTestCase {
         state = nextState(state, sinceLastHeartbeat: 0.5, sinceHangStarted: 7.0)
         XCTAssertEqual(state, .recovery(after: .timeout, heartbeatCount: 0))
 
-        for _ in 1...settings.requiredRecoveryHeartbeats {
+        for _ in 0...settings.requiredRecoveryHeartbeats {
             state = nextState(state, sinceLastHeartbeat: 0.3, sinceHangStarted: 7.0)
         }
         XCTAssertEqual(state, .recovered(after: .timeout))

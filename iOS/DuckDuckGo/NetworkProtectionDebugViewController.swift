@@ -64,6 +64,11 @@ final class NetworkProtectionDebugViewController: UITableViewController {
     enum DebugFeatureRows: Int, CaseIterable {
         case toggleAlwaysOn
         case enforceRoutes
+        case includeAllNetworks
+        case excludeLocalNetworks
+        case excludeAPNs
+        case excludeCellularServices
+        case excludeDeviceCommunication
         case showDebugEventNotifications
     }
 
@@ -329,6 +334,42 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             } else {
                 cell.accessoryType = .checkmark
             }
+        case .includeAllNetworks:
+            cell.textLabel?.text = "Include All Networks"
+            cell.accessoryType = AppDependencyProvider.shared.vpnSettings.includeAllNetworks ? .checkmark : .none
+        case .excludeLocalNetworks:
+            cell.textLabel?.text = "Exclude Local Networks"
+            cell.accessoryType = AppDependencyProvider.shared.vpnSettings.excludeLocalNetworks ? .checkmark : .none
+        case .excludeAPNs:
+            if #available(iOS 16.4, *) {
+                cell.textLabel?.text = "Exclude APNs"
+                cell.accessoryType = AppDependencyProvider.shared.vpnSettings.excludeAPNs ? .checkmark : .none
+                cell.isUserInteractionEnabled = true
+            } else {
+                cell.textLabel?.text = "Exclude APNs (iOS 16.4+)"
+                cell.accessoryType = .none
+                cell.isUserInteractionEnabled = false
+            }
+        case .excludeCellularServices:
+            if #available(iOS 16.4, *) {
+                cell.textLabel?.text = "Exclude Cellular Services"
+                cell.accessoryType = AppDependencyProvider.shared.vpnSettings.excludeCellularServices ? .checkmark : .none
+                cell.isUserInteractionEnabled = true
+            } else {
+                cell.textLabel?.text = "Exclude Cellular Services (iOS 16.4+)"
+                cell.accessoryType = .none
+                cell.isUserInteractionEnabled = false
+            }
+        case .excludeDeviceCommunication:
+            if #available(iOS 17.4, *) {
+                cell.textLabel?.text = "Exclude Device Communication"
+                cell.accessoryType = AppDependencyProvider.shared.vpnSettings.excludeDeviceCommunication ? .checkmark : .none
+                cell.isUserInteractionEnabled = true
+            } else {
+                cell.textLabel?.text = "Exclude Device Communication (iOS 17.4+)"
+                cell.accessoryType = .none
+                cell.isUserInteractionEnabled = false
+            }
         case .showDebugEventNotifications:
             cell.textLabel?.text = "Debug Event Notifications"
 
@@ -350,6 +391,27 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         case .enforceRoutes:
             AppDependencyProvider.shared.vpnSettings.enforceRoutes.toggle()
             tableView.reloadRows(at: [indexPath], with: .none)
+        case .includeAllNetworks:
+            AppDependencyProvider.shared.vpnSettings.includeAllNetworks.toggle()
+            tableView.reloadRows(at: [indexPath], with: .none)
+        case .excludeLocalNetworks:
+            AppDependencyProvider.shared.vpnSettings.excludeLocalNetworks.toggle()
+            tableView.reloadRows(at: [indexPath], with: .none)
+        case .excludeAPNs:
+            if #available(iOS 16.4, *) {
+                AppDependencyProvider.shared.vpnSettings.excludeAPNs.toggle()
+                tableView.reloadRows(at: [indexPath], with: .none)
+            }
+        case .excludeCellularServices:
+            if #available(iOS 16.4, *) {
+                AppDependencyProvider.shared.vpnSettings.excludeCellularServices.toggle()
+                tableView.reloadRows(at: [indexPath], with: .none)
+            }
+        case .excludeDeviceCommunication:
+            if #available(iOS 17.4, *) {
+                AppDependencyProvider.shared.vpnSettings.excludeDeviceCommunication.toggle()
+                tableView.reloadRows(at: [indexPath], with: .none)
+            }
         case .showDebugEventNotifications:
             AppDependencyProvider.shared.vpnSettings.showDebugVPNEventNotifications.toggle()
             tableView.reloadRows(at: [indexPath], with: .none)

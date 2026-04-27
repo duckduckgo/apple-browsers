@@ -294,6 +294,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         case .setExcludeLocalNetworks(let excludeLocalNetworks):
             try await handleSetExcludeLocalNetworks(excludeLocalNetworks)
         case .setConnectOnLogin,
+                .setExcludeAPNs,
+                .setExcludeCellularServices,
+                .setExcludeDeviceCommunication,
                 .setNotifyStatusChanges,
                 .setRegistrationKeyValidity,
                 .setSelectedServer,

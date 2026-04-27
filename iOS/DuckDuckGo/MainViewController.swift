@@ -1470,8 +1470,9 @@ class MainViewController: UIViewController {
         return nil
     }
 
-    private func buildEscapeHatch() -> EscapeHatchModel? {
-        guard idleReturnEligibilityManager.isEligibleForNTPAfterIdle() else {
+    private func buildEscapeHatch(openedAfterIdle: Bool) -> EscapeHatchModel? {
+        guard openedAfterIdle,
+              idleReturnEligibilityManager.isEligibleForNTPAfterIdle() else {
             return nil
         }
         let currentTab = tabManager.currentTabsModel.currentTab
@@ -1547,7 +1548,7 @@ class MainViewController: UIViewController {
 
         newTabPageViewController = controller
 
-        let hatch = buildEscapeHatch()
+        let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
         controller.setEscapeHatch(hatch)
         currentNTPEscapeHatch = hatch
         

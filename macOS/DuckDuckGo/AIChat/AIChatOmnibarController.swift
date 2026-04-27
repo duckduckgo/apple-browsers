@@ -327,7 +327,7 @@ final class AIChatOmnibarController {
     /// remains visible until the model list is known).
     var selectedModelSupportsWebSearch: Bool {
         guard !models.isEmpty else { return true }
-        return models.first(where: { $0.id == persistedModelId })?.supportedTools.contains(.webSearch) ?? true
+        return models.first(where: { $0.id == persistedModelId })?.supportsTool(.webSearch) ?? true
     }
 
     /// Image formats supported by the currently selected model (e.g. ["png", "jpeg", "webp"]).

@@ -333,6 +333,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.isWebSearchEnabled && omnibarController.selectedModelSupportsWebSearch
     }
 
+    private var shouldShowWebSearchChip: Bool {
+        shouldShowToolsButton && omnibarController.isWebSearchMode && omnibarController.selectedModelSupportsWebSearch
+    }
+
     private var shouldShowImageUpload: Bool {
         omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
     }
@@ -350,7 +354,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func updateToolButtonsVisibility(isEnabled: Bool) {
         toolsButton.isHidden = !shouldShowToolsButton
         imageGenActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isImageGenerationMode
-        webSearchActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isWebSearchMode || !omnibarController.selectedModelSupportsWebSearch
+        webSearchActiveButton.isHidden = !shouldShowWebSearchChip
         imageUploadButton.isHidden = !shouldShowAttachments || !shouldShowImageUpload
         imageUploadButton.isEnabled = !attachmentsContainerView.isFull
         modelPickerButton.isHidden = !shouldShowModelPicker

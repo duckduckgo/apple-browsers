@@ -87,11 +87,7 @@ struct Foreground: ForegroundHandling {
             privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
             isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
         )
-        let idleReturnEvaluator = IdleReturnEvaluator(
-            featureFlagger: appDependencies.featureFlagger,
-            privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
-            idleReturnEligibilityManager: idleReturnEligibilityManager
-        )
+        let idleReturnEvaluator = IdleReturnEvaluator(eligibilityManager: idleReturnEligibilityManager)
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,

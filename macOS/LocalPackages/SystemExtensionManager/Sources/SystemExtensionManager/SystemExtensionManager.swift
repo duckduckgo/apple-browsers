@@ -261,7 +261,7 @@ private extension OSSystemExtensionError.Code {
         case .requestCanceled: return "requestCanceled"
         case .requestSuperseded: return "requestSuperseded"
         case .authorizationRequired: return "authorizationRequired"
-        @unknown default: return "unknown(\(rawValue))"
+        @unknown default: return "futureUnknown(\(rawValue))"
         }
     }
 }

@@ -91,6 +91,7 @@ public extension SubJobWebRunning {
         return false
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func runNextAction(_ action: Action) async {
         let stepType = actionsHandler?.stepType
 
@@ -128,12 +129,8 @@ public extension SubJobWebRunning {
         }
 
         if let generateEmailAction = action as? GenerateEmailAction {
-            // Single-per-job guard: a second generateEmail indicates bad broker JSON or a logic
-            // bug, not a transient failure. In DEBUG we trip an assertion so CI/dev builds surface
-            // the bug immediately; in Release we fall through and fail just this job so one bad
-            // broker can't take the whole agent down. Retry is bypassed either way.
             guard fetchedEmail == nil else {
-                assertionFailure("generateEmail action invoked more than once in the same job — check broker JSON for duplicate generateEmail entries")
+                assertionFailure("generateEmail action invoked more than once in the same job")
                 recordDebugEvent(kind: .actionResponse,
                                  actionType: generateEmailAction.actionType,
                                  details: "generateEmail invoked twice in the same job")
@@ -146,10 +143,6 @@ public extension SubJobWebRunning {
                 recordDebugEvent(kind: .wait,
                                  actionType: generateEmailAction.actionType,
                                  details: "Requesting email address")
-                // Scan has no `ExtractedProfile` (the extract action hasn't run yet) and no
-                // downstream `emailConfirmation` action that would poll the decoupled store, so
-                // we skip the DB side effect. Opt-out keeps the existing helper so the decoupled
-                // `emailConfirmation` background poller has a store row to look up.
                 let emailData: EmailData
                 if let extractedProfile, let extractedProfileId = extractedProfile.id {
                     emailData = try await emailConfirmationDataService.getEmailAndOptionallySaveToDatabase(

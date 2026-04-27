@@ -370,10 +370,26 @@ final class AddressBarViewController: NSViewController {
             subscribeToMouseEvents()
             subscribeToFirstResponder()
         }
+        /// Three subscribers listen to `$selectedTabViewModel` and Combine fires them in registration
+        /// order. Order matters here:
+        ///
+        /// 1. `subscribeToOutgoingTabSnapshot()` — registered FIRST. Snapshots the OUTGOING tab's bar
+        ///    value into its `lastAddressBarTextFieldValue` BEFORE any other subscriber mutates
+        ///    `addressBarTextField.value`. This is what kills the cross-tab Duck.ai prompt leak: an
+        ///    in-line save in either of the other subscribers would race and capture a post-mutation
+        ///    value.
+        /// 2. `addressBarTextField.tabCollectionViewModel = …` — triggers `AddressBarTextField`'s own
+        ///    `subscribeToSelectedTabViewModel` via `didSet`. That subscriber runs `restoreValueIfPossible`,
+        ///    which may mutate `self.value` based on the incoming tab's `lastAddressBarTextFieldValue`.
+        /// 3. `subscribeToSelectedTabViewModel()` — registered LAST. Applies Duck.ai mode to the incoming
+        ///    tab via `applyIncomingTabAIChatMode` → `applyDuckAIUnfocusedValue`, which restores the
+        ///    preserved Duck.ai prompt from `sharedTextState`. Running last guarantees this has the final
+        ///    word on the bar value when returning to a Duck.ai tab.
+        subscribeToOutgoingTabSnapshot()
         addressBarTextField.tabCollectionViewModel = tabCollectionViewModel
         passiveTextField.tabCollectionViewModel = tabCollectionViewModel
-
         subscribeToSelectedTabViewModel()
+
         subscribeToAddressBarValue()
         subscribeToButtonsWidth()
         subscribeForShadowViewUpdates()
@@ -447,12 +463,29 @@ final class AddressBarViewController: NSViewController {
             .store(in: &cancellables)
     }
 
+    /// Dedicated FIRST-registered subscriber that snapshots the OUTGOING tab's bar value into its
+    /// `lastAddressBarTextFieldValue`. Runs before `AddressBarTextField.restoreValueIfPossible` and
+    /// before `subscribeToSelectedTabViewModel`'s `applyIncomingTabAIChatMode` — so the snapshot is
+    /// always pre-mutation and never captures the incoming tab's value (which is what caused the
+    /// cross-tab Duck.ai prompt leak).
+    private func subscribeToOutgoingTabSnapshot() {
+        tabCollectionViewModel.$selectedTabViewModel
+            .sink { [weak self] tabViewModel in
+                guard let self else { return }
+                if let outgoingTab = self.tabViewModel, outgoingTab !== tabViewModel {
+                    outgoingTab.lastAddressBarTextFieldValue = addressBarTextField.value
+                }
+            }
+            .store(in: &cancellables)
+    }
+
     private func subscribeToSelectedTabViewModel() {
         tabCollectionViewModel.$selectedTabViewModel
             .sink { [weak self] tabViewModel in
                 guard let self else { return }
 
                 let wasInAIChatMode = self.selectionState.isInAIChatMode
+
                 self.tabViewModel = tabViewModel
                 tabViewModelCancellables.removeAll()
 

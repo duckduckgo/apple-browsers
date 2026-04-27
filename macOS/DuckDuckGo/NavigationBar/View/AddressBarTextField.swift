@@ -304,21 +304,33 @@ final class AddressBarTextField: NSTextField {
         // sink that fires earlier in this same emission chain just restored those from the tab's shared state, and the
         // `updateValue` path below (via `sharedTextState?.reset()`) would otherwise clear them again right afterwards
         // whenever the incoming tab had no user-typed address-bar value to restore.
-        // save current (possibly modified) value into the old TabViewModel when selecting another Tab
-        if let oldSelectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel {
-            guard oldSelectedTabViewModel !== newSelectedTabViewModel else {
-                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
-                return
-            }
-            oldSelectedTabViewModel.lastAddressBarTextFieldValue = value
+        //
+        // The snapshot of the OUTGOING tab's bar value into its `lastAddressBarTextFieldValue` is owned by
+        // `AddressBarViewController.subscribeToOutgoingTabSnapshot`, which is registered first and fires
+        // before this subscriber. Saving here would race with `applyDuckAIUnfocusedValue` (which the
+        // controller's main sink runs LAST) and could record the incoming tab's prompt onto the outgoing
+        // tab, re-introducing the cross-tab leak.
+        if let oldSelectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel,
+           oldSelectedTabViewModel === newSelectedTabViewModel {
+            updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
+            return
         }
         let lastAddressBarTextFieldValue = newSelectedTabViewModel.lastAddressBarTextFieldValue
+
+        /// When the incoming tab is in duck.ai mode, the controller's main `$selectedTabViewModel` sink
+        /// (which fires right after this one) calls `applyDuckAIUnfocusedValue` to set `self.value` from
+        /// the preserved `sharedTextState.text`. Calling `updateValue` here in the empty/url fallback
+        /// branches would set the value to the tab's `addressBarString` (typically `""` for an NTP) one
+        /// runloop tick before the controller sink corrects it — visible as a brief "Ask anything
+        /// privately" placeholder flicker before the prompt appears. Skipping `updateValue` for duck.ai
+        /// tabs lets `applyDuckAIUnfocusedValue` be the single, correct value-setter.
+        let incomingIsInDuckAIMode = newSelectedTabViewModel.addressBarSharedTextState.isInDuckAIMode
 
         switch lastAddressBarTextFieldValue {
         case .text(let text, userTyped: let userTyped):
             if !text.isEmpty {
                 restoreValue(.text(text, userTyped: userTyped))
-            } else {
+            } else if !incomingIsInDuckAIMode {
                 updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
             }
         case .suggestion(let suggestionViewModel):
@@ -329,12 +341,16 @@ final class AddressBarTextField: NSTextField {
             case .phrase(phrase: let phase):
                 restoreValue(Value.text(phase, userTyped: false))
             case .unknown, .askAIChat:
-                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
+                if !incomingIsInDuckAIMode {
+                    updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
+                }
             }
         case .url(urlString: let urlString, url: _, userTyped: true):
             restoreValue(Value(stringValue: urlString, userTyped: true))
         case .url, .none:
-            updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
+            if !incomingIsInDuckAIMode {
+                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
+            }
         }
     }
 

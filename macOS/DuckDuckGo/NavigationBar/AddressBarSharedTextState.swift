@@ -50,14 +50,16 @@ final class AddressBarSharedTextState: ObservableObject {
 
     /// Resets the shared state to initial values.
     /// - Parameter clearingDuckAIState: Pass `false` from tab-switch restore paths. Tab switches must not
-    ///   wipe per-tab duck.ai mode / tool mode / attachments — those belong to the tab and are only cleared
-    ///   on explicit user action (toggle off, submit, navigation). Default `true` preserves the navigation
-    ///   semantics for callers that do want a full reset.
+    ///   wipe per-tab duck.ai state — that includes the prompt text, selection, interaction flag, mode,
+    ///   tool mode and attachments, all of which belong to the tab and are only cleared on explicit user
+    ///   action (toggle off, submit, navigation). The unfocused duck.ai bar relies on `text` surviving
+    ///   tab switches because `applyDuckAIUnfocusedValue` reads from it. Default `true` preserves the
+    ///   navigation semantics for callers that do want a full reset.
     func reset(clearingDuckAIState: Bool = true) {
+        guard clearingDuckAIState else { return }
         text = ""
         selectionRange = NSRange(location: 0, length: 0)
         hasUserInteractedWithText = false
-        guard clearingDuckAIState else { return }
         if isInDuckAIMode {
             isInDuckAIMode = false
         }

@@ -519,9 +519,11 @@ final class AddressBarSharedTextStateTests: XCTestCase {
         XCTAssertTrue(sut.aiChatAttachments.isEmpty)
     }
 
-    func testWhenResetWithClearingDuckAIStateFalse_ThenTextClearedButDuckAIFieldsPreserved() {
-        // This is the guard the tab-switch restore path relies on — clearing text/selection when another
-        // tab's address bar value is applied MUST NOT wipe the incoming tab's preserved duck.ai state.
+    func testWhenResetWithClearingDuckAIStateFalse_ThenAllDuckAIStatePreserved() {
+        // Tab-switch restore must not wipe ANY of the incoming tab's preserved duck.ai state — including
+        // the prompt text and selection. The unfocused duck.ai bar (`applyDuckAIUnfocusedValue`) reads
+        // from `text` to render the preserved prompt, so wiping it here would leave the bar showing the
+        // empty placeholder on every tab-switch-back.
         sut.updateText("prompt")
         sut.updateSelection(NSRange(location: 3, length: 0))
         sut.setDuckAIMode(true)
@@ -531,9 +533,9 @@ final class AddressBarSharedTextStateTests: XCTestCase {
 
         sut.reset(clearingDuckAIState: false)
 
-        XCTAssertEqual(sut.text, "")
-        XCTAssertEqual(sut.selectionRange, NSRange(location: 0, length: 0))
-        XCTAssertFalse(sut.hasUserInteractedWithText)
+        XCTAssertEqual(sut.text, "prompt", "Text should survive a tab-switch reset")
+        XCTAssertEqual(sut.selectionRange, NSRange(location: 3, length: 0), "Selection should survive a tab-switch reset")
+        XCTAssertTrue(sut.hasUserInteractedWithText, "User-interaction flag should survive a tab-switch reset")
         XCTAssertTrue(sut.isInDuckAIMode, "isInDuckAIMode should survive a tab-switch reset")
         XCTAssertEqual(sut.aiChatToolMode, .webSearch, "Tool mode should survive a tab-switch reset")
         XCTAssertEqual(sut.aiChatAttachments.count, 1, "Attachments should survive a tab-switch reset")

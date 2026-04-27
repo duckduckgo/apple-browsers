@@ -28,10 +28,7 @@ enum IdleReturnTreatment {
 }
 
 protocol IdleReturnEvaluating {
-    /// Whether the user returned after an idle period
     func didReturnAfterIdle(lastBackgroundDate: Date?) -> Bool
-
-    /// The treatment to apply on an idle return.
     func treatmentForIdleReturn() -> IdleReturnTreatment
 }
 
@@ -88,11 +85,6 @@ struct IdleReturnThresholdResolver {
     }
 }
 
-/// Launch-time decision-maker. Composes pieces of `IdleReturnEligibilityManaging`
-/// to answer questions about a specific launch (did the user just return after
-/// idle? what should we show them?). All "is the feature available / what's the
-/// user's setting / what's the threshold" questions live on the eligibility
-/// manager — this type does not duplicate those checks.
 final class IdleReturnEvaluator: IdleReturnEvaluating {
 
     private let eligibilityManager: IdleReturnEligibilityManaging

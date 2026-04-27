@@ -53,9 +53,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
     private let wideEvent: WideEventManaging
     private let dateProvider: () -> Date
     private var activeSessionID: String?
-    /// Latches `pageEngaged` once per session so we don't hit `updateFlow`
-    /// (synchronous disk I/O) on every scroll tick — the page-engaged signal
-    /// is monotonic, the storage round-trip is wasted after the first call.
+    /// Skips `updateFlow` (synchronous disk I/O) on every scroll tick after the first.
     private var pageEngagedSent = false
 
     init(wideEvent: WideEventManaging,

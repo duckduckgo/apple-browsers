@@ -23,19 +23,15 @@ import Persistence
 import PrivacyConfig
 
 protocol IdleReturnEligibilityManaging {
-    /// Is the after-idle feature turned on and ready for this user, regardless
-    /// of which treatment (NTP / LUT) their setting selects? Gates everything
-    /// — narrow pixel firing, NTP UI, and launch-time evaluation.
+    /// True when the feature flag is on and onboarding is complete, regardless
+    /// of which treatment (NTP / LUT) the user's setting selects.
     func isFeatureAvailable() -> Bool
 
-    /// Should NTP-specific UI/pixels treat this user as in scope?
-    /// Equivalent to `isFeatureAvailable() && effectiveAfterInactivityOption() == .newTab`.
+    /// `isFeatureAvailable() && effectiveAfterInactivityOption() == .newTab`.
     func isEligibleForNTPAfterIdle() -> Bool
 
-    /// The user's effective After-Inactivity choice (New Tab vs Last Used Tab).
     func effectiveAfterInactivityOption() -> AfterInactivityOption
 
-    /// How many seconds of inactivity before the feature engages.
     func idleThresholdSeconds() -> Int
 }
 
@@ -76,8 +72,6 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
         self.isStillOnboarding = isStillOnboarding
     }
 
-    /// Feature flag on and the user has finished both linear and contextual
-    /// onboarding. Independent of which treatment the user picked.
     func isFeatureAvailable() -> Bool {
         tutorialSettings.hasSeenOnboarding
             && !isStillOnboarding()

@@ -53,6 +53,10 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
     private let wideEvent: WideEventManaging
     private let dateProvider: () -> Date
     private var activeSessionID: String?
+    /// Latches `pageEngaged` once per session so we don't hit `updateFlow`
+    /// (synchronous disk I/O) on every scroll tick — the page-engaged signal
+    /// is monotonic, the storage round-trip is wasted after the first call.
+    private var pageEngagedSent = false
 
     init(wideEvent: WideEventManaging,
          dateProvider: @escaping () -> Date = { Date() }) {
@@ -70,10 +74,13 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
 
         let data = PostIdleSessionWideEventData(surface: surface, startedAt: dateProvider())
         activeSessionID = data.globalData.id
+        pageEngagedSent = false
         wideEvent.startFlow(data)
     }
 
     func pageEngaged() {
+        guard !pageEngagedSent else { return }
+        pageEngagedSent = true
         updateActiveSession { data in
             data.pageEngaged = true
             markFirstInteractionIfNeeded(&data)

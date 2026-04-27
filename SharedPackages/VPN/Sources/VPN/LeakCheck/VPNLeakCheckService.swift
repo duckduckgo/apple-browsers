@@ -127,7 +127,7 @@ public actor VPNLeakCheckService {
         }
     }
 
-    public func runCheck(trigger: LeakCheckTrigger) async {
+    public func runCheck(trigger: LeakCheckTrigger, bypassCooldown: Bool = false) async {
         guard !isStopped else {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — service stopped (trigger: \(trigger.rawValue, privacy: .public))")
             return
@@ -136,7 +136,8 @@ public actor VPNLeakCheckService {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — already in flight (trigger: \(trigger.rawValue, privacy: .public))")
             return
         }
-        if trigger != .reassert,
+        if !bypassCooldown,
+           trigger != .reassert,
            let last = lastCompletionDate,
            Date().timeIntervalSince(last) < configuration.cooldown {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — cooldown active (trigger: \(trigger.rawValue, privacy: .public))")

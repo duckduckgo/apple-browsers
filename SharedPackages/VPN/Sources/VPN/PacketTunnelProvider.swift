@@ -1798,7 +1798,7 @@ extension PacketTunnelProvider: SnoozeManaging {
 extension PacketTunnelProvider: LeakCheckControlling {
     func triggerLeakCheckFromDebugMenu() async {
         Logger.networkProtectionIPLeakCheck.log("Debug-triggered leak check requested")
-        await leakCheckService?.runCheck(trigger: .periodic)
+        await leakCheckService?.runCheck(trigger: .periodic, bypassCooldown: true)
     }
 }
 

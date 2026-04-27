@@ -968,6 +968,22 @@ final class BrokerProfileJobActionTests: XCTestCase {
         XCTAssertNil(sut.fetchedEmail)
     }
 
+    func testWhenGenerateEmailIsFollowedByFillFormWithExplicitDataSource_thenNeedsEmailFallbackIsSkipped() async {
+        let generateEmailAction = GenerateEmailAction(id: "1", actionType: .generateEmail)
+        let fillFormAction = FillFormAction(id: "2",
+                                            actionType: .fillForm,
+                                            dataSource: "fetchedEmail",
+                                            elements: [.init(type: "email")])
+        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [generateEmailAction, fillFormAction]),
+                                   extractedProfileId: 42)
+
+        await sut.runNextAction(generateEmailAction)
+        await sut.runNextAction(fillFormAction)
+
+        XCTAssertEqual(emailConfirmationDataService.getEmailAndSaveCallCount, 1)
+        XCTAssertEqual(emailConfirmationDataService.getEmailCallCount, 0)
+    }
+
     // MARK: - getEmailData
 
     func testWhenGetEmailDataSucceeds_thenEmailDataIsPopulatedAndPassedToService() async {

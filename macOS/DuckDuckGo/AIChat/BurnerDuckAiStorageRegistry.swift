@@ -36,9 +36,9 @@ final class BurnerDuckAiStorageRegistry {
     private var handlers: [ObjectIdentifier: DuckAiNativeStorageHandling] = [:]
     private let diskHandler: DuckAiNativeStorageHandling?
 
-    /// `diskHandler` seeds each newly created in-memory handler with the small set of
-    /// entry keys (T&C / voice-mode consent) that should survive across modes — see
-    /// `DuckAiNativeStorageHandler.consentSeededEntryKeys`.
+    /// `diskHandler` is passed to each in-memory handler as its `seedSource` so the small
+    /// set of cross-mode consent keys (see `DuckAiNativeStorageConsent.entryKeys`) remains
+    /// visible to fire windows even after the FE issues `replaceAllEntries`.
     init(diskHandler: DuckAiNativeStorageHandling? = nil) {
         self.diskHandler = diskHandler
     }

@@ -71,8 +71,7 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
         guard let handler = Self.makeHandler(in: baseDirectoryURL,
                                              id: id,
                                              keyStoreAccessGroup: appConfigurationGroupName,
-                                             pixelFiring: pixelFiring,
-                                             seedSource: consentSeedSource) else {
+                                             pixelFiring: pixelFiring) else {
             return nil
         }
         self.inner = handler
@@ -97,13 +96,11 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
         guard let new = Self.makeHandler(in: baseDirectoryURL,
                                          id: currentID,
                                          keyStoreAccessGroup: keyStoreAccessGroup,
-                                         pixelFiring: pixelFiring,
-                                         seedSource: consentSeedSource) else {
+                                         pixelFiring: pixelFiring) else {
             Logger.aiChat.error("[NativeStorage] Failed to open fire-mode store at id \(currentID); clearing in place instead")
             try? inner.deleteAllChats()
             try? inner.deleteAllFiles()
             try? inner.deleteAllEntries()
-            DuckAiNativeStorageHandler.seedConsentEntries(into: inner, from: consentSeedSource)
             return
         }
         inner = new
@@ -126,15 +123,13 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
     private static func makeHandler(in baseDirectoryURL: URL,
                                     id: UUID,
                                     keyStoreAccessGroup: String,
-                                    pixelFiring: DuckAiNativeStoragePixelFiring,
-                                    seedSource: DuckAiNativeStorageHandling?) -> DuckAiNativeStorageHandling? {
+                                    pixelFiring: DuckAiNativeStoragePixelFiring) -> DuckAiNativeStorageHandling? {
         let containerURL = baseDirectoryURL.appendingPathComponent(id.uuidString)
         do {
             return try DuckAiNativeStorageHandler(
                 .disk(path: containerURL,
                       keyStoreProvider: DuckAiKeyStoreProvider(accessGroup: keyStoreAccessGroup),
-                      pixelFiring: pixelFiring,
-                      seedSource: seedSource)
+                      pixelFiring: pixelFiring)
             )
         } catch {
             Logger.aiChat.error("[NativeStorage] fire-mode handler init failed for id \(id): \(error)")
@@ -159,8 +154,30 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
     // MARK: - DuckAiNativeStorageHandling forwarding
 
     func putEntry(key: String, value: Any) throws { try current.putEntry(key: key, value: value) }
-    func getEntry(key: String) throws -> Any? { try current.getEntry(key: key) }
-    func getAllEntries() throws -> [String: Any] { try current.getAllEntries() }
+
+    /// Reads through to `consentSeedSource` for the small consent allow-list when the
+    /// fire-mode store doesn't have the key — keeps the user from being re-prompted
+    /// after `replaceAllEntries` or a fresh fire-mode UUID rotation.
+    func getEntry(key: String) throws -> Any? {
+        if let value = try current.getEntry(key: key) { return value }
+        guard let consentSeedSource,
+              DuckAiNativeStorageConsent.entryKeys.contains(key) else {
+            return nil
+        }
+        return try? consentSeedSource.getEntry(key: key)
+    }
+
+    func getAllEntries() throws -> [String: Any] {
+        var entries = try current.getAllEntries()
+        guard let consentSeedSource else { return entries }
+        for key in DuckAiNativeStorageConsent.entryKeys where entries[key] == nil {
+            if let value = try? consentSeedSource.getEntry(key: key) {
+                entries[key] = value
+            }
+        }
+        return entries
+    }
+
     func deleteEntry(key: String) throws { try current.deleteEntry(key: key) }
     func deleteAllEntries() throws { try current.deleteAllEntries() }
     func replaceAllEntries(_ entries: [String: Any]) throws { try current.replaceAllEntries(entries) }

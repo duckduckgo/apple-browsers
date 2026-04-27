@@ -35,25 +35,13 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     /// platform-appropriate base location (group container on iOS, application support on macOS).
     public static let defaultDirectoryName = "DuckAiNativeStorage"
 
-    /// Entry keys (T&C / voice-mode consent) that survive across modes. Both `.disk` and
-    /// `.memory` cases will copy these from `seedSource` on init when present and missing
-    /// from the destination, so a user who has accepted Duck.ai T&C / voice-mode consent
-    /// in normal mode isn't re-prompted in a fire context.
-    public static let consentSeededEntryKeys: Set<String> = [
-        "duckaiHasAgreedToTerms",
-        "hasVoiceModeConsent"
-    ]
-
     public enum Mode {
         /// On-disk storage at `path`. The directory is created if it doesn't exist.
-        /// When `seedSource` is provided, consent keys (see `consentSeededEntryKeys`) are
-        /// copied from it into this store on init if not already present here.
         case disk(path: URL,
                   keyStoreProvider: DuckAiKeyStoreProvider,
-                  pixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring(),
-                  seedSource: DuckAiNativeStorageHandling? = nil)
-        /// In-memory storage. `seedSource`, when provided, is read once at init time to
-        /// copy consent keys (see `consentSeededEntryKeys`).
+                  pixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring())
+        /// In-memory storage. `seedSource`, when provided, is used by the memory handler
+        /// for consent-key read-through across modes — see `DuckAiNativeStorageConsent.entryKeys`.
         case memory(seedSource: DuckAiNativeStorageHandling? = nil)
     }
 
@@ -61,7 +49,7 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
 
     public init(_ mode: Mode) throws {
         switch mode {
-        case .disk(let path, let keyStoreProvider, let pixelFiring, let seedSource):
+        case .disk(let path, let keyStoreProvider, let pixelFiring):
             do {
                 let fileManager = FileManager.default
                 try fileManager.createDirectory(at: path, withIntermediateDirectories: true)
@@ -73,12 +61,10 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
                     filesDirectoryURL: path.appendingPathComponent("files"),
                     key: encryptionKey
                 )
-                let handler = DuckAiNativeDiskStorageHandler(
+                self.backing = DuckAiNativeDiskStorageHandler(
                     settingsStore: settingsStore.throwingKeyedStoring(),
                     dataStore: dataStore
                 )
-                Self.seedConsentEntries(into: handler, from: seedSource)
-                self.backing = handler
                 Logger.aiChat.debug("DuckAiNativeStorageHandler: disk store initialized at \(path.path)")
                 pixelFiring.fire(.initSuccess)
             } catch {
@@ -88,19 +74,6 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
 
         case .memory(let seedSource):
             self.backing = DuckAiNativeMemoryStorageHandler(seedSource: seedSource)
-        }
-    }
-
-    /// Copies `consentSeededEntryKeys` from `source` into `target` for any keys missing
-    /// from `target`. No-op when `source` is `nil`.
-    public static func seedConsentEntries(into target: DuckAiNativeStorageHandling,
-                                          from source: DuckAiNativeStorageHandling?) {
-        guard let source else { return }
-        for key in consentSeededEntryKeys {
-            if (try? target.getEntry(key: key)) == nil,
-               let value = try? source.getEntry(key: key) {
-                try? target.putEntry(key: key, value: value)
-            }
         }
     }
 

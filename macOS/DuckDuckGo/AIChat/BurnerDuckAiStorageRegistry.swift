@@ -38,7 +38,7 @@ final class BurnerDuckAiStorageRegistry {
 
     /// `diskHandler` seeds each newly created in-memory handler with the small set of
     /// entry keys (T&C / voice-mode consent) that should survive across modes — see
-    /// `InMemoryDuckAiNativeStorageHandler.seededEntryKeys`.
+    /// `DuckAiNativeStorageHandler.consentSeededEntryKeys`.
     init(diskHandler: DuckAiNativeStorageHandling? = nil) {
         self.diskHandler = diskHandler
     }
@@ -53,7 +53,8 @@ final class BurnerDuckAiStorageRegistry {
         if let existing = handlers[key] {
             return existing
         }
-        let new = InMemoryDuckAiNativeStorageHandler(seedSource: diskHandler)
+        let new = try? DuckAiNativeStorageHandler(.memory(seedSource: diskHandler))
+        guard let new else { return nil }
         handlers[key] = new
         return new
     }

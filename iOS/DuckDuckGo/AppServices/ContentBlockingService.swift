@@ -30,7 +30,8 @@ final class ContentBlockingService {
     public let updating: ContentBlockingUpdating
     public let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     public let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
-    public let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    public let fireModeStorageController: FireModeNativeStorageController?
+    public var duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? { fireModeStorageController }
 
     init(appSettings: AppSettings,
          contentBlocking: ContentBlocking,
@@ -41,10 +42,10 @@ final class ContentBlockingService {
          syncErrorHandler: SyncErrorHandler,
          webExtensionAvailability: WebExtensionAvailabilityProviding? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+         fireModeStorageController: FireModeNativeStorageController? = nil) {
 
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
-        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.fireModeStorageController = fireModeStorageController
         common = contentBlocking
 
         userScriptsDependencies = DefaultScriptSourceProvider.Dependencies(appSettings: appSettings,

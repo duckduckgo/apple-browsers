@@ -4186,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Szerveradatok törlése";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "A rendszer minden eszközt lecsatlakoztat, és a szinkronizált adatokat törli a szerverről.";
+"sync.delete.all.confirm.message" = "A biztonsági mentés törölve lesz a szerverről. A rendszer minden eszközt leválaszt a szinkronizálásról, de semmi sem lesz törölve az eszközökről.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Szerveradatok törlése?";

@@ -4186,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Dzēst servera datus";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Visas ierīces tiks atvienotas un tavi sinhronizētie dati tiks dzēsti no servera.";
+"sync.delete.all.confirm.message" = "Tavs dublējums tiks dzēsts no servera. Visas ierīces tiks atvienotas no sinhronizācijas, bet nekas netiks dzēsts ne no vienas ierīces.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Dzēst servera datus?";

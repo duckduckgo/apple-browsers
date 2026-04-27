@@ -4186,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Удалить данные с сервера";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Привязка устройств будет отключена, а синхронизированные данные — удалены с сервера.";
+"sync.delete.all.confirm.message" = "Ваша резервная копия будет удалена с сервера. Все устройства будут отключены от синхронизации, но никакие данные с устройств удалены не будут.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Удалить данные с сервера?";

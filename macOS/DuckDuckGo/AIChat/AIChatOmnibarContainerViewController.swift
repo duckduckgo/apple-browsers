@@ -322,8 +322,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     // MARK: - Tool Button Visibility
 
     private var shouldShowToolsButton: Bool {
-        omnibarController.isOmnibarToolsEnabled
-            && (omnibarController.isImageGenerationEnabled || omnibarController.isWebSearchEnabled)
+        omnibarController.isOmnibarToolsEnabled && (isImageGenerationItemVisible || isWebSearchItemVisible)
+    }
+
+    private var isImageGenerationItemVisible: Bool {
+        omnibarController.isImageGenerationEnabled
+    }
+
+    private var isWebSearchItemVisible: Bool {
+        omnibarController.isWebSearchEnabled && omnibarController.selectedModelSupportsWebSearch
+    }
+
+    private var shouldShowWebSearchChip: Bool {
+        shouldShowToolsButton && omnibarController.isWebSearchMode && omnibarController.selectedModelSupportsWebSearch
     }
 
     private var shouldShowImageUpload: Bool {
@@ -343,7 +354,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func updateToolButtonsVisibility(isEnabled: Bool) {
         toolsButton.isHidden = !shouldShowToolsButton
         imageGenActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isImageGenerationMode
-        webSearchActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isWebSearchMode
+        webSearchActiveButton.isHidden = !shouldShowWebSearchChip
         imageUploadButton.isHidden = !shouldShowAttachments || !shouldShowImageUpload
         imageUploadButton.isEnabled = !attachmentsContainerView.isFull
         modelPickerButton.isHidden = !shouldShowModelPicker
@@ -794,7 +805,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             menu.addItem(createImageItem)
         }
 
-        if omnibarController.isWebSearchEnabled {
+        if isWebSearchItemVisible {
             let webSearchItem = NSMenuItem()
             webSearchItem.attributedTitle = toolsMenuItemAttributedTitle(
                 title: UserText.aiChatWebSearchButtonLabel,
@@ -1002,6 +1013,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 modelPickerButton.modelName = persistedModelShortName
                 // Refresh image upload visibility with updated supportsImageUpload
                 updateImageUploadVisibility(supportsImageUpload: omnibarController.selectedModelSupportsImageUpload)
+                // Refresh tool button visibility so the Web Search chip reflects the loaded
+                // model's `supportedTools` (belt-and-braces — the controller also clears
+                // `activeToolMode` when the persisted model doesn't support web search).
+                updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
                 updateReasoningPickerVisibility()
             }
     }
@@ -1051,6 +1066,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.updateSelectedModel(model.id)
         modelPickerButton.modelName = model.shortName
         updateImageUploadVisibility(supportsImageUpload: model.supportsImageUpload)
+        // Refresh tool button visibility so the tools button disappears / reappears when the
+        // new model changes what the menu would show (e.g. only Web Search is flag-enabled and
+        // the newly selected model doesn't support it — the button would otherwise pop an empty menu).
+        updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
         updateReasoningPickerVisibility()
         PixelKit.fire(AIChatPixel.aiChatAddressBarModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }

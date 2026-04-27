@@ -57,7 +57,7 @@
                     "app_backgrounded",
                     "favorite_selected",
                     "chat_selected",
-                    "app_relaunched"
+                    "app_terminated"
                 ]
             },
             {

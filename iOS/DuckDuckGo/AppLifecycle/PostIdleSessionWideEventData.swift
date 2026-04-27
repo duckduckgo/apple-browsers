@@ -90,11 +90,11 @@ final class PostIdleSessionWideEventData: WideEventData {
     func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
         switch trigger {
         case .appLaunch:
-            return .complete(.unknown(reason: Self.appRelaunchedReason))
+            return .complete(.unknown(reason: Self.appTerminatedReason))
         }
     }
 
-    static let appRelaunchedReason = "app_relaunched"
+    static let appTerminatedReason = "app_terminated"
 }
 
 extension PostIdleSessionWideEventData {

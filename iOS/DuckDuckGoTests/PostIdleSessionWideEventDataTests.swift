@@ -143,14 +143,14 @@ struct PostIdleSessionWideEventDataTests {
 
     // MARK: - Completion decision
 
-    @Test("App launch trigger always completes as UNKNOWN with app_relaunched reason")
-    func appLaunchAlwaysCompletesAsUnknownAppRelaunched() async {
+    @Test("App launch trigger always completes as UNKNOWN with app_terminated reason")
+    func appLaunchAlwaysCompletesAsUnknownAppTerminated() async {
         let data = PostIdleSessionWideEventData(surface: .ntp)
         let decision = await data.completionDecision(for: .appLaunch)
 
         if case .complete(.unknown(let reason)) = decision {
-            #expect(reason == PostIdleSessionWideEventData.appRelaunchedReason)
-            #expect(reason == "app_relaunched")
+            #expect(reason == PostIdleSessionWideEventData.appTerminatedReason)
+            #expect(reason == "app_terminated")
         } else {
             Issue.record("Expected .complete(.unknown(reason:)), got \(decision)")
         }

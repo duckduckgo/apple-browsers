@@ -250,6 +250,12 @@ class FireExecutor: FireExecuting {
         // Await async tasks
         _ = await (dataTask, aiTask)
 
+        // Realign the fire-mode native store after WebsiteDataFireWorker has rotated
+        // currentFireModeID. No-op for non-data burns (ID hasn't changed).
+        if shouldBurnData {
+            fireModeStorageController?.syncWithCurrentFireModeID()
+        }
+
         // Notify delegate that we finished
         await didFinishBurning(fireRequest: request)
 
@@ -337,13 +343,11 @@ class FireExecutor: FireExecuting {
             dataClearingWideEventService?.start(.clearFaviconCache)
             let faviconResult = favicons.clearCache(.tabs)
             dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
-            fireModeStorageController?.rotate()
         case .fireMode:
             tabManager.prepareCurrentTabForDataClearing(browsingMode: .fire)
             dataClearingWideEventService?.start(.clearTabs)
             let removeAllResult = tabManager.removeAll(browsingMode: .fire)
             dataClearingWideEventService?.update(.clearTabs, result: removeAllResult)
-            fireModeStorageController?.rotate()
         case .normalMode:
             tabManager.prepareCurrentTabForDataClearing(browsingMode: .normal)
             dataClearingWideEventService?.start(.clearTabs)

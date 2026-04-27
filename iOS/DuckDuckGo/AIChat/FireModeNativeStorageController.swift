@@ -42,6 +42,7 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
 
     private let lock = NSLock()
     private var inner: DuckAiNativeStorageHandling
+    private var openedID: UUID
 
     private let baseDirectoryURL: URL
     private let dataStoreIDManager: DataStoreIDManaging
@@ -75,25 +76,30 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
             return nil
         }
         self.inner = handler
+        self.openedID = id
         Self.cleanupPendingRemovalDirectories(in: baseDirectoryURL,
                                               dataStoreIDManager: dataStoreIDManager)
     }
 
-    /// Invalidates the current fire-mode UUID, opens a fresh handler at the new UUID's
-    /// directory, seeds consent, and asynchronously deletes the old directory.
+    /// Reopens the inner handler at `DataStoreIDManager.currentFireModeID`'s directory if
+    /// the ID has changed since the last call. Idempotent — no-op when the ID hasn't moved.
+    ///
+    /// The fire-mode UUID is rotated by `WebsiteDataFireWorker` as part of a `.data` burn.
+    /// Call this after the burn completes so the native store follows the WK store rather
+    /// than initiating its own rotation (which would advance the ID twice).
     /// Falls back to clearing the existing store in place if opening a new one fails.
-    func rotate() {
+    func syncWithCurrentFireModeID() {
         lock.lock()
         defer { lock.unlock() }
-        let oldID = dataStoreIDManager.currentFireModeID
-        dataStoreIDManager.invalidateCurrentFireModeID()
-        let newID = dataStoreIDManager.currentFireModeID
+        let currentID = dataStoreIDManager.currentFireModeID
+        guard currentID != openedID else { return }
+        let previousID = openedID
         guard let new = Self.makeHandler(in: baseDirectoryURL,
-                                         id: newID,
+                                         id: currentID,
                                          keyStoreAccessGroup: keyStoreAccessGroup,
                                          pixelFiring: pixelFiring,
                                          seedSource: consentSeedSource) else {
-            Logger.aiChat.error("[NativeStorage] Failed to open fire-mode store at new ID \(newID); clearing in place instead")
+            Logger.aiChat.error("[NativeStorage] Failed to open fire-mode store at id \(currentID); clearing in place instead")
             try? inner.deleteAllChats()
             try? inner.deleteAllFiles()
             try? inner.deleteAllEntries()
@@ -101,11 +107,12 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
             return
         }
         inner = new
+        openedID = currentID
 
         DispatchQueue.global(qos: .utility).async { [baseDirectoryURL, dataStoreIDManager] in
-            let url = baseDirectoryURL.appendingPathComponent(oldID.uuidString)
+            let url = baseDirectoryURL.appendingPathComponent(previousID.uuidString)
             try? FileManager.default.removeItem(at: url)
-            dataStoreIDManager.removePendingRemovalFireModeID(oldID)
+            dataStoreIDManager.removePendingRemovalFireModeID(previousID)
         }
     }
 

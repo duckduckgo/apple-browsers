@@ -39,6 +39,17 @@ final class DataImportSummaryViewModel: ObservableObject {
         case message(body: String)
     }
 
+    enum ContinueImportDataType {
+        case passwords
+        case bookmarks
+    }
+
+    enum ContinueImportAction {
+        case shown
+        case dismissTapped
+        case continueTapped
+    }
+
     weak var delegate: DataImportSummaryViewModelDelegate?
 
     @Published var passwordsSummary: DataImport.DataTypeSummary?
@@ -51,10 +62,23 @@ final class DataImportSummaryViewModel: ObservableObject {
     private let syncPromoManager: SyncPromoManaging
     private let sessionImportedDataTypes: Set<DataImport.DataType>
     private let isSafariImportFlow: Bool
+    private let importHubPixelContext: DataImportHubPixelContext?
     private let isSupportedOSVersion: () -> Bool
+
+    private var isImportHubFlow: Bool {
+        importHubPixelContext != nil
+    }
+
+    private var importHubPixelParameters: [String: String] {
+        importHubPixelContext?.parameters ?? [:]
+    }
 
     var shouldShowPasswordsFileDeletionHint: Bool {
         isSafariImportFlow && passwordsSummary != nil
+    }
+
+    var importedDataTypesCount: Int {
+        [passwordsSummary, bookmarksSummary, creditCardsSummary].compactMap { $0 }.count
     }
 
     var footer: Footer? {
@@ -173,6 +197,7 @@ final class DataImportSummaryViewModel: ObservableObject {
          syncService: DDGSyncing,
          sessionImportedDataTypes: Set<DataImport.DataType> = [],
          isSafariImportFlow: Bool = false,
+         importHubPixelContext: DataImportHubPixelContext? = nil,
          isSupportedOSVersion: @escaping () -> Bool = {
              if #available(iOS 26.4, *) {
                  return true
@@ -189,6 +214,7 @@ final class DataImportSummaryViewModel: ObservableObject {
         self.syncService = syncService
         self.sessionImportedDataTypes = sessionImportedDataTypes
         self.isSafariImportFlow = isSafariImportFlow
+        self.importHubPixelContext = importHubPixelContext
         self.isSupportedOSVersion = isSupportedOSVersion
         self.syncPromoManager = syncPromoManager ?? SyncPromoManager(syncService: syncService, featureFlagger: featureFlagger)
         self.featureFlagger = featureFlagger
@@ -223,31 +249,57 @@ final class DataImportSummaryViewModel: ObservableObject {
     }
 
     func fireSyncButtonShownPixel() {
+        guard !isImportHubFlow else { return }
+
         Pixel.fire(pixel: .importResultSyncButtonShown, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
     }
 
     func fireSyncPromoDisplayedPixel() {
         Pixel.fire(.syncPromoDisplayed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.dataImport.rawValue])
+
+        if isImportHubFlow {
+            Pixel.fire(pixel: .importHubResultSyncPromoShown, withAdditionalParameters: importHubPixelParameters)
+        }
     }
     
     func fireSummaryPixels() {
         if let passwords = passwordsSummary {
             let successBucket = AutofillPixelReporter.accountsBucketNameFrom(count: passwords.successful)
             let skippedBucket = AutofillPixelReporter.accountsBucketNameFrom(count: passwords.duplicate + passwords.failed)
-            Pixel.fire(pixel: .importResultPasswordsSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
-                                                                                        PixelParameters.savedCredentials: successBucket,
-                                                                                        PixelParameters.skippedCredentials: skippedBucket])
+            if let importHubPixelContext {
+                var parameters = importHubPixelContext.parameters
+                parameters[PixelParameters.savedCredentials] = successBucket
+                parameters[PixelParameters.skippedCredentials] = skippedBucket
+                Pixel.fire(pixel: .importHubResultPasswordsSuccess, withAdditionalParameters: parameters)
+            } else {
+                Pixel.fire(pixel: .importResultPasswordsSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
+                                                                                            PixelParameters.savedCredentials: successBucket,
+                                                                                            PixelParameters.skippedCredentials: skippedBucket])
+            }
         }
         if let bookmarks = bookmarksSummary {
-            Pixel.fire(pixel: .importResultBookmarksSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
-                                                                                        PixelParameters.bookmarkCount: "\(bookmarks.successful)"])
+            if let importHubPixelContext {
+                var parameters = importHubPixelContext.parameters
+                parameters[PixelParameters.bookmarkCount] = "\(bookmarks.successful)"
+                Pixel.fire(pixel: .importHubResultBookmarksSuccess, withAdditionalParameters: parameters)
+            } else {
+                Pixel.fire(pixel: .importResultBookmarksSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
+                                                                                            PixelParameters.bookmarkCount: "\(bookmarks.successful)"])
+            }
         }
         if let creditCards = creditCardsSummary {
             let successBucket = AutofillPixelReporter.creditCardsBucketNameFrom(count: creditCards.successful)
             let skippedBucket = AutofillPixelReporter.creditCardsBucketNameFrom(count: creditCards.duplicate + creditCards.failed)
-            Pixel.fire(pixel: .importResultCreditCardsSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
-                                                                                          PixelParameters.savedCreditCards: successBucket,
-                                                                                          PixelParameters.skippedCreditCards: skippedBucket])
+            if let importHubPixelContext {
+                var parameters = importHubPixelContext.parameters
+                parameters[PixelParameters.savedCreditCards] = successBucket
+                parameters[PixelParameters.skippedCreditCards] = skippedBucket
+                Pixel.fire(pixel: .importHubResultCreditCardsSuccess, withAdditionalParameters: parameters)
+            } else {
+                Pixel.fire(pixel: .importResultCreditCardsSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
+                                                                                              PixelParameters.savedCreditCards: successBucket,
+                                                                                              PixelParameters.skippedCreditCards: skippedBucket])
+            }
         }
     }
 
@@ -255,21 +307,71 @@ final class DataImportSummaryViewModel: ObservableObject {
         delegate?.dataImportSummaryViewModelComplete(self)
     }
 
+    func doneTapped() {
+        if let importHubPixelContext {
+            Pixel.fire(pixel: .importHubResultDoneTapped, withAdditionalParameters: importHubPixelContext.parameters)
+        }
+
+        delegate?.dataImportSummaryViewModelComplete(self)
+    }
+
     func dismissSyncPromo() {
+        if let importHubPixelContext {
+            Pixel.fire(pixel: .importHubResultSyncPromoDismissed, withAdditionalParameters: importHubPixelContext.parameters)
+        }
         syncPromoManager.dismissPromoFor(.dataImport)
         dismiss()
     }
 
     func continueImportFromSafari() {
-        delegate?.dataImportSummaryViewModelDidRequestContinueImportFromSafari(self)
+        handleContinueImportAction(.continueTapped, for: .passwords)
     }
 
-    func launchSync(source: String? = nil) {
+    func handleContinueImportAction(_ action: ContinueImportAction, for dataType: ContinueImportDataType) {
+        if isImportHubFlow {
+            Pixel.fire(pixel: continueImportPixel(for: action, dataType: dataType), withAdditionalParameters: importHubPixelParameters)
+        }
+
+        switch action {
+        case .shown:
+            return
+        case .dismissTapped:
+            dismiss()
+        case .continueTapped:
+            delegate?.dataImportSummaryViewModelDidRequestContinueImportFromSafari(self)
+        }
+    }
+
+    func launchSync(source: String? = nil, fromSyncPromo: Bool = false) {
         delegate?.dataImportSummaryViewModelDidRequestLaunchSync(self, source: source)
-        Pixel.fire(pixel: .importResultSyncButtonTapped, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+
+        if !isImportHubFlow {
+            Pixel.fire(pixel: .importResultSyncButtonTapped, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+        }
+
+        if fromSyncPromo, let importHubPixelContext {
+            Pixel.fire(pixel: .importHubResultSyncPromoTapped, withAdditionalParameters: importHubPixelContext.parameters)
+        }
         
         if featureFlagger.isFeatureOn(.dataImportSummarySyncPromotion) {
             Pixel.fire(.syncPromoConfirmed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.dataImport.rawValue])
+        }
+    }
+
+    private func continueImportPixel(for action: ContinueImportAction, dataType: ContinueImportDataType) -> Pixel.Event {
+        switch (dataType, action) {
+        case (.passwords, .shown):
+            return .importHubResultContinueToSafariPasswordsShown
+        case (.passwords, .dismissTapped):
+            return .importHubResultContinueToSafariPasswordsDismissed
+        case (.passwords, .continueTapped):
+            return .importHubResultContinueToSafariPasswordsTapped
+        case (.bookmarks, .shown):
+            return .importHubResultContinueToSafariBookmarksShown
+        case (.bookmarks, .dismissTapped):
+            return .importHubResultContinueToSafariBookmarksDismissed
+        case (.bookmarks, .continueTapped):
+            return .importHubResultContinueToSafariBookmarksTapped
         }
     }
 

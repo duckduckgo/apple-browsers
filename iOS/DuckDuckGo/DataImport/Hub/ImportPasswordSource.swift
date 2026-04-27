@@ -28,10 +28,10 @@ enum ImportPasswordSource: CaseIterable, Identifiable {
 
     var id: String {
         switch self {
-        case .passwordsApp: return "passwordsApp"
+        case .passwordsApp: return "passwords_app"
         case .safari: return "safari"
         case .chrome: return "chrome"
-        case .syncFromDuckDuckGo: return "syncFromDuckDuckGo"
+        case .syncFromDuckDuckGo: return "sync_duckduckgo"
         }
     }
 

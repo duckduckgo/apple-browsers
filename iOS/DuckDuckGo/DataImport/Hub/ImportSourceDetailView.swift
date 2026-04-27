@@ -102,19 +102,19 @@ struct ImportSourceDetailView: View {
     }
 
     private func stepRow(number: Int, markdown: String) -> some View {
-        HStack(alignment: .center, spacing: 12) {
-            NumberBadge(number: number)
+        let stepText = (try? AttributedString(markdown: markdown)).map(Text.init) ?? Text(markdown)
 
-            if let attributed = try? AttributedString(markdown: markdown) {
-                Text(attributed)
-                    .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-            } else {
-                Text(markdown)
-                    .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-            }
-            Spacer()
+        return HStack(alignment: .center, spacing: 12) {
+            NumberBadge(number: number)
+            stepText
+                .daxBodyRegular()
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .padding(.vertical, 4)
+                .multilineTextAlignment(.leading)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
         }
         .padding(.vertical, 4)
     }

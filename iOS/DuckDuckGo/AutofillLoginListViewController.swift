@@ -46,7 +46,9 @@ final class AutofillLoginListViewController: UIViewController {
     private lazy var emptyView: UIView = {
         let emptyView = AutofillItemsEmptyView(importButtonAction: { [weak self] in
             self?.segueToFileImport()
-            Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped)
+            if case .legacy = DataImportEntryPointHandler().destination(for: .passwords) {
+                Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped)
+            }
         }, importViaSyncButtonAction: { [weak self] in
             self?.segueToImportViaSync()
             Pixel.fire(pixel: .autofillLoginsImportNoPasswords)
@@ -432,7 +434,9 @@ final class AutofillLoginListViewController: UIViewController {
     private func importFileAction() -> UIAction {
         return UIAction(title: UserText.autofillEmptyViewImportButtonTitle, image: DesignSystemImages.Glyphs.Size16.import) { [weak self] _ in
             self?.segueToFileImport()
-            Pixel.fire(pixel: .autofillImportPasswordsOverflowMenuTapped)
+            if case .legacy = DataImportEntryPointHandler().destination(for: .passwords) {
+                Pixel.fire(pixel: .autofillImportPasswordsOverflowMenuTapped)
+            }
         }
     }
 
@@ -466,9 +470,11 @@ final class AutofillLoginListViewController: UIViewController {
                                                                     keyValueStore: keyValueStore,
                                                                     bookmarksDatabase: bookmarksDatabase,
                                                                     favoritesDisplayMode: favoritesDisplayMode,
+                                                                    entryPoint: source,
                                                                     onFinished: { [weak self] in
                                                                         self?.handleDataImportCompletion()
                                                                     })
+            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: source.importHubEntryPointParameters)
         }
         navigationController?.pushViewController(destinationViewController, animated: true)
     }

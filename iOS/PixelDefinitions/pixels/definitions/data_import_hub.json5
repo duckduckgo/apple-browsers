@@ -34,7 +34,15 @@
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            }
+        ]
     },
     "import_hub_source_selected": {
         "description": "Fired when the user selects a source row on the import hub",
@@ -43,6 +51,12 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            },
             {
                 "key": "source",
                 "type": "string",
@@ -56,7 +70,15 @@
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            }
+        ]
     },
     "import_hub_source_instructions_displayed": {
         "description": "Fired when a source-specific instructions screen is shown",
@@ -65,6 +87,12 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            },
             {
                 "key": "source",
                 "type": "string",
@@ -81,6 +109,12 @@
         "parameters": [
             "appVersion",
             {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            },
+            {
                 "key": "source",
                 "type": "string",
                 "description": "Source for the instructions screen",
@@ -96,10 +130,10 @@
         "parameters": [
             "appVersion",
             {
-                "key": "source",
+                "key": "entry_point",
                 "type": "string",
-                "description": "Source for the instructions screen",
-                "enum": ["safari", "chrome", "passwords_app", "sync_duckduckgo"]
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
             }
         ]
     },
@@ -111,10 +145,10 @@
         "parameters": [
             "appVersion",
             {
-                "key": "source",
+                "key": "entry_point",
                 "type": "string",
-                "description": "Source for the instructions screen",
-                "enum": ["safari", "chrome", "passwords_app", "sync_duckduckgo"]
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
             }
         ]
     },
@@ -130,12 +164,6 @@
                 "type": "string",
                 "description": "Where the import journey started in DDG",
                 "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
-            },
-            {
-                "key": "source",
-                "type": "string",
-                "description": "Source for this simulated return metric",
-                "enum": ["safari"]
             }
         ]
     },
@@ -151,12 +179,6 @@
                 "type": "string",
                 "description": "Where the import journey started in DDG",
                 "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
-            },
-            {
-                "key": "source",
-                "type": "string",
-                "description": "Source for this simulated return metric",
-                "enum": ["safari"]
             }
         ]
     },
@@ -165,77 +187,199 @@
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            }
+        ]
     },
     "import_hub_safari_interstitial_export_tapped": {
         "description": "Fired when the user taps Open Settings to export from the Safari interstitial",
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            }
+        ]
     },
     "import_hub_safari_interstitial_cancelled": {
         "description": "Fired when the user dismisses the Safari export interstitial",
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            }
+        ]
     },
     "import_hub_browserkit_requested": {
         "description": "Fired when DDG requests Safari export through BrowserKit",
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            }
+        ]
     },
-    "import_hub_browserkit_returned_failure": {
-        "description": "Fired when the BrowserKit export request returns an error",
+    "import_hub_browserkit_returned_success": {
+        "description": "Fired when BrowserKit returns successfully for the Safari export request",
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            }
+        ]
+    },
+    "import_hub_browserkit_returned_cancelled": {
+        "description": "Fired when BrowserKit returns a user-cancelled result (BrowserDataExchangeError code 2)",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            }
+        ]
+    },
+    "import_hub_browserkit_returned_failure": {
+        "description": "Fired when the BrowserKit export request returns a non-cancelled error",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            },
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain"
+        ]
     },
     "import_hub_file_picker_displayed": {
         "description": "Fired when the system file picker is displayed from the hub flow",
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            }
+        ]
     },
     "import_hub_file_picked_zip": {
         "description": "Fired when the user selects a zip file in the file picker",
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            }
+        ]
     },
     "import_hub_file_picked_csv": {
         "description": "Fired when the user selects a CSV file in the file picker",
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            }
+        ]
     },
     "import_hub_file_picked_html": {
         "description": "Fired when the user selects an HTML file in the file picker",
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            }
+        ]
     },
     "import_hub_file_picker_cancelled": {
         "description": "Fired when the user dismisses the file picker without selecting a file",
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            }
+        ]
     },
     "import_hub_file_picker_unsupported": {
         "description": "Fired when an unsupported file type is selected in the file picker",
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            }
+        ]
     },
     "import_hub_file_error_displayed": {
         "description": "Fired when the file error sheet is displayed after upload processing fails",
@@ -244,6 +388,18 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the import journey started in DDG",
+                "enum": ["passwords", "bookmarks", "settings", "complete_setup", "promo", "in_browser_promo"]
+            },
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Source context active when the error sheet is displayed",
+                "enum": ["safari", "chrome", "passwords_app", "sync_duckduckgo"]
+            },
             {
                 "key": "reason",
                 "type": "string",

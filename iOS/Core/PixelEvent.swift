@@ -586,6 +586,8 @@ extension Pixel {
         case importHubSafariInterstitialExportTapped
         case importHubSafariInterstitialCancelled
         case importHubBrowserkitRequested
+        case importHubBrowserkitReturnedSuccess
+        case importHubBrowserkitReturnedCancelled
         case importHubBrowserkitReturnedFailure
         case importHubFilePickerDisplayed
         case importHubFilePickedZip
@@ -2317,6 +2319,8 @@ extension Pixel.Event {
         case .importHubSafariInterstitialExportTapped: return "import_hub_safari_interstitial_export_tapped"
         case .importHubSafariInterstitialCancelled: return "import_hub_safari_interstitial_cancelled"
         case .importHubBrowserkitRequested: return "import_hub_browserkit_requested"
+        case .importHubBrowserkitReturnedSuccess: return "import_hub_browserkit_returned_success"
+        case .importHubBrowserkitReturnedCancelled: return "import_hub_browserkit_returned_cancelled"
         case .importHubBrowserkitReturnedFailure: return "import_hub_browserkit_returned_failure"
         case .importHubFilePickerDisplayed: return "import_hub_file_picker_displayed"
         case .importHubFilePickedZip: return "import_hub_file_picked_zip"

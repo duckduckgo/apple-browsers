@@ -58,7 +58,11 @@ struct AutofillItemsEmptyView: View {
                 .buttonStyle(PrimaryButtonStyle(fullWidth: false))
                 .padding(.top, 24)
                 .onFirstAppear {
-                    Pixel.fire(pixel: .autofillImportPasswordsImportButtonShown)
+                    if case .hub = DataImportEntryPointHandler().destination(for: .passwords) {
+                        Pixel.fire(pixel: .importHubEntryShown, withAdditionalParameters: DataImportViewModel.ImportScreen.passwords.importHubEntryPointParameters)
+                    } else {
+                        Pixel.fire(pixel: .autofillImportPasswordsImportButtonShown)
+                    }
                 }
 
                 Button {

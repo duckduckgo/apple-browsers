@@ -227,10 +227,12 @@ class SettingsLegacyViewProvider: ObservableObject {
         case .legacy(let importScreen):
             return makeDataImportViewController(importScreen: importScreen, delegate: delegate)
         case .hub:
+            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: DataImportViewModel.ImportScreen.settings.importHubEntryPointParameters)
             return DataImportHubViewController(syncService: syncService,
                                                 keyValueStore: keyValueStore,
                                                 bookmarksDatabase: bookmarksDatabase,
                                                 favoritesDisplayMode: appSettings.favoritesDisplayMode,
+                                                entryPoint: .settings,
                                                 onFinished: onFinished)
         }
     }

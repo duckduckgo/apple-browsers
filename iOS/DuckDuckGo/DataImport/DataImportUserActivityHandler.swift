@@ -22,11 +22,18 @@ import AuthenticationServices
 import os.log
 import BrowserKit
 import BrowserServicesKit
+import Core
+import Persistence
 
 typealias DataImportResultHandler = (Result<DataImportSummary, Error>) -> Void
 
 private enum DataImportUserActivityHandlerError: Error {
     case credentialImportFailed
+}
+
+struct CredentialExchangeImportResult {
+    let summary: DataImportSummary
+    let source: String
 }
 
 protocol DataImportUserActivityHandling {
@@ -35,7 +42,7 @@ protocol DataImportUserActivityHandling {
 }
 
 protocol CredentialExchangeImportHandling {
-    func handleImport(token: UUID) async -> DataImportSummary?
+    func handleImport(token: UUID) async -> CredentialExchangeImportResult?
 }
 
 final class DataImportUserActivityHandler: DataImportUserActivityHandling {
@@ -49,11 +56,14 @@ final class DataImportUserActivityHandler: DataImportUserActivityHandling {
 
     private let credentialExchangeImportHandler: CredentialExchangeImportHandling
     private let onImportResult: DataImportResultHandler
+    private let simulatedCompletionPersistor: DataImportHubSimulatedCompletionPersistor
     private var lastHandledActivityIdentifier: String?
 
     init(credentialExchangeImportHandler: CredentialExchangeImportHandling = CredentialExchangeImportHandler(),
+         keyValueStore: ThrowingKeyValueStoring,
          onImportResult: @escaping DataImportResultHandler = { _ in }) {
         self.credentialExchangeImportHandler = credentialExchangeImportHandler
+        self.simulatedCompletionPersistor = DataImportHubSimulatedCompletionPersistor(keyValueStore: keyValueStore)
         self.onImportResult = onImportResult
     }
 
@@ -100,6 +110,7 @@ final class DataImportUserActivityHandler: DataImportUserActivityHandling {
     private func handleCredentialExchange(_ userActivity: NSUserActivity) -> Bool {
         guard let token = userActivity.userInfo?["ASCredentialImportToken"] as? UUID else {
             Logger.general.error("Skipping credential exchange activity without import token")
+            Pixel.fire(pixel: .importHubCredentialExchangeTokenMissing, withAdditionalParameters: [PixelParameters.source: DataImportHubPixelConstants.unknownSource])
             return false
         }
         let activityIdentifier = token.uuidString
@@ -132,15 +143,42 @@ final class DataImportUserActivityHandler: DataImportUserActivityHandling {
     }
 
     private func importCredentials(token: UUID) async {
-        if let summary = await credentialExchangeImportHandler.handleImport(token: token) {
+        if let result = await credentialExchangeImportHandler.handleImport(token: token) {
+            let sourceParameters = [PixelParameters.source: result.source]
+            Pixel.fire(pixel: .importHubCredentialExchangeActivityReceived, withAdditionalParameters: sourceParameters)
+            fireCredentialExchangeSimulatedCompletionIfNeeded(with: sourceParameters)
+
+            if case .success(let passwordSummary)? = result.summary[.passwords] {
+                var successParameters = sourceParameters
+                successParameters[PixelParameters.savedCredentials] = AutofillPixelReporter.accountsBucketNameFrom(count: passwordSummary.successful)
+                Pixel.fire(pixel: .importHubCredentialExchangeSuccess, withAdditionalParameters: successParameters)
+            } else {
+                Pixel.fire(pixel: .importHubCredentialExchangeSuccess, withAdditionalParameters: sourceParameters)
+            }
+
             await MainActor.run {
-                onImportResult(.success(summary))
+                onImportResult(.success(result.summary))
             }
         } else {
+            let sourceParameters = [PixelParameters.source: DataImportHubPixelConstants.unknownSource]
+            let error = DataImportUserActivityHandlerError.credentialImportFailed
+
+            Pixel.fire(pixel: .importHubCredentialExchangeActivityReceived, withAdditionalParameters: sourceParameters)
+            fireCredentialExchangeSimulatedCompletionIfNeeded(with: sourceParameters)
+            Pixel.fire(pixel: .importHubCredentialExchangeFailure, error: error, withAdditionalParameters: sourceParameters)
+
             await MainActor.run {
-                onImportResult(.failure(DataImportUserActivityHandlerError.credentialImportFailed))
+                onImportResult(.failure(error))
             }
         }
+    }
+
+    private func fireCredentialExchangeSimulatedCompletionIfNeeded(with parameters: [String: String]) {
+        guard simulatedCompletionPersistor.consumeCredentialExchangeCompletionIfEligible() else {
+            return
+        }
+
+        Pixel.fire(pixel: .importHubCredentialExchangeSimulatedCompletion, withAdditionalParameters: parameters)
     }
 }
 

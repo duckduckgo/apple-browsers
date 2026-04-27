@@ -150,12 +150,12 @@ private extension MainViewController {
         guard let coordinator = unifiedToggleInputCoordinator,
               coordinator.cardPosition == .bottom,
               viewCoordinator.addressBarPosition.isBottom else {
-            recomputeOmnibarEditingHeightIfNeeded()
+            recomputeNavigationBarContainerHeightIfNeeded()
             return
         }
         applyBottomOmnibarAnchor(state)
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-        recomputeOmnibarEditingHeightIfNeeded()
+        recomputeNavigationBarContainerHeightIfNeeded()
     }
 
     func applyBottomOmnibarAnchor(_ state: UnifiedToggleInputDisplayState.OmnibarState) {

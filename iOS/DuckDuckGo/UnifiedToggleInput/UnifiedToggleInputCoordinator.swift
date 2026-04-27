@@ -141,6 +141,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState == .aiTab(.expanded)
     }
 
+    var isInputEditing: Bool {
+        isOmnibarSession || isAITabExpanded
+    }
+
     var isActive: Bool {
         displayState != .hidden
     }
@@ -350,17 +354,17 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
 
         contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
-        let expandedHeight = omnibarEditingHeight()
+        let expandedHeight = editingHeight()
 
         if cardPosition == .top && isToggleEnabled {
             viewController.setExpanded(false, animated: false)
             viewController.setExpandedWithToggleHidden(true)
-            let toggleHiddenHeight = omnibarEditingHeight()
+            let toggleHiddenHeight = editingHeight()
             intentSubject.send(.showOmnibarEditing(expandedHeight: toggleHiddenHeight, pendingExpandedHeight: expandedHeight))
         } else if cardPosition == .top {
             viewController.setExpanded(false, animated: false)
             viewController.setExpandedWithToggleHidden(true)
-            let omnibarMatchingHeight = omnibarEditingHeight()
+            let omnibarMatchingHeight = editingHeight()
             intentSubject.send(.showOmnibarEditing(expandedHeight: omnibarMatchingHeight))
         } else {
             intentSubject.send(.showOmnibarEditing(expandedHeight: expandedHeight))
@@ -422,7 +426,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.animateToggleReveal(additionalAnimations: additionalAnimations)
     }
 
-    func omnibarEditingHeight() -> CGFloat {
+    func editingHeight() -> CGFloat {
         let screenWidth = viewController.view.window?.bounds.width ?? viewController.view.bounds.width
         let height = viewController.view.systemLayoutSizeFitting(
             CGSize(width: screenWidth, height: UIView.layoutFittingCompressedSize.height),
@@ -486,6 +490,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func updateOmnibarInputVisibility(_ isInputVisible: Bool) {
+        guard isInputVisibleForKeyboard != isInputVisible else { return }
         isInputVisibleForKeyboard = isInputVisible
         let isAITabSearch = displayState == .aiTab(.expanded) && inputMode == .search
 
@@ -506,11 +511,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         case (.omnibar(.active), true):
             cancelTopOmnibarKeyboardPresentationFallback()
             isAwaitingTopOmnibarKeyboardPresentation = false
-        case (.aiTab(.expanded), false) where isAITabSearch:
-            let renderState = computeRenderState()
-            viewController.apply(renderState.viewConfig, animated: false)
-            contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
-        case (.aiTab(.expanded), true) where isAITabSearch:
+        case (.aiTab(.expanded), _) where isAITabSearch:
             let renderState = computeRenderState()
             viewController.apply(renderState.viewConfig, animated: false)
             contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)

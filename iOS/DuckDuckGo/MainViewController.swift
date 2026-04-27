@@ -1593,10 +1593,7 @@ class MainViewController: UIViewController {
         // about to shown to the user.
         if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
             fireNewTabPixels()
-            ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
-            if openedAfterIdle {
-                postIdleSessionInstrumentation.sessionStarted(surface: .ntp)
-            }
+            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle)
         }
 
         if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
@@ -1604,6 +1601,13 @@ class MainViewController: UIViewController {
         }
 
         syncService.scheduler.requestSyncImmediately()
+    }
+
+    private func fireNTPShownInstrumentation(openedAfterIdle: Bool) {
+        ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
+        if openedAfterIdle {
+            postIdleSessionInstrumentation.sessionStarted(surface: .ntp)
+        }
     }
 
     func fireNewTabPixels() {

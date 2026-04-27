@@ -79,17 +79,17 @@ final class MockKeyboardPresenter: KeyboardPresenting {
 }
 
 final class MockIdleReturnEvaluator: IdleReturnEvaluating {
-    var shouldShowNTPAfterIdleResult = false
-    var idleThresholdPassedResult = false
+    var didReturnAfterIdleResult = false
+    var treatmentForIdleReturnResult: IdleReturnTreatment = .ntp
     var lastLastBackgroundDate: Date?
 
-    func shouldShowNTPAfterIdle(lastBackgroundDate: Date?) -> Bool {
+    func didReturnAfterIdle(lastBackgroundDate: Date?) -> Bool {
         lastLastBackgroundDate = lastBackgroundDate
-        return shouldShowNTPAfterIdleResult
+        return didReturnAfterIdleResult
     }
 
-    func idleThresholdPassed(lastBackgroundDate: Date?) -> Bool {
-        return idleThresholdPassedResult
+    func treatmentForIdleReturn() -> IdleReturnTreatment {
+        return treatmentForIdleReturnResult
     }
 }
 
@@ -333,31 +333,52 @@ final class LaunchActionHandlerTests {
         }
     }
 
-    // MARK: - Idle return NTP
+    // MARK: - Idle return
 
-    @Test("When idle evaluator returns true then showNewTabPageAfterIdleReturn is called and keyboard is not")
-    func whenIdleEvaluatorReturnsTrueThenIdleReturnHandlerIsCalled() {
+    @Test("When idle return with NTP treatment then showNewTabPageAfterIdleReturn is called and keyboard is not")
+    func whenIdleReturnNTPTreatmentThenIdleReturnHandlerIsCalled() {
         let date = Date()
-        idleReturnEvaluator.shouldShowNTPAfterIdleResult = true
+        idleReturnEvaluator.didReturnAfterIdleResult = true
+        idleReturnEvaluator.treatmentForIdleReturnResult = .ntp
         idleReturnDelegate.showNewTabPageAfterIdleReturnCalled = false
         keyboardPresenter.showKeyboardOnLaunchCalled = false
 
         launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: false))
 
         #expect(idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
+        #expect(!idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
         #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
     }
 
-    @Test("When idle evaluator returns false then showKeyboardOnLaunch is called and idle return handler is not")
-    func whenIdleEvaluatorReturnsFalseThenKeyboardIsCalled() {
+    @Test("When idle return with LUT treatment then markLastUsedTabAsResumedAfterIdle is called and keyboard shows")
+    func whenIdleReturnLUTTreatmentThenLUTHandlerIsCalled() {
         let date = Date()
-        idleReturnEvaluator.shouldShowNTPAfterIdleResult = false
+        idleReturnEvaluator.didReturnAfterIdleResult = true
+        idleReturnEvaluator.treatmentForIdleReturnResult = .lut
+        idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled = false
         idleReturnDelegate.showNewTabPageAfterIdleReturnCalled = false
         keyboardPresenter.showKeyboardOnLaunchCalled = false
 
         launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: false))
 
+        #expect(idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
         #expect(!idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
+        #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
+        #expect(keyboardPresenter.lastBackgroundDate == date)
+    }
+
+    @Test("When no idle return then showKeyboardOnLaunch is called and neither delegate is called")
+    func whenNoIdleReturnThenKeyboardIsCalled() {
+        let date = Date()
+        idleReturnEvaluator.didReturnAfterIdleResult = false
+        idleReturnDelegate.showNewTabPageAfterIdleReturnCalled = false
+        idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled = false
+        keyboardPresenter.showKeyboardOnLaunchCalled = false
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: false))
+
+        #expect(!idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
+        #expect(!idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == date)
     }
@@ -365,7 +386,7 @@ final class LaunchActionHandlerTests {
     @Test("When isFirstForeground is true then keyboard presenter receives nil so keyboard shows on cold start")
     func whenFirstForegroundThenKeyboardReceivesNil() {
         let date = Date()
-        idleReturnEvaluator.shouldShowNTPAfterIdleResult = false
+        idleReturnEvaluator.didReturnAfterIdleResult = false
         keyboardPresenter.showKeyboardOnLaunchCalled = false
 
         launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: true))

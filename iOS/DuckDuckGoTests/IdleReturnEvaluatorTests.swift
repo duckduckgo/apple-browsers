@@ -61,73 +61,86 @@ final class IdleReturnEvaluatorTests {
         )
     }
 
-    @Test("When feature is off then shouldShowNTPAfterIdle returns false")
+    @Test("When feature is off then didReturnAfterIdle returns false")
     func whenFeatureOffThenReturnsFalse() {
         let evaluator = makeEvaluator(featureOn: false)
         let date = Date().addingTimeInterval(-61)
-        #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: date))
+        #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: date))
     }
 
-    @Test("When lastBackgroundDate is nil then shouldShowNTPAfterIdle returns false")
+    @Test("When lastBackgroundDate is nil then didReturnAfterIdle returns false")
     func whenLastBackgroundDateNilThenReturnsFalse() {
         let evaluator = makeEvaluator()
-        #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: nil))
+        #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: nil))
     }
 
-    @Test("When under threshold then shouldShowNTPAfterIdle returns false")
+    @Test("When under threshold then didReturnAfterIdle returns false")
     func whenUnderThresholdThenReturnsFalse() {
         let evaluator = makeEvaluator(settingsJSON: "{\"idleThresholdSeconds\": 120}")
         let oneHourAgo = Date().addingTimeInterval(-110)
-        #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: oneHourAgo))
+        #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: oneHourAgo))
     }
 
-    @Test("When over threshold then shouldShowNTPAfterIdle returns true")
+    @Test("When over threshold then didReturnAfterIdle returns true")
     func whenOverThresholdThenReturnsTrue() {
         let evaluator = makeEvaluator(settingsJSON: "{\"idleThresholdSeconds\": 120}")
         let twoHoursAgo = Date().addingTimeInterval(-121)
-        #expect(evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: twoHoursAgo))
+        #expect(evaluator.didReturnAfterIdle(lastBackgroundDate: twoHoursAgo))
     }
 
-    @Test("When at exactly threshold then shouldShowNTPAfterIdle returns true")
+    @Test("When at exactly threshold then didReturnAfterIdle returns true")
     func whenAtThresholdThenReturnsTrue() {
         let evaluator = makeEvaluator(settingsJSON: "{\"idleThresholdSeconds\": 120}")
         let oneMinuteAgo = Date().addingTimeInterval(-120)
-        #expect(evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: oneMinuteAgo))
+        #expect(evaluator.didReturnAfterIdle(lastBackgroundDate: oneMinuteAgo))
     }
 
     @Test("When settings missing then uses default threshold and returns true for 300+s idle")
     func whenSettingsMissingThenUsesDefaultThreshold() {
         let evaluator = makeEvaluator(settingsJSON: nil)
         let fiveMinutesAgo = Date().addingTimeInterval(-300)
-        #expect(evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: fiveMinutesAgo))
+        #expect(evaluator.didReturnAfterIdle(lastBackgroundDate: fiveMinutesAgo))
         let justUnderFiveMinutes = Date().addingTimeInterval(-299)
-        #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: justUnderFiveMinutes))
+        #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: justUnderFiveMinutes))
     }
 
     @Test("When settings invalid JSON then uses default threshold")
     func whenSettingsInvalidThenUsesDefaultThreshold() {
         let evaluator = makeEvaluator(settingsJSON: "not json")
         let fiveMinutesAgo = Date().addingTimeInterval(-300)
-        #expect(evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: fiveMinutesAgo))
+        #expect(evaluator.didReturnAfterIdle(lastBackgroundDate: fiveMinutesAgo))
         let justUnderFiveMinutes = Date().addingTimeInterval(-299)
-        #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: justUnderFiveMinutes))
-    }
-
-    @Test("When eligibility manager returns false then shouldShowNTPAfterIdle returns false even when over threshold")
-    func whenEligibilityManagerReturnsFalseThenReturnsFalse() {
-        let mockEligibility = MockIdleReturnEligibilityManager()
-        mockEligibility.isEligibleForNTPAfterIdleResult = false
-        let evaluator = makeEvaluator(settingsJSON: "{\"idleThresholdSeconds\": 60}", eligibilityManager: mockEligibility)
-        let twoMinutesAgo = Date().addingTimeInterval(-121)
-        #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: twoMinutesAgo))
+        #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: justUnderFiveMinutes))
     }
 
     @Test("When idleThresholdSeconds missing in settings then uses default")
     func whenIdleThresholdSecondsMissingThenUsesDefault() {
         let evaluator = makeEvaluator(settingsJSON: "{}")
         let fiveMinutesAgo = Date().addingTimeInterval(-300)
-        #expect(evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: fiveMinutesAgo))
+        #expect(evaluator.didReturnAfterIdle(lastBackgroundDate: fiveMinutesAgo))
         let justUnderFiveMinutes = Date().addingTimeInterval(-299)
-        #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: justUnderFiveMinutes))
+        #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: justUnderFiveMinutes))
+    }
+
+    @Test("When eligibility manager returns true then treatmentForIdleReturn is .ntp")
+    func whenEligibleThenTreatmentIsNTP() {
+        let mockEligibility = MockIdleReturnEligibilityManager()
+        mockEligibility.isEligibleForNTPAfterIdleResult = true
+        let evaluator = makeEvaluator(eligibilityManager: mockEligibility)
+        #expect(evaluator.treatmentForIdleReturn() == .ntp)
+    }
+
+    @Test("When eligibility manager returns false then treatmentForIdleReturn is .lut")
+    func whenNotEligibleThenTreatmentIsLUT() {
+        let mockEligibility = MockIdleReturnEligibilityManager()
+        mockEligibility.isEligibleForNTPAfterIdleResult = false
+        let evaluator = makeEvaluator(eligibilityManager: mockEligibility)
+        #expect(evaluator.treatmentForIdleReturn() == .lut)
+    }
+
+    @Test("When no eligibility manager provided then treatmentForIdleReturn defaults to .ntp")
+    func whenNoEligibilityManagerThenTreatmentIsNTP() {
+        let evaluator = makeEvaluator(eligibilityManager: nil)
+        #expect(evaluator.treatmentForIdleReturn() == .ntp)
     }
 }

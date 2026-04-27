@@ -98,14 +98,16 @@ final class LaunchActionHandler: LaunchActionHandling {
             userActivityHandler.handleUserActivity(userActivity)
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground):
             launchSourceManager.setSource(.standard)
-            if idleReturnEvaluator.shouldShowNTPAfterIdle(lastBackgroundDate: lastBackgroundDate) {
-                idleReturnDelegate?.showNewTabPageAfterIdleReturn()
-            } else {
-                if idleReturnEvaluator.idleThresholdPassed(lastBackgroundDate: lastBackgroundDate) {
+            if idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate) {
+                switch idleReturnEvaluator.treatmentForIdleReturn() {
+                case .ntp:
+                    idleReturnDelegate?.showNewTabPageAfterIdleReturn()
+                    return
+                case .lut:
                     idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle()
                 }
-                keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate)
             }
+            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate)
         }
     }
     

@@ -22,12 +22,19 @@ import Core
 import Persistence
 import PrivacyConfig
 
-protocol IdleReturnEvaluating {
-    func shouldShowNTPAfterIdle(lastBackgroundDate: Date?) -> Bool
+enum IdleReturnTreatment {
+    case ntp
+    case lut
+}
 
-    /// Whether the idle threshold was exceeded since the last background — independent
-    /// of whether the user's setting will surface NTP-after-idle or LUT-after-idle.
-    func idleThresholdPassed(lastBackgroundDate: Date?) -> Bool
+protocol IdleReturnEvaluating {
+    /// Whether the user returned after an idle period — feature flag and threshold only.
+    /// Independent of which treatment will be applied.
+    func didReturnAfterIdle(lastBackgroundDate: Date?) -> Bool
+
+    /// The treatment to apply on an idle return. Eligibility (onboarding state,
+    /// user's "After Inactivity" setting) selects between cases. Defaults to `.lut`.
+    func treatmentForIdleReturn() -> IdleReturnTreatment
 }
 
 /// Key namespace for idle-return NTP debug overrides (typed storage, no dotted keys).
@@ -101,29 +108,22 @@ final class IdleReturnEvaluator: IdleReturnEvaluating {
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
     }
 
-    func shouldShowNTPAfterIdle(lastBackgroundDate: Date?) -> Bool {
+    func didReturnAfterIdle(lastBackgroundDate: Date?) -> Bool {
         guard featureFlagger.isFeatureOn(.showNTPAfterIdleReturn) else {
             return false
         }
         guard let lastBackgroundDate else {
-            return false
-        }
-        guard idleReturnEligibilityManager?.isEligibleForNTPAfterIdle() ?? true else {
             return false
         }
         let thresholdSeconds = idleThresholdSeconds()
         return Date().timeIntervalSince(lastBackgroundDate) >= Double(thresholdSeconds)
     }
 
-    func idleThresholdPassed(lastBackgroundDate: Date?) -> Bool {
-        guard featureFlagger.isFeatureOn(.showNTPAfterIdleReturn) else {
-            return false
+    func treatmentForIdleReturn() -> IdleReturnTreatment {
+        if idleReturnEligibilityManager?.isEligibleForNTPAfterIdle() ?? true {
+            return .ntp
         }
-        guard let lastBackgroundDate else {
-            return false
-        }
-        let thresholdSeconds = idleThresholdSeconds()
-        return Date().timeIntervalSince(lastBackgroundDate) >= Double(thresholdSeconds)
+        return .lut
     }
 
     private func idleThresholdSeconds() -> Int {

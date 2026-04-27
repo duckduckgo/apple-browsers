@@ -2182,6 +2182,7 @@
 		EA90A5267F61028E3525A81E /* RebrandedAppIconPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D67C082BD4927358D771DB /* RebrandedAppIconPicker.swift */; };
 		EAB19EDA268963510015D3EA /* DomainMatchingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB19ED9268963510015D3EA /* DomainMatchingTests.swift */; };
 		EB636BDE30C2031DD6A90899 /* StartupOnboardingCover.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD8CF8E4B152CDB3A4ACB14C /* StartupOnboardingCover.swift */; };
+		ED225CE02F9FCBA500B6E6CB /* MockSyncSetupExperimentPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED225CDF2F9FCBA500B6E6CB /* MockSyncSetupExperimentPixelFiring.swift */; };
 		ED3811FB2F3F362700F0D0DD /* MockAutofillOnboardingExperimentPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED3811FA2F3F362700F0D0DD /* MockAutofillOnboardingExperimentPixelFiring.swift */; };
 		ED48ED462F3CC88400FBAFFF /* AutofillOnboardingExperimentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED48ED452F3CC88400FBAFFF /* AutofillOnboardingExperimentPixels.swift */; };
 		ED4B3F3D2F191E5F006C5FE4 /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = ED4B3F3C2F191E5F006C5FE4 /* PrivacyConfig */; };
@@ -4760,6 +4761,7 @@
 		EA39B7E1268A1A35000C62CD /* privacy-reference-tests */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = folder; name = "privacy-reference-tests"; path = "../SharedPackages/BrowserServicesKit/Tests/BrowserServicesKitTests/Resources/privacy-reference-tests"; sourceTree = SOURCE_ROOT; };
 		EA8E5DCD620608EB3A162D3D /* AIChatTabChatHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabChatHeaderView.swift; sourceTree = "<group>"; };
 		EAB19ED9268963510015D3EA /* DomainMatchingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DomainMatchingTests.swift; sourceTree = "<group>"; };
+		ED225CDF2F9FCBA500B6E6CB /* MockSyncSetupExperimentPixelFiring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSyncSetupExperimentPixelFiring.swift; sourceTree = "<group>"; };
 		ED3811FA2F3F362700F0D0DD /* MockAutofillOnboardingExperimentPixelFiring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAutofillOnboardingExperimentPixelFiring.swift; sourceTree = "<group>"; };
 		ED48ED452F3CC88400FBAFFF /* AutofillOnboardingExperimentPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillOnboardingExperimentPixels.swift; sourceTree = "<group>"; };
 		EDB06E4C5FAE7E6BC7CDC6CC /* RebrandedOnboardingView+AppIconPickerContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "RebrandedOnboardingView+AppIconPickerContent.swift"; sourceTree = "<group>"; };
@@ -6356,6 +6358,7 @@
 		569437222BDD402600C0881B /* Sync */ = {
 			isa = PBXGroup;
 			children = (
+				ED225CDF2F9FCBA500B6E6CB /* MockSyncSetupExperimentPixelFiring.swift */,
 				569437232BDD405400C0881B /* SyncBookmarksAdapterTests.swift */,
 				569437282BDD487600C0881B /* SyncCredentialsAdapterTests.swift */,
 				C1D3C56C2E895B820086A2BD /* SyncCreditCardsAdapterTests.swift */,
@@ -13277,6 +13280,7 @@
 				98E564A22DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift in Sources */,
 				9FE7CD5C2E14C6CD006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift in Sources */,
 				9F387DDA2EA87C0F006861F8 /* PromptCooldownManagerTests.swift in Sources */,
+				ED225CE02F9FCBA500B6E6CB /* MockSyncSetupExperimentPixelFiring.swift in Sources */,
 				98E563F72DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift in Sources */,
 				BBFF22EF2F3469160055A710 /* MockFreeTrialConversionInstrumentationService.swift in Sources */,
 				98E563F82DE8B32D00E6E75F /* MockOmniBar.swift in Sources */,

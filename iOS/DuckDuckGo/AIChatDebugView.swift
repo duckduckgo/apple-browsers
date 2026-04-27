@@ -308,27 +308,31 @@ private struct AIChatStorageServerSection: View {
     @StateObject private var serverState = StorageServerState()
 
     var body: some View {
-        Section(header: Text("Native Storage Server")) {
+        Section(header: Text(verbatim: "Native Storage Server")) {
             if serverState.isRunning {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Server running")
+                    Text(verbatim: "Server running")
                         .foregroundColor(.green)
                     if let ip = serverState.localIPAddress {
-                        Text("http://\(ip):8473")
+                        Text(verbatim: "http://\(ip):8473")
                             .font(.system(.body, design: .monospaced))
                             .textSelection(.enabled)
                     }
                 }
-                Button("Stop Server") {
+                Button {
                     serverState.stop()
+                } label: {
+                    Text(verbatim: "Stop Server")
                 }
                 .foregroundColor(.red)
             } else {
                 if let error = serverState.errorMessage {
                     Text(error).foregroundColor(.red).font(.caption)
                 }
-                Button("Start Server") {
+                Button {
                     serverState.start(handler: duckAiNativeStorageHandler)
+                } label: {
+                    Text(verbatim: "Start Server")
                 }
             }
         }

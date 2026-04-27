@@ -4186,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "サーバーデータを削除";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "すべてのデバイスが切断され、同期されたデータがサーバーから削除されます。";
+"sync.delete.all.confirm.message" = "バックアップはサーバーから削除されます。すべてのデバイスの同期が解除されますが、どのデバイスからもデータは削除されません。";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "サーバーデータを削除しますか？";

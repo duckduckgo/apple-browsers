@@ -4186,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Slett serverdata";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Alle enheter blir frakoblet og dine synkroniserte data blir slettet fra serveren.";
+"sync.delete.all.confirm.message" = "Sikkerhetskopien din blir slettet fra serveren. Alle enheter blir koblet fra synkronisering, men ingenting blir slettet fra noen enhet.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Vil du slette serverdata?";

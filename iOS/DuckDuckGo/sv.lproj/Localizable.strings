@@ -4186,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Radera serverdata";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Alla enheter kopplas bort och dina synkroniserade data raderas från servern.";
+"sync.delete.all.confirm.message" = "Din säkerhetskopia kommer att raderas från servern. Alla enheter kommer att kopplas bort från synkronisering, men inget kommer att raderas från någon enhet.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Radera serverdata?";

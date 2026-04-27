@@ -4186,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Изтриване на данните от сървъра";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Връзката на всички устройства ще бъде премахната, а синхронизираните данни ще бъдат изтрити от сървъра.";
+"sync.delete.all.confirm.message" = "Резервното копие ще бъде изтрито от сървъра. Синхронизацията на всички устройства ще бъде изключена, но от устройствата няма да бъде изтрито нищо.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Изтриване на данните от сървъра?";

@@ -4186,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Kustuta serveri andmed";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Kõigi seadmete ühendus katkestatakse ja sinu sünkroonitud andmed kustutatakse serverist.";
+"sync.delete.all.confirm.message" = "Sinu varukoopia kustutatakse serverist. Kõigi seadmete sünkroonimine katkestatakse, kuid ühestki seadmest ei kustutata midagi.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Kas kustutada serveri andmed?";

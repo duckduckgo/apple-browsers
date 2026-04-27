@@ -410,7 +410,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             protocolConfiguration.disconnectOnSleep = false
 
             // Enforce routes
-            protocolConfiguration.enforceRoutes = true
+            protocolConfiguration.enforceRoutes = settings.enforceRoutes
 
             // We will control excluded networks through includedRoutes / excludedRoutes
             protocolConfiguration.excludeLocalNetworks = false

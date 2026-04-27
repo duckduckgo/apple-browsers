@@ -304,13 +304,15 @@ final class AddressBarTextField: NSTextField {
         // sink that fires earlier in this same emission chain just restored those from the tab's shared state, and the
         // `updateValue` path below (via `sharedTextState?.reset()`) would otherwise clear them again right afterwards
         // whenever the incoming tab had no user-typed address-bar value to restore.
-        // save current (possibly modified) value into the old TabViewModel when selecting another Tab
-        if let oldSelectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel {
-            guard oldSelectedTabViewModel !== newSelectedTabViewModel else {
-                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
-                return
-            }
-            oldSelectedTabViewModel.lastAddressBarTextFieldValue = value
+        //
+        // The snapshot of the outgoing tab's bar value into its `lastAddressBarTextFieldValue` is owned by
+        // `AddressBarViewController.subscribeToSelectedTabViewModel`, which fires earlier in this emission
+        // chain — saving it here too would record the post-`applyDuckAIUnfocusedValue` value (the incoming
+        // tab's draft stamped onto the outgoing tab) and corrupt `lastAddressBarTextFieldValue`.
+        if let oldSelectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel,
+           oldSelectedTabViewModel === newSelectedTabViewModel {
+            updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
+            return
         }
         let lastAddressBarTextFieldValue = newSelectedTabViewModel.lastAddressBarTextFieldValue
 

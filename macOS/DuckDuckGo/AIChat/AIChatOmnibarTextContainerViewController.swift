@@ -405,8 +405,12 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     }
 
     /// Moves the caret to the end of the prompt text without changing first responder.
+    /// Uses the UTF-16 length of the string, not `String.count` (grapheme-cluster count),
+    /// because `selectedRange` is an `NSRange` measured in UTF-16. For prompts containing
+    /// emoji or other non-BMP characters the two values differ and the previous version
+    /// would land the caret before the real end of the text.
     func moveCursorToEnd() {
-        let textLength = textView.string.count
+        let textLength = (textView.string as NSString).length
         textView.selectedRange = NSRange(location: textLength, length: 0)
     }
 

@@ -81,7 +81,7 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
      - `custom_fields`: `{"1214294661819893": "<SHORT_ID_1>,<SHORT_ID_2>,..."}` — comma-separated list of every Sentry short-ID in the cluster so future runs dedupe against any of them.
      - `html_notes`: per-issue template (see "Per-issue tracking task body" below)
      - Capture the new task's `permalink_url` and reference it in the main report — every per-issue line in the main report (whether parent or sibling) points at the same merged tracking task.
-9. **Write the main report to the user's task** via `asana_update_task` with `html_notes` — structure below. Each per-issue line should end with the per-issue tracking-task link captured in step 8 (find-or-create).
+9. **Write the main report to the user's task** via `asana_update_task` with `html_notes` — structure below. Each HIGH/MEDIUM line **leads with the tracking-task link** captured in step 8, then lists the Sentry short-ID(s), then stats (users + events), then a 1–2 sentence description with inline PR links. Lead-with-tracking is the readability win — readers scanning the list jump to the per-issue triage doc in one click instead of hunting at the end of a paragraph. LOW and Pre-existing entries skip the tracking link (no task created) and lead with the Sentry short-ID.
 10. **PII: initials + PR links only, never full names.** The DDG asana-exfiltration hook scans task writes and blocks full employee names — even when the user approves in chat (the hook can't see chat). Use first-letter-of-first-name + first-letter-of-last-name initials, and link the PR so the author is one click away on GitHub. If even initials get blocked, fall back to PR-number-only attribution. This applies to both the main report **and** the per-issue tracking task bodies created in step 8.
 
 ## Asana task structure (html_notes)
@@ -99,23 +99,23 @@ Reviewed on {today}. Scope: unresolved issues with events in {release list}.
 Full list in Sentry: <a href="...">unresolved in {version}.x</a>
 New-in-{version}.x only: <a href="...">firstRelease filter</a>
 
-<em>Blame attributions are best-effort from git blame + recent commits. Initials + PR links used (not full names) — PR page shows the author.</em>
+<em>Each entry below: <strong>tracking task</strong> · Sentry short-ID(s) · stats · description. Blame uses initials + PR links — the PR page shows the author.</em>
 
 <hr>
 
 <strong>🔴 HIGH — {cluster name or "new high-volume"}</strong>
-• <a href="...">SHORT-ID</a> — <signal> · <code>culprit</code> (U users, E events) — likely: {INITIALS} (<a href="...">#PR title</a>) · <a href="...">tracking</a>
+• <a href="...">Tracking</a> · <a href="...">SHORT-ID</a>[, <a href="...">SHORT-ID-2</a>, ...] · {U} users, {E} events · {signal} in <code>culprit</code> — {1–2 sentence description}. Likely caused by <a href="...">#NNNN</a> ({INITIALS}).
 
 <strong>🟡 MEDIUM — Other new issues</strong>
-• ...
+• <a href="...">Tracking</a> · <a href="...">SHORT-ID</a> · ...
 
 <strong>🟢 LOW — OS-level / low signal / Jetsam OOM</strong>
-• ...
+• <a href="...">SHORT-ID</a> · {U} users · {signal} <code>culprit</code> — {one-liner; no tracking task created for LOW}
 
 <hr>
 
 <strong>⚠️ Pre-existing (not new, but high-volume)</strong>
-• <a href="...">SHORT-ID</a> — <signal> · <code>culprit</code> — U users, E events
+• <a href="...">SHORT-ID</a> · {U} users, {E} events · {signal} <code>culprit</code> — {one-liner; no tracking task}
 
 <hr>
 
@@ -171,6 +171,7 @@ Likely caused by <a href="https://github.com/duckduckgo/apple-browsers/pull/<NNN
 | Running root-cause subagents serially | Dispatch them in parallel (single message, multiple Agent tool calls) — they're independent and waiting serially is wasteful. Skip subagents entirely when the culprit is generic or OS-only — there's nothing to analyze. |
 | Searching across the whole `Sentry Crash Reports` project instead of the platform section | Always scope the primary search to the platform section (`sections.any=<PLATFORM_SECTION>`). Only fall back to the `Untitled section` (`1214294661819891`) when the platform-section search misses — that's where pre-split tasks still live. |
 | Creating a new tracking task in the `Untitled section` (the fallback) | The fallback is read-only for *new* tasks. New tasks always go in the platform section (`section_id=1214291024165659` for macOS, `1214290879396596` for iOS). |
+| Burying the tracking-task link at the end of the per-issue line (`SHORT-ID — signal · culprit (U users) · tracking`) | Hard to scan when descriptions wrap across multiple visual lines. Lead with `Tracking · SHORT-ID(s) · stats · description` so the actionable link is the first thing the reader sees. LOW and Pre-existing entries (no tracking task) lead with the Sentry short-ID instead. |
 
 ## Example invocation
 
@@ -184,4 +185,4 @@ Likely caused by <a href="https://github.com/duckduckgo/apple-browsers/pull/<NNN
 6. Rewrite all `ddg.sentry.io` URLs to `errors.duckduckgo.com/organizations/ddg/issues/<SHORT_ID>/?project=6`.
 7. For each new issue with an informative stacktrace (e.g. `NSInternalInconsistencyException` with a clear message, or a deep first-party call chain), dispatch a parallel general-purpose subagent (single message, multiple Agent tool calls) to produce a root-cause summary + numbered call chain. Skip when the culprit is generic or OS-only.
 8. Group new issues by culprit (siblings → one task). For each cluster: `asana_search_tasks(workspace="137249556945", projects.any="1214294661819890", sections.any="1214291024165659", custom_fields.1214294661819893.value="<SHORT_ID>", opt_fields="name,permalink_url,custom_fields,memberships.section.gid,tags,tags.name")` (macOS section). Split the returned `custom_fields` value on commas and require an **exact element match** (the field is comma-separated; substring matches are false positives). If no match in the platform section, retry with `sections.any="1214294661819891"` (Untitled-section fallback) — link any hit there as-is. If still no match, `asana_create_task` with `name`, `project_id="1214294661819890"`, `section_id="1214291024165659"` (macOS), `custom_fields={"1214294661819893":"<SHORT_ID_1>,<SHORT_ID_2>,..."}` (all sibling short-IDs comma-separated), and `html_notes` from the per-issue template. Capture `permalink_url`.
-9. `asana_update_task(task_id="1214175611004136", html_notes="<body>...</body>")` with the main report; each per-issue line ends with `· <a href="...">tracking</a>` linking to the task from step 8.
+9. `asana_update_task(task_id="1214175611004136", html_notes="<body>...</body>")` with the main report. **Lead each HIGH/MEDIUM line with the tracking-task link**, then the Sentry short-ID(s), then stats, then the description — e.g. `• <a href="...task/14310448135804">Tracking</a> · <a href="...issues/APPLE-IOS-D6FM/...">D6FM</a> · 153 users, 263 events · SIGABRT in <code>TabViewController.ViewSettings?</code> — NSInternalInconsistencyException ...`. LOW and Pre-existing lines lead with the Sentry short-ID (no tracking task).

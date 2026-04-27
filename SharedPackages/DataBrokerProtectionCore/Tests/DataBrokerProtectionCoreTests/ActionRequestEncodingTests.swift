@@ -176,6 +176,44 @@ final class ActionRequestEncodingTests: XCTestCase {
         XCTAssertEqual(emittedEmailData, emailData)
     }
 
+    func testWhenGenerateEmailAndGetEmailDataPopulateRunner_thenWirePayloadHasFetchedEmailAndEmailDataAndNoEmailMirror() throws {
+        let action = FillFormAction(id: "fill-vcode", actionType: .fillForm, elements: [.init(type: "verificationCode")])
+        let extractedProfile = ExtractedProfile(id: 42, name: "John Doe")
+        let fetchedEmail = FetchedEmail(email: "disposable@duck.com")
+        let emailData: ExtractedEmailData = ["verificationCode": "123456"]
+        let params = Params(state: ActionRequest(action: action,
+                                                  data: .userData(makeProfileQuery(),
+                                                                  extractedProfile,
+                                                                  fetchedEmail,
+                                                                  emailData)))
+
+        let state = try XCTUnwrap(try params.toDictionary()["state"] as? [String: Any])
+        let data = try XCTUnwrap(state["data"] as? [String: Any])
+
+        XCTAssertEqual((data["fetchedEmail"] as? [String: String])?["email"], "disposable@duck.com")
+        XCTAssertEqual(data["emailData"] as? [String: String], ["verificationCode": "123456"])
+        let encodedProfile = try XCTUnwrap(data["extractedProfile"] as? [String: Any])
+        XCTAssertNil(encodedProfile["email"])
+    }
+
+    func testWhenLegacyBrokerFillForm_thenWirePayloadCarriesExtractedProfileEmail() throws {
+        let action = FillFormAction(id: "fill-email", actionType: .fillForm, elements: [.init(type: "email")])
+        let extractedProfile = ExtractedProfile(id: 42, name: "John Doe", email: "legacy-disposable@duck.com")
+        let params = Params(state: ActionRequest(action: action,
+                                                  data: .userData(makeProfileQuery(),
+                                                                  extractedProfile,
+                                                                  nil,
+                                                                  [:])))
+
+        let state = try XCTUnwrap(try params.toDictionary()["state"] as? [String: Any])
+        let data = try XCTUnwrap(state["data"] as? [String: Any])
+
+        let encodedProfile = try XCTUnwrap(data["extractedProfile"] as? [String: Any])
+        XCTAssertEqual(encodedProfile["email"] as? String, "legacy-disposable@duck.com")
+        XCTAssertNil(data["fetchedEmail"])
+        XCTAssertNil(data["emailData"])
+    }
+
     private func makeProfileQuery() -> ProfileQuery {
         ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 1985)
     }

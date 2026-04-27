@@ -798,10 +798,12 @@ final class AddressBarViewController: NSViewController {
             /// same placeholder as the Duck.ai panel's prompt editor so the empty-state label matches across
             /// focused and unfocused states.
             addressBarPlaceholder = UserText.aiChatOmnibarPlaceholder
-        } else if isNewTab {
-            addressBarPlaceholder = UserText.addressBarPlaceholder
         } else {
-            addressBarPlaceholder = ""
+            /// In search mode the placeholder always reads "Search or enter address". `NSTextField` only
+            /// paints it when `stringValue` is empty, so this naturally appears on a fresh NTP and after
+            /// the user clears a URL on a loaded page, and stays out of the way while a URL is displayed.
+            /// Unfocused URL display is owned by `passiveTextField` and is unaffected by this string.
+            addressBarPlaceholder = UserText.addressBarPlaceholder
         }
 
         let font = NSFont.systemFont(ofSize: isNewTab ? theme.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : theme.addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
@@ -1353,6 +1355,12 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
             } else {
                 selectionState = .inactive
                 updateMode()
+                /// `selectionState`'s didSet ran `updateView` with the stale `.editing(.aiChat)` mode set
+                /// from when this tab was Duck.ai-active, which kept `addressBarTextField` visible (and
+                /// left-aligned with the full URL) on the incoming search-mode URL tab until the user
+                /// focused/unfocused the bar. Re-run the layout now that `updateMode` has flipped `mode`
+                /// to its correct browsing/editing value so the active/passive text-field split converges.
+                updateView()
                 view.window?.makeFirstResponder(nil)
                 addressBarButtonsViewController?.resetSearchModeToggle()
             }

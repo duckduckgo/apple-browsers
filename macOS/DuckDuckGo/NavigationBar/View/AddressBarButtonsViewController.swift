@@ -813,7 +813,10 @@ final class AddressBarButtonsViewController: NSViewController {
         let hasRequestedPermission = tabViewModel.usedPermissions.values.contains(where: { $0.isRequested })
         let shouldShowWhileFocused = (tabViewModel.tab.content == .newtab) && hasRequestedPermission
 
-        permissionButtons.isShown = (shouldShowWhileFocused || !isTextFieldEditorFirstResponder)
+        /// `hasPendingBarInput` suppresses the indicators while the user has typed or has an autocomplete
+        /// suggestion in the bar — they belong to the loaded page, not to the user's pending edit, and
+        /// would otherwise crowd the bar at exactly the moment the user is interacting with it.
+        permissionButtons.isShown = (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && !hasPendingBarInput))
         && !tabViewModel.isShowingErrorPage
         defer {
             showOrHidePermissionPopoverIfNeeded()
@@ -903,7 +906,8 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
             isPermissionCenterPopoverShown: isPermissionCenterPopoverShown,
             isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
-            hasAnyPersistedPermissions: hasAnyPersistedPermissions
+            hasAnyPersistedPermissions: hasAnyPersistedPermissions,
+            hasPendingBarInput: hasPendingBarInput
         ) && !isAIChatPanelActive
 
         showOrHidePermissionCenterPopoverIfNeeded()
@@ -1013,10 +1017,6 @@ final class AddressBarButtonsViewController: NSViewController {
         let isNewTab = [.newtab].contains(tabViewModel.tab.content)
         let isHypertextUrl = url?.navigationalScheme?.isHypertextScheme == true && url?.isDuckPlayer == false
         let isEditingMode = controllerMode?.isEditing ?? false
-        /// `isUserTyped` covers both `.text(userTyped: true)` and `.url(userTyped: true)` — i.e. any pending
-        /// edit the user hasn't submitted. Without the URL case, typing `test.com` (which parses as a URL)
-        /// and unfocusing would leave the shield rendering over the draft value.
-        let isTextFieldValueUserTyped = textFieldValue?.isUserTyped ?? false
         let isLocalUrl = url?.isLocalURL ?? false
 
         // Privacy entry point button
@@ -1026,11 +1026,14 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyDashboardButton.mouseOverTintColor = isFlaggedAsMalicious ? .alertRedHover : privacyDashboardButton.mouseOverTintColor
         privacyDashboardButton.mouseDownTintColor = isFlaggedAsMalicious ? .alertRedPressed : privacyDashboardButton.mouseDownTintColor
 
+        /// `hasPendingBarInput` covers `.text(userTyped: true)`, `.url(userTyped: true)`, and `.suggestion` —
+        /// any state where the bar is showing the user's pending edit (typed draft or autocomplete suggestion
+        /// surfaced over it). The shield belongs to the loaded page, not to the edit.
         privacyDashboardButton.isShown = !isEditingMode
         && !isTextFieldEditorFirstResponder
         && isHypertextUrl
         && !tabViewModel.isShowingErrorPage
-        && !isTextFieldValueUserTyped
+        && !hasPendingBarInput
         && !isLocalUrl
         && !isAIChatPanelActive
 
@@ -1045,17 +1048,21 @@ final class AddressBarButtonsViewController: NSViewController {
         && !isAIChatPanelActive
     }
 
+    /// Whether the address bar currently shows pending user input — a typed value (`.text` or `.url`
+    /// with `userTyped: true`) or a `.suggestion` the engine surfaced over typed text. URL-context
+    /// icons (privacy shield, permission indicators) belong to the *loaded page*, not to the user's
+    /// pending edit, and must be suppressed while either is on screen.
+    private var hasPendingBarInput: Bool {
+        guard let textFieldValue else { return false }
+        return textFieldValue.isUserTyped || textFieldValue.isSuggestion
+    }
+
     /// Whether the privacy shield indicators should be suppressed because the user is interacting with
     /// the address bar, or because the duck.ai panel is covering it (its prompt overlay would otherwise
     /// clash with shield rendering at the overlay edges).
-    ///
-    /// The `isUserTyped` branch (not just `isText`) covers the "unfocus while a pending edit is visible"
-    /// case: if the user typed a URL-like string (e.g. `test.com`) the value parses as `.url(userTyped: true)`
-    /// rather than `.text`, so `isText` alone would leave the shield rendering on top of the draft — the
-    /// shield belongs to the loaded page, not to the edited value.
     private var shouldHideShieldsForInputOrAIChat: Bool {
         if isAIChatPanelActive { return true }
-        if textFieldValue?.isUserTyped ?? false { return true }
+        if hasPendingBarInput { return true }
         if isTextFieldEditorFirstResponder { return true }
         return false
     }
@@ -2937,7 +2944,8 @@ extension TabViewModel {
     func shouldShowPermissionCenterButton(
         isPermissionCenterPopoverShown: Bool,
         isTextFieldEditorFirstResponder: Bool,
-        hasAnyPersistedPermissions: Bool
+        hasAnyPersistedPermissions: Bool,
+        hasPendingBarInput: Bool
     ) -> Bool {
         // Show permission buttons when there's a requested permission on NTP even if address bar is focused,
         // since NTP has the address bar focused by default
@@ -2947,12 +2955,16 @@ extension TabViewModel {
         let pageInitiatedPopupOpened = tab.popupHandling?.pageInitiatedPopupOpened ?? false
         let mustDisplayAutoplayPolicy = tab.mustDisplayAutoplayPolicy
 
+        /// `hasPendingBarInput` suppresses the indicator while the user has typed or has an autocomplete
+        /// suggestion in the bar — the indicator belongs to the loaded page, not the user's pending edit.
+        let isUnfocusedAndIdle = !isTextFieldEditorFirstResponder && !hasPendingBarInput
+
         // Also show when a page-initiated popup was auto-allowed (due to "Always Allow" setting)
         // so user can access permission center to change the decision
         return (shouldShowWhileFocused
-            || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions))
-            || (!isTextFieldEditorFirstResponder && mustDisplayAutoplayPolicy)
-            || (!isTextFieldEditorFirstResponder && isPermissionCenterPopoverShown))
+            || (isUnfocusedAndIdle && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions))
+            || (isUnfocusedAndIdle && mustDisplayAutoplayPolicy)
+            || (isUnfocusedAndIdle && isPermissionCenterPopoverShown))
         && !isShowingErrorPage
     }
 

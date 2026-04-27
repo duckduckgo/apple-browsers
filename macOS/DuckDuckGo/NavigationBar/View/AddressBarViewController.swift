@@ -453,19 +453,6 @@ final class AddressBarViewController: NSViewController {
                 guard let self else { return }
 
                 let wasInAIChatMode = self.selectionState.isInAIChatMode
-
-                /// Snapshot the outgoing tab's current bar value into its `lastAddressBarTextFieldValue`
-                /// BEFORE `applyIncomingTabAIChatMode` runs `applyDuckAIUnfocusedValue` and overwrites
-                /// `addressBarTextField.value` with the incoming tab's preserved draft. Without this, the
-                /// later save inside `AddressBarTextField.restoreValueIfPossible` captures the already-
-                /// mutated bar value and stamps the incoming tab's text onto the OUTGOING tab's
-                /// `lastAddressBarTextFieldValue` — so the next switch back to that tab restores the wrong
-                /// draft. The save in `restoreValueIfPossible` is redundant once we've handled it here and
-                /// has been removed.
-                if let outgoingTab = self.tabViewModel, outgoingTab !== tabViewModel {
-                    outgoingTab.lastAddressBarTextFieldValue = addressBarTextField.value
-                }
-
                 self.tabViewModel = tabViewModel
                 tabViewModelCancellables.removeAll()
 

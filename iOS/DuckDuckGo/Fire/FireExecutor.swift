@@ -55,6 +55,9 @@ struct FireRequest {
     enum Scope {
         case tab(viewModel: TabViewModel)
         case fireMode
+        // Burns only normal-mode tabs/data, leaving fire-mode tabs/data untouched.
+        // This differs from `.all`, which burns both fire-mode and normal-mode tabs/data together.
+        // Note: this case is not currently invoked in production code paths.
         case normalMode
         case all
     }
@@ -400,9 +403,10 @@ class FireExecutor: FireExecuting {
         switch scope {
         case .tab:
             return TimedPixel(.singleTabDataCleared)
-        case .fireMode, .normalMode:
-            // TODO: - return new pixel
-            return nil
+        case .fireMode:
+            return TimedPixel(.fireModeDataCleared)
+        case .normalMode:
+            return TimedPixel(.normalModeDataCleared)
         case .all:
             return TimedPixel(.forgetAllDataCleared)
         }
@@ -416,7 +420,8 @@ class FireExecutor: FireExecuting {
             let tabType = viewModel.tab.isAITab ? "ai" : "web"
             return [
                 PixelParameters.tabType: tabType,
-                PixelParameters.domainsCount: "\(domains?.count ?? 0)"
+                PixelParameters.domainsCount: "\(domains?.count ?? 0)",
+                PixelParameters.browsingMode: viewModel.tab.pixelParamValue
             ]
         case .fireMode:
             tabsModel = self.tabManager.tabsModel(for: .fire)

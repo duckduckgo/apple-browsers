@@ -41,5 +41,10 @@
         "type": "string",
         "description": "Count pixel schedule type",
         "enum": ["count"]
+    },
+    "daily_count": {
+        "type": "string",
+        "description": "Daily and count pixel schedule type",
+        "enum": ["daily", "count"]
     }
 }

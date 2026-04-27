@@ -29,6 +29,7 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @State private var shouldStartTyping = false
+        @State private var showContent = false
         @Binding private var isVisible: Bool
         private let action: () -> Void
 
@@ -40,7 +41,10 @@ extension OnboardingRebranding.OnboardingView {
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
                 TypingText(UserText.Onboarding.AddressBarPosition.title,
-                           startAnimating: $shouldStartTyping)
+                           startAnimating: $shouldStartTyping,
+                           onTypingFinished: {
+                               withAnimation { showContent = true }
+                           })
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                     .font(onboardingTheme.typography.title)
                     .multilineTextAlignment(.center)
@@ -53,16 +57,10 @@ extension OnboardingRebranding.OnboardingView {
                     }
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
+                .opacity(showContent ? 1 : 0)
+                .animation(.easeIn(duration: 0.25), value: showContent)
             }
-            .onChange(of: isVisible) { showing in
-                if showing {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
-                        shouldStartTyping = true
-                    }
-                } else {
-                    shouldStartTyping = false
-                }
-            }
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
     }
 

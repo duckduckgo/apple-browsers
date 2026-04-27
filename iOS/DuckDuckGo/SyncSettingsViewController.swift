@@ -26,6 +26,7 @@ import Common
 import os.log
 import PrivacyConfig
 import AttributedMetric
+import Persistence
 
 @MainActor
 class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
@@ -59,6 +60,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     let userSession = UserSession()
     let featureFlagger: FeatureFlagger
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
+    let syncSettingsStore: KeyValueStoring
 
     var isSyncEnabled: Bool {
         syncService.account != nil
@@ -96,6 +98,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     var onConfirmSyncDisable: (() -> Void)?
     var onConfirmAndDeleteAllData: (() -> Void)?
 
+    let useSimplifiedLayout: Bool
+
     // For some reason, on iOS 14, the viewDidLoad wasn't getting called so do some setup here
     init(
         syncService: DDGSyncing,
@@ -107,7 +111,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         source: String? = nil,
         pairingInfo: PairingInfo? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-        syncAutoRestoreHandler: SyncAutoRestoreHandling
+        syncAutoRestoreHandler: SyncAutoRestoreHandling,
+        syncSettingsStore: KeyValueStoring = UserDefaults.standard
     ) {
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
@@ -118,6 +123,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         self.pairingInfo = pairingInfo
         self.featureFlagger = featureFlagger
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
+        self.syncSettingsStore = syncSettingsStore
 
         let viewModel = SyncSettingsViewModel(
             isOnDevEnvironment: { syncService.serverEnvironment == .development },
@@ -129,7 +135,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         )
         self.viewModel = viewModel
 
-        let useSimplifiedLayout = (featureFlagger.resolveCohort(for: FeatureFlag.simplifiedSyncSetupExperiment) as? FeatureFlag.SimplifiedSyncSetupExperimentCohort) == .treatment
+        self.useSimplifiedLayout = (featureFlagger.resolveCohort(for: FeatureFlag.simplifiedSyncSetupExperiment) as? FeatureFlag.SimplifiedSyncSetupExperimentCohort) == .treatment
         let rootView = SyncSettingsRootView(model: viewModel, useSimplifiedLayout: useSimplifiedLayout)
 
         super.init(rootView: rootView)
@@ -309,9 +315,11 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+
         Pixel.fire(pixel: .settingsSyncOpen, withAdditionalParameters: [
             "is_enabled": isSyncEnabled ? "1" : "0"
         ])
+
         startPairingIfNecessary()
     }
 
@@ -460,8 +468,16 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
+        presentSyncCompletionAfterDelay()
+    }
+
+    func presentSyncCompletionAfterDelay() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.dismissVCAndShowRecoveryPDF()
+            if self.useSimplifiedLayout {
+                self.dismissVCAndShowDeviceSyncedToast()
+            } else {
+                self.dismissVCAndShowRecoveryPDF()
+            }
         }
     }
 
@@ -498,6 +514,20 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         self.navigationController?.topViewController?.dismiss(animated: true, completion: self.showRecoveryPDF)
     }
 
+    func dismissVCAndShowDeviceSyncedToast() {
+        self.navigationController?.topViewController?.dismiss(animated: true) {
+            self.enableAutoRestoreByDefaultIfNeeded()
+            ActionMessageView.present(message: UserText.simplifiedDeviceSyncedSuccessfullyToast)
+        }
+    }
+
+    func enableAutoRestoreByDefaultIfNeeded() {
+        guard syncAutoRestoreHandler.isAutoRestoreFeatureEnabled,
+              syncAutoRestoreHandler.existingDecision() == nil else { return }
+        try? syncAutoRestoreHandler.persistDecision(true)
+        refreshAutoRestoreDecisionState()
+    }
+
     func codeCollectionCancelled() {
         assert(navigationController?.visibleViewController is UIHostingController<AnyView>)
         needsPreservedAccountCleanupBeforeServerOperation = false
@@ -524,15 +554,23 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             .prefix(1)
             .sink { [weak self] _ in
                 guard let self else { return }
-                self.dismissVCAndShowRecoveryPDF()
+                if self.useSimplifiedLayout {
+                    self.dismissVCAndShowDeviceSyncedToast()
+                } else {
+                    self.dismissVCAndShowRecoveryPDF()
+                }
             }.store(in: &cancellables)
     }
-    
+
     func controllerDidCreateSyncAccount() {
         let additionalParameters = source.map { ["source": $0] } ?? [:]
         Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
-        self.dismissVCAndShowRecoveryPDF()
+        if useSimplifiedLayout {
+            dismissVCAndShowDeviceSyncedToast()
+        } else {
+            self.dismissVCAndShowRecoveryPDF()
+        }
         viewModel.syncEnabled(recoveryCode: recoveryCode)
     }
     
@@ -568,13 +606,11 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         }
     }
     
-    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole) {
+    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery _: Bool, setupRole: SyncSetupRole) {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.dismissVCAndShowRecoveryPDF()
-        }
+        presentSyncCompletionAfterDelay()
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
             return
         }

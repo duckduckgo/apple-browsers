@@ -31,18 +31,25 @@ final class UnifiedToggleInputFloatingSubmitViewController: UIViewController {
 
     weak var delegate: UnifiedToggleInputFloatingSubmitDelegate?
 
-    private let button: UIButton = {
-        let button = UIButton(type: .system)
+    private let button: CircularButton = {
+        let button = CircularButton()
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.backgroundColor = UIColor(designSystemColor: .accent)
-        button.tintColor = UIColor(designSystemColor: .accentContentPrimary)
-        button.layer.cornerRadius = Metrics.buttonSize / 2
-        button.clipsToBounds = true
+        button.isShadowHidden = true
         return button
     }()
 
+    var isAIVoiceChatEnabled = false {
+        didSet { updateIcon() }
+    }
+
     private var hasText = false
+    private var isFireTab = false
     private var cancellables = Set<AnyCancellable>()
+
+    func refreshFireMode(fireMode: Bool) {
+        isFireTab = fireMode
+        updateIcon()
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -76,16 +83,20 @@ final class UnifiedToggleInputFloatingSubmitViewController: UIViewController {
     }
 
     private func updateIcon() {
-        let icon: UIImage? = hasText
-            ? DesignSystemImages.Glyphs.Size24.arrowUp
-            : DesignSystemImages.Glyphs.Size24.voice
+        let showVoice = !hasText && isAIVoiceChatEnabled
+        let isActive = hasText || showVoice
+        let icon = showVoice ? DesignSystemImages.Glyphs.Size24.voice : DesignSystemImages.Glyphs.Size24.arrowUp
         button.setImage(icon, for: .normal)
+        button.isEnabled = isActive
+        button.applySubmitStyle(isActive: isActive,
+                                isFireTab: isFireTab,
+                                activeForeground: UIColor(designSystemColor: .accentContentPrimary))
     }
 
     @objc private func buttonTapped() {
         if hasText {
             delegate?.floatingSubmitDidTapSubmit()
-        } else {
+        } else if isAIVoiceChatEnabled {
             delegate?.floatingSubmitDidTapVoice()
         }
     }

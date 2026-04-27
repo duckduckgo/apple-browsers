@@ -77,7 +77,7 @@ public struct TextMenuItemCaption: View {
     }
 
     public var body: some View {
-        Text(text)
+        Text(.init(text))
             .frame(maxWidth: .infinity, alignment: .leading)
             .fixMultilineScrollableText()
             .foregroundColor(Color(.greyText))

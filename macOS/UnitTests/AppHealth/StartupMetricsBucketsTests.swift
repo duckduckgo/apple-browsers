@@ -44,6 +44,9 @@ final class StartupMetricsBucketsTests: XCTestCase {
 
     func testBucketMillisecondsAtBoundaries() {
         XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0), "0")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.005), "5")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.010), "10")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.075), "75")
         XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.1), "100")
         XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.2), "200")
         XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.3), "300")
@@ -57,16 +60,21 @@ final class StartupMetricsBucketsTests: XCTestCase {
     }
 
     func testBucketMillisecondsWithinRanges() {
-        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.05), "0")
-        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.15), "100")
-        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.25), "200")
-        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.35), "300")
-        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.45), "400")
-        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.75), "500")
-        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(1.5), "1000")
-        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(2.5), "2000")
-        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(4.0), "3000")
-        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(7.0), "5000")
-        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(15.0), "10000")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.001), "0")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.006), "5")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.009), "5")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.05), "50")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.054), "50")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.15), "150")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.151), "150")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.25), "250")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.35), "350")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.45), "450")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(0.75), "750")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(1.5), "1500")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(2.5), "2500")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(4.0), "4000")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(7.0), "7000")
+        XCTAssertEqual(StartupMetricsBuckets.bucketMilliseconds(15.009), "15005")
     }
 }

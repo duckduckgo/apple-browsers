@@ -163,6 +163,35 @@ enum MemoryReportingBuckets {
         }
     }
 
+    /// Reclaimed memory buckets in megabytes.
+    /// Maps a value to: 0, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, or 65536.
+    static func bucketReclaimedMemoryMB(_ value: Double) -> Int {
+        switch Int(value) {
+        case ..<128:
+            return 0
+        case 128..<256:
+            return 128
+        case 256..<512:
+            return 256
+        case 512..<1024:
+            return 512
+        case 1024..<2048:
+            return 1024
+        case 2048..<4096:
+            return 2048
+        case 4096..<8192:
+            return 4096
+        case 8192..<16384:
+            return 8192
+        case 16384..<32768:
+            return 16384
+        case 32768..<65536:
+            return 32768
+        default:
+            return 65536
+        }
+    }
+
     /// Returns the architecture of the current build.
     static var currentArchitecture: String {
         #if arch(arm64)

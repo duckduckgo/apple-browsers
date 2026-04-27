@@ -28,8 +28,7 @@ struct PermissionCenterView: View {
     @ObservedObject var viewModel: PermissionCenterViewModel
 
     private enum PopoverWidth {
-        static let base: CGFloat = 360
-        static let withExternalApps: CGFloat = 380
+        static let base: CGFloat = 400
         static let withPopups: CGFloat = 450
 
         /// Wider widths for languages with longer popup permission strings
@@ -45,17 +44,14 @@ struct PermissionCenterView: View {
         ]
     }
 
-    /// Use a wider popover when popup or external app permissions are present due to longer content
+    /// Use a wider popover when popup is present due to longer content
     private var popoverWidth: CGFloat {
         let hasPopups = viewModel.permissionItems.contains { $0.permissionType == .popups }
-        let hasExternalApps = viewModel.permissionItems.contains { $0.isGroupedExternalApps }
         if hasPopups {
             if let languageCode = Locale.current.languageCode {
                 return PopoverWidth.withPopupsByLanguage[languageCode] ?? PopoverWidth.withPopups
             }
             return PopoverWidth.withPopups
-        } else if hasExternalApps {
-            return PopoverWidth.withExternalApps
         }
         return PopoverWidth.base
     }
@@ -100,6 +96,18 @@ struct PermissionCenterView: View {
                                 },
                                 onRemoveScheme: { scheme in
                                     viewModel.removeExternalScheme(scheme)
+                                }
+                            )
+                        case .autoplayPolicy:
+                            AutoplayPermissionRowView(
+                                item: item,
+                                currentDecision: viewModel.currentAutoplayDecision(),
+                                isRemoveAllowed: viewModel.allowsAutoplayPolicyRemoval(),
+                                onDecisionChanged: { decision in
+                                    viewModel.setAutoplayDecision(decision)
+                                },
+                                onRemove: {
+                                    viewModel.removePermission(item.permissionType)
                                 }
                             )
                         default:
@@ -357,7 +365,8 @@ struct PermissionRowView: View {
             SystemPermissionWarningView(
                 prefixText: item.permissionType.systemPermissionDisabledText,
                 linkText: item.permissionType.systemSettingsLinkText,
-                linkColor: .accentColor
+                linkColor: .accentColor,
+                linkOnNewLine: item.permissionType == .notification
             ) {
                 openSystemSettings()
             }
@@ -662,5 +671,114 @@ struct ExternalSchemeRowView: View {
         case .deny:
             return UserText.permissionCenterNeverAllow
         }
+    }
+}
+
+// MARK: - AutoplayPermissionRowView
+
+struct AutoplayPermissionRowView: View {
+
+    let item: PermissionCenterItem
+    let currentDecision: AutoplayDecision
+    let isRemoveAllowed: Bool
+    let onDecisionChanged: (AutoplayDecision) -> Void
+    let onRemove: () -> Void
+
+    @State private var selectedDecision: AutoplayDecision
+    @State private var isRemoveButtonHovered = false
+
+    private var pendingRemovalOpacity: Double {
+        item.isPendingRemoval ? 0.5 : 1
+    }
+
+    init(
+        item: PermissionCenterItem,
+        currentDecision: AutoplayDecision,
+        isRemoveAllowed: Bool,
+        onDecisionChanged: @escaping (AutoplayDecision) -> Void,
+        onRemove: @escaping () -> Void
+    ) {
+        self.item = item
+        self.currentDecision = currentDecision
+        self.isRemoveAllowed = isRemoveAllowed
+        self.onDecisionChanged = onDecisionChanged
+        self.onRemove = onRemove
+        self._selectedDecision = State(initialValue: currentDecision)
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // Icon
+            Image(nsImage: item.permissionType.icon)
+                .foregroundColor(
+                    Color(designSystemColor: .textSecondary)
+                        .opacity(pendingRemovalOpacity)
+                )
+                .frame(width: 24, height: 24)
+
+            // Permission name
+            Text(UserText.permissionAutoplay)
+                .font(.system(size: 13))
+                .foregroundColor(
+                    item.isPendingRemoval ? Color(designSystemColor: .textSecondary) : Color(designSystemColor: .textPrimary)
+                )
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer()
+
+            // Decision dropdown
+            autoplayDecisionPopUpButton
+                .disabled(item.isPendingRemoval)
+                .opacity(pendingRemovalOpacity)
+
+            // Remove button
+            Button(action: onRemove) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PlainButtonStyle())
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(isRemoveButtonHovered && !item.isPendingRemoval ? Color(.buttonMouseOver) : Color.clear)
+            )
+            .onHover { hovering in
+                isRemoveButtonHovered = hovering
+            }
+            .help(UserText.permissionCenterResetTooltip)
+            .disabled(item.isPendingRemoval || !isRemoveAllowed)
+            .opacity(pendingRemovalOpacity)
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 12)
+        .padding(.vertical, 12)
+        .onChange(of: selectedDecision) { newValue in
+            onDecisionChanged(newValue)
+        }
+    }
+
+    private var autoplayDecisionPopUpButton: some View {
+        NSPopUpButtonView(selection: $selectedDecision) {
+            let button = NSPopUpButton()
+            button.bezelStyle = .accessoryBarAction
+            button.isBordered = true
+            button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+
+            let decisions: [(AutoplayDecision, String)] = [
+                (.allowAll, UserText.autoplayModeAllowAll),
+                (.audioMuted, UserText.autoplayModeBlockAudio),
+                (.blockAll, UserText.autoplayModeBlockAll),
+            ]
+
+            for (decision, title) in decisions {
+                let menuItem = button.menu?.addItem(withTitle: title, action: nil, keyEquivalent: "")
+                menuItem?.representedObject = decision
+            }
+
+            return button
+        }
+        .fixedSize()
     }
 }

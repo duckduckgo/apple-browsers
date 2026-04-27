@@ -36,9 +36,15 @@ public final class PixelKitMock: PixelFiring {
 
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency,
+                     includeAppVersionParameter: Bool,
                      withAdditionalParameters parameters: [String: String]?,
+                     withNamePrefix namePrefix: String?,
                      onComplete: @escaping PixelKit.CompletionBlock) {
-        let fireCall = ExpectedFireCall(pixel: event, frequency: frequency, additionalParameters: parameters)
+        let fireCall = ExpectedFireCall(pixel: event,
+                                        frequency: frequency,
+                                        additionalParameters: parameters,
+                                        namePrefix: namePrefix,
+                                        includeAppVersionParameter: includeAppVersionParameter)
         actualFireCalls.append(fireCall)
         onComplete(true, nil)
     }
@@ -52,11 +58,19 @@ public struct ExpectedFireCall: Equatable {
     public let pixel: PixelKitEvent
     public let frequency: PixelKit.Frequency
     public let additionalParameters: [String: String]?
+    public let namePrefix: String?
+    public let includeAppVersionParameter: Bool
 
-    public init(pixel: PixelKitEvent, frequency: PixelKit.Frequency, additionalParameters: [String: String]? = nil) {
+    public init(pixel: PixelKitEvent,
+                frequency: PixelKit.Frequency,
+                additionalParameters: [String: String]? = nil,
+                namePrefix: String? = nil,
+                includeAppVersionParameter: Bool = true) {
         self.pixel = pixel
         self.frequency = frequency
         self.additionalParameters = additionalParameters
+        self.namePrefix = namePrefix
+        self.includeAppVersionParameter = includeAppVersionParameter
     }
 
     public static func == (lhs: ExpectedFireCall, rhs: ExpectedFireCall) -> Bool {
@@ -65,5 +79,7 @@ public struct ExpectedFireCall: Equatable {
         && lhs.pixel.error == rhs.pixel.error
         && lhs.frequency == rhs.frequency
         && lhs.additionalParameters == rhs.additionalParameters
+        && lhs.namePrefix == rhs.namePrefix
+        && lhs.includeAppVersionParameter == rhs.includeAppVersionParameter
     }
 }

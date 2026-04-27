@@ -45,6 +45,10 @@ class SwipeTabsCoordinator: NSObject {
     
     var isEnabled = false {
         didSet {
+            if !isEnabled {
+                state = .idle
+            }
+            updateLayout()
             collectionView.reloadData()
         }
     }
@@ -74,6 +78,7 @@ class SwipeTabsCoordinator: NSObject {
         collectionView.register(OmniBarCell.self, forCellWithReuseIdentifier: Constant.omniBarReuseIdentifier)
         collectionView.register(OmniBarCell.self, forCellWithReuseIdentifier: Constant.templateReuseIdentifier)
         collectionView.isPagingEnabled = true
+        collectionView.contentInsetAdjustmentBehavior = .never
         collectionView.delegate = self
         collectionView.dataSource = self
         collectionView.decelerationRate = .fast
@@ -269,8 +274,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         guard !state.isIdle else {
-            // Turns out this is needed (we used to have a pixel here)
-            assertionFailure("invalid state")
             return
         }
 
@@ -366,6 +369,11 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar?.showSeparator()
             cell.omniBar?.adjust(for: appSettings.currentAddressBarPosition)
 
+            cell.omniBar?.configureForSwipeTemplate(
+                isExpandedPhone: coordinator.omniBar.isExpandedPhone,
+                tabCount: tabsModel.count
+            )
+            
             if tab?.isAITab == true {
                 cell.omniBar?.enterAIChatMode()
             } else if let url {
@@ -376,6 +384,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             }
 
             cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
+            cell.omniBar?.refreshFireMode(fireMode: tab?.fireTab ?? false)
 
             controller.didMove(toParent: coordinator.parentController)
             cell.controller = controller
@@ -393,14 +402,23 @@ class OmniBarCell: UICollectionViewCell {
     weak var coordinator: MainViewCoordinator?
     var controller: OmniBarViewController?
 
+    override var safeAreaInsets: UIEdgeInsets {
+        guard let collectionView = superview as? UICollectionView else {
+            return super.safeAreaInsets
+        }
+        return collectionView.safeAreaInsets
+    }
+
     weak var omniBar: OmniBar? {
         willSet {
+            (omniBar?.barView as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
             omniBar?.barView.removeFromSuperview()
         }
         didSet {
             guard let omniBarView = omniBar?.barView else { return }
 
             omniBarView.translatesAutoresizingMaskIntoConstraints = false
+            (omniBarView as? DefaultOmniBarView)?.safeAreaManagedByContainer = true
             addSubview(omniBarView)
 
             NSLayoutConstraint.activate([

@@ -15,6 +15,7 @@
 		<string>com.duckduckgo.app.maliciousSiteProtectionHashPrefixSetRefresh</string>
 		<string>com.duckduckgo.app.maliciousSiteProtectionFilterSetRefresh</string>
 		<string>com.duckduckgo.app.dbp.backgroundProcessing</string>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER).dbp.continuedProcessing.*</string>
 	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
@@ -144,6 +145,7 @@
 				<string>http</string>
 				<string>https</string>
 				<string>ddgOpenAIChat</string>
+				<string>ddgOpenAIVoiceChat</string>
 				<string>ddgNewEmail</string>
 			</array>
 		</dict>
@@ -222,8 +224,6 @@
 	<array>
 		<string>arm64</string>
 	</array>
-	<key>UIStatusBarHidden</key>
-	<true/>
 	<key>SUBSCRIPTION_APP_GROUP</key>
 	<string>$(AppIdentifierPrefix)$(SUBSCRIPTION_APP_GROUP)</string>
 	<key>NSSupportsLiveActivities</key>

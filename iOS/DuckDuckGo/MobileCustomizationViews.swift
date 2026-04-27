@@ -25,10 +25,6 @@ protocol MobileCustomizationView { }
 
 extension MobileCustomizationView {
 
-    private var dataClearingCapability: DataClearingCapable {
-        DataClearingCapability.create(using: AppDependencyProvider.shared.featureFlagger)
-    }
-
     func buttonIconProvider(_ button: MobileCustomization.Button) -> Image? {
         if button == .none {
             return Image(uiImage: DesignSystemImages.Glyphs.Size16.eyeClosed)
@@ -56,17 +52,15 @@ extension MobileCustomizationView {
         case .bookmarks:
             UserText.actionOpenBookmarks
         case .fire:
-            if dataClearingCapability.isEnhancedDataClearingEnabled {
-                UserText.settingsDeleteTabsAndData
-            } else {
-                isAIChatEnabled ? UserText.settingsAutoClearTabsAndDataWithAIChat : UserText.settingsAutoClearTabsAndData
-            }
+            UserText.settingsDeleteTabsAndData
         case .vpn:
             UserText.actionVPN
         case .passwords:
             UserText.actionOpenPasswords
         case .downloads:
             UserText.downloadsScreenTitle
+        case .duckAIVoice:
+            UserText.actionDuckAIVoice
         }
     }
 
@@ -83,7 +77,7 @@ struct AddressBarCustomizationPickerView: View, MobileCustomizationView {
     let mobileCustomization: MobileCustomization
 
     var body: some View {
-        let options = MobileCustomization.addressBarButtons.sorted(by: { lhs, rhs in
+        let options = mobileCustomization.addressBarButtonOptions.sorted(by: { lhs, rhs in
             // Always put none at the end
             if lhs == .none { return false }
             if rhs == .none { return true }
@@ -128,7 +122,7 @@ struct ToolbarCustomizationPickerView: View, MobileCustomizationView {
     let mobileCustomization: MobileCustomization
 
     var body: some View {
-        let options = MobileCustomization.toolbarButtons.sorted(by: { lhs, rhs in
+        let options = mobileCustomization.toolbarButtonOptions.sorted(by: { lhs, rhs in
             return descriptionForOption(lhs, isAIChatEnabled: isAIChatEnabled).localizedCaseInsensitiveCompare(descriptionForOption(rhs, isAIChatEnabled: isAIChatEnabled)) == .orderedAscending
         })
 

@@ -19,6 +19,15 @@
 
 import UIKit
 
+enum OmniBarLayoutMode {
+    /// No external buttons visible, full-width search bar (iPhone portrait, iPad compact, editing)
+    case compact
+    /// External buttons with wide spacing (iPad full width)
+    case expandedPad
+    /// External buttons with tight spacing (iPhone landscape)
+    case expandedPhone
+}
+
 protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 
     var text: String? { get set }
@@ -40,6 +49,10 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var bookmarksButton: UIButton! { get }
     var aiChatButton: UIButton! { get }
     var menuButton: UIButton! { get }
+    var fireButton: UIButton! { get }
+    var tabSwitcherContainerView: UIView { get }
+
+    func configureForSwipeTemplate(mode: OmniBarLayoutMode, tabCount: Int)
 
     var refreshButton: UIButton! { get }
     var customizableButton: UIButton! { get }
@@ -67,17 +80,21 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var onClearButtonPressed: (() -> Void)? { get set }
     var onPrivacyIconPressed: (() -> Void)? { get set }
     var onMenuButtonPressed: (() -> Void)? { get set }
+    var onMenuButtonLongPressed: (() -> Void)? { get set }
     var onTrackersViewPressed: (() -> Void)? { get set }
     var onSettingsButtonPressed: (() -> Void)? { get set }
+    var onSettingsButtonLongPressed: (() -> Void)? { get set }
     var onCancelPressed: (() -> Void)? { get set }
     var onRefreshPressed: (() -> Void)? { get set }
     var onCustomizableButtonPressed: (() -> Void)? { get set }
     var onBackPressed: (() -> Void)? { get set }
     var onForwardPressed: (() -> Void)? { get set }
     var onBookmarksPressed: (() -> Void)? { get set }
+    var onPasswordsPressed: (() -> Void)? { get set }
     var onAIChatPressed: (() -> Void)? { get set }
     var onDismissPressed: (() -> Void)? { get set }
-    
+    var onFirePressed: (() -> Void)? { get set }
+
     /// Callback triggered when the AI Chat left button is tapped
     var onAIChatLeftButtonPressed: (() -> Void)? { get set }
 
@@ -90,7 +107,8 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 
     func hideButtons()
     func revealButtons()
-    
+    func setBookmarksPosition(leading: Bool, hidden: Bool)
+
     // Fire mode
     func refreshFireMode(fireMode: Bool)
 }
@@ -127,8 +145,13 @@ protocol OmniBarStatusUpdateable: AnyObject {
     var isBackButtonHidden: Bool { get set }
     var isForwardButtonHidden: Bool { get set }
     var isBookmarksButtonHidden: Bool { get set }
+    var isPasswordsButtonHidden: Bool { get set }
     var isAIChatButtonHidden: Bool { get set }
     var isSearchLoupeHidden: Bool { get set }
     var isDismissButtonHidden: Bool { get set }
     var isFullAIChatHidden: Bool { get set }
+    var isFireButtonHidden: Bool { get set }
+    var isTabSwitcherButtonHidden: Bool { get set }
+    var layoutMode: OmniBarLayoutMode { get }
+    func setLayoutMode(_ mode: OmniBarLayoutMode, animated: Bool)
 }

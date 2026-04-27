@@ -71,16 +71,6 @@ final class LoadingIndicatorPolicyTests: XCTestCase {
         }
     }
 
-    func testLoadingIndicatorIsNotShownForDuckSearchEvenIfOtherConditionsAreMet(isLoading: Bool, error: NSError?) async throws {
-        let sampleParameters: [(isLoading: Bool, error: NSError?)] = [(true, nil), (true, NSError.testingError), (false, nil), (false, NSError.testingError)]
-
-        for (isLoading, error) in sampleParameters {
-            let searchURL = URL.makeSearchUrl(from: "yosemite")
-            let result = policy.shouldShowLoadingIndicator(isLoading: isLoading, url: searchURL, error: error)
-            XCTAssertFalse(result)
-        }
-    }
-
     // MARK: - Favicon Crossfade Tests
 
     func testFaviconCrossfadesWhenPlaceholderIsDisplayedAndNewFaviconIsAvailable() {

@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Common
 import Combine
 import DDGSync
+import FeatureFlags
 import SwiftUI
 import Networking
 import Subscription
@@ -29,6 +30,7 @@ import PixelKit
 import PreferencesUI_macOS
 import PrivacyConfig
 import SubscriptionUI
+import WebExtensions
 import os.log
 
 protocol AIFeaturesStatusProviding: AnyObject {
@@ -69,8 +71,10 @@ final class PreferencesSidebarModel: ObservableObject {
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let aiChatPreferences: AIChatPreferences
     let aboutPreferences: AboutPreferences
+    let dockPreferences: DockPreferencesModel
     let accessibilityPreferences: AccessibilityPreferences
     let duckPlayerPreferences: DuckPlayerPreferences
+    let youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences
 
     @Published private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .init()
 
@@ -118,8 +122,10 @@ final class PreferencesSidebarModel: ObservableObject {
         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         aiChatPreferences: AIChatPreferences,
         aboutPreferences: AboutPreferences,
+        dockPreferences: DockPreferencesModel,
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
+        youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
         self.loadSections = loadSections
@@ -138,8 +144,10 @@ final class PreferencesSidebarModel: ObservableObject {
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
         self.aiChatPreferences = aiChatPreferences
         self.aboutPreferences = aboutPreferences
+        self.dockPreferences = dockPreferences
         self.accessibilityPreferences = accessibilityPreferences
         self.duckPlayerPreferences = duckPlayerPreferences
+        self.youTubeAdBlockingPreferences = youTubeAdBlockingPreferences
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
         self.personalInformationRemovalUpdates = personalInformationRemovalSubject.eraseToAnyPublisher()
@@ -177,15 +185,19 @@ final class PreferencesSidebarModel: ObservableObject {
         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         aiChatPreferences: AIChatPreferences,
         aboutPreferences: AboutPreferences,
+        dockPreferences: DockPreferencesModel,
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
-        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+        youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences,
+        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
+        adBlockingAvailability: AdBlockingAvailabilityProviding
     ) {
         let loadSections = { currentSubscriptionFeatures in
             return PreferencesSection.defaultSections(
                 includingDuckPlayer: includeDuckPlayer,
                 includingSync: syncService.featureFlags.contains(.userInterface),
                 includingAIChat: includeAIChat,
+                includingYouTubeAdBlocking: adBlockingAvailability.isFeatureAvailable,
                 subscriptionState: currentSubscriptionFeatures
             )
         }
@@ -205,8 +217,10 @@ final class PreferencesSidebarModel: ObservableObject {
                   cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                   aiChatPreferences: aiChatPreferences,
                   aboutPreferences: aboutPreferences,
+                  dockPreferences: dockPreferences,
                   accessibilityPreferences: accessibilityPreferences,
                   duckPlayerPreferences: duckPlayerPreferences,
+                  youTubeAdBlockingPreferences: youTubeAdBlockingPreferences,
                   winBackOfferVisibilityManager: winBackOfferVisibilityManager
         )
     }
@@ -227,6 +241,7 @@ final class PreferencesSidebarModel: ObservableObject {
                                                privacyConfigurationManager: PrivacyConfigurationManaging) {
         let duckPlayerFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .duckPlayer)
         let aiChatFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .aiChat)
+        let youTubeAdBlockingFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .adBlockingExtension)
 
         let syncFeatureFlagsDidChange = syncService.featureFlagsPublisher.map { $0.contains(.userInterface) }
             .removeDuplicates()
@@ -234,11 +249,26 @@ final class PreferencesSidebarModel: ObservableObject {
 
         Publishers.Merge(duckPlayerFeatureFlagDidChange, syncFeatureFlagsDidChange)
             .merge(with: aiChatFeatureFlagDidChange)
+            .merge(with: youTubeAdBlockingFeatureFlagDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.refreshSections()
             }
             .store(in: &cancellables)
+
+        subscribeToLocalFeatureFlagOverrideChanges()
+    }
+
+    private func subscribeToLocalFeatureFlagOverrideChanges() {
+        if let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> {
+            overridesHandler.flagDidChangePublisher
+                .filter { flag, _ in flag == .adBlockingExtension }
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.refreshSections()
+                }
+                .store(in: &cancellables)
+        }
     }
 
     private func subscribeToSubscriptionChanges() {

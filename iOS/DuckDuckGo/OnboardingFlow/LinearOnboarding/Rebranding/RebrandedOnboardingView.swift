@@ -20,6 +20,7 @@
 import DuckUI
 import Onboarding
 import SwiftUI
+import MetricBuilder
 
 private enum BubbleBackedDialogMetrics {
     static let introAdditionalTopMargin: CGFloat = 40
@@ -28,6 +29,11 @@ private enum BubbleBackedDialogMetrics {
     static let searchExperienceAdditionalTopMargin: CGFloat = 0
     static let addToDockAdditionalTopMargin: CGFloat = 0
     static let appIconPickerAdditionalTopMargin: CGFloat = 0
+
+    /// Percentage-based vertical offset for the dialog bubble to center it appropriately based on device orientation and screen size.
+    /// iPhone uses 0.0 (relies on padding), iPad uses percentage of screen height
+    static let dialogVerticalOffsetPercentage = MetricBuilder<CGFloat>(default: 0.0)
+        .iPad(portrait: 0.15, landscape: 0.05)
 }
 
 /// Animation timing constants for the rebranded onboarding bubble dialogs.
@@ -152,10 +158,13 @@ extension OnboardingRebranding {
         typealias ViewState = LegacyOnboardingViewState
 
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+        @Environment(\.verticalSizeClass) private var verticalSizeClass
         @Namespace var animationNamespace
         @ObservedObject private var model: OnboardingIntroViewModel
         @State private var dialogContentHeight: CGFloat = 0
         @State private var showBubbleContent: Bool = false
+        @State private var isExperimentExitTransitionActive = false
 
         init(model: OnboardingIntroViewModel) {
             self.model = model
@@ -208,29 +217,31 @@ extension OnboardingRebranding {
                             .scale.combined(with: .opacity)
                         )
 #if DEBUG || ALPHA
-                        .safeAreaInset(edge: .bottom) {
+                        .overlay(alignment: .bottom) {
                             Button {
                                 model.overrideOnboardingCompleted()
                             } label: {
                                 Text(UserText.Onboarding.Intro.Debug.skip)
                             }
                             .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
+                            .padding(.bottom, 8)
                         }
 #endif
                 }
-            }
-            .overlay(alignment: .topLeading) {
-                RebrandingBadge()
-                    .padding(.leading, onboardingTheme.linearOnboardingMetrics.rebrandingBadgeLeadingPadding)
-                    .padding(.top, onboardingTheme.linearOnboardingMetrics.rebrandingBadgeTopPadding)
             }
             .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)
         }
 
         private func onboardingDialogView(state: ViewState.Intro) -> some View {
             let configuration = bubbleBackedDialogConfiguration(for: state.type)
+            let isExperimentSearchStep = if case .duckAIQueryExperimentDialog = state.type { true } else { false }
 
             return GeometryReader { geometry in
+                let defaultTopPadding = onboardingTheme.linearOnboardingMetrics.minTopMargin + configuration.additionalTopMargin
+                // On iPad we reduce the gap between dialog and background illustration by adding extra padding to the dialog by a percentage of screen height based on orientation.
+                let platformSpecificTopPadding = geometry.size.height * BubbleBackedDialogMetrics.dialogVerticalOffsetPercentage.build(v: verticalSizeClass, h: horizontalSizeClass)
+                let topPadding = defaultTopPadding + platformSpecificTopPadding
+
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .center) {
                         bubbleBackedDialogView(state: state, configuration: configuration)
@@ -238,7 +249,7 @@ extension OnboardingRebranding {
                             .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth, alignment: .center)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .frame(width: geometry.size.width, alignment: .center)
-                            .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + configuration.additionalTopMargin)
+                            .padding(.top, topPadding)
                     }
                     .frame(minHeight: geometry.size.height, alignment: .top)
                     .background {
@@ -256,6 +267,7 @@ extension OnboardingRebranding {
                 }
             }
             .padding()
+            .opacity(isExperimentExitTransitionActive && isExperimentSearchStep ? 0 : 1)
         }
 
         private var landingView: some View {
@@ -383,6 +395,8 @@ extension OnboardingRebranding {
                 addressBarPositionView
             case .chooseSearchExperienceDialog:
                 searchExperienceSelectionView
+            case .duckAIQueryExperimentDialog(let defaultMode):
+                experimentSearchExperienceSelectionView(defaultMode: defaultMode)
             }
         }
 
@@ -436,6 +450,14 @@ extension OnboardingRebranding {
                     isVisible: true,
                     showsStepCounter: true
                 )
+            case .duckAIQueryExperimentDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.searchExperienceAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: false
+                )
             }
         }
 
@@ -485,6 +507,20 @@ extension OnboardingRebranding {
             )
         }
 
+        private func experimentSearchExperienceSelectionView(defaultMode: DuckAIQueryExperimentMode) -> some View {
+            LegacyOnboardingView.DuckAIExperimentSearchContent(
+                defaultMode: defaultMode,
+                visualStyle: .rebranded,
+                onModeConfirmed: model.selectDuckAIQueryExperimentAction(selection:),
+                openAIChatAction: model.openAIChatFromOnboarding,
+                openSearchAction: model.searchFromOnboarding,
+                measureQuerySubmissionAction: model.measureDuckAIQueryExperimentQuerySubmission,
+                startExitTransitionAction: {
+                    beginExperimentExitTransition()
+                }
+            )
+        }
+
         /// Animates bubble content with a hide → optional action → show sequence.
         ///
         /// This three-phase sequence prevents cross-fading between old and new content:
@@ -523,24 +559,14 @@ extension OnboardingRebranding {
             }
         }
 
+        private func beginExperimentExitTransition() {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                isExperimentExitTransitionActive = true
+            }
+        }
+
     }
 
-}
-
-private struct RebrandingBadge: View {
-    var body: some View {
-        Text("REBRANDED")
-            .font(.caption2.weight(.semibold))
-            .textCase(.uppercase)
-            .foregroundColor(.white)
-            .padding(.vertical, 4)
-            .padding(.horizontal, 8)
-            .background(
-                Capsule()
-                    .fill(Color.black.opacity(0.7))
-            )
-            .accessibilityIdentifier("RebrandedBadge")
-    }
 }
 
 private struct OnboardingDialogHeightPreferenceKey: PreferenceKey {

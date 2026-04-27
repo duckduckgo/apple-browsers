@@ -314,6 +314,26 @@ class TabSnapshotExtensionTests: XCTestCase {
         XCTAssertEqual(mockWebViewSnapshotRenderer.lastDelay, 0.1)
     }
 
+    // MARK: - shouldClearSnapshotOnDeinit
+
+    @MainActor
+    func testWhenShouldClearSnapshotOnDeinitIsTrue_ThenSnapshotIsClearedOnDeinit() {
+        let identifier = tabSnapshotExtension.identifier
+
+        tabSnapshotExtension = nil
+
+        XCTAssertTrue(mockTabSnapshotStore.clearedSnapshotIDs.contains(identifier))
+    }
+
+    @MainActor
+    func testWhenShouldClearSnapshotOnDeinitIsFalse_ThenSnapshotIsNotClearedOnDeinit() {
+        let identifier = tabSnapshotExtension.identifier
+        tabSnapshotExtension.shouldClearSnapshotOnDeinit = false
+
+        tabSnapshotExtension = nil
+
+        XCTAssertFalse(mockTabSnapshotStore.clearedSnapshotIDs.contains(identifier))
+    }
 }
 
 fileprivate extension URL {

@@ -31,6 +31,7 @@ import PixelKit
 import PrivacyConfig
 import SwiftUI
 import VPN
+import WebExtensions
 
 final class MainViewController: NSViewController {
     private(set) lazy var mainView = MainView(frame: NSRect(x: 0, y: 0, width: 600, height: 660))
@@ -42,7 +43,14 @@ final class MainViewController: NSViewController {
     let aiChatCoordinator: AIChatCoordinating
     let aiChatSummarizer: AIChatSummarizer
     let aiChatTranslator: AIChatTranslator
-    let findInPageViewController: FindInPageViewController
+
+    private(set) lazy var findInPageViewController: FindInPageViewController = {
+        let vc = FindInPageViewController.create()
+        vc.delegate = self
+        addAndLayoutChild(vc, into: mainView.findInPageContainerView)
+        return vc
+    }()
+
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
     let aiChatOmnibarContainerViewController: AIChatOmnibarContainerViewController
@@ -127,6 +135,7 @@ final class MainViewController: NSViewController {
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences = NSApp.delegateTyped.cookiePopupProtectionPreferences,
          aiChatPreferences: AIChatPreferences = NSApp.delegateTyped.aiChatPreferences,
          aboutPreferences: AboutPreferences = NSApp.delegateTyped.aboutPreferences,
+         dockPreferences: DockPreferencesModel = NSApp.delegateTyped.dockPreferences,
          accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
          duckPlayer: DuckPlayer = NSApp.delegateTyped.duckPlayer,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
@@ -140,7 +149,8 @@ final class MainViewController: NSViewController {
          pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
          memoryUsageMonitor: MemoryUsageMonitor = NSApp.delegateTyped.memoryUsageMonitor,
-         startupProfiler: StartupProfiler = NSApp.delegateTyped.startupProfiler
+         startupProfiler: StartupProfiler = NSApp.delegateTyped.startupProfiler,
+         adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -226,9 +236,11 @@ final class MainViewController: NSViewController {
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
             aiChatPreferences: aiChatPreferences,
             aboutPreferences: aboutPreferences,
+            dockPreferences: dockPreferences,
             accessibilityPreferences: accessibilityPreferences,
             duckPlayer: duckPlayer,
-            pinningManager: pinningManager
+            pinningManager: pinningManager,
+            adBlockingAvailability: adBlockingAvailability
         )
         aiChatCoordinator = AIChatCoordinator(
             sidebarHost: browserTabViewController,
@@ -267,6 +279,7 @@ final class MainViewController: NSViewController {
                                                                          networkProtectionStatusReporter: networkProtectionStatusReporter,
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
                                                                          brokenSitePromptLimiter: brokenSitePromptLimiter,
+                                                                         adBlockingAvailability: adBlockingAvailability,
                                                                          searchPreferences: searchPreferences,
                                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                                                                          aiChatMenuConfig: aiChatMenuConfig,
@@ -280,7 +293,6 @@ final class MainViewController: NSViewController {
                                                                          pinningManager: pinningManager,
                                                                          memoryUsageMonitor: memoryUsageMonitor)
 
-        findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
         bookmarksBarViewController = BookmarksBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
@@ -291,13 +303,19 @@ final class MainViewController: NSViewController {
 
         // Create the shared AI Chat omnibar controller
         let suggestionsReader = AIChatSuggestionsReader(
-            suggestionsReader: SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: contentBlocking.privacyConfigurationManager),
+            suggestionsReader: SuggestionsReader(
+                featureFlagger: featureFlagger,
+                privacyConfig: contentBlocking.privacyConfigurationManager,
+                nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+            ),
             historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
         )
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,
             tabCollectionViewModel: tabCollectionViewModel,
-            suggestionsReader: suggestionsReader
+            suggestionsReader: suggestionsReader,
+            preferences: NSApp.delegateTyped.aiChatPreferencesPersistor
         )
 
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(
@@ -315,7 +333,6 @@ final class MainViewController: NSViewController {
 
         aiChatOmnibarController.delegate = self
         browserTabViewController.delegate = self
-        findInPageViewController.delegate = self
     }
 
     override func loadView() {
@@ -325,7 +342,6 @@ final class MainViewController: NSViewController {
         addAndLayoutChild(bookmarksBarViewController, into: mainView.bookmarksBarContainerView)
         addAndLayoutChild(navigationBarViewController, into: mainView.navigationBarContainerView)
         addAndLayoutChild(browserTabViewController, into: mainView.webContainerView)
-        addAndLayoutChild(findInPageViewController, into: mainView.findInPageContainerView)
         addAndLayoutChild(fireViewController, into: mainView.fireContainerView)
         addAndLayoutChild(aiChatOmnibarContainerViewController, into: mainView.aiChatOmnibarContainerView)
         addAndLayoutChild(aiChatOmnibarTextContainerViewController, into: mainView.aiChatOmnibarTextContainerView)
@@ -455,8 +471,8 @@ final class MainViewController: NSViewController {
     }
 
     private func closeFloatingAIChatsForCurrentWindow() {
-        let regularTabIDs = tabCollectionViewModel.tabViewModels.keys.map(\.uuid)
-        let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabViewModels.keys.map(\.uuid) ?? []
+        let regularTabIDs = Array(tabCollectionViewModel.tabViewModels.keys)
+        let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager.map { Array($0.tabViewModels.keys) } ?? []
 
         for tabID in Set(regularTabIDs + pinnedTabIDs) {
             aiChatCoordinator.closeFloatingWindow(for: tabID)
@@ -477,7 +493,9 @@ final class MainViewController: NSViewController {
         tabBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         navigationBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         browserTabViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
-        findInPageViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        if isLazyVar(named: "findInPageViewController", initializedIn: self) {
+            findInPageViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
         fireViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         bookmarksBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         aiChatOmnibarContainerViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)

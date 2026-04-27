@@ -48,6 +48,13 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func fireAutoRestorePixel(event: SyncSettingsViewModel.AutoRestorePixelEvent)
     func shareLink(for url: URL, with message: String, from rect: CGRect)
 
+    // Simplified sync setup experiment
+    func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
+    func simplifiedConfirmAndDisableSync() async -> Bool
+    func simplifiedCopyRecoveryCode()
+    func showSimplifiedSyncEnabledToast()
+    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool { get set }
+
     var syncBookmarksPausedTitle: String? { get }
     var syncCredentialsPausedTitle: String? { get }
     var syncCreditCardsPausedTitle: String? { get }
@@ -116,6 +123,7 @@ public class SyncSettingsViewModel: ObservableObject {
     public enum SyncSetupEntryPoint: Equatable {
         case backup
         case pairing
+        case simplifiedToggle
     }
 
     public enum PreservedAccountContinuation: Equatable {
@@ -143,7 +151,7 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var invalidCredentialsTitles: [String] = []
     @Published public var invalidCreditCardsTitles: [String] = []
 
-    @Published var isBusy = false
+    @Published public var isBusy = false
     @Published var recoveryCode = ""
 
     @Published public var isDataSyncingAvailable: Bool = true
@@ -154,6 +162,7 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isAppVersionNotSupported: Bool = false
     @Published public var isSyncWithSetUpSheetVisible: Bool = false
     @Published public var isRecoverSyncedDataSheetVisible: Bool = false
+    @Published public var isSyncWithAnotherDevicePromptVisible: Bool = false
 
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
 
@@ -170,6 +179,7 @@ public class SyncSettingsViewModel: ObservableObject {
     private(set) var switchToProdEnvironment: () -> Void = {}
     private var cancellables = Set<AnyCancellable>()
     private var pendingPreservedAccountContinuation: PreservedAccountContinuation?
+    private var shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
 
     private let autoRestoreProvider: SyncAutoRestoreProviding
 
@@ -304,7 +314,10 @@ public class SyncSettingsViewModel: ObservableObject {
 
     @MainActor
     private func beginFlow(for continuation: PreservedAccountContinuation) async {
-        guard await commonAuthenticate() else { return }
+        guard await commonAuthenticate() else {
+            isBusy = false
+            return
+        }
 
         guard delegate?.isPreservedAccountPromptNeeded() != true else {
             pendingPreservedAccountContinuation = continuation
@@ -325,6 +338,8 @@ public class SyncSettingsViewModel: ObservableObject {
                 isSyncWithSetUpSheetVisible = true
             case .pairing:
                 delegate?.showSyncWithAnotherDevice()
+            case .simplifiedToggle:
+                beginSimplifiedSyncSetup()
             }
         case .recover:
             isRecoverSyncedDataSheetVisible = true
@@ -354,10 +369,76 @@ public class SyncSettingsViewModel: ObservableObject {
         delegate?.createAccountAndStartSyncing(optionsViewModel: self)
     }
 
+    public func enableSyncToggleTapped() {
+        guard !isBusy else { return }
+        guard isAccountCreationAvailable else { return }
+        isBusy = true
+        Task { @MainActor in
+            await beginFlow(for: .setup(.simplifiedToggle))
+        }
+    }
+
+    @MainActor
+    public func beginSimplifiedSyncSetup() {
+        guard let delegate else { return }
+        isBusy = true
+        delegate.simplifiedCreateAccountAndStartSyncing(optionsViewModel: self)
+    }
+
+    public func disableSyncToggleTapped() {
+        guard !isBusy else { return }
+        isBusy = true
+        Task { @MainActor in
+            defer { isBusy = false }
+            if await delegate?.simplifiedConfirmAndDisableSync() == true {
+                isSyncEnabled = false
+            }
+        }
+    }
+
+    @discardableResult
+    public func checkAndShowSyncWithAnotherDevicePrompt() -> Bool {
+        guard !isBusy else { return false }
+        guard isSyncEnabled else { return false }
+        guard devices.count == 1 else { return false }
+        guard delegate?.hasShownSimplifiedSyncAnotherDevicePrompt == false else { return false }
+        isSyncWithAnotherDevicePromptVisible = true
+        delegate?.hasShownSimplifiedSyncAnotherDevicePrompt = true
+        return true
+    }
+
+    public func dismissSyncWithAnotherDevicePrompt() {
+        isSyncWithAnotherDevicePromptVisible = false
+    }
+
+    public func syncAnotherDeviceFromPromptTapped() {
+        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
+        dismissSyncWithAnotherDevicePrompt()
+        scanQRCode()
+    }
+
+    public func scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal() {
+        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = true
+    }
+
+    public func syncWithAnotherDevicePromptDidDismiss() {
+        guard shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal else { return }
+
+        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
+        delegate?.showSimplifiedSyncEnabledToast()
+    }
+
     public func copyCode() {
         Task { @MainActor in
             guard await commonAuthenticate() else { return }
             UIPasteboard.general.string = recoveryCode
+        }
+    }
+
+    public func simplifiedCopyRecoveryCode() {
+        Task { @MainActor in
+            guard await commonAuthenticate() else { return }
+            delegate?.simplifiedCopyRecoveryCode()
         }
     }
 
@@ -458,4 +539,6 @@ public class SyncSettingsViewModel: ObservableObject {
 
 public extension SyncManagementViewModelDelegate {
     func fireAutoRestorePixel(event _: SyncSettingsViewModel.AutoRestorePixelEvent) {}
+    func simplifiedCopyRecoveryCode() {}
+    func showSimplifiedSyncEnabledToast() {}
 }

@@ -54,7 +54,8 @@ public enum WebExtensionManagerFactory {
         mainViewController: MainViewController,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferences,
-        darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil
+        darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
+        scriptletConfiguration: ScriptletConfiguration? = nil
     ) -> WebExtensionManager {
         let preferencesAdapter = AutoconsentPreferencesAdapter(preferences: autoconsentPreferences)
 
@@ -67,7 +68,8 @@ public enum WebExtensionManagerFactory {
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: preferencesAdapter,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
-            )
+            ),
+            scriptletConfiguration: scriptletConfiguration
         )
     }
 }

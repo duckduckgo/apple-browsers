@@ -26,6 +26,7 @@ import PixelKit
 import PixelExperimentKit
 import os.log
 import FeatureFlags
+import WebExtensions
 
 protocol PrivacyDashboardViewControllerSizeDelegate: AnyObject {
 
@@ -363,8 +364,8 @@ extension PrivacyDashboardViewController {
     private func collectBreakageReportData(breakageReportingSubfeature: BreakageReportingSubfeature?) async -> BreakageReportData? {
         await withCheckedContinuation({ continuation in
             guard let breakageReportingSubfeature else { continuation.resume(returning: nil); return }
-            breakageReportingSubfeature.notifyHandler { metrics, detectorData, jsPerformanceMetrics in
-                let result = BreakageReportData(performanceMetrics: metrics, detectorData: detectorData, jsPerformance: jsPerformanceMetrics)
+            breakageReportingSubfeature.notifyHandler { metrics, jsPerformanceMetrics, breakageData in
+                let result = BreakageReportData(performanceMetrics: metrics, jsPerformance: jsPerformanceMetrics, breakageData: breakageData)
                 continuation.resume(returning: result)
             }
         })
@@ -401,8 +402,8 @@ extension PrivacyDashboardViewController {
         let breakageReportData = await collectBreakageReportData(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature)
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
-        let detectorMetrics = breakageReportData?.detectorData?.flattenedMetrics()
         let jsPerformance = breakageReportData?.jsPerformance
+        let breakageData = breakageReportData?.breakageData
 
         var errors: [Error]?
         var statusCodes: [Int]?
@@ -414,6 +415,13 @@ extension PrivacyDashboardViewController {
         }
 
         let isPirEnabled = await isPirEnabledAndUserHasProfile()
+
+        var loadedWebExtensions: String?
+        var adBlockingScriptletsVersion: String?
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            loadedWebExtensions = webExtensionManager.loadedWebExtensionsString()
+            adBlockingScriptletsVersion = webExtensionManager.adBlockingScriptletsVersion()
+        }
 
         let websiteBreakage = BrokenSiteReport(siteUrl: currentURL,
                                                category: category.lowercased(),
@@ -442,8 +450,11 @@ extension PrivacyDashboardViewController {
                                                privacyExperiments: currentTab.privacyInfo?.privacyExperimentCohorts ?? "",
                                                isPirEnabled: isPirEnabled,
                                                isForceDarkModeEnabled: NSApp.delegateTyped.darkReaderFeatureSettings?.isForceDarkModeEnabled,
+                                               lastTabSuspension: currentTab.tabSuspension?.lastSuspensionState.rawValue,
                                                pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming,
-                                               detectorMetrics: detectorMetrics)
+                                               breakageData: breakageData,
+                                               loadedWebExtensions: loadedWebExtensions,
+                                               adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion)
         return websiteBreakage
     }
 }

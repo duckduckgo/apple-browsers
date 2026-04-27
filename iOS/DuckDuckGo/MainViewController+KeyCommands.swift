@@ -78,13 +78,24 @@ extension MainViewController {
             ]
         }
 
-        let other: [UIKeyCommand] = [
+        let tabCommands: [UIKeyCommand] = [
             UIKeyCommand(title: "", action: #selector(keyboardCloseTab), input: "w", modifierFlags: .command,
                          discoverabilityTitle: UserText.keyCommandCloseTab),
             UIKeyCommand(title: "", action: #selector(keyboardNewTab), input: "t", modifierFlags: .command,
                          discoverabilityTitle: UserText.keyCommandNewTab),
             UIKeyCommand(title: "", action: #selector(keyboardNewTab), input: "n", modifierFlags: .command,
-                         discoverabilityTitle: UserText.keyCommandNewTab),
+                         discoverabilityTitle: UserText.keyCommandNewTab)
+        ]
+
+        var newFireTabCommands: [UIKeyCommand] = []
+        if fireModeCapability.isFireModeEnabled {
+            newFireTabCommands.append(
+                UIKeyCommand(title: "", action: #selector(keyboardNewFireTab), input: "n", modifierFlags: [.command, .shift],
+                             discoverabilityTitle: UserText.keyCommandNewFireTab)
+            )
+        }
+
+        let other: [UIKeyCommand] = [
             UIKeyCommand(title: "", action: #selector(keyboardNextTab), input: "]", modifierFlags: [.shift, .command],
                          discoverabilityTitle: UserText.keyCommandNextTab),
             UIKeyCommand(title: "", action: #selector(keyboardPreviousTab), input: "[", modifierFlags: [.shift, .command],
@@ -110,7 +121,7 @@ extension MainViewController {
             UIKeyCommand(title: "", action: #selector(keyboardEscape), input: UIKeyCommand.inputEscape, modifierFlags: [])
         ]
 
-        let commands = [alwaysAvailable, browsingCommands, findInPageCommands, arrowKeys, other].flatMap { $0 }
+        let commands = [alwaysAvailable, browsingCommands, findInPageCommands, arrowKeys, tabCommands, newFireTabCommands, other].flatMap { $0 }
         commands.forEach {
             $0.wantsPriorityOverSystemBehavior = true
         }
@@ -126,6 +137,7 @@ extension MainViewController {
     }
 
     @objc func keyboardReload() {
+        guard isShortcutEnabled() else { return }
         self.currentTab?.refresh()
     }
 
@@ -139,6 +151,7 @@ extension MainViewController {
 
     @objc func keyboardLocation() {
         guard tabSwitcherController == nil else { return }
+        guard isShortcutEnabled() else { return }
 
         showBars()
         viewCoordinator.omniBar.beginEditing(animated: true)
@@ -149,6 +162,7 @@ extension MainViewController {
     }
     
     @objc func keyboardFind() {
+        guard isShortcutEnabled() else { return }
         currentTab?.requestFindInPage()
     }
     
@@ -161,6 +175,7 @@ extension MainViewController {
     
     @objc func keyboardNewTab() {
         guard tabSwitcherController == nil else { return }
+        guard isShortcutEnabled() else { return }
         
         if currentTab != nil {
             newTab()
@@ -168,9 +183,20 @@ extension MainViewController {
             keyboardFind()
         }
     }
+
+    @objc func keyboardNewFireTab() {
+        guard tabSwitcherController == nil else { return }
+        guard isShortcutEnabled() else { return }
+        guard fireModeCapability.isFireModeEnabled else { return }
+
+        tabManager.setBrowsingMode(.fire, source: .keyCommand)
+        performCancel()
+        newTab()
+    }
     
     @objc func keyboardCloseTab() {
         guard tabSwitcherController == nil else { return }
+        guard isShortcutEnabled() else { return }
         
         guard let tab = currentTab else { return }
         closeTab(tab.tabModel)
@@ -194,6 +220,7 @@ extension MainViewController {
     
     @objc func keyboardShowAllTabs() {
         guard tabSwitcherController == nil else { return }
+        guard isShortcutEnabled() else { return }
         
         performCancel()
         showTabSwitcher()
@@ -201,29 +228,38 @@ extension MainViewController {
     
     @objc func keyboardBrowserForward() {
         guard tabSwitcherController == nil else { return }
+        guard isShortcutEnabled() else { return }
         
         currentTab?.goForward()
     }
     
     @objc func keyboardBrowserBack() {
         guard tabSwitcherController == nil else { return }
+        guard isShortcutEnabled() else { return }
         
         currentTab?.goBack()
     }
     
     @objc func keyboardPrint() {
+        guard isShortcutEnabled() else { return }
         currentTab?.print()
     }
 
     @objc func keyboardAddBookmark() {
+        guard isShortcutEnabled() else { return }
         saveBookmark(favorite: false)
     }
 
     @objc func keyboardAddFavorite() {
+        guard isShortcutEnabled() else { return }
         saveBookmark(favorite: true)
     }
     
     @objc func keyboardNoOperation() { }
+
+    private func isShortcutEnabled() -> Bool {
+        !experimentDuckAIFireOnboardingFlow.controlsLocked
+    }
 
     private func saveBookmark(favorite: Bool) {
         currentTab?.saveAsBookmark(favorite: favorite, viewModel: menuBookmarksViewModel)

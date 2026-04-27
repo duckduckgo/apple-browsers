@@ -21,13 +21,21 @@ import Core
 import Suggestions
 import SwiftUI
 
+/// Controls which suggestion types are displayed in autocomplete.
+enum AutocompleteSuggestionFilter {
+    /// Show all suggestions: search phrases, URLs, bookmarks, history, open tabs, AI chat.
+    case all
+    /// Show only URL-based suggestions: websites, bookmarks, history.
+    /// Used in duck.ai mode as a fallback when chat history has no matches —
+    /// users typing URLs should still get autocomplete without seeing search suggestions.
+    case urlsOnly
+}
+
 protocol AutocompleteViewModelDelegate: NSObjectProtocol {
 
     func onSuggestionSelected(_ suggestion: Suggestion, ddgSuggestionIndex: Int?)
     func onSuggestionHighlighted(_ suggestion: Suggestion, forQuery query: String)
     func onTapAhead(_ suggestion: Suggestion)
-    func onMessageDismissed()
-    func onMessageShown()
     func deleteSuggestion(_ suggestion: Suggestion)
 
 }
@@ -47,20 +55,18 @@ class AutocompleteViewModel: ObservableObject {
     @Published var localResults = [SuggestionModel]()
     @Published var aiChatSuggestions = [SuggestionModel]()
     @Published var query: String?
-    @Published var isMessageVisible = true
     @Published var emptySuggestion: [SuggestionModel]?
     @Published var isPad: Bool = false
+    @Published var sectionTitle: String?
     weak var delegate: AutocompleteViewModelDelegate?
 
     let isAddressBarAtBottom: Bool
     let showAskAIChat: Bool
-    let isSwipeToDeleteEnabled: Bool
+    var suggestionFilter: AutocompleteSuggestionFilter = .all
 
-    init(isAddressBarAtBottom: Bool, showMessage: Bool, showAskAIChat: Bool, isSwipeToDeleteEnabled: Bool) {
+    init(isAddressBarAtBottom: Bool, showAskAIChat: Bool) {
         self.isAddressBarAtBottom = isAddressBarAtBottom
-        self.isMessageVisible = showMessage
         self.showAskAIChat = showAskAIChat
-        self.isSwipeToDeleteEnabled = isSwipeToDeleteEnabled
     }
 
     func updateSuggestions(_ suggestions: SuggestionResult) {
@@ -68,26 +74,19 @@ class AutocompleteViewModel: ObservableObject {
         ddgSuggestions = suggestions.duckduckgoSuggestions.map { SuggestionModel(suggestion: $0) }
         localResults = suggestions.localSuggestions.map { SuggestionModel(suggestion: $0) }
 
-        if topHits.isEmpty && ddgSuggestions.isEmpty && localResults.isEmpty {
-            topHits = [SuggestionModel(suggestion: .phrase(phrase: query ?? ""), canShowTapAhead: false)]
-        }
-        
-        if showAskAIChat, let query {
-            aiChatSuggestions = [.init(suggestion: .askAIChat(value: query))]
-        } else {
+        switch suggestionFilter {
+        case .all:
+            if topHits.isEmpty && ddgSuggestions.isEmpty && localResults.isEmpty {
+                topHits = [SuggestionModel(suggestion: .phrase(phrase: query ?? ""), canShowTapAhead: false)]
+            }
+            if showAskAIChat, let query {
+                aiChatSuggestions = [.init(suggestion: .askAIChat(value: query))]
+            } else {
+                aiChatSuggestions = []
+            }
+        case .urlsOnly:
             aiChatSuggestions = []
         }
-    }
-
-    func onDismissMessage() {
-        withAnimation {
-            isMessageVisible = false
-            delegate?.onMessageDismissed()
-        }
-    }
-
-    func onShownToUser() {
-        delegate?.onMessageShown()
     }
 
     func onSuggestionSelected(_ model: SuggestionModel) {

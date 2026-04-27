@@ -25,6 +25,7 @@ import History
 import HistoryView
 import NewTabPage
 import TrackerRadarKit
+import Persistence
 import PixelKit
 import PrivacyConfig
 import enum UserScript.UserScriptError
@@ -84,7 +85,10 @@ protocol ScriptSourceProviding {
             return appDelegate?.syncService
         },
         syncErrorHandler: Application.appDelegate.syncErrorHandler,
-        webExtensionAvailability: Application.appDelegate.webExtensionAvailability
+        webExtensionAvailability: Application.appDelegate.webExtensionAvailability,
+        dockCustomization: Application.appDelegate.dockCustomization,
+        reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore),
+        installDateProvider: { AppDelegate.firstLaunchDate }
     )
 }
 
@@ -117,6 +121,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let syncErrorHandler: SyncErrorHandling
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
     let appearancePreferences: AppearancePreferences
+    let dockCustomization: DockCustomization
 
     init(configStorage: ConfigurationStoring,
          privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -141,7 +146,10 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          autoconsentManagement: AutoconsentManagement,
          syncServiceProvider: @escaping () -> DDGSyncing?,
          syncErrorHandler: SyncErrorHandling,
-         webExtensionAvailability: WebExtensionAvailabilityProviding?
+         webExtensionAvailability: WebExtensionAvailabilityProviding?,
+         dockCustomization: DockCustomization,
+         reinstallUserDetection: ReinstallingUserDetecting,
+         installDateProvider: @escaping () -> Date
     ) {
 
         self.configStorage = configStorage
@@ -163,13 +171,20 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.syncErrorHandler = syncErrorHandler
         self.webExtensionAvailability = webExtensionAvailability
         self.appearancePreferences = appearancePreferences
+        self.dockCustomization = dockCustomization
 
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
         self.surrogatesConfig = buildSurrogatesConfig()
         self.sessionKey = generateSessionKey()
         self.messageSecret = generateSessionKey()
         self.autofillSourceProvider = buildAutofillSource()
-        self.onboardingActionsManager = buildOnboardingActionsManager(onboardingNavigationDelegate, appearancePreferences, startupPreferences)
+        self.onboardingActionsManager = buildOnboardingActionsManager(
+            onboardingNavigationDelegate,
+            appearancePreferences,
+            startupPreferences,
+            reinstallUserDetection,
+            installDateProvider
+        )
         self.historyViewActionsManager = HistoryViewActionsManager(
             historyCoordinator: historyCoordinator,
             bookmarksHandler: bookmarkManager,
@@ -257,16 +272,24 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         }
     }
 
-    private func buildOnboardingActionsManager(_ navigationDelegate: OnboardingNavigating, _ appearancePreferences: AppearancePreferences, _ startupPreferences: StartupPreferences) -> OnboardingActionsManaging {
+    private func buildOnboardingActionsManager(
+        _ navigationDelegate: OnboardingNavigating,
+        _ appearancePreferences: AppearancePreferences,
+        _ startupPreferences: StartupPreferences,
+        _ reinstallUserDetection: ReinstallingUserDetecting,
+        _ installDateProvider: @escaping () -> Date
+    ) -> OnboardingActionsManaging {
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
-            dockCustomization: DockCustomizer(),
+            dockCustomization: dockCustomization,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
             bookmarkManager: bookmarkManager,
             pinningManager: pinningManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            reinstallUserDetection: reinstallUserDetection,
+            installDateProvider: installDateProvider
         )
     }
 

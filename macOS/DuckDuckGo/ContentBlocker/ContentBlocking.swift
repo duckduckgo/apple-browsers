@@ -90,7 +90,10 @@ final class AppContentBlocking {
         autoconsentManagement: AutoconsentManagement,
         contentScopePreferences: ContentScopePreferences,
         syncErrorHandler: SyncErrorHandling,
-        webExtensionAvailability: WebExtensionAvailabilityProviding?
+        webExtensionAvailability: WebExtensionAvailabilityProviding?,
+        dockCustomization: DockCustomization,
+        reinstallUserDetection: ReinstallingUserDetecting,
+        installDateProvider: @escaping () -> Date
     ) {
         let buildType = StandardApplicationBuildType()
         // When TEST_PRIVACY_CONFIG_PATH is set, skip cached config to use embedded (test) config
@@ -131,7 +134,10 @@ final class AppContentBlocking {
             autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences,
             syncErrorHandler: syncErrorHandler,
-            webExtensionAvailability: webExtensionAvailability
+            webExtensionAvailability: webExtensionAvailability,
+            dockCustomization: dockCustomization,
+            reinstallUserDetection: reinstallUserDetection,
+            installDateProvider: installDateProvider
         )
     }
 
@@ -159,7 +165,10 @@ final class AppContentBlocking {
         autoconsentManagement: AutoconsentManagement,
         contentScopePreferences: ContentScopePreferences,
         syncErrorHandler: SyncErrorHandling,
-        webExtensionAvailability: WebExtensionAvailabilityProviding?
+        webExtensionAvailability: WebExtensionAvailabilityProviding?,
+        dockCustomization: DockCustomization,
+        reinstallUserDetection: ReinstallingUserDetecting,
+        installDateProvider: @escaping () -> Date
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.tld = tld
@@ -207,7 +216,10 @@ final class AppContentBlocking {
                                                   autoconsentManagement: autoconsentManagement,
                                                   contentScopePreferences: contentScopePreferences,
                                                   syncErrorHandler: syncErrorHandler,
-                                                  webExtensionAvailability: webExtensionAvailability)
+                                                  webExtensionAvailability: webExtensionAvailability,
+                                                  dockCustomization: dockCustomization,
+                                                  reinstallUserDetection: reinstallUserDetection,
+                                                  installDateProvider: installDateProvider)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,

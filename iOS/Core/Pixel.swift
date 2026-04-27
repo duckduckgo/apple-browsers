@@ -28,7 +28,6 @@ public struct PixelParameters {
     public static let duration = "dur"
     static let test = "test"
     public static let appVersion = "appVersion"
-    public static let osVersion = "osVersion"
 
     public static let autocompleteBookmarkCapable = "bc"
     public static let autocompleteIncludedLocalResults = "sb"
@@ -87,6 +86,7 @@ public struct PixelParameters {
 
     public static let count = "count"
     public static let source = "source"
+    public static let browsingMode = "browsing_mode"
     public static let authVersion = "authVersion"
     public static let lastUsed = "last_used"
 
@@ -107,6 +107,10 @@ public struct PixelParameters {
     public static let isInternalUser = "is_internal_user"
 
     public static let enabled = "enabled"
+
+    // Onboarding subscription promotion
+    public static let returningUser = "ru"
+    public static let freeTrial = "free_trial"
 
     // Email manager
     public static let emailKeychainAccessType = "access_type"
@@ -183,6 +187,7 @@ public struct PixelParameters {
 
     public static let appState = "state"
     public static let appEvent = "event"
+    public static let windowChanged = "windowChanged"
 
     public static let didCallWillEnterForeground = "didCallWillEnterForeground"
 
@@ -197,6 +202,12 @@ public struct PixelParameters {
 
     // New Address Bar Picker
     public static let selection = "selection"
+
+    // Autoplay
+    public static let autoplayBlockingMode = "autoplay_blocking_mode"
+
+    // Fire animation
+    public static let fireAnimation = "fireAnimationType"
 }
 
 public struct PixelValues {

@@ -25,6 +25,45 @@ import Core
 
 extension SyncSettingsViewController {
 
+    // Base list of activity types that don't make sense for sharing a sync recovery code in any form (plain text or PDF).
+    private var recoveryShareBaseExcludedActivityTypes: [UIActivity.ActivityType] {
+        var types: [UIActivity.ActivityType] = [
+            .postToFacebook,
+            .postToTwitter,
+            .postToWeibo,
+            .postToTencentWeibo,
+            .postToFlickr,
+            .postToVimeo,
+            .assignToContact,
+            .saveToCameraRoll,
+            .addToReadingList
+        ]
+        if #available(iOS 15.4, *) {
+            types.append(.sharePlay)
+        }
+        if #available(iOS 16.0, *) {
+            types.append(contentsOf: [.collaborationInviteWithLink, .collaborationCopyLink])
+        }
+        if #available(iOS 16.4, *) {
+            types.append(.addToHomeScreen)
+        }
+        return types
+    }
+
+    // Text-code share: also exclude activities that only make sense for rich documents.
+    private var recoveryCodeExcludedActivityTypes: [UIActivity.ActivityType] {
+        recoveryShareBaseExcludedActivityTypes + [
+            .openInIBooks,
+            .markupAsPDF,
+            .print
+        ]
+    }
+
+    // PDF share: allow Books and Print.
+    private var recoveryPDFExcludedActivityTypes: [UIActivity.ActivityType] {
+        recoveryShareBaseExcludedActivityTypes
+    }
+
     func shareRecoveryPDF() {
 
         authenticateUser { [weak self] error in
@@ -34,8 +73,10 @@ extension SyncSettingsViewController {
                 .generate(recoveryCode)
 
             let pdf = RecoveryCodeItem(data: data)
+
             navigationController?.visibleViewController?.presentShareSheet(withItems: [pdf],
-                                                                           fromView: view)
+                                                                           fromView: view,
+                                                                           additionalExcludedActivityTypes: recoveryPDFExcludedActivityTypes)
         }
     }
 
@@ -43,7 +84,8 @@ extension SyncSettingsViewController {
 
         navigationController?.visibleViewController?.presentShareSheet(withItems: [code],
                                                                        fromView: view,
-                                                                       overrideInterfaceStyle: .dark) { activity, didComplete, _, _  in
+                                                                       overrideInterfaceStyle: .dark,
+                                                                       additionalExcludedActivityTypes: recoveryCodeExcludedActivityTypes) { activity, didComplete, _, _  in
             guard case .copyToPasteboard = activity, didComplete else {
                 return
             }

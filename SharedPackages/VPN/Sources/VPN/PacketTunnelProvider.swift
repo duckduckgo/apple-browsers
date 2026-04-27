@@ -47,6 +47,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case adapterEndTemporaryShutdownStateAttemptFailure(Error)
         case adapterEndTemporaryShutdownStateRecoverySuccess
         case adapterEndTemporaryShutdownStateRecoveryFailure(Error)
+
+        case connectionFailureLoopDetected(_ error: Error)
     }
 
     public enum AttemptStep: CustomDebugStringConvertible {
@@ -118,6 +120,23 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         // State Reset - 200+
         case appRequestedCancellation
 
+        /// Integer error codes for `TunnelError`, used as the single source of truth
+        /// for serialization across the XPC / process boundary.
+        public enum Code: Int, CaseIterable {
+            // Tunnel Setup Errors - 0+
+            case startingTunnelWithoutAuthToken = 0
+            case couldNotGenerateTunnelConfiguration = 1
+            case simulateTunnelFailureError = 2
+            case settingsMissing = 3
+            case simulateSubscriptionExpiration = 4
+            case tokenReset = 5
+            // Subscription Errors - 100+
+            case vpnAccessRevoked = 100
+            case vpnAccessRevokedDetectedByMonitorCheck = 101
+            // State Reset - 200+
+            case appRequestedCancellation = 200
+        }
+
         public var errorDescription: String? {
             switch self {
             case .startingTunnelWithoutAuthToken(let internalError):
@@ -139,22 +158,22 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
         }
 
-        public var errorCode: Int {
+        /// The `Code` for this error — exhaustive switch ensures new cases are not forgotten.
+        public var code: Code {
             switch self {
-                // Tunnel Setup Errors - 0+
-            case .startingTunnelWithoutAuthToken: return 0
-            case .couldNotGenerateTunnelConfiguration: return 1
-            case .simulateTunnelFailureError: return 2
-            case .settingsMissing: return 3
-            case .simulateSubscriptionExpiration: return 4
-            case .tokenReset: return 5
-                // Subscription Errors - 100+
-            case .vpnAccessRevoked: return 100
-            case .vpnAccessRevokedDetectedByMonitorCheck: return 101
-                // State Reset - 200+
-            case .appRequestedCancellation: return 200
+            case .startingTunnelWithoutAuthToken: return .startingTunnelWithoutAuthToken
+            case .couldNotGenerateTunnelConfiguration: return .couldNotGenerateTunnelConfiguration
+            case .simulateTunnelFailureError: return .simulateTunnelFailureError
+            case .settingsMissing: return .settingsMissing
+            case .simulateSubscriptionExpiration: return .simulateSubscriptionExpiration
+            case .tokenReset: return .tokenReset
+            case .vpnAccessRevoked: return .vpnAccessRevoked
+            case .vpnAccessRevokedDetectedByMonitorCheck: return .vpnAccessRevokedDetectedByMonitorCheck
+            case .appRequestedCancellation: return .appRequestedCancellation
             }
         }
+
+        public var errorCode: Int { code.rawValue }
 
         public var errorUserInfo: [String: Any] {
             switch self {
@@ -371,6 +390,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let debugEvents: EventMapping<NetworkProtectionError>
     private let providerEvents: EventMapping<Event>
     public let entitlementCheck: (() async -> Result<Bool, Error>)?
+    public let loopDetector: ConnectionFailureLoopDetector
 
     @MainActor
     public init(notificationsPresenter: VPNNotificationsPresenting,
@@ -398,7 +418,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 keyExpirationTester: KeyExpirationTesting? = nil,
                 tunnelFailureMonitor: TunnelFailureMonitoring? = nil,
                 failureRecoveryHandler: FailureRecoveryHandling? = nil,
-                entitlementCheck: (() async -> Result<Bool, Error>)?) {
+                entitlementCheck: (() async -> Result<Bool, Error>)?,
+                loopDetector: ConnectionFailureLoopDetector) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
         self.notificationsPresenter = notificationsPresenter
@@ -417,6 +438,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.latencyMonitor = latencyMonitor
         self.entitlementMonitor = entitlementMonitor
         self.entitlementCheck = entitlementCheck
+        self.loopDetector = loopDetector
 
         self.wideEvent = wideEvent ?? WideEvent(featureFlagProvider: WideEventFeatureFlagProvider(settings: settings))
 
@@ -724,6 +746,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 #endif
         } catch {
             if startupOptions.startupMethod == .automaticOnDemand {
+                if loopDetector.connectionFailed(isOnDemand: true) {
+                    providerEvents.fire(.connectionFailureLoopDetected(error))
+                }
+
                 // If the VPN was started by on-demand without the basic prerequisites for
                 // it to work we skip firing pixels.  This should only be possible if the
                 // manual start attempt that preceded failed, or if the subscription has
@@ -734,6 +760,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 try? await Task.sleep(interval: .seconds(15))
                 Logger.networkProtection.log("Waking up...")
             } else {
+                loopDetector.connectionFailed(isOnDemand: false)
+
                 // If the VPN was started manually without the basic prerequisites we always
                 // want to know as this should not be possible.
                 providerEvents.fire(.tunnelStartAttempt(.begin))
@@ -754,8 +782,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             try await startTunnel(onDemand: startupOptions.startupMethod == .automaticOnDemand)
 
             providerEvents.fire(.tunnelStartAttempt(.success))
+            loopDetector.connectionSucceeded()
             completeAndCleanupConnectionWideEvent()
         } catch {
+            if loopDetector.connectionFailed(isOnDemand: startupOptions.startupMethod == .automaticOnDemand) {
+                providerEvents.fire(.connectionFailureLoopDetected(error))
+            }
+
             Logger.networkProtection.error("🔴 Failed to start tunnel \(error.localizedDescription, privacy: .public)")
 
             if startupOptions.startupMethod == .automaticOnDemand {
@@ -882,6 +915,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         if case .userInitiated = reason {
             // If the user shut down the VPN deliberately, end snooze mode early.
             self.snoozeTimingStore.reset()
+            loopDetector.reset()
         }
 
         if case .superceded = reason {
@@ -1592,10 +1626,8 @@ private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
     let settings: VPNSettings
 
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-            return settings.wideEventPostEndpointEnabled
-        }
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }
 

@@ -20,38 +20,56 @@
 public protocol PixelFiring {
     func fire(_ event: PixelKitEvent,
               frequency: PixelKit.Frequency,
+              includeAppVersionParameter: Bool,
               withAdditionalParameters: [String: String]?,
+              withNamePrefix: String?,
               onComplete: @escaping PixelKit.CompletionBlock)
 }
 
 extension PixelFiring {
     public func fire(_ event: PixelKitEvent) {
-        fire(event, frequency: .standard)
+        fire(event, frequency: .standard, includeAppVersionParameter: true)
     }
 
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency) {
-        fire(event, frequency: frequency, withAdditionalParameters: nil, onComplete: { _, _ in })
+        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, onComplete: { _, _ in })
+    }
+
+    public func fire(_ event: PixelKitEvent,
+                     frequency: PixelKit.Frequency,
+                     includeAppVersionParameter: Bool) {
+        fire(event, frequency: frequency, includeAppVersionParameter: includeAppVersionParameter, withAdditionalParameters: nil, withNamePrefix: nil, onComplete: { _, _ in })
     }
 
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency,
                      onComplete: @escaping PixelKit.CompletionBlock) {
-        fire(event, frequency: frequency, withAdditionalParameters: nil, onComplete: onComplete)
+        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, onComplete: onComplete)
     }
 
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency,
                      withAdditionalParameters parameters: [String: String]?) {
-        fire(event, frequency: frequency, withAdditionalParameters: parameters, onComplete: { _, _ in })
+        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: parameters, withNamePrefix: nil, onComplete: { _, _ in })
+    }
+
+    public func fire(_ event: PixelKitEvent,
+                     frequency: PixelKit.Frequency,
+                     withAdditionalParameters parameters: [String: String]?,
+                     withNamePrefix namePrefix: String?) {
+        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: parameters, withNamePrefix: namePrefix, onComplete: { _, _ in })
     }
 }
 
 extension PixelKit: PixelFiring {
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency,
+                     includeAppVersionParameter: Bool,
                      withAdditionalParameters parameters: [String: String]?,
+                     withNamePrefix namePrefix: String?,
                      onComplete: @escaping PixelKit.CompletionBlock) {
-        fire(event, frequency: frequency, withHeaders: nil, withAdditionalParameters: parameters, onComplete: onComplete)
+        fire(event, frequency: frequency, withHeaders: nil, withAdditionalParameters: parameters,
+             withNamePrefix: namePrefix, includeAppVersionParameter: includeAppVersionParameter, onComplete: onComplete)
     }
 }

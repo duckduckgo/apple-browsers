@@ -25,11 +25,10 @@ struct UTIRenderState: Equatable {
     var isExpanded: Bool
     var cardPosition: UnifiedToggleInputCardPosition
     var usesOmnibarMargins: Bool
-    var showsDismissButton: Bool
     var isToolbarSubmitHidden: Bool
     var inactiveAppearance: Bool
     var isFloatingSubmitVisible: Bool
-    var headerDisplayMode: UnifiedInputContentContainerViewController.HeaderDisplayMode
+    var isToggleEnabled: Bool
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
 
@@ -38,12 +37,23 @@ struct UTIRenderState: Equatable {
             isExpanded: isExpanded,
             cardPosition: cardPosition,
             usesOmnibarMargins: usesOmnibarMargins,
-            showsDismissButton: showsDismissButton,
             isToolbarSubmitHidden: isToolbarSubmitHidden,
             inactiveAppearance: inactiveAppearance,
             inputMode: inputMode,
             isTopBarPosition: usesOmnibarMargins
         )
+    }
+
+    /// The inline dismiss (X inside the card's top row) takes over when the expanded card is
+    /// anchored at the top with the Search/Duck.ai toggle enabled. When the toggle setting is
+    /// disabled, the card has no top row to host the X, so the floating dismiss in the content
+    /// container is used instead.
+    var isInlineDismissActive: Bool {
+        cardPosition == .top && isExpanded && isToggleEnabled
+    }
+
+    var isFloatingDismissVisible: Bool {
+        isContentVisible && !isInlineDismissActive
     }
 
 }

@@ -26,6 +26,7 @@ import AVFoundation
 import os.log
 
 extension SyncSettingsViewController: SyncManagementViewModelDelegate {
+
     var syncBookmarksPausedTitle: String? {
         UserText.syncLimitExceededTitle
     }
@@ -189,6 +190,34 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
+    func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
+        Task { @MainActor in
+            defer { optionsViewModel.isBusy = false }
+            do {
+                guard await self.performDeferredPreservedAccountCleanupIfNeeded() else {
+                    return
+                }
+                try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
+                let additionalParameters = self.source.map { ["source": $0] } ?? [:]
+                try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
+                AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
+                optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
+                self.enableAutoRestoreByDefaultIfNeeded()
+                await self.refreshDevicesAfterSimplifiedSyncEnable()
+
+                let didShowPrompt = optionsViewModel.checkAndShowSyncWithAnotherDevicePrompt()
+                if didShowPrompt {
+                    optionsViewModel.scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal()
+                } else {
+                    self.showSimplifiedSyncEnabledToast()
+                }
+            } catch {
+                self.firePixelIfNeededFor(event: .syncSignupError, error: error)
+                ActionMessageView.present(message: UserText.simplifiedSyncSetupFailedToast)
+            }
+        }
+    }
+
     @MainActor
     func handleError(_ type: SyncErrorMessage, error: Error?, event: Pixel.Event?) async {
         await withCheckedContinuation { continuation in
@@ -301,11 +330,13 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             let readyView = AutoRestoreReadyView(model: self.viewModel, onCancel: { [weak self] in
                 Pixel.fire(pixel: .syncAutoRestoreSettingsCancelled, withAdditionalParameters: [PixelParameters.source: promptSource.rawValue])
                 self?.viewModel.clearPendingPreservedAccountContinuation()
+                self?.viewModel.isBusy = false
                 self?.autoRestorePromptSource = nil
                 self?.dismissPresentedViewController()
             })
             let controller = DismissibleHostingController(rootView: readyView, onDismiss: { [weak self] in
                 self?.viewModel.clearPendingPreservedAccountContinuation()
+                self?.viewModel.isBusy = false
                 if self?.needsPreservedAccountCleanupBeforeServerOperation == false {
                     self?.autoRestorePromptSource = nil
                 }
@@ -425,8 +456,25 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func showPreparingSync(_ completion: (() -> Void)?) {
-        let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: viewModel.isAIChatSyncEnabled))
-        navigationController?.present(controller, animated: true, completion: completion)
+        if useSimplifiedLayout {
+            let controller = UIHostingController(rootView: SimplifiedConnectingSheetView())
+            controller.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
+            if #available(iOS 16.4, *) {
+                controller.sizingOptions = .intrinsicContentSize
+            }
+            if #available(iOS 16.0, *) {
+                let fittingSize = controller.view.systemLayoutSizeFitting(
+                    CGSize(width: UIScreen.main.bounds.width, height: UIView.layoutFittingCompressedSize.height)
+                )
+                controller.sheetPresentationController?.detents = [
+                    .custom { _ in fittingSize.height }
+                ]
+            }
+            navigationController?.present(controller, animated: true, completion: completion)
+        } else {
+            let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: viewModel.isAIChatSyncEnabled))
+            navigationController?.present(controller, animated: true, completion: completion)
+        }
     }
 
     @MainActor
@@ -492,6 +540,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             viewModel.isSyncWithSetUpSheetVisible = true
         case .pairing:
             showSyncWithAnotherDevice()
+        case .simplifiedToggle:
+            viewModel.beginSimplifiedSyncSetup()
         }
     }
 
@@ -579,7 +629,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         model.delegate = self
         
         var controller: UIHostingController<AnyView>
-        if showQRCode {
+        if useSimplifiedLayout {
+            controller = UIHostingController(rootView: AnyView(SimplifiedScanOrShowCodeView(model: model)))
+        } else if showQRCode {
             controller = UIHostingController(rootView: AnyView(ScanOrSeeCode(model: model)))
         } else {
             controller = UIHostingController(rootView: AnyView(ScanOrEnterCodeToRecoverSyncedDataView(model: model)))
@@ -590,8 +642,19 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         : UINavigationController(rootViewController: controller)
         
         navController.overrideUserInterfaceStyle = .dark
+        if useSimplifiedLayout {
+            navController.view.backgroundColor = UIColor(baseColor: .gray90)
+            let transparentAppearance = UINavigationBarAppearance()
+            transparentAppearance.configureWithTransparentBackground()
+            navController.navigationBar.standardAppearance = transparentAppearance
+            navController.navigationBar.scrollEdgeAppearance = transparentAppearance
+        }
         navController.setNeedsStatusBarAppearanceUpdate()
-        navController.modalPresentationStyle = .fullScreen
+        if useSimplifiedLayout, UIDevice.current.userInterfaceIdiom == .pad {
+            navController.modalPresentationStyle = .formSheet
+        } else {
+            navController.modalPresentationStyle = .fullScreen
+        }
         navigationController?.present(navController, animated: true) {
             self.checkCameraPermission(model: model)
             if let onPresentPixelInfo {
@@ -647,6 +710,34 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             }
             alert.addAction(cancelAction)
             alert.addAction(confirmAction)
+            self.present(alert, animated: true)
+        }
+    }
+
+    func simplifiedConfirmAndDisableSync() async -> Bool {
+        return await withCheckedContinuation { continuation in
+            let alert = UIAlertController(title: UserText.simplifiedSyncTurnOffTitle,
+                                          message: UserText.simplifiedSyncTurnOffMessage,
+                                          preferredStyle: .alert)
+            let cancelAction = UIAlertAction(title: UserText.actionCancel, style: .cancel) { _ in
+                continuation.resume(returning: false)
+            }
+            let turnOffAction = UIAlertAction(title: UserText.simplifiedSyncTurnOffAction, style: .default) { _ in
+                Task { @MainActor in
+                    do {
+                        try await self.syncService.disconnect()
+                        Pixel.fire(pixel: .syncDisabled)
+                        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
+                        self.syncPausedStateManager.syncDidTurnOff()
+                        continuation.resume(returning: true)
+                    } catch {
+                        await self.handleError(SyncErrorMessage.unableToTurnSyncOff, error: error, event: .syncLogoutError)
+                        continuation.resume(returning: false)
+                    }
+                }
+            }
+            alert.addAction(cancelAction)
+            alert.addAction(turnOffAction)
             self.present(alert, animated: true)
         }
     }
@@ -712,6 +803,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown, includedParameters: [.appVersion])
     }
 
+    func codeCopied() {
+        ActionMessageView.present(message: UserText.simplifiedCodeCopiedToast)
+    }
+
     @MainActor
     private func presentPreservedAccountCleanupFailureAlert() {
         let alertController = UIAlertController(title: SyncErrorMessage.unknownError.title, message: SyncErrorMessage.unknownError.description, preferredStyle: .alert)
@@ -737,12 +832,50 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 return .syncBackup
             case .pairing:
                 return .syncPairing
+            case .simplifiedToggle:
+                return .syncBackup
             }
         case .recover:
             return .syncRecover
         }
     }
 }
+
+// MARK: - Simplified Sync
+
+extension SyncSettingsViewController {
+    private func refreshDevicesAfterSimplifiedSyncEnable() async {
+        do {
+            let devices = try await syncService.fetchDevices()
+            mapDevices(devices)
+        } catch {
+            Logger.sync.error("Failed to fetch devices after simplified sync enable: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    func showSimplifiedSyncEnabledToast() {
+        DispatchQueue.main.async {
+            ActionMessageView.present(message: UserText.simplifiedSyncEnabledToast)
+        }
+    }
+
+    func simplifiedCopyRecoveryCode() {
+        UIPasteboard.general.string = recoveryCode
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        ActionMessageView.present(message: UserText.simplifiedRecoveryCodeCopiedToast)
+    }
+
+    private enum SimplifiedSyncSettingsKey: String {
+        case hasShownSimplifiedSyncAnotherDevicePrompt = "sync.simplified.sync-another-device-prompt.shown"
+    }
+
+    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool {
+        get { syncSettingsStore.object(forKey: SimplifiedSyncSettingsKey.hasShownSimplifiedSyncAnotherDevicePrompt.rawValue) as? Bool ?? false }
+        set { syncSettingsStore.set(newValue, forKey: SimplifiedSyncSettingsKey.hasShownSimplifiedSyncAnotherDevicePrompt.rawValue) }
+    }
+}
+
+// MARK: - DismissibleHostingController
 
 private class DismissibleHostingController<Content: View>: UIHostingController<Content> {
 

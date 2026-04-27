@@ -22,6 +22,7 @@ import Common
 import BrowserServicesKit
 import History
 import NewTabPage
+import Persistence
 import PrivacyConfig
 import UserScript
 import Configuration
@@ -107,7 +108,10 @@ final class UserContentUpdating {
          autoconsentManagement: AutoconsentManagement,
          contentScopePreferences: ContentScopePreferences,
          syncErrorHandler: SyncErrorHandling,
-         webExtensionAvailability: WebExtensionAvailabilityProviding?
+         webExtensionAvailability: WebExtensionAvailabilityProviding?,
+         dockCustomization: DockCustomization,
+         reinstallUserDetection: ReinstallingUserDetecting,
+         installDateProvider: @escaping () -> Date
     ) {
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {
             return NotificationCenter.default.publisher(for: name)
@@ -152,7 +156,10 @@ final class UserContentUpdating {
                                                           autoconsentManagement: autoconsentManagement,
                                                           syncServiceProvider: syncServiceProvider,
                                                           syncErrorHandler: syncErrorHandler,
-                                                          webExtensionAvailability: webExtensionAvailability)
+                                                          webExtensionAvailability: webExtensionAvailability,
+                                                          dockCustomization: dockCustomization,
+                                                          reinstallUserDetection: reinstallUserDetection,
+                                                          installDateProvider: installDateProvider)
                 return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
             }
             return await newContentTask.value

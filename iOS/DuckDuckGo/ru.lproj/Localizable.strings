@@ -94,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Голосовой режим Duck.ai";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Редактировать закладку";
 
@@ -106,12 +109,14 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Вкладки и данные сброшены";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Очистить вкладки, данные и чаты Duck.ai";
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Открыть в фоновом режиме";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Новая Fire-вкладка";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Открыть в Fire-вкладке";
 /* Create New Tab action */
 "action.title.newTabAction" = "Новая вкладка";
 
@@ -201,6 +206,21 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Функции ИИ";
+
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Выбрать фото";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Сделать фото";
+
+/* Title for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.title" = "Настрой ответы";
+
+/* Subtitle for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.subtitle" = "Найдите актуальную информацию";
+
+/* Title for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.title" = "Веб-поиск";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Существующие закладки дублироваться не будут.";
@@ -345,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Поиск в DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Теперь рекомендации включают недавно посещенные вами сайты. Их можно отключить в настройках или очистить с помощью кнопки Fire Button 🔥.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Та же конфиденциальность.\nЛучшие поисковые рекомендации!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Перейти на вкладку";
@@ -862,6 +876,9 @@
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Нет, спасибо";
 
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Не сейчас";
+
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Вы можете сохранить этот пароль на устройстве под надежной защитой функции «Пароли и автозаполнение» от DuckDuckGo.";
 
@@ -927,6 +944,15 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Обновить имя пользователя?";
+
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Разрешить аудио и видео";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Блокировать аудио и видео";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Блокировать аудио";
 
 /* No comment provided by engineer. */
 "Available Products" = "Доступные продукты";
@@ -1079,10 +1105,13 @@
 "Confirm" = "Подтвердить";
 
 /* No comment provided by engineer. */
-"Contextual Onboarding" = "Контекстное ознакомление";
-
-/* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
+
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Удалить чат";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Удалить этот чат?";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Пропустить";
@@ -1164,6 +1193,9 @@
 
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Удиви меня!";
+
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Чтобы добавить виджет, найдите в списке **DuckDuckGo** и выберите **Голосовой режим Duck.ai**.";
 
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Чтобы добавить виджет, найдите в списке **DuckDuckGo** и выберите **Элемент управления VPN**.";
@@ -1447,19 +1479,29 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Работа проигрывателя Duck Player пострадала в результате недавних изменений на YouTube. Мы уже ищем решение и благодарим вас за понимание.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Чтобы изменить виджет, нажмите на него. Выберите в качестве ярлыков **Duck.ai** и **Голосовой режим Duck.ai**.";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Найдите и выберите **DuckDuckGo**. С помощью свайпа откройте **Пользовательские ярлыки** и выберите **Добавить виджет**.";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Добавить содержимое страницы";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Отправляется вместе с сообщением для Duck.ai";
 
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Последние чаты";
 
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Последние чаты";
 
-/* Title for the Duck.ai contextual onboarding screen */
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Просмотреть все чаты";
 
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Как добавить ярлык на голосовой режим Duck.ai в центр управления";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI — дополнительный конфиденциальный сервис. Ваши данные не применяются для обучения ИИ.";
@@ -1467,8 +1509,20 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Добавить содержимое страницы";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Задайте вопрос о странице";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Кратко изложи содержимое страницы";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Получить краткое изложение страницы";
+
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Добавить Duck.ai в центр управления";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Добавить виджет Duck.ai на главный экран";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Показывать кнопки и ссылки Duck.ai в результатах поиска DuckDuckGo.";
@@ -1481,6 +1535,9 @@
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Ярлыки для браузера";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Поговори с Duck.ai через Siri";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Адресная строка";
@@ -1499,6 +1556,30 @@
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Ярлыки";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Голосовой чат с Duck.ai можно начать с помощью быстрой команды Siri, например: «Siri, запусти голосовой чат DuckDuckGo». Быстро, удобно, клавиатура не требуется.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, запусти голосовой чат DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, хочу поговорить с DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, голосовой чат с DuckDuckGo.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Запуск Duck.ai с помощью Siri";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Все чаты %@ конфиденциальны";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "конфиденциальны";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo для iOS";
@@ -1572,14 +1653,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Продолжить в Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Всегда открывать видео из YouTube в Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Видеоролики, открываемые в Duck Player, будут проигрываться автоматически. Отключите эту настройку, если вы предпочитаете запускать воспроизведение вручную.";
 
-/* Label for the auto-play toggle in Duck Player settings */
+/* Label for the autoplay toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Автовоспроизведение видео";
+
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Открывает видео в режиме кинотеатра: ваши просмотры не влияют на ленту рекомендаций YouTube.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Включить Duck Player";
 
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Экспериментальные";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Player позволяет смотреть YouTube без целевой рекламы. Ваши просмотры не влияют на рекомендации видео.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo обеспечивает все основные функции для защиты конфиденциальности в интернете.";
@@ -1763,6 +1856,20 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Произошла неизвестная ошибка";
+
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Перейти на эту вкладку";
+
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Последняя использованная Fire-вкладка";
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Вернуться к %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Вернуться к...";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Вернуться к %1$@, %2$@";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2064,8 +2171,52 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Выбрать, что удалить";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Вход на сайт через другую учетную запись";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Просмотр сайтов без сохранения локальной истории";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Устранение неполадок с сайтами";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Данные на вкладках Fire Tab изолированы от прочих данных браузера. При закрытии их данные будут уничтожены. Защита от отслеживания в таких вкладках не отличается от стандартной.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Новая Fire-вкладка";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire-вкладки";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Новый";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Новинка! Просматривайте сайты, не сохраняя локальную историю, или входите на сайты с другой учетной записью.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Не сейчас";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Попробуйте Fire-вкладки";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Попробуйте Fire-вкладки";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Используйте вкладки Fire Tab, чтобы просматривать веб-страницы без сохранения локальной истории.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Новинка: вкладки Fire Tab";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire-вкладка";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Воздушный поток";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Классика с пламенем";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Инферно";
@@ -2125,7 +2276,10 @@
 "import.passwords.promo.title" = "Импорт паролей в DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Задать вопрос (конфиденциально)";
+"input.field.placeholder.duckai" = "Задавайте любые вопросы, сохраняя конфиденциальность";
+
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Дополнительный вопрос...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Установить расширение";
@@ -2180,6 +2334,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Введите поисковый запрос или адрес сайта";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Новая Fire-вкладка";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Новая вкладка";
@@ -2346,6 +2503,18 @@
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "VPN отключен ввиду окончания подписки. Оформите подписку, чтобы подключиться снова.";
 
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Ошибка аутентификации. Проверьте состояние подписки и повторите попытку.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "Ошибка подключения к VPN-серверу. Повторите попытку позже.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Срок действия подписки истек. Чтобы подключиться к VPN, оформите новую подписку.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Произошла непредвиденная ошибка. Повторите попытку. Если проблема не исчезнет, обратитесь за помощью через раздел **О нас** > **ЧаВо и поддержка**.";
+
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "Подключиться к DuckDuckGo VPN не удалось. Повторите попытку позже.";
 
@@ -2442,11 +2611,8 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "DNS-сервер";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Повторите попытку позже.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.title" = "Подключиться не удалось.";
+/* Connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "Не удалось подключиться";
 
 /* IP Address label shown in NetworkProtection's status view. */
 "network.protection.status.view.ip.address" = "IP-адрес";
@@ -2587,6 +2753,9 @@
 "No Logs" = "Нет журналов";
 
 /* No comment provided by engineer. */
+"No matches for \"%@\"" = "Нет совпадений по запросу «%@»";
+
+/* No comment provided by engineer. */
 "No messages" = "Нет сообщений";
 
 /* No comment provided by engineer. */
@@ -2612,6 +2781,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "Блокировка рекламы на YouTube включена";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Понятно";
@@ -2667,8 +2839,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Пропустить";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Привет!\n\nБыстрый и надежный браузер заказывали?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Привет!\n\nКак насчет быстрого браузера, который защищает ваши данные и дает вам право решать, когда использовать ИИ?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Далее";
@@ -2682,11 +2854,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Настройки > Функции ИИ";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Нужен удобный доступ к приватному чату с ИИ?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Переключатель между \nобычным поиском и Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Поехали!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Только поиск";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Нужен доступ к приватным чатам с ИИ прямо из адресной строки?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Итак, начнем!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Мы уже это проходили";
@@ -2703,6 +2881,21 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Кстати, пока не забыл...";
 
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Знаете ли вы?";
+
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Надежно. Быстро. Меньше рекламы.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "Это — DuckDuckGo Search.";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Как насчет быстрого браузера, который защищает ваши данные и дает вам право решать, когда использовать ИИ?";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Привет!";
+
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Восстановить закладки, пароли и другие данные из предыдущей синхронизации DuckDuckGo?";
 
@@ -2715,15 +2908,6 @@
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Давай продолжим с того места, где ты остановился";
 
-/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.message" = "Надежно. Быстро. Меньше рекламы.";
-/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.title" = "Это — DuckDuckGo Search.";
-/* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Быстрый и надежный браузер заказывали?";
-/* The title of the onboarding intro */
-"onboarding.rebranding.intro.title" = "Привет!";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Начать просмотр";
 
@@ -2735,6 +2919,9 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Понятно. Тогда мы пропустим остальные советы.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Попробуй бесплатно!";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Ознакомление бесплатное!";
@@ -3013,9 +3200,6 @@
 "prompt.x-safari-https.try-open.title" = "Этот сайт пытается открыться в Safari.";
 
 /* No comment provided by engineer. */
-"REBRANDED" = "РЕБРЕНДИНГ";
-
-/* No comment provided by engineer. */
 "Recent Processing Logs" = "Журналы недавней обработки";
 
 /* No comment provided by engineer. */
@@ -3045,6 +3229,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Сканирование...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Удалить Fire-вкладки и их данные?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Удалить вкладки и данные сайтов?";
 
@@ -3129,6 +3315,9 @@
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Добавьте виджет на домашний экран";
 
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Ярлыки Duck.ai на главном экране";
+
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Добавить виджет DuckDuckGo VPN на главный экран";
 
@@ -3141,11 +3330,35 @@
 /* Settings screen cell title for toggling tracker blocking animation in address bar */
 "settings.address.trackers.animation" = "Показывать в адресной строке";
 
-/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_and_duckai" = "Поиск и Duck.ai";
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Выберите, что вы увидите, когда вернетесь после %@ бездействия.";
 
-/* Title for the 'Search Only' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_only" = "Только поиск";
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 ч.";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d часов";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 мин.";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d минут";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 секунда";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d секунд";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "После бездействия";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Последняя использованная вкладка";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Новая вкладка";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Новая функция! Теперь в адресной строке можно переключаться между обычным поиском и Duck.ai.";
@@ -3189,9 +3402,6 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Положение адресной строки";
 
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Пробное меню браузера";
-
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Открывать ссылки в связанных приложениях";
 
@@ -3212,12 +3422,6 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Очистить";
-
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Сбросить вкладки и данные";
-
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Очистить вкладки, данные и чаты Duck.ai";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Закрыть все открытые вкладки.";
@@ -3279,20 +3483,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Автоматически удалять данные";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Автовоспроизведение";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Настройки Duck Player";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Настройки автовоспроизведения применятся только к новым вкладкам (к текущим — после перезапуска приложения). Управление автовоспроизведением в Duck Player: ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Отзыв о браузере";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Нажатие кнопки Fire Button также сотрет историю Duck.ai, включая закрепленные чаты.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Очистить чаты Duck.ai";
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Стереть данные браузера";
-
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Автоудаление данных";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Завершение настройки";
@@ -3312,12 +3519,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Собственная настройка";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Стереть все вкладки, чаты Duck.ai и данные всех сайтов (кроме огнеупорных)";
-
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Стереть все вкладки и данные всех сайтов (кроме огнеупорных)";
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Очистка данных";
 
@@ -3326,6 +3527,21 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Браузер по умолчанию";
+
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Стандартное положение переключателя на новых вкладках.";
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
+"settings.default.omnibar.mode.header" = "Положение переключателя";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Последнее использование";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Поиск";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Удалить чаты Duck.ai";
@@ -3372,9 +3588,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Aнимация кнопки «Огонь»";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Огнеупорные сайты";
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Огнеупорные сайты";
 
@@ -3416,6 +3629,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Управление учетной записью";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Медиа";
 
 /* Settings title for the 'More' section */
 "settings.more" = "DuckDuckGo также предлагает...";
@@ -3744,11 +3960,11 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Тарифные планы";
 
-/* Subscription Removal confirmation message */
-"subscription.cancel.message" = "Ваша подписка удалена с этого устройства.";
-
 /* Button to cancel a pending downgrade of the subscription */
 "subscription.cancel.downgrade.button" = "Отменить понижение";
+
+/* Subscription Removal confirmation message */
+"subscription.cancel.message" = "Ваша подписка удалена с этого устройства.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Ваш тарифный план будет понижен до %1$@ %2$@.";
@@ -3970,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Удалить данные с сервера";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Привязка устройств будет отключена, а синхронизированные данные — удалены с сервера.";
+"sync.delete.all.confirm.message" = "Ваша резервная копия будет удалена с сервера. Все устройства будут отключены от синхронизации, но никакие данные с устройств удалены не будут.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Удалить данные с сервера?";
@@ -4056,15 +4272,36 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "К сожалению, функция «Синхронизация и резервное копирование» больше не работает в этой версии приложения. Чтобы продолжить, обновите DuckDuckGo до последней версии.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Закрыть вкладку";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Вкладка не прочитана";
+
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Закрыть Fire-вкладку";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Закрыть вкладку";
 /* Accessibility label on remove button */
 "tab.close.home" = "Закрыть домашнюю вкладку";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Закрыть сайт «%1$@» по адресу %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire-вкладка";
+
+/* New tab title */
+"tab.new.title" = "Новая вкладка";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Открыть домашнюю вкладку";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Открыть новую вкладку";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Открыть Fire-вкладку";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Открыть сайт «%1$@» по адресу %2$@";
 
@@ -4479,6 +4716,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "DuckDuckGo для Windows!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo удаляет рекламу на YouTube, позволяя вам смотреть видео без перерыва.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Блокировка рекламы на YouTube";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Блокировать рекламу на YouTube";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Закладки";
 
@@ -4494,44 +4740,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Что будем импортировать?";
 
-/* Accessibility hint for the escape hatch card */
-"escapeHatch.accessibility.hint" = "Перейти на эту вкладку";
-
-/* Accessibility label for escape hatch card; %@ is the tab title */
-"escapeHatch.returnTo.accessibility.label" = "Вернуться к %@";
-
-/* Label shown on the escape hatch card above the tab title */
-"escapeHatch.returnTo.label" = "Вернуться к...";
-
-/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
-"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Вернуться к %1$@, %2$@";
-
-/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Выберите, что вы увидите, когда вернетесь после %@ бездействия.";
-
-/* Idle interval 1 hour for settings footer */
-"settings.afterInactivity.idle.interval.hour" = "1 ч.";
-
-/* Idle interval in hours for settings footer (plural) */
-"settings.afterInactivity.idle.interval.hours" = "%d часов";
-
-/* Idle interval 1 minute for settings footer */
-"settings.afterInactivity.idle.interval.minute" = "1 мин.";
-
-/* Idle interval in minutes for settings footer (plural) */
-"settings.afterInactivity.idle.interval.minutes" = "%d минут";
-
-/* Idle interval 1 second for settings footer */
-"settings.afterInactivity.idle.interval.second" = "1 секунда";
-
-/* Idle interval in seconds for settings footer (plural) */
-"settings.afterInactivity.idle.interval.seconds" = "%d секунд";
-
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "После бездействия";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Последняя использованная вкладка";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Новая вкладка";

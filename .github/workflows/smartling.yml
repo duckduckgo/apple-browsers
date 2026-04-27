@@ -34,7 +34,7 @@ jobs:
     if: |
       (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'pull_request' && (github.event.label.name == 'start ios translation' || github.event.label.name == 'start macos translation' || github.event.label.name == 'authorize translation' || github.event.label.name == 'download translations' || github.event.label.name == 'check translation status'))
-    runs-on: macos-15
+    runs-on: macos-26
     name: Smartling translation job
     permissions:
       contents: write
@@ -105,7 +105,7 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
           ref: ${{ steps.params.outputs.branch }}

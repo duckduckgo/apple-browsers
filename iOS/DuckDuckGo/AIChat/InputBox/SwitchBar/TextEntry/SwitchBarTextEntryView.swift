@@ -145,22 +145,20 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func setupView() {
-        if handler.isFireTab {
-            overrideUserInterfaceStyle = .dark
-        }
-        
+        applyFireModeAppearance(isFireTab: handler.isFireTab)
+
         let fontMetrics = UIFontMetrics(forTextStyle: .body)
         let textFont = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
         textView.font = textFont
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = UIColor.clear
-        textView.tintColor = handler.isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
         textView.textColor = UIColor(designSystemColor: .textPrimary)
         textView.autocorrectionType = .no
         textView.autocapitalizationType = .none
         textView.delegate = self
         textView.isScrollEnabled = false
         textView.showsVerticalScrollIndicator = false
+        textView.accessibilityIdentifier = "searchEntry"
 
         placeholderLabel.font = textFont
         placeholderLabel.adjustsFontForContentSizeCategory = true
@@ -264,7 +262,9 @@ class SwitchBarTextEntryView: UIView {
             placeholderLabel.text = UserText.searchDuckDuckGo
             textView.autocapitalizationType = .none
         case .aiChat:
-            placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
+            placeholderLabel.text = handler.hasSubmittedPrompt
+                ? UserText.aiChatFollowUpPlaceholder
+                : UserText.searchInputFieldPlaceholderDuckAI
             textView.autocapitalizationType = .sentences
 
             /// Auto-focus the text field when switching to duck.ai mode (OmniBar toggle only)
@@ -289,9 +289,9 @@ class SwitchBarTextEntryView: UIView {
             textView.returnKeyType = .search
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
-            textView.keyboardType = .default
+            textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
             textView.returnKeyType = .default
-            if handler.isUsingFadeOutAnimation && textView.text.isEmpty {
+            if handler.shouldDisableAutocorrectOnEmpty && textView.text.isEmpty {
                 disableAutoCorrectionAndSpellChecking()
             } else {
                 enableAutoCorrectionAndSpellChecking()
@@ -307,14 +307,15 @@ class SwitchBarTextEntryView: UIView {
 
     private func updateButtonState() {
         let newButtonState = handler.buttonState
+        buttonsView.isAIVoiceChatEnabled = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
 
         if newButtonState != currentButtonState {
-            currentButtonState = newButtonState
-
-            // Prevent unexpected animations of this change
+            // UIStackView animates `isHidden` changes that land inside an animation block;
+            // lay out `self` so `buttonsView`'s frame settles here, not on a later pass.
             UIView.performWithoutAnimation {
+                currentButtonState = newButtonState
                 adjustTextViewContentInset()
-                buttonsView.layoutIfNeeded()
+                layoutIfNeeded()
             }
         }
     }
@@ -370,7 +371,7 @@ class SwitchBarTextEntryView: UIView {
 
         if isUnexpandedURL() ||
             // https://app.asana.com/1/137249556945/project/392891325557410/task/1210916875279070?focus=true
-            textView.text.isBlank {
+            (isExpandable ? textView.text.isEmpty : textView.text.isBlank) {
 
             /// When empty (or showing an unexpanded URL), size to one line  to avoid clipping at larger accessibility sizes.
             let requiredEmptyStateHeight = requiredHeightForSingleLineContent()
@@ -448,6 +449,17 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
+    func refreshFireMode(fireMode: Bool) {
+        applyFireModeAppearance(isFireTab: fireMode)
+    }
+
+    private func applyFireModeAppearance(isFireTab: Bool) {
+        overrideUserInterfaceStyle = isFireTab ? .dark : .unspecified
+        textView.tintColor = isFireTab
+            ? UIColor(singleUseColor: .fireModeAccent)
+            : UIColor(designSystemColor: .accent)
+    }
+
     private func setupSubscriptions() {
         handler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
@@ -499,10 +511,21 @@ class SwitchBarTextEntryView: UIView {
                 self?.updateButtonState()
             }
             .store(in: &cancellables)
+
+        handler.hasSubmittedPromptPublisher
+            .receive(on: DispatchQueue.main)
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                guard let self, self.currentMode == .aiChat else { return }
+                self.placeholderLabel.text = self.handler.hasSubmittedPrompt
+                    ? UserText.aiChatFollowUpPlaceholder
+                    : UserText.searchInputFieldPlaceholderDuckAI
+            }
+            .store(in: &cancellables)
     }
 
     private func updateAutoCorrectionSetupForAIChat(for text: String) {
-        guard handler.isUsingFadeOutAnimation && currentMode == .aiChat else { return }
+        guard handler.shouldDisableAutocorrectOnEmpty, currentMode == .aiChat else { return }
 
         let isTextEmpty = text.isEmpty
         let stateChanged = isTextEmpty != wasTextEmptyForAutocorrection
@@ -513,7 +536,7 @@ class SwitchBarTextEntryView: UIView {
         if isTextEmpty {
             disableAutoCorrectionAndSpellChecking()
         } else {
-            textView.keyboardType = .default
+            textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
             textView.returnKeyType = .default
             enableAutoCorrectionAndSpellChecking()
         }
@@ -574,7 +597,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         updatePlaceholderVisibility()
         updateButtonState()
         updateTextViewHeight()
-        handler.updateCurrentText(textView.text ?? "")
+        handler.updateCurrentText((textView.text ?? "").strippingDictationPlaceholder)
         handler.markUserInteraction()
 
         // On iPad, reload input views on each keystroke (old behavior, without fade-out animation)

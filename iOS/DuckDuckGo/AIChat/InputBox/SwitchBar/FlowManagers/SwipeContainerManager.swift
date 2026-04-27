@@ -91,6 +91,57 @@ final class SwipeContainerManager: NSObject {
         manager.installInContainerView(chatPageContainer, parentViewController: containerViewController)
     }
 
+    /// Overlays the search page on the visible area, or returns it to its natural position.
+    func setSearchPageVisible(_ visible: Bool, animated: Bool) {
+        if switchBarHandler.isUsingFadeOutAnimation {
+            applySearchPageFade(visible, animated: animated)
+        } else {
+            applySearchPageSlide(visible, animated: animated)
+        }
+    }
+
+    /// Pages already overlap — control visibility with alpha.
+    private func applySearchPageFade(_ visible: Bool, animated: Bool) {
+        let alpha: CGFloat = visible ? 1.0 : 0.0
+        if visible {
+            searchPageContainer.superview?.bringSubviewToFront(searchPageContainer)
+        }
+        if animated {
+            UIView.animate(withDuration: 0.2) { self.searchPageContainer.alpha = alpha }
+        } else {
+            searchPageContainer.alpha = alpha
+        }
+    }
+
+    /// Pages are side-by-side — translate the search page over the chat page.
+    private func applySearchPageSlide(_ visible: Bool, animated: Bool) {
+        if visible {
+            let pageWidth = swipeContainerViewController.swipeScrollView.frame.width
+            searchPageContainer.transform = CGAffineTransform(translationX: pageWidth, y: 0)
+            searchPageContainer.superview?.bringSubviewToFront(searchPageContainer)
+            searchPageContainer.alpha = 1.0
+        } else {
+            let fadeOut = {
+                self.searchPageContainer.alpha = 0.0
+            }
+            let resetTransform = { (_: Bool) in
+                self.searchPageContainer.transform = .identity
+                self.searchPageContainer.alpha = 1.0
+            }
+            if animated {
+                UIView.animate(withDuration: 0.2, animations: fadeOut, completion: resetTransform)
+            } else {
+                fadeOut()
+                resetTransform(true)
+            }
+        }
+    }
+
+    /// Restores the chat page container visibility after URL fallback hides.
+    func restoreChatPageVisibility() {
+        chatPageContainer.alpha = 1.0
+    }
+
     func syncVisibleMode(animated: Bool) {
         if switchBarHandler.isUsingFadeOutAnimation {
             fadeOutContainerViewController.setMode(switchBarHandler.currentToggleState)

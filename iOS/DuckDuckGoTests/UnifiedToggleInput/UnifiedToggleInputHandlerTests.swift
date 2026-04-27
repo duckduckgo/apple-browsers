@@ -64,6 +64,17 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertFalse(sut.isCurrentTextValidURL)
     }
 
+    // MARK: - Fire Tab
+
+    func test_initialState_isFireTab_defaultsFalse() {
+        XCTAssertFalse(sut.isFireTab)
+    }
+
+    func test_init_withFireTabTrue_setsIsFireTab() {
+        sut = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isFireTab: true)
+        XCTAssertTrue(sut.isFireTab)
+    }
+
     // MARK: - updateCurrentText
 
     func test_updateCurrentText_setsCurrentText() {
@@ -196,6 +207,23 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
 
         sut.setToggleState(.search)
         waitForExpectations(timeout: 1)
+    }
+
+    func test_setToggleState_sameState_doesNotPublishChange() {
+        sut.setToggleState(.search)
+
+        let expectation = expectation(description: "toggleStatePublisher does not fire")
+        expectation.isInverted = true
+        sut.toggleStatePublisher
+            .dropFirst()
+            .sink { _ in
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.setToggleState(.search)
+
+        waitForExpectations(timeout: 0.1)
     }
 
     // MARK: - isVoiceSearchEnabled

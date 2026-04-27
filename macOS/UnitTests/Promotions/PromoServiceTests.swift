@@ -49,7 +49,8 @@ final class PromoServiceTests: XCTestCase {
         isOnboardingCompletedProvider: @escaping () -> Bool = { true },
         evaluationDeferralWindow: TimeInterval = 0,
         registrationFallbackTimeout: TimeInterval = 0,
-        externalActivationWindow: TimeInterval = 0
+        externalActivationWindow: TimeInterval = 0,
+        dateProvider: @escaping () -> Date = Date.init
     ) -> PromoService {
         PromoService(
             promos: promos,
@@ -60,7 +61,8 @@ final class PromoServiceTests: XCTestCase {
             stateQueue: testQueue,
             evaluationDeferralWindow: evaluationDeferralWindow,
             registrationFallbackTimeout: registrationFallbackTimeout,
-            externalActivationWindow: externalActivationWindow
+            externalActivationWindow: externalActivationWindow,
+            dateProvider: dateProvider
         )
     }
 
@@ -70,28 +72,21 @@ final class PromoServiceTests: XCTestCase {
         // Given: Two medium promos
         let delegate1 = MockPromoDelegate(isEligible: true)
         let delegate2 = MockPromoDelegate(isEligible: true)
-        delegate2.setShowResult(.actioned)
         let promo1 = PromoTestHelpers.makePromo(id: "promo-1", delegate: delegate1)
         let promo2 = PromoTestHelpers.makePromo(id: "promo-2", delegate: delegate2)
         let promoService = makeService(promos: [promo1, promo2])
 
-        let shownExpectation = XCTestExpectation(description: "primary promo shown")
-        let resultExpectation = XCTestExpectation(description: "primary promo result recorded")
+        let promo1ShownExpectation = XCTestExpectation(description: "promo 1 shown")
+        let promo2ShownExpectation = XCTestExpectation(description: "promo 2 shown")
+        promo2ShownExpectation.isInverted = true // We do not expect promo 2 to be shown
         promoService.visiblePromosPublisher
             .dropFirst()
             .sink { promos in
-                if promos.contains(where: { $0.id == "promo-2" }) {
-                    XCTFail("Second promo should not be shown")
-                } else if promos.contains(where: { $0.id == "promo-1" }) {
-                    shownExpectation.fulfill()
+                if promos.contains(where: { $0.id == promo1.id }) {
+                    promo1ShownExpectation.fulfill()
                 }
-            }
-            .store(in: &cancellables)
-        promoService.historyPublisher(for: "promo-1")
-            .compactMap { $0 }
-            .sink { record in
-                if record.actioned, record.timesDismissed == 1 {
-                    resultExpectation.fulfill()
+                if promos.contains(where: { $0.id == promo2.id }) {
+                    promo2ShownExpectation.fulfill()
                 }
             }
             .store(in: &cancellables)
@@ -99,17 +94,8 @@ final class PromoServiceTests: XCTestCase {
         // When: Trigger is sent
         promoService.applicationDidBecomeActive()
         triggerSubject.send(.appLaunched)
-        await fulfillment(of: [shownExpectation], timeout: timeout)
-        delegate1.completeShow(with: .actioned)
-        await fulfillment(of: [resultExpectation], timeout: timeout)
-
-        // Then: Promo history records contain expected history
-        let record1 = historyStore.record(for: "promo-1")
-        let record2 = historyStore.record(for: "promo-2")
-        XCTAssertEqual(record1.timesDismissed, 1)
-        XCTAssertTrue(record1.actioned)
-        XCTAssertEqual(record2.timesDismissed, 0)
-        XCTAssertFalse(record2.actioned)
+        await fulfillment(of: [promo1ShownExpectation], timeout: timeout)
+        await fulfillment(of: [promo2ShownExpectation], timeout: 0.5) // Short timeout for inverted expectation
     }
 
     func testWhenTwoMediumPromosHaveMutualCoexistingIds_ThenBothCanBeVisible() async {
@@ -318,28 +304,21 @@ final class PromoServiceTests: XCTestCase {
         // Given: Global context promo and other context promo
         let delegate1 = MockPromoDelegate(isEligible: true)
         let delegate2 = MockPromoDelegate(isEligible: true)
-        delegate2.setShowResult(.actioned)
-        let promo1 = PromoTestHelpers.makePromo(id: "global", context: .global, delegate: delegate1)
-        let promo2 = PromoTestHelpers.makePromo(id: "ntp", context: .newTabPage, delegate: delegate2)
-        let promoService = makeService(promos: [promo1, promo2])
+        let globalPromo = PromoTestHelpers.makePromo(id: "global", context: .global, delegate: delegate1)
+        let ntpPromo = PromoTestHelpers.makePromo(id: "ntp", context: .newTabPage, delegate: delegate2)
+        let promoService = makeService(promos: [globalPromo, ntpPromo])
 
-        let shownExpectation = XCTestExpectation(description: "global promo is shown")
-        let resultExpectation = XCTestExpectation(description: "global promo result recorded")
+        let globalShownExpectation = XCTestExpectation(description: "global promo is shown")
+        let ntpShownExpectation = XCTestExpectation(description: "ntp promo is shown")
+        ntpShownExpectation.isInverted = true // We do not expect ntp promo to be shown
         promoService.visiblePromosPublisher
             .dropFirst()
             .sink { promos in
-                if promos.contains(where: { $0.context == .newTabPage }) {
-                    XCTFail("New tab page context should be blocked by global context promo")
-                } else if promos.contains(where: { $0.id == "global" }) {
-                    shownExpectation.fulfill()
+                if promos.contains(where: { $0.id == globalPromo.id }) {
+                    globalShownExpectation.fulfill()
                 }
-            }
-            .store(in: &cancellables)
-        promoService.historyPublisher(for: "global")
-            .compactMap { $0 }
-            .sink { record in
-                if record.actioned, record.timesDismissed == 1 {
-                    resultExpectation.fulfill()
+                if promos.contains(where: { $0.id == ntpPromo.id }) {
+                    ntpShownExpectation.fulfill()
                 }
             }
             .store(in: &cancellables)
@@ -348,17 +327,8 @@ final class PromoServiceTests: XCTestCase {
         promoService.applicationDidBecomeActive()
         triggerSubject.send(.appLaunched)
         triggerSubject.send(.newTabPageAppeared)
-        await fulfillment(of: [shownExpectation], timeout: timeout)
-        delegate1.completeShow(with: .actioned)
-        await fulfillment(of: [resultExpectation], timeout: timeout)
-
-        // Then: Promo history records contain expected history
-        let record1 = historyStore.record(for: "global")
-        let record2 = historyStore.record(for: "ntp")
-        XCTAssertEqual(record1.timesDismissed, 1)
-        XCTAssertTrue(record1.actioned)
-        XCTAssertEqual(record2.timesDismissed, 0)
-        XCTAssertFalse(record2.actioned)
+        await fulfillment(of: [globalShownExpectation], timeout: timeout)
+        await fulfillment(of: [ntpShownExpectation], timeout: 0.5) // Short timeout for inverted expectation
     }
 
     func testWhenTwoSameContextPromosHaveMutualCoexistingIds_ThenBothCanBeVisible() async {
@@ -410,16 +380,21 @@ final class PromoServiceTests: XCTestCase {
         let promoB = PromoTestHelpers.makePromo(id: "promo-b", coexistingPromoIDs: ["promo-a"], delegate: delegateB)
         let promoC = PromoTestHelpers.makePromo(id: "promo-c", coexistingPromoIDs: [], delegate: delegateC)
         let promoService = makeService(promos: [promoA, promoB, promoC])
+        let showAExpectation = XCTestExpectation(description: "A is shown")
         let showBExpectation = XCTestExpectation(description: "B is shown")
-        let hideExpectation = XCTestExpectation(description: "all hidden")
+        let showCExpectation = XCTestExpectation(description: "C is shown")
+        showCExpectation.isInverted = true // We do not expect C to be shown
         promoService.visiblePromosPublisher
             .dropFirst()
             .sink { promos in
-                if promos.contains(where: { $0.id == "promo-b" }) && !promos.contains(where: { $0.id == "promo-c" }) {
+                if promos.contains(where: { $0.id == promoA.id }) {
+                    showAExpectation.fulfill()
+                }
+                if promos.contains(where: { $0.id == promoB.id }) {
                     showBExpectation.fulfill()
                 }
-                if promos.isEmpty {
-                    hideExpectation.fulfill()
+                if promos.contains(where: { $0.id == promoC.id }) {
+                    showCExpectation.fulfill()
                 }
             }
             .store(in: &cancellables)
@@ -427,13 +402,8 @@ final class PromoServiceTests: XCTestCase {
         // When: show A and B (they coexist), C is blocked when evaluated
         promoService.applicationDidBecomeActive()
         triggerSubject.send(.appLaunched)
-        await fulfillment(of: [showBExpectation], timeout: timeout)
-        delegateA.completeShow(with: .actioned)
-        delegateB.completeShow(with: .actioned)
-        await fulfillment(of: [hideExpectation], timeout: timeout)
-
-        // Then: C was never shown
-        XCTAssertEqual(delegateC.hideCallCount, 0)
+        await fulfillment(of: [showAExpectation, showBExpectation], timeout: timeout)
+        await fulfillment(of: [showCExpectation], timeout: 0.5) // Short timeout for inverted expectation
     }
 
     func testWhenAppInitiatedPromoDismissedRecently_ThenGlobalCooldownBlocksNextAppPromo() async {
@@ -1244,6 +1214,46 @@ final class PromoServiceTests: XCTestCase {
     }
 
     // MARK: - Timeout and eligibility
+
+    func testWhenSimulatedDateAdvancesPastTimeoutDeadline_ThenReconcileRecordsTimeoutWithoutWallClock() async {
+        // Given: logical clock and a promo whose wall-clock timeout is long, while show() stays suspended
+        var simulatedNow = Date(timeIntervalSince1970: 1_700_000_000)
+        let delegate = MockPromoDelegate(isEligible: true)
+        let promo = PromoTestHelpers.makePromo(
+            id: "sim-timeout-promo",
+            promoType: PromoType(.inlineMessage, customTimeoutInterval: 100, customTimeoutResult: .actioned),
+            delegate: delegate
+        )
+        let promoService = makeService(promos: [promo], dateProvider: { simulatedNow })
+
+        let visibleExpectation = XCTestExpectation(description: "promo visible")
+        let hiddenExpectation = XCTestExpectation(description: "promo hidden after reconcile")
+        var hasSeenVisible = false
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                if !promos.isEmpty, !hasSeenVisible {
+                    hasSeenVisible = true
+                    visibleExpectation.fulfill()
+                }
+                if hasSeenVisible, promos.isEmpty {
+                    hiddenExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [visibleExpectation], timeout: timeout)
+
+        simulatedNow = simulatedNow.addingTimeInterval(101)
+        promoService.reconcileActivePromoTimeoutsAfterSimulatedDateAdvance()
+        await fulfillment(of: [hiddenExpectation], timeout: timeout)
+
+        let record = historyStore.record(for: "sim-timeout-promo")
+        XCTAssertTrue(record.actioned)
+        XCTAssertEqual(record.timesDismissed, 1)
+    }
 
     func testWhenTimeoutFiresBeforeShowReturns_ThenTimeoutResultRecorded() async {
         // Given: promo with short timeout

@@ -94,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Duck.ai-röst";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Redigera bokmärke";
 
@@ -106,12 +109,14 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Flikar och data rensade";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Rensa flikar, data och Duck.ai-chattar";
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Öppna i bakgrunden";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Ny Fire-flik";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Öppna på en ny Fire-flik";
 /* Create New Tab action */
 "action.title.newTabAction" = "Ny flik";
 
@@ -201,6 +206,21 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI-funktioner";
+
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Välj foto";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Ta ett foto";
+
+/* Title for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.title" = "Anpassa svar";
+
+/* Subtitle for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.subtitle" = "Hitta aktuell information";
+
+/* Title for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.title" = "Webbsökning";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Befintliga bokmärken kommer inte att kopieras.";
@@ -345,12 +365,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Sök med DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Sökförslag inkluderar nu dina nyligen besökta webbplatser. Stäng av funktionen i inställningarna, eller rensa när som helst med 🔥 Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Samma integritet.\nBättre sökförslag!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Byt till flik";
@@ -862,6 +876,9 @@
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Nej tack";
 
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Inte nu";
+
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Förvara ditt lösenord säkert på enheten med DuckDuckGo Lösenord och autofyll.";
 
@@ -927,6 +944,15 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Uppdatera användarnamn?";
+
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Tillåt ljud och video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Blockera ljud och video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Blockera ljud";
 
 /* No comment provided by engineer. */
 "Available Products" = "Tillgängliga produkter";
@@ -1079,10 +1105,13 @@
 "Confirm" = "Bekräfta";
 
 /* No comment provided by engineer. */
-"Contextual Onboarding" = "Kontextuell onboarding";
-
-/* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
+
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Radera chatt";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Radera den här chatten?";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Hoppa över";
@@ -1164,6 +1193,9 @@
 
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Överraska mig!";
+
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Hitta **DuckDuckGo** i listan och tryck sedan på **Duck.ai Voice** för att lägga till den.";
 
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Hitta **DuckDuckGo** i listan och tryck sedan på **VPN-kontroll** för att lägga till det";
@@ -1447,19 +1479,29 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "De senaste ändringarna på YouTube har påverkat funktionaliteten hos Duck Player. Vi arbetar för att åtgärda problemen och tackar för din förståelse.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Tryck på widgeten för att redigera den och ställ sedan in **Duck.ai** och **Duck.ai Voice** som genvägar";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Hitta och välj **DuckDuckGo**, svep sedan till **Anpassade genvägar** och välj **Lägg till widget**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Bifoga sidans innehåll";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Skickat med ditt meddelande till Duck.ai";
 
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Senaste chattar";
 
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Senaste chattar";
 
-/* Title for the Duck.ai contextual onboarding screen */
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Visa alla chattar";
 
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Lägg till Duck.ai röstgenväg till din kontrollcenter";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGos AI-funktioner är privata och valfria. Dina data används inte för att träna AI.";
@@ -1467,8 +1509,20 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Bifoga sidans innehåll";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Fråga om sidan";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Sammanfatta denna sida";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Sammanfatta sidan";
+
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Lägg till Duck.ai i Kontrollcenter";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Lägg till Duck.ai-widgeten på startsidan";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Visa Duck.ai-knappar och -länkar i DuckDuckGo-sökresultaten.";
@@ -1481,6 +1535,9 @@
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Webbläsargenvägar";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Prata med Duck.ai via Siri";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adressfält";
@@ -1499,6 +1556,30 @@
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Genvägar";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Med Siri-genvägar kan du starta en Duck.ai-röstchatt med ett snabbt röstkommando, till exempel ”Siri, starta DuckDuckGos röstchatt”. Det är ett snabbt sätt att börja chatta med Duck.ai utan att använda händerna.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, starta DuckDuckGos röstchatt.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, prata med DuckDuckGo.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, röstchatta med DuckDuckGo.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Prata med Duck.ai med hjälp av Siri!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Alla chattar är %@ privata";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "privata";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo för iOS";
@@ -1572,14 +1653,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Återuppta i Duck Player";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Öppna alltid YouTube-videor i Duck Player";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videor som öppnas i Duck Player spelas upp automatiskt. Inaktivera det här om du vill starta uppspelningen av videor i Duck Player manuellt.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Spela upp videor automatiskt";
+/* Label for the autoplay toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Videor med automatisk uppspelning";
+
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Öppnar videor i ett visningsläge som förhindrar att det du tittar på påverkar ditt YouTube-flöde.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Aktivera Duck Player";
 
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Experimentell";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Med Duck Player kan du titta på YouTube utan riktade annonser och förhindra att tittaraktivitet påverkar dina rekommendationer.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo tillhandahåller allt du behöver för att skydda dig själv när du surfar på webben.";
@@ -1763,6 +1856,20 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Ett okänt fel har inträffat";
+
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Växlar till denna flik";
+
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Senast använda Fire Tab";
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Gå tillbaka till %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Återgå till…";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Gå tillbaka till %1$@, %2$@";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2064,8 +2171,52 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Välj vad som ska raderas";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Logga in på en webbplats med ett annat konto";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Surfa utan att spara lokal historik";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Felsöka webbplatser";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire-flikar är isolerade från andra webbläsardata. Deras data rensas när du stänger dem alla. De ger dig samma spårningsskydd som andra flikar.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Ny Fire-flik";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire-flikar";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Ny";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Nytt! Surfa utan att spara lokal historik eller logga in på webbplatser med ett annat konto.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Inte nu";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Prova Fire-flikar";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Prova Fire-flikar";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Testa Fire-flikar för att bläddra utan att spara lokal historik.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Nya: Fire-flikar";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire-flik";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luftström";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Inferno Klassisk";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Inferno";
@@ -2125,7 +2276,10 @@
 "import.passwords.promo.title" = "Importera dina lösenord till DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Fråga privat";
+"input.field.placeholder.duckai" = "Fråga vad som helst privat";
+
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Ställ en följdfråga...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Installera tillägg";
@@ -2180,6 +2334,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Sök eller ange adress";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Ny Fire-flik";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Ny flik";
@@ -2346,6 +2503,18 @@
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "VPN har kopplats från på grund av att abonnemanget har gått ut. Prenumerera på DuckDuckGo för att återansluta VPN-tjänsten.";
 
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Det gick inte att autentisera. Kontrollera att ditt abonnemang är aktivt och försök igen.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "Det gick inte att ansluta till en VPN-server. Försök igen senare.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Ditt abonnemang har gått ut. Abonnera igen för att ansluta till en VPN-server.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Ett oväntat fel uppstod. Försök igen. Om problemet kvarstår kan du bläddra till **Om** och trycka på **Vanliga frågor och support** för hjälp.";
+
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN kunde inte ansluta. Försök igen senare.";
 
@@ -2442,10 +2611,7 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "DNS-server";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Försök igen senare.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
+/* Connection failed error title shown in NetworkProtection's status view. */
 "network.protection.status.view.error.connection.failed.title" = "Det gick inte att ansluta.";
 
 /* IP Address label shown in NetworkProtection's status view. */
@@ -2587,6 +2753,9 @@
 "No Logs" = "Inga loggar";
 
 /* No comment provided by engineer. */
+"No matches for \"%@\"" = "Inga träffar för \"%@\"";
+
+/* No comment provided by engineer. */
 "No messages" = "Inga meddelanden";
 
 /* No comment provided by engineer. */
@@ -2612,6 +2781,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "YouTube-annonsblockering på";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Jag fattar";
@@ -2667,8 +2839,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Hoppa över";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Hej!\n\nÄr du redo för en snabbare webbläsare som också skyddar dig?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Hej!\n\nÄr du redo för en snabbare webbläsare som skyddar dig och låter dig själv bestämma när och hur du vill använda AI?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Nästa";
@@ -2682,11 +2854,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Inställningar > AI-funktioner.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vill du ha enkel tillgång till privat AI-chatt?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Växla mellan\nSök och Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Vi kör!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Sök endast";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vill du ha enkel tillgång till privat AI-chatt i adressfältet?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Då sätter vi igång!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Jag har varit här förut";
@@ -2703,6 +2881,21 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Innan jag glömmer ...";
 
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Visste du det?";
+
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Privat. Snabbt. Färre annonser.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "Det är DuckDuckGo Search!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Är du redo för en snabbare webbläsare som skyddar dig och låter dig själv bestämma när och hur du vill använda AI?";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Hej!";
+
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Vill du återställa dina bokmärken, lösenord med mera från din tidigare DuckDuckGo-synkronisering?";
 
@@ -2715,15 +2908,6 @@
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Vi fortsätter där du slutade";
 
-/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.message" = "Privat. Snabbt. Färre annonser.";
-/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.title" = "Det är DuckDuckGo Search!";
-/* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Är du redo för en snabbare webbläsare som också skyddar dig?";
-/* The title of the onboarding intro */
-"onboarding.rebranding.intro.title" = "Hej!";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Börja bläddra";
 
@@ -2735,6 +2919,9 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Jag förstår! Jag hoppar över de andra tipsen.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Prova gratis!";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Prova gratis!";
@@ -3013,9 +3200,6 @@
 "prompt.x-safari-https.try-open.title" = "Webbplatsen vill öppnas i Safari.";
 
 /* No comment provided by engineer. */
-"REBRANDED" = "MED ETT NYTT NAMN";
-
-/* No comment provided by engineer. */
 "Recent Processing Logs" = "Senaste bearbetningsloggar";
 
 /* No comment provided by engineer. */
@@ -3045,6 +3229,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skannar ...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Ta bort Fire Tabs och deras data?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Ta bort flikar och webbplatsdata?";
 
@@ -3129,6 +3315,9 @@
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Lägg till widget på startsidan";
 
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Lägg till Duck.ai-genvägar på din startskärm";
+
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Lägg till DuckDuckGo VPN-widgeten på din startsida";
 
@@ -3141,11 +3330,35 @@
 /* Settings screen cell title for toggling tracker blocking animation in address bar */
 "settings.address.trackers.animation" = "Visa i adressfältet";
 
-/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_and_duckai" = "Sök & Duck.ai";
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Välj vad du ser när du återgår efter %@ av inaktivitet.";
 
-/* Title for the 'Search Only' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_only" = "Sök endast";
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 timme";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d timmar";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 minut";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d minuter";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 sekund";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d sekunder";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Efter inaktivitet";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Senast använda flik";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Ny flik";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Prova det nya alternativet för att växla mellan sökning och Duck.ai i adressfältet.";
@@ -3189,9 +3402,6 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adressfältsläge";
 
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Experimentell webbläsarmeny";
-
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Öppna länkar i associerade appar";
 
@@ -3212,12 +3422,6 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Klart";
-
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Rensa flikar och data";
-
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Rensa flikar, data och Duck.ai-chattar";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Stäng alla öppna flikar";
@@ -3279,20 +3483,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Radera data automatiskt";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Autouppspelning";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Inställningar för Duck Player";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Inställningarna för automatisk uppspelning gäller bara för nyöppnade flikar. Ändringar kan inte tillämpas på befintliga flikar om inte programmet startas om. Hantera automatisk uppspelning i Duck Player genom att gå till ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Webbläsarfeedback";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button raderar också Duck.ai-historik, inklusive fästa chattar.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Rensa Duck.ai-chattar";
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Rensa webbläsardata";
-
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Rensa data automatiskt";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Slutför din inställning";
@@ -3312,12 +3519,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Anpassa";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Rensar alla flikar, Duck.ai-chattar och data för webbplatser som inte har Fireproof.";
-
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Rensar alla flikar och data för webbplatser som inte har Fireproof.";
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datarensning";
 
@@ -3326,6 +3527,21 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardwebbläsare";
+
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Reglagets standardläge på nya flikar.";
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
+"settings.default.omnibar.mode.header" = "Reglagets läge";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Senast använt";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Sök";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Ta bort Duck.ai-chattar";
@@ -3372,9 +3588,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animation för brännarknapp";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Brandsäkra webbplatser";
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproof-webbplatser";
 
@@ -3416,6 +3629,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Hantera konto";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Media";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Mer från DuckDuckGo";
@@ -3744,11 +3960,11 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Abonnemangstyper";
 
-/* Subscription Removal confirmation message */
-"subscription.cancel.message" = "Ditt abonnemang har tagits bort från den här enheten.";
-
 /* Button to cancel a pending downgrade of the subscription */
 "subscription.cancel.downgrade.button" = "Avbryt nedgradering";
+
+/* Subscription Removal confirmation message */
+"subscription.cancel.message" = "Ditt abonnemang har tagits bort från den här enheten.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Din plan kommer att nedgraderas till %1$@ den %2$@.";
@@ -3970,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Radera serverdata";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Alla enheter kopplas bort och dina synkroniserade data raderas från servern.";
+"sync.delete.all.confirm.message" = "Din säkerhetskopia kommer att raderas från servern. Alla enheter kommer att kopplas bort från synkronisering, men inget kommer att raderas från någon enhet.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Radera serverdata?";
@@ -4056,15 +4272,36 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Tyvärr är synkronisering och säkerhetskopiering inte längre tillgängliga i den här appversionen. Uppdatera DuckDuckGo till den senaste versionen för att fortsätta.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Stäng flik";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Fliken oläst";
+
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Stäng Fire-flik";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Stäng flik";
 /* Accessibility label on remove button */
 "tab.close.home" = "Stäng hemfliken";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Stäng %1$@ på %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire Tab";
+
+/* New tab title */
+"tab.new.title" = "Ny flik";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Öppna hemfliken";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Öppna ny flik";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Öppna Fire-flik";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Öppna %1$@ på %2$@";
 
@@ -4479,6 +4716,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Skaffa DuckDuckGo för Windows!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo tar bort videoannonser på YouTube, så du kan titta på videor utan avbrott.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "Blockera YouTube-annonser";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Annonsblockering på YouTube";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Bokmärken";
 
@@ -4494,44 +4740,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Vad vill du importera?";
 
-/* Accessibility hint for the escape hatch card */
-"escapeHatch.accessibility.hint" = "Växlar till denna flik";
-
-/* Accessibility label for escape hatch card; %@ is the tab title */
-"escapeHatch.returnTo.accessibility.label" = "Gå tillbaka till %@";
-
-/* Label shown on the escape hatch card above the tab title */
-"escapeHatch.returnTo.label" = "Återgå till…";
-
-/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
-"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Gå tillbaka till %1$@, %2$@";
-
-/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Välj vad du ser när du återgår efter %@ av inaktivitet.";
-
-/* Idle interval 1 hour for settings footer */
-"settings.afterInactivity.idle.interval.hour" = "1 timme";
-
-/* Idle interval in hours for settings footer (plural) */
-"settings.afterInactivity.idle.interval.hours" = "%d timmar";
-
-/* Idle interval 1 minute for settings footer */
-"settings.afterInactivity.idle.interval.minute" = "1 minut";
-
-/* Idle interval in minutes for settings footer (plural) */
-"settings.afterInactivity.idle.interval.minutes" = "%d minuter";
-
-/* Idle interval 1 second for settings footer */
-"settings.afterInactivity.idle.interval.second" = "1 sekund";
-
-/* Idle interval in seconds for settings footer (plural) */
-"settings.afterInactivity.idle.interval.seconds" = "%d sekunder";
-
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Efter inaktivitet";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Senast använda flik";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Ny flik";

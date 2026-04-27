@@ -92,14 +92,16 @@ struct SettingsRootView: View {
         .accentColor(Color(designSystemColor: .textPrimary))
         .environmentObject(viewModel)
         .conditionalInsetGroupedListStyle()
-        .onAppear {
-            viewModel.onAppear()
+        .onFirstAppear {
+            viewModel.onFirstAppear()
+        } subsequently: {
+            viewModel.onSubsequentAppear()
         }
 
         // MARK: Deeplink Modifiers
 
         .sheet(isPresented: $shouldDisplayDeepLinkSheet, onDismiss: {
-            viewModel.onAppear()
+            viewModel.onSubsequentAppear()
             shouldDisplayDeepLinkSheet = false
         }, content: {
             if let target = deepLinkTarget {
@@ -240,7 +242,11 @@ struct SettingsRootView: View {
         case .restoreFlow:
             emailFlowNavigationDestination()
         case .duckPlayer:
-            SettingsDuckPlayerView().environmentObject(viewModel)
+            if viewModel.state.youTubeAdBlockingAvailable {
+                SettingsYouTubeAdBlockingView().environmentObject(viewModel)
+            } else {
+                SettingsDuckPlayerView().environmentObject(viewModel)
+            }
         case .netP:
             NetworkProtectionRootView()
         case .aiChat:

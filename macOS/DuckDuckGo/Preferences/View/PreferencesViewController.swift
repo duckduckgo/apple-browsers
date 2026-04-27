@@ -26,6 +26,7 @@ import VPN
 import AIChat
 import PrivacyConfig
 import Subscription
+import WebExtensions
 
 final class PreferencesViewController: NSViewController {
 
@@ -57,11 +58,14 @@ final class PreferencesViewController: NSViewController {
         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         aiChatPreferences: AIChatPreferences,
         aboutPreferences: AboutPreferences,
+        dockPreferences: DockPreferencesModel,
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
+        youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences,
         subscriptionManager: any SubscriptionManager,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
-        pinningManager: PinningManager
+        pinningManager: PinningManager,
+        adBlockingAvailability: AdBlockingAvailabilityProviding
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -83,9 +87,12 @@ final class PreferencesViewController: NSViewController {
                                         cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                                         aiChatPreferences: aiChatPreferences,
                                         aboutPreferences: aboutPreferences,
+                                        dockPreferences: dockPreferences,
                                         accessibilityPreferences: accessibilityPreferences,
                                         duckPlayerPreferences: duckPlayerPreferences,
-                                        winBackOfferVisibilityManager: winBackOfferVisibilityManager)
+                                        youTubeAdBlockingPreferences: youTubeAdBlockingPreferences,
+                                        winBackOfferVisibilityManager: winBackOfferVisibilityManager,
+                                        adBlockingAvailability: adBlockingAvailability)
         super.init(nibName: nil, bundle: nil)
     }
 

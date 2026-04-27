@@ -112,6 +112,22 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("getAIChatNativeConfigValues propagates fire-window provider value", .timeLimit(.minutes(1)))
+    func testWhenFireWindowProviderReturnsTrueThenGetAIChatNativeConfigValuesPassesTrue() async {
+        handler.isFireWindowProvider = { true }
+        _ = await handler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock())
+        #expect(messageHandler.getNativeConfigValuesCalls == [true])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("getAIChatNativeConfigValues defaults to false when no provider set", .timeLimit(.minutes(1)))
+    func testWhenFireWindowProviderIsNilThenGetAIChatNativeConfigValuesPassesFalse() async {
+        handler.isFireWindowProvider = nil
+        _ = await handler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock())
+        #expect(messageHandler.getNativeConfigValuesCalls == [false])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("getAIChatNativePrompt calls messageHandler", .timeLimit(.minutes(1)))
     func testThatGetAIChatNativePromptCallsMessageHandler() async {
         _ = await handler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock())

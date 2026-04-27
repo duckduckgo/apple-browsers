@@ -37,7 +37,23 @@ protocol AIChatOmnibarControllerDelegate: AnyObject {
 /// to coordinate text input and submission.
 @MainActor
 final class AIChatOmnibarController {
+    enum ToolMode: Equatable {
+        case imageGeneration
+        case webSearch
+    }
+
     @Published private(set) var currentText: String = ""
+    @Published private(set) var activeToolMode: ToolMode?
+    @Published var hasImageAttachments: Bool = false
+
+    /// The last selected reasoning effort, persisted across sessions. `nil` if no selection has
+    /// been made, or the persisted raw value doesn't map to a known `AIChatReasoningEffort` case.
+    var selectedReasoningEffort: AIChatReasoningEffort? {
+        preferences.selectedReasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
+    }
+
+    var isImageGenerationMode: Bool { activeToolMode == .imageGeneration }
+    var isWebSearchMode: Bool { activeToolMode == .webSearch }
     weak var delegate: AIChatOmnibarControllerDelegate?
     private let aiChatTabOpener: AIChatTabOpening
     private let promptHandler: AIChatPromptHandler
@@ -82,6 +98,33 @@ final class AIChatOmnibarController {
     /// Whether the omnibar tools (customize, search toggle, image upload) are enabled.
     var isOmnibarToolsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarTools)
+    }
+
+    var isViewAllChatsEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatViewAllChatsNativeOmnibar)
+    }
+
+    /// Whether the image generation tool is available.
+    var isImageGenerationEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarImageGeneration)
+    }
+
+    /// Whether the web search tool is available.
+    var isWebSearchEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarWebSearch)
+    }
+
+    /// Whether the reasoning effort picker is available.
+    var isReasoningEffortEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarReasoningEffort)
+    }
+
+    func toggleImageGenerationMode() {
+        activeToolMode = isImageGenerationMode ? nil : .imageGeneration
+    }
+
+    func toggleWebSearchMode() {
+        activeToolMode = isWebSearchMode ? nil : .webSearch
     }
 
     /// Publisher that emits when the omnibar tools enabled state changes.
@@ -170,6 +213,8 @@ final class AIChatOmnibarController {
                 self.hasActiveSubscription = userTier != .free
                 self.models = remoteModels.map { AIChatModel(remoteModel: $0, userTier: userTier) }
                 self.clearStaleModelSelectionIfNeeded()
+                self.clearStaleReasoningEffortIfNeeded()
+                self.deactivateWebSearchIfUnsupported()
             } catch is CancellationError {
                 return
             } catch {
@@ -204,13 +249,21 @@ final class AIChatOmnibarController {
         currentFetchTask = Task { [weak self] in
             guard let self else { return }
 
-            let suggestions = await reader.fetchSuggestions(query: query.isEmpty ? nil : query)
+            let maxChats = isViewAllChatsEnabled ? reader.maxHistoryCount + 1 : reader.maxHistoryCount
+            let suggestions = await reader.fetchSuggestions(query: query.isEmpty ? nil : query, maxChats: maxChats)
 
             // Check if task was cancelled
             guard !Task.isCancelled else { return }
 
-            self.suggestionsViewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
+            let totalFetched = suggestions.pinned.count + suggestions.recent.count
+            let showViewAllChats = isViewAllChatsEnabled && totalFetched > reader.maxHistoryCount
+            self.suggestionsViewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent, showViewAllChats: showViewAllChats)
         }
+    }
+
+    /// Re-fetches suggestions from the database using the current query text.
+    func refreshSuggestions() {
+        fetchSuggestionsIfNeeded(query: currentText)
     }
 
     // MARK: - Public Methods
@@ -234,6 +287,23 @@ final class AIChatOmnibarController {
         }
     }
 
+    /// Clears the persisted reasoning effort if the current model no longer supports it, or if
+    /// the persisted raw value doesn't map to a known `AIChatReasoningEffort` case. Runs after
+    /// models are fetched, so a stale value persisted against an older model list doesn't linger
+    /// and get attached to future prompts.
+    private func clearStaleReasoningEffortIfNeeded() {
+        guard let effort = selectedReasoningEffort else {
+            // Wipe any unknown raw value we couldn't decode into the enum.
+            if preferences.selectedReasoningEffort != nil {
+                preferences.selectedReasoningEffort = nil
+            }
+            return
+        }
+        if !selectedModelReasoningEfforts.contains(effort) {
+            preferences.selectedReasoningEffort = nil
+        }
+    }
+
     /// The model ID to include in the prompt. Returns nil if the user has never
     /// explicitly selected a model, so the backend uses its default.
     var currentModelId: String? {
@@ -252,6 +322,14 @@ final class AIChatOmnibarController {
         return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? true
     }
 
+    /// Whether the currently selected model supports the WebSearch tool.
+    /// Returns true when models are unavailable (conservative default — Web Search menu item
+    /// remains visible until the model list is known).
+    var selectedModelSupportsWebSearch: Bool {
+        guard !models.isEmpty else { return true }
+        return models.first(where: { $0.id == persistedModelId })?.supportsTool(.webSearch) ?? true
+    }
+
     /// Image formats supported by the currently selected model (e.g. ["png", "jpeg", "webp"]).
     /// Returns a default set when models are unavailable.
     var selectedModelImageFormats: [String] {
@@ -259,10 +337,100 @@ final class AIChatOmnibarController {
         return models.first(where: { $0.id == persistedModelId })?.supportedImageFormats ?? ["png", "jpeg", "webp"]
     }
 
+    /// Supported reasoning effort levels for the currently selected model. Unknown raw values
+    /// returned by the backend are silently filtered out. This is the server-truth list — used to
+    /// validate persisted selections and to gate what we attach to submissions, so a value the
+    /// user actually picked still flows through unchanged (e.g. a stored `medium` keeps submitting
+    /// `medium` even after the model gains `high` support).
+    var selectedModelReasoningEfforts: [AIChatReasoningEffort] {
+        (models.first(where: { $0.id == persistedModelId })?.supportedReasoningEffort ?? [])
+            .compactMap(AIChatReasoningEffort.init(rawValue:))
+    }
+
+    /// Display-only variant of `selectedModelReasoningEfforts` for the picker menu. Picker
+    /// buckets collapse to a single menu item when the model advertises both efforts in a
+    /// bucket:
+    /// - Fast maps to the first supported effort from `none`, then `minimal` — `.minimal` is
+    ///   hidden when `.none` is also supported.
+    /// - Extended Reasoning maps to the first supported effort from `high`, then `medium` —
+    ///   `.medium` is hidden when `.high` is also supported.
+    /// Submission and validation paths must use the un-deduped list so a previously-picked value
+    /// (e.g. stored `.medium` or `.minimal`) keeps flowing to the backend unchanged.
+    var pickerReasoningEfforts: [AIChatReasoningEffort] {
+        var efforts = selectedModelReasoningEfforts
+        if efforts.contains(.none), efforts.contains(.minimal) {
+            efforts.removeAll { $0 == .minimal }
+        }
+        if efforts.contains(.high), efforts.contains(.medium) {
+            efforts.removeAll { $0 == .medium }
+        }
+        return efforts
+    }
+
+    /// The picker effort that visually represents the persisted selection. Returns the stored
+    /// effort directly when it's in the picker list; otherwise maps to its bucket equivalent
+    /// (`.medium` → `.high`, `.minimal` → `.none`) so the chip label/icon and the menu checkmark
+    /// stay in sync with what's actually submitted. Submission still sends the persisted value
+    /// unchanged via `effectiveReasoningEffort`.
+    var displayedReasoningEffort: AIChatReasoningEffort? {
+        guard let stored = selectedReasoningEffort else { return nil }
+        let efforts = pickerReasoningEfforts
+        if efforts.contains(stored) { return stored }
+        switch stored {
+        case .medium where efforts.contains(.high): return .high
+        case .minimal where efforts.contains(.none): return .none
+        default: return nil
+        }
+    }
+
+    /// Updates the selected reasoning effort and persists it for future sessions.
+    func updateSelectedReasoningEffort(_ effort: AIChatReasoningEffort?) {
+        preferences.selectedReasoningEffort = effort?.rawValue
+    }
+
+    /// The model ID to use for the current submission.
+    /// Returns nil when image generation mode is active — the mode field handles routing.
+    var effectiveModelId: String? {
+        isImageGenerationMode ? nil : currentModelId
+    }
+
+    /// The mode to include in the prompt payload (e.g., "image-generation").
+    var effectiveMode: String? {
+        isImageGenerationMode ? AIChatNativePrompt.imageGenerationMode : nil
+    }
+
+    /// The tool choice to include in the prompt payload (e.g., ["WebSearch"]).
+    var effectiveToolChoice: [String]? {
+        isWebSearchMode ? [AIChatRAGTool.webSearch.rawValue] : nil
+    }
+
+    /// The reasoning effort to include in the prompt payload as a raw server-contract value.
+    /// Returns nil when the feature flag is off, image generation mode is active, or the current
+    /// model doesn't list the persisted effort as supported — so we never send a stale value that
+    /// no longer applies to the active request.
+    var effectiveReasoningEffort: String? {
+        guard isReasoningEffortEnabled, !isImageGenerationMode else { return nil }
+        guard let effort = selectedReasoningEffort,
+              selectedModelReasoningEfforts.contains(effort) else { return nil }
+        return effort.rawValue
+    }
+
     /// Updates the selected model ID and persists it (along with its short name) for future sessions.
     func updateSelectedModel(_ modelId: String) {
         preferences.selectedModelId = modelId
         preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
+        // The newly selected model may not support the previously persisted reasoning effort.
+        // Clearing here keeps stale-effort handling in one place (see `clearStaleReasoningEffortIfNeeded`).
+        clearStaleReasoningEffortIfNeeded()
+        deactivateWebSearchIfUnsupported()
+    }
+
+    /// Clears Web Search mode if the currently selected model doesn't support the WebSearch tool.
+    /// Submitting a web-search prompt to an unsupported model fails on the duck.ai page, so the
+    /// mode must not remain active across a switch into such a model.
+    private func deactivateWebSearchIfUnsupported() {
+        guard isWebSearchMode, !selectedModelSupportsWebSearch else { return }
+        activeToolMode = nil
     }
 
     /// Updates the current text being typed by the user
@@ -276,6 +444,8 @@ final class AIChatOmnibarController {
 
     func cleanup() {
         currentText = ""
+        activeToolMode = nil
+        hasImageAttachments = false
         hasBeenActivated = false
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
@@ -304,11 +474,17 @@ final class AIChatOmnibarController {
     /// Submits the currently selected suggestion, if any.
     /// - Returns: `true` if a suggestion was submitted, `false` if no suggestion was selected.
     func submitSelectedSuggestion() -> Bool {
-        guard isSuggestionsEnabled,
-              let selectedSuggestion = suggestionsViewModel.selectedSuggestion else {
-            return false
+        guard isSuggestionsEnabled else { return false }
+
+        if suggestionsViewModel.isViewAllChatsSelected {
+            viewAllChats()
+            currentText = ""
+            return true
         }
 
+        guard let selectedSuggestion = suggestionsViewModel.selectedSuggestion else {
+            return false
+        }
         delegate?.aiChatOmnibarController(self, didSelectSuggestion: selectedSuggestion)
         currentText = ""
         return true
@@ -357,8 +533,19 @@ final class AIChatOmnibarController {
             }
     }
 
+    func viewAllChats() {
+        PixelKit.fire(AIChatPixel.aiChatViewAllChatsClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
+    }
+
     func submit() {
         guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return
+        }
+
+        // Block submission if too many images are attached and would be sent
+        let canSendImages = isImageGenerationMode || selectedModelSupportsImageUpload
+        if canSendImages, let attachments = attachmentsProvider?(), attachments.count > AIChatImageAttachmentsContainerView.maxAttachments {
             return
         }
 
@@ -373,12 +560,24 @@ final class AIChatOmnibarController {
 
         PixelKit.fire(AIChatPixel.aiChatAddressBarAIChatSubmitPrompt, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
+        if isImageGenerationMode {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarImageGenerationSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        } else if isWebSearchMode {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        }
+
+        // Capture mode/model/toolChoice/reasoning before async work — cleanup() may reset state
+        let modelId = effectiveModelId
+        let mode = effectiveMode
+        let toolChoice = effectiveToolChoice
+        let reasoningEffort = effectiveReasoningEffort
+
         Task { @MainActor in
             // Wait for any pending image resizes to complete
             await waitForAttachmentsReady?()
 
-            // Get attachments after resizes are complete
-            let attachments = attachmentsProvider?() ?? []
+            // Get attachments after resizes are complete — only include if model supports images or in image gen mode
+            let attachments = canSendImages ? (attachmentsProvider?() ?? []) : []
             let images = Self.nativePromptImages(from: attachments, supportedFormats: self.selectedModelImageFormats)
 
             if !attachments.isEmpty {
@@ -389,11 +588,11 @@ final class AIChatOmnibarController {
                 with: .query(trimmedText, shouldAutoSubmit: true),
                 behavior: .currentTab
             )
-            // Re-set prompt after tab opener to include images and model selection (tab opener overwrites with a plain query)
-            let modelId = self.currentModelId
-            let prompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true, images: images, modelId: modelId)
+            // Re-set prompt after tab opener to include images, model selection, and mode (tab opener overwrites with a plain query)
+            let prompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true, toolChoice: toolChoice, images: images, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)
             promptHandler.setData(prompt)
 
+            self.activeToolMode = nil
             onAttachmentsClearRequested?()
             delegate?.aiChatOmnibarControllerDidSubmit(self)
         }

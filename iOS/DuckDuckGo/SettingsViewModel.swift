@@ -35,6 +35,17 @@ import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
 import SERPSettings
 import Networking
+import WebExtensions
+
+enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
+    case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
+
+    static let youTubeAdBlockingEnabledDidChangeNotification = Notification.Name("youTubeAdBlockingEnabledDidChange")
+}
+
+struct YouTubeAdBlockingKeys: StoringKeys {
+    let youTubeAdBlockingEnabled = StorageKey<Bool>(YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabled)
+}
 
 final class SettingsViewModel: ObservableObject {
 
@@ -42,7 +53,6 @@ final class SettingsViewModel: ObservableObject {
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
     private(set) var privacyStore = PrivacyUserDefaults()
     lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
-    private lazy var dataClearingCapability: DataClearingCapable = DataClearingCapability.create(using: featureFlagger)
     private lazy var animator: FireButtonAnimator = FireButtonAnimator(appSettings: AppUserDefaults())
     private var legacyViewProvider: SettingsLegacyViewProvider
     private lazy var versionProvider: AppVersion = AppVersion.shared
@@ -55,6 +65,7 @@ final class SettingsViewModel: ObservableObject {
     let serpSettings: SERPSettingsProviding
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     private let tabSwitcherSettings: TabSwitcherSettings
+    private let autoplaySettings: AutoplaySettings
     let themeManager: ThemeManaging
     var experimentalAIChatManager: ExperimentalAIChatManager
     private let duckPlayerSettings: DuckPlayerSettings
@@ -67,7 +78,8 @@ final class SettingsViewModel: ObservableObject {
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     private let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
-    
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding
+
     private lazy var newBadgeVisibilityManager: NewBadgeVisibilityManaging = {
         NewBadgeVisibilityManager(
             keyValueStore: keyValueStore,
@@ -80,6 +92,10 @@ final class SettingsViewModel: ObservableObject {
     }()
 
     private var afterInactivityStorage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> {
+        keyValueStore.throwingKeyedStoring()
+    }
+
+    private var youTubeAdBlockingStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> {
         keyValueStore.throwingKeyedStoring()
     }
 
@@ -135,6 +151,8 @@ final class SettingsViewModel: ObservableObject {
 
     // View State
     @Published private(set) var state: SettingsState
+    private var lastEnabledDuckPlayerMode: DuckPlayerMode?
+    private var lastEnabledNativeYoutubeMode: NativeDuckPlayerYoutubeMode?
 
     // MARK: Cell Visibility
     enum Features {
@@ -172,6 +190,10 @@ final class SettingsViewModel: ObservableObject {
 
     var shouldShowHideAIGeneratedImagesSection: Bool {
         featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
+    }
+
+    var isDefaultOmnibarModeEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition)
     }
 
     var isTabSwitcherTrackerCountEnabled: Bool {
@@ -300,6 +322,20 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: $0 == .addressBar ? .settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
                 self.appSettings.currentRefreshButtonPosition = $0
                 self.state.refreshButtonPosition = $0
+            }
+        )
+    }
+
+    var autoplayBlockingModeBinding: Binding<AutoplayBlockingMode> {
+        Binding<AutoplayBlockingMode>(
+            get: {
+                self.state.autoplayBlockingMode
+            },
+            set: {
+                self.autoplaySettings.currentAutoplayBlockingMode = $0
+                self.state.autoplayBlockingMode = $0
+                Pixel.fire(pixel: .settingsAutoplayChanged,
+                          withAdditionalParameters: [PixelParameters.autoplayBlockingMode: $0.rawValue])
             }
         )
     }
@@ -481,7 +517,7 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.appSettings.duckPlayerMode = $0
                 self.state.duckPlayerMode = $0
-                
+
                 switch self.state.duckPlayerMode {
                 case .alwaysAsk:
                     Pixel.fire(pixel: Pixel.Event.duckPlayerSettingBackToDefault)
@@ -495,7 +531,87 @@ final class SettingsViewModel: ObservableObject {
             }
         )
     }
-    
+
+    private var resolvedDuckPlayerMode: DuckPlayerMode {
+        if let lastEnabledDuckPlayerMode {
+            return lastEnabledDuckPlayerMode
+        }
+        if let current = state.duckPlayerMode, current != .disabled {
+            return current
+        }
+        return .alwaysAsk
+    }
+
+    private var resolvedNativeYoutubeMode: NativeDuckPlayerYoutubeMode {
+        if let lastEnabledNativeYoutubeMode {
+            return lastEnabledNativeYoutubeMode
+        }
+        let current = state.duckPlayerNativeYoutubeMode
+        return current != .never ? current : .ask
+    }
+
+    var isDuckPlayerEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                return self.state.duckPlayerMode != .disabled
+            },
+            set: { newValue in
+                let oldMode = self.state.duckPlayerMode ?? .alwaysAsk
+
+                if !newValue {
+                    if oldMode != .disabled {
+                        self.lastEnabledDuckPlayerMode = oldMode
+                    }
+                    self.appSettings.duckPlayerMode = .disabled
+                    self.state.duckPlayerMode = .disabled
+                } else {
+                    let restoredMode = self.resolvedDuckPlayerMode
+                    self.appSettings.duckPlayerMode = restoredMode
+                    self.state.duckPlayerMode = restoredMode
+                }
+
+                if oldMode != self.state.duckPlayerMode {
+                    switch self.state.duckPlayerMode {
+                    case .enabled:
+                        Pixel.fire(pixel: .duckPlayerSettingAlwaysSettings)
+                    case .alwaysAsk:
+                        Pixel.fire(pixel: .duckPlayerSettingBackToDefault)
+                    case .disabled:
+                        Pixel.fire(pixel: .duckPlayerSettingNeverSettings)
+                    case .none:
+                        break
+                    }
+                }
+            }
+        )
+    }
+
+    var isAlwaysOpenBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                return self.state.duckPlayerMode == .enabled
+            },
+            set: { newValue in
+                let oldMode = self.state.duckPlayerMode ?? .alwaysAsk
+                let newMode: DuckPlayerMode = newValue ? .enabled : .alwaysAsk
+
+                self.appSettings.duckPlayerMode = newMode
+                self.state.duckPlayerMode = newMode
+
+                if oldMode != newMode {
+                    switch newMode {
+                    case .enabled:
+                        Pixel.fire(pixel: .duckPlayerSettingAlwaysSettings)
+                    case .alwaysAsk:
+                        Pixel.fire(pixel: .duckPlayerSettingBackToDefault)
+                    case .disabled:
+                        Pixel.fire(pixel: .duckPlayerSettingNeverSettings)
+                    }
+                }
+            }
+        )
+    }
+
     var duckPlayerOpenInNewTabBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.duckPlayerOpenInNewTab },
@@ -542,6 +658,22 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var youTubeAdBlockingEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.youTubeAdBlockingEnabled },
+            set: {
+                guard $0 != self.state.youTubeAdBlockingEnabled else { return }
+                try? self.youTubeAdBlockingStorage.set($0, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
+                self.state.youTubeAdBlockingEnabled = $0
+                DailyPixel.fireDailyAndCount(
+                    pixel: $0 ? .webExtensionAdBlockingEnabled : .webExtensionAdBlockingDisabled,
+                    pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+                )
+                NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
+            }
+        )
+    }
+
       var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
         Binding<NativeDuckPlayerYoutubeMode>(
             get: {
@@ -558,6 +690,66 @@ final class SettingsViewModel: ObservableObject {
                     self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeChoose)
                 case .never:
                     self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeDontShow)
+                }
+            }
+        )
+    }
+
+    var isShowDuckPlayerOnYoutubeBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                return self.state.duckPlayerNativeYoutubeMode != .never
+            },
+            set: { newValue in
+                let oldMode = self.state.duckPlayerNativeYoutubeMode
+
+                if !newValue {
+                    if oldMode != .never {
+                        self.lastEnabledNativeYoutubeMode = oldMode
+                    }
+                    self.appSettings.duckPlayerNativeYoutubeMode = .never
+                    self.state.duckPlayerNativeYoutubeMode = .never
+                } else {
+                    let restoredMode = self.resolvedNativeYoutubeMode
+                    self.appSettings.duckPlayerNativeYoutubeMode = restoredMode
+                    self.state.duckPlayerNativeYoutubeMode = restoredMode
+                }
+
+                if oldMode != self.state.duckPlayerNativeYoutubeMode {
+                    switch self.state.duckPlayerNativeYoutubeMode {
+                    case .auto:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeAutomatic)
+                    case .ask:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeChoose)
+                    case .never:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeDontShow)
+                    }
+                }
+            }
+        )
+    }
+
+    var isOpenAutomaticallyBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                return self.state.duckPlayerNativeYoutubeMode == .auto
+            },
+            set: { newValue in
+                let oldMode = self.state.duckPlayerNativeYoutubeMode
+                let newMode: NativeDuckPlayerYoutubeMode = newValue ? .auto : .ask
+
+                self.appSettings.duckPlayerNativeYoutubeMode = newMode
+                self.state.duckPlayerNativeYoutubeMode = newMode
+
+                if oldMode != newMode {
+                    switch newMode {
+                    case .auto:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeAutomatic)
+                    case .ask:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeChoose)
+                    case .never:
+                        self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeDontShow)
+                    }
                 }
             }
         )
@@ -709,12 +901,15 @@ final class SettingsViewModel: ObservableObject {
          onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
-         darkReaderFeatureSettings: DarkReaderFeatureSettings
+         autoplaySettings: AutoplaySettings = DefaultAutoplaySettings(),
+         darkReaderFeatureSettings: DarkReaderFeatureSettings,
+         adBlockingAvailability: AdBlockingAvailabilityProviding
     ) {
 
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.state = SettingsState.defaults
         self.tabSwitcherSettings = tabSwitcherSettings
+        self.autoplaySettings = autoplaySettings
         self.legacyViewProvider = legacyViewProvider
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
@@ -747,6 +942,7 @@ final class SettingsViewModel: ObservableObject {
             daxDialogsStatusProvider: legacyViewProvider.daxDialogsManager
         )
         self.whatsNewCoordinator = whatsNewCoordinator
+        self.adBlockingAvailability = adBlockingAvailability
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -801,13 +997,16 @@ extension SettingsViewModel {
             subscription: SettingsState.defaults.subscription,
             sync: getSyncState(),
             syncSource: nil,
-            duckPlayerEnabled: featureFlagger.isFeatureOn(.duckPlayer) || shouldDisplayDuckPlayerContingencyMessage,
+            duckPlayerEnabled: !adBlockingAvailability.isFeatureAvailable && (featureFlagger.isFeatureOn(.duckPlayer) || shouldDisplayDuckPlayerContingencyMessage),
             duckPlayerMode: duckPlayerSettings.mode,
             duckPlayerOpenInNewTab: duckPlayerSettings.openInNewTab,
             duckPlayerOpenInNewTabEnabled: featureFlagger.isFeatureOn(.duckPlayerOpenInNewTab),
             duckPlayerAutoplay: duckPlayerSettings.autoplay,
             duckPlayerNativeUISERPEnabled: duckPlayerSettings.nativeUISERPEnabled,
-            duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode
+            duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode,
+            autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode,
+            youTubeAdBlockingAvailable: adBlockingAvailability.isFeatureAvailable,
+            youTubeAdBlockingEnabled: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false
         )
 
         // Subscribe to DuckPlayerSettings updates
@@ -993,15 +1192,17 @@ extension SettingsViewModel {
         static let shouldCheckIfDefaultBrowserKey = "com.duckduckgo.settings.setup.check-browser-default"
     }
 
-    func onAppear() {
+    func onFirstAppear() {
         Task {
             await initState()
             triggerDeepLinkNavigation(to: self.deepLinkTarget)
         }
     }
-    
-    func onDisappear() {
-        self.deepLinkTarget = nil
+
+    func onSubsequentAppear() {
+        Task {
+            await setupSubscriptionEnvironment()
+        }
     }
 
     @MainActor
@@ -1145,8 +1346,6 @@ extension SettingsViewModel {
         }))
         case .unprotectedSites: pushViewController(legacyViewProvider.unprotectedSites)
         case .fireproofSites: pushViewController(legacyViewProvider.fireproofSites)
-        case .autoclearData:
-            pushViewController(legacyViewProvider.autoclearData)
         case .keyboard: pushViewController(legacyViewProvider.keyboard)
         case .debug: pushViewController(legacyViewProvider.debug)
             
@@ -1502,8 +1701,10 @@ extension SettingsViewModel {
                     }
                 } else {
                     guard newValue != self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled else { return }
-                    self.objectWillChange.send()
-                    self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                    withAnimation {
+                        self.objectWillChange.send()
+                        self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                    }
                 }
             }
         )
@@ -1535,6 +1736,17 @@ extension SettingsViewModel {
                     self.objectWillChange.send()
                     self.aiChatSettings.enableAutomaticContextAttachment(enable: newValue)
                 }
+            }
+        )
+    }
+
+    var defaultOmnibarModeBinding: Binding<DefaultOmnibarMode> {
+        Binding<DefaultOmnibarMode>(
+            get: { self.aiChatSettings.defaultOmnibarMode },
+            set: { newValue in
+                guard newValue != self.aiChatSettings.defaultOmnibarMode else { return }
+                self.objectWillChange.send()
+                self.aiChatSettings.setDefaultOmnibarMode(newValue)
             }
         )
     }
@@ -1576,18 +1788,14 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
     }
 
     func navigateToAutoClearData() {
-        if dataClearingCapability.isEnhancedDataClearingEnabled {
-            let viewModel = AutoClearSettingsViewModel(
-                appSettings: appSettings,
-                aiChatSettings: aiChatSettings
-            )
-            let view = AutoClearSettingsView(viewModel: viewModel)
-                .environmentObject(self)
-            let hostingController = UIHostingController(rootView: view)
-            pushViewController(hostingController)
-        } else {
-            presentLegacyView(.autoclearData)
-        }
+        let viewModel = AutoClearSettingsViewModel(
+            appSettings: appSettings,
+            aiChatSettings: aiChatSettings
+        )
+        let view = AutoClearSettingsView(viewModel: viewModel)
+            .environmentObject(self)
+        let hostingController = UIHostingController(rootView: view)
+        pushViewController(hostingController)
     }
 
     func presentFireConfirmation(from sourceRect: CGRect) {

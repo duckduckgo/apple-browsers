@@ -139,7 +139,6 @@ struct DataBrokerRunCustomJSONView: View {
         [
             (FeatureFlag.dbpRemoteBrokerDelivery.rawValue, viewModel.featureFlagger.isRemoteBrokerDeliveryFeatureOn.description),
             (FeatureFlag.dbpEmailConfirmationDecoupling.rawValue, viewModel.featureFlagger.isEmailConfirmationDecouplingFeatureOn.description),
-            (FeatureFlag.dbpClickActionDelayReductionOptimization.rawValue, viewModel.featureFlagger.isClickActionDelayReductionOptimizationOn.description),
             (FeatureFlag.dbpWebViewUserAgent.rawValue, viewModel.featureFlagger.isWebViewUserAgentOn.description),
         ]
     }
@@ -374,7 +373,7 @@ struct DataBrokerRunCustomJSONView: View {
             HStack(spacing: 12) {
                 Button("Opt-out Selected") {
                     if let selectedResult {
-                        viewModel.runOptOut(scanResult: selectedResult)
+                        viewModel.runOptOut(scanResult: selectedResult, jsonString: jsonText)
                     }
                 }
                 .disabled(selectedResult == nil)

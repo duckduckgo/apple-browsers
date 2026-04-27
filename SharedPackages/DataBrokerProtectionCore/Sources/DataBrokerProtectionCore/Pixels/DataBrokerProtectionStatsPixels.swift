@@ -97,17 +97,14 @@ public final class DataBrokerProtectionStatsPixels: StatsPixels {
     private var repository: DataBrokerProtectionStatsPixelsRepository
     private let customStatsPixelsTrigger: CustomStatsPixelsTrigger
     private let customOptOutStatsProvider: DataBrokerProtectionCustomOptOutStatsProvider
-    private let featureFlagger: DBPFeatureFlagging
 
     public init(database: DataBrokerProtectionRepository,
                 handler: EventMapping<DataBrokerProtectionSharedPixels>,
-                featureFlagger: DBPFeatureFlagging,
                 repository: DataBrokerProtectionStatsPixelsRepository = DataBrokerProtectionStatsPixelsUserDefaults(),
                 customStatsPixelsTrigger: CustomStatsPixelsTrigger = DefaultCustomStatsPixelsTrigger(),
                 customOptOutStatsProvider: DataBrokerProtectionCustomOptOutStatsProvider = DefaultDataBrokerProtectionCustomOptOutStatsProvider()) {
         self.database = database
         self.handler = handler
-        self.featureFlagger = featureFlagger
         self.repository = repository
         self.customStatsPixelsTrigger = customStatsPixelsTrigger
         self.customOptOutStatsProvider = customOptOutStatsProvider
@@ -155,8 +152,7 @@ private extension DataBrokerProtectionStatsPixels {
 
     func pixel(for dataBrokerStat: CustomIndividualDataBrokerStat) -> DataBrokerProtectionSharedPixels {
         .customDataBrokerStatsOptoutSubmit(dataBrokerURL: dataBrokerStat.dataBrokerURL,
-                                           optOutSubmitSuccessRate: dataBrokerStat.optoutSubmitSuccessRate,
-                                           clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn)
+                                           optOutSubmitSuccessRate: dataBrokerStat.optoutSubmitSuccessRate)
     }
 
     func fireCustomGlobalStatsPixel(customOptOutStats: CustomOptOutStats) {
@@ -164,8 +160,7 @@ private extension DataBrokerProtectionStatsPixels {
     }
 
     func pixel(for aggregateStat: CustomAggregateBrokersStat) -> DataBrokerProtectionSharedPixels {
-        .customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: aggregateStat.optoutSubmitSuccessRate,
-                                       clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn)
+        .customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: aggregateStat.optoutSubmitSuccessRate)
     }
 }
 

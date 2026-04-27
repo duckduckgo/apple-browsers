@@ -47,6 +47,12 @@ extension WKWebView {
             return false
         }
 
+        var isPlayingAudio: Bool {
+            switch self {
+            case .muted(let playing), .unmuted(let playing): return playing
+            }
+        }
+
         mutating func toggle() {
             self = switch self {
             case let .muted(isPlayingAudio): .unmuted(isPlayingAudio: isPlayingAudio)
@@ -259,7 +265,7 @@ extension WKWebView {
                 self.setMicrophoneCaptureState(muted ? .muted : .active, completionHandler: {})
             case .geolocation:
                 self.configuration.processPool.geolocationProvider?.isPaused = muted
-            case .popups, .externalScheme, .notification:
+            case .popups, .externalScheme, .notification, .autoplayPolicy:
                 assertionFailure("The permission don't support pausing")
             }
         }
@@ -282,7 +288,7 @@ extension WKWebView {
                 }
             case .geolocation:
                 self.configuration.processPool.geolocationProvider?.revoke()
-            case .popups, .externalScheme, .notification:
+            case .popups, .externalScheme, .notification, .autoplayPolicy:
                 continue
             }
         }
@@ -360,6 +366,11 @@ extension WKWebView {
     var fullScreenPlaceholderView: NSView? {
         guard self.responds(to: Selector.fullScreenPlaceholderView) else { return nil }
         return self.value(forKey: NSStringFromSelector(Selector.fullScreenPlaceholderView)) as? NSView
+    }
+
+    var webProcessIdentifier: pid_t? {
+        guard self.responds(to: Selector.webProcessIdentifier) else { return nil }
+        return self.value(forKey: NSStringFromSelector(Selector.webProcessIdentifier)) as? pid_t
     }
 
     func removeFocusFromWebView() {
@@ -461,6 +472,7 @@ extension WKWebView {
         static let setAddsVisitedLinks = NSSelectorFromString("_setAddsVisitedLinks:")
         static let addsVisitedLinks = NSSelectorFromString("_addsVisitedLinks")
         static let isPlayingAudio = "_isPlayingAudio"
+        static let webProcessIdentifier = NSSelectorFromString("_webProcessIdentifier")
 
         @available(macOS, deprecated: 12.0, message: "This needs to be removed when macOS 11 support is dropped.")
         static let mediaCaptureState = NSSelectorFromString("_mediaCaptureState")
@@ -506,6 +518,21 @@ struct _WKCaptureDevices: OptionSet {
     static let microphone = Self(rawValue: 1 << 0)
     static let camera = Self(rawValue: 1 << 1)
     static let display = Self(rawValue: 1 << 2)
+}
+
+// https://github.com/WebKit/WebKit/blob/407a96d094af6d48100f4524d964667336d962b4/Source/WebKit/Shared/API/Cocoa/_WKRenderingProgressEvents.h
+struct _WKRenderingProgressEvents: OptionSet {
+    let rawValue: UInt
+
+    static let firstLayout = Self(rawValue: 1 << 0)
+    static let firstVisuallyNonEmptyLayout = Self(rawValue: 1 << 1)
+    static let firstPaintWithSignificantArea = Self(rawValue: 1 << 2)
+    static let reachedSessionRestorationRenderTreeSizeThreshold = Self(rawValue: 1 << 3)
+    static let firstLayoutAfterSuppressedIncrementalRendering = Self(rawValue: 1 << 4)
+    static let firstPaintAfterSuppressedIncrementalRendering = Self(rawValue: 1 << 5)
+    static let firstPaint = Self(rawValue: 1 << 6)
+    static let didRenderSignificantAmountOfText = Self(rawValue: 1 << 7)
+    static let firstMeaningfulPaint = Self(rawValue: 1 << 8)
 }
 
 struct _WKFindOptions: OptionSet {

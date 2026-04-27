@@ -20,6 +20,7 @@ import Foundation
 import PrivacyConfig
 
 public enum FeatureFlagCategory: String, CaseIterable, Comparable {
+    case adBlocking = "Ad Blocking"
     case duckAI = "Duck.ai"
     case dbp = "Personal Information Removal"
     case osSupportWarnings = "OS Support Warnings"
@@ -45,63 +46,4 @@ public enum FeatureFlagCategory: String, CaseIterable, Comparable {
 
 public protocol FeatureFlagCategorization {
     var category: FeatureFlagCategory { get }
-}
-
-extension FeatureFlag: FeatureFlagCategorization {
-    public var category: FeatureFlagCategory {
-        switch self {
-        case .aiChatPageContext,
-                .aiChatKeepSession,
-                .aiChatOmnibarToggle,
-                .aiChatOmnibarCluster,
-                .aiChatSuggestions,
-                .aiChatOmnibarTools,
-                .aiChatOmnibarOnboarding,
-                .standaloneMigration,
-                .aiChatMultiplePageContexts,
-                .aiChatSidebarResizable,
-                .aiChatSidebarFloating,
-                .aiChatChromeSidebar,
-                .aiChatNtpRecentChats:
-            return .duckAI
-        case .osSupportForceUnsupportedMessage,
-                .osSupportForceWillSoonDropSupportMessage,
-                .willSoonDropBigSurSupport:
-            return .osSupportWarnings
-        case .syncSeamlessAccountSwitching,
-                .syncSetupBarcodeIsUrlBased,
-                .canScanUrlBasedSyncSetupBarcodes,
-                .exchangeKeysToSyncWithAnotherDevice:
-            return .sync
-        case .autoUpdateInDEBUG,
-                .autoUpdateInREVIEW,
-                .appStoreUpdateFlow,
-                .automaticUpdatesOnly:
-            return .updates
-        case .networkProtectionAppStoreSysex,
-                .networkProtectionAppStoreSysexMessage,
-                .winBackOffer:
-            return .vpn
-        case .dbpEmailConfirmationDecoupling,
-                .dbpRemoteBrokerDelivery,
-                .dbpClickActionDelayReductionOptimization,
-                .dbpWebViewUserAgent:
-            return .dbp
-        case .paidAIChat,
-                .supportsAlternateStripePaymentFlow,
-                .blackFridayCampaign,
-                .allowProTierPurchase:
-            return .subscription
-        case .popupBlocking:
-            return .popupBlocking
-        case .webNotifications:
-            return .webNotifications
-        case .webExtensions,
-                .forceDarkModeOnWebsites,
-                .embeddedExtension:
-            return .webExtensions
-        default:
-            return .other
-        }
-    }
 }

@@ -26,6 +26,7 @@ public extension PixelKit {
         public static let test = "test"
         public static let appVersion = "appVersion"
         public static let pixelSource = "pixelSource"
+        public static let channel = "channel"
         public static let osMajorVersion = "osMajorVersion"
         public static let osUpgradeCapability = "can_update"
         public static let maxSupportedOSVersion = "maxSupportedOS"
@@ -89,6 +90,7 @@ public extension PixelKit {
 
         // UserScript
         public static let jsFile = "jsFile"
+        public static let userScriptSource = "source"
     }
 
     enum Values {

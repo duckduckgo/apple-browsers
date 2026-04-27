@@ -86,7 +86,7 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download stop_workflow flag artifact
         id: download-stop-workflow
@@ -119,7 +119,7 @@ jobs:
     steps:
       # Always check out main first, because the release branch might have been deleted (for public releases)
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           submodules: recursive

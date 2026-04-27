@@ -56,11 +56,12 @@ public extension OnboardingRebranding.OnboardingStyles {
                 configuration.label
                     .font(typography.contextual.controlSmall)
                     .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.center)
+                    .multilineTextAlignment(.leading)
                     .lineLimit(nil)
                     .foregroundColor(foregroundColor(isPressed: configuration.isPressed, isHovered: isHovered))
-                    .padding()
-                    .frame(minWidth: 0, maxWidth: optionsListMetrics.itemMaxWidth, maxHeight: optionsListMetrics.itemMaxHeight)
+                    .padding(.vertical, optionsListMetrics.verticalPadding)
+                    .padding(.horizontal, optionsListMetrics.horizontalPadding)
+                    .frame(minWidth: 0, maxWidth: optionsListMetrics.itemMaxWidth, minHeight: optionsListMetrics.itemMinHeight)
                     .background(backgroundColor(isPressed: configuration.isPressed, isHovered: isHovered))
                     .cornerRadius(optionsListMetrics.cornerRadius)
                     .contentShape(Rectangle()) // Makes whole button area tappable, when there's no background
@@ -77,11 +78,7 @@ public extension OnboardingRebranding.OnboardingStyles {
             }
 
             private func foregroundColor(isPressed: Bool, isHovered: Bool) -> Color {
-#if os(iOS)
                 return colorPalette.optionsListIconColor
-#else
-                return Color(designSystemColor: .accentTextPrimary)
-#endif
             }
 
             private func backgroundColor(isPressed: Bool, isHovered: Bool) -> Color {

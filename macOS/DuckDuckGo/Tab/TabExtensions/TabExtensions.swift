@@ -88,6 +88,8 @@ protocol TabExtensionDependencies {
     var aiChatSessionStore: AIChatSessionStoring { get }
     var tabCrashAggregator: TabCrashAggregator { get }
     var tabsPreferences: TabsPreferences { get }
+    var autoplayPreferences: AutoplayPreferences { get }
+    var permissionManager: PermissionManagerProtocol { get }
     var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
 }
 
@@ -204,6 +206,16 @@ extension TabExtensionsBuilder {
         }
 
         add {
+            AutoplayPolicyTabExtension(
+                autoplayPreferences: dependencies.autoplayPreferences,
+                featureFlagger: dependencies.featureFlagger,
+                permissionManager: dependencies.permissionManager,
+                privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                telemetryScriptPublisher: userScripts.compactMap { $0 }
+            )
+        }
+
+        add {
             AutofillTabExtension(autofillUserScriptPublisher: userScripts.map(\.?.autofillScript),
                                  privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
                                  webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences,
@@ -291,7 +303,8 @@ extension TabExtensionsBuilder {
         add {
             AIChatTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
                                webViewPublisher: args.webViewFuture,
-                               isLoadedInSidebar: args.isTabLoadedInSidebar)
+                               isLoadedInSidebar: args.isTabLoadedInSidebar,
+                               isTabBurner: args.isTabBurner)
         }
 
         add {
@@ -336,6 +349,20 @@ extension TabExtensionsBuilder {
             InternalFeedbackFormTabExtension(
                 webViewPublisher: args.webViewFuture,
                 internalUserDecider: dependencies.featureFlagger.internalUserDecider
+            )
+        }
+
+        add {
+            TabSuspensionExtension(
+                tabID: args.tabID,
+                webViewPublisher: args.webViewFuture.map { $0 as TabSuspensionWebViewChecking },
+                contentPublisher: args.contentPublisher,
+                scriptsPublisher: userScripts.compactMap { $0 },
+                featureFlagger: dependencies.featureFlagger,
+                aiChatSessionStore: dependencies.aiChatSessionStore,
+                privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                tld: dependencies.privacyFeatures.contentBlocking.tld,
+                isTabPinned: args.isTabPinned
             )
         }
     }

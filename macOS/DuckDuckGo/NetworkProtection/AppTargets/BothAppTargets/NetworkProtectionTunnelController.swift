@@ -749,7 +749,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             frequency: .uniqueByName,
             includeAppVersionParameter: true) { [weak self] fired, error in
                 guard let self, error == nil, fired else { return }
-                self.defaults.vpnFirstEnabled = PixelKit.pixelLastFireDate(event: NetworkProtectionPixelEvent.networkProtectionNewUser)
+                self.defaults.vpnFirstEnabled = try? PixelKit.pixelLastFireDate(event: NetworkProtectionPixelEvent.networkProtectionNewUser)
             }
     }
 
@@ -765,8 +765,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
         try await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
         self.connectionWideEventData?.oauthDuration?.complete()
-
-        settings.wideEventPostEndpointEnabled = featureFlagger.isFeatureOn(.wideEventPostEndpoint)
 
         // Encode entire VPN settings as one unit
         let settingsSnapshot = VPNSettingsSnapshot(from: settings)

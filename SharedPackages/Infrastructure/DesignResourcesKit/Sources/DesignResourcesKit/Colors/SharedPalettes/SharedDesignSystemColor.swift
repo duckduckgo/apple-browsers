@@ -55,6 +55,9 @@ public enum SharedDesignSystemColor {
     case alertGreen
     case alertYellow
 
+    // Shield
+    case shieldPrivacy
+
     // Buttons/Primary
     case buttonsPrimaryDefault
     case buttonsPrimaryPressed

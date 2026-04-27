@@ -2675,8 +2675,9 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 guard let self else { return }
+                let onPresented = notification.userInfo?[SettingsDeepLinkUserInfoKey.onPresented] as? (() -> Void)
                 let handleSettingsDeepLink = {
-                    self.handleSettingsDeepLink(notification)
+                    self.handleSettingsDeepLink(notification, onPresented: onPresented)
                 }
                 if let presentedViewController {
                     if !(presentedViewController is SettingsUINavigationController) {
@@ -2690,7 +2691,7 @@ class MainViewController: UIViewController {
             .store(in: &settingsDeepLinkcancellables)
     }
     
-    private func handleSettingsDeepLink(_ notification: Notification) {
+    private func handleSettingsDeepLink(_ notification: Notification, onPresented: (() -> Void)? = nil) {
         switch notification.object as? SettingsViewModel.SettingsDeepLinkSection {
         
         case .duckPlayer:
@@ -2698,7 +2699,8 @@ class MainViewController: UIViewController {
                 deepLinkTarget = .duckPlayer
             launchSettings(deepLinkTarget: deepLinkTarget)
         case .subscriptionFlow(let components):
-            launchSettings(deepLinkTarget: .subscriptionFlow(redirectURLComponents: components))
+            launchSettings(completion: { _ in onPresented?() },
+                           deepLinkTarget: .subscriptionFlow(redirectURLComponents: components))
         case .subscriptionPlanChangeFlow(let components):
             launchSettings(deepLinkTarget: .subscriptionPlanChangeFlow(redirectURLComponents: components))
         case .subscriptionSettings:

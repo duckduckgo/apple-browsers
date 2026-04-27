@@ -421,8 +421,20 @@ extension NewTabPageViewController {
         let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onCompletion: onDismiss, onManualDismiss: onManualDismiss))
         let hostingController = UIHostingController(rootView: daxDialogView)
         self.hostingController = hostingController
-
         hostingController.view.backgroundColor = .clear
+
+        // For the chat-path "try visiting a site" dialog the keyboard must be visible. We activate
+        // the editing state first, then embed the dialog inside it on the next run loop (once
+        // `presentedViewController` is set) — mirroring how the completion dialog is embedded.
+        if spec == .subsequent, (daxDialogsManager as? ContextualOnboardingLogic)?.chatPathPhase == .visitSite {
+            chromeDelegate?.omniBar.beginEditing(animated: true)
+            DispatchQueue.main.async { [weak self, weak hostingController] in
+                guard let self, let hostingController else { return }
+                self.embedDialogInEditingState(hostingController)
+            }
+            return
+        }
+
         addChild(hostingController)
         view.addSubview(hostingController.view)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -437,6 +449,63 @@ extension NewTabPageViewController {
         hostingController.didMove(toParent: self)
 
         newTabPageViewModel.startOnboarding()
+    }
+
+    private func embedDialogInEditingState(_ hostingController: UIHostingController<AnyView>) {
+        guard let editingController = parent?.presentedViewController as? OmniBarEditingStateViewController else {
+            // Fallback: embed directly on the NTP if the editing state didn't materialise.
+            addChild(hostingController)
+            view.addSubview(hostingController.view)
+            hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+                hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            ])
+            hostingController.didMove(toParent: self)
+            newTabPageViewModel.startOnboarding()
+            return
+        }
+
+        editingController.addChild(hostingController)
+        let container = editingController.contentStackContainerView
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(hostingController.view)
+        NSLayoutConstraint.activate([
+            editingController.isUsingTopBarPositionForLayout
+                ? hostingController.view.topAnchor.constraint(equalTo: editingController.contentStackTopAnchor,
+                                                              constant: editingController.addressBarToToggleSpacing)
+                : hostingController.view.topAnchor.constraint(equalTo: container.topAnchor),
+            editingController.isUsingTopBarPositionForLayout
+                ? hostingController.view.heightAnchor.constraint(equalTo: container.heightAnchor)
+                : hostingController.view.bottomAnchor.constraint(equalTo: editingController.contentStackBottomAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+        ])
+        hostingController.didMove(toParent: editingController)
+        container.bringSubviewToFront(editingController.switchBarVC.view)
+        newTabPageViewModel.startOnboarding()
+
+        // When the keyboard is dismissed (editing state dismissed by user), rescue the dialog
+        // back to the NTP so it remains visible rather than disappearing with the editing state.
+        editingController.onViewWillDisappear = { [weak self, weak editingController, weak hostingController] in
+            guard let self, let hostingController, hostingController.parent === editingController else { return }
+            hostingController.willMove(toParent: nil)
+            hostingController.view.removeFromSuperview()
+            hostingController.removeFromParent()
+
+            self.addChild(hostingController)
+            self.view.addSubview(hostingController.view)
+            hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                hostingController.view.topAnchor.constraint(equalTo: self.view.topAnchor),
+                hostingController.view.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+                hostingController.view.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+                hostingController.view.bottomAnchor.constraint(equalTo: self.view.bottomAnchor)
+            ])
+            hostingController.didMove(toParent: self)
+        }
     }
 
     private func dismissHostingController(didFinishNTPOnboarding: Bool) {

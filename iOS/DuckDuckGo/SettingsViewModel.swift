@@ -1644,6 +1644,10 @@ extension NSNotification.Name {
     static let settingsDeepLinkNotification: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.settingsDeepLink")
 }
 
+enum SettingsDeepLinkUserInfoKey {
+    static let onPresented = "onPresented"
+}
+
 // MARK: - AI Chat
 extension SettingsViewModel {
 

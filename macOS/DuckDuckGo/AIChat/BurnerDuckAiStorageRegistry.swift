@@ -32,57 +32,29 @@ import WebKit
 /// from its background message queue while registration happens on the main actor.
 final class BurnerDuckAiStorageRegistry {
 
-    static let shared = BurnerDuckAiStorageRegistry()
-
     private let lock = NSLock()
     private var handlers: [ObjectIdentifier: DuckAiNativeStorageHandling] = [:]
 
-    private init() {}
+    init() {}
 
-    /// Returns the existing handler for the given data store, or installs `make()`'s
-    /// result and returns it. `make` is invoked at most once per data store.
-    func handler(for dataStore: WKWebsiteDataStore,
-                 makeIfAbsent make: () -> DuckAiNativeStorageHandling) -> DuckAiNativeStorageHandling {
+    /// Returns or lazily creates the in-memory handler scoped to `burnerMode`'s data store.
+    /// Returns `nil` for `.regular`.
+    func handler(for burnerMode: BurnerMode) -> DuckAiNativeStorageHandling? {
+        guard case .burner(let dataStore) = burnerMode else { return nil }
         let key = ObjectIdentifier(dataStore)
         lock.lock()
         defer { lock.unlock() }
         if let existing = handlers[key] {
             return existing
         }
-        let new = make()
+        let new = InMemoryDuckAiNativeStorageHandler()
         handlers[key] = new
         return new
-    }
-
-    func handler(for dataStore: WKWebsiteDataStore) -> DuckAiNativeStorageHandling? {
-        let key = ObjectIdentifier(dataStore)
-        lock.lock()
-        defer { lock.unlock() }
-        return handlers[key]
-    }
-
-    func unregister(_ dataStore: WKWebsiteDataStore) {
-        unregister(ObjectIdentifier(dataStore))
     }
 
     func unregister(_ key: ObjectIdentifier) {
         lock.lock()
         defer { lock.unlock() }
         handlers.removeValue(forKey: key)
-    }
-}
-
-extension BurnerMode {
-    /// Resolves (lazily creating if needed) the in-memory Duck.ai storage handler scoped
-    /// to this burner mode's data store. Returns `nil` for `.regular`.
-    func duckAiFireModeStorageHandler() -> DuckAiNativeStorageHandling? {
-        switch self {
-        case .regular:
-            return nil
-        case .burner(let dataStore):
-            return BurnerDuckAiStorageRegistry.shared.handler(for: dataStore) {
-                InMemoryDuckAiNativeStorageHandler()
-            }
-        }
     }
 }

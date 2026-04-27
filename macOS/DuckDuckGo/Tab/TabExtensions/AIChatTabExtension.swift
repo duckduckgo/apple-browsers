@@ -45,6 +45,7 @@ final class AIChatTabExtension {
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
     private let bootstrapRefresher: DuckAiNativeStorageBootstrapScriptRefresher?
+    private let fireModeHandlerProvider: () -> DuckAiNativeStorageHandling?
 
     private(set) weak var aiChatUserScript: AIChatUserScript? {
         didSet {
@@ -60,6 +61,7 @@ final class AIChatTabExtension {
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
+         burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry? = NSApp.delegateTyped.burnerDuckAiStorageRegistry,
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
         self.isLoadedInSidebar = isLoadedInSidebar
         self.isTabBurner = isTabBurner
@@ -67,13 +69,13 @@ final class AIChatTabExtension {
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
         let debugSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
-        let fireModeHandlerProvider: () -> DuckAiNativeStorageHandling? = { [burnerMode] in
-            burnerMode.duckAiFireModeStorageHandler()
+        self.fireModeHandlerProvider = { [burnerMode, weak burnerDuckAiStorageRegistry] in
+            burnerDuckAiStorageRegistry?.handler(for: burnerMode)
         }
         self.bootstrapRefresher = Self.makeBootstrapRefresher(
             featureFlagger: featureFlagger,
             handler: duckAiNativeStorageHandler,
-            fireModeHandlerProvider: fireModeHandlerProvider,
+            fireModeHandlerProvider: self.fireModeHandlerProvider,
             aiChatDebugURLSettings: debugSettings
         )
         pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
@@ -93,10 +95,8 @@ final class AIChatTabExtension {
                 if let isTabBurner = self?.isTabBurner {
                     self?.aiChatUserScript?.handler.isFireWindowProvider = { isTabBurner }
                 }
-                if let burnerMode = self?.burnerMode {
-                    scripts.duckAiNativeStorageUserScript?.fireModeHandlerProvider = {
-                        burnerMode.duckAiFireModeStorageHandler()
-                    }
+                if let provider = self?.fireModeHandlerProvider {
+                    scripts.duckAiNativeStorageUserScript?.fireModeHandlerProvider = provider
                 }
 
                 // Pass the handoff payload in case it was provided before the user script was loaded

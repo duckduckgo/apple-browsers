@@ -270,9 +270,11 @@ final class WindowsManager {
                 fireWindowSession = existing
             } else {
                 let newSession = FireWindowSession()
-                let dataStoreKey = ObjectIdentifier(dataStore)
-                newSession.onDeinit {
-                    BurnerDuckAiStorageRegistry.shared.unregister(dataStoreKey)
+                if let registry = Application.appDelegate.burnerDuckAiStorageRegistry {
+                    let dataStoreKey = ObjectIdentifier(dataStore)
+                    newSession.onDeinit { [weak registry] in
+                        registry?.unregister(dataStoreKey)
+                    }
                 }
                 fireWindowSession = newSession
             }

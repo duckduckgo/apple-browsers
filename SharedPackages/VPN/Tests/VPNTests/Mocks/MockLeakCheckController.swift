@@ -1,7 +1,7 @@
 //
-//  ExtensionRequest.swift
+//  MockLeakCheckController.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,21 +17,14 @@
 //
 
 import Foundation
+@testable import VPN
 
-public enum VPNCommand: Codable {
-    case expireRegistrationKey
-    case removeSystemExtension
-    case removeVPNConfiguration
-    case sendTestNotification
-    case restartAdapter
-    case uninstallVPN(showNotification: Bool)
-    case simulateSubscriptionExpirationInTunnel
-    case quitAgent
-    case createLogSnapshot
-    case triggerLeakCheck
-}
+@MainActor
+final class MockLeakCheckController: LeakCheckControlling {
 
-public enum ExtensionRequest: Codable {
-    case changeTunnelSetting(_ change: VPNSettings.Change)
-    case command(_ command: VPNCommand)
+    private(set) var triggerLeakCheckFromDebugMenuCalled = false
+
+    func triggerLeakCheckFromDebugMenu() async {
+        triggerLeakCheckFromDebugMenuCalled = true
+    }
 }

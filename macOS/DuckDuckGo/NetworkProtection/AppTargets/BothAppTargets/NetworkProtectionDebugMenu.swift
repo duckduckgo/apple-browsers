@@ -133,6 +133,9 @@ final class NetworkProtectionDebugMenu: NSMenu {
             NSMenuItem(title: "Send Test Notification", action: #selector(NetworkProtectionDebugMenu.sendTestNotification))
                 .targetting(self)
 
+            NSMenuItem(title: "Trigger VPN Leak Check Now", action: #selector(NetworkProtectionDebugMenu.triggerLeakCheck))
+                .targetting(self)
+
             NSMenuItem(title: "Log Feedback Metadata to Console", action: #selector(NetworkProtectionDebugMenu.logFeedbackMetadataToConsole))
                 .targetting(self)
 
@@ -289,6 +292,16 @@ final class NetworkProtectionDebugMenu: NSMenu {
         Task { @MainActor in
             do {
                 try await debugUtilities.simulateSubscriptionExpirationInTunnel()
+            } catch {
+                await NSAlert(error: error).runModal()
+            }
+        }
+    }
+
+    @objc func triggerLeakCheck(_ sender: Any?) {
+        Task { @MainActor in
+            do {
+                try await debugUtilities.triggerLeakCheck()
             } catch {
                 await NSAlert(error: error).runModal()
             }

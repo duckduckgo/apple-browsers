@@ -24,6 +24,10 @@ import PrivacyConfig
 
 protocol IdleReturnEvaluating {
     func shouldShowNTPAfterIdle(lastBackgroundDate: Date?) -> Bool
+
+    /// Whether the idle threshold was exceeded since the last background — independent
+    /// of whether the user's setting will surface NTP-after-idle or LUT-after-idle.
+    func idleThresholdPassed(lastBackgroundDate: Date?) -> Bool
 }
 
 /// Key namespace for idle-return NTP debug overrides (typed storage, no dotted keys).
@@ -105,6 +109,17 @@ final class IdleReturnEvaluator: IdleReturnEvaluating {
             return false
         }
         guard idleReturnEligibilityManager?.isEligibleForNTPAfterIdle() ?? true else {
+            return false
+        }
+        let thresholdSeconds = idleThresholdSeconds()
+        return Date().timeIntervalSince(lastBackgroundDate) >= Double(thresholdSeconds)
+    }
+
+    func idleThresholdPassed(lastBackgroundDate: Date?) -> Bool {
+        guard featureFlagger.isFeatureOn(.showNTPAfterIdleReturn) else {
+            return false
+        }
+        guard let lastBackgroundDate else {
             return false
         }
         let thresholdSeconds = idleThresholdSeconds()

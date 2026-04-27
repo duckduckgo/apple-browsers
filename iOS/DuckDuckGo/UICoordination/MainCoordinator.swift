@@ -758,6 +758,10 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         }
     }
 
+    func markLastUsedTabAsResumedAfterIdle() {
+        controller.postIdleSessionInstrumentation.sessionStarted(surface: .lut)
+    }
+
 }
 
 // MARK: - SystemSettingsPiPTutorialPresenting

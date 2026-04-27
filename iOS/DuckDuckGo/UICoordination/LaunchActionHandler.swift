@@ -45,6 +45,7 @@ enum LaunchAction {
 @MainActor
 protocol IdleReturnLaunchDelegate: AnyObject {
     func showNewTabPageAfterIdleReturn()
+    func markLastUsedTabAsResumedAfterIdle()
 }
 
 @MainActor
@@ -100,6 +101,9 @@ final class LaunchActionHandler: LaunchActionHandling {
             if idleReturnEvaluator.shouldShowNTPAfterIdle(lastBackgroundDate: lastBackgroundDate) {
                 idleReturnDelegate?.showNewTabPageAfterIdleReturn()
             } else {
+                if idleReturnEvaluator.idleThresholdPassed(lastBackgroundDate: lastBackgroundDate) {
+                    idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle()
+                }
                 keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate)
             }
         }

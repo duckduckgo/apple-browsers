@@ -80,20 +80,30 @@ final class MockKeyboardPresenter: KeyboardPresenting {
 
 final class MockIdleReturnEvaluator: IdleReturnEvaluating {
     var shouldShowNTPAfterIdleResult = false
+    var idleThresholdPassedResult = false
     var lastLastBackgroundDate: Date?
 
     func shouldShowNTPAfterIdle(lastBackgroundDate: Date?) -> Bool {
         lastLastBackgroundDate = lastBackgroundDate
         return shouldShowNTPAfterIdleResult
     }
+
+    func idleThresholdPassed(lastBackgroundDate: Date?) -> Bool {
+        return idleThresholdPassedResult
+    }
 }
 
 @MainActor
 final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
     var showNewTabPageAfterIdleReturnCalled = false
+    var markLastUsedTabAsResumedAfterIdleCalled = false
 
     func showNewTabPageAfterIdleReturn() {
         showNewTabPageAfterIdleReturnCalled = true
+    }
+
+    func markLastUsedTabAsResumedAfterIdle() {
+        markLastUsedTabAsResumedAfterIdleCalled = true
     }
 }
 

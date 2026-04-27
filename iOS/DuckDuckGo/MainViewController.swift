@@ -82,6 +82,9 @@ struct StartupOnboardingDecision {
 
 class MainViewController: UIViewController {
 
+    /// iOS may deliver buffered accelerometer data as a spurious shake when returning from background.
+    private static let shakeIgnoreIntervalAfterForeground: TimeInterval = 1.0
+
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return ThemeManager.shared.currentTheme.statusBarStyle
     }
@@ -180,7 +183,7 @@ class MainViewController: UIViewController {
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
-    private let fireModeCapability: FireModeCapable
+    let fireModeCapability: FireModeCapable
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -200,6 +203,7 @@ class MainViewController: UIViewController {
     private var feedbackCancellable: AnyCancellable?
     private var aiChatCancellables = Set<AnyCancellable>()
     private var settingsCancellables = Set<AnyCancellable>()
+    private var lastForegroundEntryDate = Date.distantPast
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
     private var currentNTPEscapeHatch: EscapeHatchModel?
     private var hasCompletedInitialLoad = false
@@ -1700,6 +1704,8 @@ class MainViewController: UIViewController {
     }
     
     func onForeground() {
+        lastForegroundEntryDate = Date()
+
         fireExperimentalAddressBarPixel()
         fireIPadToggleStateOnAppOpenPixel()
         fireContextualAutoAttachPixel()
@@ -3783,17 +3789,20 @@ extension MainViewController: OmniBarDelegate {
     }
 
     override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
-        if motion == .motionShake, featureFlagger.internalUserDecider.isInternalUser || isDebugBuild {
-            var topVC: UIViewController = self
-            while let presented = topVC.presentedViewController {
-                topVC = presented
-            }
-            if !(topVC is DebugScreensViewController),
-               !((topVC as? UINavigationController)?.viewControllers.first is DebugScreensViewController) {
-                segueToDebugSettings()
-            }
+        defer { super.motionEnded(motion, with: event) }
+
+        guard motion == .motionShake, featureFlagger.internalUserDecider.isInternalUser || isDebugBuild else { return }
+        guard AppUserDefaults().shakeToOpenDebugMenuEnabled else { return }
+        guard Date().timeIntervalSince(lastForegroundEntryDate) > Self.shakeIgnoreIntervalAfterForeground else { return }
+
+        var topVC: UIViewController = self
+        while let presented = topVC.presentedViewController {
+            topVC = presented
         }
-        super.motionEnded(motion, with: event)
+        if !(topVC is DebugScreensViewController),
+           !((topVC as? UINavigationController)?.viewControllers.first is DebugScreensViewController) {
+            segueToDebugSettings()
+        }
     }
 
     func performCancel() {
@@ -4642,10 +4651,6 @@ extension MainViewController: TabDelegate {
         showFireButtonPulse()
     }
 
-    func tabDidRequestToggleSidebarOnCurrentTab(_ tab: TabViewController) {
-        currentTab?.submitToggleSidebarAction()
-    }
-
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String) {
         let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
                                      privacyConfig: privacyConfigurationManager,
@@ -4796,8 +4801,8 @@ extension MainViewController: TabSwitcherDelegate {
         tabSwitcherNewTabWithAnimation()
     }
 
-    func tabSwitcherDidRequestNewFireTab(tabSwitcher: TabSwitcherViewController) {
-        tabManager.setBrowsingMode(.fire, source: .tabSwitcherLongPress)
+    func tabSwitcherDidRequestNewFireTab(tabSwitcher: TabSwitcherViewController, source: FireModeSwitchSource) {
+        tabManager.setBrowsingMode(.fire, source: source)
         tabSwitcherNewTabWithAnimation()
     }
 

@@ -1,5 +1,5 @@
 //
-//  AIChatFeatureFlag.swift
+//  Logger+SystemExtensionManager.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,11 +17,8 @@
 //
 
 import Foundation
+import os.log
 
-public protocol AIChatFeatureFlagProviding {
-    func isAIChatSyncEnabled() -> Bool
-    func supportsSyncChatsDeletion() -> Bool
-    func isNativeDataAccessEnabled() -> Bool
-    func isNativeDataStorageEnabled() -> Bool
-
+extension Logger {
+    static let systemExtensionManager = Logger(subsystem: "System Extension Manager", category: "")
 }

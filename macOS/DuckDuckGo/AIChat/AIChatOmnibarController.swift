@@ -214,6 +214,7 @@ final class AIChatOmnibarController {
                 self.models = remoteModels.map { AIChatModel(remoteModel: $0, userTier: userTier) }
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningEffortIfNeeded()
+                self.deactivateWebSearchIfUnsupported()
             } catch is CancellationError {
                 return
             } catch {
@@ -321,6 +322,14 @@ final class AIChatOmnibarController {
         return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? true
     }
 
+    /// Whether the currently selected model supports the WebSearch tool.
+    /// Returns true when models are unavailable (conservative default — Web Search menu item
+    /// remains visible until the model list is known).
+    var selectedModelSupportsWebSearch: Bool {
+        guard !models.isEmpty else { return true }
+        return models.first(where: { $0.id == persistedModelId })?.supportsTool(.webSearch) ?? true
+    }
+
     /// Image formats supported by the currently selected model (e.g. ["png", "jpeg", "webp"]).
     /// Returns a default set when models are unavailable.
     var selectedModelImageFormats: [String] {
@@ -375,6 +384,15 @@ final class AIChatOmnibarController {
         // The newly selected model may not support the previously persisted reasoning effort.
         // Clearing here keeps stale-effort handling in one place (see `clearStaleReasoningEffortIfNeeded`).
         clearStaleReasoningEffortIfNeeded()
+        deactivateWebSearchIfUnsupported()
+    }
+
+    /// Clears Web Search mode if the currently selected model doesn't support the WebSearch tool.
+    /// Submitting a web-search prompt to an unsupported model fails on the duck.ai page, so the
+    /// mode must not remain active across a switch into such a model.
+    private func deactivateWebSearchIfUnsupported() {
+        guard isWebSearchMode, !selectedModelSupportsWebSearch else { return }
+        activeToolMode = nil
     }
 
     /// Updates the current text being typed by the user

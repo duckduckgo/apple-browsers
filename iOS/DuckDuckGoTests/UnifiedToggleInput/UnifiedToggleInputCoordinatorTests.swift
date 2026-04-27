@@ -860,6 +860,15 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isToolsButtonHidden)
     }
 
+    func test_toolsButton_staysUnhiddenAcrossSwitchToSearchMode_soItFadesWithTheToolbar() {
+        sut.showExpanded()
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden)
+
+        sut.updateInputMode(.search, animated: true)
+
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden)
+    }
+
     func test_toolsMenu_disablesWebSearchActionWhenModelDoesNotSupportIt() {
         mockPreferences.selectedModelId = "gpt-5"
         sut.modelStore.models = [makeModel(id: "gpt-5", access: true)]

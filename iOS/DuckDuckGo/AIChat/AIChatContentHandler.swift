@@ -79,8 +79,8 @@ protocol AIChatContentHandling: AnyObject {
     /// Sets the initial payload data for the AIChat session.
     func setPayload(payload: Any?)
 
-    /// Builds a query URL with optional prompt, auto-submit, and RAG tools.
-    func buildQueryURL(query: String?, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL
+    /// Builds a query URL with optional prompt, auto-submit, onboarding flow and RAG tools.
+    func buildQueryURL(query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?) -> URL
 
     /// Builds a URL for voice mode (appends `?mode=voice`).
     func buildVoiceModeURL() -> URL
@@ -116,7 +116,7 @@ extension AIChatContentHandlingDelegate {
 }
 
 final class AIChatContentHandler: AIChatContentHandling {
-    
+
     // MARK: - Dependencies
     private let aiChatSettings: AIChatSettingsProvider
     private var payloadHandler: AIChatPayloadHandler
@@ -127,12 +127,6 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let statisticsLoader: StatisticsLoader
 
     private var userScript: AIChatUserScriptProviding?
-    private var isFrontendReady = false {
-        didSet {
-            if isFrontendReady { flushPendingActions() }
-        }
-    }
-    private var pendingSidebarToggle = false
 
     /// Closure to get page context for contextual mode. Nil in full mode.
     /// Parameter is the request reason (e.g., `.userAction` for manual attach).
@@ -173,8 +167,8 @@ final class AIChatContentHandler: AIChatContentHandling {
         payloadHandler.setData(payload)
     }
     
-    /// Builds a query URL with optional prompt, auto-submit, and RAG tools.
-    func buildQueryURL(query: String?, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL {
+    /// Builds a query URL with optional prompt, auto-submit, onboarding flow and RAG tools.
+    func buildQueryURL(query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?) -> URL {
         guard let query, var components = URLComponents(url: aiChatSettings.aiChatURL, resolvingAgainstBaseURL: false) else {
             return aiChatSettings.aiChatURL
         }
@@ -189,6 +183,13 @@ final class AIChatContentHandler: AIChatContentHandling {
         if autoSend {
             queryItems.removeAll { $0.name == AIChatURLParameters.autoSubmitPromptQueryName }
             queryItems.append(URLQueryItem(name: AIChatURLParameters.autoSubmitPromptQueryName, value: AIChatURLParameters.autoSubmitPromptQueryValue))
+        }
+
+        if let flowValue = flowType.flowQueryValue {
+            queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
+            queryItems.append(URLQueryItem(name: AIChatURLParameters.flowQueryName, value: flowValue))
+        } else {
+            queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
         }
 
         if let tools = tools, !tools.isEmpty {
@@ -230,24 +231,12 @@ final class AIChatContentHandler: AIChatContentHandling {
     }
 
     /// Submits a toggle sidebar action to open/close the sidebar.
-    /// If the frontend isn't ready yet, queues the action until it initializes.
     func submitToggleSidebarAction() {
-        if isFrontendReady {
-            userScript?.submitToggleSidebarAction()
-        } else {
-            pendingSidebarToggle = true
-        }
+        userScript?.submitToggleSidebarAction()
     }
 
     func submitPageContext(_ context: AIChatPageContextData?) {
         userScript?.submitPageContext(context)
-    }
-
-    private func flushPendingActions() {
-        if pendingSidebarToggle {
-            pendingSidebarToggle = false
-            userScript?.submitToggleSidebarAction()
-        }
     }
 
     /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
@@ -264,10 +253,6 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
     func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScriptMessages) {
         if message == .getAIChatPageContext {
             delegate?.aiChatContentHandlerDidReceivePageContextRequest(self)
-        }
-
-        if message == .setAIChatHistoryEnabled {
-            isFrontendReady = true
         }
 
         switch message {

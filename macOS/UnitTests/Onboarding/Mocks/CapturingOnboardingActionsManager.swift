@@ -43,10 +43,12 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var reportExceptionCalled = false
     var exceptionParams: [String: String] = [:]
     var completedStep: OnboardingSteps?
+    var shownStep: OnboardingSteps?
     var bookmarkBarVisible: Bool?
     var homeButtonVisible: Bool?
     var sessionRestoreEnabled: Bool?
     var duckAiInAddressBarEnabled: Bool?
+    var reportedTelemetryEvent: OnboardingUserScript.TelemetryEvent?
 
     func onboardingStarted() {
         onboardingStartedCalled = true
@@ -97,8 +99,16 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
         completedStep = step
     }
 
+    func stepShown(step: OnboardingSteps) {
+        shownStep = step
+    }
+
     func reportException(with param: [String: String]) {
         reportExceptionCalled = true
         exceptionParams = param
+    }
+
+    func reportTelemetryEvent(_ event: OnboardingUserScript.TelemetryEvent) {
+        reportedTelemetryEvent = event
     }
 }

@@ -24,6 +24,7 @@ import AIChat
 import UIComponents
 import PixelKit
 import PrivacyConfig
+import WebExtensions
 
 protocol AddressBarViewControllerDelegate: AnyObject {
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController)
@@ -110,6 +111,7 @@ final class AddressBarViewController: NSViewController {
     private let tabsPreferences: TabsPreferences
     private let accessibilityPreferences: AccessibilityPreferences
     private let featureFlagger: FeatureFlagger
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding
 
     private var aiChatSettings: AIChatPreferencesStorage
 
@@ -210,7 +212,8 @@ final class AddressBarViewController: NSViewController {
           aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
           aiChatCoordinator: AIChatCoordinating,
-          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+          featureFlagger: FeatureFlagger,
+          adBlockingAvailability: AdBlockingAvailabilityProviding) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -239,6 +242,7 @@ final class AddressBarViewController: NSViewController {
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatCoordinator = aiChatCoordinator
         self.featureFlagger = featureFlagger
+        self.adBlockingAvailability = adBlockingAvailability
 
         super.init(coder: coder)
     }
@@ -255,7 +259,9 @@ final class AddressBarViewController: NSViewController {
                                                          aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
                                                          aiChatMenuConfig: aiChatMenuConfig,
                                                          aiChatCoordinator: aiChatCoordinator,
-                                                         aiChatSettings: aiChatSettings)
+                                                         aiChatSettings: aiChatSettings,
+                                                         featureFlagger: featureFlagger,
+                                                         adBlockingAvailability: adBlockingAvailability)
 
         self.addressBarButtonsViewController = controller
         controller?.delegate = self
@@ -997,6 +1003,11 @@ final class AddressBarViewController: NSViewController {
         guard viewWithinAddressBar.shouldShowArrowCursor == false else { return nil }
 
         guard selectionState != .activeWithAIChat else { return event }
+
+        if self.view.window?.firstResponder !== addressBarTextField.currentEditor() {
+            self.addressBarButtonsViewController?.bookmarkButton.isHidden = true
+            self.addressBarTextField.makeMeFirstResponder()
+        }
 
         // The event location is not a button so we can forward the event to the textfield
         addressBarTextField.rightMouseDown(with: event)

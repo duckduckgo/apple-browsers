@@ -22,11 +22,14 @@ import DesignResourcesKit
 
 class DownloadsListHostingController: UIHostingController<DownloadsList> {
     required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
+    init() {
         let dataSource = DownloadsListDataSource()
         let viewModel = DownloadsListViewModel(dataSource: dataSource)
         
-        super.init(coder: aDecoder, rootView: DownloadsList(viewModel: viewModel))
+        super.init(rootView: DownloadsList(viewModel: viewModel))
 
         setUpAppearances()
         
@@ -43,7 +46,6 @@ class DownloadsListHostingController: UIHostingController<DownloadsList> {
         let navAppearance = UINavigationBar.appearance(whenContainedInInstancesOf: [DownloadsListHostingController.self])
         decorateNavigationBar(navAppearance)
 
-        let toolbarAppearance = UIToolbar.appearance(whenContainedInInstancesOf: [DownloadsListHostingController.self])
         decorateToolbar()
     }
     

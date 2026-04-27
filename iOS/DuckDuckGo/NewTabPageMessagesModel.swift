@@ -37,7 +37,7 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let pixelReporter: RemoteMessagingPixelReporting?
     private let fireModePromotionEligibility: FireModePromotionCoordinating?
 
-    var onFireModeRequested: (() -> Void)?
+    var onTryFireModeRequested: (() -> Void)?
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
          notificationCenter: NotificationCenter = .default,
@@ -94,7 +94,6 @@ final class NewTabPageMessagesModel: ObservableObject {
     // MARK: - Fire Mode Promotion Actions
 
     func firePromotionDidAppear() {
-        // TODO: fire promotion shown pixel
         fireModePromotionEligibility?.markNTPPromotionShown()
     }
 
@@ -102,7 +101,7 @@ final class NewTabPageMessagesModel: ObservableObject {
     func firePromotionTryFireTabsTapped() async {
         fireModePromotionEligibility?.markNTPPromotionEngaged()
         await dismissHomeMessage(.firePromotion)
-        onFireModeRequested?()
+        onTryFireModeRequested?()
     }
 
     @MainActor

@@ -39,7 +39,7 @@ extension OnboardingRebranding {
 
         static let daxAnimation = DaxAnimation(
             animationName: "Dax-FloatingLeft",
-            size: CGSize(width: 86.33, height: 154),
+            size: CGSize(width: 112, height: 222),
             position: .left(bottomPadding: 18)
         )
 

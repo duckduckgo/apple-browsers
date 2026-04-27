@@ -35,6 +35,7 @@ public protocol DuckAiNativeStorageHandling {
 
     func putChat(chatId: String, data: Data) throws
     func putChats(_ chats: [DuckAiChatRecord]) throws
+    func getChat(chatId: String) throws -> DuckAiChatRecord?
     func getAllChats() throws -> [DuckAiChatRecord]
     func deleteChat(chatId: String) throws
     func deleteAllChats() throws
@@ -45,6 +46,7 @@ public protocol DuckAiNativeStorageHandling {
     func getFile(uuid: String) throws -> DuckAiFileContent?
     func listFiles() throws -> [DuckAiFileMetadata]
     func deleteFile(uuid: String) throws
+    func deleteFiles(chatId: String) throws
     func deleteAllFiles() throws
 
     // MARK: - Migration

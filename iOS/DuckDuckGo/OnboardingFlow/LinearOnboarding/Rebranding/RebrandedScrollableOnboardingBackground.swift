@@ -192,7 +192,7 @@ private struct ExitingBackgroundView<Content: View>: View, Animatable {
 }
 
 private extension OnboardingView.ViewState.Intro.IntroType {
-    
+
     var backgroundImage: Image {
         switch self {
         case .startOnboardingDialog:
@@ -206,6 +206,8 @@ private extension OnboardingView.ViewState.Intro.IntroType {
         case .chooseAddressBarPositionDialog:
             return OnboardingRebrandingImages.Linear.addressBarPositionBackground
         case .chooseSearchExperienceDialog:
+            return OnboardingRebrandingImages.Linear.addressBarSearchPreferenceBackground
+        case .duckAIQueryExperimentDialog:
             return OnboardingRebrandingImages.Linear.addressBarSearchPreferenceBackground
         }
     }
@@ -227,6 +229,8 @@ private extension OnboardingView.ViewState.Intro.IntroType {
         case .chooseAddressBarPositionDialog:
             return 360
         case .chooseSearchExperienceDialog:
+            return 294
+        case .duckAIQueryExperimentDialog:
             return 294
         }
     }
@@ -255,6 +259,8 @@ private extension OnboardingView.ViewState.Intro.IntroType {
         case .chooseAddressBarPositionDialog:
             return 246
         case .chooseSearchExperienceDialog:
+            return 164
+        case .duckAIQueryExperimentDialog:
             return 164
         }
     }

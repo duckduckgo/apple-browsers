@@ -40,6 +40,7 @@ extension MainViewController {
 
         let coordinator = UnifiedToggleInputCoordinator(
             isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            isFireTab: isCurrentTabFireTab(),
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             toggleModeStorage: toggleModeStorage
         )
@@ -83,7 +84,7 @@ extension MainViewController {
         switch action {
         case .unbindInactiveNonAITab:
             refreshInactiveNonAITab(tab: tab, coordinator: coordinator)
-            tab.updateWebViewBottomAnchor(for: viewCoordinator.toolbar.alpha)
+            tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
             return
         case .refreshAITab(let behavior):
             let completedRefresh = refreshAITab(tab: tab, coordinator: coordinator, behavior: behavior)
@@ -94,7 +95,7 @@ extension MainViewController {
             refreshNonAITab(tab: tab, coordinator: coordinator)
         }
 
-        tab.updateWebViewBottomAnchor(for: viewCoordinator.toolbar.alpha)
+        tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
     }
 
     func applyUnifiedInputChromeBackground(_ state: UnifiedInputChromeBackgroundState, updateWebView: Bool = true) {
@@ -288,8 +289,9 @@ private extension MainViewController {
         let hasExistingChat = tab.url?.duckAIChatID != nil
         let tabURL = tab.url ?? tab.link?.url
         let isVoiceMode = tabURL?.isDuckAIVoiceMode == true || tab.isVoiceModeRequested
+        let isSidebarOpen = tabURL?.isDuckAISidebarOpen == true
         tab.isVoiceModeRequested = false
-        let shouldExpandAfterRefresh = !hasExistingChat && !coordinator.hasSubmittedPrompt && !isVoiceMode
+        let shouldExpandAfterRefresh = !hasExistingChat && !coordinator.hasSubmittedPrompt && !isVoiceMode && !isSidebarOpen
         return .refreshAITab(.showCollapsed(expandAfterRefresh: shouldExpandAfterRefresh))
     }
 
@@ -588,8 +590,8 @@ extension MainViewController: UnifiedToggleInputDelegate {
         tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
     }
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?) {
-        openAIChat(prompt, autoSend: true, modelId: modelId, images: images)
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, images: [AIChatNativePrompt.NativePromptImage]?) {
+        openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, images: images)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
@@ -650,9 +652,9 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
         onSwitchToTab(tab)
     }
 
-    func unifiedInputEditingStateDidRequestFireMode() {
+    func unifiedInputEditingStateDidRequestTryFireMode() {
         unifiedToggleInputCoordinator?.contentViewController.dismissAnimated()
-        navigateToFireMode()
+        showTabSwitcher(forceFireTabsTip: true)
     }
 
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode) {

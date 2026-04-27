@@ -33,10 +33,14 @@ public struct AIChatModel {
     public let supportsImageUpload: Bool
     /// Image formats supported by this model (e.g. ["png", "webp"]). Empty when image upload is not supported.
     public let supportedImageFormats: [String]
+    /// Tools supported by this model for prompt-time augmentation.
+    public let supportedTools: [AIChatRAGTool]
     /// Whether the current user has access to this model based on their subscription tier.
     public let entityHasAccess: Bool
     /// The access tiers this model belongs to (e.g. ["free", "plus", "pro", "internal"]).
     public let accessTier: [String]
+    /// Supported reasoning effort levels (e.g. ["none", "low", "medium"]). Empty when reasoning is not supported.
+    public let supportedReasoningEffort: [String]
 
     public enum ModelProvider {
         case openAI
@@ -47,15 +51,32 @@ public struct AIChatModel {
         case unknown
     }
 
-    public init(id: String, name: String, shortName: String? = nil, provider: ModelProvider, supportsImageUpload: Bool, supportedImageFormats: [String] = [], entityHasAccess: Bool, accessTier: [String] = []) {
+    public init(
+        id: String,
+        name: String,
+        shortName: String? = nil,
+        provider: ModelProvider,
+        supportsImageUpload: Bool,
+        supportedImageFormats: [String] = [],
+        supportedTools: [AIChatRAGTool] = [],
+        entityHasAccess: Bool,
+        accessTier: [String] = [],
+        supportedReasoningEffort: [String] = []
+    ) {
         self.id = id
         self.name = name
         self.shortName = shortName ?? name
         self.provider = provider
         self.supportsImageUpload = supportsImageUpload
         self.supportedImageFormats = supportedImageFormats
+        self.supportedTools = supportedTools
         self.entityHasAccess = entityHasAccess
         self.accessTier = accessTier
+        self.supportedReasoningEffort = supportedReasoningEffort
+    }
+
+    public func supportsTool(_ tool: AIChatRAGTool) -> Bool {
+        supportedTools.contains(tool)
     }
 
     /// Returns a platform-appropriate icon for use in menu items.

@@ -183,6 +183,7 @@ extension OnboardingRebranding {
         /// The animation currently displayed by the overlay. Updated explicitly so the old overlay
         /// stays alive (and can play its exit) even after the model state has moved to the next step.
         @State private var currentDaxAnimation: DaxAnimation?
+        @State private var isExperimentExitTransitionActive = false
 
         init(model: OnboardingIntroViewModel) {
             self.model = model
@@ -231,13 +232,14 @@ extension OnboardingRebranding {
                             .scale.combined(with: .opacity)
                         )
 #if DEBUG || ALPHA
-                        .safeAreaInset(edge: .bottom) {
+                        .overlay(alignment: .bottom) {
                             Button {
                                 model.overrideOnboardingCompleted()
                             } label: {
                                 Text(UserText.Onboarding.Intro.Debug.skip)
                             }
                             .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
+                            .padding(.bottom, 8)
                         }
 #endif
                 }
@@ -257,6 +259,7 @@ extension OnboardingRebranding {
 
         private func onboardingDialogView(state: ViewState.Intro) -> some View {
             let configuration = bubbleBackedDialogConfiguration(for: state.type)
+            let isExperimentSearchStep = if case .duckAIQueryExperimentDialog = state.type { true } else { false }
 
             return GeometryReader { geometry in
                 let defaultTopPadding = onboardingTheme.linearOnboardingMetrics.minTopMargin + configuration.additionalTopMargin
@@ -289,6 +292,7 @@ extension OnboardingRebranding {
                 }
             }
             .padding()
+            .opacity(isExperimentExitTransitionActive && isExperimentSearchStep ? 0 : 1)
         }
 
         private var landingView: some View {
@@ -428,6 +432,8 @@ extension OnboardingRebranding {
                 addressBarPositionView
             case .chooseSearchExperienceDialog:
                 searchExperienceSelectionView
+            case .duckAIQueryExperimentDialog(let defaultMode):
+                experimentSearchExperienceSelectionView(defaultMode: defaultMode)
             }
         }
 
@@ -477,6 +483,14 @@ extension OnboardingRebranding {
                     tailDirection: .leading,
                     isVisible: true,
                     showsStepCounter: true
+                )
+            case .duckAIQueryExperimentDialog:
+                return BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.searchExperienceAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: false
                 )
             }
         }
@@ -557,10 +571,26 @@ extension OnboardingRebranding {
             case .chooseAppIconDialog: return AppIconPickerContent.daxAnimation
             case .chooseAddressBarPositionDialog: return nil // Dax-Floating is embedded in ScrollableOnboardingBackground
             case .chooseSearchExperienceDialog: return SearchExperienceContent.daxAnimation
+            case .duckAIQueryExperimentDialog: return nil
             }
         }
 
         /// Animates a hide -> action -> show sequence to prevent cross-fading between steps.
+        private func experimentSearchExperienceSelectionView(defaultMode: DuckAIQueryExperimentMode) -> some View {
+            LegacyOnboardingView.DuckAIExperimentSearchContent(
+                defaultMode: defaultMode,
+                visualStyle: .rebranded,
+                onModeConfirmed: model.selectDuckAIQueryExperimentAction(selection:),
+                openAIChatAction: model.openAIChatFromOnboarding,
+                openSearchAction: model.searchFromOnboarding,
+                measureQuerySubmissionAction: model.measureDuckAIQueryExperimentQuerySubmission,
+                startExitTransitionAction: {
+                    beginExperimentExitTransition()
+                }
+            )
+        }
+
+        /// Animates bubble content with a hide → optional action → show sequence.
         ///
         /// If the current step's `DaxAnimation` has an `exitOffset`, Dax slides off-screen first;
         /// all subsequent delays are shifted by `OnboardingBubbleAnimationMetrics.daxExitDuration`.
@@ -574,10 +604,10 @@ extension OnboardingRebranding {
 
             // Dax exit only applies during step transitions (action != nil).
             // On initial appearance (action == nil) the overlay is just being created — no exit needed.
-            let currentDax: DaxAnimation? = action != nil ? {
-                guard case let .onboarding(viewState) = model.state else { return nil }
-                return daxAnimation(for: viewState.type)
-            }() : nil
+            // Use `currentDaxAnimation` (what's actually displayed) instead of deriving from the model state,
+            // so transitions where the overlay was already cleared (e.g. promo→tutorial within add-to-dock)
+            // don't trigger an unnecessary daxExitDuration delay.
+            let currentDax: DaxAnimation? = action != nil ? currentDaxAnimation : nil
             let daxExitDuration = currentDax?.effectiveExitDuration ?? OnboardingBubbleAnimationMetrics.daxExitDuration
             let hasAnyDaxExit = currentDax?.hasSlideExit == true
                 || currentDax?.hasFadeExit == true
@@ -625,6 +655,12 @@ extension OnboardingRebranding {
             let showDelay = actionDelay + OnboardingBubbleAnimationMetrics.contentFadeInDelay
             DispatchQueue.main.asyncAfter(deadline: .now() + showDelay) {
                 withAnimation { showBubbleContent = true }
+            }
+        }
+
+        private func beginExperimentExitTransition() {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                isExperimentExitTransitionActive = true
             }
         }
 

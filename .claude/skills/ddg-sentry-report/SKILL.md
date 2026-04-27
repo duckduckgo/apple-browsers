@@ -28,6 +28,10 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
   - Filtering by a single release prefix (`release:DuckDuckGo@...`) silently drops extension crashes. Use the `app_version` tag instead — it's set by the SDK on every event regardless of target, so a single `app_version:1.186.*` (or exact `app_version:1.186.0`) catches main app + extensions in one query. Keep the explicit release list only for `firstRelease:` (see below), and include **all** releases returned by `find_releases(query="<version>")`, not just the main-app prefix.
 - **Project filter in URLs:** macOS uses numeric `project=6`. For iOS, `project=apple-ios` (slug) works on the Sentry self-hosted host. If numeric is needed, look it up via `find_projects`.
 - **iOS SIGKILL noise:** Most iOS SIGKILL crashes with culprit `main` are Jetsam memory-pressure kills, not app bugs. Group these under LOW unless volume spikes or the culprit frame names specific app code. Don't attempt blame on them.
+- **`Sentry Crash Reports` Asana project (GID `1214294661819890`) is partitioned by platform.** Look up and create per-issue tracking tasks scoped to the section that matches the run's project:
+  - macOS section: `1214291024165659`
+  - iOS section: `1214290879396596`
+  - Fallback (`Untitled section`, no platform): `1214294661819891` — older tasks predating the split live here; query as a fallback when the platform section returns no match, but always **create** new tasks in the platform section.
 - **Sentry MCP `list_issues` query uses Sentry's native syntax**, not natural language. Key filters:
   - `app_version:1.186.*` — events tagged with any version in the `1.186.x` series (wildcard, unquoted); use `app_version:1.186.0` for an exact version. Works across main app + extensions.
   - `firstRelease:[DuckDuckGo@1.186.0,com.duckduckgo.macos.vpn.network-extension@1.186.0,...]` — issues *first seen* in these releases (new regressions); list must include every release string for the version, not just the main-app prefix
@@ -56,18 +60,21 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
    - If the culprit is too generic (`value`, `NSBundle.module`, `main`, OS symbols) — skip attribution
 6. **Compose URL-rewritten issue links.** Every `https://ddg.sentry.io/issues/<SHORT_ID>` becomes `https://errors.duckduckgo.com/organizations/ddg/issues/<SHORT_ID>/?project=<PROJECT_FILTER>`. Query links use `/organizations/ddg/issues/?project=<PROJECT_FILTER>&query=...&statsPeriod=7d`.
 7. **Root-cause analysis (subagents) — for each new issue with an informative stacktrace.** Especially worth investigating: unhandled exceptions where the message itself encodes the contract violation (e.g. `NSInternalInconsistencyException: Invalid update: ...`), or app-code culprits with a deep first-party call chain. Skip when the culprit is generic (`value`, `__pthread_kill`, `objc_release`, `main`), when the trace is OS-frames-only, or when the crash is Jetsam OOM. Dispatch one **general-purpose** subagent per qualifying issue **in parallel** (single message, multiple Agent tool calls). Brief each subagent with: short-ID, exception class + message, the full stacktrace from `get_sentry_resource`, the suspect PR(s) from step 5, and a concrete instruction to (a) trace the call chain backward to its origin in this repo, (b) identify the invariant being violated, and (c) return a short structured report (root-cause summary, numbered call chain 4–8 steps, optional fix sketch). Cap responses ("under 250 words"). Use the analyses to populate the per-issue tracking tasks in step 8.
-8. **Per-issue tracking task in `Sentry Crash Reports` (find-or-create).** For every new issue (whether a subagent ran or not), look up an existing task in project `1214294661819890` keyed on the **Sentry Crash Group ID** custom field (GID `1214294661819893`):
+8. **Per-issue tracking task in `Sentry Crash Reports` (find-or-create, section-scoped).** Pick `<PLATFORM_SECTION>` for the run: macOS → `1214291024165659`, iOS → `1214290879396596`. For every new issue, look up an existing task in project `1214294661819890` keyed on the **Sentry Crash Group ID** custom field (GID `1214294661819893`):
    ```
+   # Primary search — the platform section (scoped lookup is faster).
    asana_search_tasks(workspace="137249556945",
      projects.any="1214294661819890",
+     sections.any="<PLATFORM_SECTION>",
      custom_fields.1214294661819893.value="<SHORT_ID>",
-     opt_fields="name,permalink_url,custom_fields,tags,tags.name")
+     opt_fields="name,permalink_url,custom_fields,memberships.section.gid,tags,tags.name")
    ```
    The `value` filter is substring-match — verify the returned `custom_fields` contains an exact `APPLE-MACOS-XXX` (or `APPLE-IOS-XXX`) match before treating the task as a hit, otherwise consider it not found.
-   - **Found:** capture `permalink_url`; reference it in the main report's per-issue line as `· <a href="...">tracking</a>`. Do not modify the existing task.
-   - **Not found:** create one with `asana_create_task`:
+   - **Found (in either platform section or `Untitled section` fallback):** capture `permalink_url`; reference it in the main report's per-issue line as `· <a href="...">tracking</a>`. Do not modify the existing task — Untitled-section tasks stay where they are.
+   - **Not found anywhere:** create one with `asana_create_task`. **Always create in the platform section, never the fallback:**
      - `name`: `<error type> <culprit>` — mirrors the convention in existing tasks (e.g. `EXC_CRASH TabBarViewController.tabCollectionViewModel`, `NSInternalInconsistencyException CollectionView.reloadItems`).
-     - `projects`: `["1214294661819890"]`
+     - `project_id`: `1214294661819890`
+     - `section_id`: `<PLATFORM_SECTION>` (macOS or iOS — required so the task lands in the right column)
      - `custom_fields`: `{"1214294661819893": "<SHORT_ID>"}` (set the Sentry Crash Group ID so future runs can dedupe)
      - `html_notes`: per-issue template (see "Per-issue tracking task body" below)
      - Capture the new task's `permalink_url` and reference it in the main report.
@@ -155,6 +162,8 @@ Likely caused by <a href="https://github.com/duckduckgo/apple-browsers/pull/<NNN
 | Skipping the find-or-create lookup and creating a duplicate tracking task | Always run `asana_search_tasks` against `Sentry Crash Reports` filtered by `custom_fields.1214294661819893.value=<SHORT_ID>` first, and verify the returned custom field value matches **exactly** (substring-match means `APPLE-MACOS-BD7` returns `APPLE-MACOS-BD70` too). |
 | Forgetting to set `custom_fields` on the new tracking task | Without `{"1214294661819893": "<SHORT_ID>"}`, future runs of this skill will create duplicates because the dedupe lookup will miss. |
 | Running root-cause subagents serially | Dispatch them in parallel (single message, multiple Agent tool calls) — they're independent and waiting serially is wasteful. Skip subagents entirely when the culprit is generic or OS-only — there's nothing to analyze. |
+| Searching across the whole `Sentry Crash Reports` project instead of the platform section | Always scope the primary search to the platform section (`sections.any=<PLATFORM_SECTION>`). Only fall back to the `Untitled section` (`1214294661819891`) when the platform-section search misses — that's where pre-split tasks still live. |
+| Creating a new tracking task in the `Untitled section` (the fallback) | The fallback is read-only for *new* tasks. New tasks always go in the platform section (`section_id=1214291024165659` for macOS, `1214290879396596` for iOS). |
 
 ## Example invocation
 
@@ -167,5 +176,5 @@ Likely caused by <a href="https://github.com/duckduckgo/apple-browsers/pull/<NNN
 5. For each new issue: grep culprit symbol → `git blame` → capture PR from commit `(#NNNN)`.
 6. Rewrite all `ddg.sentry.io` URLs to `errors.duckduckgo.com/organizations/ddg/issues/<SHORT_ID>/?project=6`.
 7. For each new issue with an informative stacktrace (e.g. `NSInternalInconsistencyException` with a clear message, or a deep first-party call chain), dispatch a parallel general-purpose subagent (single message, multiple Agent tool calls) to produce a root-cause summary + numbered call chain. Skip when the culprit is generic or OS-only.
-8. For each new issue: `asana_search_tasks(workspace="137249556945", projects.any="1214294661819890", custom_fields.1214294661819893.value="<SHORT_ID>", opt_fields="name,permalink_url,custom_fields,tags,tags.name")`. If a task exists with an exact custom-field match, capture its `permalink_url`. If not, `asana_create_task` with `name`, `projects=["1214294661819890"]`, `custom_fields={"1214294661819893":"<SHORT_ID>"}`, and `html_notes` from the per-issue template.
+8. For each new issue: `asana_search_tasks(workspace="137249556945", projects.any="1214294661819890", sections.any="1214291024165659", custom_fields.1214294661819893.value="<SHORT_ID>", opt_fields="name,permalink_url,custom_fields,memberships.section.gid,tags,tags.name")` (macOS section). If no exact custom-field match, retry with `sections.any="1214294661819891"` (Untitled-section fallback) — link any hit there as-is. If still no match, `asana_create_task` with `name`, `project_id="1214294661819890"`, `section_id="1214291024165659"` (macOS), `custom_fields={"1214294661819893":"<SHORT_ID>"}`, and `html_notes` from the per-issue template. Capture `permalink_url`.
 9. `asana_update_task(task_id="1214175611004136", html_notes="<body>...</body>")` with the main report; each per-issue line ends with `· <a href="...">tracking</a>` linking to the task from step 8.

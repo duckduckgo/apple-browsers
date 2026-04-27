@@ -533,7 +533,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             debugEvents: self.debugEvents,
             tunnelState: self,
             tunnelLifecycle: self,
-            snoozeManager: self
+            snoozeManager: self,
+            leakCheckController: self
         )
 
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider initialized")
@@ -1792,6 +1793,13 @@ extension PacketTunnelProvider: TunnelLifecycleManaging {
 extension PacketTunnelProvider: SnoozeManaging {
     // startSnooze(duration:) — already internal @MainActor
     // cancelSnooze() — already internal @MainActor
+}
+
+extension PacketTunnelProvider: LeakCheckControlling {
+    func triggerLeakCheckFromDebugMenu() async {
+        Logger.networkProtectionIPLeakCheck.log("Debug-triggered leak check requested")
+        await leakCheckService?.runCheck(trigger: .periodic, bypassCooldown: true)
+    }
 }
 
 // MARK: - Error Description Helper

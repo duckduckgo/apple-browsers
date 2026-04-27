@@ -173,10 +173,6 @@ public extension SubJobWebRunning {
                                  actionType: generateEmailAction.actionType,
                                  details: "Email address received")
                 fetchedEmail = emailData.emailAddress
-                // Mirror to the in-memory ExtractedProfile (opt-out only — nil during scan) so the
-                // C-S-S fillForm payload and any downstream inline emailConfirmation action stay in
-                // sync with the DB row persisted by the service.
-                extractedProfile?.email = emailData.emailAddress
                 stageCalculator.setEmailPattern(emailData.pattern)
                 if stepType == .optOut {
                     stageCalculator.fireOptOutEmailGenerate()
@@ -227,39 +223,29 @@ public extension SubJobWebRunning {
         }
 
         if action.needsEmail {
-            if let cachedEmail = fetchedEmail {
-                // A prior generateEmailAction has already fetched and (for opt-out) persisted the
-                // email. Reuse it without another service call. Stage + pixel were already fired
-                // by the generateEmail action, so we deliberately don't fire them again here.
+            do {
+                stageCalculator.setStage(.emailGenerate)
                 recordDebugEvent(kind: .wait,
                                  actionType: action.actionType,
-                                 details: "Reusing previously generated email")
-                extractedProfile?.email = cachedEmail
-            } else {
-                do {
-                    stageCalculator.setStage(.emailGenerate)
-                    recordDebugEvent(kind: .wait,
-                                     actionType: action.actionType,
-                                     details: "Requesting email address")
-                    let emailData = try await emailConfirmationDataService.getEmailAndOptionallySaveToDatabase(
-                        dataBrokerId: context.dataBroker.id,
-                        dataBrokerURL: context.dataBroker.url,
-                        profileQueryId: context.profileQuery.id,
-                        extractedProfileId: extractedProfile?.id,
-                        attemptId: stageCalculator.attemptId
-                    )
-                    recordDebugEvent(kind: .wait,
-                                     actionType: action.actionType,
-                                     details: "Email address received")
-                    extractedProfile?.email = emailData.emailAddress
-                    stageCalculator.setEmailPattern(emailData.pattern)
-                    if stepType == .optOut {
-                        stageCalculator.fireOptOutEmailGenerate()
-                    }
-                } catch {
-                    await onEmailError(error: error)
-                    return
+                                 details: "Requesting email address")
+                let emailData = try await emailConfirmationDataService.getEmailAndOptionallySaveToDatabase(
+                    dataBrokerId: context.dataBroker.id,
+                    dataBrokerURL: context.dataBroker.url,
+                    profileQueryId: context.profileQuery.id,
+                    extractedProfileId: extractedProfile?.id,
+                    attemptId: stageCalculator.attemptId
+                )
+                recordDebugEvent(kind: .wait,
+                                 actionType: action.actionType,
+                                 details: "Email address received")
+                extractedProfile?.email = emailData.emailAddress
+                stageCalculator.setEmailPattern(emailData.pattern)
+                if stepType == .optOut {
+                    stageCalculator.fireOptOutEmailGenerate()
                 }
+            } catch {
+                await onEmailError(error: error)
+                return
             }
         }
 
@@ -275,7 +261,12 @@ public extension SubJobWebRunning {
             try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
         }
 
-        let request: CCFRequestData = .userData(context.profileQuery, self.extractedProfile, emailData: emailData)
+        let request: CCFRequestData = .userData(
+            context.profileQuery,
+            self.extractedProfile,
+            fetchedEmail.map { FetchedEmail(email: $0) },
+            emailData
+        )
         recordDebugEvent(kind: .actionPayload,
                          actionType: action.actionType,
                          details: DebugHelper.prettyPrintedActionPayload(action: action, data: request))

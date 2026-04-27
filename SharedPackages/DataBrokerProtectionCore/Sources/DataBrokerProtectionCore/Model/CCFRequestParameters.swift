@@ -20,11 +20,19 @@ import Foundation
 
 public enum CCFRequestData: Encodable {
     case solveCaptcha(CaptchaToken)
-    case userData(ProfileQuery, ExtractedProfile?, emailData: [String: String] = [:])
+    case userData(ProfileQuery, ExtractedProfile?, FetchedEmail?, [String: String])
 }
 
 public struct CaptchaToken: Encodable, Sendable {
     let token: String
+}
+
+public struct FetchedEmail: Encodable, Sendable {
+    let email: String
+
+    public init(email: String) {
+        self.email = email
+    }
 }
 
 struct InitParams: Encodable {
@@ -35,6 +43,7 @@ struct InitParams: Encodable {
 private enum UserDataCodingKeys: String, CodingKey {
     case userProfile
     case extractedProfile
+    case fetchedEmail
     case emailData
 }
 
@@ -53,11 +62,14 @@ struct ActionRequest: Encodable {
         switch data {
         case .solveCaptcha(let captchaToken):
             try container.encode(captchaToken, forKey: .data)
-        case .userData(let profileQuery, let extractedProfile, let emailData):
+        case .userData(let profileQuery, let extractedProfile, let fetchedEmail, let emailData):
             var userDataContainer = container.nestedContainer(keyedBy: UserDataCodingKeys.self, forKey: .data)
             try userDataContainer.encode(profileQuery, forKey: .userProfile)
             if let extractedProfile = extractedProfile {
                 try userDataContainer.encode(extractedProfile, forKey: .extractedProfile)
+            }
+            if let fetchedEmail = fetchedEmail {
+                try userDataContainer.encode(fetchedEmail, forKey: .fetchedEmail)
             }
             if !emailData.isEmpty {
                 try userDataContainer.encode(emailData, forKey: .emailData)

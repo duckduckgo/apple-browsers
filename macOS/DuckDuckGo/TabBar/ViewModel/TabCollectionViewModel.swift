@@ -442,11 +442,10 @@ final class TabCollectionViewModel: NSObject {
             NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
         }
         let insertionIndex = tabCollection.tabs.indices.index(before: tabCollection.tabs.endIndex)
+        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
+        delegate?.tabCollectionViewModelDidAppend(self, selected: selected)
         if selected {
             selectUnpinnedTab(at: insertionIndex, forceChange: forceChange)
-            delegate?.tabCollectionViewModelDidAppend(self, selected: true)
-        } else {
-            delegate?.tabCollectionViewModelDidAppend(self, selected: false)
         }
         return insertionIndex
     }
@@ -469,12 +468,12 @@ final class TabCollectionViewModel: NSObject {
         }
 
         tabCollection.append(tabs: tabs)
+        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
+        delegate?.tabCollectionViewModelDidMultipleChanges(self)
         if shouldSelectLastTab {
             let newSelectionIndex = tabCollection.tabs.count - 1
             selectUnpinnedTab(at: newSelectionIndex)
         }
-
-        delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
     func append(tabs: [Tab], andSelect shouldSelectLastTab: Bool) {

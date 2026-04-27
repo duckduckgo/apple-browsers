@@ -338,7 +338,7 @@ final class WatchdogTests: XCTestCase {
         cancellable.cancel()
         hangWatchdog.stop()
     }
-    
+
     // MARK: - State Transitions
 
     func testHangStateTransitions() async throws {

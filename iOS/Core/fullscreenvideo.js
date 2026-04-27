@@ -52,7 +52,7 @@
         }
 
         HTMLElement.prototype.requestFullscreen = function () {
-            const video = findVideo(this) || findVideo(document.body)
+            const video = findVideo(this)
             if (!video) return false
             video.webkitEnterFullscreen()
             return true

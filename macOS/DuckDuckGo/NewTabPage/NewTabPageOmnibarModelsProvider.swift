@@ -61,7 +61,8 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
                             shortName: model.shortName,
                             isEnabled: model.entityHasAccess,
                             supportsImageUpload: model.supportsImageUpload,
-                            supportedTools: model.supportedTools.map(\.rawValue)
+                            supportedTools: model.supportedTools.map(\.rawValue),
+                            supportedReasoningEffort: model.supportedReasoningEffort
                         )
                     }
                 )

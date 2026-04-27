@@ -338,11 +338,49 @@ final class AIChatOmnibarController {
     }
 
     /// Supported reasoning effort levels for the currently selected model. Unknown raw values
-    /// returned by the backend are silently filtered out — the picker only shows efforts the app
-    /// knows how to render.
+    /// returned by the backend are silently filtered out. This is the server-truth list — used to
+    /// validate persisted selections and to gate what we attach to submissions, so a value the
+    /// user actually picked still flows through unchanged (e.g. a stored `medium` keeps submitting
+    /// `medium` even after the model gains `high` support).
     var selectedModelReasoningEfforts: [AIChatReasoningEffort] {
         (models.first(where: { $0.id == persistedModelId })?.supportedReasoningEffort ?? [])
             .compactMap(AIChatReasoningEffort.init(rawValue:))
+    }
+
+    /// Display-only variant of `selectedModelReasoningEfforts` for the picker menu. Picker
+    /// buckets collapse to a single menu item when the model advertises both efforts in a
+    /// bucket:
+    /// - Fast maps to the first supported effort from `none`, then `minimal` — `.minimal` is
+    ///   hidden when `.none` is also supported.
+    /// - Extended Reasoning maps to the first supported effort from `high`, then `medium` —
+    ///   `.medium` is hidden when `.high` is also supported.
+    /// Submission and validation paths must use the un-deduped list so a previously-picked value
+    /// (e.g. stored `.medium` or `.minimal`) keeps flowing to the backend unchanged.
+    var pickerReasoningEfforts: [AIChatReasoningEffort] {
+        var efforts = selectedModelReasoningEfforts
+        if efforts.contains(.none), efforts.contains(.minimal) {
+            efforts.removeAll { $0 == .minimal }
+        }
+        if efforts.contains(.high), efforts.contains(.medium) {
+            efforts.removeAll { $0 == .medium }
+        }
+        return efforts
+    }
+
+    /// The picker effort that visually represents the persisted selection. Returns the stored
+    /// effort directly when it's in the picker list; otherwise maps to its bucket equivalent
+    /// (`.medium` → `.high`, `.minimal` → `.none`) so the chip label/icon and the menu checkmark
+    /// stay in sync with what's actually submitted. Submission still sends the persisted value
+    /// unchanged via `effectiveReasoningEffort`.
+    var displayedReasoningEffort: AIChatReasoningEffort? {
+        guard let stored = selectedReasoningEffort else { return nil }
+        let efforts = pickerReasoningEfforts
+        if efforts.contains(stored) { return stored }
+        switch stored {
+        case .medium where efforts.contains(.high): return .high
+        case .minimal where efforts.contains(.none): return .none
+        default: return nil
+        }
     }
 
     /// Updates the selected reasoning effort and persists it for future sessions.

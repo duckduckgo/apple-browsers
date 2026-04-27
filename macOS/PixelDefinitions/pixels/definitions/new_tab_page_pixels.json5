@@ -77,7 +77,7 @@
         "owners": ["jleandroperez"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_new-tab-page_customizer_shown": {
         "description": "Fires when the user reveals the New Tab Page Customizer UI.",
@@ -87,6 +87,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "themePopoverWasOpen",
                 "type": "boolean",

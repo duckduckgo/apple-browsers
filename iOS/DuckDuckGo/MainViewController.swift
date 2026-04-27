@@ -4405,6 +4405,13 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestNewTab(_ tab: TabViewController) {
         _ = findInPageView?.resignFirstResponder()
+        // Pre-arm logo hiding BEFORE newTab() because attachHomeScreen() may call
+        // omniBar.beginEditing(animated:) when KeyboardSettings.onNewTab is enabled, which
+        // would create the editing-state VC before presentChatPathOnboardingCompletionIfNeeded()
+        // gets a chance to set the pending flag.
+        if daxDialogsManager.chatPathPhase == .trackerToEOJ, aiChatSettings.isAIChatEnabled {
+            omniBar.setEditingStateLogoHidden(true)
+        }
         newTab()
         presentChatPathOnboardingCompletionIfNeeded()
     }
@@ -4413,6 +4420,10 @@ extension MainViewController: TabDelegate {
         guard daxDialogsManager.chatPathPhase == .trackerToEOJ,
               aiChatSettings.isAIChatEnabled else { return }
         let message = UserText.Onboarding.DuckAIQueryExperiment.completionOnboardingMessage
+        // Hide the NTP synchronously, before any frame is rendered, so its empty-state Dax can't
+        // flash before the editing-state transition begins. Restored by NewTabPageViewController
+        // on every dismissal path.
+        newTabPageViewController?.view.alpha = 0
         DispatchQueue.main.async { [weak self] in
             self?.newTabPageViewController?.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message)
         }

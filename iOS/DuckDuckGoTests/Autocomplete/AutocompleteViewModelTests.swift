@@ -23,8 +23,8 @@ import Suggestions
 
 final class AutocompleteViewModelTests: XCTestCase {
 
-    private func makeViewModel(showAskAIChat: Bool = false, isSwipeToDeleteEnabled: Bool = false) -> (AutocompleteViewModel, MockAutocompleteViewModelDelegate) {
-        let vm = AutocompleteViewModel(isAddressBarAtBottom: false, showAskAIChat: showAskAIChat, isSwipeToDeleteEnabled: isSwipeToDeleteEnabled)
+    private func makeViewModel(showAskAIChat: Bool = false) -> (AutocompleteViewModel, MockAutocompleteViewModelDelegate) {
+        let vm = AutocompleteViewModel(isAddressBarAtBottom: false, showAskAIChat: showAskAIChat)
         let delegate = MockAutocompleteViewModelDelegate()
         vm.delegate = delegate
         return (vm, delegate)

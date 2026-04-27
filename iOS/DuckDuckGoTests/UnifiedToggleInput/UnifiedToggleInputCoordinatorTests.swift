@@ -616,6 +616,32 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         waitForExpectations(timeout: 0.1)
     }
 
+    // MARK: - Fire Tab
+
+    func test_updateIsFireTab_true_updatesHandler() {
+        XCTAssertFalse(sut.viewController.handler.isFireTab)
+        sut.updateIsFireTab(true)
+        XCTAssertTrue(sut.viewController.handler.isFireTab)
+    }
+
+    func test_updateIsFireTab_falseAfterTrue_updatesHandler() {
+        sut.updateIsFireTab(true)
+        sut.updateIsFireTab(false)
+        XCTAssertFalse(sut.viewController.handler.isFireTab)
+    }
+
+    func test_updateIsFireTab_noChangeDoesNotRebuildDaxLogoManager() {
+        let initialManager = sut.contentViewController.daxLogoManager
+        sut.updateIsFireTab(false)
+        XCTAssertTrue(sut.contentViewController.daxLogoManager === initialManager)
+    }
+
+    func test_updateIsFireTab_trueRebuildsDaxLogoManager() {
+        let initialManager = sut.contentViewController.daxLogoManager
+        sut.updateIsFireTab(true)
+        XCTAssertFalse(sut.contentViewController.daxLogoManager === initialManager)
+    }
+
     // MARK: - Submit From Omnibar Editing
 
     func test_submitSearch_fromOmnibarEditing_deactivates() {
@@ -830,6 +856,15 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         sut.activateFromOmnibar(inputMode: .aiChat)
         sut.updateInputMode(.aiChat, animated: false)
+
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden)
+    }
+
+    func test_toolsButton_staysUnhiddenAcrossSwitchToSearchMode_soItFadesWithTheToolbar() {
+        sut.showExpanded()
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden)
+
+        sut.updateInputMode(.search, animated: true)
 
         XCTAssertFalse(sut.viewController.isToolsButtonHidden)
     }
@@ -1382,9 +1417,11 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {
+    var selectedReasoningEffort: String?
     var selectedModelId: String?
     var selectedModelShortName: String?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
 private final class MockToggleModeStorage: ToggleModeStoring {

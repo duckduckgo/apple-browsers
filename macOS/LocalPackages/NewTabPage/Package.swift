@@ -32,6 +32,7 @@ let package = Package(
             targets: ["NewTabPage"]),
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/AIChat"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../WebKitExtensions"),
         .package(path: "../UserScriptActionsManager"),
@@ -62,6 +63,7 @@ let package = Package(
             dependencies: [
                 "NewTabPage",
                 "Utilities",
+                .product(name: "AIChat", package: "AIChat"),
                 .product(name: "AutoconsentStats", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
             ]

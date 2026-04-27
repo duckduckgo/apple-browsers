@@ -222,6 +222,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a model from the model picker menu
     case aiChatAddressBarModelSelected
 
+    /// Event Trigger: User selects a reasoning effort from the native omnibar picker
+    case aiChatAddressBarReasoningEffortSelected
+
     // MARK: - Image Generation Mode
 
     /// Event Trigger: User activates image generation mode via the Tools menu
@@ -250,8 +253,21 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a model from the New Tab Page model picker
     case aiChatNtpModelSelected
 
+    /// Event Trigger: User selects a reasoning effort from the New Tab Page omnibar picker
+    case aiChatNtpReasoningEffortSelected
+
     /// Event Trigger: User taps "View all chats" from the New Tab Page omnibar
     case aiChatNtpViewAllChatsClicked
+
+    // MARK: - NTP Image Generation Mode
+
+    /// Event Trigger: User submits a prompt while image generation mode is active on the New Tab Page
+    case aiChatNtpImageGenerationSubmitted
+
+    // MARK: - NTP Web Search Mode
+
+    /// Event Trigger: User submits a prompt while web search mode is active on the New Tab Page
+    case aiChatNtpWebSearchSubmitted
 
     /// Event Trigger: User taps "View all chats" from the native address bar omnibar
     case aiChatViewAllChatsClicked
@@ -471,6 +487,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_submit_with_image"
         case .aiChatAddressBarModelSelected:
             return "aichat_addressbar_model_selected"
+        case .aiChatAddressBarReasoningEffortSelected:
+            return "aichat_addressbar_reasoning_effort_selected"
         case .aiChatAddressBarImageGenerationActivated:
             return "aichat_addressbar_image_generation_activated"
         case .aiChatAddressBarImageGenerationDeactivated:
@@ -487,8 +505,14 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_ntp_submit_with_image"
         case .aiChatNtpModelSelected:
             return "aichat_ntp_model_selected"
+        case .aiChatNtpReasoningEffortSelected:
+            return "aichat_ntp_reasoning_effort_selected"
         case .aiChatNtpViewAllChatsClicked:
             return "aichat_ntp_view_all_chats_clicked"
+        case .aiChatNtpImageGenerationSubmitted:
+            return "aichat_ntp_image_generation_submitted"
+        case .aiChatNtpWebSearchSubmitted:
+            return "aichat_ntp_web_search_submitted"
         case .aiChatViewAllChatsClicked:
             return "aichat_view_all_chats_clicked"
         case .aiChatModelsFetchFailed:
@@ -583,6 +607,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageAttached,
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarModelSelected,
+                .aiChatAddressBarReasoningEffortSelected,
                 .aiChatAddressBarImageGenerationActivated,
                 .aiChatAddressBarImageGenerationDeactivated,
                 .aiChatAddressBarImageGenerationSubmitted,
@@ -590,7 +615,10 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarWebSearchDeactivated,
                 .aiChatAddressBarWebSearchSubmitted,
                 .aiChatNtpModelSelected,
+                .aiChatNtpReasoningEffortSelected,
                 .aiChatNtpViewAllChatsClicked,
+                .aiChatNtpImageGenerationSubmitted,
+                .aiChatNtpWebSearchSubmitted,
                 .aiChatViewAllChatsClicked,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,
@@ -709,9 +737,13 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarSubmitWithImage,
                 .aiChatAddressBarModelSelected,
+                .aiChatAddressBarReasoningEffortSelected,
                 .aiChatNtpSubmitWithImage,
                 .aiChatNtpModelSelected,
+                .aiChatNtpReasoningEffortSelected,
                 .aiChatNtpViewAllChatsClicked,
+                .aiChatNtpImageGenerationSubmitted,
+                .aiChatNtpWebSearchSubmitted,
                 .aiChatViewAllChatsClicked,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,

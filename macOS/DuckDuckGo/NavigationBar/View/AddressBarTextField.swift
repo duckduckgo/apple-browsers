@@ -374,6 +374,14 @@ final class AddressBarTextField: NSTextField {
             }
         }
         if !self.isFirstResponder || shouldUpdateValue {
+            /// The tab's `addressBarString` just changed — this fires from navigation (submit, link
+            /// click, JS) on the currently-selected tab. Whatever pending draft the user had in
+            /// `lastAddressBarTextFieldValue` (live-saved per-keystroke from `handleTextDidChange`) has
+            /// been consumed by the navigation, so clear it. Otherwise switching away and back to this
+            /// tab would restore the stale draft over the freshly-loaded URL (e.g. typing "wiki",
+            /// picking the wikipedia.org suggestion, switching tabs, returning — the bar would show
+            /// "wiki" instead of the centered passive `wikipedia.org`).
+            selectedTabViewModel?.lastAddressBarTextFieldValue = nil
             updateValue(selectedTabViewModel: selectedTabViewModel, addressBarString: addressBarString)
         }
     }
@@ -1157,6 +1165,16 @@ extension AddressBarTextField: NSTextFieldDelegate {
             if let editor = currentEditor() {
                 sharedTextState?.updateSelection(editor.selectedRange)
             }
+        }
+
+        /// Live-save the user's typed text into the current tab's `lastAddressBarTextFieldValue` so the
+        /// snapshot is always up-to-date by the time a tab switch fires — no Combine ordering can race
+        /// with this. We always store the canonical typed `.text(stringValueWithoutSuffix, userTyped: true)`
+        /// shape (not whatever speculative `.suggestion` the engine surfaced over the typed text), so the
+        /// restore path on switch-back doesn't have to disambiguate suggestion shapes — the user's intent
+        /// is the typed text itself.
+        if let currentTab = tabCollectionViewModel?.selectedTabViewModel {
+            currentTab.lastAddressBarTextFieldValue = .text(stringValueWithoutSuffix, userTyped: true)
         }
     }
 

@@ -4186,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Ištrinti serverio duomenis";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Visi įrenginiai bus atjungti, o sinchronizuoti duomenys bus ištrinti iš serverio.";
+"sync.delete.all.confirm.message" = "Jūsų atsarginė kopija bus ištrinta iš serverio. Visi įrenginiai bus atjungti nuo sinchronizavimo, bet iš nė vieno įrenginio niekas nebus ištrinta.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Ištrinti serverio duomenis?";

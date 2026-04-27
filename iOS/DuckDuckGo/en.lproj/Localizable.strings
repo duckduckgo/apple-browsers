@@ -3932,10 +3932,10 @@ Take back control of your personal information with the browser designed for dat
 "sync.delete.all.confirm.action" = "Delete Server Data";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "All devices will be disconnected and your synced data will be deleted from the server.";
+"sync.delete.all.confirm.message" = "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device.";
 
 /* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Delete Server Data?";
+"sync.delete.all.confirm.title" = "Delete server data?";
 
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "No account needed. End-to-end encryption means nobody but you can see your bookmarks, not even us.";

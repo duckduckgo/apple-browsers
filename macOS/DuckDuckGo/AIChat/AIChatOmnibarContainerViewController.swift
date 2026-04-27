@@ -322,8 +322,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     // MARK: - Tool Button Visibility
 
     private var shouldShowToolsButton: Bool {
-        omnibarController.isOmnibarToolsEnabled
-            && (omnibarController.isImageGenerationEnabled || omnibarController.isWebSearchEnabled)
+        omnibarController.isOmnibarToolsEnabled && (isImageGenerationItemVisible || isWebSearchItemVisible)
+    }
+
+    private var isImageGenerationItemVisible: Bool {
+        omnibarController.isImageGenerationEnabled
+    }
+
+    private var isWebSearchItemVisible: Bool {
+        omnibarController.isWebSearchEnabled && omnibarController.selectedModelSupportsWebSearch
+    }
+
+    private var shouldShowWebSearchChip: Bool {
+        shouldShowToolsButton && omnibarController.isWebSearchMode && omnibarController.selectedModelSupportsWebSearch
     }
 
     private var shouldShowImageUpload: Bool {
@@ -343,7 +354,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func updateToolButtonsVisibility(isEnabled: Bool) {
         toolsButton.isHidden = !shouldShowToolsButton
         imageGenActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isImageGenerationMode
-        webSearchActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isWebSearchMode
+        webSearchActiveButton.isHidden = !shouldShowWebSearchChip
         imageUploadButton.isHidden = !shouldShowAttachments || !shouldShowImageUpload
         imageUploadButton.isEnabled = !attachmentsContainerView.isFull
         modelPickerButton.isHidden = !shouldShowModelPicker
@@ -498,6 +509,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         reasoningPickerButton.translatesAutoresizingMaskIntoConstraints = false
         reasoningPickerButton.target = self
         reasoningPickerButton.action = #selector(reasoningPickerButtonClicked)
+        reasoningPickerButton.font = .systemFont(ofSize: 12, weight: .regular)
         reasoningPickerButton.toolTip = UserText.aiChatReasoningEffortPickerButtonTooltip
         reasoningPickerButton.setAccessibilityLabel(UserText.aiChatReasoningEffortPickerButtonTooltip)
         reasoningPickerButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.reasoningPickerButton) }
@@ -794,7 +806,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             menu.addItem(createImageItem)
         }
 
-        if omnibarController.isWebSearchEnabled {
+        if isWebSearchItemVisible {
             let webSearchItem = NSMenuItem()
             webSearchItem.attributedTitle = toolsMenuItemAttributedTitle(
                 title: UserText.aiChatWebSearchButtonLabel,
@@ -1002,6 +1014,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 modelPickerButton.modelName = persistedModelShortName
                 // Refresh image upload visibility with updated supportsImageUpload
                 updateImageUploadVisibility(supportsImageUpload: omnibarController.selectedModelSupportsImageUpload)
+                // Refresh tool button visibility so the Web Search chip reflects the loaded
+                // model's `supportedTools` (belt-and-braces — the controller also clears
+                // `activeToolMode` when the persisted model doesn't support web search).
+                updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
                 updateReasoningPickerVisibility()
             }
     }
@@ -1051,6 +1067,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.updateSelectedModel(model.id)
         modelPickerButton.modelName = model.shortName
         updateImageUploadVisibility(supportsImageUpload: model.supportsImageUpload)
+        // Refresh tool button visibility so the tools button disappears / reappears when the
+        // new model changes what the menu would show (e.g. only Web Search is flag-enabled and
+        // the newly selected model doesn't support it — the button would otherwise pop an empty menu).
+        updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
         updateReasoningPickerVisibility()
         PixelKit.fire(AIChatPixel.aiChatAddressBarModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
@@ -1061,8 +1081,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        let currentEffort = omnibarController.selectedReasoningEffort
-        for effort in omnibarController.selectedModelReasoningEfforts {
+        let currentEffort = omnibarController.displayedReasoningEffort
+        for effort in omnibarController.pickerReasoningEfforts {
             let item = NSMenuItem(title: "", action: #selector(reasoningEffortSelected(_:)), keyEquivalent: "")
             item.attributedTitle = toolsMenuItemAttributedTitle(title: effort.title, subtitle: effort.subtitle)
             item.target = self
@@ -1081,6 +1101,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         guard let effort = sender.representedObject as? AIChatReasoningEffort else { return }
         omnibarController.updateSelectedReasoningEffort(effort)
         updateReasoningPickerAppearance(effort)
+        PixelKit.fire(AIChatPixel.aiChatAddressBarReasoningEffortSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
     private func updateReasoningPickerVisibility() {
@@ -1088,14 +1109,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             reasoningPickerButton.isHidden = true
             return
         }
-        let efforts = omnibarController.selectedModelReasoningEfforts
-        reasoningPickerButton.isHidden = efforts.isEmpty || omnibarController.isImageGenerationMode
+        let efforts = omnibarController.pickerReasoningEfforts
+        reasoningPickerButton.isHidden = efforts.count <= 1 || omnibarController.isImageGenerationMode
         guard let fallback = efforts.first else { return }
         // Display only. The controller owns stale-effort cleanup (on model switch and on models
         // refetch) so we never write to persistence from here — a saved value that isn't supported
         // by the current model is ignored for display and not attached to submissions.
-        let validCurrent = omnibarController.selectedReasoningEffort.flatMap { efforts.contains($0) ? $0 : nil }
-        updateReasoningPickerAppearance(validCurrent ?? fallback)
+        // `displayedReasoningEffort` maps stored bucket-equivalents (e.g. `.medium` → `.high`)
+        // to the picker's representation so the chip label/icon stay in sync with what's
+        // actually submitted.
+        updateReasoningPickerAppearance(omnibarController.displayedReasoningEffort ?? fallback)
     }
 
     private func updateReasoningPickerAppearance(_ effort: AIChatReasoningEffort) {

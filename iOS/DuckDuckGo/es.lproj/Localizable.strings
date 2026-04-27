@@ -4186,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Eliminar datos del servidor";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Todos los dispositivos se desconectarán y tus datos sincronizados se eliminarán del servidor.";
+"sync.delete.all.confirm.message" = "Tu copia de seguridad se eliminará del servidor. Todos los dispositivos se desconectarán de la sincronización, pero no se eliminará nada de ningún dispositivo.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "¿Eliminar datos del servidor?";

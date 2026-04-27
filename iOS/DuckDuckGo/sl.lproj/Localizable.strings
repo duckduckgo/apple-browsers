@@ -4186,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Izbriši podatke strežnika";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Prekinjena bo povezava z vsemi napravami, sinhronizirani podatki pa bodo izbrisani iz strežnika.";
+"sync.delete.all.confirm.message" = "Vaša varnostna kopija bo izbrisana s strežnika. Za vse naprave bo sinhronizacija prekinjena, vendar iz nobene naprave ne bo nič izbrisano.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Želite izbrisati podatke strežnika?";

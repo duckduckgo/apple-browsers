@@ -110,6 +110,30 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertFalse(allIds.contains("pro-only"))
     }
 
+    // MARK: - Reasoning Effort Tests
+
+    func testWhenModelHasSupportedReasoningEffortThenItIsMappedToItem() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "reasoning-model", supportedReasoningEffort: ["none", "low", "medium"], accessTier: ["free"])
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+        let item = sections.flatMap(\.items).first(where: { $0.id == "reasoning-model" })
+
+        XCTAssertEqual(item?.supportedReasoningEffort, ["none", "low", "medium"])
+    }
+
+    func testWhenModelHasNoReasoningSupportThenMappedItemHasEmptyArray() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "plain-model", accessTier: ["free"])
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+        let item = sections.flatMap(\.items).first(where: { $0.id == "plain-model" })
+
+        XCTAssertEqual(item?.supportedReasoningEffort, [])
+    }
+
     // MARK: - Section Structure Tests
 
     func testWhenFreeUserThenTwoSectionsReturned() async {
@@ -192,6 +216,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         shortName: String? = nil,
         supportsImageUpload: Bool = false,
         supportedTools: [String] = [],
+        supportedReasoningEffort: [String] = [],
         accessTier: [String]
     ) -> AIChatRemoteModel {
         AIChatRemoteModel(
@@ -202,6 +227,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
             entityHasAccess: true,
             supportsImageUpload: supportsImageUpload,
             supportedTools: supportedTools,
+            supportedReasoningEffort: supportedReasoningEffort,
             accessTier: accessTier
         )
     }

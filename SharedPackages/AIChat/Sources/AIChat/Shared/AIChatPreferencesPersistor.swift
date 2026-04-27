@@ -29,6 +29,9 @@ public protocol AIChatPreferencesPersisting {
     var selectedModelShortName: String? { get set }
     /// The last selected reasoning effort (e.g. "none", "minimal", "low", "medium").
     var selectedReasoningEffort: String? { get set }
+    /// Emits the new value whenever `selectedReasoningEffort` changes through this persistor instance.
+    /// Consumers that need cross-component sync must share the same instance.
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { get }
 }
 
 /// Reference type so that a single instance can be shared across components (e.g. the native address-bar
@@ -43,6 +46,7 @@ public final class AIChatPreferencesPersistor: AIChatPreferencesPersisting {
 
     private let keyValueStore: ThrowingKeyValueStoring
     private let selectedModelIdSubject = PassthroughSubject<String?, Never>()
+    private let selectedReasoningEffortSubject = PassthroughSubject<String?, Never>()
 
     public init(keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) {
         self.keyValueStore = keyValueStore
@@ -80,11 +84,18 @@ public final class AIChatPreferencesPersistor: AIChatPreferencesPersisting {
     public var selectedReasoningEffort: String? {
         get { try? keyValueStore.object(forKey: Key.selectedReasoningEffort.rawValue) as? String }
         set {
+            let current = try? keyValueStore.object(forKey: Key.selectedReasoningEffort.rawValue) as? String
+            guard newValue != current else { return }
             if let value = newValue {
                 try? keyValueStore.set(value, forKey: Key.selectedReasoningEffort.rawValue)
             } else {
                 try? keyValueStore.removeObject(forKey: Key.selectedReasoningEffort.rawValue)
             }
+            selectedReasoningEffortSubject.send(newValue)
         }
+    }
+
+    public var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
+        selectedReasoningEffortSubject.eraseToAnyPublisher()
     }
 }

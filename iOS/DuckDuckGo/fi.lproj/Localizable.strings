@@ -4186,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Poista palvelimen tiedot";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Kaikkien laitteiden yhteys katkaistaan, ja synkronoidut tietosi poistetaan palvelimelta.";
+"sync.delete.all.confirm.message" = "Varmuuskopiosi poistetaan palvelimelta. Kaikkien laitteiden synkronointi katkaistaan, mutta mitään ei poisteta mistään laitteesta.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Poista palvelimen tiedot?";

@@ -4186,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Șterge datele serverului";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Toate dispozitivele vor fi deconectate, iar datele tale sincronizate vor fi șterse de pe server.";
+"sync.delete.all.confirm.message" = "Copia de rezervă va fi ștearsă de pe server. Toate dispozitivele vor fi deconectate de la sincronizare, dar nimic nu va fi șters de pe niciun dispozitiv.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Ștergi datele serverului?";

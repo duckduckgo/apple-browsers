@@ -39,16 +39,12 @@
         // which a plain querySelector won't pierce.
         const findVideo = function (root) {
             if (root instanceof HTMLVideoElement) return root
-            if (root.shadowRoot) {
-                const inShadow = findVideo(root.shadowRoot)
-                if (inShadow) return inShadow
-            }
             const direct = root.querySelector('video')
             if (direct) return direct
-            const descendants = root.querySelectorAll('*')
-            for (let i = 0; i < descendants.length; i++) {
-                if (descendants[i].shadowRoot) {
-                    const found = findVideo(descendants[i].shadowRoot)
+            const elements = [root, ...root.querySelectorAll('*')]
+            for (let i = 0; i < elements.length; i++) {
+                if (elements[i].shadowRoot) {
+                    const found = findVideo(elements[i].shadowRoot)
                     if (found) return found
                 }
             }

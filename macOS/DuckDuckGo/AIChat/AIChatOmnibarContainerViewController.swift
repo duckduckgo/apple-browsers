@@ -19,6 +19,7 @@
 import Cocoa
 import QuartzCore
 import Combine
+import DesignResourcesKit
 import UniformTypeIdentifiers
 import DesignResourcesKitIcons
 import AIChat
@@ -293,14 +294,42 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 guard let self else { return }
                 self.updateToolButtonsVisibility(isEnabled: self.omnibarController.isOmnibarToolsEnabled)
                 self.updateImageUploadVisibility(supportsImageUpload: self.omnibarController.selectedModelSupportsImageUpload)
+                // Re-evaluate the submit button so voice mode is suppressed/restored when
+                // image-generation toggles (voice mode is hidden while image-gen is active).
+                self.updateSubmitButtonState(for: self.omnibarController.currentText)
             }
     }
+
+    /// What the submit button does on click. Driven by whether the input has text — empty
+    /// triggers a voice-chat tab open, otherwise the existing submit flow runs.
+    private enum SubmitButtonMode {
+        case submit
+        case voice
+    }
+
+    private var submitButtonMode: SubmitButtonMode = .submit
 
     private func updateSubmitButtonState(for text: String) {
         let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let canSendImages = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
         let hasBlockingExcess = canSendImages && attachmentsContainerView.hasExcessAttachments
-        applySubmitButtonAppearance(enabled: hasText && !hasBlockingExcess)
+
+        // Voice-chat mode only kicks in when the input is empty, the feature flag is on, and we
+        // aren't in image-generation mode (where the button must keep its image-flow semantics).
+        // Otherwise the button keeps its original arrow/disabled-when-empty behavior.
+        if !hasText && omnibarController.isVoiceChatAccessEnabled && !omnibarController.isImageGenerationMode {
+            submitButtonMode = .voice
+            submitButton.image = DesignSystemImages.Glyphs.Size16.voice
+            submitButton.toolTip = UserText.aiChatVoiceChatButtonTooltip
+            submitButton.setAccessibilityLabel(UserText.aiChatVoiceChatButtonTooltip)
+            applySubmitButtonAppearance(enabled: true)
+        } else {
+            submitButtonMode = .submit
+            submitButton.image = DesignSystemImages.Glyphs.Size12.arrowRight
+            submitButton.toolTip = UserText.aiChatSendButtonTooltip
+            submitButton.setAccessibilityLabel(UserText.aiChatSendButtonTooltip)
+            applySubmitButtonAppearance(enabled: hasText && !hasBlockingExcess)
+        }
     }
 
     private func applySubmitButtonAppearance(enabled: Bool) {
@@ -308,9 +337,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         NSAppearance.withAppAppearance {
             if enabled {
-                submitButton.layer?.backgroundColor = NSColor(designSystemColor: .accentPrimary).cgColor
-                submitButton.normalTintColor = .white
-                submitButton.mouseOverTintColor = NSColor(designSystemColor: .buttonsPrimaryText).withAlphaComponent(0.8)
+                // Voice-chat mode uses the accent-alt palette (background + content-primary
+                // foreground) so the action reads as visually distinct from a standard submit.
+                if submitButtonMode == .voice {
+                    submitButton.layer?.backgroundColor = NSColor(designSystemColor: .accentAltPrimary).cgColor
+                    submitButton.normalTintColor = NSColor(designSystemColor: .accentAltContentPrimary)
+                    submitButton.mouseOverTintColor = NSColor(designSystemColor: .accentAltContentSecondary)
+                } else {
+                    submitButton.layer?.backgroundColor = NSColor(designSystemColor: .accentPrimary).cgColor
+                    submitButton.normalTintColor = .white
+                    submitButton.mouseOverTintColor = NSColor(designSystemColor: .buttonsPrimaryText).withAlphaComponent(0.8)
+                }
             } else {
                 submitButton.layer?.backgroundColor = NSColor.clear.cgColor
                 submitButton.normalTintColor = NSColor.secondaryLabelColor
@@ -457,9 +494,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         submitButton.target = self
         submitButton.action = #selector(submitButtonClicked)
 
+        // Conservative initial state — arrow icon. `updateSubmitButtonState(for:)` fires
+        // immediately on subscribe and swaps to voice mode if the flag is on and input is empty.
         submitButton.image = DesignSystemImages.Glyphs.Size12.arrowRight
         submitButton.imagePosition = .imageOnly
         submitButton.toolTip = UserText.aiChatSendButtonTooltip
+        submitButton.setAccessibilityLabel(UserText.aiChatSendButtonTooltip)
         containerView.addSubview(submitButton)
 
         imageUploadButton.translatesAutoresizingMaskIntoConstraints = false
@@ -769,7 +809,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     @objc private func submitButtonClicked() {
-        omnibarController.submit()
+        switch submitButtonMode {
+        case .submit:
+            omnibarController.submit()
+        case .voice:
+            omnibarController.openNewVoiceChat()
+        }
     }
 
     @objc private func toolsButtonClicked() {
@@ -1157,8 +1202,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
 
         submitButton.layer?.cornerRadius = Constants.submitButtonCornerRadius
-        // Colour is set dynamically by applySubmitButtonAppearance based on enabled state
-        applySubmitButtonAppearance(enabled: !omnibarController.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        // Colour is set dynamically by applySubmitButtonAppearance based on enabled state.
+        // Route through `updateSubmitButtonState(for:)` so voice mode is preserved on theme
+        // changes — calling `applySubmitButtonAppearance` directly with the legacy
+        // hasText-only enabled flag would re-disable the voice button on every theme refresh.
+        updateSubmitButtonState(for: omnibarController.currentText)
 
         let toolButtonTintColor = NSColor(designSystemColor: .textPrimary)
         toolsButton.tintColor = toolButtonTintColor

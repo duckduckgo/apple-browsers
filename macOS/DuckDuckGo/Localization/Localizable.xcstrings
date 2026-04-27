@@ -5001,6 +5001,18 @@
         }
       }
     },
+    "aichat.voice-chat-button.tooltip" : {
+      "comment" : "Tooltip for the voice chat button shown in the AI chat omnibar when the input is empty",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Start a voice chat"
+          }
+        }
+      }
+    },
     "aichat.web-search-button.deactivate-tooltip" : {
       "comment" : "Tooltip for the web search button when web search mode is active",
       "extractionState" : "extracted_with_value",

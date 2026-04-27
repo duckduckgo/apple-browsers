@@ -33,6 +33,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case getAiChats = "omnibar_getAiChats"
         case openAiChat = "omnibar_openAiChat"
         case viewAllAIChats = "omnibar_viewAllAIChats"
+        case openNewVoiceChat = "omnibar_openNewVoiceChat"
     }
 
     private let configProvider: NewTabPageOmnibarConfigProviding
@@ -60,7 +61,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.modePublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.showViewAllAiChatsPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.selectedModelIdPublisher.map { _ in () }.eraseToAnyPublisher(),
-            configProvider.selectedReasoningEffortPublisher.map { _ in () }.eraseToAnyPublisher()
+            configProvider.selectedReasoningEffortPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.isVoiceChatAccessEnabledPublisher.map { _ in () }.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in
@@ -89,7 +91,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.submitChat.rawValue: { [weak self] in try await self?.submitChat(params: $0, original: $1) },
             MessageName.getAiChats.rawValue: { [weak self] in try await self?.getAiChats(params: $0, original: $1) },
             MessageName.openAiChat.rawValue: { [weak self] in try await self?.openAiChat(params: $0, original: $1) },
-            MessageName.viewAllAIChats.rawValue: { [weak self] in try await self?.viewAllAIChats(params: $0, original: $1) }
+            MessageName.viewAllAIChats.rawValue: { [weak self] in try await self?.viewAllAIChats(params: $0, original: $1) },
+            MessageName.openNewVoiceChat.rawValue: { [weak self] in try await self?.openNewVoiceChat(params: $0, original: $1) }
         ])
     }
 
@@ -106,6 +109,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
             enableImageGeneration: configProvider.isImageGenerationEnabled,
             enableWebSearch: configProvider.isWebSearchEnabled,
+            enableVoiceChatAccess: configProvider.isVoiceChatAccessEnabled,
             selectedModelId: configProvider.selectedModelId,
             aiModelSections: sectionsForWeb(aiModelSections),
             selectedReasoningEffort: configProvider.selectedReasoningEffort
@@ -177,6 +181,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
             enableImageGeneration: configProvider.isImageGenerationEnabled,
             enableWebSearch: configProvider.isWebSearchEnabled,
+            enableVoiceChatAccess: configProvider.isVoiceChatAccessEnabled,
             selectedModelId: configProvider.selectedModelId,
             aiModelSections: sectionsForWeb(modelsProvider?.lastFetchedSections),
             selectedReasoningEffort: configProvider.selectedReasoningEffort
@@ -284,6 +289,15 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             return nil
         }
         await actionHandler.viewAllAiChats(target: action.target)
+        return nil
+    }
+
+    /// Defensive flag gate: a stale page that holds an old config (or any forced caller) must not
+    /// bypass the rollout. Drop the message silently when the feature is off.
+    @MainActor
+    private func openNewVoiceChat(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard configProvider.isVoiceChatAccessEnabled else { return nil }
+        actionHandler.openNewVoiceChat()
         return nil
     }
 

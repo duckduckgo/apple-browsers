@@ -39,4 +39,9 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
     @MainActor
     func viewAllAiChats(target: NewTabPageDataModel.OpenTarget)
 
+    /// Opens a new voice-chat tab from the NTP omnibar. Mirrors the `Duck.ai → New Voice Chat`
+    /// menu action.
+    @MainActor
+    func openNewVoiceChat()
+
 }

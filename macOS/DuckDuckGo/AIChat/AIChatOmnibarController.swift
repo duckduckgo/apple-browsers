@@ -63,6 +63,7 @@ final class AIChatOmnibarController {
     private let suggestionsReader: AIChatSuggestionsReading?
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
+    private let aiChatURLProvider: () -> URL
     private var preferences: AIChatPreferencesPersisting
     private var cancellables = Set<AnyCancellable>()
     private var sharedTextStateCancellable: AnyCancellable?
@@ -119,6 +120,12 @@ final class AIChatOmnibarController {
         featureFlagger.isFeatureOn(.aiChatOmnibarReasoningEffort)
     }
 
+    /// Whether 1-click voice-chat access in the omnibar is available. When disabled, the submit
+    /// button keeps its legacy "arrow / disabled when empty" behavior.
+    var isVoiceChatAccessEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarVoiceChatAccess)
+    }
+
     func toggleImageGenerationMode() {
         activeToolMode = isImageGenerationMode ? nil : .imageGeneration
     }
@@ -154,7 +161,8 @@ final class AIChatOmnibarController {
         suggestionsReader: AIChatSuggestionsReading? = nil,
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         modelsService: AIChatModelsProviding = AIChatModelsService(),
-        subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager
+        subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager,
+        aiChatURLProvider: @escaping () -> URL = { AIChatRemoteSettings().aiChatURL }
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -165,12 +173,21 @@ final class AIChatOmnibarController {
         self.preferences = preferences
         self.modelsService = modelsService
         self.subscriptionManager = subscriptionManager
+        self.aiChatURLProvider = aiChatURLProvider
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
 
         subscribeToSelectedTabViewModel()
         subscribeToTextChangesForSuggestions()
+    }
+
+    /// Opens a new voice-chat tab from the AI chat omnibar. Mirrors the `Duck.ai → New Voice Chat`
+    /// menu action: a new selected tab loaded with the voice-mode URL.
+    func openNewVoiceChat() {
+        let url = AIChatURLParameters.voiceModeURL(from: aiChatURLProvider())
+        aiChatTabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
+        PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNative, frequency: .dailyAndStandard, includeAppVersionParameter: true)
     }
 
     private func subscribeToTextChangesForSuggestions() {

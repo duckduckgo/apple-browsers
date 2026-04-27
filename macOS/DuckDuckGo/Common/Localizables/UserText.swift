@@ -671,6 +671,7 @@ struct UserText {
 
 
     static let aiChatSendButtonTooltip = NSLocalizedString("aichat.send-button.tooltip", value: "Send", comment: "Tooltip for the send button in AI chat omnibar")
+    static let aiChatVoiceChatButtonTooltip = NSLocalizedString("aichat.voice-chat-button.tooltip", value: "Start a voice chat", comment: "Tooltip for the voice chat button shown in the AI chat omnibar when the input is empty")
     static let aiChatSearchToggleButtonTooltip = NSLocalizedString("aichat.search-toggle-button.tooltip", value: "Search the web", comment: "Tooltip for the search toggle button in AI chat omnibar")
     static let aiChatImageUploadButtonTooltip = NSLocalizedString("aichat.image-upload-button.tooltip", value: "Attach image", comment: "Tooltip for the image upload button in AI chat omnibar")
     static let aiChatToolsButtonLabel = NSLocalizedString("aichat.tools-button.label", value: "Tools", comment: "Label for the tools dropdown button in AI chat omnibar")

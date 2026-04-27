@@ -272,6 +272,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the reasoning effort picker in the Duck.ai omnibar
     case aiChatOmnibarReasoningEffort
 
+    /// Enables 1-click voice-chat access from the Duck.ai omnibar
+    case aiChatOmnibarVoiceChatAccess
+
     /// Enables attaching content from multiple open tabs to Duck.ai chat
     case aiChatAttachMoreTabs
 
@@ -559,6 +562,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarWebSearch)), category: .duckAI)
         case .aiChatOmnibarReasoningEffort:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarReasoningEffort)), category: .duckAI)
+        case .aiChatOmnibarVoiceChatAccess:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarVoiceChatAccess)), category: .duckAI)
         case .aiChatAttachMoreTabs:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.attachMoreTabs)), category: .duckAI)
         case .aiChatSidebarResizable:

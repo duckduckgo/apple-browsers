@@ -217,6 +217,32 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(controller.currentText, "", "Current text should be cleared after submit")
     }
 
+    // MARK: - Voice Chat
+
+    func testOpenNewVoiceChat_OpensTabWithVoiceModeURLInNewSelectedTab() {
+        // Given — a stubbed AI chat URL so the voice-mode transform is deterministic
+        let baseURL = URL(string: "https://duck.ai/")!
+        let voiceController = AIChatOmnibarController(
+            aiChatTabOpener: mockTabOpener,
+            tabCollectionViewModel: tabCollectionViewModel,
+            featureFlagger: featureFlagger,
+            searchPreferencesPersistor: searchPreferencesPersistor,
+            preferences: mockPreferences,
+            modelsService: mockModelsService,
+            subscriptionManager: mockSubscriptionManager,
+            aiChatURLProvider: { baseURL }
+        )
+
+        // When
+        voiceController.openNewVoiceChat()
+
+        // Then — tab opener invoked with the voice-mode URL and a new selected tab behavior,
+        // matching the `Duck.ai → New Voice Chat` menu action.
+        XCTAssertTrue(mockTabOpener.openAIChatTabCalled)
+        XCTAssertEqual(mockTabOpener.lastURL, AIChatURLParameters.voiceModeURL(from: baseURL))
+        XCTAssertEqual(mockTabOpener.lastBehavior, .newTab(selected: true))
+    }
+
     // MARK: - Text Update Tests
 
     func testWhenTextIsUpdated_ThenCurrentTextReflectsChange() {

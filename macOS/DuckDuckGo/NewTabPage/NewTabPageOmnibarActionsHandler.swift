@@ -32,19 +32,22 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let isShiftPressed: () -> Bool
     private let isCommandPressed: () -> Bool
     private let firePixel: (PixelKitEvent) -> Void
+    private let aiChatURLProvider: () -> URL
 
     init(promptHandler: AIChatPromptHandler = AIChatPromptHandler.shared,
          windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging,
          tabsPreferences: TabsPreferences,
          isShiftPressed: @escaping () -> Bool = { NSApp?.isShiftPressed ?? false },
          isCommandPressed: @escaping () -> Bool = { NSApp?.isCommandPressed ?? false },
-         firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
+         firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) },
+         aiChatURLProvider: @escaping () -> URL = { AIChatRemoteSettings().aiChatURL }) {
         self.promptHandler = promptHandler
         self.windowControllersManager = windowControllersManager
         self.tabsPreferences = tabsPreferences
         self.isShiftPressed = isShiftPressed
         self.isCommandPressed = isCommandPressed
         self.firePixel = firePixel
+        self.aiChatURLProvider = aiChatURLProvider
     }
 
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
@@ -194,6 +197,17 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
 
         tabOpener.openNewAIChat(in: behavior)
+    }
+
+    @MainActor
+    func openNewVoiceChat() {
+        let tabOpener = AIChatTabOpener(
+            promptHandler: promptHandler,
+            aiChatTabManaging: windowControllersManager
+        )
+        let url = AIChatURLParameters.voiceModeURL(from: aiChatURLProvider())
+        tabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
+        PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNtp, frequency: .dailyAndStandard, includeAppVersionParameter: true)
     }
 
     private func linkOpenBehavior(for target: NewTabPageDataModel.OpenTarget, using tabsPreferences: TabsPreferences) -> LinkOpenBehavior {

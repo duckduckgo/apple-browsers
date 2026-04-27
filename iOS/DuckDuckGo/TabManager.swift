@@ -59,6 +59,7 @@ enum FireModeSwitchSource: String {
     case ntpPromotion = "ntp_promotion"
     case longPressLink = "long_press_link"
     case tabSwitcherLongPress = "tab_switcher_long_press"
+    case keyCommand = "key_command"
 }
 
 /// Receives lifecycle events for TabViewController instances managed by TabManager.

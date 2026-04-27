@@ -1,5 +1,5 @@
 {
-  "originHash" : "ab07fbe23e4f5b803a2a2f97200a448bf9d7332867406461f744a55fea6c86d0",
+  "originHash" : "4e272643e3a5d6fe39df4b49da0def1aa060d5e9530863b2c125732eb8a301a8",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/combine-schedulers.git",
       "state" : {
-        "revision" : "fd16d76fd8b9a976d88bfb6cacc05ca8d19c91b6",
-        "version" : "1.1.0"
+        "revision" : "dcccb979a2183b8df3334237e3dc1ae2b4116a86",
+        "version" : "1.2.0"
       }
     },
     {

@@ -52,6 +52,9 @@ final class DaxLogoManager {
 
     private(set) var containerYCenterConstraint: NSLayoutConstraint?
 
+    private weak var centeringGuideOwner: UIView?
+    private var centeringGuide: UILayoutGuide?
+
     // MARK: - Initialization
 
     init(isFireTab: Bool = false) {
@@ -60,12 +63,19 @@ final class DaxLogoManager {
 
     // MARK: - Public Methods
     
+    /// `anchorView` is optional: pass `nil` to fill the parent's safe area (fire-tab-only use case —
+    /// UTI hosts its input outside the content container so there's no in-container anchor to align to).
     func installInViewController(_ parentController: UIViewController,
                                  asSubviewOf parentView: UIView,
-                                 anchorView: UIView,
+                                 anchorView: UIView? = nil,
                                  isTopBarPosition: Bool,
                                  escapeHatch: EscapeHatchModel? = nil,
                                  onEscapeHatchTap: (() -> Void)? = nil) {
+
+        if !isFireTab && isTopBarPosition && anchorView == nil {
+            assertionFailure("Non-fire top-bar Dax logo install requires an anchor view.")
+            return
+        }
 
         logoContainerView.translatesAutoresizingMaskIntoConstraints = false
         logoContainerView.isUserInteractionEnabled = isFireTab
@@ -116,18 +126,44 @@ final class DaxLogoManager {
         updateState()
     }
 
+    /// Matches sibling scrollable content insets so the fire-tab empty state isn't clipped by the nav bar.
+    func setFireTabContentInsets(_ insets: UIEdgeInsets) {
+        fireTabHostingController?.additionalSafeAreaInsets = insets
+    }
+
+    /// Removes the managed views from the hierarchy so the manager can be discarded.
+    func tearDown() {
+        fireTabHostingController?.willMove(toParent: nil)
+        fireTabHostingController?.view.removeFromSuperview()
+        fireTabHostingController?.removeFromParent()
+        fireTabHostingController = nil
+        logoContainerView.removeFromSuperview()
+        if let centeringGuide {
+            centeringGuideOwner?.removeLayoutGuide(centeringGuide)
+        }
+        centeringGuide = nil
+        centeringGuideOwner = nil
+    }
+
     // MARK: - Private Methods
 
-    private func installFireTabConstraints(parentView: UIView, anchorView: UIView, isTopBarPosition: Bool) {
-        if isTopBarPosition {
-            NSLayoutConstraint.activate([
-                logoContainerView.topAnchor.constraint(equalTo: anchorView.bottomAnchor),
-                logoContainerView.bottomAnchor.constraint(equalTo: parentView.keyboardLayoutGuide.topAnchor)
-            ])
+    private func installFireTabConstraints(parentView: UIView, anchorView: UIView?, isTopBarPosition: Bool) {
+        if let anchorView {
+            if isTopBarPosition {
+                NSLayoutConstraint.activate([
+                    logoContainerView.topAnchor.constraint(equalTo: anchorView.bottomAnchor),
+                    logoContainerView.bottomAnchor.constraint(equalTo: parentView.keyboardLayoutGuide.topAnchor)
+                ])
+            } else {
+                NSLayoutConstraint.activate([
+                    logoContainerView.topAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.topAnchor),
+                    logoContainerView.bottomAnchor.constraint(equalTo: anchorView.topAnchor)
+                ])
+            }
         } else {
             NSLayoutConstraint.activate([
                 logoContainerView.topAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.topAnchor),
-                logoContainerView.bottomAnchor.constraint(equalTo: anchorView.topAnchor)
+                logoContainerView.bottomAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.bottomAnchor)
             ])
         }
 
@@ -137,14 +173,16 @@ final class DaxLogoManager {
         ])
     }
 
-    private func installDaxLogoConstraints(parentView: UIView, anchorView: UIView, isTopBarPosition: Bool) {
+    private func installDaxLogoConstraints(parentView: UIView, anchorView: UIView?, isTopBarPosition: Bool) {
         let centeringGuide = UILayoutGuide()
         centeringGuide.identifier = "DaxLogoCenteringGuide"
         parentView.addLayoutGuide(centeringGuide)
+        self.centeringGuide = centeringGuide
+        self.centeringGuideOwner = parentView
 
         containerYCenterConstraint = logoContainerView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor)
 
-        if isTopBarPosition {
+        if let anchorView, isTopBarPosition {
             NSLayoutConstraint.activate([
                 anchorView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
                 parentView.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor)
@@ -179,7 +217,8 @@ final class DaxLogoManager {
             rootView: FireModeEmptyStateView(type: .tab,
                                              escapeHatch: escapeHatch,
                                              onEscapeHatchTap: onEscapeHatchTap))
-        hostingController.view.backgroundColor = .clear
+        // Opaque NTP background so the fire empty state fully covers any favorites/suggestion tray content layered beneath.
+        hostingController.view.backgroundColor = UIColor(designSystemColor: .background)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
         parentController.addChild(hostingController)
@@ -208,10 +247,11 @@ final class DaxLogoManager {
 
         if forcedHidden {
             resolvedAlpha = 0
+        } else if isFireTab {
+            // Fire-mode empty state is a single shared view (no home/AI variants to blend), so show it whenever either dax slot is active.
+            resolvedAlpha = (isHomeDaxVisible || isAIDaxVisible) ? 1 : 0
         } else if isHomeDaxVisible != isAIDaxVisible {
-            if !isFireTab {
-                daxLogoView.updateProgress(isAIDaxVisible ? 1 : 0)
-            }
+            daxLogoView.updateProgress(isAIDaxVisible ? 1 : 0)
 
             let homeLogoProgress = 1 - progress
             let aiLogoProgress = progress
@@ -224,9 +264,7 @@ final class DaxLogoManager {
 
             resolvedAlpha = max(daxAlpha, aiAlpha)
         } else if isHomeDaxVisible && isAIDaxVisible {
-            if !isFireTab {
-                daxLogoView.updateProgress(progress)
-            }
+            daxLogoView.updateProgress(progress)
 
             resolvedAlpha = 1
         } else {

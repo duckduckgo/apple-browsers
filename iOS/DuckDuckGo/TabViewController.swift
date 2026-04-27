@@ -3235,9 +3235,10 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.webView = webView
         
         userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.tabModel.fireTab ?? false }
-        userScripts.duckAiNativeStorageUserScript?.fireModeHandlerProvider = { [weak self] in
-            guard let self, self.tabModel.fireTab else { return nil }
-            return self.duckAiFireModeStorageHandler
+        userScripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = { [weak self] in
+            guard let self else { return .notFireMode }
+            return .resolve(isFireMode: self.tabModel.fireTab,
+                            handler: self.duckAiFireModeStorageHandler)
         }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()

@@ -29,15 +29,27 @@ import WebKit
 /// Callers should invoke `refresh(on:staticScripts:)` before each navigation to Duck.ai.
 public final class DuckAiNativeStorageBootstrapScriptRefresher {
 
+    private static let unavailableFireModeHandler: DuckAiNativeStorageHandling = NullDuckAiNativeStorageHandler()
+
     private let diskHandler: DuckAiNativeStorageHandling
     private let originRules: [HostnameMatchingRule]
 
-    /// When set and returning a non-nil handler, the refreshed bootstrap is built from that
-    /// in-memory handler instead of the on-disk one.
-    public var fireModeHandlerProvider: (() -> DuckAiNativeStorageHandling?)?
+    /// Returns the fire-mode storage state for the surrounding webview.
+    /// `.notFireMode` uses the normal on-disk store, `.available` uses the isolated
+    /// fire-mode handler, and `.unavailable` resolves to empty storage rather than
+    /// falling back to disk.
+    public var fireModeStorageProvider: (() -> DuckAiFireModeStorage)?
 
     private var handler: DuckAiNativeStorageHandling {
-        fireModeHandlerProvider?() ?? diskHandler
+        switch fireModeStorageProvider?() ?? .notFireMode {
+        case .notFireMode:
+            return diskHandler
+        case .unavailable:
+            Logger.aiChat.error("[NativeStorage] Fire-mode handler unavailable; using null storage to preserve mode isolation")
+            return Self.unavailableFireModeHandler
+        case .available(let fireModeHandler):
+            return fireModeHandler
+        }
     }
 
     public init(handler: DuckAiNativeStorageHandling,

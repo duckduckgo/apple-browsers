@@ -469,9 +469,10 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
 
         aiChatUserScript = userScripts.aiChatUserScript
         aiChatUserScript?.setFireModeProvider(isFireModeProvider)
-        userScripts.duckAiNativeStorageUserScript?.fireModeHandlerProvider = { [weak self] in
-            guard let self, self.isFireModeProvider?() == true else { return nil }
-            return self.duckAiFireModeStorageHandler
+        userScripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = { [weak self] in
+            guard let self else { return .notFireMode }
+            return .resolve(isFireMode: self.isFireModeProvider?() == true,
+                            handler: self.duckAiFireModeStorageHandler)
         }
         aiChatUserScript?.delegate = self
         aiChatUserScript?.setPayloadHandler(payloadHandler)

@@ -45,7 +45,7 @@ final class AIChatTabExtension {
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
     private let bootstrapRefresher: DuckAiNativeStorageBootstrapScriptRefresher?
-    private let fireModeHandlerProvider: () -> DuckAiNativeStorageHandling?
+    private let fireModeStorageProvider: () -> DuckAiFireModeStorage
 
     private(set) weak var aiChatUserScript: AIChatUserScript? {
         didSet {
@@ -69,13 +69,14 @@ final class AIChatTabExtension {
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
         let debugSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
-        self.fireModeHandlerProvider = { [burnerMode, weak burnerDuckAiStorageRegistry] in
-            burnerDuckAiStorageRegistry?.handler(for: burnerMode)
+        self.fireModeStorageProvider = { [burnerMode, weak burnerDuckAiStorageRegistry] in
+            .resolve(isFireMode: burnerMode.isBurner,
+                     handler: burnerDuckAiStorageRegistry?.handler(for: burnerMode))
         }
         self.bootstrapRefresher = Self.makeBootstrapRefresher(
             featureFlagger: featureFlagger,
             handler: duckAiNativeStorageHandler,
-            fireModeHandlerProvider: self.fireModeHandlerProvider,
+            fireModeStorageProvider: self.fireModeStorageProvider,
             aiChatDebugURLSettings: debugSettings
         )
         pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
@@ -95,8 +96,8 @@ final class AIChatTabExtension {
                 if let isTabBurner = self?.isTabBurner {
                     self?.aiChatUserScript?.handler.isFireWindowProvider = { isTabBurner }
                 }
-                if let provider = self?.fireModeHandlerProvider {
-                    scripts.duckAiNativeStorageUserScript?.fireModeHandlerProvider = provider
+                if let provider = self?.fireModeStorageProvider {
+                    scripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = provider
                 }
 
                 // Pass the handoff payload in case it was provided before the user script was loaded
@@ -299,7 +300,7 @@ extension AIChatTabExtension {
     fileprivate static func makeBootstrapRefresher(
         featureFlagger: FeatureFlagger,
         handler: DuckAiNativeStorageHandling?,
-        fireModeHandlerProvider: @escaping () -> DuckAiNativeStorageHandling?,
+        fireModeStorageProvider: @escaping () -> DuckAiFireModeStorage,
         aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings>
     ) -> DuckAiNativeStorageBootstrapScriptRefresher? {
         guard featureFlagger.isFeatureOn(.aiChatNativeStorage), let handler else { return nil }
@@ -308,7 +309,7 @@ extension AIChatTabExtension {
             originRules.append(.exact(hostname: customHostname))
         }
         let refresher = DuckAiNativeStorageBootstrapScriptRefresher(handler: handler, originRules: originRules)
-        refresher.fireModeHandlerProvider = fireModeHandlerProvider
+        refresher.fireModeStorageProvider = fireModeStorageProvider
         return refresher
     }
 }

@@ -21,7 +21,6 @@ import AIChatDebugServer
 import DebugServer
 import AppKit
 import Persistence
-import PrivacyConfig
 
 final class AIChatDebugMenu: NSMenu {
     private var storage = DefaultAIChatPreferencesStorage()
@@ -35,13 +34,9 @@ final class AIChatDebugMenu: NSMenu {
         target: self
     )
 
-    init(debugStorage: (any KeyedStoring<AIChatDebugURLSettings>)? = nil,
-         internalUserDecider: InternalUserDecider) {
+    init(debugStorage: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
         self.debugStorage = if let debugStorage { debugStorage } else { UserDefaults.standard.keyedStoring() }
         super.init(title: "")
-
-        let buildType = StandardApplicationBuildType()
-        let showStorageServer = buildType.isDebugBuild || internalUserDecider.isInternalUser
 
         buildItems {
             NSMenuItem(title: "Web Communication") {
@@ -57,11 +52,9 @@ final class AIChatDebugMenu: NSMenu {
             NSMenuItem(title: "Reset Toggle Animation", action: #selector(resetToggleAnimation))
                 .targetting(self)
 
-            if showStorageServer {
-                NSMenuItem.separator()
+            NSMenuItem.separator()
 
-                storageServerMenuItem
-            }
+            storageServerMenuItem
         }
     }
 

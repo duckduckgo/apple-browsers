@@ -860,7 +860,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
                 duckAiNativeStorageHandler = nil
             }
-            burnerDuckAiStorageRegistry = BurnerDuckAiStorageRegistry()
+            burnerDuckAiStorageRegistry = BurnerDuckAiStorageRegistry(diskHandler: duckAiNativeStorageHandler)
         } else {
             duckAiNativeStorageHandler = nil
             burnerDuckAiStorageRegistry = nil

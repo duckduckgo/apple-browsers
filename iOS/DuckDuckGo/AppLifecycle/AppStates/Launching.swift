@@ -120,7 +120,9 @@ struct Launching: LaunchingHandling {
 
         let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(featureFlagger: featureFlagger)
         let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? =
-            featureFlagger.isFeatureOn(.aiChatNativeStorage) ? InMemoryDuckAiNativeStorageHandler() : nil
+            featureFlagger.isFeatureOn(.aiChatNativeStorage)
+                ? InMemoryDuckAiNativeStorageHandler(seedSource: duckAiNativeStorageHandler)
+                : nil
 
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
                                                             contentBlocking: contentBlocking,

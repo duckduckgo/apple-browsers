@@ -34,8 +34,14 @@ final class BurnerDuckAiStorageRegistry {
 
     private let lock = NSLock()
     private var handlers: [ObjectIdentifier: DuckAiNativeStorageHandling] = [:]
+    private let diskHandler: DuckAiNativeStorageHandling?
 
-    init() {}
+    /// `diskHandler` seeds each newly created in-memory handler with the small set of
+    /// entry keys (T&C / voice-mode consent) that should survive across modes — see
+    /// `InMemoryDuckAiNativeStorageHandler.seededEntryKeys`.
+    init(diskHandler: DuckAiNativeStorageHandling? = nil) {
+        self.diskHandler = diskHandler
+    }
 
     /// Returns or lazily creates the in-memory handler scoped to `burnerMode`'s data store.
     /// Returns `nil` for `.regular`.
@@ -47,7 +53,7 @@ final class BurnerDuckAiStorageRegistry {
         if let existing = handlers[key] {
             return existing
         }
-        let new = InMemoryDuckAiNativeStorageHandler()
+        let new = InMemoryDuckAiNativeStorageHandler(seedSource: diskHandler)
         handlers[key] = new
         return new
     }

@@ -24,7 +24,19 @@ import DuckAiDataStore
 /// All chats, files, entries, and migration markers live for the lifetime
 /// of the instance only. Releasing the instance — or closing the fire window
 /// that owns it — discards the data with no on-disk residue.
+///
+/// At init time, a small allow-list of entry keys (see `seededEntryKeys`) is
+/// copied once from `seedSource` into the in-memory store. This lets a user
+/// who has accepted Duck.ai T&C / voice-mode consent in normal mode avoid
+/// being prompted again when they enter fire mode. Updates the FE makes to
+/// these keys in fire mode stay in memory and never reach disk.
 public final class InMemoryDuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
+
+    /// Entry keys copied once from `seedSource` at init.
+    public static let seededEntryKeys: Set<String> = [
+        "duckaiHasAgreedToTerms",
+        "hasVoiceModeConsent"
+    ]
 
     private let lock = NSLock()
     private var entries: [String: Any] = [:]
@@ -32,7 +44,14 @@ public final class InMemoryDuckAiNativeStorageHandler: DuckAiNativeStorageHandli
     private var files: [String: DuckAiFileContent] = [:]
     private var migrations: [String: Bool] = [:]
 
-    public init() {}
+    public init(seedSource: DuckAiNativeStorageHandling? = nil) {
+        guard let seedSource else { return }
+        for key in Self.seededEntryKeys {
+            if let value = try? seedSource.getEntry(key: key) {
+                entries[key] = value
+            }
+        }
+    }
 
     // MARK: - Entries
 

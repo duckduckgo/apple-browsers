@@ -43,7 +43,7 @@ final class ActionRequestEncodingTests: XCTestCase {
         let step = try JSONDecoder().decode(Step.self, from: Data(stepJSON.utf8))
         let action = try XCTUnwrap(step.actions.first)
 
-        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil)))
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil)))
         let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
 
         XCTAssertEqual(rawActionPayload["actionType"] as? String, "navigate")
@@ -90,7 +90,7 @@ final class ActionRequestEncodingTests: XCTestCase {
         let action = try XCTUnwrap(step.actions.first)
 
         // When: encoding the action request payload for WebView injection.
-        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil)))
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil)))
         let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
 
         // Then: nested condition payload is preserved.
@@ -108,7 +108,7 @@ final class ActionRequestEncodingTests: XCTestCase {
     func testWhenActionDoesNotContainRawJSON_thenEncodingFallsBackToTypedAction() throws {
         let action = NavigateAction(id: "navigate-typed", actionType: .navigate, url: "https://example.com")
 
-        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil)))
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil)))
         let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
 
         XCTAssertEqual(rawActionPayload["actionType"] as? String, "navigate")
@@ -124,7 +124,7 @@ final class ActionRequestEncodingTests: XCTestCase {
         let actionsHandler = ActionsHandler.forEmailConfirmationContinuation(step, confirmationURL: confirmationURL)
         let continuationAction = try XCTUnwrap(actionsHandler.nextAction())
 
-        let params = Params(state: ActionRequest(action: continuationAction, data: .userData(makeProfileQuery(), nil)))
+        let params = Params(state: ActionRequest(action: continuationAction, data: .userData(makeProfileQuery(), nil, nil)))
         let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
 
         XCTAssertEqual(rawActionPayload["actionType"] as? String, "navigate")
@@ -141,7 +141,7 @@ final class ActionRequestEncodingTests: XCTestCase {
             url: "https://example.com",
             json: Data("[]".utf8)
         )
-        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil)))
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil)))
 
         // When / Then: encoding fails with a clear invalid action payload error.
         XCTAssertThrowsError(try JSONEncoder().encode(params)) { error in

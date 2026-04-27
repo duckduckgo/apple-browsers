@@ -31,9 +31,18 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
     public let featureName: String = "duckAiNativeStorage"
     public let messageOriginPolicy: MessageOriginPolicy
 
-    private let handler: DuckAiNativeStorageHandling
+    private let diskHandler: DuckAiNativeStorageHandling
     private let pixelFiring: DuckAiNativeStoragePixelFiring
     private let storageQueue = DispatchQueue(label: "com.duckduckgo.native-storage", qos: .userInitiated)
+
+    /// When set and returning a non-nil handler, all storage operations route to that
+    /// in-memory handler instead of the on-disk one. Returning `nil` means the surrounding
+    /// webview is not in a fire-mode context and the on-disk handler is used.
+    public var fireModeHandlerProvider: (() -> DuckAiNativeStorageHandling?)?
+
+    private var handler: DuckAiNativeStorageHandling {
+        fireModeHandlerProvider?() ?? diskHandler
+    }
 
     // MARK: - Initialization
 
@@ -42,7 +51,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         originRules: [HostnameMatchingRule],
         pixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring()
     ) {
-        self.handler = handler
+        self.diskHandler = handler
         self.pixelFiring = pixelFiring
         self.messageOriginPolicy = .only(rules: originRules)
         super.init()

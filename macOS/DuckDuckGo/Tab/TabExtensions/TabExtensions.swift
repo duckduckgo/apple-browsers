@@ -304,7 +304,8 @@ extension TabExtensionsBuilder {
             AIChatTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
                                webViewPublisher: args.webViewFuture,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
-                               isTabBurner: args.isTabBurner)
+                               isTabBurner: args.isTabBurner,
+                               burnerMode: args.burnerMode)
         }
 
         add {

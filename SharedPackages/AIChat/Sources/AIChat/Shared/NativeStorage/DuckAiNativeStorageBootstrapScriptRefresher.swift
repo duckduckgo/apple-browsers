@@ -29,11 +29,20 @@ import WebKit
 /// Callers should invoke `refresh(on:staticScripts:)` before each navigation to Duck.ai.
 public final class DuckAiNativeStorageBootstrapScriptRefresher {
 
-    private let handler: DuckAiNativeStorageHandling
+    private let diskHandler: DuckAiNativeStorageHandling
     private let originRules: [HostnameMatchingRule]
 
-    public init(handler: DuckAiNativeStorageHandling, originRules: [HostnameMatchingRule]) {
-        self.handler = handler
+    /// When set and returning a non-nil handler, the refreshed bootstrap is built from that
+    /// in-memory handler instead of the on-disk one.
+    public var fireModeHandlerProvider: (() -> DuckAiNativeStorageHandling?)?
+
+    private var handler: DuckAiNativeStorageHandling {
+        fireModeHandlerProvider?() ?? diskHandler
+    }
+
+    public init(handler: DuckAiNativeStorageHandling,
+                originRules: [HostnameMatchingRule]) {
+        self.diskHandler = handler
         self.originRules = originRules
     }
 

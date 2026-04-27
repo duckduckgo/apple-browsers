@@ -66,6 +66,7 @@ final class AIChatViewControllerManager {
     private var productSurfaceTelemetry: ProductSurfaceTelemetry
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let statisticsLoader: StatisticsLoader
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     // MARK: - Initialization
 
@@ -80,7 +81,8 @@ final class AIChatViewControllerManager {
          subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler(),
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
-         statisticsLoader: StatisticsLoader = .shared) {
+         statisticsLoader: StatisticsLoader = .shared,
+         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -94,6 +96,7 @@ final class AIChatViewControllerManager {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.freeTrialConversionService = freeTrialConversionService
         self.statisticsLoader = statisticsLoader
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
     }
 
     // MARK: - Public Methods
@@ -466,6 +469,10 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
 
         aiChatUserScript = userScripts.aiChatUserScript
         aiChatUserScript?.setFireModeProvider(isFireModeProvider)
+        userScripts.duckAiNativeStorageUserScript?.fireModeHandlerProvider = { [weak self] in
+            guard let self, self.isFireModeProvider?() == true else { return nil }
+            return self.duckAiFireModeStorageHandler
+        }
         aiChatUserScript?.delegate = self
         aiChatUserScript?.setPayloadHandler(payloadHandler)
         aiChatUserScript?.webView = chatViewController?.webView

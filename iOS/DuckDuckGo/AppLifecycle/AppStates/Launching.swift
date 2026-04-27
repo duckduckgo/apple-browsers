@@ -119,6 +119,8 @@ struct Launching: LaunchingHandling {
         )
 
         let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(featureFlagger: featureFlagger)
+        let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? =
+            featureFlagger.isFeatureOn(.aiChatNativeStorage) ? InMemoryDuckAiNativeStorageHandler() : nil
 
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
                                                             contentBlocking: contentBlocking,
@@ -128,7 +130,8 @@ struct Launching: LaunchingHandling {
                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                             syncErrorHandler: syncService.syncErrorHandler,
                                                             webExtensionAvailability: webExtensionAvailability,
-                                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
         let configurationService = RemoteConfigurationService()

@@ -262,11 +262,23 @@ final class WindowsManager {
             fireCoordinator: fireCoordinator
         )
 
-        let fireWindowSession = if case .burner = burnerMode {
-            Application.appDelegate.windowControllersManager.mainWindowControllers.first(where: {
+        let fireWindowSession: FireWindowSession?
+        if case .burner(let dataStore) = burnerMode {
+            if let existing = Application.appDelegate.windowControllersManager.mainWindowControllers.first(where: {
                 $0.mainViewController.tabCollectionViewModel.burnerMode == burnerMode
-            })?.fireWindowSession ?? FireWindowSession()
-        } else { FireWindowSession?.none }
+            })?.fireWindowSession {
+                fireWindowSession = existing
+            } else {
+                let newSession = FireWindowSession()
+                let dataStoreKey = ObjectIdentifier(dataStore)
+                newSession.onDeinit {
+                    BurnerDuckAiStorageRegistry.shared.unregister(dataStoreKey)
+                }
+                fireWindowSession = newSession
+            }
+        } else {
+            fireWindowSession = nil
+        }
         return MainWindowController(
             mainViewController: mainViewController,
             fireWindowSession: fireWindowSession,

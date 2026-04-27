@@ -109,6 +109,7 @@ class FireExecutor: FireExecuting {
     private let dataClearingWideEventService: DataClearingWideEventService?
     private let aiChatDeleter: AIChatDeleting
     private let idManager: DataStoreIDManaging
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     weak var delegate: FireExecutorDelegate?
     private var burnInProgress = false
@@ -137,6 +138,7 @@ class FireExecutor: FireExecuting {
          privacyStats: PrivacyStatsProviding? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter(),
          wideEvent: WideEventManaging? = nil,
          idManager: DataStoreIDManaging = DataStoreIDManager.shared) {
@@ -156,6 +158,7 @@ class FireExecutor: FireExecuting {
                                              featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))}
         self.appSettings = appSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.pixelsReporter = pixelsReporter
         self.dataClearingWideEventService = wideEvent.map { DataClearingWideEventService(wideEvent: $0) }
         let aiChatDeleter = AIChatDeleter(historyCleanerProvider: self.historyCleanerProvider,
@@ -334,11 +337,13 @@ class FireExecutor: FireExecuting {
             dataClearingWideEventService?.start(.clearFaviconCache)
             let faviconResult = favicons.clearCache(.tabs)
             dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
+            wipeFireModeNativeStorage()
         case .fireMode:
             tabManager.prepareCurrentTabForDataClearing(browsingMode: .fire)
             dataClearingWideEventService?.start(.clearTabs)
             let removeAllResult = tabManager.removeAll(browsingMode: .fire)
             dataClearingWideEventService?.update(.clearTabs, result: removeAllResult)
+            wipeFireModeNativeStorage()
         case .normalMode:
             tabManager.prepareCurrentTabForDataClearing(browsingMode: .normal)
             dataClearingWideEventService?.start(.clearTabs)
@@ -538,6 +543,13 @@ class FireExecutor: FireExecuting {
             Logger.aiChat.debug("No chatID found for tab, skipping single chat deletion")
             return .success(())
         }
+    }
+
+    private func wipeFireModeNativeStorage() {
+        guard let duckAiFireModeStorageHandler else { return }
+        try? duckAiFireModeStorageHandler.deleteAllChats()
+        try? duckAiFireModeStorageHandler.deleteAllFiles()
+        try? duckAiFireModeStorageHandler.deleteAllEntries()
     }
 
     private func recordAIChatsClearDate(trigger: FireRequest.Trigger) async {

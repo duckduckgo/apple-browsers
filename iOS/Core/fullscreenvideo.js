@@ -52,20 +52,10 @@
         }
 
         HTMLElement.prototype.requestFullscreen = function () {
-            // The caller may be a sibling of the <video> (e.g. a maximize button in a custom
-            // player's controls), so we walk up from `this` — crossing shadow root boundaries
-            // via host — and search at each level until we find a video.
-            let scope = this
-            while (scope && scope !== document) {
-                const video = findVideo(scope)
-                if (video) {
-                    video.webkitEnterFullscreen()
-                    return true
-                }
-                scope = scope instanceof ShadowRoot ? scope.host : scope.parentNode
-            }
-
-            return false
+            const video = findVideo(this) || findVideo(document.body)
+            if (!video) return false
+            video.webkitEnterFullscreen()
+            return true
         }
     }
 })()

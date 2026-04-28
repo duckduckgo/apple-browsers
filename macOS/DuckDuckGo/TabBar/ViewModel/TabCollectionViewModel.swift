@@ -19,10 +19,12 @@
 import AppKit
 import Combine
 import Common
+import FeatureFlags
 import Foundation
 import History
 import os.log
 import PixelKit
+import PrivacyConfig
 import WebKit
 
 /**
@@ -162,6 +164,7 @@ final class TabCollectionViewModel: NSObject {
         case noTabSelected
     }
 
+    private let featureFlagger: FeatureFlagger
     private let dataClearingPixelsReporter: DataClearingPixelsReporter
 
     init(
@@ -172,6 +175,7 @@ final class TabCollectionViewModel: NSObject {
         startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
         tabsPreferences: TabsPreferences = NSApp.delegateTyped.tabsPreferences,
         accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         windowControllersManager: WindowControllersManagerProtocol? = nil,
         dataClearingPixelsReporter: DataClearingPixelsReporter = .init()
     ) {
@@ -182,6 +186,7 @@ final class TabCollectionViewModel: NSObject {
         self.startupPreferences = startupPreferences
         self.tabsPreferences = tabsPreferences
         self.accessibilityPreferences = accessibilityPreferences
+        self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
         self.dataClearingPixelsReporter = DataClearingPixelsReporter()
         super.init()
@@ -440,6 +445,12 @@ final class TabCollectionViewModel: NSObject {
         tabCollection.append(tab: tab)
         if tab.content == .newtab {
             NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
+            if isBurner, featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) {
+                var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
+                if persistor.fireTabVisitCount < SubscriptionPromoConstants.requiredVisitCount {
+                    persistor.fireTabVisitCount += 1
+                }
+            }
         }
         let insertionIndex = tabCollection.tabs.indices.index(before: tabCollection.tabs.endIndex)
         // Notify the delegate before updating selection — see `insert(_:at:selected:)`.

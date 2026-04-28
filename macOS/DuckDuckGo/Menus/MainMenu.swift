@@ -956,7 +956,7 @@ final class MainMenu: NSMenu {
                 .submenu(DataBrokerProtectionDebugMenu())
 
             FreemiumDebugMenu()
-
+            SubscriptionPromoDebugMenu()
             AdBlockingDebugMenu()
 
             if case .normal = AppVersion.runType {

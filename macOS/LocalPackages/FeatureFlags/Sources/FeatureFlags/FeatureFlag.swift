@@ -272,7 +272,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the reasoning effort picker in the Duck.ai omnibar
     case aiChatOmnibarReasoningEffort
 
-    /// Enables 1-click voice-chat access from the Duck.ai omnibar
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214283076614743?focus=true
     case aiChatOmnibarVoiceChatAccess
 
     /// Enables attaching content from multiple open tabs to Duck.ai chat

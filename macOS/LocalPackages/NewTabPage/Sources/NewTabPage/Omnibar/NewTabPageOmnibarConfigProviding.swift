@@ -39,5 +39,24 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     var isAIChatToolsEnabled: Bool { get }
 
+    var isImageGenerationEnabled: Bool { get }
+
+    var isWebSearchEnabled: Bool { get }
+
     var selectedModelId: String? { get set }
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { get }
+
+    /// Short display name that the native omnibar can show before its own models fetch completes.
+    /// Mirrors the native `AIChatPreferencesPersisting.selectedModelShortName`.
+    var selectedModelShortName: String? { get set }
+
+    /// Whether the reasoning-effort picker feature is available. Combines the dedicated
+    /// reasoning-effort feature flag with `isAIChatToolsEnabled`, since reasoning effort depends
+    /// on the model picker being available.
+    var isReasoningEffortEnabled: Bool { get }
+
+    /// The user's persisted reasoning effort (e.g. `"none"`, `"low"`, `"medium"`). `nil` when
+    /// nothing is selected or when `isReasoningEffortEnabled` is false.
+    var selectedReasoningEffort: String? { get set }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { get }
 }

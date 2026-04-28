@@ -179,7 +179,6 @@ extension DebugScreensViewModel {
                 return self.debugStoryboard.instantiateViewController(identifier: "SyncDebugViewController") { coder in
                     SyncDebugViewController(coder: coder,
                                             sync: d.syncService,
-                                            keyValueStore: d.keyValueStore,
                                             bookmarksDatabase: d.bookmarksDatabase)
                 }
             }),

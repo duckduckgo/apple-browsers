@@ -1626,10 +1626,8 @@ private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
     let settings: VPNSettings
 
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-            return settings.wideEventPostEndpointEnabled
-        }
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }
 

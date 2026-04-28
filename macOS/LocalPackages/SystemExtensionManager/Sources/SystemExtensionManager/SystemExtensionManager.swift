@@ -19,6 +19,7 @@
 import Foundation
 import Cocoa
 import Combine
+import os.log
 import SystemExtensions
 
 public enum SystemExtensionRequestError: Error {
@@ -210,12 +211,14 @@ extension SystemExtensionRequest: OSSystemExtensionRequestDelegate {
             continuation?.resume()
             continuation = nil
         case .willCompleteAfterReboot:
+            Logger.systemExtensionManager.notice("System extension request will complete after reboot: \(request.identifier, privacy: .public)")
             continuation?.resume(throwing: SystemExtensionRequestError.willActivateAfterReboot)
             continuation = nil
             return
         @unknown default:
             // Not much we can do about this, so we just let the owning app decide
             // what to do about this.
+            Logger.systemExtensionManager.error("System extension request returned unknown result \(result.rawValue, privacy: .public) for \(request.identifier, privacy: .public)")
             continuation?.resume(throwing: SystemExtensionRequestError.unknownRequestResult)
             continuation = nil
             return
@@ -223,8 +226,42 @@ extension SystemExtensionRequest: OSSystemExtensionRequestDelegate {
     }
 
     func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
+        Self.logRequestFailure(error: error, request: request)
         continuation?.resume(throwing: error)
         continuation = nil
     }
 
+    private static func logRequestFailure(error: Error, request: OSSystemExtensionRequest) {
+        let nsError = error as NSError
+        let symbolicName = (error as? OSSystemExtensionError)?.code.symbolicName ?? "n/a"
+        Logger.systemExtensionManager.error("""
+        System extension request failed
+          bundleID:    \(request.identifier, privacy: .public)
+          domain:      \(nsError.domain, privacy: .public)
+          code:        \(nsError.code, privacy: .public) (\(symbolicName, privacy: .public))
+          description: \(error.localizedDescription, privacy: .public)
+        """)
+    }
+
+}
+
+private extension OSSystemExtensionError.Code {
+    var symbolicName: String {
+        switch self {
+        case .unknown: return "unknown"
+        case .missingEntitlement: return "missingEntitlement"
+        case .unsupportedParentBundleLocation: return "unsupportedParentBundleLocation"
+        case .extensionNotFound: return "extensionNotFound"
+        case .extensionMissingIdentifier: return "extensionMissingIdentifier"
+        case .duplicateExtensionIdentifer: return "duplicateExtensionIdentifer"
+        case .unknownExtensionCategory: return "unknownExtensionCategory"
+        case .codeSignatureInvalid: return "codeSignatureInvalid"
+        case .validationFailed: return "validationFailed"
+        case .forbiddenBySystemPolicy: return "forbiddenBySystemPolicy"
+        case .requestCanceled: return "requestCanceled"
+        case .requestSuperseded: return "requestSuperseded"
+        case .authorizationRequired: return "authorizationRequired"
+        @unknown default: return "futureUnknown(\(rawValue))"
+        }
+    }
 }

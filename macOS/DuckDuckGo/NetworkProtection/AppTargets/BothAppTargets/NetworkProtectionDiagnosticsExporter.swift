@@ -90,13 +90,15 @@ final class NetworkProtectionDiagnosticsExporter {
 
     private enum InfoPlistKey {
         static let vpnMenuAgentBundleID = "AGENT_BUNDLE_ID"
-        static let tunnelAppexBundleID = "TUNNEL_APPEX_BUNDLE_ID"
-        static let tunnelSysexBundleID = "TUNNEL_SYSEX_BUNDLE_ID"
-        static let proxyAppexBundleID = "PROXY_APPEX_BUNDLE_ID"
-        static let proxySysexBundleID = "PROXY_SYSEX_BUNDLE_ID"
+        static let sysexBundleID = "SYSEX_BUNDLE_ID"
         static let netPAppGroup = "NETP_APP_GROUP"
         static let ipcAppGroup = "IPC_APP_GROUP"
         static let subscriptionAppGroup = "SUBSCRIPTION_APP_GROUP"
+    }
+
+    private enum AppExtensionBundleIDSuffix {
+        static let tunnel = ".network-protection-extension"
+        static let proxy = ".proxy"
     }
 
     // MARK: - Dependencies
@@ -215,6 +217,10 @@ final class NetworkProtectionDiagnosticsExporter {
             NSRunningApplication.runningApplications(withBundleIdentifier: $0)
         } ?? []
 
+        let tunnelAppexBundleID = vpnMenuAgentBundleID.map { $0 + AppExtensionBundleIDSuffix.tunnel }
+        let proxyAppexBundleID = vpnMenuAgentBundleID.map { $0 + AppExtensionBundleIDSuffix.proxy }
+        let sysexBundleID = infoPlistValue(for: InfoPlistKey.sysexBundleID)
+
         return """
         \(section("App"))
         App version: \(AppVersion.shared.versionAndBuildNumber)
@@ -226,11 +232,10 @@ final class NetworkProtectionDiagnosticsExporter {
         \(section("Bundle identifiers"))
         Main app: \(Bundle.main.bundleIdentifier ?? "unknown")
         VPN menu login item: \(vpnMenuAgentBundleID ?? missingInfoPlistValue(for: InfoPlistKey.vpnMenuAgentBundleID))
-        Tunnel app extension: \(infoPlistValue(for: InfoPlistKey.tunnelAppexBundleID) ?? missingInfoPlistValue(for: InfoPlistKey.tunnelAppexBundleID))
-        Tunnel system extension:
-        \(infoPlistValue(for: InfoPlistKey.tunnelSysexBundleID) ?? missingInfoPlistValue(for: InfoPlistKey.tunnelSysexBundleID))
-        Proxy app extension: \(infoPlistValue(for: InfoPlistKey.proxyAppexBundleID) ?? missingInfoPlistValue(for: InfoPlistKey.proxyAppexBundleID))
-        Proxy system extension: \(infoPlistValue(for: InfoPlistKey.proxySysexBundleID) ?? missingInfoPlistValue(for: InfoPlistKey.proxySysexBundleID))
+        Tunnel app extension: \(tunnelAppexBundleID ?? missingInfoPlistValue(for: InfoPlistKey.vpnMenuAgentBundleID))
+        Tunnel system extension: \(sysexBundleID ?? missingInfoPlistValue(for: InfoPlistKey.sysexBundleID))
+        Proxy app extension: \(proxyAppexBundleID ?? missingInfoPlistValue(for: InfoPlistKey.vpnMenuAgentBundleID))
+        Proxy system extension: \(sysexBundleID ?? missingInfoPlistValue(for: InfoPlistKey.sysexBundleID))
 
         \(section("App groups"))
         Network Protection: \(infoPlistValue(for: InfoPlistKey.netPAppGroup) ?? missingInfoPlistValue(for: InfoPlistKey.netPAppGroup))

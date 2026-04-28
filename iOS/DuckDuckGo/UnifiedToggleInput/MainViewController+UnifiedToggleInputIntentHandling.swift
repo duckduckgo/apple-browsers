@@ -140,7 +140,7 @@ private extension MainViewController {
         unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
         viewCoordinator.hideUnifiedToggleInput()
         resetUnifiedInputContentAfterHide()
-        // Container is now hidden; clear text so it can't leak into the next session.
+        // Avoid leaking text into the next input session.
         unifiedToggleInputCoordinator?.clearText()
     }
 

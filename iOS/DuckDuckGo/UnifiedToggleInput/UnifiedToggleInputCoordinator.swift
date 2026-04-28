@@ -874,6 +874,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             if isOmnibarSession {
                 deactivateToOmnibar()
             } else {
+                // showCollapsed has no dismiss hook; clear synchronously.
                 setText("")
                 showCollapsed()
             }

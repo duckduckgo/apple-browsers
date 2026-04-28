@@ -130,6 +130,10 @@ private enum State: CustomDebugStringConvertible {
 final class WireGuardAdapter: WireGuardAdapterProtocol {
     public typealias LogHandler = (WireGuardLogLevel, String) -> Void
     typealias PacketTunnelSettingsGeneratorProvider = (TunnelConfiguration, [Endpoint?]) -> PacketTunnelSettingsGenerating
+
+    /// Delay between successive attempts to bring the backend back up after a failed
+    /// resume from temporary shutdown. Long enough to let transient network conditions
+    /// settle without spamming `setNetworkSettings`/`turnOn` on every retry.
     private let temporaryShutdownRecoveryDelay: TimeInterval
 
     /// WireGuard configuration fields
@@ -359,17 +363,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
 
             do {
                 let settingsGenerator = try self.makeSettingsGenerator(with: tunnelConfiguration)
-                try self.setNetworkSettings(settingsGenerator.generateNetworkSettings())
-
-                let (wgConfig, resolutionResults) = settingsGenerator.uapiConfiguration()
-                self.logEndpointResolutionResults(resolutionResults)
-
-                Logger.networkProtection.debug("UAPI configuration is \(String(reflecting: wgConfig), privacy: .public)")
-
-                self.state = .started(
-                    try self.startWireGuardBackend(wgConfig: wgConfig),
-                    settingsGenerator
-                )
+                try self.bringUpBackend(with: settingsGenerator)
                 self.networkMonitor = networkMonitor
                 completionHandler(nil)
             } catch let error as WireGuardAdapterError {
@@ -638,6 +632,23 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
         }
     }
 
+    /// Applies network settings, generates the UAPI config, and starts the WireGuard backend,
+    /// transitioning state to `.started`. Shared by the initial `start` flow and the
+    /// resume-from-temporary-shutdown flow.
+    private func bringUpBackend(with settingsGenerator: PacketTunnelSettingsGenerating) throws {
+        try setNetworkSettings(settingsGenerator.generateNetworkSettings())
+
+        let (wgConfig, resolutionResults) = settingsGenerator.uapiConfiguration()
+        logEndpointResolutionResults(resolutionResults)
+
+        Logger.networkProtection.debug("UAPI configuration is \(String(reflecting: wgConfig), privacy: .public)")
+
+        state = .started(
+            try startWireGuardBackend(wgConfig: wgConfig),
+            settingsGenerator
+        )
+    }
+
     private func attemptResume(settingsGenerator: PacketTunnelSettingsGenerating) {
         dispatchPrecondition(condition: .onQueue(workQueue))
 
@@ -646,15 +657,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
         guard lastKnownPathStatus?.isSatisfiable == true else { return }
 
         do {
-            try setNetworkSettings(activeGenerator.generateNetworkSettings())
-
-            let (wgConfig, resolutionResults) = activeGenerator.uapiConfiguration()
-            logEndpointResolutionResults(resolutionResults)
-
-            state = .started(
-                try startWireGuardBackend(wgConfig: wgConfig),
-                activeGenerator
-            )
+            try bringUpBackend(with: activeGenerator)
 
             if temporaryShutdownRecoveryFailed {
                 eventHandler.handle(.endTemporaryShutdownStateRecoverySuccess)

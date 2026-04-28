@@ -375,7 +375,6 @@ final class WireGuardAdapterTests: XCTestCase {
 
         pathMonitor.emitStatus(.satisfied)
 
-        // First attempt runs synchronously inside MockPathMonitor.emitStatus (queue.sync).
         XCTAssertEqual(wireGuardInterface.turnOnCallCount, 2)
         XCTAssertEqual(packetTunnelProvider.setTunnelNetworkSettingsCallCount, 2)
         XCTAssertTrue(eventHandler.handledEvents.isEmpty)
@@ -400,7 +399,6 @@ final class WireGuardAdapterTests: XCTestCase {
             XCTFail("Expected attempt failure event")
         }
 
-        // Note: With periodic retry, the task continues automatically - no need to emit .satisfied again
         waitForHandledEventCount(2)
         if case .endTemporaryShutdownStateRecoveryFailure(let error) = eventHandler.handledEvents[1] {
             guard let adapterError = error as? WireGuardAdapterError,
@@ -413,7 +411,6 @@ final class WireGuardAdapterTests: XCTestCase {
             XCTFail("Expected recovery failure event")
         }
 
-        // Clear error - next periodic retry will succeed
         packetTunnelProvider.setTunnelNetworkSettingsError = nil
         waitForHandledEventCount(3)
         if case .endTemporaryShutdownStateRecoverySuccess = eventHandler.handledEvents[2] {

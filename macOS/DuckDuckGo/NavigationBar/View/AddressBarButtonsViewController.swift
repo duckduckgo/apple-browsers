@@ -690,6 +690,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private func subscribeToButtonsVisibility() {
         privacyDashboardButton.publisher(for: \.isHidden).asVoid()
             .merge(with: zoomButton.publisher(for: \.isHidden).asVoid())
+            .merge(with: permissionCenterButton.publisher(for: \.isHidden).asVoid())
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.updateSeparator()
@@ -1000,7 +1001,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateSeparator() {
-        separator.isShown = privacyDashboardButton.isVisible && zoomButton.isVisible
+        separator.isShown = privacyDashboardButton.isVisible && (permissionCenterButton.isVisible || zoomButton.isVisible)
     }
 
     // MARK: - AI Chat Action Helpers

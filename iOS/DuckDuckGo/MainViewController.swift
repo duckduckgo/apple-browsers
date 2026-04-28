@@ -1550,6 +1550,9 @@ class MainViewController: UIViewController {
         // ie remove back/forward and show bookmarks/passwords
         // but also before any other UI updates so that data from the old tab doesn't find its way into the new one
         refreshControls()
+        DispatchQueue.main.async { [weak self] in
+            self?.presentChatPathOnboardingCompletionIfNeeded()
+        }
 
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
@@ -4406,7 +4409,6 @@ extension MainViewController: TabDelegate {
     func tabDidRequestNewTab(_ tab: TabViewController) {
         _ = findInPageView?.resignFirstResponder()
         newTab()
-        presentChatPathOnboardingCompletionIfNeeded()
     }
 
     private func presentChatPathOnboardingCompletionIfNeeded() {

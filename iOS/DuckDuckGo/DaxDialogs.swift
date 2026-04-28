@@ -639,6 +639,14 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             return nil
         }
 
+        // Chat-path trackerToEOJ phase: fire and visit-site seen, user has now browsed with trackers.
+        // The EOJ dialog is shown via presentChatPathOnboardingCompletionIfNeeded; suppress the
+        // standard .final here to prevent a duplicate dialog and duplicate pixel fires.
+        // (Standard-path users never set chatPathVisitSiteSeen, so they fall through to .final below.)
+        if settings.fireMessageExperimentShown && settings.chatPathVisitSiteSeen {
+            return nil
+        }
+
         // Check final first as if we skip anonymous searches we don't want to show this.
         if settings.fireMessageExperimentShown {
             return .final
@@ -790,6 +798,8 @@ extension DaxDialogs: SubscriptionPromotionCoordinating {
         }
     }
 
+    /// True when the subscription promotion dialog is eligible to be shown but hasn't been shown yet.
+    /// Used to defer `disableContextualDaxDialogs()` until after the promo is dismissed.
     var subscriptionPromotionPending: Bool {
         finalDaxDialogSeen && onboardingSubscriptionPromotionHelper.shouldDisplay && !subscriptionPromotionDialogSeen
     }

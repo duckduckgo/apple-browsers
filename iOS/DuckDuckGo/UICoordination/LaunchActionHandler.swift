@@ -52,6 +52,11 @@ enum LaunchAction {
 }
 
 @MainActor
+protocol OnboardingPresenting: AnyObject {
+    func startOnboardingFlowIfNotSeenBefore(url: URL?)
+}
+
+@MainActor
 protocol IdleReturnLaunchDelegate: AnyObject {
     func showNewTabPageAfterIdleReturn()
     func markLastUsedTabAsResumedAfterIdle()

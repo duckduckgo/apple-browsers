@@ -1606,7 +1606,6 @@
 		9FD6E6192DFA72C200C2B032 /* PictureInPictureControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E6182DFA72BC00C2B032 /* PictureInPictureControllerTests.swift */; };
 		9FD6E61B2DFA739200C2B032 /* MockAVPictureInPictureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E61A2DFA738800C2B032 /* MockAVPictureInPictureController.swift */; };
 		9FD6E61D2DFA743300C2B032 /* MockPIctureInPictureControllerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E61C2DFA742A00C2B032 /* MockPIctureInPictureControllerFactory.swift */; };
-		9FD8A2ED2F984D8F005772BC /* OnboardingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8A2EC2F984D8B005772BC /* OnboardingCoordinator.swift */; };
 		9FD8A2F22F99B98D005772BC /* CustomProductPage+Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8A2F12F99B982005772BC /* CustomProductPage+Onboarding.swift */; };
 		9FD8A2F52F99BA32005772BC /* CustomProductPageEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8A2F42F99BA30005772BC /* CustomProductPageEvaluator.swift */; };
 		9FD8A2F72F99C028005772BC /* CustomProductPageDeepLinkHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8A2F62F99C01C005772BC /* CustomProductPageDeepLinkHandler.swift */; };
@@ -4210,7 +4209,6 @@
 		9FD6E6182DFA72BC00C2B032 /* PictureInPictureControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PictureInPictureControllerTests.swift; sourceTree = "<group>"; };
 		9FD6E61A2DFA738800C2B032 /* MockAVPictureInPictureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAVPictureInPictureController.swift; sourceTree = "<group>"; };
 		9FD6E61C2DFA742A00C2B032 /* MockPIctureInPictureControllerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPIctureInPictureControllerFactory.swift; sourceTree = "<group>"; };
-		9FD8A2EC2F984D8B005772BC /* OnboardingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingCoordinator.swift; sourceTree = "<group>"; };
 		9FD8A2F12F99B982005772BC /* CustomProductPage+Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CustomProductPage+Onboarding.swift"; sourceTree = "<group>"; };
 		9FD8A2F42F99BA30005772BC /* CustomProductPageEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomProductPageEvaluator.swift; sourceTree = "<group>"; };
 		9FD8A2F62F99C01C005772BC /* CustomProductPageDeepLinkHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomProductPageDeepLinkHandler.swift; sourceTree = "<group>"; };
@@ -9691,7 +9689,6 @@
 				CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */,
 				CBF259912D47BFDD00AC63E4 /* OverlayWindowManager.swift */,
 				CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */,
-				9FD8A2EC2F984D8B005772BC /* OnboardingCoordinator.swift */,
 			);
 			path = UICoordination;
 			sourceTree = "<group>";
@@ -12309,7 +12306,6 @@
 				CBAD0F272D02EE4B006267B8 /* AfterInactivitySettingStorage.swift in Sources */,
 				CBAD0F2B2D02EE4E006267B8 /* AfterInactivityEffectiveOptionResolver.swift in Sources */,
 				CBAD0F3B2D02EE5B006267B8 /* IdleReturnCohort.swift in Sources */,
-				9FD8A2ED2F984D8F005772BC /* OnboardingCoordinator.swift in Sources */,
 				80A09D522F6B854400AACDEE /* URLCacheFireWorker.swift in Sources */,
 				CBAD0F2D2D02EE50006267B8 /* IdleReturnEligibilityManager.swift in Sources */,
 				EDDEC0152F99679E00FBE920 /* SyncSetupExperimentPixels.swift in Sources */,

@@ -101,7 +101,7 @@ struct Foreground: ForegroundHandling {
             authenticationService: sceneDependencies.authenticationService,
             autoClearService: sceneDependencies.autoClearService,
             launchActionHandler: launchActionHandler,
-            onboardingCoordinator: appDependencies.onboardingCoordinator
+            onboardingPresenter: appDependencies.mainCoordinator
         )
     }
 

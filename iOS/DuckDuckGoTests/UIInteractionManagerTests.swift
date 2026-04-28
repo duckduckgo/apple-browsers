@@ -61,7 +61,7 @@ final class MockLaunchActionHandler: LaunchActionHandling {
 
 }
 
-final class MockOnboardingCoordinator: OnboardingCoordinating {
+final class MockOnboardingPresenting: OnboardingPresenting {
     private(set) var didCallPresentOnboarding = false
     private(set) var capturedURL: URL?
 
@@ -77,12 +77,12 @@ final class UIInteractionManagerTests {
     let mockAuthService = MockAuthenticationService()
     let mockAutoClearService = MockAutoClearService()
     let mockLaunchActionHandler = MockLaunchActionHandler()
-    let mockOnboardingCoordinator = MockOnboardingCoordinator()
+    let mockOnboardingPresenter = MockOnboardingPresenting()
     lazy var uiInteractionManager = UIInteractionManager(
         authenticationService: mockAuthService,
         autoClearService: mockAutoClearService,
         launchActionHandler: mockLaunchActionHandler,
-        onboardingCoordinator: mockOnboardingCoordinator
+        onboardingPresenter: mockOnboardingPresenter
     )
 
     @Test("Start method calls onWebViewReadyForInteractions and opens URL")
@@ -139,8 +139,8 @@ final class UIInteractionManagerTests {
             uiInteractionManager.start(
                 launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: true),
                 onWebViewReadyForInteractions: {
-                    #expect(self.mockOnboardingCoordinator.didCallPresentOnboarding)
-                    #expect(self.mockOnboardingCoordinator.capturedURL == nil)
+                    #expect(self.mockOnboardingPresenter.didCallPresentOnboarding)
+                    #expect(self.mockOnboardingPresenter.capturedURL == nil)
                     continuation.resume()
                 },
                 onAppReadyForInteractions: { }
@@ -155,8 +155,8 @@ final class UIInteractionManagerTests {
             uiInteractionManager.start(
                 launchAction: .handleShortcutItem(shortcutItem),
                 onWebViewReadyForInteractions: {
-                    #expect(self.mockOnboardingCoordinator.didCallPresentOnboarding)
-                    #expect(self.mockOnboardingCoordinator.capturedURL == nil)
+                    #expect(self.mockOnboardingPresenter.didCallPresentOnboarding)
+                    #expect(self.mockOnboardingPresenter.capturedURL == nil)
                     continuation.resume()
                 },
                 onAppReadyForInteractions: { }
@@ -171,8 +171,8 @@ final class UIInteractionManagerTests {
             uiInteractionManager.start(
                 launchAction: .handleUserActivity(userActivity),
                 onWebViewReadyForInteractions: {
-                    #expect(self.mockOnboardingCoordinator.didCallPresentOnboarding)
-                    #expect(self.mockOnboardingCoordinator.capturedURL == nil)
+                    #expect(self.mockOnboardingPresenter.didCallPresentOnboarding)
+                    #expect(self.mockOnboardingPresenter.capturedURL == nil)
                     continuation.resume()
                 },
                 onAppReadyForInteractions: { }
@@ -183,7 +183,7 @@ final class UIInteractionManagerTests {
     @Test("Start method presents onboarding before handling immediate launch actions")
     func startPresentsOnboardingBeforeHandlingImmediateLaunchActions() async {
         // Override the onboarding coordinator to track order of operations
-        final class MockOnboardingCoordinator: OnboardingCoordinating {
+        final class MockOnboardingPresenter: OnboardingPresenting {
             private(set) var didCallPresentOnboarding = false
             private(set) var didPresentOnboardingBeforeHandlingActions: Bool = false
 
@@ -202,21 +202,21 @@ final class UIInteractionManagerTests {
 
         let url = URL(string: "https://example.com")!
         let mockLaunchActionHandler = MockLaunchActionHandler()
-        let mockOnboardingCoordinator = MockOnboardingCoordinator(launchActionHandler: mockLaunchActionHandler)
+        let mockOnboardingPresenter = MockOnboardingPresenter(launchActionHandler: mockLaunchActionHandler)
 
         let sut = UIInteractionManager(
             authenticationService: mockAuthService,
             autoClearService: mockAutoClearService,
             launchActionHandler: mockLaunchActionHandler,
-            onboardingCoordinator: mockOnboardingCoordinator
+            onboardingPresenter: mockOnboardingPresenter
         )
 
         await withCheckedContinuation { continuation in
             sut.start(
                 launchAction: .openURL(url),
                 onWebViewReadyForInteractions: {
-                    #expect(mockOnboardingCoordinator.didCallPresentOnboarding)
-                    #expect(mockOnboardingCoordinator.didPresentOnboardingBeforeHandlingActions == true)
+                    #expect(mockOnboardingPresenter.didCallPresentOnboarding)
+                    #expect(mockOnboardingPresenter.didPresentOnboardingBeforeHandlingActions == true)
                     continuation.resume()
                 },
                 onAppReadyForInteractions: { }

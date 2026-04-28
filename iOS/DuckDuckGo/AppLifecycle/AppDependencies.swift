@@ -30,7 +30,6 @@ struct AppDependencies {
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let appSettings: AppSettings
     let backgroundTaskManager: BackgroundTaskManager
-    let onboardingCoordinator: OnboardingCoordinating
 
 }
 

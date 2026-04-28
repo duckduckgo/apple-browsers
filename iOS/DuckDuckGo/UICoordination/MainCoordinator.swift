@@ -88,6 +88,7 @@ final class MainCoordinator {
     private var webExtensionLoadTask: Task<Void, Never>?
     private var isWebExtensionLoadPending = false
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
+    private let onboardingManager: OnboardingFlowManaging
 
     private var hasPresentedOnboarding = false
 
@@ -132,6 +133,7 @@ final class MainCoordinator {
                                                                       privacyConfigurationManager: privacyConfigurationManager)
         self.modalPromptCoordinationService = modalPromptCoordinationService
         self.wideEvent = wideEvent
+        self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
         self.voiceShortcutFeature = DuckAIVoiceShortcutFeature(featureFlagger: featureFlagger)
         FireModeCapability.resolve(using: featureFlagger)
@@ -824,7 +826,11 @@ extension MainCoordinator: SystemSettingsPiPTutorialPresenting {
 
 extension MainCoordinator: OnboardingPresenting {
 
-    func presentOnboardingFlowIfNotSeenBefore() {
+    func startOnboardingFlowIfNotSeenBefore(url: URL?) {
+        // 1. Configure Onboarding Flow
+        onboardingManager.configureOnboardingFlow(from: url)
+
+        // 2. Presenting Onboarding Flow if needed
         guard !hasPresentedOnboarding, controller.isStartupOnboardingPending else { return }
         hasPresentedOnboarding = true
         controller.startupOnboardingCover.bringToFront()

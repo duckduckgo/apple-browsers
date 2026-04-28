@@ -61,6 +61,14 @@
                     "underlying_code": {
                         "type": "integer",
                         "description": "The underlying error code"
+                    },
+                    "underlying_domain2": {
+                        "type": "string",
+                        "description": "The second underlying error domain"
+                    },
+                    "underlying_code2": {
+                        "type": "integer",
+                        "description": "The second underlying error code"
                     }
                 }
             }

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import XCTest
 import AIChat
 
@@ -82,5 +83,125 @@ final class AIChatPreferencesPersistorTests: XCTestCase {
 
         // Then
         XCTAssertEqual(secondPersistor.selectedModelId, "gpt-4o-mini")
+    }
+
+    // MARK: - Selected Reasoning Effort
+
+    func testWhenNoReasoningEffortSelected_ThenSelectedReasoningEffortIsNil() {
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testWhenReasoningEffortIsSet_ThenItCanBeReadBack() {
+        // Given & When
+        persistor.selectedReasoningEffort = "low"
+
+        // Then
+        XCTAssertEqual(persistor.selectedReasoningEffort, "low")
+    }
+
+    func testWhenReasoningEffortIsOverwritten_ThenNewValueIsReturned() {
+        // Given
+        persistor.selectedReasoningEffort = "low"
+
+        // When
+        persistor.selectedReasoningEffort = "medium"
+
+        // Then
+        XCTAssertEqual(persistor.selectedReasoningEffort, "medium")
+    }
+
+    func testWhenReasoningEffortIsCleared_ThenItReturnsNil() {
+        // Given
+        persistor.selectedReasoningEffort = "low"
+
+        // When
+        persistor.selectedReasoningEffort = nil
+
+        // Then
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testWhenReasoningEffortIsPersisted_ThenItSurvivesNewPersistorInstance() {
+        // Given
+        persistor.selectedReasoningEffort = "medium"
+
+        // When — create new persistor backed by the same store
+        let secondPersistor = AIChatPreferencesPersistor(keyValueStore: userDefaults)
+
+        // Then
+        XCTAssertEqual(secondPersistor.selectedReasoningEffort, "medium")
+    }
+
+    // MARK: - Selected Reasoning Mode
+
+    func testWhenNoReasoningModeSelected_ThenSelectedReasoningModeIsNil() {
+        XCTAssertNil(persistor.selectedReasoningMode)
+    }
+
+    func testWhenReasoningModeIsSet_ThenItCanBeReadBack() {
+        persistor.selectedReasoningMode = .extendedReasoning
+
+        XCTAssertEqual(persistor.selectedReasoningMode, .extendedReasoning)
+    }
+
+    func testWhenReasoningModeIsCleared_ThenItReturnsNil() {
+        persistor.selectedReasoningMode = .reasoning
+
+        persistor.selectedReasoningMode = nil
+
+        XCTAssertNil(persistor.selectedReasoningMode)
+    }
+
+    func testWhenReasoningModeIsPersisted_ThenItSurvivesNewPersistorInstance() {
+        persistor.selectedReasoningMode = .fast
+
+        let secondPersistor = AIChatPreferencesPersistor(keyValueStore: userDefaults)
+
+        XCTAssertEqual(secondPersistor.selectedReasoningMode, .fast)
+    }
+
+    func testWhenPersistedReasoningModeRawValueIsUnknown_ThenSelectedReasoningModeIsNil() {
+        userDefaults.set("unsupported", forKey: "aichat.omnibar.selected-reasoning-mode")
+
+        XCTAssertNil(persistor.selectedReasoningMode)
+    }
+
+    // MARK: - selectedModelIdPublisher
+
+    func testSelectedModelIdPublisher_emitsOnEveryDistinctWrite() {
+        var received: [String?] = []
+        let cancellable = persistor.selectedModelIdPublisher.sink { received.append($0) }
+
+        persistor.selectedModelId = "gpt-4o-mini"
+        persistor.selectedModelId = "claude-sonnet-4-5"
+        persistor.selectedModelId = nil
+
+        cancellable.cancel()
+        XCTAssertEqual(received, ["gpt-4o-mini", "claude-sonnet-4-5", nil])
+    }
+
+    func testSelectedModelIdPublisher_dedupsIdenticalWrites() {
+        var received: [String?] = []
+        let cancellable = persistor.selectedModelIdPublisher.sink { received.append($0) }
+
+        persistor.selectedModelId = "gpt-4o-mini"
+        persistor.selectedModelId = "gpt-4o-mini"   // no-op, publisher must not emit
+        persistor.selectedModelId = "claude-sonnet-4-5"
+
+        cancellable.cancel()
+        XCTAssertEqual(received, ["gpt-4o-mini", "claude-sonnet-4-5"])
+    }
+
+    func testSelectedModelIdPublisher_isInstanceScoped() {
+        // Two persistors on the same store: a write on one MUST NOT emit on the other's publisher.
+        // (Callers that want cross-component propagation share a single persistor instance.)
+        let otherPersistor = AIChatPreferencesPersistor(keyValueStore: userDefaults)
+        var received: [String?] = []
+        let cancellable = otherPersistor.selectedModelIdPublisher.sink { received.append($0) }
+
+        persistor.selectedModelId = "gpt-4o-mini"
+
+        cancellable.cancel()
+        XCTAssertEqual(received, [])
     }
 }

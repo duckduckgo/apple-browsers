@@ -123,8 +123,12 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
         let cardTop = pillFrame.minY - Constants.cornerRadius
         let cardLeading = pillFrame.minX + Constants.popupLeadingOffset
 
+        let desiredTop = shadowContainer.topAnchor.constraint(equalTo: view.topAnchor, constant: cardTop)
+        desiredTop.priority = .defaultHigh
+
         NSLayoutConstraint.activate([
-            shadowContainer.topAnchor.constraint(equalTo: view.topAnchor, constant: cardTop),
+            desiredTop,
+            shadowContainer.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor),
             shadowContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: cardLeading),
             shadowContainer.widthAnchor.constraint(equalToConstant: Constants.popupWidth),
         ])

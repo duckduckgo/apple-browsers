@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Ava taustal";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Uus Fire vahekaart";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Ava Fire vahekaardil";
 /* Create New Tab action */
 "action.title.newTabAction" = "Uus vaheleht";
 
@@ -207,6 +212,24 @@
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Tee foto";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Analüütiliste ülesannete jaoks";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Laiendatud arutlus";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Vastab kiiresti";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Kiire";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Keeruliste ülesannete jaoks";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Arutlus";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Kohanda vastuseid";
@@ -360,12 +383,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Otsi DuckDuckGo'st";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Otsingusoovitused hõlmavad nüüd sinu hiljuti külastatud saite. Saad selle välja lülitada seadetes või tühjendada igal ajal nupu 🔥 Fire Button abil.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Sama privaatsus.\nParemad otsingusoovitused!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Vaheta vahekaardile";
@@ -876,6 +893,9 @@
 
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Ei aitäh";
+
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Mitte praegu";
 
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Salvesta oma parool turvaliselt seadmesse DuckDuckGo paroolide ja automaatse täitmisega.";
@@ -1489,6 +1509,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Saadetud koos sinu sõnumiga Duck.ai-le";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Hiljutised vestlused";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Hiljutised vestlused";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Vaata kõiki vestlusi";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Lisa Duck.ai häälvestluse otsetee juhtimiskeskusesse";
 
@@ -1498,8 +1527,14 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Lisa lehe sisu";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Küsi lehe kohta";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Loo lehekülje kokkuvõte";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Kokkuvõte lehelt";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Lisa Duck.ai juhtimiskeskusesse";
@@ -1557,6 +1592,12 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Vestle Duck.ai-ga Siri abil!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Kõik vestlused on %@ privaatsed";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "privaatsed";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo iOS-ile";
@@ -1837,6 +1878,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Lülitub sellele vahekaardile";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Viimati kasutatud Fire vahekaart";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Tagasi %@ juurde";
 
@@ -2146,6 +2189,47 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Vali, mida kustutada";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Logi saidile sisse teise kontoga";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Sirvi kohalikku ajalugu salvestamata";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Tõrkeotsing veebilehtedel";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire vahekaardid on teistest brauseriandmetest isoleeritud. Nende andmed põletatakse, kui sa need kõik sulged. Need pakuvad sulle sama jälgimiskaitset kui teisedki vahekaardid.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Uus Fire vahekaart";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire vahekaardid";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Uus";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Uus! Sirvi kohalikku ajalugu salvestamata või logi saitidele sisse teise kontoga.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Mitte praegu";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Proovi Fire vahekaarte";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Proovi Fire vahekaarte";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Proovi Fire vahekaarte, et sirvida ilma kohalikku ajalugu salvestamata.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Uus: Fire vahekaardid";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire vahekaart";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
 
@@ -2210,7 +2294,7 @@
 "import.passwords.promo.title" = "Impordi paroolid DuckDuckGosse";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Küsi privaatselt";
+"input.field.placeholder.duckai" = "Küsi ükskõik mida privaatselt";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Küsi lisaküsimus...";
@@ -2268,6 +2352,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Otsi või sisesta aadress";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Uus Fire vahekaart";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Uus vaheleht";
@@ -3160,6 +3247,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skaneerimine...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Kas kustutada Fire vahekaardid ja nende andmed?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Kas kustutada vahekaardid ja saidi andmed?";
 
@@ -4115,7 +4204,7 @@
 "sync.delete.all.confirm.action" = "Kustuta serveri andmed";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Kõigi seadmete ühendus katkestatakse ja sinu sünkroonitud andmed kustutatakse serverist.";
+"sync.delete.all.confirm.message" = "Sinu varukoopia kustutatakse serverist. Kõigi seadmete sünkroonimine katkestatakse, kuid ühestki seadmest ei kustutata midagi.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Kas kustutada serveri andmed?";
@@ -4207,15 +4296,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Vahekaart lugemata";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Sulge Fire vahekaart";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Sulge vaheleht";
 /* Accessibility label on remove button */
 "tab.close.home" = "Sulge avalehe vahekaart";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Sulge \"%1$@\" aadressil %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire vahekaart";
+
+/* New tab title */
+"tab.new.title" = "Uus vaheleht";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Ava avalehe vahekaart";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Ava uuel vahekaardil";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Ava Fire vahekaart";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Ava \"%1$@\" aadressil %2$@";
 

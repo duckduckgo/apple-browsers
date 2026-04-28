@@ -39,6 +39,8 @@ public struct AIChatModel {
     public let entityHasAccess: Bool
     /// The access tiers this model belongs to (e.g. ["free", "plus", "pro", "internal"]).
     public let accessTier: [String]
+    /// Supported reasoning effort levels. Empty when reasoning is not supported.
+    public let supportedReasoningEffort: [AIChatReasoningEffort]
 
     public enum ModelProvider {
         case openAI
@@ -58,7 +60,8 @@ public struct AIChatModel {
         supportedImageFormats: [String] = [],
         supportedTools: [AIChatRAGTool] = [],
         entityHasAccess: Bool,
-        accessTier: [String] = []
+        accessTier: [String] = [],
+        supportedReasoningEffort: [AIChatReasoningEffort] = []
     ) {
         self.id = id
         self.name = name
@@ -69,6 +72,7 @@ public struct AIChatModel {
         self.supportedTools = supportedTools
         self.entityHasAccess = entityHasAccess
         self.accessTier = accessTier
+        self.supportedReasoningEffort = supportedReasoningEffort
     }
 
     public func supportsTool(_ tool: AIChatRAGTool) -> Bool {

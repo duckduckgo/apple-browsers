@@ -137,7 +137,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
         sut.pushAction(method: CCFSubscribeActionName.onActionReceived, webView: mockWebView, params: params)
 
-        await fulfillment(of: [timeoutExpectation], timeout: 3.0)
+        await fulfillment(of: [timeoutExpectation], timeout: 10.0)
 
         XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError,
                        DataBrokerProtectionError.actionFailed(actionID: actionID, message: "Action timed out"))

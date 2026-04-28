@@ -56,6 +56,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
 
     override func tearDown() {
         autoreleasepool {
+            firedPixels = []
             promptHandler = nil
             windowControllersManager = nil
             tabsPreferences = nil
@@ -99,7 +100,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnSameTab_ThenAIChatOpens() {
         let target: NewTabPageDataModel.OpenTarget = .sameTab
 
-        handler.submitChat("duckduckgo", target: target)
+        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 1)
@@ -109,10 +110,28 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnNewTab_ThenNewTabOpensWithAIChat() {
         let target: NewTabPageDataModel.OpenTarget = .newTab
 
-        handler.submitChat("duckduckgo", target: target)
+        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)
+    }
+
+    @MainActor
+    func testWhenSubmitAIChatWithReasoningEffort_ThenPromptUsesTypedReasoningEffort() {
+        handler.submitChat("duckduckgo",
+                           target: .sameTab,
+                           modelId: "gpt-5.2",
+                           images: nil,
+                           mode: nil,
+                           toolChoice: nil,
+                           reasoningEffort: "low")
+
+        let prompt = promptHandler.consumeData()
+        let expectedPrompt = AIChatNativePrompt.queryPrompt("duckduckgo",
+                                                           autoSubmit: true,
+                                                           modelId: "gpt-5.2",
+                                                           reasoningEffort: .low)
+        XCTAssertEqual(prompt, expectedPrompt)
     }
 
     // MARK: - openAiChat pixels
@@ -145,7 +164,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
 
     @MainActor
     func testViewAllAiChats_opensNewAIChatTab() {
-        handler.viewAllAiChats(target: .sameTab)
+        handler.viewAllAiChats(target: .newTab)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)

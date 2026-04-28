@@ -179,7 +179,7 @@ public extension SubJobWebRunning {
             return
         }
 
-        if featureFlagger.isClickActionDelayReductionOptimizationOn && action is ClickAction {
+        if action is ClickAction {
             Logger.action.log("Executing click action delay BEFORE click: \(self.clickAwaitTime)s")
             recordDebugEvent(kind: .wait,
                              actionType: action.actionType,
@@ -188,12 +188,6 @@ public extension SubJobWebRunning {
         }
 
         let request: CCFRequestData = .userData(context.profileQuery, self.extractedProfile)
-        if shouldFireTypedFallbackPixel(for: action) {
-            pixelHandler.fire(.actionPayloadTypedFallbackUnexpected(dataBroker: context.dataBroker.url,
-                                                                   version: context.dataBroker.version,
-                                                                   actionType: action.actionType.rawValue,
-                                                                   stepType: stepType))
-        }
         recordDebugEvent(kind: .actionPayload,
                          actionType: action.actionType,
                          details: DebugHelper.prettyPrintedActionPayload(action: action, data: request))
@@ -324,14 +318,6 @@ public extension SubJobWebRunning {
         }
     }
 
-    private func shouldFireTypedFallbackPixel(for action: Action) -> Bool {
-        guard action.json == nil else { return false }
-        let isSyntheticEmailContinuationNavigate = actionsHandler?.isEmailConfirmationContinuation == true &&
-            actionsHandler?.syntheticContinuationActionId == action.id &&
-            action is NavigateAction
-        return !isSyntheticEmailContinuationNavigate
-    }
-
     func success(actionId: String, actionType: ActionType) async {
         recordDebugEvent(kind: .actionResponse,
                          actionType: actionType,
@@ -342,15 +328,6 @@ public extension SubJobWebRunning {
         case .click:
             if isForOptOut {
                 stageCalculator.fireOptOutFillForm()
-            }
-            // When click delay optimization is OFF, wait after click (legacy behavior)
-            // When ON, the delay happens before the click in runNextAction
-            if !featureFlagger.isClickActionDelayReductionOptimizationOn {
-                Logger.action.log("Executing click action delay AFTER click: \(self.clickAwaitTime)s")
-                recordDebugEvent(kind: .wait,
-                                 actionType: .click,
-                                 details: "Waiting \(clickAwaitTime)s (click delay after click)")
-                try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
             }
             await executeNextStep()
         case .fillForm:

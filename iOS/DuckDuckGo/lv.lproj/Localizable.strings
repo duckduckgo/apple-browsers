@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Atvērt fonā";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Jauna Fire cilne";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Atvērt Fire cilnē";
 /* Create New Tab action */
 "action.title.newTabAction" = "Jauna cilne";
 
@@ -207,6 +212,24 @@
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Uzņemt fotoattēlu";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Analītiskiem uzdevumiem";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Paplašinātas spriešanas iespējas";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Atbild ātri";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Ātri";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Sarežģītiem uzdevumiem";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Spriešana";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Pielāgo atbildes";
@@ -360,12 +383,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Meklēt DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Meklēšanas ieteikumi tagad ietver tavas nesen apmeklētās vietnes. Izslēdz sadaļā Iestatījumi vai jebkurā laikā notīri ar 🔥 Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Tas pats privātums.\nLabāki meklēšanas ieteikumi!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Pārslēgties uz cilni";
@@ -876,6 +893,9 @@
 
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Nē, paldies";
+
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Ne tagad";
 
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Droši saglabā paroli ierīcē, izmantojot DuckDuckGo paroles un automātisko aizpildīšanu.";
@@ -1489,6 +1509,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Nosūtīts kopā ar tavu ziņojumu uz Duck.ai";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Pēdējās tērzēšanas sarunas";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Pēdējās tērzēšanas sarunas";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Skatīt visas tērzēšanas sarunas";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Pievieno Duck.ai balss saīsni savam vadības centram";
 
@@ -1498,8 +1527,14 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Pievienot lapas saturu";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Jautā par lapu";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Apkopot šo lapu";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Apkopo šo lapu";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Pievieno Duck.ai Vadības centram";
@@ -1557,6 +1592,12 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Sazinies ar Duck.ai, izmantojot Siri!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Visas tērzēšanas sarunas ir %@ privātas";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "privātas";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo operētājsistēmai iOS";
@@ -1837,6 +1878,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Pārslēdzas uz šo cilni";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Pēdējo reizi izmantotā Fire cilne";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Atgriezties pie %@";
 
@@ -2146,6 +2189,47 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Izvēlies, ko dzēst";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Pierakstīties vietnē ar citu kontu";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Pārlūkot, nesaglabājot vietējo vēsturi";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Tīmekļa vietņu problēmu novēršana";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire cilnes ir izolētas no citiem pārlūkprogrammas datiem. Tās visas aizverot, to dati tiek iznīcināti. Tām ir tāda pati izsekošanas aizsardzība kā citām cilnēm.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Jauna Fire cilne";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire cilnes";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Jauns";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Jaunums! Pārlūko vietnes, nesaglabājot vietējo vēsturi, vai pieraksties tajās, izmantojot citu kontu.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Ne tagad";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Izmēģini Fire cilnes";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Izmēģini Fire cilnes";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Izmēģini Fire Tabs, lai pārlūkotu, nesaglabājot vietējo vēsturi.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Jaunums: Fire cilnes";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire cilne";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Gaisa plūsma";
 
@@ -2210,7 +2294,7 @@
 "import.passwords.promo.title" = "Importēt savas paroles DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Pajautāt privāti";
+"input.field.placeholder.duckai" = "Jautā jebko privāti";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Uzdod papildjautājumu...";
@@ -2268,6 +2352,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Meklē vai ievadi adresi";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Jauna Fire cilne";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Jauna cilne";
@@ -3160,6 +3247,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skenēšana...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Vai dzēst Fire cilnes un to datus?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Vai dzēst cilnes un vietņu datus?";
 
@@ -4115,7 +4204,7 @@
 "sync.delete.all.confirm.action" = "Dzēst servera datus";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Visas ierīces tiks atvienotas un tavi sinhronizētie dati tiks dzēsti no servera.";
+"sync.delete.all.confirm.message" = "Tavs dublējums tiks dzēsts no servera. Visas ierīces tiks atvienotas no sinhronizācijas, bet nekas netiks dzēsts ne no vienas ierīces.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Dzēst servera datus?";
@@ -4207,15 +4296,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Nelasīta cilne";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Aizvērt Fire cilni";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Aizvērt cilni";
 /* Accessibility label on remove button */
 "tab.close.home" = "Aizvērt sākuma cilni";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Aizvērt “%1$@” vietnē %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire cilne";
+
+/* New tab title */
+"tab.new.title" = "Jauna cilne";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Atvērt sākuma cilni";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Atvērt jaunu cilni";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Atvērt Fire cilni";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Atvērt “%1$@” vietnē %2$@";
 

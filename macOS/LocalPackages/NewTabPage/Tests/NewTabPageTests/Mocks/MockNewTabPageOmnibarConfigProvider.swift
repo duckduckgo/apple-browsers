@@ -52,5 +52,23 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var isAIChatToolsEnabled: Bool = false
 
-    var selectedModelId: String?
+    var isImageGenerationEnabled: Bool = false
+
+    var isWebSearchEnabled: Bool = false
+
+    @Published var selectedModelId: String?
+
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> {
+        $selectedModelId.dropFirst().eraseToAnyPublisher()
+    }
+
+    var selectedModelShortName: String?
+
+    var isReasoningEffortEnabled: Bool = false
+
+    @Published var selectedReasoningEffort: String?
+
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
+        $selectedReasoningEffort.dropFirst().eraseToAnyPublisher()
+    }
 }

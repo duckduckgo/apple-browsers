@@ -2,7 +2,7 @@ appId: com.duckduckgo.mobile.ios
 tags:
     - iphone
     - privacy
-name: 01_content_scope_experiments_setup
+name: 11_content_scope_experiments_setup
 
 ---
 
@@ -22,6 +22,8 @@ name: 01_content_scope_experiments_setup
     index: 0
 
 ##Override Privacy Config
+- scrollUntilVisible: 
+    element: "Configuration URLs"
 - tapOn: "Configuration URLs"
 - tapOn: "Privacy Config"
 - inputText: "https://privacy-test-pages.site/content-scope-scripts/infra/config/conditional-matching-experiments.json"

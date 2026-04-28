@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Отваряне във фонов режим";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Нов раздел Fire";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Отваряне в раздел Fire";
 /* Create New Tab action */
 "action.title.newTabAction" = "Нов раздел";
 
@@ -207,6 +212,24 @@
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Направете снимка";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "За аналитични задачи";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Разширена обосновка";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Бързи отговори";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Бързо";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "За сложни задачи";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Обосновка";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Персонализиране на отговорите";
@@ -360,12 +383,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Търси с DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Предложенията за търсене вече включват наскоро посетени сайтове. Изключете ги в Настройки, а можете и да ги изтриете по всяко време с 🔥 Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Същата поверителност.\nПо-добри предложения при търсене!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Превключване към раздел";
@@ -876,6 +893,9 @@
 
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Не, благодаря";
+
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Не сега";
 
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "С DuckDuckGo Passwords & Autofill можете да съхранявате паролата по сигурен начин на устройството.";
@@ -1489,6 +1509,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Изпратено с твоето съобщение до Duck.ai";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Последни чатове";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Последни чатове";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Преглед на всички чатове";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Добавяне на пряк път за Duck.ai Voice към Центъра за управление";
 
@@ -1498,8 +1527,14 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Прикачи съдържанието на страницата";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Попитайте за страницата";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Обобщи тази страница";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Обобщаване на страницата";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Добавяне на Duck.ai към Центъра за управление";
@@ -1557,6 +1592,12 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Говорете с Duck.ai чрез Сири!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Всички чатове са %@ поверителни";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "поверителни";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo за iOS";
@@ -1837,6 +1878,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Превключва към този раздел";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Последно използван раздел Fire";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Връщане към %@";
 
@@ -2146,6 +2189,47 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Избери какво да изтриеш";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Влизане в сайт с друг акаунт";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Сърфиране без запазване на локалната история";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Отстраняване на неизправности в уебсайтове";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Разделите Fire са изолирани от другите данни на браузъра. Когато затворите всички такива раздели, данните в тях се изгарят. Те имат същата защита от проследяване като другите раздели.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Нов раздел Fire";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Раздели Fire";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Нов";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Ново! Можете да сърфирате, без да запазвате локална история или да влизате в сайтове с друг акаунт.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Не сега";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Изпробвайте разделите Fire";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Изпробвайте разделите Fire";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Изпробвайте разделите Fire, в които сърфирате, без да запазвате локална история.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Ново: Раздели Fire";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Раздел Fire";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Въздушна струя";
 
@@ -2210,7 +2294,7 @@
 "import.passwords.promo.title" = "Импортиране на пароли в DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Задавайте въпроси поверително";
+"input.field.placeholder.duckai" = "Задайте въпрос поверително";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Задайте последващ въпрос...";
@@ -2268,6 +2352,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Търсене или въвеждане на адрес";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Нов раздел Fire";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Нов раздел";
@@ -3160,6 +3247,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Сканиране...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Изтриване на разделите Fire и данните в тях?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Да изтрием ли разделите и данните от сайта?";
 
@@ -4115,7 +4204,7 @@
 "sync.delete.all.confirm.action" = "Изтриване на данните от сървъра";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Връзката на всички устройства ще бъде премахната, а синхронизираните данни ще бъдат изтрити от сървъра.";
+"sync.delete.all.confirm.message" = "Резервното копие ще бъде изтрито от сървъра. Синхронизацията на всички устройства ще бъде изключена, но от устройствата няма да бъде изтрито нищо.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Изтриване на данните от сървъра?";
@@ -4207,15 +4296,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Непрочетен раздел";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Затваряне на раздел Fire";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Затваряне на раздел";
 /* Accessibility label on remove button */
 "tab.close.home" = "Затваряне на началния раздел";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Затваряне на \"%1$@\" с адрес %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Раздел Fire";
+
+/* New tab title */
+"tab.new.title" = "Нов раздел";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Отваряне на началния раздел";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Отваряне на нов раздел";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Отваряне на раздел Fire";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Отваряне на \"%1$@\" с адрес %2$@";
 

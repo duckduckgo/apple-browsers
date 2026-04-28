@@ -87,6 +87,10 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
         try dataStore.putChats(chats)
     }
 
+    public func getChat(chatId: String) throws -> DuckAiChatRecord? {
+        try dataStore.getChat(chatId: chatId)
+    }
+
     public func getAllChats() throws -> [DuckAiChatRecord] {
         try dataStore.getAllChats()
     }
@@ -115,6 +119,10 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
 
     public func deleteFile(uuid: String) throws {
         try dataStore.deleteFile(uuid: uuid)
+    }
+
+    public func deleteFiles(chatId: String) throws {
+        try dataStore.deleteFiles(chatId: chatId)
     }
 
     public func deleteAllFiles() throws {

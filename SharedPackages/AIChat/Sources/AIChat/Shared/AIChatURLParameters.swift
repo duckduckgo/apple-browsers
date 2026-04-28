@@ -36,6 +36,9 @@ public enum AIChatURLParameters {
     public static let voiceModeValue = "voice"
     public static let imageModeValue = "image"
 
+    public static let sidebarName = "sidebar"
+    public static let sidebarOpenValue = "open"
+
     /// Appends `?mode=voice` to the given base URL.
     public static func voiceModeURL(from baseURL: URL) -> URL {
         modeURL(from: baseURL, mode: voiceModeValue)
@@ -44,6 +47,11 @@ public enum AIChatURLParameters {
     /// Appends `?mode=image` to the given base URL.
     public static func imageModeURL(from baseURL: URL) -> URL {
         modeURL(from: baseURL, mode: imageModeValue)
+    }
+
+    /// Appends `?sidebar=open` to the given base URL.
+    public static func sidebarOpenURL(from baseURL: URL) -> URL {
+        baseURL.addingOrReplacing(URLQueryItem(name: sidebarName, value: sidebarOpenValue))
     }
 
     private static func modeURL(from baseURL: URL, mode: String) -> URL {

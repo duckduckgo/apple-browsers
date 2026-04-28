@@ -120,7 +120,8 @@ final class UserScripts: UserScriptsProvider {
             }
             duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
                 handler: duckAiNativeStorageHandler,
-                originRules: originRules
+                originRules: originRules,
+                pixelFiring: DuckAiNativeStoragePixelAdapter()
             )
         } else {
             duckAiNativeStorageUserScript = nil
@@ -209,5 +210,5 @@ final class UserScripts: UserScriptsProvider {
             return wkUserScripts
         }
     }
-    
+
 }

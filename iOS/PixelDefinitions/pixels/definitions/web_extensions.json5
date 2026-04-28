@@ -371,7 +371,7 @@
         "description": "Fires once daily to report whether YouTube ad blocking is currently enabled (feature flag on and user opted in).",
         "owners": ["miasma13"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
             {

@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Arka Planda Aç";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Yeni Fire Sekmesi";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Fire sekmesinde açın";
 /* Create New Tab action */
 "action.title.newTabAction" = "Yeni Sekme";
 
@@ -207,6 +212,24 @@
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fotoğraf Çek";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Analitik görevler için";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Genişletilmiş Akıl Yürütme";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Hızlı yanıtlar";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Hızlı";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Karmaşık görevler için";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Akıl yürütme";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Yanıtları Özelleştir";
@@ -360,12 +383,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "DuckDuckGo'da Ara";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Arama önerileri artık son ziyaret ettiğiniz siteleri de içeriyor. Ayarlardan kapatabilir veya istediğiniz zaman 🔥 Fire Button ile temizleyebilirsiniz.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Aynı gizlilik.\nDaha iyi arama önerileri!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Sekmeye Geç";
@@ -876,6 +893,9 @@
 
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Hayır Teşekkürler";
+
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Şimdi Değil";
 
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "DuckDuckGo Parolalar ve Otomatik Doldurma ile parolanızı cihazınızda güvenle saklayın.";
@@ -1489,6 +1509,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Duck.ai'a mesajınızla gönderildi";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Son Sohbetler";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Son Sohbetler";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Tüm sohbetleri görüntüle";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Duck.ai Voice Kısayolunu Kontrol Merkezinize Ekleyin";
 
@@ -1498,8 +1527,14 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Sayfa İçeriğini Ekle";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Sayfa hakkında soru sor";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Bu Sayfayı Özetle";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Sayfayı özetle";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Duck.ai'ı Kontrol Merkezine ekleyin";
@@ -1557,6 +1592,12 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Siri'yi kullanarak Duck.ai ile konuş!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Tüm sohbetler %@ gizlidir";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "gizlidir";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "iOS için DuckDuckGo";
@@ -1837,6 +1878,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Bu sekmeye geçer";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "En son kullanılan Fire Sekmesi";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "%@ sekmesine geri dönün";
 
@@ -2146,6 +2189,47 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Nelerin Silineceğini Seçin";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Farklı bir hesapla bir sitede oturum açın";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Yerel geçmişi kaydetmeden göz atın";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Web sitelerindeki sorunları giderin";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire Sekmeleri diğer tarayıcı verilerinden izole edilmiştir. Tüm pencereleri kapattığınızda verileri imha edilir. Diğer sekmelerle aynı izleme korumasını sunarlar.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Yeni Fire Sekmesi";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire Sekmeleri";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Yeni";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Yeni! Yerel geçmişi kaydetmeden göz atın veya sitelerde farklı bir hesapla oturum açın.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Şimdi Değil";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Fire Sekmelerini Deneyin";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Fire Sekmelerini Deneyin";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Yerel geçmişi kaydetmeden göz atmak için Fire Sekmelerini deneyin.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Yeni: Fire Sekmeleri";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire Sekmesi";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Hava";
 
@@ -2210,7 +2294,7 @@
 "import.passwords.promo.title" = "Şifrelerinizi DuckDuckGo'ya aktarın";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Özel olarak sor";
+"input.field.placeholder.duckai" = "Gizli bir şekilde her şeyi sorabilirsiniz";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Takip sorusu sor...";
@@ -2268,6 +2352,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Adres Ara veya Gir";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Yeni Fire Sekmesi";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Yeni Sekme";
@@ -3160,6 +3247,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Taranıyor...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Fire Sekmeleri ve verileri silinsin mi?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Sekmeleri ve site verilerini silmek mi istiyorsunuz?";
 
@@ -4115,7 +4204,7 @@
 "sync.delete.all.confirm.action" = "Sunucu Verilerini Sil";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Tüm cihazların bağlantısı kesilecek ve senkronize edilen verileriniz sunucudan silinecektir.";
+"sync.delete.all.confirm.message" = "Yedekleriniz sunucudan silinecektir. Tüm cihazların senkronizasyon bağlantısı kesilecek, ancak hiçbir cihazdan hiçbir şey silinmeyecektir.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Sunucu Verileri Silinsin mi?";
@@ -4207,15 +4296,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Sekme Okunmamış";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Fire sekmesini kapatın";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Sekmeyi kapat";
 /* Accessibility label on remove button */
 "tab.close.home" = "Ana sekmeyi kapat";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "%2$@ adresindeki \"%1$@\" sitesini kapat";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire Sekmesi";
+
+/* New tab title */
+"tab.new.title" = "Yeni Sekme";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Ana sekmeyi aç";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Yeni sekme açın";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Fire sekmesini açın";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "%2$@ adresindeki \"%1$@\" sitesini aç";
 

@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Apri in background";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Nuova scheda Fire";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Apri in una scheda Fire";
 /* Create New Tab action */
 "action.title.newTabAction" = "Nuova scheda";
 
@@ -207,6 +212,24 @@
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Scatta una foto";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Per attività analitiche";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Ragionamento Esteso";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Risponde rapidamente";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Veloce";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Per attività complesse";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Ragionamento";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Personalizza le risposte";
@@ -360,12 +383,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Cerca DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "I suggerimenti di ricerca ora includono i siti visitati di recente. Disattiva nelle impostazioni o cancella in qualsiasi momento con il 🔥 Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "La stessa privacy.\nSuggerimenti di ricerca migliori!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Passa alla scheda";
@@ -876,6 +893,9 @@
 
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "No, grazie";
+
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Non adesso";
 
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Memorizza in modo sicuro la tua password sul dispositivo con DuckDuckGo Passwords & Autofill.";
@@ -1489,6 +1509,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Inviato con il tuo messaggio a Duck.ai";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Chat recenti";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Chat recenti";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Visualizza tutte le chat";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Aggiungi la scorciatoia Duck.ai Voice al centro di controllo";
 
@@ -1498,8 +1527,14 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Allega il contenuto della pagina";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Richiedi informazioni sulla pagina";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Riassumi questa pagina";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Riassumi la pagina";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Aggiungi Duck.ai al Centro di controllo";
@@ -1557,6 +1592,12 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Interagisci con Duck.ai usando Siri!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Tutte le chat sono %@ private";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "private";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo per iOS";
@@ -1837,6 +1878,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Passa a questa scheda";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Ultima scheda Fire usata";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Torna a %@";
 
@@ -2146,6 +2189,47 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Scegli cosa eliminare";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Accedi a un sito con un altro account";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Sfoglia senza salvare la cronologia locale";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Risolvi i problemi dei siti web";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Le schede Fire sono isolate dagli altri dati del browser. I dati vengono eliminati quando le chiudi tutte. Ti offrono la stessa protezione dal tracciamento delle altre schede.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Nuova scheda Fire";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Schede Fire";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Nuova";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Novità! Naviga senza salvare la cronologia locale o accedi ai siti con un account diverso.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Non adesso";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Prova Fire Tabs";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Prova le schede Fire";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Prova Fire Tabs per navigare senza salvare la cronologia locale.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Novità: schede Fire";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Scheda Fire";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Aria";
 
@@ -2210,7 +2294,7 @@
 "import.passwords.promo.title" = "Importa le tue password in DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Chiedi in privato";
+"input.field.placeholder.duckai" = "Chiedi qualsiasi cosa in privato";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Poni una domanda di approfondimento...";
@@ -2268,6 +2352,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Cerca o digita l'indirizzo";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Nuova scheda Fire";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Nuova scheda";
@@ -3160,6 +3247,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Scansione...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Eliminare le schede di Fire e i relativi dati?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Eliminare schede e dati del sito?";
 
@@ -4115,7 +4204,7 @@
 "sync.delete.all.confirm.action" = "Eliminare i dati del server";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Tutti i dispositivi saranno disconnessi e i dati sincronizzati verranno eliminati dal server.";
+"sync.delete.all.confirm.message" = "Il tuo backup verrà eliminato dal server. Tutti i dispositivi verranno disconnessi dalla sincronizzazione, ma nessun dato verrà eliminato da alcun dispositivo.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Eliminare i dati del server?";
@@ -4207,15 +4296,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Scheda non letta";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Chiudi scheda Fire";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Chiudi scheda";
 /* Accessibility label on remove button */
 "tab.close.home" = "Chiudi la scheda Home";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Chiudi \"%1$@\" all'indirizzo %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Scheda Fire";
+
+/* New tab title */
+"tab.new.title" = "Nuova scheda";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Apri la scheda Home";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Apri una nuova scheda";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Apri scheda Fire";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Apri \"%1$@\" all'indirizzo %2$@";
 

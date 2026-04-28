@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Άνοιγμα στο παρασκήνιο";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Νέα καρτέλα Fire";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Άνοιγμα σε καρτέλα Fire";
 /* Create New Tab action */
 "action.title.newTabAction" = "Νέα καρτέλα";
 
@@ -207,6 +212,24 @@
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Τραβήξτε μια φωτογραφία";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Για εργασίες ανάλυσης";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Εκτεταμένη συλλογιστική";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Άμεσες απαντήσεις";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Γρήγορα";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Για σύνθετες εργασίες";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Συλλογιστική";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Προσαρμογή απαντήσεων";
@@ -360,12 +383,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Αναζήτηση DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Οι προτάσεις αναζήτησης περιλαμβάνουν πλέον τους ιστότοπους που επισκεφθήκατε πρόσφατα. Απενεργοποιήστε τη λειτουργία από τις Ρυθμίσεις ή καταργήστε την οποιαδήποτε στιγμή με το κουμπί 🔥 Fire Button.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Ίδιο απόρρητο.\nΚαλύτερες προτάσεις αναζήτησης!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Αλλαγή στην Καρτέλα";
@@ -876,6 +893,9 @@
 
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Όχι, ευχαριστώ";
+
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Όχι τώρα";
 
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Αποθηκεύστε με ασφάλεια τον κωδικό πρόσβασής σας στη συσκευή με τη λειτουργία DuckDuckGo κωδικοί πρόσβασης και αυτόματη συμπλήρωση.";
@@ -1489,6 +1509,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Αποστέλλεται με το μήνυμά σας στο Duck.ai";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Πρόσφατες συνομιλίες";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Πρόσφατες συνομιλίες";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Δες όλες τις συνομιλίες";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Προσθέστε τη φωνητική συντόμευση Duck.ai στο Κέντρο ελέγχου σας";
 
@@ -1498,8 +1527,14 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Επισύναψη περιεχομένου σελίδας";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Ρώτα για τη σελίδα";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Συνοψίστε αυτήν τη σελίδα";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Συνόψισε τη σελίδα";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Προσθήκη Duck.ai στο Κέντρο ελέγχου";
@@ -1557,6 +1592,12 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Συνομιλήστε με το Duck.ai χρησιμοποιώντας το Siri!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Όλες οι συνομιλίες είναι %@ ιδιωτικές";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "ιδιωτικές";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo για iOS";
@@ -1837,6 +1878,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Αλλάζει σε αυτήν την καρτέλα";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Τελευταία χρήση καρτέλας Fire";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Επιστροφή σε %@";
 
@@ -2146,6 +2189,47 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Επιλέξτε τι να διαγράψετε";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Συνδέσου σε ιστότοπο με διαφορετικό λογαριασμό";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Περιηγήσου χωρίς να αποθηκεύεις το τοπικό ιστορικό";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Αντιμετώπιση προβλημάτων ιστοτόπων";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Οι καρτέλες Fire είναι απομονωμένες από άλλα δεδομένα του προγράμματος περιήγησης. Τα δεδομένα τους καίγονται όταν τις κλείσεις όλες. Παρέχουν την ίδια προστασία παρακολούθησης με άλλες καρτέλες.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Νέα καρτέλα Fire";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Καρτέλες Fire";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Νέο";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Νέο! Περιηγήσου χωρίς να αποθηκεύσεις το τοπικό ιστορικό ή συνδέσου σε ιστότοπους με διαφορετικό λογαριασμό.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Όχι τώρα";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Δοκίμασε τις καρτέλες Fire";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Δοκίμασε τις καρτέλες Fire";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Δοκίμασε τις Καρτέλες Fire για περιήγηση χωρίς να αποθηκεύεις το τοπικό ιστορικό.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Νέο: Καρτέλες Fire";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Καρτέλα Fire";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Ρεύμα αέρα";
 
@@ -2210,7 +2294,7 @@
 "import.passwords.promo.title" = "Εισαγάγετε τους κωδικούς πρόσβασής σας στο DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Ρωτήστε ιδιωτικά";
+"input.field.placeholder.duckai" = "Ρώτα οτιδήποτε ιδιωτικά";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Κάντε μια συμπληρωματική ερώτηση...";
@@ -2268,6 +2352,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Αναζήτηση ή εισαγωγή διεύθυνσης";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Νέα καρτέλα Fire";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Νέα καρτέλα";
@@ -3160,6 +3247,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Σάρωση...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Να διαγραφούν οι καρτέλες Fire και τα δεδομένα τους;";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Διαγραφή καρτελών και δεδομένων ιστότοπου;";
 
@@ -4115,7 +4204,7 @@
 "sync.delete.all.confirm.action" = "Διαγραφή δεδομένων διακομιστή";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Όλες οι συσκευές θα αποσυνδεθούν και τα συγχρονισμένα δεδομένα σας θα διαγραφούν από τον διακομιστή.";
+"sync.delete.all.confirm.message" = "Το αντίγραφο ασφαλείας σου θα διαγραφεί από τον διακομιστή. Όλες οι συσκευές θα αποσυνδεθούν από τον συγχρονισμό, αλλά τίποτα δεν θα διαγραφεί από καμία συσκευή.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Διαγραφή δεδομένων διακομιστή;";
@@ -4207,15 +4296,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Μη αναγνωσμένη καρτέλα";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Κλείσιμο καρτέλας Fire";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Κλείσιμο καρτέλας";
 /* Accessibility label on remove button */
 "tab.close.home" = "Κλείσιμο αρχικής καρτέλας";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Κλείσιμο \"%1$@\" στο %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Καρτέλα Fire";
+
+/* New tab title */
+"tab.new.title" = "Νέα καρτέλα";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Άνοιγμα αρχικής καρτέλας";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Άνοιγμα νέας καρτέλας";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Άνοιγμα καρτέλας Fire";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Άνοιγμα \"%1$@\" στο %2$@";
 

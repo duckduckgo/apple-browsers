@@ -300,14 +300,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 return true
             }
 
-            // Mirror the visible button state: when the input is empty and the voice-chat
-            // affordance is showing, Enter should activate voice rather than no-op via `submit()`.
-            let trimmed = omnibarController.currentText.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.isEmpty && omnibarController.isVoiceChatAccessEnabled && !omnibarController.isImageGenerationMode {
-                omnibarController.openNewVoiceChat()
-                return true
-            }
-
+            // Voice handoff requires an explicit click on the voice button. Enter on an empty
+            // input must not implicitly start a voice session — it stays a no-op via `submit()`,
+            // mirroring the legacy disabled-submit behavior.
             omnibarController.submit()
             return true
         } else if commandSelector == #selector(NSResponder.insertTab(_:)) {

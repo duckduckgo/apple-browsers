@@ -1,5 +1,5 @@
 {
-  "originHash" : "676cf7c80eb2723929fa990d90b7f30b750107c37e9d2f906bf667ad96fc0ce5",
+  "originHash" : "29224ab5e29d7b015e974c871a2118c641cefe345d4feb191c58f2d4423f92b1",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/combine-schedulers.git",
       "state" : {
-        "revision" : "fd16d76fd8b9a976d88bfb6cacc05ca8d19c91b6",
-        "version" : "1.1.0"
+        "revision" : "dcccb979a2183b8df3334237e3dc1ae2b4116a86",
+        "version" : "1.2.0"
       }
     },
     {
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "454f3131bbbdc19a4bf5bc1c2aabf1725cc9f5fc",
-        "version" : "13.41.0"
+        "revision" : "6595e3346449830cac79de569554c8a0adc5852b",
+        "version" : "14.2.0"
       }
     },
     {

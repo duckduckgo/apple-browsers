@@ -49,6 +49,7 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
 
     var createAccountAndStartSyncingCalled = false
     var capturedOptionModel: SyncSettingsViewModel?
+    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool = false
 
     func waitForInvocation() {
         let expectation = expectation(description: "Inv")
@@ -194,12 +195,6 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         return true
     }
 
-    var simplifiedSyncAnotherDevicePromptState: SyncAnotherDevicePromptState { .dismissed }
-
-    func simplifiedSyncAnotherDevicePromptWasDismissed() {
-        monitor.incrementCalls(function: #function.cleaningFunctionName())
-    }
-
     func showRecoveryCodeEntry() {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
@@ -294,8 +289,6 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     func shareLink(for url: URL, with message: String, from rect: CGRect) {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
-
-
 }
 
 // MARK: An idea... can be made more public if works out

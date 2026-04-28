@@ -35,6 +35,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID)
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -53,12 +54,15 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     let isToggleEnabled: Bool
-    lazy var handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isToggleEnabled: isToggleEnabled)
+    let handler: UnifiedToggleInputHandler
 
     // MARK: - Public API
 
-    init(isToggleEnabled: Bool) {
+    init(isToggleEnabled: Bool, isFireTab: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
+        self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
+                                                 isToggleEnabled: isToggleEnabled,
+                                                 isFireTab: isFireTab)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -253,6 +257,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.resignFirstResponder()
     }
 
+    func refreshFireMode(fireMode: Bool) {
+        inputBarView.refreshFireMode(fireMode: fireMode)
+    }
+
     // MARK: - Lifecycle
 
     override func loadView() {
@@ -274,6 +282,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         barView.onAttachmentsLayoutDidChange = { [weak self] in
             guard let self else { return }
             delegate?.unifiedToggleInputVCDidChangeAttachments(self)
+        }
+        barView.onInlineDismissTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVCDidTapInlineDismiss(self)
         }
         view = barView
     }

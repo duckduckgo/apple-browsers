@@ -397,7 +397,9 @@ class TabViewCell: UICollectionViewCell {
 
     private func startRemoveAnimation() {
         self.isDeleting = true
-        Pixel.fire(pixel: .tabSwitcherSwipeCloseTab)
+        Pixel.fire(pixel: .tabSwitcherSwipeCloseTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: isFireTab ? BrowsingMode.fire.pixelParamValue : BrowsingMode.normal.pixelParamValue
+        ])
         self.deleteTab()
         UIView.animate(withDuration: Constants.swipeAnimationDuration, animations: {
             self.transform = CGAffineTransform.identity.translatedBy(x: -self.frame.width, y: 0)
@@ -424,7 +426,9 @@ class TabViewCell: UICollectionViewCell {
     }
 
     @objc func deleteTab() {
-        Pixel.fire(pixel: .tabSwitcherClickCloseTab)
+        Pixel.fire(pixel: .tabSwitcherClickCloseTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: isFireTab ? BrowsingMode.fire.pixelParamValue : BrowsingMode.normal.pixelParamValue
+        ])
         closeTab()
     }
 

@@ -220,6 +220,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             shouldFollowUp: shouldFollowUpToFireDialog,
             message: attributedMessage,
             blockedTrackersCTAAction: { [weak self, weak delegate] in
+                // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
                 if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
                     delegate?.didTapDismissContextualOnboardingAction()
                 } else {
@@ -234,6 +235,8 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             delegate?.didShowContextualOnboardingTrackersDialog()
         }
         .onFirstAppear { [weak self] in
+            // Fire the general dialog impression pixel for all users, plus an additional
+            // chat-path-specific pixel when the user is in the Duck.ai experiment flow.
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: spec.pixelName)
             if self?.contextualOnboardingSettings.chatPathPhase == .trackerToEOJ {
                 self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingChatPathTrackersBlockedUnique)
@@ -294,6 +297,7 @@ protocol ContextualOnboardingSettings {
     var userHasSeenTrackersDialog: Bool { get }
     var userHasSeenFireDialog: Bool { get }
     var userHasSeenTryVisitSiteDialog: Bool { get }
+    /// The current phase of the Duck.ai chat-first onboarding path.
     var chatPathPhase: DaxDialogs.ChatPathPhase { get }
 }
 
@@ -313,6 +317,7 @@ extension DefaultDaxDialogsSettings: ContextualOnboardingSettings {
         tryVisitASiteShown
     }
 
+    /// The current phase of the Duck.ai chat-first onboarding path.
     var chatPathPhase: DaxDialogs.ChatPathPhase {
         guard fireMessageExperimentShown else { return .none }
         if !chatPathVisitSiteSeen { return .visitSite }

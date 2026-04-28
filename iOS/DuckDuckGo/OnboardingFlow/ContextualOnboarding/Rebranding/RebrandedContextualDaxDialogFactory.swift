@@ -212,6 +212,7 @@ private extension RebrandedContextualDaxDialogFactory {
                 shouldFollowUp: shouldFollowUpToFireDialog,
                 message: attributedMessage,
                 blockedTrackersCTAAction: { [weak self, weak delegate] in
+                    // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
                     if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
                         delegate?.didTapDismissContextualOnboardingAction()
                     } else {
@@ -228,6 +229,8 @@ private extension RebrandedContextualDaxDialogFactory {
             delegate?.didShowContextualOnboardingTrackersDialog()
         }
         .onFirstAppear { [weak self] in
+            // Fire the general dialog impression pixel for all users, plus an additional
+            // chat-path-specific pixel when the user is in the Duck.ai experiment flow.
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: spec.pixelName)
             if self?.contextualOnboardingSettings.chatPathPhase == .trackerToEOJ {
                 self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingChatPathTrackersBlockedUnique)

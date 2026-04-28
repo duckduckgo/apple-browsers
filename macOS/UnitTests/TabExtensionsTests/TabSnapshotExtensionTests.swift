@@ -314,6 +314,33 @@ class TabSnapshotExtensionTests: XCTestCase {
         XCTAssertEqual(mockWebViewSnapshotRenderer.lastDelay, 0.1)
     }
 
+    // MARK: - renderSnapshotSync(from:)
+
+    @MainActor
+    func testWhenRenderSnapshotSync_AndRendererProducesImage_ThenSnapshotIsStored() throws {
+        let view = NSView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
+        let rendered = NSImage(size: NSSize(width: 280, height: 187))
+        mockViewSnapshotRenderer.nextSnapshot = rendered
+
+        tabSnapshotExtension.renderSnapshotSync(from: view)
+
+        let stored = try XCTUnwrap(tabSnapshotExtension.snapshot)
+        XCTAssertIdentical(stored, rendered)
+    }
+
+    @MainActor
+    func testWhenRenderSnapshotSync_AndRendererReturnsNil_ThenSnapshotIsCleared() {
+        let view = NSView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
+        mockViewSnapshotRenderer.nextSnapshot = NSImage(size: NSSize(width: 280, height: 187))
+        tabSnapshotExtension.renderSnapshotSync(from: view)
+        XCTAssertNotNil(tabSnapshotExtension.snapshot)
+
+        mockViewSnapshotRenderer.nextSnapshot = nil
+        tabSnapshotExtension.renderSnapshotSync(from: view)
+
+        XCTAssertNil(tabSnapshotExtension.snapshot)
+    }
+
     // MARK: - shouldClearSnapshotOnDeinit
 
     @MainActor

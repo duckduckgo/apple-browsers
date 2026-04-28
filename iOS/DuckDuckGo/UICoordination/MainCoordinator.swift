@@ -82,8 +82,11 @@ final class MainCoordinator {
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var isSyncingEmbeddedExtensions = false
     private var darkReaderCancellables = Set<AnyCancellable>()
+    private var youTubeAdBlockingCancellable: AnyCancellable?
     private var webExtensionLoadTask: Task<Void, Never>?
+    private var isWebExtensionLoadPending = false
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
+    private let keyValueStore: ThrowingKeyValueStoring
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -120,6 +123,7 @@ final class MainCoordinator {
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.keyValueStore = keyValueStore
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
                                                                       privacyConfigurationManager: privacyConfigurationManager)
         self.modalPromptCoordinationService = modalPromptCoordinationService
@@ -315,10 +319,27 @@ final class MainCoordinator {
             .removeDuplicates()
             .eraseToAnyPublisher()
 
+        let adBlockingExtensionPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.adBlockingExtension)
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+
+        youTubeAdBlockingCancellable = NotificationCenter.default
+            .publisher(for: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification)
+            .sink { [weak self] _ in
+                guard #available(iOS 18.4, *) else { return }
+                Task { @MainActor in
+                    await self?.syncEmbeddedExtensions()
+                }
+            }
+
         webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
             featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
+            adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
             onFeatureFlagEnabled: { [weak self] in
                 self?.initializeWebExtensions()
             },
@@ -326,6 +347,9 @@ final class MainCoordinator {
                 self?.clearWebExtensionReferences()
             },
             onEmbeddedExtensionFlagEnabled: { [weak self] in
+                await self?.syncEmbeddedExtensions()
+            },
+            onAdBlockingExtensionFlagEnabled: { [weak self] in
                 await self?.syncEmbeddedExtensions()
             }
         )
@@ -341,14 +365,7 @@ final class MainCoordinator {
     private func initializeWebExtensions() {
         guard webExtensionManager == nil else {
             // Already initialized, just reload extensions and re-register tabs
-            webExtensionLoadTask?.cancel()
-            webExtensionLoadTask = Task { @MainActor [weak self] in
-                await self?.webExtensionManager?.loadInstalledExtensions()
-                guard !Task.isCancelled else { return }
-                await self?.syncEmbeddedExtensions()
-                guard !Task.isCancelled else { return }
-                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
-            }
+            scheduleExtensionLoad()
             return
         }
 
@@ -373,13 +390,26 @@ final class MainCoordinator {
         controller.setWebExtensionManager(webExtensionManager)
         subscribeToDarkReaderChanges()
 
-        // Load extensions asynchronously - the controller is already attached to tabs
+        // Defer extension loading until the app reaches the foreground
+        // (applicationDidBecomeActive) to ensure the WebKit process and
+        // protected data are fully available. Loading too early during launch
+        // can cause WKWebExtensionErrorInvalidArchive errors on iOS.
+        if UIApplication.shared.applicationState == .active {
+            scheduleExtensionLoad()
+        } else {
+            isWebExtensionLoadPending = true
+        }
+    }
+
+    @available(iOS 18.4, *)
+    private func scheduleExtensionLoad() {
+        isWebExtensionLoadPending = false
+        webExtensionLoadTask?.cancel()
         webExtensionLoadTask = Task { @MainActor [weak self] in
-            await webExtensionManager.loadInstalledExtensions()
+            guard let self, let manager = self.webExtensionManager as? WebExtensionManager else { return }
+            await self.loadAndSyncEmbeddedExtensions(manager)
             guard !Task.isCancelled else { return }
-            await self?.syncEmbeddedExtensions()
-            guard !Task.isCancelled else { return }
-            self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+            self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
         }
     }
 
@@ -394,6 +424,7 @@ final class MainCoordinator {
             privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
             apiService: DefaultAPIService(),
             baseDirectory: scriptletsDirectory,
+            pixelFiring: iOSWebExtensionPixelFiring(),
             isProduction: !isDebugBuild
         )
     }
@@ -406,6 +437,17 @@ final class MainCoordinator {
         isSyncingEmbeddedExtensions = true
         defer { isSyncingEmbeddedExtensions = false }
 
+        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+    }
+
+    @available(iOS 18.4, *)
+    @MainActor
+    private func loadAndSyncEmbeddedExtensions(_ webExtensionManager: WebExtensionManager) async {
+        await webExtensionManager.loadAndSyncExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+    }
+
+    @available(iOS 18.4, *)
+    private func enabledEmbeddedExtensionTypes() -> Set<DuckDuckGoWebExtensionType> {
         var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
         if featureFlagger.isFeatureOn(.embeddedExtension) {
             enabledTypes.insert(.embedded)
@@ -413,10 +455,14 @@ final class MainCoordinator {
         if darkReaderFeatureSettings.isForceDarkModeEnabled == true {
             enabledTypes.insert(.darkReader)
         }
-        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
+        if controller.adBlockingAvailability.isEnabled {
+            enabledTypes.insert(.adBlockingExtension)
+        }
+        return enabledTypes
     }
 
     private func clearWebExtensionReferences() {
+        isWebExtensionLoadPending = false
         webExtensionLoadTask?.cancel()
         webExtensionLoadTask = nil
         webExtensionManager = nil
@@ -447,7 +493,8 @@ final class MainCoordinator {
         let normalModel: TabsModel
         let fireModel: TabsModel
 
-        if AutoClearSettingsModel(settings: appSettings) != nil {
+        if let autoClearSettings = AutoClearSettingsModel(settings: appSettings),
+           autoClearSettings.action.contains(.tabs) {
             normalModel = TabsModel(desktop: isPadDevice, mode: .normal)
             fireModel = TabsModel(desktop: isPadDevice, mode: .fire)
             tabsPersistence.clearAll()
@@ -511,7 +558,12 @@ final class MainCoordinator {
         controller.showBars()
         controller.onForeground()
 
+        fireDailyAdBlockingPixel()
+
         if #available(iOS 18.4, *) {
+            if isWebExtensionLoadPending {
+                scheduleExtensionLoad()
+            }
             webExtensionEventsCoordinator?.didFocusWindow()
         }
     }
@@ -525,6 +577,14 @@ final class MainCoordinator {
 
     private func resetAppStartTime() {
         controller.appDidFinishLaunchingStartTime = nil
+    }
+
+    private func fireDailyAdBlockingPixel() {
+        let isEnabled = controller.adBlockingAvailability.isEnabled
+        DailyPixel.fire(
+            pixel: .webExtensionDailyAdBlockingState,
+            withAdditionalParameters: ["is_enabled": isEnabled ? "true" : "false"]
+        )
     }
 
 }

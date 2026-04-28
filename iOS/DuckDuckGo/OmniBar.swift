@@ -64,6 +64,7 @@ protocol OmniBar: AnyObject {
     func selectTextToEnd(_ offset: Int)
 
     func showOrScheduleCookiesManagedNotification(isCosmetic: Bool)
+    func showYouTubeAdBlockNotification()
 
     func showOrScheduleOnboardingPrivacyIconAnimation()
     func dismissOnboardingPrivacyIconAnimation()

@@ -29,6 +29,7 @@ public extension XCTestCase {
     private static var standardPixelParameters = [
         PixelKit.Parameters.appVersion,
         PixelKit.Parameters.pixelSource,
+        PixelKit.Parameters.channel,
         PixelKit.Parameters.test
     ]
 

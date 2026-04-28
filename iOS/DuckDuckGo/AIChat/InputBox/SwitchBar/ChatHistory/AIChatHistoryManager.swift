@@ -129,6 +129,10 @@ final class AIChatHistoryManager {
         historyViewController?.setEscapeHatch(model, onTapped: onTapped)
     }
 
+    func setAdditionalTopInset(_ inset: CGFloat) {
+        historyViewController?.additionalTopInset = inset
+    }
+
     func setSectionTitle(_ title: String?) {
         pendingSectionTitle = title
         historyViewController?.setScrollableTitle(title)

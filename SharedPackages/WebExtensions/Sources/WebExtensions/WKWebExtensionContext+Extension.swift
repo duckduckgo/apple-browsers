@@ -31,6 +31,15 @@ public enum DuckDuckGoWebExtensionType: String, Codable, CaseIterable {
     case embedded = "com.duckduckgo.web-extension.embedded"
     case darkReader = "org.duckduckgo.web-extension.darkreader"
     case adBlockingExtension = "com.duckduckgo.content-blocker-extension"
+
+    /// Short human-readable label used in breakage reports.
+    public var shortLabel: String {
+        switch self {
+        case .embedded: return "embedded"
+        case .darkReader: return "darkMode"
+        case .adBlockingExtension: return "adBlocking"
+        }
+    }
 }
 
 /// Metadata extracted from a web extension without loading it into a controller.

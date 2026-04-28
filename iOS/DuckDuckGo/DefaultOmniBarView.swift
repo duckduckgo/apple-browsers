@@ -517,7 +517,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             searchAreaView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
 
             searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            readableSearchAreaWidth,
 
             activeOutlineView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: -Metrics.activeBorderWidth),
             activeOutlineView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: Metrics.activeBorderWidth),
@@ -591,7 +590,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaContainerView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
         searchAreaContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
 
-        searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
+        searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
         searchAreaContainerView.layer.cornerCurve = .continuous
 
@@ -704,10 +703,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func updateFireModeAppearance() {
         if fireMode {
-            searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeBackground)
+            searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeCardBackground)
             activeOutlineView.layer.borderColor = UIColor(singleUseColor: .fireModeAccent).cgColor
         } else {
-            searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
+            searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
             activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
         }
         let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified

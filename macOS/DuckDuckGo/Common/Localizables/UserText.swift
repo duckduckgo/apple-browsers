@@ -1793,8 +1793,9 @@ struct UserText {
     static let showNetworkProtectionShortcut = NSLocalizedString("pinning.show-netp-shortcut", value: "Show VPN Shortcut", comment: "Menu item for showing the NetP shortcut")
     static let hideNetworkProtectionShortcut = NSLocalizedString("pinning.hide-netp-shortcut", value: "Hide VPN Shortcut", comment: "Menu item for hiding the NetP shortcut")
 
-    static let showFeedbackShortcut = NSLocalizedString("pinning.show-feedback-shortcut", value: "Show Feedback Shortcut", comment: "Menu item for showing the internal feedback shortcut")
-    static let hideFeedbackShortcut = NSLocalizedString("pinning.hide-feedback-shortcut", value: "Hide Feedback Shortcut", comment: "Menu item for hiding the internal feedback shortcut")
+    // Internal only — not localized
+    static let showFeedbackShortcut = "Show Feedback Shortcut"
+    static let hideFeedbackShortcut = "Hide Feedback Shortcut"
 
 
     // MARK: - Tooltips
@@ -1805,7 +1806,7 @@ struct UserText {
 
     static let bookmarksShortcutTooltip = NSLocalizedString("tooltip.bookmarks.shortcut", value: "Bookmarks", comment: "Tooltip for the bookmarks shortcut")
     static let downloadsShortcutTooltip = NSLocalizedString("tooltip.downloads.shortcut", value: "Downloads", comment: "Tooltip for the downloads shortcut")
-    static let feedbackShortcutTooltip = NSLocalizedString("tooltip.feedback.shortcut", value: "Send Internal Feedback", comment: "Tooltip for the internal feedback toolbar button")
+    static let feedbackShortcutTooltip = "Send Internal Feedback" // Internal only — not localized
 
     static let addItemTooltip = NSLocalizedString("tooltip.autofill.add-item", value: "Add item", comment: "Tooltip for the Add Item button")
     static let moreOptionsTooltip = NSLocalizedString("tooltip.autofill.more-options", value: "More options", comment: "Tooltip for the More Options button")

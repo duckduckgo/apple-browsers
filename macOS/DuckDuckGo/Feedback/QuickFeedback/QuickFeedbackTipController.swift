@@ -28,12 +28,13 @@ struct QuickFeedbackTipSettings: StoringKeys {
 @MainActor
 final class QuickFeedbackTipController {
 
+    // Internal only — not localized
     private static let messages = [
-        NSLocalizedString("feedback.tip.report", value: "Dax wants YOU to report problems!", comment: "Feedback tooltip message"),
-        NSLocalizedString("feedback.tip.regressions", value: "Only YOU can prevent regressions!", comment: "Feedback tooltip message"),
-        NSLocalizedString("feedback.tip.spotted", value: "Spotted a bug? Dax wants to hear about it!", comment: "Feedback tooltip message"),
-        NSLocalizedString("feedback.tip.squash", value: "Help Dax squash bugs, share your feedback!", comment: "Feedback tooltip message"),
-        NSLocalizedString("feedback.tip.delight", value: "Deliver delight the Dax way, report a problem today!", comment: "Feedback tooltip message"),
+        "Dax wants YOU to report problems!",
+        "Only YOU can prevent regressions!",
+        "Spotted a bug? Dax wants to hear about it!",
+        "Help Dax squash bugs, share your feedback!",
+        "Deliver delight the Dax way, report a problem today!",
     ]
 
     #if DEBUG

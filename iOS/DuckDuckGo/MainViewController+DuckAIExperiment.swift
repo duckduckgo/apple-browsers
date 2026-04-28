@@ -176,6 +176,7 @@ extension MainViewController {
         // The experiment path skips fireButtonPulseStarted() so no timer auto-hides the highlight.
         // Dismiss it explicitly now that the fire step is complete.
         ViewHighlighter.hideAll()
+        daxDialogsManager.setAsChatFirstPath()
         daxDialogsManager.setFireEducationMessageSeen()
         setExperimentFireControlsLocked(false)
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {

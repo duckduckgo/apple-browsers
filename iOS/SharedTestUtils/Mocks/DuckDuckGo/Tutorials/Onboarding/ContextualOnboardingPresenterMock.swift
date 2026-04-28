@@ -135,6 +135,8 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 
     }
 
+    func setAsChatFirstPath() {}
+
     func clearHeldURLData() -> Result<Void, Error> {
         return .success(())
     }

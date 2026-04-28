@@ -267,4 +267,6 @@ class MockDaxDialogsSettings: DaxDialogsSettings {
     var subscriptionPromotionDialogShown: Bool = false
 
     var chatPathVisitSiteSeen: Bool = false
+
+    var isChatFirstPath: Bool = false
 }

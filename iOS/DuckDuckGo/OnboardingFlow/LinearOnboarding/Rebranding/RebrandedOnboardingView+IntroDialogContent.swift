@@ -131,13 +131,13 @@ extension OnboardingRebranding.OnboardingView {
             skipAction()
 
             if #available(iOS 17.0, *) {
-                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
                     showSkipOnboarding = true
                 } completion: {
                     withAnimation { isVisible = true }
                 }
             } else {
-                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
                     showSkipOnboarding = true
                 }
                 // Timing-based fallback for iOS 16 (no completion handler on withAnimation).

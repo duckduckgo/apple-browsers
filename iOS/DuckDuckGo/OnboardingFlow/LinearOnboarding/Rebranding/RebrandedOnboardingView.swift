@@ -270,7 +270,7 @@ extension OnboardingRebranding {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .center) {
                         bubbleBackedDialogView(state: state, configuration: configuration)
-                            .animation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration), value: state.type)
+                            .animation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration), value: state.type)
                             .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth, alignment: .center)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .frame(width: geometry.size.width, alignment: .center)

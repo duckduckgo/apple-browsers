@@ -100,6 +100,8 @@ final class UnifiedToggleInputToggleView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+        // Clip so labels don't protrude past the pill while the height constraint animates 0→toggleHeight.
+        clipsToBounds = true
         setupUI()
     }
 

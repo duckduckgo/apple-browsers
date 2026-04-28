@@ -214,6 +214,11 @@ class MainViewCoordinator {
         unifiedToggleInputContainer.layer.removeAllAnimations()
         navigationBarCollectionView.isUserInteractionEnabled = false
 
+        // Snap the regular omnibar out (no fade) on show — intentional asymmetry with dismiss,
+        // which fades it back in. Both surfaces share the same screen space at full visual
+        // density (placeholder text + icons + segmented toggle), so crossfading on show
+        // produces double-vision. Dismiss works because the UTI is shrinking + collapsing as
+        // it fades, so densities don't compete.
         navigationBarCollectionView.alpha = 0
         unifiedToggleInputContainer.alpha = 1
         unifiedToggleInputContainer.isHidden = false
@@ -270,13 +275,9 @@ class MainViewCoordinator {
 
     @MainActor
     func hideUnifiedToggleInputOmnibar(completion: (() -> Void)? = nil) {
-        if addressBarPosition.isBottom {
-            setNavBarContainerBottomToToolbar()
-        }
-
         omnibarDismissAnimator?.stopAnimation(true)
 
-        let animator = UIViewPropertyAnimator(duration: 0.2, curve: .easeInOut) { [weak self] in
+        let animator = UIViewPropertyAnimator(duration: MainViewController.Constants.omnibarTransitionDuration, curve: .easeInOut) { [weak self] in
             self?.animateUnifiedToggleInputOmnibarDismissLayout()
         }
         animator.addCompletion { [weak self] position in
@@ -291,7 +292,13 @@ class MainViewCoordinator {
         animator.startAnimation()
     }
 
+    /// Applies the dismiss-direction layout changes. Call inside an animation context
+    /// (UIView.animate or UIViewPropertyAnimator) — it includes a `layoutIfNeeded()` so the
+    /// constraint mutations interpolate.
     func animateUnifiedToggleInputOmnibarDismissLayout() {
+        if addressBarPosition.isBottom {
+            setNavBarContainerBottomToToolbar()
+        }
         navigationBarCollectionView.alpha = 1
         unifiedToggleInputContainer.alpha = 0
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight

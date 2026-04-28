@@ -214,22 +214,22 @@
 "aichat.attachment.option.take.photo" = "Fotoğraf Çek";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
-"aichat.reasoning.extended.subtitle" = "For analytical tasks";
+"aichat.reasoning.extended.subtitle" = "Analitik görevler için";
 
 /* Title for the extended reasoning mode in the Duck.ai reasoning picker */
-"aichat.reasoning.extended.title" = "Extended Reasoning";
+"aichat.reasoning.extended.title" = "Genişletilmiş Akıl Yürütme";
 
 /* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
-"aichat.reasoning.fast.subtitle" = "Answers quickly";
+"aichat.reasoning.fast.subtitle" = "Hızlı yanıtlar";
 
 /* Title for the fast reasoning mode in the Duck.ai reasoning picker */
-"aichat.reasoning.fast.title" = "Fast";
+"aichat.reasoning.fast.title" = "Hızlı";
 
 /* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
-"aichat.reasoning.reasoning.subtitle" = "For complex tasks";
+"aichat.reasoning.reasoning.subtitle" = "Karmaşık görevler için";
 
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
-"aichat.reasoning.reasoning.title" = "Reasoning";
+"aichat.reasoning.reasoning.title" = "Akıl yürütme";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Yanıtları Özelleştir";

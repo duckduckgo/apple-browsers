@@ -33,7 +33,7 @@ import PrivacyConfig
 /// the new ID's directory, and asynchronously delete the old directory on disk.
 ///
 /// Conforms to `DuckAiNativeStorageHandling` so consumers don't need to know about
-/// rotation; only `FireExecutor` calls `rotate()` directly on the concrete type.
+/// rotation; only `FireExecutor` calls `syncWithCurrentFireModeID()` directly on the concrete type.
 final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
 
     private enum Constants {

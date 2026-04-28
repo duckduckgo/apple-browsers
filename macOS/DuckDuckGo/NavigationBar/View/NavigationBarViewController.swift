@@ -917,6 +917,8 @@ final class NavigationBarViewController: NSViewController {
                     self.updateDownloadsButton(source: .pinnedViewsNotification)
                 case .homeButton:
                     self.updateHomeButton()
+                case .feedback:
+                    self.updateQuickFeedbackButtonVisibility()
                 case .networkProtection:
                     self.updateNetworkProtectionButton()
                 case .share:
@@ -1807,6 +1809,8 @@ final class NavigationBarViewController: NSViewController {
             return [bookmarkListButton]
         case .downloads:
             return [downloadsButton]
+        case .feedback:
+            return [feedbackButton, feedbackButtonSpacer].compactMap { $0 }
         case .share:
             return [shareButton]
         case .homeButton where Self.homeButtonPosition == .left:
@@ -1834,6 +1838,12 @@ final class NavigationBarViewController: NSViewController {
             return NSMenuItem(title: UserText.downloads, action: #selector(overflowMenuRequestedDownloadsPopover), keyEquivalent: "")
                 .targetting(self)
                 .withImage(theme.iconsProvider.navigationToolbarIconsProvider.downloadsButtonImage)
+        case .feedback:
+            let icon = (DesignSystemImages.Color.Size16.feedback.copy() as? NSImage) ?? DesignSystemImages.Color.Size16.feedback
+            icon.isTemplate = false
+            return NSMenuItem(title: UserText.feedbackShortcutTooltip, action: #selector(quickFeedbackButtonClicked), keyEquivalent: "")
+                .targetting(self)
+                .withImage(icon)
         case .share:
             return NSMenuItem(title: UserText.shareMenuItem, action: #selector(overflowMenuRequestedSharePopover), keyEquivalent: "")
                 .targetting(self)
@@ -1951,6 +1961,11 @@ extension NavigationBarViewController: NSMenuDelegate {
             let networkProtectionTitle = pinningManager.shortcutTitle(for: .networkProtection)
             menu.addItem(withTitle: networkProtectionTitle, action: #selector(toggleNetworkProtectionPanelPinning), keyEquivalent: "")
         }
+
+        if !isInPopUpWindow && NSApp.delegateTyped.internalUserDecider.isInternalUser {
+            let feedbackTitle = pinningManager.shortcutTitle(for: .feedback)
+            menu.addItem(withTitle: feedbackTitle, action: #selector(toggleFeedbackPanelPinning), keyEquivalent: "")
+        }
     }
 
     @objc
@@ -1993,7 +2008,8 @@ extension NavigationBarViewController: NSMenuDelegate {
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
 
         if internalUserDecider.isInternalUser {
-            addQuickFeedbackButton()
+            pinFeedbackIfNeverToggledBefore()
+            updateQuickFeedbackButtonVisibility()
         }
 
         internalUserCancellable = internalUserDecider.isInternalUserPublisher
@@ -2001,11 +2017,27 @@ extension NavigationBarViewController: NSMenuDelegate {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isInternal in
                 if isInternal {
-                    self?.addQuickFeedbackButton()
+                    self?.pinFeedbackIfNeverToggledBefore()
+                    self?.updateQuickFeedbackButtonVisibility()
                 } else {
                     self?.removeQuickFeedbackButton()
                 }
             }
+    }
+
+    private func pinFeedbackIfNeverToggledBefore() {
+        guard !pinningManager.isPinned(.feedback),
+              !pinningManager.wasManuallyToggled(.feedback) else { return }
+        pinningManager.pin(.feedback)
+    }
+
+    private func updateQuickFeedbackButtonVisibility() {
+        let isInternal = NSApp.delegateTyped.internalUserDecider.isInternalUser
+        if isInternal && pinningManager.isPinned(.feedback) {
+            addQuickFeedbackButton()
+        } else {
+            removeQuickFeedbackButton()
+        }
     }
 
     private func addQuickFeedbackButton() {
@@ -2063,6 +2095,10 @@ extension NavigationBarViewController: NSMenuDelegate {
     @objc private func quickFeedbackButtonClicked(_ sender: Any?) {
         feedbackTipController?.recordButtonClick()
         Application.appDelegate.quickFeedbackService.openFeedbackPopup(from: view.window)
+    }
+
+    @objc private func toggleFeedbackPanelPinning(_ sender: NSMenuItem) {
+        pinningManager.togglePinning(for: .feedback)
     }
 
     private func setupNetworkProtectionButton() {

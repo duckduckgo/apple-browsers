@@ -1801,6 +1801,11 @@ struct UserText {
     static let showNetworkProtectionShortcut = NSLocalizedString("pinning.show-netp-shortcut", value: "Show VPN Shortcut", comment: "Menu item for showing the NetP shortcut")
     static let hideNetworkProtectionShortcut = NSLocalizedString("pinning.hide-netp-shortcut", value: "Hide VPN Shortcut", comment: "Menu item for hiding the NetP shortcut")
 
+    // Internal only — not localized
+    static let showFeedbackShortcut = "Show Feedback Shortcut"
+    static let hideFeedbackShortcut = "Hide Feedback Shortcut"
+
+
     // MARK: - Tooltips
 
     static let passwordsShortcutTooltip = NSLocalizedString("tooltip.passwords.shortcut", value: "Passwords", comment: "Tooltip for the passwords shortcut")

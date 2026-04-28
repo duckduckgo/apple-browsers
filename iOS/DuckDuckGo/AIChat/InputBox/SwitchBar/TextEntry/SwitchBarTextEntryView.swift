@@ -43,6 +43,9 @@ class SwitchBarTextEntryView: UIView {
 
         // Increased buttons spacing
         static let additionalVerticalButtonsPadding: CGFloat = 6
+
+        // Matches UnifiedToggleInputView.Constants.animationDuration so icons ride the focus animation.
+        static let buttonStateAnimationDuration: TimeInterval = 0.25
     }
 
     private let handler: SwitchBarHandling
@@ -310,12 +313,15 @@ class SwitchBarTextEntryView: UIView {
         buttonsView.isAIVoiceChatEnabled = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
 
         if newButtonState != currentButtonState {
-            // UIStackView animates `isHidden` changes that land inside an animation block;
-            // lay out `self` so `buttonsView`'s frame settles here, not on a later pass.
-            UIView.performWithoutAnimation {
-                currentButtonState = newButtonState
-                adjustTextViewContentInset()
-                layoutIfNeeded()
+            // Snapshot crossfade so icons fade in/out without UIStackView's `isHidden` jank.
+            UIView.transition(with: buttonsView,
+                              duration: Constants.buttonStateAnimationDuration,
+                              options: .transitionCrossDissolve) {
+                UIView.performWithoutAnimation {
+                    self.currentButtonState = newButtonState
+                    self.adjustTextViewContentInset()
+                    self.layoutIfNeeded()
+                }
             }
         }
     }

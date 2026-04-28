@@ -1809,7 +1809,7 @@ struct UserText {
 
     static let bookmarksShortcutTooltip = NSLocalizedString("tooltip.bookmarks.shortcut", value: "Bookmarks", comment: "Tooltip for the bookmarks shortcut")
     static let downloadsShortcutTooltip = NSLocalizedString("tooltip.downloads.shortcut", value: "Downloads", comment: "Tooltip for the downloads shortcut")
-    static let feedbackShortcutTooltip = NSLocalizedString("tooltip.feedback.shortcut", value: "Send Internal Feedback", comment: "Tooltip for the internal feedback toolbar button")
+    static let feedbackShortcutTooltip = "Send Internal Feedback" // Internal only — not localized
 
     static let addItemTooltip = NSLocalizedString("tooltip.autofill.add-item", value: "Add item", comment: "Tooltip for the Add Item button")
     static let moreOptionsTooltip = NSLocalizedString("tooltip.autofill.more-options", value: "More options", comment: "Tooltip for the More Options button")

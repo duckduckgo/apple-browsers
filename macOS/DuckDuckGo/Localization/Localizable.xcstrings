@@ -36151,71 +36151,6 @@
         }
       }
     },
-    "feedback.tip.delight" : {
-      "comment" : "Feedback tooltip message",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Deliver delight the Dax way, report a problem today!"
-          }
-        }
-      },
-      "shouldTranslate" : false
-    },
-    "feedback.tip.regressions" : {
-      "comment" : "Feedback tooltip message",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Only YOU can prevent regressions!"
-          }
-        }
-      },
-      "shouldTranslate" : false
-    },
-    "feedback.tip.report" : {
-      "comment" : "Feedback tooltip message",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Dax wants YOU to report problems!"
-          }
-        }
-      },
-      "shouldTranslate" : false
-    },
-    "feedback.tip.spotted" : {
-      "comment" : "Feedback tooltip message",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Spotted a bug? Dax wants to hear about it!"
-          }
-        }
-      },
-      "shouldTranslate" : false
-    },
-    "feedback.tip.squash" : {
-      "comment" : "Feedback tooltip message",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Help Dax squash bugs, share your feedback!"
-          }
-        }
-      },
-      "shouldTranslate" : false
-    },
     "find-in-page.text-field.placeholder" : {
       "comment" : "Placeholder text for the text field where the user inputs strings to searcg in the web page",
       "extractionState" : "extracted_with_value",
@@ -104695,19 +104630,6 @@
           }
         }
       }
-    },
-    "tooltip.feedback.shortcut" : {
-      "comment" : "Tooltip for the internal feedback toolbar button",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Send Internal Feedback"
-          }
-        }
-      },
-      "shouldTranslate" : false
     },
     "tooltip.find-in-page.close" : {
       "comment" : "Tooltip for the Find In Page bar's Close button",

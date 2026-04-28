@@ -57,6 +57,8 @@ final class NetworkProtectionDebugMenu: NSMenu {
     private let excludeCellularServicesMenuItem = NSMenuItem(title: "excludeCellularServices", action: #selector(NetworkProtectionDebugMenu.toggleExcludeCellularServices))
     private let excludeDeviceCommunicationMenuItem = NSMenuItem(title: "excludeDeviceCommunication", action: #selector(NetworkProtectionDebugMenu.toggleExcludeDeviceCommunication))
 
+    private let resetTunnelSettingsMenuItem = NSMenuItem(title: "Reset to Defaults", action: #selector(NetworkProtectionDebugMenu.resetTunnelSettings))
+
     private let networkProtectionDeviceManager: NetworkProtectionDeviceManager
     private let pinningManager: PinningManager
 
@@ -121,6 +123,11 @@ final class NetworkProtectionDebugMenu: NSMenu {
             }
 
             NSMenuItem(title: "Tunnel Settings") {
+                resetTunnelSettingsMenuItem
+                    .targetting(self)
+
+                NSMenuItem.separator()
+
                 shouldIncludeAllNetworksMenuItem
                     .targetting(self)
 
@@ -416,6 +423,15 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     @objc func toggleExcludeDeviceCommunication(_ sender: Any?) {
         settings.excludeDeviceCommunication.toggle()
+
+        Task {
+            try await Task.sleep(interval: 0.1)
+            try await debugUtilities.restartAdapter()
+        }
+    }
+
+    @objc func resetTunnelSettings(_ sender: Any?) {
+        settings.resetTunnelFlagsToDefaults()
 
         Task {
             try await Task.sleep(interval: 0.1)

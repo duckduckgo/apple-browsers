@@ -245,6 +245,15 @@ public final class VPNSettings {
         defaults.resetNetworkProtectionSettingShowInMenuBar()
     }
 
+    public func resetTunnelFlagsToDefaults() {
+        defaults.resetNetworkProtectionSettingEnforceRoutes()
+        defaults.resetNetworkProtectionSettingIncludeAllNetworks()
+        defaults.resetNetworkProtectionSettingExcludeLocalNetworks()
+        defaults.resetNetworkProtectionSettingExcludeAPNs()
+        defaults.resetNetworkProtectionSettingExcludeCellularServices()
+        defaults.resetNetworkProtectionSettingExcludeDeviceCommunication()
+    }
+
     // MARK: - Applying Changes
 
     public func apply(change: Change) {

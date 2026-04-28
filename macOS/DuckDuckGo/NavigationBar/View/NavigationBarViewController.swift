@@ -1837,7 +1837,7 @@ final class NavigationBarViewController: NSViewController {
                 .targetting(self)
                 .withImage(theme.iconsProvider.navigationToolbarIconsProvider.downloadsButtonImage)
         case .feedback:
-            let icon = DesignSystemImages.Color.Size16.feedback
+            let icon = (DesignSystemImages.Color.Size16.feedback.copy() as? NSImage) ?? DesignSystemImages.Color.Size16.feedback
             icon.isTemplate = false
             return NSMenuItem(title: UserText.feedbackShortcutTooltip, action: #selector(quickFeedbackButtonClicked), keyEquivalent: "")
                 .targetting(self)

@@ -283,7 +283,7 @@ archive_and_export() {
 		-exportPath "${workdir}" \
 		-exportOptionsPlist "${export_options_plist}" \
 		-configuration "${configuration}" \
-		-skipPackagePluginValidation -skipMacroValidation \ \
+		-skipPackagePluginValidation -skipMacroValidation \
 		"${extra_xcargs}" \
 		2>&1 \
 		| ${log_formatter}

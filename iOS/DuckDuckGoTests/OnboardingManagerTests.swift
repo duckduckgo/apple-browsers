@@ -267,44 +267,6 @@ struct OnboardingFlowConfiguration {
         #expect(tutorialSettings.onboardingFlowType == nil)
     }
 
-    @Test("Check flow is not reconfigured when onboarding has been skipped")
-    func doesNotConfigureWhenOnboardingHasBeenSkipped() {
-        // GIVEN
-        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
-        tutorialSettings.hasSkippedOnboarding = true
-        let sut = OnboardingManager(
-            appDefaults: AppSettingsMock(),
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
-            tutorialSettings: tutorialSettings
-        )
-        let url = URL(string: "ddgCPP://duckAI")
-
-        // WHEN
-        sut.configureOnboardingFlow(from: url)
-
-        // THEN - Should remain nil
-        #expect(tutorialSettings.onboardingFlowType == nil)
-    }
-
-    @Test("Check flow is not reconfigured when onboarding has been both seen and skipped")
-    func doesNotConfigureWhenOnboardingHasBeenSeenAndSkipped() {
-        // GIVEN
-        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
-        tutorialSettings.hasSkippedOnboarding = true
-        let sut = OnboardingManager(
-            appDefaults: AppSettingsMock(),
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
-            tutorialSettings: tutorialSettings
-        )
-        let url = URL(string: "ddgCPP://duckAI")
-
-        // WHEN
-        sut.configureOnboardingFlow(from: url)
-
-        // THEN - Should remain nil
-        #expect(tutorialSettings.onboardingFlowType == nil)
-    }
-
     @Test("Check Duck.ai flow falls back to default when feature flag is disabled")
     func fallsBackToDefaultWhenDuckAIFeatureFlagDisabled() {
         // GIVEN

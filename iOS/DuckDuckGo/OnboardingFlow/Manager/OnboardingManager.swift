@@ -162,9 +162,9 @@ extension OnboardingManager: OnboardingFlowManaging {
     /// This should be called early in the app lifecycle, before onboarding is presented
     func configureOnboardingFlow(from url: URL?) {
         Logger.onboarding.debug("Configuring Onboarding Flow")
-        // Continue only if user hasn't seen AND hasn't skipped onboarding
-        guard !tutorialSettings.hasSeenOnboarding && !tutorialSettings.hasSkippedOnboarding else {
-            Logger.onboarding.debug("User has completed/skipped onboarding. Skipping.")
+        // Continue only if user hasn't seen
+        guard !tutorialSettings.hasSeenOnboarding else {
+            Logger.onboarding.debug("User has completed onboarding. Skipping.")
             return
         }
 

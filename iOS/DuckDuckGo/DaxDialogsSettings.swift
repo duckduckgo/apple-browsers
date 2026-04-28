@@ -52,6 +52,10 @@ protocol DaxDialogsSettings: AnyObject {
 
     /// Whether the user has seen the "try visiting a site" dialog in the chat-first (Duck.ai) onboarding path.
     var chatPathVisitSiteSeen: Bool { get set }
+
+    /// Whether the user entered the Duck.ai chat-first onboarding path.
+    /// Set when the user completes the fire-education step in the Duck.ai experiment flow.
+    var isChatFirstPath: Bool { get set }
 }
 
 class DefaultDaxDialogsSettings: DaxDialogsSettings {
@@ -100,4 +104,7 @@ class DefaultDaxDialogsSettings: DaxDialogsSettings {
 
     @UserDefaultsWrapper(key: .daxChatPathVisitSiteSeen, defaultValue: false)
     var chatPathVisitSiteSeen: Bool
+
+    @UserDefaultsWrapper(key: .daxIsChatFirstPath, defaultValue: false)
+    var isChatFirstPath: Bool
 }

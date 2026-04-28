@@ -312,6 +312,7 @@ extension OnboardingRebranding {
             } else {
                 AnyView(
                     SkipOnboardingContent(
+                        isVisible: $showBubbleContent,
                         startBrowsingAction: model.confirmSkipOnboardingAction,
                         resumeOnboardingAction: {
                             animateContentTransition {

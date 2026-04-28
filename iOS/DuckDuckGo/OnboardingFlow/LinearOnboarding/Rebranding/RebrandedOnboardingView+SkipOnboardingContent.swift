@@ -30,14 +30,21 @@ extension OnboardingRebranding.OnboardingView {
 
         @State private var shouldStartTyping = false
         @State private var showContent = false
+        /// Bound to the parent's bubble visibility flag. Driving the typing/content reveal off the
+        /// parent's bubble lifecycle (rather than `onAppear`) avoids re-triggering the animation
+        /// when the app returns from background — a transition that re-fires `onAppear` but does not
+        /// toggle `isVisible`.
+        @Binding var isVisible: Bool
 
         private let startBrowsingAction: () -> Void
         private let resumeOnboardingAction: () -> Void
 
         init(
+            isVisible: Binding<Bool>,
             startBrowsingAction: @escaping () -> Void,
             resumeOnboardingAction: @escaping () -> Void
         ) {
+            self._isVisible = isVisible
             self.startBrowsingAction = startBrowsingAction
             self.resumeOnboardingAction = resumeOnboardingAction
         }
@@ -79,17 +86,7 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
             )
-            // Delay typing start to let the parent bubble resize/fade-in complete;
-            // reset on disappear so a second appearance starts fresh.
-            .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
-                    shouldStartTyping = true
-                }
-            }
-            .onDisappear {
-                shouldStartTyping = false
-                showContent = false
-            }
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
 
         /// Builds the skip message as a composed Text, bolding the "Fire Button" product name.

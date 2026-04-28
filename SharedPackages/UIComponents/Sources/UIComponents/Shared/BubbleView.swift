@@ -83,7 +83,7 @@ struct Bubble: InsettableShape, Animatable {
             self.animatedPlacementValue = offset
         }
     }
-    
+
     /// Pairs the continuous tail parameters so SwiftUI interpolates them across
     /// `tailPosition` changes — eliminating the brief border/fin desync that occurred
     /// when the path snapped instantly between two different shapes.

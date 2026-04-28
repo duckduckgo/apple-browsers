@@ -97,4 +97,21 @@ final class DuckAiNativeDataStoreChatsTests: XCTestCase {
     func testWhenDeleteNonExistentChatThenNoError() throws {
         XCTAssertNoThrow(try sut.deleteChat(chatId: "non-existent"))
     }
+
+    func testWhenGetChatOnExistingIdThenReturnsRecord() throws {
+        try sut.putChat(chatId: "chat-1", data: Data("one".utf8))
+        try sut.putChat(chatId: "chat-2", data: Data("two".utf8))
+
+        let record = try sut.getChat(chatId: "chat-2")
+
+        XCTAssertEqual(record, DuckAiChatRecord(chatId: "chat-2", data: Data("two".utf8)))
+    }
+
+    func testWhenGetChatOnMissingIdThenReturnsNil() throws {
+        try sut.putChat(chatId: "chat-1", data: Data("one".utf8))
+
+        let record = try sut.getChat(chatId: "chat-missing")
+
+        XCTAssertNil(record)
+    }
 }

@@ -49,6 +49,7 @@ protocol SwitchBarHandling: AnyObject {
 
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
+    var shouldDisableAutocorrectOnEmpty: Bool { get }
 
     var hasSubmittedPrompt: Bool { get set }
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { get }
@@ -127,6 +128,10 @@ final class SwitchBarHandler: SwitchBarHandling {
             return devicePlatform.isIphone
         }
         return false
+    }
+
+    var shouldDisableAutocorrectOnEmpty: Bool {
+        featureFlagger.isFeatureOn(.unifiedToggleInput) || devicePlatform.isIphone
     }
 
     var isVoiceSearchEnabled: Bool {

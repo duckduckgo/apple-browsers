@@ -71,7 +71,7 @@
 "widget.gallery.customshortcuts.description" = "Здесь вы можете выбрать ярлыки для избранных действий.";
 
 /* Display name for quick actions widget in widget gallery */
-"widget.gallery.customshortcuts.display.name" = "Пользовательские сочетания клавиш";
+"widget.gallery.customshortcuts.display.name" = "Пользовательские ярлыки";
 
 /* Description for editing custom shortcuts */
 "widget.gallery.customshortcuts.edit.description" = "Выберите сочетания клавиш";

@@ -36,6 +36,7 @@ final class MockAuthenticationService: AuthenticationServiceProtocol {
 final class MockAutoClearService: AutoClearServiceProtocol {
 
     var isClearingEnabled: Bool = true
+    var isTabClearingEnabled: Bool = true
     var autoClearTask: Task<Void, Never>?
 
     var waitForDataClearedCalled = false

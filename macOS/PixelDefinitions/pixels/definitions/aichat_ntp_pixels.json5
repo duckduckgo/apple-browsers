@@ -22,9 +22,30 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "m_mac_aichat_ntp_reasoning_effort_selected": {
+        "description": "Fired when user selects a reasoning effort from the New Tab Page omnibar picker",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "m_mac_aichat_ntp_view_all_chats_clicked": {
         "description": "Fired when user taps 'View all chats' from the New Tab Page omnibar",
         "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_ntp_image_generation_submitted": {
+        "description": "Fired when user submits a prompt while image generation mode is active on the New Tab Page",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_ntp_web_search_submitted": {
+        "description": "Fired when user submits a prompt while web search mode is active on the New Tab Page",
+        "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource"]

@@ -27,21 +27,28 @@ public extension OnboardingTheme {
         let bubbleCornerRadius = 36.0
         let borderWidth = 1.5
 
-        let typography = Typography.system
+        let typography = Typography(
+            contextualTitle: .system(size: 20, weight: .bold),
+            contextualBody: .system(size: 16, weight: .regular),
+            contextualControlSmall: .system(size: 13, weight: .regular)
+        )
+
+        let accentPrimary = Color(0x2F95EE)
+        let bubbleBorder = Color(0xCBEAFF)
 
         let colorPalette = ColorPalette(
-            background: Color(designSystemColor: .surfaceBackdrop),
-            bubbleBorder: Color(designSystemColor: .accentAltPrimary),
-            bubbleBackground: Color(designSystemColor: .surfaceTertiary),
+            background: .white,
+            bubbleBorder: bubbleBorder,
+            bubbleBackground: .white,
             bubbleShadow: Color.shade(0.03),
             textPrimary: Color(designSystemColor: .textPrimary),
             textSecondary: Color(designSystemColor: .textSecondary),
-            optionsListBorderColor: Color(designSystemColor: .accentPrimary),
-            optionsListIconColor: Color(designSystemColor: .accentPrimary),
-            optionsListTextColor: Color(designSystemColor: .textLink),
+            optionsListBorderColor: accentPrimary,
+            optionsListIconColor: accentPrimary,
+            optionsListTextColor: accentPrimary,
             primaryButtonBackgroundColor: Color(designSystemColor: .buttonsPrimaryDefault),
             primaryButtonTextColor: Color(designSystemColor: .buttonsPrimaryText),
-            backgroundAccent: Color(designSystemColor: .accentPrimary)
+            backgroundAccent: accentPrimary
         )
 
         let dismissButtonMetrics = DismissButtonMetrics(
@@ -51,18 +58,20 @@ public extension OnboardingTheme {
         )
 
         let contextualOptionsListMetrics = ContextualOnboardingMetrics.OptionsListMetrics(
-            cornerRadius: 32,
+            cornerRadius: 999,
             borderWidth: 1,
             borderInset: 0.5,
             iconSize: CGSize(width: 16, height: 16),
-            itemMinHeight: 40
+            itemMinHeight: 28,
+            verticalPadding: 6,
+            horizontalPadding: 12
         )
 
         return OnboardingTheme(
-            typography: .system,
+            typography: typography,
             colorPalette: colorPalette,
             bubbleMetrics: BubbleMetrics(
-                contentInsets: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
+                contentInsets: EdgeInsets(top: 24, leading: 32, bottom: 24, trailing: 32),
                 cornerRadius: bubbleCornerRadius,
                 borderWidth: borderWidth,
                 shadowRadius: 6.0,
@@ -76,9 +85,9 @@ public extension OnboardingTheme {
             dismissButtonMetrics: dismissButtonMetrics,
             contextualOnboardingMetrics: OnboardingTheme.ContextualOnboardingMetrics(
                 containerPadding: EdgeInsets(top: 16, leading: 16, bottom: 58, trailing: 16),
-                contentSpacing: 20,
-                titleBodyVerticalSpacingVerticalLayout: 10,
-                titleBodyVerticalSpacingHorizontalLayout: 10,
+                contentSpacing: 12,
+                titleBodyVerticalSpacingVerticalLayout: 8,
+                titleBodyVerticalSpacingHorizontalLayout: 8,
                 titleBodyInset: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0),
                 contextualTitleTextAlignment: .leading,
                 contextualBodyTextAlignment: .leading,

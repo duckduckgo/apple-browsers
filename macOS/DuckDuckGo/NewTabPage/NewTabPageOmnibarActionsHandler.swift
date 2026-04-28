@@ -152,7 +152,14 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         // Re-set prompt after tab opener to include images, mode, tool choice, model selection,
         // and reasoning effort (tab opener overwrites with a plain query)
         let nativeImages = images?.map { AIChatNativePrompt.NativePromptImage(data: $0.data, format: $0.format) }
-        let nativePrompt = AIChatNativePrompt.queryPrompt(chat, autoSubmit: true, toolChoice: toolChoice, images: nativeImages, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)
+        let nativeReasoningEffort = reasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
+        let nativePrompt = AIChatNativePrompt.queryPrompt(chat,
+                                                          autoSubmit: true,
+                                                          toolChoice: toolChoice,
+                                                          images: nativeImages,
+                                                          modelId: modelId,
+                                                          mode: mode,
+                                                          reasoningEffort: nativeReasoningEffort)
         promptHandler.setData(nativePrompt)
     }
 

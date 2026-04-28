@@ -249,13 +249,6 @@ final class AIChatUserScript: NSObject, Subfeature {
     private func subscribeToInputBoxEvents() {
         inputBoxCancellables.removeAll()
 
-        inputBoxHandler?.didSubmitPrompt
-            .sink(receiveValue: { [weak self] prompt in
-                let modelId = self?.inputBoxHandler?.persistedModelId
-                self?.submitPrompt(prompt, modelId: modelId)
-            })
-            .store(in: &inputBoxCancellables)
-
         inputBoxHandler?.didPressNewChatButton
             .sink(receiveValue: { [weak self] _ in self?.push(.newChatAction) })
             .store(in: &inputBoxCancellables)
@@ -281,22 +274,23 @@ final class AIChatUserScript: NSObject, Subfeature {
         submitPrompt(prompt, pageContext: pageContext, modelId: nil)
     }
 
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?) {
-        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext)
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
+        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext, reasoningEffort: reasoningEffort)
         push(.submitPrompt(promptPayload))
     }
 
-    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?) {
-        submitPrompt(prompt, images: images, modelId: modelId, tools: nil)
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
+        submitPrompt(prompt, images: images, modelId: modelId, tools: nil, reasoningEffort: reasoningEffort)
     }
 
-    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?, tools: [AIChatRAGTool]?) {
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort? = nil) {
         let promptPayload = AIChatNativePrompt.queryPrompt(
             prompt,
             autoSubmit: true,
             toolChoice: tools?.map(\.rawValue),
             images: images,
-            modelId: modelId
+            modelId: modelId,
+            reasoningEffort: reasoningEffort
         )
         push(.submitPrompt(promptPayload))
     }

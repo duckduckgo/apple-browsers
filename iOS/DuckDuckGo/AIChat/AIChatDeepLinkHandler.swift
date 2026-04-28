@@ -30,7 +30,9 @@ protocol AIChatDeepLinkPresenting: UIViewController {
         flowType: AIChatOnboardingFlowType,
         tools: [AIChatRAGTool]?,
         modelId: String?,
+        reasoningEffort: AIChatReasoningEffort?,
         images: [AIChatNativePrompt.NativePromptImage]?,
+        files: [AIChatNativePrompt.NativePromptFile]?,
         fromDeepLink: Bool
     )
 }
@@ -38,7 +40,18 @@ protocol AIChatDeepLinkPresenting: UIViewController {
 extension AIChatDeepLinkPresenting {
 
     func openAIChat(fromDeepLink: Bool) {
-        openAIChat(nil, autoSend: false, payload: nil, flowType: .default, tools: nil, modelId: nil, images: nil, fromDeepLink: fromDeepLink)
+        openAIChat(
+            nil,
+            autoSend: false,
+            payload: nil,
+            flowType: .default,
+            tools: nil,
+            modelId: nil,
+            reasoningEffort: nil,
+            images: nil,
+            files: nil,
+            fromDeepLink: fromDeepLink
+        )
     }
     
 }

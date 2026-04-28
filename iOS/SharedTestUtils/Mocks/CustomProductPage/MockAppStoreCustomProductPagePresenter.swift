@@ -32,7 +32,9 @@ final class MockAppStoreCustomProductPagePresenter: UIViewController, AppStoreCu
         flowType: AIChatOnboardingFlowType,
         tools: [AIChatRAGTool]?,
         modelId: String?,
+        reasoningEffort: AIChat.AIChatReasoningEffort?,
         images: [AIChatNativePrompt.NativePromptImage]?,
+        files: [AIChat.AIChatNativePrompt.NativePromptFile]?,
         fromDeepLink: Bool
     ) {}
 }

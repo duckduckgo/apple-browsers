@@ -21,6 +21,7 @@ import AVKit
 import BrowserServicesKit
 import Core
 import Onboarding
+import PrivacyConfig
 
 enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertible {
     case notSet
@@ -52,6 +53,7 @@ typealias OnboardingManaging = OnboardingStepsProvider & OnboardingAddToDockVisi
 final class OnboardingManager {
     private let onboardingFlowEvaluator: OnboardingFlowEvaluating
     private var appDefaults: OnboardingDebugAppSettings
+    private let featureFlagger: FeatureFlagger
     private let variantManager: VariantManager
     private let isIphone: Bool
     private let tutorialSettings: TutorialSettings
@@ -84,12 +86,14 @@ final class OnboardingManager {
 
     init(
         appDefaults: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings,
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         variantManager: VariantManager = DefaultVariantManager(),
         isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone,
         onboardingFlowEvaluator: OnboardingFlowEvaluating = AppStoreCustomProductPageEvaluator(),
         tutorialSettings: TutorialSettings = DefaultTutorialSettings()
     ) {
         self.appDefaults = appDefaults
+        self.featureFlagger = featureFlagger
         self.variantManager = variantManager
         self.isIphone = isIphone
         self.onboardingFlowEvaluator = onboardingFlowEvaluator
@@ -173,7 +177,13 @@ extension OnboardingManager: OnboardingFlowManaging {
         let flowType = onboardingFlowEvaluator.evaluateOnboardingFlow(from: url)
         Logger.onboarding.debug("Configured onboarding flow: \(flowType.rawValue, privacy: .public)")
 
-        tutorialSettings.onboardingFlowType = flowType
+        switch flowType {
+        case .duckAI where !featureFlagger.isFeatureOn(.onboardingDuckAIFlow):
+            Logger.onboarding.debug("Duck.ai onboarding feature disabled. Reverting to default onboarding")
+            tutorialSettings.onboardingFlowType = .default
+        default:
+            tutorialSettings.onboardingFlowType = flowType
+        }
     }
 
 }

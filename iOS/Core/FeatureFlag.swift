@@ -237,6 +237,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1213320237636425?focus=true
     case onboardingDuckAIQueryExperiment
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214336846806516?focus=true
+    case onboardingDuckAIFlow
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472842661
     case storeSerpSettings
 
@@ -579,6 +582,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .onboardingDuckAIQueryExperiment:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.onboardingDuckAIQueryExperiment)),
                    cohortType: DuckAIQueryExperimentCohort.self)
+        case .onboardingDuckAIFlow:
+            Config(source: .disabled, supportsLocalOverriding: true)
         case .storeSerpSettings:
             Config(source: .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings)))
         case .showHideAIGeneratedImagesSection:

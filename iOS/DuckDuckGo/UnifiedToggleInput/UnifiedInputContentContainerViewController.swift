@@ -125,7 +125,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         aiChatHistoryManager?.hasSuggestions ?? false
     }
 
-    private let daxLogoManager: DaxLogoManager
+    private(set) var daxLogoManager: DaxLogoManager
+    private var isDaxLogoForcedHidden = false
     private var notificationCancellable: AnyCancellable?
 
     private weak var contentAnimator: UIViewPropertyAnimator?
@@ -139,7 +140,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.switchBarHandler = switchBarHandler
-        self.daxLogoManager = DaxLogoManager()
+        self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -174,9 +175,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if aiChatHistoryManager == nil && featureFlagger.isFeatureOn(.aiChatSuggestions) && aiChatSettings.isChatSuggestionsEnabled {
-            installChatHistoryList()
-        }
+        installChatHistoryListIfNeeded()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -198,7 +197,24 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func setLogoHidden(_ hidden: Bool) {
+        isDaxLogoForcedHidden = hidden
         daxLogoManager.setForcedHidden(hidden)
+    }
+
+    func refreshFireMode(fireMode: Bool) {
+        rebuildDaxLogoManager(isFireTab: fireMode)
+        rebuildChatHistoryManager()
+    }
+
+    private func rebuildDaxLogoManager(isFireTab: Bool) {
+        daxLogoManager.tearDown()
+        daxLogoManager = DaxLogoManager(isFireTab: isFireTab)
+        // Replay cached forcedHidden so rebuilds don't silently un-hide the dax logo / fire empty state.
+        daxLogoManager.setForcedHidden(isDaxLogoForcedHidden)
+        guard isViewLoaded else { return }
+        installDaxLogoView()
+        applyRequestedContentInset()
+        updateDaxVisibility()
     }
 
     var isSwipeEnabled: Bool = true {
@@ -461,6 +477,20 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         suggestionTrayManager = manager
     }
 
+    private func installChatHistoryListIfNeeded() {
+        guard aiChatHistoryManager == nil,
+              featureFlagger.isFeatureOn(.aiChatSuggestions),
+              aiChatSettings.isChatSuggestionsEnabled else { return }
+        installChatHistoryList()
+    }
+
+    private func rebuildChatHistoryManager() {
+        guard aiChatHistoryManager != nil else { return }
+        aiChatHistoryManager?.tearDown()
+        aiChatHistoryManager = nil
+        installChatHistoryListIfNeeded()
+    }
+
     private func installChatHistoryList() {
         guard let swipeContainerManager else { return }
 
@@ -511,7 +541,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func installDaxLogoView() {
-        daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, anchorView: contentContainerView, isTopBarPosition: false)
+        daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, isTopBarPosition: false)
     }
 
     private func setupSubscriptions() {
@@ -621,6 +651,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             right: 0
         )
         insets.top += Metrics.contentTopInset
+        daxLogoManager.setFireTabContentInsets(insets)
         guard swipeContainerManager?.containerViewController.additionalSafeAreaInsets != insets else { return }
         swipeContainerManager?.containerViewController.additionalSafeAreaInsets = insets
     }
@@ -655,6 +686,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let isChatHistoryPending = aiChatHistoryManager != nil
             && aiChatHistoryManager?.hasCompletedInitialFetch != true
             && switchBarHandler.currentToggleState == .aiChat
+            && !switchBarHandler.isFireTab
         let isURLFallbackShowingContent = isShowingURLFallback && isShowingTray
 
         let hasContent = (shouldDisplaySuggestionTray && isShowingTray) || isHorizontallyCompactLayoutEnabled

@@ -152,10 +152,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
 
-    /// Whether the wide event POST endpoint is enabled
-    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
-    case wideEventPostEndpoint
-
     /// Memory Pressure Reporter
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
     case memoryPressureReporting
@@ -223,10 +219,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
     case genericBackgroundTask
-
-    /// Whether the wide event POST endpoint is enabled
-    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
-    case wideEventPostEndpoint
 
     /// Failsafe flag for disabling call stack tree depth limiting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
@@ -425,6 +417,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables AI chat tools (model selector, image upload) on the New Tab Page omnibar
     case ntpChatTools
 
+    /// Enables image generation mode on the New Tab Page omnibar
+    case ntpImageGeneration
+
+    /// Enables web search mode on the New Tab Page omnibar
+    case ntpWebSearch
+
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
 
@@ -466,6 +464,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables web search tool in the Duck.ai omnibar
     case omnibarWebSearch
+
+    /// Enables the reasoning effort picker in the Duck.ai omnibar
+    case omnibarReasoningEffort
 
     /// Enables querying AI Chat data directly from local storage instead of via webview
     case nativeDataAccess
@@ -542,6 +543,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncIdentities
     case aiChatSync
     case simplifiedSyncSetupExperiment
+    case allowSingleDeviceOnConnectScreen
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

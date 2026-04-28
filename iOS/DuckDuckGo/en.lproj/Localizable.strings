@@ -86,7 +86,7 @@
 "action.title.newFireTabAction" = "New Fire Tab";
 
 /* Open in New Fire Tab action */
-"action.title.newFireTabForUrl" = "Open in a Fire Tab";
+"action.title.newFireTabForUrl" = "Open in Fire Tab";
 
 /* Create New Tab action */
 "action.title.newTabAction" = "New Tab";
@@ -2066,7 +2066,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Troubleshoot websites";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Fire Tabs are isolated from other browser data, and their data is burned when you close them all. They have the same tracking protection as other tabs.";
+"fire.mode.empty.state.description" = "Fire Tabs are isolated from other browser data. Their data is burned when you close them all. They give you the same tracking protection as other tabs.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "New Fire Tab";
@@ -2078,7 +2078,7 @@
 "fire.mode.menu.promotion.badge" = "New";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Browse without saving local history or sign in to sites with a different account.";
+"fire.mode.ntp.promotion.description" = "New! Browse without saving local history or sign in to sites with a different account.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Not Now";
@@ -2088,6 +2088,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Try Fire Tabs";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Try Fire Tabs to browse without saving local history.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "New: Fire Tabs";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire Tab";
@@ -2199,6 +2205,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Search or Enter Address";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "New Fire Tab";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "New Tab";
@@ -3923,10 +3932,10 @@ Take back control of your personal information with the browser designed for dat
 "sync.delete.all.confirm.action" = "Delete Server Data";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "All devices will be disconnected and your synced data will be deleted from the server.";
+"sync.delete.all.confirm.message" = "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device.";
 
 /* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Delete Server Data?";
+"sync.delete.all.confirm.title" = "Delete server data?";
 
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "No account needed. End-to-end encryption means nobody but you can see your bookmarks, not even us.";

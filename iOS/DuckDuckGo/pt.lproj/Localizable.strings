@@ -2181,7 +2181,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Resolver problemas de sites";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Os separadores Fire estão isolados de outros dados do navegador e os respetivos dados são queimados quando os fechas. Têm a mesma proteção contra rastreamento que os outros separadores.";
+"fire.mode.empty.state.description" = "Os separadores Fire estão isolados de outros dados do navegador. Os dados deles são queimados quando fechas o separador. Têm a mesma proteção contra rastreio que os outros separadores.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Novo separador Fire";
@@ -2193,7 +2193,7 @@
 "fire.mode.menu.promotion.badge" = "Novo";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Navegue sem guardar o histórico local ou inicie sessão em sites com uma conta diferente.";
+"fire.mode.ntp.promotion.description" = "Novo! Navega sem guardar o histórico local ou inicia sessão em sites com uma conta diferente.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Agora não";
@@ -2203,6 +2203,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Experimenta o Fire Tabs";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Experimenta os separadores Fire para navegar sem guardar o histórico local.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Novo: Separadores Fire";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire Tab";
@@ -2328,6 +2334,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Pesquisar ou inserir endereço";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Novo separador Fire";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Novo separador";
@@ -4177,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Eliminar dados do servidor";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Todos os dispositivos serão desconectados e os dados sincronizados serão eliminados do servidor.";
+"sync.delete.all.confirm.message" = "A tua cópia de segurança será eliminada do servidor. Todos os dispositivos serão desligados da sincronização, mas nada será eliminado dos dispositivos.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Eliminar dados do servidor?";

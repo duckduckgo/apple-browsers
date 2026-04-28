@@ -1200,9 +1200,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            memoryUsageMonitor: memoryUsageMonitor,
             pixelFiring: PixelKit.shared,
-            keyValueStore: keyValueStore
+            keyValueStore: keyValueStore,
+            memoryProvider: MemoryUsageMonitor.residentMemorySize(forPID:)
         )
 
         super.init()
@@ -1912,8 +1912,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             // Load extensions asynchronously - the controller is already attached to tabs
             Task {
-                await webExtensionManager.loadInstalledExtensions()
-                await syncEmbeddedExtensions()
+                await self.loadAndSyncEmbeddedExtensions(webExtensionManager)
             }
         } else {
             webExtensionManager = nil
@@ -1924,9 +1923,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func initializeWebExtensions() async {
         guard webExtensionManager == nil else {
-            // Already initialized, just load extensions
-            await (webExtensionManager as? WebExtensionManager)?.loadInstalledExtensions()
-            await syncEmbeddedExtensions()
+            if let manager = webExtensionManager as? WebExtensionManager {
+                await loadAndSyncEmbeddedExtensions(manager)
+            }
             return
         }
 
@@ -1938,8 +1937,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.webExtensionManager = webExtensionManager
 
-        await webExtensionManager.loadInstalledExtensions()
-        await syncEmbeddedExtensions()
+        await loadAndSyncEmbeddedExtensions(webExtensionManager)
     }
 
     @available(macOS 15.4, *)
@@ -1951,6 +1949,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         isSyncingEmbeddedExtensions = true
         defer { isSyncingEmbeddedExtensions = false }
 
+        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    private func loadAndSyncEmbeddedExtensions(_ webExtensionManager: WebExtensionManager) async {
+        await webExtensionManager.loadAndSyncExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+    }
+
+    @available(macOS 15.4, *)
+    private func enabledEmbeddedExtensionTypes() -> Set<DuckDuckGoWebExtensionType> {
         var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
         if featureFlagger.isFeatureOn(.embeddedExtension) {
             enabledTypes.insert(.embedded)
@@ -1961,7 +1970,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if adBlockingAvailability.isEnabled {
             enabledTypes.insert(.adBlockingExtension)
         }
-        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
+        return enabledTypes
     }
 
     @available(macOS 15.4, *)

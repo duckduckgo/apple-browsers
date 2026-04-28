@@ -40,6 +40,7 @@ extension MainViewController {
 
         let coordinator = UnifiedToggleInputCoordinator(
             isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            isFireTab: isCurrentTabFireTab(),
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             toggleModeStorage: toggleModeStorage
         )
@@ -136,12 +137,12 @@ extension MainViewController {
         }
     }
 
-    func recomputeOmnibarEditingHeightIfNeeded() {
+    func recomputeNavigationBarContainerHeightIfNeeded() {
         guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.isOmnibarSession else {
+              coordinator.isInputEditing else {
             return
         }
-        let height = coordinator.omnibarEditingHeight()
+        let height = coordinator.editingHeight()
         guard viewCoordinator.constraints.navigationBarContainerHeight.constant != height else { return }
         viewCoordinator.constraints.navigationBarContainerHeight.constant = height
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
@@ -194,7 +195,7 @@ private extension MainViewController {
         coordinator.attachmentsChangePublisher
             .sink { [weak self] in
                 guard let self, let coordinator = unifiedToggleInputCoordinator else { return }
-                if coordinator.isAITabExpanded || coordinator.isOmnibarSession {
+                if coordinator.isInputEditing {
                     adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
                 }
             }
@@ -288,8 +289,9 @@ private extension MainViewController {
         let hasExistingChat = tab.url?.duckAIChatID != nil
         let tabURL = tab.url ?? tab.link?.url
         let isVoiceMode = tabURL?.isDuckAIVoiceMode == true || tab.isVoiceModeRequested
+        let isSidebarOpen = tabURL?.isDuckAISidebarOpen == true
         tab.isVoiceModeRequested = false
-        let shouldExpandAfterRefresh = !hasExistingChat && !coordinator.hasSubmittedPrompt && !isVoiceMode
+        let shouldExpandAfterRefresh = !hasExistingChat && !coordinator.hasSubmittedPrompt && !isVoiceMode && !isSidebarOpen
         return .refreshAITab(.showCollapsed(expandAfterRefresh: shouldExpandAfterRefresh))
     }
 
@@ -606,11 +608,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidChangeHeight() {
-        if unifiedToggleInputCoordinator?.isOmnibarSession == true {
-            recomputeOmnibarEditingHeightIfNeeded()
-        } else {
-            unifiedToggleInputCoordinator?.pushContentInsets()
-        }
+        recomputeNavigationBarContainerHeightIfNeeded()
     }
 }
 

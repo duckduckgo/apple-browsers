@@ -2181,7 +2181,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Webhelyek hibaelhárítása";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "A Fire lapok a böngésző egyéb adataitól el vannak különítve, és az összes Fire lap bezárásakor a hozzájuk tartozó adatok törlésre kerülnek. Ugyanolyan nyomkövetés elleni védelemmel rendelkeznek, mint a többi lap.";
+"fire.mode.empty.state.description" = "A Fire lapok a böngésző egyéb adataitól el vannak különítve. Az összes bezárásakor a hozzájuk tartozó adatok törlésre kerülnek. Ugyanolyan nyomkövetés elleni védelmet kínálnak, mint a többi lap.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Új Fire lap";
@@ -2193,7 +2193,7 @@
 "fire.mode.menu.promotion.badge" = "Új";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Böngészés a helyi előzmények mentése nélkül, vagy bejelentkezés a webhelyekre másik fiókkal.";
+"fire.mode.ntp.promotion.description" = "Újdonság! Böngészés a helyi előzmények mentése nélkül, vagy bejelentkezés a webhelyekre másik fiókkal.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Most nem";
@@ -2203,6 +2203,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Fire lapok kipróbálása";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Próbáld ki a Fire lapok funkciót, hogy a helyi előzmények mentése nélkül böngészhess.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Új: Fire lapok";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire lap";
@@ -2328,6 +2334,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Keresés vagy cím megadása";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Új Fire lap";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Új lap";
@@ -4177,7 +4186,7 @@
 "sync.delete.all.confirm.action" = "Szerveradatok törlése";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "A rendszer minden eszközt lecsatlakoztat, és a szinkronizált adatokat törli a szerverről.";
+"sync.delete.all.confirm.message" = "A biztonsági mentés törölve lesz a szerverről. A rendszer minden eszközt leválaszt a szinkronizálásról, de semmi sem lesz törölve az eszközökről.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Szerveradatok törlése?";

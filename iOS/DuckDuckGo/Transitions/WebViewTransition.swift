@@ -145,7 +145,17 @@ class ToWebViewTransition: WebViewTransition {
               let rowIndex = tabSwitcherViewController.tabsModel.indexOf(tab: tab),
               let layoutAttr = tabSwitcherViewController.collectionView.layoutAttributesForItem(at: IndexPath(row: rowIndex, section: 0))
         else {
-            transitionContext.completeTransition(true)
+            // Crossfade fallback when destination is no longer a web view; mirrors ToHomeScreenTransition.
+            if let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController {
+                mainViewController.view.alpha = 1
+            }
+            UIView.animate(withDuration: TabSwitcherTransition.Constants.duration, animations: {
+                self.tabSwitcherViewController.view.alpha = 0
+            }, completion: { _ in
+                self.solidBackground.removeFromSuperview()
+                self.imageContainer.removeFromSuperview()
+                transitionContext.completeTransition(true)
+            })
             return
         }
                 

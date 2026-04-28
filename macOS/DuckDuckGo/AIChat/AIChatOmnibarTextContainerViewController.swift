@@ -39,10 +39,15 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let layoutManager = NSLayoutManager()
     private let textContainer = NSTextContainer()
     private let textView: FocusableTextView
-    private let placeholderLabel = NSTextField(labelWithString: "")
+    private let placeholderLabel = ClickThroughLabel(labelWithString: "")
     private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
     private var cancellables = Set<AnyCancellable>()
+    /// When true, the text view is being updated programmatically (text or selection) and any
+    /// resulting `textViewDidChangeSelection` callback must not overwrite the persisted caret
+    /// position — otherwise e.g. a tab-switch cleanup that clears `currentText` would also wipe
+    /// the saved selection with `(0, 0)` before we get a chance to restore it.
+    private var isUpdatingProgrammatically = false
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
@@ -51,6 +56,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         didSet { wireTabCycle() }
     }
     var heightDidChange: ((CGFloat) -> Void)?
+    /// Fires when the prompt text view becomes first responder.
+    /// Used by the orchestrating layer to re-focus into duck.ai mode when the user clicks the prompt while unfocused.
+    var onTextViewDidBecomeFirstResponder: (() -> Void)?
 
     init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging) {
         self.omnibarController = omnibarController
@@ -89,6 +97,14 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         scrollView.documentView = textView
         textView.navigationDelegate = self
         textView.registerForImageDrop()
+        textView.onDidBecomeFirstResponder = { [weak self] in
+            self?.onTextViewDidBecomeFirstResponder?()
+        }
+    }
+
+    /// Whether the prompt editor is currently the window's first responder.
+    var isTextViewFirstResponder: Bool {
+        view.window?.firstResponder === textView
     }
 
     override func viewWillAppear() {
@@ -156,6 +172,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         placeholderLabel.drawsBackground = false
         placeholderLabel.isEditable = false
         placeholderLabel.isSelectable = false
+        placeholderLabel.hitTestForwardingTarget = textView
         containerView.addSubview(placeholderLabel)
 
         NSLayoutConstraint.activate([
@@ -220,11 +237,13 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             .sink { [weak self] newText in
                 guard let self = self else { return }
                 if self.textView.string != newText {
+                    self.isUpdatingProgrammatically = true
                     self.textView.string = newText
                     if self.view.window?.firstResponder == self.textView {
                         let textLength = newText.count
                         self.textView.selectedRange = NSRange(location: textLength, length: 0)
                     }
+                    self.isUpdatingProgrammatically = false
                     /// Update panel height when text changes programmatically (e.g., from paste)
                     self.updatePanelHeight()
                 }
@@ -252,6 +271,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     @objc func textDidChange(_ notification: Notification) {
         omnibarController.updateText(textView.string)
+        omnibarController.updateSelection(textView.selectedRange)
         let currentScrollPosition = scrollView.documentVisibleRect.origin
         updatePanelHeight()
         updatePlaceholderVisibility()
@@ -260,6 +280,15 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             guard let self = self else { return }
             self.textView.scroll(currentScrollPosition)
         }
+    }
+
+    func textViewDidChangeSelection(_ notification: Notification) {
+        /// Persist the caret / selection to the current tab's shared state so the same position is
+        /// restored when the panel is re-activated (tab switch, refocus, etc.).
+        /// Skip programmatic updates — otherwise clearing `textView.string` via the `$currentText`
+        /// sink (triggered by cleanup on tab switch) would overwrite the saved selection with `(0, 0)`.
+        guard !isUpdatingProgrammatically else { return }
+        omnibarController.updateSelection(textView.selectedRange)
     }
 
     private func updatePlaceholderVisibility() {
@@ -336,7 +365,52 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     func focusTextViewWithCursorAtEnd() {
         focusTextView()
-        let textLength = textView.string.count
+        moveCursorToEnd()
+    }
+
+    /// Focuses the text view and restores the caret to the position persisted for the current tab,
+    /// falling back to the end of the prompt when no position has been saved yet or when the saved
+    /// location is past the current text length.
+    func focusTextViewRestoringCursorPosition() {
+        focusTextView()
+        isUpdatingProgrammatically = true
+        defer { isUpdatingProgrammatically = false }
+        /// `saved.location` is a UTF-16 offset (it came from an `NSRange`), so compare it against the
+        /// UTF-16 length of the string rather than `String.count` (grapheme-cluster count). For prompts
+        /// containing emoji or other non-BMP characters the two differ and valid saved positions would
+        /// otherwise fail the bounds check and fall through to `moveCursorToEnd`.
+        let utf16Length = (textView.string as NSString).length
+        if let saved = omnibarController.currentSelectionRange,
+           saved.location <= utf16Length {
+            let clampedLength = min(saved.length, max(0, utf16Length - saved.location))
+            textView.selectedRange = NSRange(location: saved.location, length: clampedLength)
+        } else {
+            moveCursorToEnd()
+        }
+    }
+
+    /// Forces the text view's string to match `omnibarController.currentText` synchronously.
+    /// The normal `$currentText` → `textView.string` path is async (receive(on: .main)), so typing in search
+    /// mode and immediately toggling to Duck.ai can show the prompt filling in after the panel is already visible.
+    /// Call this at activation to snap the text in place without the visible fill-in.
+    func syncTextViewToCurrentText() {
+        let newText = omnibarController.currentText
+        if textView.string != newText {
+            isUpdatingProgrammatically = true
+            textView.string = newText
+            isUpdatingProgrammatically = false
+            updatePlaceholderVisibility()
+            updatePanelHeight()
+        }
+    }
+
+    /// Moves the caret to the end of the prompt text without changing first responder.
+    /// Uses the UTF-16 length of the string, not `String.count` (grapheme-cluster count),
+    /// because `selectedRange` is an `NSRange` measured in UTF-16. For prompts containing
+    /// emoji or other non-BMP characters the two values differ and the previous version
+    /// would land the caret before the real end of the text.
+    func moveCursorToEnd() {
+        let textLength = (textView.string as NSString).length
         textView.selectedRange = NSRange(location: textLength, length: 0)
     }
 
@@ -458,10 +532,43 @@ protocol FocusableTextViewNavigationDelegate: AnyObject {
     func textViewDidReceiveImageDrop(_ fileURLs: [URL]) -> Bool
 }
 
+/// NSTextField label that forwards mouse hits to a configured target view.
+/// Used for the prompt placeholder: clicks on the placeholder area hit-test to the text view so the prompt takes focus,
+/// rather than falling through the empty scroll-view area to the address bar behind (which would switch to search mode).
+private final class ClickThroughLabel: NSTextField {
+    weak var hitTestForwardingTarget: NSView?
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return hitTestForwardingTarget ?? nil
+    }
+}
+
 /// Custom NSTextView that ensures it can always accept focus when clicked
 private final class FocusableTextView: NSTextView {
 
     weak var navigationDelegate: FocusableTextViewNavigationDelegate?
+
+    /// Fires when the text view transitions from not-first-responder to first-responder (gaining focus).
+    var onDidBecomeFirstResponder: (() -> Void)?
+
+    private var wasFirstResponder: Bool = false
+
+    override func becomeFirstResponder() -> Bool {
+        let didBecome = super.becomeFirstResponder()
+        if didBecome && !wasFirstResponder {
+            wasFirstResponder = true
+            onDidBecomeFirstResponder?()
+        }
+        return didBecome
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let didResign = super.resignFirstResponder()
+        if didResign {
+            wasFirstResponder = false
+        }
+        return didResign
+    }
 
     private static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tiff", "tif"]
 
@@ -511,7 +618,13 @@ private final class FocusableTextView: NSTextView {
 
     override func mouseDown(with event: NSEvent) {
         if window?.firstResponder != self {
+            /// Refocus click: make this the first responder so the refocus flow (via `becomeFirstResponder` →
+            /// `onDidBecomeFirstResponder` callback → `focusTextViewRestoringCursorPosition`) can restore the
+            /// caret to the position saved for the current tab. Skip `super.mouseDown` so NSTextView doesn't
+            /// override our restored selection with a click-location caret; a subsequent click with the text
+            /// view already first responder positions the caret normally.
             window?.makeFirstResponder(self)
+            return
         }
         super.mouseDown(with: event)
     }

@@ -61,11 +61,12 @@ struct FillFormAction: Action {
         try container.encode(elements, forKey: .elements)
     }
 
-    /// True only when the action has an email element and no explicit dataSource. When dataSource
-    /// is set (e.g. "fetchedEmail"), the email is sourced from elsewhere on the wire — fetching
-    /// again would double-fetch and diverge from what's already cached on the runner.
+    /// True when the action has an email element and the dataSource is not "fetchedEmail".
+    /// Legacy brokers (dataSource "userProfile" or unset) rely on the implicit fetch fallback;
+    /// the new generateEmail flow uses dataSource "fetchedEmail" to opt out of it so the runner's
+    /// cached email isn't overwritten by a second fetch.
     var needsEmail: Bool {
-        elements.contains { $0.type == "email" } && dataSource == nil
+        elements.contains { $0.type == "email" } && dataSource != "fetchedEmail"
     }
 
     func with(json: Data?) -> FillFormAction {

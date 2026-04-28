@@ -184,7 +184,7 @@ jobs:
         include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
 
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}-${{ matrix.test }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}-${{ matrix.test }}-${{ inputs.build-type }}
       cancel-in-progress: true
 
     timeout-minutes: 120

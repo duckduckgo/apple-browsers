@@ -854,7 +854,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         switch mode {
         case .search:
             if case .aiTab = displayState {
-                setText("")
                 hide()
             } else if isOmnibarSession {
                 deactivateToOmnibar()

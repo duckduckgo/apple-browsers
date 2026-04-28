@@ -136,6 +136,9 @@ final class NetworkProtectionDebugMenu: NSMenu {
             NSMenuItem(title: "Log Feedback Metadata to Console", action: #selector(NetworkProtectionDebugMenu.logFeedbackMetadataToConsole))
                 .targetting(self)
 
+            NSMenuItem(title: "Export Diagnostics…", action: #selector(NetworkProtectionDebugMenu.exportDiagnostics))
+                .targetting(self)
+
             NSMenuItem(title: "Onboarding")
                 .submenu(NetworkProtectionOnboardingMenu())
 
@@ -315,6 +318,27 @@ final class NetworkProtectionDebugMenu: NSMenu {
             let metadata = await collector.collectMetadata()
 
             print(metadata.toPrettyPrintedJSON()!)
+        }
+    }
+
+    @objc func exportDiagnostics(_ sender: Any?) {
+        Task { @MainActor in
+            do {
+                let exporter = NetworkProtectionDiagnosticsExporter(subscriptionManager: Application.appDelegate.subscriptionManager)
+                let diagnosticsURLs = try await exporter.exportToDesktop()
+
+                let alert = NSAlert()
+                alert.messageText = "VPN diagnostics exported"
+                alert.informativeText = "Saved overview and log files to your Desktop."
+                alert.addButton(withTitle: "Show in Finder")
+                alert.addButton(withTitle: "OK")
+
+                if await alert.runModal() == .alertFirstButtonReturn {
+                    NSWorkspace.shared.activateFileViewerSelecting(diagnosticsURLs)
+                }
+            } catch {
+                await NSAlert(error: error).runModal()
+            }
         }
     }
 

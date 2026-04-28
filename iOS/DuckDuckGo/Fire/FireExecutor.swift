@@ -92,7 +92,7 @@ protocol FireExecuting {
 
 class FireExecutor: FireExecuting {
     
-    typealias HistoryCleanerProvider = (WKWebsiteDataStore?) -> HistoryCleaning
+    typealias HistoryCleanerProvider = (WKWebsiteDataStore?, _ isFireMode: Bool) -> HistoryCleaning
     
     // MARK: - Variables
     private let fireWorkers: [FireExecutorWorker]
@@ -151,11 +151,16 @@ class FireExecutor: FireExecuting {
         self.fireModeCapability = FireModeCapability.create()
         self.dataClearingCapability = DataClearingCapability.create(using: featureFlagger)
         self.historyCleanerProvider = historyCleanerProvider ??
-        { dataStore in return HistoryCleaner(featureFlagger: featureFlagger,
-                                             privacyConfig: privacyConfigurationManager,
-                                             websiteDataStore: dataStore,
-                                             nativeStorageHandler: duckAiNativeStorageHandler,
-                                             featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))}
+        { dataStore, isFireMode in
+            let nativeHandler: DuckAiNativeStorageHandling? = isFireMode
+                ? fireModeStorageController
+                : duckAiNativeStorageHandler
+            return HistoryCleaner(featureFlagger: featureFlagger,
+                                  privacyConfig: privacyConfigurationManager,
+                                  websiteDataStore: dataStore,
+                                  nativeStorageHandler: nativeHandler,
+                                  featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+        }
         self.appSettings = appSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.fireModeStorageController = fireModeStorageController
@@ -496,7 +501,7 @@ class FireExecutor: FireExecuting {
 
     @MainActor
     private func burnNormalModeAIHistory(trigger: FireRequest.Trigger) async -> Result<Void, Error> {
-        let cleaner = historyCleanerProvider(nil)
+        let cleaner = historyCleanerProvider(nil, false)
         let result = await cleaner.cleanAIChatHistory()
         switch result {
         case .success:
@@ -523,7 +528,7 @@ class FireExecutor: FireExecuting {
         }
 
         let fireDataStore = WKWebsiteDataStore(forIdentifier: idManager.currentFireModeID)
-        let cleaner = historyCleanerProvider(fireDataStore)
+        let cleaner = historyCleanerProvider(fireDataStore, true)
         let result = await cleaner.cleanAIChatHistory()
         switch result {
         case .success:

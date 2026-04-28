@@ -123,10 +123,14 @@ private extension MainViewController {
     }
 
     func handleHideOmnibarEditingIntent(animated: Bool) {
+        let onDismissed: () -> Void = { [weak self] in
+            self?.unifiedToggleInputCoordinator?.clearText()
+        }
         if animated {
-            viewCoordinator.hideUnifiedToggleInputOmnibar()
+            viewCoordinator.hideUnifiedToggleInputOmnibar(completion: onDismissed)
         } else {
             viewCoordinator.finishUnifiedToggleInputOmnibarDismiss()
+            onDismissed()
         }
         resetUnifiedInputContentAfterHide()
         viewCoordinator.suggestionTrayContainer.backgroundColor = .clear

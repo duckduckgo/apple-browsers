@@ -372,7 +372,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.deactivateToOmnibar()
 
         XCTAssertEqual(sut.displayState, .hidden)
-        XCTAssertEqual(sut.textState, .empty)
+        // Text is preserved through deactivate; the dismiss completion handler clears it after the animation.
+        XCTAssertEqual(sut.textState, .prefilledSelected)
         XCTAssertFalse(sut.isOmnibarSession)
     }
 

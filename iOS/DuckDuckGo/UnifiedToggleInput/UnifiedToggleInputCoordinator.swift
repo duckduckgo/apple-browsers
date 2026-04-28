@@ -391,7 +391,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState = .hidden
         cardPosition = .bottom
         isInputVisibleForKeyboard = true
-        setText("")
+        // Text clear is deferred to dismiss completion — avoids placeholder flash mid-collapse.
         resetToolsSelection()
         clearAttachments()
 
@@ -850,11 +850,11 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
         commitCurrentToggleState()
-        setText("")
 
         switch mode {
         case .search:
             if case .aiTab = displayState {
+                setText("")
                 hide()
             } else if isOmnibarSession {
                 deactivateToOmnibar()
@@ -875,6 +875,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             if isOmnibarSession {
                 deactivateToOmnibar()
             } else {
+                setText("")
                 showCollapsed()
             }
             if let userScript = boundUserScript {
@@ -953,7 +954,10 @@ private extension UnifiedToggleInputCoordinator {
 
     func resetSessionState() {
         isNewChatPending = false
-        setText("")
+        // While the UTI is hidden, dismiss completion owns the visible text — clearing here would flash the placeholder.
+        if isActive {
+            setText("")
+        }
         aiChatStatus = .unknown
         aiChatInputBoxVisibility = .unknown
         attachmentUsage = nil

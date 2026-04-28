@@ -472,16 +472,12 @@ final class WireGuardAdapterTests: XCTestCase {
         // Swap in a new settings generator and call update; this transitions the adapter
         // to .temporaryShutdown(newGenerator). The pending retry from the old chain bails
         // on its next tick (settingsGenerator !== activeGenerator).
+        // The provider closure stored by the adapter reads `self.settingsGenerator` lazily,
+        // so mutating that property is what actually swaps which generator the adapter creates.
         let newSettingsGenerator = MockPacketTunnelSettingsGenerator()
         newSettingsGenerator.networkSettingsToReturn = expectedNetworkSettings
         newSettingsGenerator.uapiConfigurationReturnValue = ("new-config", [nil])
-
-        settingsGeneratorProvider = { [weak self] _, _ in
-            guard self != nil else {
-                return MockPacketTunnelSettingsGenerator()
-            }
-            return newSettingsGenerator
-        }
+        settingsGenerator = newSettingsGenerator
 
         packetTunnelProvider.setTunnelNetworkSettingsError = nil
 

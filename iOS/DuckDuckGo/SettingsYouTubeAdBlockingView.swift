@@ -29,8 +29,19 @@ struct SettingsYouTubeAdBlockingView: View {
     @State private var hasFiredSettingsDisplayedPixel = false
 
     @EnvironmentObject var viewModel: SettingsViewModel
+
+    var description: SettingsDescription {
+        SettingsDescription(imageName: "SettingsYoutubeHero",
+                            title: UserText.youTubeAdBlockingTitle,
+                            status: .on,
+                            explanation: UserText.adBlockingDescription)
+    }
+
     var body: some View {
         List {
+            SettingsDescriptionView(content: description)
+                .listRowBackground(Color.clear)
+
             if viewModel.shouldDisplayDuckPlayerContingencyMessage {
                 Section {
                     ContingencyMessageView {
@@ -45,28 +56,8 @@ struct SettingsYouTubeAdBlockingView: View {
             }
 
             if !viewModel.shouldDisplayDuckPlayerContingencyMessage {
-                Section {
-                    VStack(alignment: .center, spacing: 16) {
-                        Image(.settingsYoutubeHero)
-                            .padding(.top, 8)
-
-                        Text(UserText.youTubeAdBlockingTitle)
-                            .daxTitle3()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-
-                        Text(UserText.youTubeAdBlockingExplanation)
-                            .daxBodyRegular()
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                            .padding(.horizontal, 16)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
-                    .padding(.vertical, 8)
-                }
-
-                Section {
+                Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
+                        footer: Text(UserText.youTubeAdBlockingExplanation)) {
                     SettingsCellView(
                         label: UserText.youTubeAdBlockingToggle,
                         accessory: .toggle(isOn: viewModel.youTubeAdBlockingEnabled)

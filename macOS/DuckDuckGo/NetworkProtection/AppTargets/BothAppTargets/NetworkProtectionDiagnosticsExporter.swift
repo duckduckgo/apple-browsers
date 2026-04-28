@@ -176,7 +176,7 @@ final class NetworkProtectionDiagnosticsExporter {
                 \(file.name)
                 ================================================================================
 
-                \(Self.redactSensitiveValues(file.contents))
+                \(file.contents)
                 """
             }.joined(separator: "\n\n")
 
@@ -193,9 +193,6 @@ final class NetworkProtectionDiagnosticsExporter {
 
         This file is intended for internal debugging. It includes local system state that can affect the VPN, including DNS, routes,
         interfaces, system extension and login item status, VPN settings, app state, and recent VPN-related logs.
-
-        Values that look like hostnames, local user names, home directory paths, access tokens, passwords, private keys,
-        authorization headers, or secrets are redacted.
         """
     }
 
@@ -440,10 +437,10 @@ final class NetworkProtectionDiagnosticsExporter {
                 }
 
                 output.append("STDOUT:")
-                output.append(Self.redactSensitiveValues(result.output).nilIfEmpty ?? "none")
+                output.append(result.output.nilIfEmpty ?? "none")
 
                 output.append("STDERR:")
-                output.append(Self.redactSensitiveValues(result.errorOutput).nilIfEmpty ?? "none")
+                output.append(result.errorOutput.nilIfEmpty ?? "none")
 
                 return output.joined(separator: "\n")
             }.joined(separator: "\n\n")
@@ -472,11 +469,11 @@ final class NetworkProtectionDiagnosticsExporter {
                     return "No VPN-related log entries found in the last 60 minutes."
                 }
 
-                return Self.redactSensitiveValues(logs.map { entry in
+                return logs.map { entry in
                     let timestamp = Self.isoDateFormatter.string(from: entry.date)
                     let level = entry.level.description.map { "\($0)\t" } ?? ""
                     return "\(level)[\(timestamp)]\t[\(entry.process)]\t[\(entry.subsystem)]\t[\(entry.category)]\t\(entry.composedMessage)"
-                }.joined(separator: "\n"))
+                }.joined(separator: "\n")
             } catch {
                 return "Failed to collect recent VPN logs: \(error.localizedDescription)"
             }
@@ -642,46 +639,6 @@ final class NetworkProtectionDiagnosticsExporter {
         }
 
         return String(describing: value)
-    }
-
-    private static func redactSensitiveValues(_ string: String) -> String {
-        redactLocalIdentity(in: string).components(separatedBy: .newlines)
-            .map { line in
-                let lowercased = line.lowercased()
-                let sensitiveFragments = ["access_token", "refresh_token", "authorization", "password", "privatekey", "private_key", "secret"]
-
-                guard sensitiveFragments.contains(where: lowercased.contains) else {
-                    return line
-                }
-
-                for separator in [": ", " = ", "\t"] {
-                    if let range = line.range(of: separator) {
-                        return String(line[..<range.upperBound]) + "<redacted>"
-                    }
-                }
-
-                return "<redacted sensitive line>"
-            }
-            .joined(separator: "\n")
-    }
-
-    private static func redactLocalIdentity(in string: String) -> String {
-        var redacted = string
-
-        let homeDirectoryPath = FileManager.default.homeDirectoryForCurrentUser.path
-        redacted = redacted.replacingOccurrences(of: homeDirectoryPath, with: "<home-directory>")
-
-        let userName = NSUserName()
-        if userName.count >= 3 {
-            redacted = redacted.replacingOccurrences(of: userName, with: "<user-name>")
-        }
-
-        let hostName = ProcessInfo.processInfo.hostName
-        if hostName.count >= 3 {
-            redacted = redacted.replacingOccurrences(of: hostName, with: "<host-name>")
-        }
-
-        return redacted
     }
 
     private static let isoDateFormatter: ISO8601DateFormatter = {

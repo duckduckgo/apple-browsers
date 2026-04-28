@@ -148,6 +148,10 @@ final class AddressBarTextField: NSTextField {
             .sink { [weak self] selectedTabViewModel in
                 guard let self else { return }
                 hideSuggestionWindow()
+                /// Point sharedTextState at the incoming tab before `restoreValueIfPossible` runs. Otherwise
+                /// `updateValue`'s `sharedTextState?.reset()` would clear the OUTGOING tab's state (including the
+                /// per-tab duck.ai flag), wiping the persistent duck.ai mode from the tab we just left.
+                sharedTextState = selectedTabViewModel.addressBarSharedTextState
                 subscribeToAddressBarString(selectedTabViewModel: selectedTabViewModel)
                 subscribeToContentType(selectedTabViewModel: selectedTabViewModel)
             }
@@ -165,6 +169,24 @@ final class AddressBarTextField: NSTextField {
             }
     }
 
+    /// Pins `value` to `.text(sharedTextState.text, userTyped: true)` for the unfocused duck.ai state so the
+    /// bar renders the preserved prompt (or an empty string that triggers the "Ask anything privately"
+    /// placeholder) even when the underlying tab has a URL loaded — without this, entering unfocused duck.ai
+    /// on a browsing tab would leave `value = .url(...)` and the bar would render the URL + privacy indicators.
+    /// Call at transitions that enter `.inactiveWithAIChat` — NOT from `updateView`, because assigning `value`
+    /// fires the `$value` sink which re-enters `updateView` and would recurse forever.
+    func applyDuckAIUnfocusedValue() {
+        /// `textForSingleLineDisplay` collapses any newline (LF / CR / CRLF / Unicode line
+        /// separators) to a space — the address bar is single-line and a multi-line prompt would
+        /// otherwise render with broken vertical alignment.
+        let text = sharedTextState?.textForSingleLineDisplay ?? ""
+        let target: Value = .text(text, userTyped: true)
+        guard value != target else { return }
+        isUpdatingFromSharedState = true
+        self.value = target
+        isUpdatingFromSharedState = false
+    }
+
     /// Subscribes to shared text state changes to keep address bar in sync with Duck.ai panel
     private func subscribeToSharedTextState() {
         sharedTextStateCancellable?.cancel()
@@ -175,11 +197,11 @@ final class AddressBarTextField: NSTextField {
 
         sharedTextStateCancellable = sharedTextState.$text
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] newText in
-                guard let self,
+            .sink { [weak self, weak sharedTextState] _ in
+                guard let self, let sharedTextState,
                       !self.isUpdatingFromSharedState,
                       !self.isFirstResponder else { return }
-                let textForAddressBar = newText.replacingOccurrences(of: "\n", with: " ")
+                let textForAddressBar = sharedTextState.textForSingleLineDisplay
                 /// Only update if the text actually changed and user interacted with shared state
                 guard sharedTextState.hasUserInteractedWithText,
                       self.stringValueWithoutSuffix != textForAddressBar else { return }
@@ -281,22 +303,38 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func restoreValueIfPossible(newSelectedTabViewModel: TabViewModel) {
-        // save current (possibly modified) value into the old TabViewModel when selecting another Tab
-        if let oldSelectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel {
-            guard oldSelectedTabViewModel !== newSelectedTabViewModel else {
-                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil)
-                return
-            }
-            oldSelectedTabViewModel.lastAddressBarTextFieldValue = value
+        // Tab-switch restore must not wipe the incoming tab's duck.ai mode / tool mode / attachments — the controller
+        // sink that fires earlier in this same emission chain just restored those from the tab's shared state, and the
+        // `updateValue` path below (via `sharedTextState?.reset()`) would otherwise clear them again right afterwards
+        // whenever the incoming tab had no user-typed address-bar value to restore.
+        //
+        // The snapshot of the OUTGOING tab's bar value into its `lastAddressBarTextFieldValue` is owned by
+        // `AddressBarViewController.subscribeToOutgoingTabSnapshot`, which is registered first and fires
+        // before this subscriber. Saving here would race with `applyDuckAIUnfocusedValue` (which the
+        // controller's main sink runs LAST) and could record the incoming tab's prompt onto the outgoing
+        // tab, re-introducing the cross-tab leak.
+        if let oldSelectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel,
+           oldSelectedTabViewModel === newSelectedTabViewModel {
+            updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
+            return
         }
         let lastAddressBarTextFieldValue = newSelectedTabViewModel.lastAddressBarTextFieldValue
+
+        /// When the incoming tab is in duck.ai mode, the controller's main `$selectedTabViewModel` sink
+        /// (which fires right after this one) calls `applyDuckAIUnfocusedValue` to set `self.value` from
+        /// the preserved `sharedTextState.text`. Calling `updateValue` here in the empty/url fallback
+        /// branches would set the value to the tab's `addressBarString` (typically `""` for an NTP) one
+        /// runloop tick before the controller sink corrects it — visible as a brief "Ask anything
+        /// privately" placeholder flicker before the prompt appears. Skipping `updateValue` for duck.ai
+        /// tabs lets `applyDuckAIUnfocusedValue` be the single, correct value-setter.
+        let incomingIsInDuckAIMode = newSelectedTabViewModel.addressBarSharedTextState.isInDuckAIMode
 
         switch lastAddressBarTextFieldValue {
         case .text(let text, userTyped: let userTyped):
             if !text.isEmpty {
                 restoreValue(.text(text, userTyped: userTyped))
-            } else {
-                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil)
+            } else if !incomingIsInDuckAIMode {
+                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
             }
         case .suggestion(let suggestionViewModel):
             let suggestion = suggestionViewModel.suggestion
@@ -306,12 +344,16 @@ final class AddressBarTextField: NSTextField {
             case .phrase(phrase: let phase):
                 restoreValue(Value.text(phase, userTyped: false))
             case .unknown, .askAIChat:
-                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil)
+                if !incomingIsInDuckAIMode {
+                    updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
+                }
             }
         case .url(urlString: let urlString, url: _, userTyped: true):
             restoreValue(Value(stringValue: urlString, userTyped: true))
         case .url, .none:
-            updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil)
+            if !incomingIsInDuckAIMode {
+                updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil, clearingDuckAIState: false)
+            }
         }
     }
 
@@ -335,11 +377,19 @@ final class AddressBarTextField: NSTextField {
             }
         }
         if !self.isFirstResponder || shouldUpdateValue {
+            /// The tab's `addressBarString` just changed — this fires from navigation (submit, link
+            /// click, JS) on the currently-selected tab. Whatever pending draft the user had in
+            /// `lastAddressBarTextFieldValue` (live-saved per-keystroke from `handleTextDidChange`) has
+            /// been consumed by the navigation, so clear it. Otherwise switching away and back to this
+            /// tab would restore the stale draft over the freshly-loaded URL (e.g. typing "wiki",
+            /// picking the wikipedia.org suggestion, switching tabs, returning — the bar would show
+            /// "wiki" instead of the centered passive `wikipedia.org`).
+            selectedTabViewModel?.lastAddressBarTextFieldValue = nil
             updateValue(selectedTabViewModel: selectedTabViewModel, addressBarString: addressBarString)
         }
     }
 
-    private func updateValue(selectedTabViewModel: TabViewModel?, addressBarString: String?) {
+    private func updateValue(selectedTabViewModel: TabViewModel?, addressBarString: String?, clearingDuckAIState: Bool = true) {
         guard let selectedTabViewModel = selectedTabViewModel ?? tabCollectionViewModel?.selectedTabViewModel else { return }
 
         let addressBarString = addressBarString ?? selectedTabViewModel.addressBarString
@@ -349,7 +399,7 @@ final class AddressBarTextField: NSTextField {
 
         /// Reset shared state when navigating to a website (not user-typed)
         /// This prevents old typed text from appearing when toggling modes while on a website
-        sharedTextState?.reset()
+        sharedTextState?.reset(clearingDuckAIState: clearingDuckAIState)
     }
 
     func clearValue() {
@@ -1112,6 +1162,22 @@ extension AddressBarTextField: NSTextFieldDelegate {
 
         if !isUpdatingFromSharedState {
             sharedTextState?.updateText(stringValueWithoutSuffix, markInteraction: true)
+            /// Keep the caret in sync with the search-mode field editor so toggling to duck.ai mid-type places
+            /// the prompt cursor where the user left it instead of at position 0. Without this the duck.ai
+            /// panel's `focusTextViewRestoringCursorPosition` only ever sees the default `(0, 0)` selection.
+            if let editor = currentEditor() {
+                sharedTextState?.updateSelection(editor.selectedRange)
+            }
+        }
+
+        /// Live-save the user's typed text into the current tab's `lastAddressBarTextFieldValue` so the
+        /// snapshot is always up-to-date by the time a tab switch fires — no Combine ordering can race
+        /// with this. We always store the canonical typed `.text(stringValueWithoutSuffix, userTyped: true)`
+        /// shape (not whatever speculative `.suggestion` the engine surfaced over the typed text), so the
+        /// restore path on switch-back doesn't have to disambiguate suggestion shapes — the user's intent
+        /// is the typed text itself.
+        if let currentTab = tabCollectionViewModel?.selectedTabViewModel {
+            currentTab.lastAddressBarTextFieldValue = .text(stringValueWithoutSuffix, userTyped: true)
         }
     }
 

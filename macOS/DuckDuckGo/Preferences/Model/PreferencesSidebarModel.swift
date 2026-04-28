@@ -337,6 +337,8 @@ final class PreferencesSidebarModel: ObservableObject {
             return PrivacyProtectionStatus(statusPublisher: publisher, initialValue: EmailManager().isSignedIn ? .on : .off) { _ in
                 EmailManager().isSignedIn ? .on : .off
             }
+        case .youTubeAdBlocking:
+            return PrivacyProtectionStatus(statusIndicator: .on)
         case .vpn:
             return vpnProtectionStatus()
         case .personalInformationRemoval:

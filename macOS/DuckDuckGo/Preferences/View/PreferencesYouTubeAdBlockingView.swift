@@ -81,13 +81,18 @@ extension Preferences {
         }
 
         var body: some View {
-            PreferencePane {
+            PreferencePane(UserText.youTubeAdBlocking, spacing: 4) {
 
-                // TITLE
-                TextMenuTitle(UserText.youTubeAdBlocking)
+                PreferencePaneSection {
+                    StatusIndicatorView(status: .alwaysOn, isLarge: true)
+                }
+
+                PreferencePaneSection {
+                    TextMenuItemCaption(UserText.adBlockingDescription)
+                }
 
                 // YouTube Ad Blocking Section
-                PreferencePaneSection {
+                PreferencePaneSection(UserText.adBlockingYouTubeSectionHeader) {
                     TextMenuItemCaption(UserText.youTubeAdBlockingExplanation)
 
                     Spacer().frame(height: 4)

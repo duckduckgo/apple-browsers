@@ -135,7 +135,7 @@ final class OnboardingUITests: UITestCase {
     }
 
     func resetApplicationData() throws {
-        let bundleID = app.bundleID!
+        let bundleID = XCUIApplication().bundleID!
         let commands = [
             "/usr/bin/defaults delete \(bundleID)",
             "/bin/rm -rf ~/Library/Containers/\(bundleID)/Data",

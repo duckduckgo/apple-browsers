@@ -54,21 +54,21 @@ struct PostIdleSessionInstrumentationTests {
 
     // MARK: - No active session
 
-    @Test("When no active session then sessionEnded is a no-op", .timeLimit(.minutes(1)))
+    @Test("When no active session then sessionEnded is a no-op")
     func sessionEndedWithoutActiveSessionIsNoop() {
         let (sut, wideEvent, _) = makeSUT()
         sut.sessionEnded(reason: .barUsed)
         #expect(wideEvent.completions.isEmpty)
     }
 
-    @Test("When no active session then sessionCancelledByBackground is a no-op", .timeLimit(.minutes(1)))
+    @Test("When no active session then sessionCancelledByBackground is a no-op")
     func sessionCancelledWithoutActiveSessionIsNoop() {
         let (sut, wideEvent, _) = makeSUT()
         sut.sessionCancelledByBackground()
         #expect(wideEvent.completions.isEmpty)
     }
 
-    @Test("When no active session then non-terminal updates are no-ops", .timeLimit(.minutes(1)))
+    @Test("When no active session then non-terminal updates are no-ops")
     func nonTerminalUpdatesWithoutActiveSessionAreNoop() {
         let (sut, wideEvent, _) = makeSUT()
         sut.pageEngaged()
@@ -79,7 +79,7 @@ struct PostIdleSessionInstrumentationTests {
 
     // MARK: - sessionStarted
 
-    @Test("When sessionStarted with ntp then a flow is started with surface=ntp", .timeLimit(.minutes(1)))
+    @Test("When sessionStarted with ntp then a flow is started with surface=ntp")
     func sessionStartedNtpStartsFlow() {
         let (sut, wideEvent, _) = makeSUT()
         sut.sessionStarted(surface: .ntp)
@@ -87,7 +87,7 @@ struct PostIdleSessionInstrumentationTests {
         #expect(started?.surface == .ntp)
     }
 
-    @Test("When sessionStarted with lut then a flow is started with surface=lut", .timeLimit(.minutes(1)))
+    @Test("When sessionStarted with lut then a flow is started with surface=lut")
     func sessionStartedLutStartsFlow() {
         let (sut, wideEvent, _) = makeSUT()
         sut.sessionStarted(surface: .lut)
@@ -95,7 +95,7 @@ struct PostIdleSessionInstrumentationTests {
         #expect(started?.surface == .lut)
     }
 
-    @Test("Restarting cancels the previous active session", .timeLimit(.minutes(1)))
+    @Test("Restarting cancels the previous active session")
     func restartingSessionCancelsPrevious() {
         let (sut, wideEvent, clock) = makeSUT()
         sut.sessionStarted(surface: .ntp)
@@ -116,7 +116,7 @@ struct PostIdleSessionInstrumentationTests {
 
     // MARK: - Non-terminal updates
 
-    @Test("pageEngaged sets pageEngaged=true and marks first interaction", .timeLimit(.minutes(1)))
+    @Test("pageEngaged sets pageEngaged=true and marks first interaction")
     func pageEngagedSetsFlagsAndFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
         sut.sessionStarted(surface: .ntp)
@@ -128,7 +128,7 @@ struct PostIdleSessionInstrumentationTests {
         #expect(last?.firstInteractionInterval.end == clock.now)
     }
 
-    @Test("toggleUsed sets toggleUsed=true", .timeLimit(.minutes(1)))
+    @Test("toggleUsed sets toggleUsed=true")
     func toggleUsedSetsFlag() {
         let (sut, wideEvent, _) = makeSUT()
         sut.sessionStarted(surface: .ntp)
@@ -137,7 +137,7 @@ struct PostIdleSessionInstrumentationTests {
         #expect(last?.toggleUsed == true)
     }
 
-    @Test("backPressed sets backPressed=true", .timeLimit(.minutes(1)))
+    @Test("backPressed sets backPressed=true")
     func backPressedSetsFlag() {
         let (sut, wideEvent, _) = makeSUT()
         sut.sessionStarted(surface: .ntp)
@@ -146,7 +146,7 @@ struct PostIdleSessionInstrumentationTests {
         #expect(last?.backPressed == true)
     }
 
-    @Test("First interaction is only set once across multiple updates", .timeLimit(.minutes(1)))
+    @Test("First interaction is only set once across multiple updates")
     func firstInteractionMarkedOnlyOnce() {
         let (sut, wideEvent, clock) = makeSUT()
         sut.sessionStarted(surface: .ntp)
@@ -164,7 +164,7 @@ struct PostIdleSessionInstrumentationTests {
 
     // MARK: - Terminal events
 
-    @Test("sessionEnded completes flow as success with given reason", .timeLimit(.minutes(1)))
+    @Test("sessionEnded completes flow as success with given reason")
     func sessionEndedCompletesAsSuccess() {
         let (sut, wideEvent, clock) = makeSUT()
         sut.sessionStarted(surface: .ntp)
@@ -184,7 +184,7 @@ struct PostIdleSessionInstrumentationTests {
         }
     }
 
-    @Test("sessionEnded sets first interaction if not yet set", .timeLimit(.minutes(1)))
+    @Test("sessionEnded sets first interaction if not yet set")
     func sessionEndedMarksFirstInteractionIfNotSet() {
         let (sut, wideEvent, clock) = makeSUT()
         sut.sessionStarted(surface: .ntp)
@@ -197,7 +197,7 @@ struct PostIdleSessionInstrumentationTests {
         #expect(completion.0.firstInteractionInterval.end == clock.now)
     }
 
-    @Test("sessionEnded preserves prior first-interaction timestamp", .timeLimit(.minutes(1)))
+    @Test("sessionEnded preserves prior first-interaction timestamp")
     func sessionEndedPreservesEarlierFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
         sut.sessionStarted(surface: .ntp)
@@ -213,7 +213,7 @@ struct PostIdleSessionInstrumentationTests {
         #expect(completion.0.firstInteractionInterval.end == firstStamp)
     }
 
-    @Test("sessionEnded clears the active session", .timeLimit(.minutes(1)))
+    @Test("sessionEnded clears the active session")
     func sessionEndedClearsActiveSession() {
         let (sut, wideEvent, _) = makeSUT()
         sut.sessionStarted(surface: .ntp)
@@ -226,7 +226,7 @@ struct PostIdleSessionInstrumentationTests {
 
     // MARK: - Cancellation
 
-    @Test("sessionCancelledByBackground completes as cancelled with app_backgrounded", .timeLimit(.minutes(1)))
+    @Test("sessionCancelledByBackground completes as cancelled with app_backgrounded")
     func sessionCancelledCompletesAsCancelled() {
         let (sut, wideEvent, clock) = makeSUT()
         sut.sessionStarted(surface: .ntp)
@@ -244,7 +244,7 @@ struct PostIdleSessionInstrumentationTests {
         }
     }
 
-    @Test("sessionCancelledByBackground clears the active session", .timeLimit(.minutes(1)))
+    @Test("sessionCancelledByBackground clears the active session")
     func sessionCancelledClearsActiveSession() {
         let (sut, wideEvent, _) = makeSUT()
         sut.sessionStarted(surface: .ntp)

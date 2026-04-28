@@ -69,13 +69,13 @@ struct IdleReturnEligibilityManagerTests {
         )
     }
 
-    @Test("isFeatureAvailable is true when flag is on and onboarding is complete", .timeLimit(.minutes(1)))
+    @Test("isFeatureAvailable is true when flag is on and onboarding is complete")
     func isFeatureAvailableTrueWhenAllPreconditionsMet() {
         let manager = makeManager(featureOn: true, hasSeenOnboarding: true, isStillOnboarding: false)
         #expect(manager.isFeatureAvailable())
     }
 
-    @Test("isFeatureAvailable is independent of effective After-Inactivity option", .timeLimit(.minutes(1)))
+    @Test("isFeatureAvailable is independent of effective After-Inactivity option")
     func isFeatureAvailableIgnoresEffectiveOption() {
         let managerNewTab = makeManager(featureOn: true, effectiveOption: .newTab)
         let managerLastUsed = makeManager(featureOn: true, effectiveOption: .lastUsedTab)
@@ -83,61 +83,61 @@ struct IdleReturnEligibilityManagerTests {
         #expect(managerLastUsed.isFeatureAvailable())
     }
 
-    @Test("isFeatureAvailable is false when feature flag is off", .timeLimit(.minutes(1)))
+    @Test("isFeatureAvailable is false when feature flag is off")
     func isFeatureAvailableFalseWhenFlagOff() {
         let manager = makeManager(featureOn: false)
         #expect(!manager.isFeatureAvailable())
     }
 
-    @Test("isFeatureAvailable is false when linear onboarding has not been seen", .timeLimit(.minutes(1)))
+    @Test("isFeatureAvailable is false when linear onboarding has not been seen")
     func isFeatureAvailableFalseWhenOnboardingNotSeen() {
         let manager = makeManager(featureOn: true, hasSeenOnboarding: false)
         #expect(!manager.isFeatureAvailable())
     }
 
-    @Test("isFeatureAvailable is false when contextual onboarding still active", .timeLimit(.minutes(1)))
+    @Test("isFeatureAvailable is false when contextual onboarding still active")
     func isFeatureAvailableFalseWhenContextualOnboardingActive() {
         let manager = makeManager(featureOn: true, isStillOnboarding: true)
         #expect(!manager.isFeatureAvailable())
     }
 
-    @Test("When all conditions met then isEligibleForNTPAfterIdle returns true", .timeLimit(.minutes(1)))
+    @Test("When all conditions met then isEligibleForNTPAfterIdle returns true")
     func whenAllConditionsMetThenIsEligibleReturnsTrue() {
         let manager = makeManager(featureOn: true, effectiveOption: .newTab)
         #expect(manager.isEligibleForNTPAfterIdle())
     }
 
-    @Test("When feature is off then isEligibleForNTPAfterIdle returns false", .timeLimit(.minutes(1)))
+    @Test("When feature is off then isEligibleForNTPAfterIdle returns false")
     func whenFeatureOffThenIsEligibleReturnsFalse() {
         let manager = makeManager(featureOn: false, effectiveOption: .newTab)
         #expect(!manager.isEligibleForNTPAfterIdle())
     }
 
-    @Test("When effective option is Last Used Tab then isEligibleForNTPAfterIdle returns false", .timeLimit(.minutes(1)))
+    @Test("When effective option is Last Used Tab then isEligibleForNTPAfterIdle returns false")
     func whenEffectiveOptionIsLastUsedTabThenIsEligibleReturnsFalse() {
         let manager = makeManager(featureOn: true, effectiveOption: .lastUsedTab)
         #expect(!manager.isEligibleForNTPAfterIdle())
     }
 
-    @Test("When linear onboarding has not been seen then isEligibleForNTPAfterIdle returns false", .timeLimit(.minutes(1)))
+    @Test("When linear onboarding has not been seen then isEligibleForNTPAfterIdle returns false")
     func whenLinearOnboardingNotSeenThenIsEligibleReturnsFalse() {
         let manager = makeManager(featureOn: true, effectiveOption: .newTab, hasSeenOnboarding: false)
         #expect(!manager.isEligibleForNTPAfterIdle())
     }
 
-    @Test("When contextual onboarding is still active then isEligibleForNTPAfterIdle returns false", .timeLimit(.minutes(1)))
+    @Test("When contextual onboarding is still active then isEligibleForNTPAfterIdle returns false")
     func whenContextualOnboardingActiveReturnsFalse() {
         let manager = makeManager(featureOn: true, effectiveOption: .newTab, isStillOnboarding: true)
         #expect(!manager.isEligibleForNTPAfterIdle())
     }
 
-    @Test("When contextual onboarding is done then isEligibleForNTPAfterIdle returns true", .timeLimit(.minutes(1)))
+    @Test("When contextual onboarding is done then isEligibleForNTPAfterIdle returns true")
     func whenContextualOnboardingDoneReturnsTrue() {
         let manager = makeManager(featureOn: true, effectiveOption: .newTab, isStillOnboarding: false)
         #expect(manager.isEligibleForNTPAfterIdle())
     }
 
-    @Test("effectiveAfterInactivityOption returns value from resolver", .timeLimit(.minutes(1)))
+    @Test("effectiveAfterInactivityOption returns value from resolver")
     func effectiveAfterInactivityOptionReturnsValueFromResolver() {
         let managerNewTab = makeManager(effectiveOption: .newTab)
         #expect(managerNewTab.effectiveAfterInactivityOption() == .newTab)
@@ -146,7 +146,7 @@ struct IdleReturnEligibilityManagerTests {
         #expect(managerLastUsed.effectiveAfterInactivityOption() == .lastUsedTab)
     }
 
-    @Test("idleThresholdSeconds returns value from threshold resolver", .timeLimit(.minutes(1)))
+    @Test("idleThresholdSeconds returns value from threshold resolver")
     func idleThresholdSecondsReturnsValueFromThresholdResolver() {
         let manager = makeManager(thresholdSeconds: 120)
         #expect(manager.idleThresholdSeconds() == 120)

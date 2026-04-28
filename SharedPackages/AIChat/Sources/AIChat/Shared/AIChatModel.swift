@@ -39,8 +39,8 @@ public struct AIChatModel {
     public let entityHasAccess: Bool
     /// The access tiers this model belongs to (e.g. ["free", "plus", "pro", "internal"]).
     public let accessTier: [String]
-    /// Supported reasoning effort levels (e.g. ["none", "low", "medium", "high"]). Empty when reasoning is not supported.
-    public let supportedReasoningEffort: [String]
+    /// Supported reasoning effort levels. Empty when reasoning is not supported.
+    public let supportedReasoningEffort: [AIChatReasoningEffort]
 
     public enum ModelProvider {
         case openAI
@@ -61,7 +61,7 @@ public struct AIChatModel {
         supportedTools: [AIChatRAGTool] = [],
         entityHasAccess: Bool,
         accessTier: [String] = [],
-        supportedReasoningEffort: [String] = []
+        supportedReasoningEffort: [AIChatReasoningEffort] = []
     ) {
         self.id = id
         self.name = name

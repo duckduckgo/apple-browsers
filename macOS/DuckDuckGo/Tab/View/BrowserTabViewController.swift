@@ -101,6 +101,7 @@ final class BrowserTabViewController: NSViewController {
     private let accessibilityPreferences: AccessibilityPreferences
     private let duckPlayer: DuckPlayer
     private let subscriptionManager: any SubscriptionManager
+    private weak var subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let pinningManager: PinningManager
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
@@ -177,6 +178,7 @@ final class BrowserTabViewController: NSViewController {
          accessibilityPreferences: AccessibilityPreferences,
          duckPlayer: DuckPlayer,
          subscriptionManager: any SubscriptionManager = NSApp.delegateTyped.subscriptionManager,
+         subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate? = NSApp.delegateTyped.subscriptionPromoDelegate,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          pinningManager: PinningManager,
          adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
@@ -205,6 +207,7 @@ final class BrowserTabViewController: NSViewController {
         self.accessibilityPreferences = accessibilityPreferences
         self.duckPlayer = duckPlayer
         self.subscriptionManager = subscriptionManager
+        self.subscriptionPromoDelegate = subscriptionPromoDelegate
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.pinningManager = pinningManager
         self.adBlockingAvailability = adBlockingAvailability
@@ -1111,7 +1114,11 @@ final class BrowserTabViewController: NSViewController {
             // We only use HTML New Tab Page in regular windows for now
             if tabCollectionViewModel.isBurner {
                 removeAllTabContent()
-                addAndLayoutChildBesideSidebar(burnerHomePageViewControllerCreatingIfNeeded())
+                let burnerHomePage = burnerHomePageViewControllerCreatingIfNeeded()
+                if let tab = tabViewModel?.tab {
+                    burnerHomePage.updatePromoState(for: tab)
+                }
+                addAndLayoutChildBesideSidebar(burnerHomePage)
             } else {
                 updateTabIfNeeded(tabViewModel: tabViewModel)
             }
@@ -1196,15 +1203,17 @@ final class BrowserTabViewController: NSViewController {
     func generateNativePreviewIfNeeded() {
         guard let tabViewModel = tabViewModel, !tabViewModel.tab.content.displaysContentInWebView, !tabViewModel.isShowingErrorPage else { return }
 
-        var containsHostingView: Bool
+        let containsHostingView: Bool
         switch tabViewModel.tab.content {
         case .onboarding:
             return
         case .newtab:
-            guard tabCollectionViewModel.isBurner else {
+            guard tabCollectionViewModel.isBurner,
+                  let burnerHomePage = burnerHomePageViewController else {
                 return
             }
-            containsHostingView = false
+            tabViewModel.tab.tabSnapshots?.renderSnapshotSync(from: burnerHomePage.view)
+            return
         case .settings:
             containsHostingView = true
         default:
@@ -1227,10 +1236,32 @@ final class BrowserTabViewController: NSViewController {
     var burnerHomePageViewController: BurnerHomePageViewController?
     private func burnerHomePageViewControllerCreatingIfNeeded() -> BurnerHomePageViewController {
         return burnerHomePageViewController ?? {
-            let burnerHomePageViewController = BurnerHomePageViewController()
+            var dateProvider: () -> Date = Date.init
+            let buildType = StandardApplicationBuildType()
+            if buildType.isDebugBuild || buildType.isReviewBuild {
+                let debugStore = SubscriptionPromoDebugStore(keyValueStore: UserDefaults.standard)
+                dateProvider = { debugStore.simulatedTodayDate }
+            }
+            let burnerHomePageViewController = BurnerHomePageViewController(
+                subscriptionManager: subscriptionManager,
+                featureFlagger: featureFlagger,
+                promoDelegate: subscriptionPromoDelegate,
+                dateProvider: dateProvider
+            )
+            burnerHomePageViewController.openSubscriptionPage = { [weak self] in
+                self?.openSubscriptionPurchasePage()
+            }
             self.burnerHomePageViewController = burnerHomePageViewController
             return burnerHomePageViewController
         }()
+    }
+
+    private func openSubscriptionPurchasePage() {
+        guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(
+            SubscriptionFunnelOrigin.fireWindowPromo.rawValue
+        )?.url else { return }
+        let tab = Tab(content: .url(url, source: .link), shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
+        tabCollectionViewModel.append(tab: tab)
     }
 
     // MARK: - DataBrokerProtection

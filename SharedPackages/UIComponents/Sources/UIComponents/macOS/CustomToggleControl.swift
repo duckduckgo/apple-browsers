@@ -315,6 +315,16 @@ public final class CustomToggleControl: NSControl {
         animateSelection()
     }
 
+    /// Sets the selected segment without triggering the action.
+    /// Useful when programmatically syncing the toggle state to an external source of truth
+    /// (e.g. restoring per-tab mode on tab switch) to avoid re-entering the action handler.
+    public func setSelectedSegmentSilently(_ segment: Int) {
+        guard segment >= 0 && segment < segmentCount else { return }
+        guard _selectedSegment != segment else { return }
+        _selectedSegment = segment
+        animateSelection()
+    }
+
     // MARK: - Initialization
 
     override public init(frame frameRect: NSRect) {

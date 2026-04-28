@@ -280,6 +280,9 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var selectedModelId: String?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> {Just(nil).eraseToAnyPublisher() }
     var selectedModelShortName: String?
+    var isReasoningEffortEnabled: Bool = false
+    var selectedReasoningEffort: String?
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Just(nil).eraseToAnyPublisher() }
 }
 
 private extension AIChatSuggestion {

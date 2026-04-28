@@ -127,6 +127,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var screenLockedCancellable: AnyCancellable?
     private var emailCancellables = Set<AnyCancellable>()
     private(set) var promoService: PromoService?
+    private(set) weak var subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
     var privacyDashboardWindow: NSWindow?
 
     let tabCrashAggregator = TabCrashAggregator()
@@ -170,6 +171,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let autoconsentManagement = AutoconsentManagement()
     let attributedMetricManager: AttributedMetricManager
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    let burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry?
 
     @MainActor
     private(set) lazy var autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinator = AutoconsentStatsPopoverCoordinator(
@@ -847,20 +849,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if featureFlagger.isFeatureOn(.aiChatNativeStorage),
            let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-            let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
+            let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
             do {
-                let keyStoreProvider = DuckAiKeyStoreProvider()
-                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(
-                    containerURL: nativeStorageContainerURL,
-                    keyStoreProvider: keyStoreProvider,
-                    pixelFiring: DuckAiNativeStoragePixelAdapter()
-                ).handler
+                duckAiNativeStorageHandler = try DuckAiNativeStorageHandler(
+                    .disk(path: nativeStorageContainerURL,
+                          keyStoreProvider: DuckAiKeyStoreProvider(),
+                          pixelFiring: DuckAiNativeStoragePixelAdapter())
+                )
             } catch {
                 Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
                 duckAiNativeStorageHandler = nil
             }
+            burnerDuckAiStorageRegistry = BurnerDuckAiStorageRegistry(diskHandler: duckAiNativeStorageHandler)
         } else {
             duckAiNativeStorageHandler = nil
+            burnerDuckAiStorageRegistry = nil
         }
 
         aiChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: featureFlagger,
@@ -1368,13 +1371,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
         if featureFlagger.isFeatureOn(.promoQueue) {
+            let subscriptionPromoDelegate = FireWindowSubscriptionPromoDelegate()
+            self.subscriptionPromoDelegate = subscriptionPromoDelegate
             let dependencies = PromoDependencies(
                 keyValueStore: keyValueStore,
                 isExternallyActivated: urlEventHandlerResult.willOpenWindows,
                 isOnboardingCompletedProvider: { OnboardingActionsManager.isOnboardingFinished },
                 activeRemoteMessageModel: activeRemoteMessageModel,
                 defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
-                sessionRestoreCoordinator: sessionRestorePromptCoordinator
+                sessionRestoreCoordinator: sessionRestorePromptCoordinator,
+                subscriptionPromoDelegate: subscriptionPromoDelegate
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)

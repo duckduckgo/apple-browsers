@@ -554,7 +554,9 @@ final class NavigationBarViewController: NSViewController {
         let performResize = { [weak self] in
             guard let self else { return }
 
-            let isAddressBarFocused = addressBarViewController?.selectionState.isSelected ?? false
+            /// Use the taller, wider layout whenever there's user-provided input or Duck.ai is active; compact only
+            /// for `.inactive` + `.browsing` (see `AddressBarViewController.shouldUseTallAddressBarLayout`).
+            let isAddressBarFocused = addressBarViewController?.shouldUseTallAddressBarLayout ?? false
 
             let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
             height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass, focused: isAddressBarFocused)
@@ -2217,6 +2219,14 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
             // When manually toggling to search mode (!isAIChatMode), keep the address bar selected
             mainViewController.updateAIChatOmnibarContainerVisibility(visible: isAIChatMode, shouldKeepSelection: !isAIChatMode)
         }
+    }
+
+    func addressBarViewControllerDidResignFocusKeepingAIChatMode(_ addressBarViewController: AddressBarViewController) {
+        (parent as? MainViewController)?.hideAIChatOmnibarPanelKeepingTabState()
+    }
+
+    func addressBarViewControllerDidRefocusInAIChatMode(_ addressBarViewController: AddressBarViewController) {
+        (parent as? MainViewController)?.showAIChatOmnibarPanelForRefocus()
     }
 }
 

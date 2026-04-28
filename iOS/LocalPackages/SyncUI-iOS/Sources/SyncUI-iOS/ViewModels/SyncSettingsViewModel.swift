@@ -21,32 +21,6 @@ import Foundation
 import UIKit
 import Combine
 
-/// Used to track the status of whether or not we've shown the Sync Another Device prompt
-/// to the user, whether it's been dismissed, and whether we need to show it again.
-///
-public enum SyncAnotherDevicePromptState: Int {
-    case notYetShown = 0
-    case remindedOnce = 1
-    case dismissed = 2
-
-    public static let storageKey = "sync.simplified.sync-another-device-prompt.state"
-
-    public var shouldShow: Bool { self != .dismissed }
-
-    public var dismissButtonTitle: String {
-        switch self {
-        case .notYetShown:
-            return UserText.simplifiedSyncAnotherDeviceRemind
-        case .remindedOnce, .dismissed:
-            return UserText.simplifiedSyncAnotherDeviceNoThanks
-        }
-    }
-
-    public var next: SyncAnotherDevicePromptState {
-        SyncAnotherDevicePromptState(rawValue: rawValue + 1) ?? .dismissed
-    }
-}
-
 public protocol SyncManagementViewModelDelegate: AnyObject {
 
     func authenticateUser() async throws
@@ -77,9 +51,9 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     // Simplified sync setup experiment
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
     func simplifiedConfirmAndDisableSync() async -> Bool
-    func simplifiedSyncAnotherDevicePromptWasDismissed()
     func simplifiedCopyRecoveryCode()
-    var simplifiedSyncAnotherDevicePromptState: SyncAnotherDevicePromptState { get }
+    func showSimplifiedSyncEnabledToast()
+    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool { get set }
 
     var syncBookmarksPausedTitle: String? { get }
     var syncCredentialsPausedTitle: String? { get }
@@ -205,6 +179,7 @@ public class SyncSettingsViewModel: ObservableObject {
     private(set) var switchToProdEnvironment: () -> Void = {}
     private var cancellables = Set<AnyCancellable>()
     private var pendingPreservedAccountContinuation: PreservedAccountContinuation?
+    private var shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
 
     private let autoRestoreProvider: SyncAutoRestoreProviding
 
@@ -415,31 +390,42 @@ public class SyncSettingsViewModel: ObservableObject {
         isBusy = true
         Task { @MainActor in
             defer { isBusy = false }
-            guard await commonAuthenticate() else { return }
             if await delegate?.simplifiedConfirmAndDisableSync() == true {
                 isSyncEnabled = false
             }
         }
     }
 
-    public var simplifiedSyncAnotherDevicePromptDismissButtonTitle: String {
-        delegate?.simplifiedSyncAnotherDevicePromptState.dismissButtonTitle ?? UserText.simplifiedSyncAnotherDeviceNoThanks
-    }
-
-    public func checkAndShowSyncWithAnotherDevicePrompt() {
-        guard !isBusy else { return }
-        guard isSyncEnabled else { return }
-        guard devices.count == 1 else { return }
-        guard delegate?.simplifiedSyncAnotherDevicePromptState.shouldShow == true else { return }
+    @discardableResult
+    public func checkAndShowSyncWithAnotherDevicePrompt() -> Bool {
+        guard !isBusy else { return false }
+        guard isSyncEnabled else { return false }
+        guard devices.count == 1 else { return false }
+        guard delegate?.hasShownSimplifiedSyncAnotherDevicePrompt == false else { return false }
         isSyncWithAnotherDevicePromptVisible = true
+        delegate?.hasShownSimplifiedSyncAnotherDevicePrompt = true
+        return true
     }
 
     public func dismissSyncWithAnotherDevicePrompt() {
         isSyncWithAnotherDevicePromptVisible = false
     }
 
+    public func syncAnotherDeviceFromPromptTapped() {
+        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
+        dismissSyncWithAnotherDevicePrompt()
+        scanQRCode()
+    }
+
+    public func scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal() {
+        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = true
+    }
+
     public func syncWithAnotherDevicePromptDidDismiss() {
-        delegate?.simplifiedSyncAnotherDevicePromptWasDismissed()
+        guard shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal else { return }
+
+        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
+        delegate?.showSimplifiedSyncEnabledToast()
     }
 
     public func copyCode() {
@@ -554,4 +540,5 @@ public class SyncSettingsViewModel: ObservableObject {
 public extension SyncManagementViewModelDelegate {
     func fireAutoRestorePixel(event _: SyncSettingsViewModel.AutoRestorePixelEvent) {}
     func simplifiedCopyRecoveryCode() {}
+    func showSimplifiedSyncEnabledToast() {}
 }

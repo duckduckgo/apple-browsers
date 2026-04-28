@@ -33,6 +33,7 @@ public final class DuckAiNativeStorageBootstrapScriptRefresher {
 
     private let diskHandler: DuckAiNativeStorageHandling
     private let originRules: [HostnameMatchingRule]
+    private var didLogUnavailableFireModeHandler = false
 
     /// Returns the fire-mode storage state for the surrounding webview.
     /// `.notFireMode` uses the normal on-disk store, `.available` uses the isolated
@@ -45,7 +46,10 @@ public final class DuckAiNativeStorageBootstrapScriptRefresher {
         case .notFireMode:
             return diskHandler
         case .unavailable:
-            Logger.aiChat.error("[NativeStorage] Fire-mode handler unavailable; using null storage to preserve mode isolation")
+            if !didLogUnavailableFireModeHandler {
+                didLogUnavailableFireModeHandler = true
+                Logger.aiChat.error("[NativeStorage] Fire-mode handler unavailable; using null storage to preserve mode isolation")
+            }
             return Self.unavailableFireModeHandler
         case .available(let fireModeHandler):
             return fireModeHandler

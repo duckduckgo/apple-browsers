@@ -61,47 +61,47 @@ final class IdleReturnEvaluatorTests {
         return mock
     }
 
-    @Test("When feature is unavailable then didReturnAfterIdle returns false")
+    @Test("When feature is unavailable then didReturnAfterIdle returns false", .timeLimit(.minutes(1)))
     func whenFeatureUnavailableThenReturnsFalse() {
         let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(featureAvailable: false))
         let date = Date().addingTimeInterval(-61)
         #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: date))
     }
 
-    @Test("When lastBackgroundDate is nil then didReturnAfterIdle returns false")
+    @Test("When lastBackgroundDate is nil then didReturnAfterIdle returns false", .timeLimit(.minutes(1)))
     func whenLastBackgroundDateNilThenReturnsFalse() {
         let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility())
         #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: nil))
     }
 
-    @Test("When under threshold then didReturnAfterIdle returns false")
+    @Test("When under threshold then didReturnAfterIdle returns false", .timeLimit(.minutes(1)))
     func whenUnderThresholdThenReturnsFalse() {
         let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(thresholdSeconds: 120))
         let underThreshold = Date().addingTimeInterval(-110)
         #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: underThreshold))
     }
 
-    @Test("When over threshold then didReturnAfterIdle returns true")
+    @Test("When over threshold then didReturnAfterIdle returns true", .timeLimit(.minutes(1)))
     func whenOverThresholdThenReturnsTrue() {
         let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(thresholdSeconds: 120))
         let overThreshold = Date().addingTimeInterval(-121)
         #expect(evaluator.didReturnAfterIdle(lastBackgroundDate: overThreshold))
     }
 
-    @Test("When at exactly threshold then didReturnAfterIdle returns true")
+    @Test("When at exactly threshold then didReturnAfterIdle returns true", .timeLimit(.minutes(1)))
     func whenAtThresholdThenReturnsTrue() {
         let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(thresholdSeconds: 120))
         let atThreshold = Date().addingTimeInterval(-120)
         #expect(evaluator.didReturnAfterIdle(lastBackgroundDate: atThreshold))
     }
 
-    @Test("When effective option is .newTab then treatmentForIdleReturn is .ntp")
+    @Test("When effective option is .newTab then treatmentForIdleReturn is .ntp", .timeLimit(.minutes(1)))
     func whenEffectiveOptionIsNewTabThenTreatmentIsNTP() {
         let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(effectiveOption: .newTab))
         #expect(evaluator.treatmentForIdleReturn() == .ntp)
     }
 
-    @Test("When effective option is .lastUsedTab then treatmentForIdleReturn is .lut")
+    @Test("When effective option is .lastUsedTab then treatmentForIdleReturn is .lut", .timeLimit(.minutes(1)))
     func whenEffectiveOptionIsLastUsedTabThenTreatmentIsLUT() {
         let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(effectiveOption: .lastUsedTab))
         #expect(evaluator.treatmentForIdleReturn() == .lut)

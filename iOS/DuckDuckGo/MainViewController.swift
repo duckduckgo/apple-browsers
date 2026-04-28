@@ -3857,17 +3857,20 @@ extension MainViewController: OmniBarDelegate {
             PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue
         ])
         guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         performCancel()
         newTab()
     }
 
     private func newFireTabLongPressMenuAction() {
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
         performCancel()
         newTab()
     }
 
     private func newNormalTabLongPressMenuAction() {
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         performCancel()
         newTab()

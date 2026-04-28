@@ -386,8 +386,9 @@ extension DataBrokerProtectionWebViewHandler: NSToolbarDelegate {
         [ToolbarItemIdentifier.addressBar, .flexibleSpace]
     }
 
-    public func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier,
-                 willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+    public func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier
+                        itemIdentifier: NSToolbarItem.Identifier,
+                        willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
         guard itemIdentifier == ToolbarItemIdentifier.addressBar else { return nil }
         let item = NSToolbarItem(itemIdentifier: itemIdentifier)
         let view = makeAddressBarView()

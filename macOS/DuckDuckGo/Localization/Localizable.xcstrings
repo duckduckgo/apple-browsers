@@ -35621,7 +35621,8 @@
             "value" : "Deliver delight the Dax way, report a problem today!"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "feedback.tip.regressions" : {
       "comment" : "Feedback tooltip message",
@@ -35633,7 +35634,8 @@
             "value" : "Only YOU can prevent regressions!"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "feedback.tip.report" : {
       "comment" : "Feedback tooltip message",
@@ -35645,7 +35647,8 @@
             "value" : "Dax wants YOU to report problems!"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "feedback.tip.spotted" : {
       "comment" : "Feedback tooltip message",
@@ -35657,7 +35660,8 @@
             "value" : "Spotted a bug? Dax wants to hear about it!"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "feedback.tip.squash" : {
       "comment" : "Feedback tooltip message",
@@ -35669,7 +35673,8 @@
             "value" : "Help Dax squash bugs, share your feedback!"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "find-in-page.text-field.placeholder" : {
       "comment" : "Placeholder text for the text field where the user inputs strings to searcg in the web page",
@@ -72566,7 +72571,8 @@
             "value" : "Hide Feedback Shortcut"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "pinning.hide-netp-shortcut" : {
       "comment" : "Menu item for hiding the NetP shortcut",
@@ -72878,7 +72884,8 @@
             "value" : "Show Feedback Shortcut"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "pinning.show-netp-shortcut" : {
       "comment" : "Menu item for showing the NetP shortcut",
@@ -104185,7 +104192,8 @@
             "value" : "Send Internal Feedback"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "tooltip.find-in-page.close" : {
       "comment" : "Tooltip for the Find In Page bar's Close button",

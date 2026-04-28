@@ -4734,9 +4734,6 @@ extension MainViewController: TabDelegate {
         if let tab = tabManager.select(tab, dismissCurrent: false)  {
             transitionTo(tab: tab, from: previousTab)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            self.performCancel()
-        }
     }
 
     func tabCheckIfItsBeingCurrentlyPresented(_ tab: TabViewController) -> Bool {

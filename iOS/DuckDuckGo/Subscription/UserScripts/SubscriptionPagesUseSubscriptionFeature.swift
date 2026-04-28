@@ -438,9 +438,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         // 3: Configure wide event and start the flow
         let experiment = subscriptionSelection.experiment?.name
         let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
-        let purchasedProductHasFreeTrialOffer = subscriptionManager.storePurchaseManager().availableProducts
-            .first(where: { $0.id == subscriptionSelection.id })?.introductoryOffer?.isFreeTrial == true
-        let isFreeTrialPurchase = freeTrialEligible && purchasedProductHasFreeTrialOffer
 
         let data = SubscriptionPurchaseWideEventData(
             purchasePlatform: .appStore,
@@ -548,7 +545,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseSuccess,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             UniquePixel.fire(pixel: .subscriptionActivated)
-            Pixel.fireAttribution(pixel: .subscriptionSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, freeTrial: isFreeTrialPurchase, subscriptionDataReporter: subscriptionDataReporter)
+            Pixel.fireAttribution(pixel: .subscriptionSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, freeTrial: freeTrialEligible, subscriptionDataReporter: subscriptionDataReporter)
             setTransactionStatus(.idle)
             NotificationCenter.default.post(name: .subscriptionDidChange, object: self)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)

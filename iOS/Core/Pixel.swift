@@ -110,7 +110,7 @@ public struct PixelParameters {
 
     // Onboarding subscription promotion
     public static let returningUser = "ru"
-    public static let freeTrial = "is_eligible_for_free_trial"
+    public static let freeTrial = "free_trial"
 
     // Email manager
     public static let emailKeychainAccessType = "access_type"

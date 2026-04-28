@@ -265,21 +265,21 @@
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "returningUser", "is_eligible_for_free_trial"]
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
     },
     "m_privacy-pro_onboarding_promotion_tap": {
         "description": "Fired when the user taps the subscription promotion CTA during onboarding",
         "owners": ["jozsef-vesza"],
         "triggers": ["user_submitted"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "returningUser", "is_eligible_for_free_trial"]
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
     },
     "m_privacy-pro_onboarding_promotion_dismiss": {
         "description": "Fired when the user dismisses the subscription promotion during onboarding",
         "owners": ["jozsef-vesza"],
         "triggers": ["user_submitted"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "returningUser", "is_eligible_for_free_trial"]
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
     },
 
     // Skipped Onboarding Subscription Promotion Pixels
@@ -288,21 +288,21 @@
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "returningUser", "is_eligible_for_free_trial"]
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
     },
     "m_privacy-pro_skipped_onboarding_promotion_tap": {
         "description": "Fired when the user taps the subscription promotion CTA on the skipped-onboarding modal",
         "owners": ["jozsef-vesza"],
         "triggers": ["user_submitted"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "returningUser", "is_eligible_for_free_trial"]
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
     },
     "m_privacy-pro_skipped_onboarding_promotion_dismiss": {
         "description": "Fired when the user dismisses the skipped-onboarding subscription promotion modal",
         "owners": ["jozsef-vesza"],
         "triggers": ["user_submitted"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "returningUser", "is_eligible_for_free_trial"]
+        "parameters": ["appVersion", "returningUser", "freeTrial"]
     },
 
     // Free Trial Journey Pixels

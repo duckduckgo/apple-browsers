@@ -301,9 +301,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
                 // 4: Configure wide event and start the flow
                 let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
-                let purchasedProductHasFreeTrialOffer = subscriptionManager.storePurchaseManager().availableProducts
-                    .first(where: { $0.id == subscriptionSelection.id })?.introductoryOffer?.isFreeTrial == true
-                let isFreeTrialPurchase = freeTrialEligible && purchasedProductHasFreeTrialOffer
                 let data = SubscriptionPurchaseWideEventData(purchasePlatform: .appStore,
                                                              subscriptionIdentifier: subscriptionSelection.id,
                                                              freeTrialEligible: freeTrialEligible,
@@ -397,7 +394,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                     sendFreemiumSubscriptionPixelIfFreemiumActivated()
                     saveSubscriptionUpgradeTimestampIfFreemiumActivated()
                     PixelKit.fire(SubscriptionPixel.subscriptionActivated, frequency: .uniqueByName)
-                    subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel(freeTrial: isFreeTrialPurchase)
+                    subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel(freeTrial: freeTrialEligible)
                     sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
                     notificationCenter.post(name: .subscriptionDidChange, object: self)
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)

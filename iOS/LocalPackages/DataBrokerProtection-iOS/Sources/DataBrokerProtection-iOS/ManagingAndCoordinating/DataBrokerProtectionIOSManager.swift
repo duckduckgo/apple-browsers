@@ -923,23 +923,14 @@ private extension DataBrokerProtectionIOSManager {
 
 private extension DataBrokerProtectionIOSManager {
 
-    /// Applies side-effects tied to a scan-operations completion callback. Used from both
-    /// `startImmediateScanOperations()` and `coordinatorIsReadyForScanOperations()`.
-    ///
-    /// - `.firstScanCompletedAndMatchesFound` always fires when the DB reports matches. This
-    ///   is pre-branch behavior: the completion block fired it on both normally-finished and
-    ///   interrupted runs, and downstream notification scheduling depends on it.
-    /// - The freemium `firstScanResult` write is gated on `didCompleteNormally`. It's a
-    ///   branch-introduced side-effect and is first-write-wins, so an interrupted run's
-    ///   mid-scan DB snapshot must not permanently lock the wrong value. A transient DB read
-    ///   error is also handled — if `hasMatches()` throws, nothing fires or persists and a
-    ///   later successful scan captures the correct outcome.
-    func applyScanCompletionSideEffects(didCompleteNormally: Bool) async {
+    /// Handles common completion work for immediate scan operations.
+    /// The queue also runs completion for interrupted scans; only normal completions may persist first-write-wins freemium state.
+    func handleScanOperationsCompletion(scanCompletedNormally: Bool) async {
         guard let hasMatches = try? database.hasMatches() else { return }
         if hasMatches {
             eventsHandler.fire(.firstScanCompletedAndMatchesFound)
         }
-        guard didCompleteNormally else { return }
+        guard scanCompletedNormally else { return }
         await freemiumDBPUserStateManager.recordFirstScanResultIfNeeded(hasMatches: hasMatches)
     }
 
@@ -955,25 +946,21 @@ extension DataBrokerProtectionIOSManager {
         }
 
         await checkForEmailConfirmationData()
-        // `JobQueueManager` invokes this completion block on both normal finish AND on
-        // interruption (e.g. when `appDidBecomeActive` kicks off a replacement run mid-scan).
-        // The errorHandler tells us which one; thread that signal into the completion so we
-        // can gate the branch-introduced freemium write on real completion. Pre-existing
-        // side-effects (`.firstScanCompletedAndMatchesFound`) stay unconditional.
-        var didCompleteNormally = false
+        // Completion also runs for interrupted scans; the error handler is the normal-finish signal.
+        var scanCompletedNormally = false
         queueManager.startImmediateScanOperationsIfPermitted(
             showWebView: false,
             jobDependencies: jobDependencies,
             errorHandler: { [weak self] errors in
                 if errors?.oneTimeError == nil {
-                    didCompleteNormally = true
+                    scanCompletedNormally = true
                     self?.eventsHandler.fire(.firstScanCompleted)
                 }
             }
         ) { [weak self] in
             guard let self else { return }
             Task {
-                await self.applyScanCompletionSideEffects(didCompleteNormally: didCompleteNormally)
+                await self.handleScanOperationsCompletion(scanCompletedNormally: scanCompletedNormally)
                 DispatchQueue.main.async {
                     backgroundAssertion.release()
                 }
@@ -1065,23 +1052,21 @@ extension DataBrokerProtectionIOSManager: DBPContinuedProcessingDelegate {
         }
 
         await checkForEmailConfirmationData()
-        // See startImmediateScanOperations for the rationale. Continued-processing's
-        // `.scanPhaseCompleted` emission is explicitly unchanged — that's pre-branch behavior;
-        // revisiting how the coordinator handles interrupted scans is a separate concern.
-        var didCompleteNormally = false
+        // Same completion semantics as `startImmediateScanOperations()`.
+        var scanCompletedNormally = false
         queueManager.startImmediateScanOperationsIfPermitted(
             showWebView: false,
             jobDependencies: jobDependencies,
             errorHandler: { [weak self] errors in
                 if errors?.oneTimeError == nil {
-                    didCompleteNormally = true
+                    scanCompletedNormally = true
                     self?.eventsHandler.fire(.firstScanCompleted)
                 }
             }
         ) { [weak self] in
             guard let self else { return }
             Task {
-                await self.applyScanCompletionSideEffects(didCompleteNormally: didCompleteNormally)
+                await self.handleScanOperationsCompletion(scanCompletedNormally: scanCompletedNormally)
                 DispatchQueue.main.async {
                     Task { [weak self] in
                         await self?.continuedProcessingCoordinator.didEmit(event: .scanPhaseCompleted)

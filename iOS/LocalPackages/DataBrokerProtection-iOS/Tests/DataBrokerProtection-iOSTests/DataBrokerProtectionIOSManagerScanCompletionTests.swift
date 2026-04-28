@@ -81,8 +81,8 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
         deps.authenticationManager.isUserAuthenticatedValue = authenticated
 
         await sut.startImmediateScanOperations()
-        // The callback's Task fires `.firstScanCompletedAndMatchesFound` inside
-        // `handleScanCompletion` when hasMatches is true, so we can anchor the wait on that.
+        // The callback's Task fires `.firstScanCompletedAndMatchesFound` when hasMatches is true,
+        // so we can anchor the wait on that.
         // Otherwise we wait for a freemium write (unauthenticated hasMatches=false case).
         await awaitCondition {
             deps.eventsHandler.firstScanCompletedAndMatchesFoundFired
@@ -108,7 +108,7 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
 
     func test_pathA_authenticated_persistsNothing() async {
         let deps = await runPathA(hasMatches: true, authenticated: true)
-        // firstScanCompletedAndMatchesFoundFired proves `handleScanCompletion` actually ran;
+        // firstScanCompletedAndMatchesFoundFired proves the completion handler actually ran;
         // without it, a no-op callback could silently pass the "stays nil" assertion.
         XCTAssertTrue(deps.eventsHandler.firstScanCompletedAndMatchesFoundFired)
         XCTAssertNil(stateManager.firstScanResult)

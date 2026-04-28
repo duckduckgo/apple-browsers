@@ -7897,7 +7897,6 @@
 				9F4D2B202FFC000200A1B2C4 /* DuckAIQueryExperimentMode.swift */,
 				C1A1B9CC2F6BC7A400B12345 /* OnboardingRestorePromptHandler.swift */,
 				9FDEC7B72C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift */,
-				C1A1B9CC2F6BC7A400B12345 /* OnboardingRestorePromptHandler.swift */,
 				9FB0271A2C2927D0009EA190 /* OnboardingView.swift */,
 				9F7CFF7E2C8A94F70012833E /* OnboardingView+AddressBarPositionContent.swift */,
 				9F46BEF72CD8D7490092E0EF /* OnboardingView+AddToDockContent.swift */,

@@ -813,7 +813,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     @objc private func textDidChange() {
-        let newQuery = textField.text ?? ""
+        let newQuery = (textField.text ?? "").strippingDictationPlaceholder
         omniDelegate?.onOmniQueryUpdated(newQuery)
         if newQuery.isEmpty {
             refreshState(state.onTextClearedState)

@@ -86,6 +86,7 @@ public struct PixelParameters {
 
     public static let count = "count"
     public static let source = "source"
+    public static let browsingMode = "browsing_mode"
     public static let authVersion = "authVersion"
     public static let lastUsed = "last_used"
 
@@ -109,7 +110,7 @@ public struct PixelParameters {
 
     // Onboarding subscription promotion
     public static let returningUser = "ru"
-    public static let freeTrial = "free_trial"
+    public static let freeTrial = "is_eligible_for_free_trial"
 
     // Email manager
     public static let emailKeychainAccessType = "access_type"

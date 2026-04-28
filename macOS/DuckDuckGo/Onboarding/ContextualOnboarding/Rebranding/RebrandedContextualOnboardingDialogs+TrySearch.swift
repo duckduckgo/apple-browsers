@@ -24,24 +24,28 @@ import Onboarding
 extension OnboardingRebranding {
 
     struct OnboardingTrySearchDialog: View {
-        let title = UserText.ContextualOnboarding.onboardingTryASearchTitle
+        let title = NSAttributedString(string: UserText.ContextualOnboarding.onboardingTryASearchTitle)
         let message = NSAttributedString(string: UserText.ContextualOnboarding.onboardingTryASearchMessage)
         let viewModel: OnboardingSearchSuggestionsViewModel
         let onManualDismiss: () -> Void
 
         var body: some View {
-            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
-                Onboarding.ContextualDaxDialogContent(
+            OnboardingBubbleView.withDismissButton(
+                tailPosition: .leading(offset: 0.3, direction: .top),
+                onDismiss: onManualDismiss
+            ) {
+                OnboardingRebranding.ContextualDaxDialogContent(
                     orientation: .horizontalStack(alignment: .top),
                     title: title,
-                    titleFont: OnboardingDialogsContants.titleFont,
-                    message: message,
-                    messageFont: OnboardingDialogsContants.messageFont,
-                    list: viewModel.itemsList,
-                    listAction: viewModel.listItemPressed
-                )
+                    message: message
+                ) {
+                    OnboardingRebranding.ContextualOnboardingListView(
+                        list: viewModel.itemsList,
+                        action: viewModel.listItemPressed
+                    )
+                }
             }
-            .padding()
+            .padding(.horizontal)
         }
     }
 

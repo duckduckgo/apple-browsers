@@ -289,15 +289,43 @@
         "description": "Location selection for the VPN latency test",
         "enum": ["nearest", "custom"]
     },
-    "freeTrial": {
-        "key": "free_trial",
-        "type": "boolean",
-        "description": "Whether the subscription was purchased via a free trial"
-    },
     "locale": {
         "key": "locale",
         "type": "string",
         "description": "User locale",
         "examples": ["en-US", "hu-HU"]
+    },
+    "is_eligible_for_free_trial": {
+        "key": "is_eligible_for_free_trial",
+        "type": "boolean",
+        "description": "Whether the user is eligible for a free trial"
+    },
+    "freeTrial": {
+        "key": "free_trial",
+        "type": "boolean",
+        "description": "Whether the subscription was purchased via a free trial"
+    },
+    "onboardingEventType": {
+        "key": "e",
+        "type": "string",
+        "description": "Event type to classify what happened at each onboarding step",
+        "enum": ["shown", "clicked", "confirmed"]
+    },
+    "onboardingClickedValue": {
+        "key": "value",
+        "type": "string",
+        "description": "Whether the user clicked the primary CTA or skipped/closed the onboarding step",
+        "enum": ["engage", "dismiss"]
+    },
+    "onboardingInstallType": {
+        "key": "it",
+        "type": "string",
+        "description": "Install type to distinguish between first-time installs and reinstalls during onboarding",
+        "enum": ["new", "reinstall"]
+    },
+    "onboardingDaysSinceInstall": {
+        "key": "d",
+        "type": "integer",
+        "description": "Days since install when the value is between 0 and 28 inclusive during onboarding"
     }
 }

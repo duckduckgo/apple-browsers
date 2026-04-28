@@ -50,7 +50,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
     private var lastResults: SuggestionResult?
     private var loader: SuggestionLoader?
-    private var historyMessageManager: HistoryMessageManager
     private var featureFlagger: FeatureFlagger
     private let historyManager: HistoryManaging
     private let bookmarksDatabase: CoreDataDatabase
@@ -89,7 +88,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     init(historyManager: HistoryManaging,
          bookmarksDatabase: CoreDataDatabase,
          appSettings: AppSettings,
-         historyMessageManager: HistoryMessageManager = HistoryMessageManager(),
          tabsModel: TabsModelManaging,
          featureFlagger: FeatureFlagger,
          aiChatSettings: AIChatSettingsProvider,
@@ -103,17 +101,13 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
         self.appSettings = appSettings
-        self.historyMessageManager = historyMessageManager
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
 
-        let isAIChatSearchInputUserSettingsEnabled = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
         let isAddressBarAtBottom = appSettings.currentAddressBarPosition == .bottom
         self.showAskAIChat = aiChatSettings.isAIChatEnabled
         self.model = AutocompleteViewModel(isAddressBarAtBottom: isAddressBarAtBottom,
-                                           showMessage: historyMessageManager.shouldShow(),
-                                           showAskAIChat: showAskAIChat,
-                                           isSwipeToDeleteEnabled: !isAIChatSearchInputUserSettingsEnabled)
+                                           showAskAIChat: showAskAIChat)
 
         super.init(rootView: AutocompleteView(model: model))
         self.model.delegate = self
@@ -143,7 +137,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        historyMessageManager.incrementDisplayCount()
         fireUsagePixels()
     }
 
@@ -270,7 +263,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private func updateHeight() {
         guard let lastResults else { return }
 
-        let messageHeight = model.isMessageVisible ? 196 : 0
         let sectionPadding = 12
         let controllerPadding = 20
 
@@ -282,7 +274,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             sectionHeight(lastResults.localSuggestions) +
             (lastResults.localSuggestions.isEmpty ? 0 : sectionPadding) +
             (showAskAIChat ? sectionHeight([.askAIChat(value: "")]) + sectionPadding : 0) +
-            messageHeight +
             controllerPadding
 
         self.presentationDelegate?
@@ -316,15 +307,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 }
 
 extension AutocompleteViewController: AutocompleteViewModelDelegate {
-
-    func onMessageDismissed() {
-        historyMessageManager.dismissedByUser()
-        updateHeight()
-    }
-
-    func onMessageShown() {
-        historyMessageManager.shownToUser()
-    }
 
     func onSuggestionSelected(_ suggestion: Suggestion, ddgSuggestionIndex: Int?) {
         switch suggestion {
@@ -371,8 +353,8 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
         case .historyEntry(_, let url, _):
             Task {
                 await historyManager.deleteHistoryForURL(url)
-                Pixel.fire(pixel: .autocompleteSwipeToDelete)
-                DailyPixel.fireDaily(.autocompleteSwipeToDeleteDaily)
+                Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
+                DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
                 requestSuggestions(query: self.query)
             }
         default:

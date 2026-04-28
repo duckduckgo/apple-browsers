@@ -265,21 +265,21 @@
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "returningUser", "freeTrial"]
+        "parameters": ["appVersion", "returningUser", "is_eligible_for_free_trial"]
     },
     "m_privacy-pro_onboarding_promotion_tap": {
         "description": "Fired when the user taps the subscription promotion CTA during onboarding",
         "owners": ["jozsef-vesza"],
         "triggers": ["user_submitted"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "returningUser", "freeTrial"]
+        "parameters": ["appVersion", "returningUser", "is_eligible_for_free_trial"]
     },
     "m_privacy-pro_onboarding_promotion_dismiss": {
         "description": "Fired when the user dismisses the subscription promotion during onboarding",
         "owners": ["jozsef-vesza"],
         "triggers": ["user_submitted"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "returningUser", "freeTrial"]
+        "parameters": ["appVersion", "returningUser", "is_eligible_for_free_trial"]
     },
 
     // Skipped Onboarding Subscription Promotion Pixels
@@ -288,21 +288,21 @@
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "returningUser", "freeTrial"]
+        "parameters": ["appVersion", "returningUser", "is_eligible_for_free_trial"]
     },
     "m_privacy-pro_skipped_onboarding_promotion_tap": {
         "description": "Fired when the user taps the subscription promotion CTA on the skipped-onboarding modal",
         "owners": ["jozsef-vesza"],
         "triggers": ["user_submitted"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "returningUser", "freeTrial"]
+        "parameters": ["appVersion", "returningUser", "is_eligible_for_free_trial"]
     },
     "m_privacy-pro_skipped_onboarding_promotion_dismiss": {
         "description": "Fired when the user dismisses the skipped-onboarding subscription promotion modal",
         "owners": ["jozsef-vesza"],
         "triggers": ["user_submitted"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "returningUser", "freeTrial"]
+        "parameters": ["appVersion", "returningUser", "is_eligible_for_free_trial"]
     },
 
     // Free Trial Journey Pixels
@@ -471,6 +471,11 @@
                 "type": "string",
                 "description": "The funnel that led to the subscription flow",
                 "pattern": "^funnel_"
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Legacy context name carried over from flows started on older app versions, prior to the funnel_name migration. New flows use feature.data.ext.funnel_name."
             }
         ]
     },
@@ -548,6 +553,11 @@
                 "type": "string",
                 "description": "The funnel that led to the restore flow",
                 "pattern": "^funnel_"
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Legacy context name carried over from flows started on older app versions, prior to the funnel_name migration. New flows use feature.data.ext.funnel_name."
             }
         ]
     },
@@ -637,8 +647,7 @@
             {
                 "key": "feature.data.ext.funnel_name",
                 "type": "string",
-                "description": "The funnel that led to the plan change flow",
-                "pattern": "^funnel_"
+                "description": "The funnel that led to the plan change flow. Note: older app versions sent shorter, non-prefixed values (e.g. 'cancel-downgrade')."
             }
         ]
     },

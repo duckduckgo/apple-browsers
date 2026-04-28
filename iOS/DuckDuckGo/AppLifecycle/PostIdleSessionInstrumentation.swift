@@ -81,21 +81,21 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
         pageEngagedSent = true
         updateActiveSession { data in
             data.pageEngaged = true
-            markFirstInteractionIfNeeded(&data)
+            markFirstInteractionIfNeeded(on: data, at: dateProvider())
         }
     }
 
     func toggleUsed() {
         updateActiveSession { data in
             data.toggleUsed = true
-            markFirstInteractionIfNeeded(&data)
+            markFirstInteractionIfNeeded(on: data, at: dateProvider())
         }
     }
 
     func backPressed() {
         updateActiveSession { data in
             data.backPressed = true
-            markFirstInteractionIfNeeded(&data)
+            markFirstInteractionIfNeeded(on: data, at: dateProvider())
         }
     }
 
@@ -134,11 +134,6 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
     private func updateActiveSession(_ mutate: (inout PostIdleSessionWideEventData) -> Void) {
         guard let globalID = activeSessionID else { return }
         wideEvent.updateFlow(globalID: globalID, update: mutate)
-    }
-
-    private func markFirstInteractionIfNeeded(_ data: inout PostIdleSessionWideEventData) {
-        guard data.firstInteractionInterval.end == nil else { return }
-        data.firstInteractionInterval.end = dateProvider()
     }
 
     private func markFirstInteractionIfNeeded(on data: PostIdleSessionWideEventData, at date: Date) {

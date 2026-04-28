@@ -176,7 +176,10 @@ final class AddressBarTextField: NSTextField {
     /// Call at transitions that enter `.inactiveWithAIChat` — NOT from `updateView`, because assigning `value`
     /// fires the `$value` sink which re-enters `updateView` and would recurse forever.
     func applyDuckAIUnfocusedValue() {
-        let text = sharedTextState?.text ?? ""
+        /// `textForSingleLineDisplay` collapses any newline (LF / CR / CRLF / Unicode line
+        /// separators) to a space — the address bar is single-line and a multi-line prompt would
+        /// otherwise render with broken vertical alignment.
+        let text = sharedTextState?.textForSingleLineDisplay ?? ""
         let target: Value = .text(text, userTyped: true)
         guard value != target else { return }
         isUpdatingFromSharedState = true
@@ -194,11 +197,11 @@ final class AddressBarTextField: NSTextField {
 
         sharedTextStateCancellable = sharedTextState.$text
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] newText in
-                guard let self,
+            .sink { [weak self, weak sharedTextState] _ in
+                guard let self, let sharedTextState,
                       !self.isUpdatingFromSharedState,
                       !self.isFirstResponder else { return }
-                let textForAddressBar = newText.replacingOccurrences(of: "\n", with: " ")
+                let textForAddressBar = sharedTextState.textForSingleLineDisplay
                 /// Only update if the text actually changed and user interacted with shared state
                 guard sharedTextState.hasUserInteractedWithText,
                       self.stringValueWithoutSuffix != textForAddressBar else { return }

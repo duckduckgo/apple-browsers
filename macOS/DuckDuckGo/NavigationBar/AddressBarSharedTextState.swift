@@ -27,6 +27,16 @@ final class AddressBarSharedTextState: ObservableObject {
     /// The current text content shared between modes
     @Published private(set) var text: String = ""
 
+    /// `text` with every newline (LF, CR, CRLF, line/paragraph separators — anything in
+    /// `CharacterSet.newlines`) collapsed to a single space, suitable for rendering in the
+    /// single-line address bar. The Duck.ai panel's prompt editor consumes the raw `text`
+    /// instead. Centralized here so every bar consumer gets the same transformation; without
+    /// this, a multi-line prompt would render with broken vertical alignment in the unfocused
+    /// bar (the field tries to lay out two lines and only the first peeks through).
+    var textForSingleLineDisplay: String {
+        text.components(separatedBy: .newlines).joined(separator: " ")
+    }
+
     /// The current selection range in the text
     @Published private(set) var selectionRange: NSRange = NSRange(location: 0, length: 0)
 

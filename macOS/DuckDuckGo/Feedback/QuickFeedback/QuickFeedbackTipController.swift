@@ -50,6 +50,7 @@ final class QuickFeedbackTipController {
 
     private var popover: NSPopover?
     private var autoDismissTimer: Timer?
+    private var scheduledShowWork: DispatchWorkItem?
     private weak var anchorView: NSView?
     private let storage: any KeyedStoring<QuickFeedbackTipSettings>
 
@@ -59,12 +60,15 @@ final class QuickFeedbackTipController {
 
     func scheduleIfNeeded(anchoredTo view: NSView) {
         anchorView = view
+        scheduledShowWork?.cancel()
 
         guard shouldShow() else { return }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + Self.showDelay) { [weak self] in
+        let work = DispatchWorkItem { [weak self] in
             self?.showTip()
         }
+        scheduledShowWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.showDelay, execute: work)
     }
 
     func recordButtonClick() {
@@ -73,6 +77,8 @@ final class QuickFeedbackTipController {
     }
 
     func dismissTip() {
+        scheduledShowWork?.cancel()
+        scheduledShowWork = nil
         autoDismissTimer?.invalidate()
         autoDismissTimer = nil
         popover?.close()

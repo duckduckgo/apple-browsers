@@ -207,23 +207,21 @@ private extension RebrandedContextualDaxDialogFactory {
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
-        return OnboardingConditionalCenteredScrollableContainerView {
-            OnboardingRebranding.OnboardingTrackersBlockedDialog(
-                shouldFollowUp: shouldFollowUpToFireDialog,
-                message: attributedMessage,
-                blockedTrackersCTAAction: { [weak self, weak delegate] in
-                    // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
-                    if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
-                        delegate?.didTapDismissContextualOnboardingAction()
-                    } else {
-                        onSizeUpdate()
-                        delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
-                        self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)
-                    }
-                },
-                onManualDismiss: onManualDismiss
-            )
-        }
+        return OnboardingRebranding.OnboardingTrackersBlockedDialogScreen(
+            shouldFollowUp: shouldFollowUpToFireDialog,
+            message: attributedMessage,
+            blockedTrackersCTAAction: { [weak self, weak delegate] in
+                // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
+                if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
+                    delegate?.didTapDismissContextualOnboardingAction()
+                } else {
+                    onSizeUpdate()
+                    delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
+                    self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)
+                }
+            },
+            onManualDismiss: onManualDismiss
+        )
         .applyAnimatedContextualOnboardingBackground(backgroundType: .trackers)
         .onAppear { [weak delegate] in
             delegate?.didShowContextualOnboardingTrackersDialog()

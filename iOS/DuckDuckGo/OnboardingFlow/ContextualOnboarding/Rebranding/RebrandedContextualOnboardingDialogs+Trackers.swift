@@ -25,12 +25,15 @@ import MetricBuilder
 
 extension OnboardingRebranding {
 
-    /// https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12205-39034&m=dev
-    struct OnboardingTrackersBlockedDialog: View {
-        @Environment(\.verticalSizeClass) private var vSizeClass
-        @Environment(\.horizontalSizeClass) private var hSizeClass
-        @Environment(\.onboardingTheme) private var theme
-
+    /// Screen-level wrapper that hosts the Trackers dialog together with its Dax animation.
+    ///
+    /// The Dax overlay is rendered as a sibling of the dialog (not nested inside it), so its
+    /// view extent matches the contextual onboarding background — i.e. the full screen — on
+    /// every device class. Nesting the overlay inside the dialog body causes
+    /// `OnboardingConditionalCenteredScrollableContainerView`'s `.fixedSize(vertical: true)`
+    /// on iPad to collapse the GeometryReader to the bubble's intrinsic height, anchoring Dax
+    /// to the bubble bottom instead of the screen bottom.
+    struct OnboardingTrackersBlockedDialogScreen: View {
         @State private var showNextScreen: Bool = false
 
         let shouldFollowUp: Bool
@@ -39,33 +42,64 @@ extension OnboardingRebranding {
         let blockedTrackersCTAAction: () -> Void
         let onManualDismiss: (_ isShowingNextScreen: Bool) -> Void
 
+        var body: some View {
+            ZStack(alignment: .top) {
+                // Sibling of the dialog so the Dax view spans the same area as the background.
+                // Hidden when transitioning to the Fire follow-up.
+                if !OnboardingBubbleAnimationMetrics.isCompactDevice && !showNextScreen {
+                    DaxAnimationOverlay(
+                        animation: OnboardingTrackersBlockedDialog.daxAnimation,
+                        playForward: true,
+                        isExiting: false
+                    )
+                }
+
+                OnboardingConditionalCenteredScrollableContainerView {
+                    OnboardingTrackersBlockedDialog(
+                        shouldFollowUp: shouldFollowUp,
+                        message: message,
+                        cta: cta,
+                        showNextScreen: $showNextScreen,
+                        blockedTrackersCTAAction: blockedTrackersCTAAction,
+                        onManualDismiss: onManualDismiss
+                    )
+                }
+            }
+        }
+    }
+
+    /// https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12205-39034&m=dev
+    struct OnboardingTrackersBlockedDialog: View {
+        @Environment(\.verticalSizeClass) private var vSizeClass
+        @Environment(\.horizontalSizeClass) private var hSizeClass
+        @Environment(\.onboardingTheme) private var theme
+
+        let shouldFollowUp: Bool
+        let message: AttributedString
+        var cta = UserText.Onboarding.ContextualOnboarding.onboardingGotItButton
+        @Binding var showNextScreen: Bool
+        let blockedTrackersCTAAction: () -> Void
+        let onManualDismiss: (_ isShowingNextScreen: Bool) -> Void
+
         static let daxAnimation = DaxAnimation(
             animationName: "Dax-WingBottom",
             size: CGSize(width: 390/3, height: 211/3),
-            position: .bottom(leftCenterOffset: 150, yOffset: -10.0),
-            largeScreenPosition: .left(bottomPadding: 0.0, xOffset: 0.0),
+            position: .left(),
+//            largeScreenPosition: .left(),
             twoStagesAnimation: 0.5
         )
 
         var body: some View {
-            ZStack(alignment: .top) {
-                // Dax is only shown on the trackers screen; hidden when transitioning to the Fire follow-up.
-                if !OnboardingBubbleAnimationMetrics.isCompactDevice && !showNextScreen {
-                    DaxAnimationOverlay(animation: Self.daxAnimation, playForward: true, isExiting: false)
+            OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: { onManualDismiss(showNextScreen) }
+            ) {
+                if showNextScreen {
+                    OnboardingRebranding.OnboardingFireDialogContent(message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
+                } else {
+                    trackersBlockedContent
                 }
-
-                OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: { onManualDismiss(showNextScreen) }
-                ) {
-                    if showNextScreen {
-                        OnboardingRebranding.OnboardingFireDialogContent(message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
-                    } else {
-                        trackersBlockedContent
-                    }
-                }
-                .padding(theme.contextualOnboardingMetrics.containerPadding)
-                .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(theme.contextualOnboardingMetrics.containerPadding)
+            .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
         }
 
         private var trackersBlockedContent: some View {

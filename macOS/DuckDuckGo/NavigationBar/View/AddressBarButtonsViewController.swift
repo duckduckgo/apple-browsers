@@ -2458,40 +2458,6 @@ extension AddressBarButtonsViewController: NavigationBarBadgeAnimatorDelegate {
 
 }
 
-// MARK: - PermissionContextMenuDelegate
-
-extension AddressBarButtonsViewController: PermissionContextMenuDelegate {
-
-    func permissionContextMenu(_ menu: PermissionContextMenu, mutePermissions permissions: [PermissionType]) {
-        tabViewModel?.tab.permissions.set(permissions, muted: true)
-    }
-    func permissionContextMenu(_ menu: PermissionContextMenu, unmutePermissions permissions: [PermissionType]) {
-        tabViewModel?.tab.permissions.set(permissions, muted: false)
-    }
-    func permissionContextMenu(_ menu: PermissionContextMenu, allowPermissionQuery query: PermissionAuthorizationQuery) {
-        tabViewModel?.tab.permissions.allow(query)
-    }
-    func permissionContextMenu(_ menu: PermissionContextMenu, alwaysAllowPermission permission: PermissionType) {
-        permissionManager.setPermission(.allow, forDomain: menu.domain, permissionType: permission)
-    }
-    func permissionContextMenu(_ menu: PermissionContextMenu, alwaysDenyPermission permission: PermissionType) {
-        permissionManager.setPermission(.deny, forDomain: menu.domain, permissionType: permission)
-    }
-    func permissionContextMenu(_ menu: PermissionContextMenu, resetStoredPermission permission: PermissionType) {
-        permissionManager.setPermission(.ask, forDomain: menu.domain, permissionType: permission)
-    }
-    func permissionContextMenu(_ menu: PermissionContextMenu, resetTemporaryPopupAllowance: Void) {
-        tabViewModel?.tab.popupHandling?.clearPopupAllowanceForCurrentPage()
-    }
-    func permissionContextMenu(_ menu: PermissionContextMenu, setTemporaryPopupAllowance: Void) {
-        tabViewModel?.tab.popupHandling?.setPopupAllowanceForCurrentPage()
-    }
-    func permissionContextMenuReloadPage(_ menu: PermissionContextMenu) {
-        tabViewModel?.reload()
-    }
-
-}
-
 // MARK: - NSPopoverDelegate
 
 extension AddressBarButtonsViewController: NSPopoverDelegate {
@@ -2526,7 +2492,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
                 button.backgroundColor = .clear
                 button.mouseOverColor = .buttonMouseOver
             } else {
-                assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected PermissionButton")
+                assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected AddressBarButton")
             }
             // If popover was closed while authorization was no longer in progress (e.g., system permission denied),
             // treat this as a denial of the website permission to prevent the popover from re-appearing
@@ -2544,7 +2510,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
                 button.backgroundColor = .clear
                 button.mouseOverColor = .buttonMouseOver
             } else {
-                assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected PermissionButton")
+                assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected AddressBarButton")
             }
             updatePermissionCenterButtonIcon()
             // Check for other pending permission requests after popover closes

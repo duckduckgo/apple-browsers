@@ -261,7 +261,7 @@ archive_and_export() {
 		MARKETING_VERSION="${app_version}" \
 		CURRENT_PROJECT_VERSION="${build_number}" \
 		RELEASE_PRODUCT_NAME_OVERRIDE=DuckDuckGo \
-		"${extra_xcargs}" \
+		${extra_xcargs:+"${extra_xcargs}"} \
 		2>&1 \
 		| ${log_formatter}
 
@@ -284,7 +284,7 @@ archive_and_export() {
 		-exportOptionsPlist "${export_options_plist}" \
 		-configuration "${configuration}" \
 		-skipPackagePluginValidation -skipMacroValidation \
-		"${extra_xcargs}" \
+		${extra_xcargs:+"${extra_xcargs}"} \
 		2>&1 \
 		| ${log_formatter}
 }

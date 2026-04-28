@@ -372,7 +372,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.deactivateToOmnibar()
 
         XCTAssertEqual(sut.displayState, .hidden)
-        XCTAssertEqual(sut.textState, .empty)
+        // Text is preserved through deactivate; the dismiss completion handler clears it after the animation.
+        XCTAssertEqual(sut.textState, .prefilledSelected)
         XCTAssertFalse(sut.isOmnibarSession)
     }
 
@@ -616,6 +617,32 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         waitForExpectations(timeout: 0.1)
     }
 
+    // MARK: - Fire Tab
+
+    func test_updateIsFireTab_true_updatesHandler() {
+        XCTAssertFalse(sut.viewController.handler.isFireTab)
+        sut.updateIsFireTab(true)
+        XCTAssertTrue(sut.viewController.handler.isFireTab)
+    }
+
+    func test_updateIsFireTab_falseAfterTrue_updatesHandler() {
+        sut.updateIsFireTab(true)
+        sut.updateIsFireTab(false)
+        XCTAssertFalse(sut.viewController.handler.isFireTab)
+    }
+
+    func test_updateIsFireTab_noChangeDoesNotRebuildDaxLogoManager() {
+        let initialManager = sut.contentViewController.daxLogoManager
+        sut.updateIsFireTab(false)
+        XCTAssertTrue(sut.contentViewController.daxLogoManager === initialManager)
+    }
+
+    func test_updateIsFireTab_trueRebuildsDaxLogoManager() {
+        let initialManager = sut.contentViewController.daxLogoManager
+        sut.updateIsFireTab(true)
+        XCTAssertFalse(sut.contentViewController.daxLogoManager === initialManager)
+    }
+
     // MARK: - Submit From Omnibar Editing
 
     func test_submitSearch_fromOmnibarEditing_deactivates() {
@@ -834,6 +861,15 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isToolsButtonHidden)
     }
 
+    func test_toolsButton_staysUnhiddenAcrossSwitchToSearchMode_soItFadesWithTheToolbar() {
+        sut.showExpanded()
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden)
+
+        sut.updateInputMode(.search, animated: true)
+
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden)
+    }
+
     func test_toolsMenu_disablesWebSearchActionWhenModelDoesNotSupportIt() {
         mockPreferences.selectedModelId = "gpt-5"
         sut.modelStore.models = [makeModel(id: "gpt-5", access: true)]
@@ -994,6 +1030,23 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.submittedModelId, "free")
     }
 
+    func test_prepareExternalPromptSubmission_passesModelIdForFirstPrompt() {
+        mockPreferences.selectedModelId = "gpt-5"
+
+        let submission = sut.prepareExternalPromptSubmission()
+
+        XCTAssertEqual(submission.modelId, "gpt-5")
+    }
+
+    func test_prepareExternalPromptSubmission_omitsModelIdAfterFirstPrompt() {
+        mockPreferences.selectedModelId = "gpt-5"
+        _ = sut.prepareExternalPromptSubmission()
+
+        let submission = sut.prepareExternalPromptSubmission()
+
+        XCTAssertNil(submission.modelId)
+    }
+
     // MARK: - Model Chip Visibility
 
     func test_modelChip_visibleByDefault() {
@@ -1003,6 +1056,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_modelChip_hiddenAfterPromptSubmit() {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+    }
+
+    func test_modelChip_hiddenAfterPreparingExternalPromptSubmission() {
+        sut.prepareExternalPromptSubmission()
         XCTAssertTrue(sut.hasSubmittedPrompt)
         XCTAssertTrue(sut.viewController.isModelChipHidden)
     }
@@ -1343,12 +1402,35 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertLessThanOrEqual(submitFrame.maxX, sut.bounds.maxX)
     }
 
+    func test_reasoningButton_hasAccessibilityIdentifier() {
+        let sut = UnifiedToggleInputToolbarView()
+
+        let reasoningButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.Reasoning", in: sut)
+
+        XCTAssertEqual(reasoningButton?.accessibilityLabel, UserText.aiChatToolbarReasoningButtonAccessibilityLabel)
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(reasoningButton?.preferredMenuElementOrder, .fixed)
+        }
+    }
+
     private func findButton(accessibilityLabel: String, in view: UIView) -> UIButton? {
         for subview in view.subviews {
             if let button = subview as? UIButton, button.accessibilityLabel == accessibilityLabel {
                 return button
             }
             if let button = findButton(accessibilityLabel: accessibilityLabel, in: subview) {
+                return button
+            }
+        }
+        return nil
+    }
+
+    private func findButton(accessibilityIdentifier: String, in view: UIView) -> UIButton? {
+        for subview in view.subviews {
+            if let button = subview as? UIButton, button.accessibilityIdentifier == accessibilityIdentifier {
+                return button
+            }
+            if let button = findButton(accessibilityIdentifier: accessibilityIdentifier, in: subview) {
                 return button
             }
         }
@@ -1363,14 +1445,16 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedPrompt: String?
     var submittedModelId: String?
     var submittedTools: [AIChatRAGTool]?
+    var submittedReasoningEffort: AIChatReasoningEffort?
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
     var submittedQuery: String?
     var committedMode: TextEntryMode?
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, images: [AIChatNativePrompt.NativePromptImage]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?) {
         submittedPrompt = prompt
         submittedModelId = modelId
         submittedTools = tools
+        submittedReasoningEffort = reasoningEffort
         submittedImages = images
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
@@ -1382,8 +1466,12 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {
+    var selectedReasoningEffort: String?
     var selectedModelId: String?
     var selectedModelShortName: String?
+    var selectedReasoningMode: AIChatReasoningMode?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
 private final class MockToggleModeStorage: ToggleModeStoring {

@@ -26,6 +26,9 @@ protocol ViewSnapshotRendering {
     @MainActor
     func renderSnapshot(view: @escaping () -> NSView?) async -> NSImage?
 
+    @MainActor
+    func renderSnapshotSync(view: NSView) -> NSImage?
+
 }
 
 final class ViewSnapshotRenderer: ViewSnapshotRendering {
@@ -38,8 +41,19 @@ final class ViewSnapshotRenderer: ViewSnapshotRendering {
         }
     }
 
+    @MainActor
+    func renderSnapshotSync(view: NSView) -> NSImage? {
+        dispatchPrecondition(condition: .onQueue(.main))
+        guard let resizedImage = createResizedImage(from: { view }, with: view.bounds) else {
+            Logger.tabSnapshots.error("Native snapshot rendering failed")
+            return nil
+        }
+        return resizedImage
+    }
+
     func renderSnapshot(view: @escaping () -> NSView?, completion: @escaping (NSImage?) -> Void) {
         guard let originalBounds = view()?.bounds else {
+            Logger.tabSnapshots.error("Native snapshot rendering failed")
             completion(nil)
             return
         }
@@ -97,11 +111,15 @@ final class ViewSnapshotRenderer: ViewSnapshotRendering {
 
         if let context = NSGraphicsContext(bitmapImageRep: bitmapRep) {
             NSGraphicsContext.current = context
-            DispatchQueue.main.sync {
-                assert(Thread.isMainThread)
+            let render = {
                 context.cgContext.translateBy(x: 0, y: size.height)
                 context.cgContext.scaleBy(x: 1.0, y: -1.0)
                 view()?.layer?.render(in: context.cgContext)
+            }
+            if Thread.isMainThread {
+                render()
+            } else {
+                DispatchQueue.main.sync(execute: render)
             }
         }
     }

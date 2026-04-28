@@ -87,7 +87,6 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     }
 
     var cancellables = Set<AnyCancellable>()
-    private var devicePromptCancellable: AnyCancellable?
     let syncPausedStateManager: any SyncPausedStateManaging
     let viewModel: SyncSettingsViewModel
 
@@ -322,21 +321,6 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         ])
 
         startPairingIfNecessary()
-        observeDevicesForPromptCheck()
-    }
-
-    /// Subscribes to $devices, waits for the first non-empty value, and checks whether to show the "sync another device" prompt.
-    /// This is so that we wait until the device list is loaded before deciding whether to display the prompt.
-    /// Only subscribes if sync is already enabled.
-    private func observeDevicesForPromptCheck() {
-        guard isSyncEnabled else { return }
-        guard devicePromptCancellable == nil else { return }
-        devicePromptCancellable = viewModel.$devices
-            .drop(while: { $0.isEmpty })
-            .prefix(1)
-            .sink { [weak self] _ in
-                self?.viewModel.checkAndShowSyncWithAnotherDevicePrompt()
-            }
     }
 
     func updateOptions() {
@@ -484,8 +468,16 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
+        presentSyncCompletionAfterDelay()
+    }
+
+    func presentSyncCompletionAfterDelay() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.dismissVCAndShowRecoveryPDF()
+            if self.useSimplifiedLayout {
+                self.dismissVCAndShowDeviceSyncedToast()
+            } else {
+                self.dismissVCAndShowRecoveryPDF()
+            }
         }
     }
 
@@ -522,10 +514,10 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         self.navigationController?.topViewController?.dismiss(animated: true, completion: self.showRecoveryPDF)
     }
 
-    func dismissVCAndShowSyncEnabledToast() {
+    func dismissVCAndShowDeviceSyncedToast() {
         self.navigationController?.topViewController?.dismiss(animated: true) {
             self.enableAutoRestoreByDefaultIfNeeded()
-            ActionMessageView.present(message: UserText.simplifiedSyncEnabledToast)
+            ActionMessageView.present(message: UserText.simplifiedDeviceSyncedSuccessfullyToast)
         }
     }
 
@@ -563,7 +555,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             .sink { [weak self] _ in
                 guard let self else { return }
                 if self.useSimplifiedLayout {
-                    self.dismissVCAndShowSyncEnabledToast()
+                    self.dismissVCAndShowDeviceSyncedToast()
                 } else {
                     self.dismissVCAndShowRecoveryPDF()
                 }
@@ -575,7 +567,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         if useSimplifiedLayout {
-            dismissVCAndShowSyncEnabledToast()
+            dismissVCAndShowDeviceSyncedToast()
         } else {
             self.dismissVCAndShowRecoveryPDF()
         }
@@ -614,17 +606,11 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         }
     }
     
-    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole) {
+    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery _: Bool, setupRole: SyncSetupRole) {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if self.useSimplifiedLayout, !isRecovery {
-                self.dismissVCAndShowSyncEnabledToast()
-            } else {
-                self.dismissVCAndShowRecoveryPDF()
-            }
-        }
+        presentSyncCompletionAfterDelay()
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
             return
         }

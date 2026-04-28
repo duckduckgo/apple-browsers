@@ -272,7 +272,10 @@ public extension DesignSystemImages {
             public static var tabMobile: DesignSystemImage { .init(resource: .tabMobile16) }
             public static var tabReopen: DesignSystemImage { .init(resource: .tabReopen16) }
             public static var tabTop: DesignSystemImage { .init(resource: .tabTop16) }
+            public static var thinking: DesignSystemImage { .init(resource: .thinking16) }
+            public static var timer: DesignSystemImage { .init(resource: .timer16) }
             public static var thumbsUp: DesignSystemImage { .init(resource: .thumbsUp16) }
+            public static var thunderbolt: DesignSystemImage { .init(resource: .thunderbolt16) }
             public static var trash: DesignSystemImage { .init(resource: .trash16) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize16) }
             public static var permissionCamera: DesignSystemImage { .init(resource: .video16) }
@@ -464,6 +467,7 @@ public extension DesignSystemImages {
             public static var info: DesignSystemImage { .init(resource: .info24) }
             public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid24) }
             public static var key: DesignSystemImage { .init(resource: .key24) }
+            public static var lightning: DesignSystemImage { .init(resource: .lightning24) }
             public static var linkSolid: DesignSystemImage { .init(resource: .linkSolid24) }
             public static var list: DesignSystemImage { .init(resource: .list24) }
             public static var location: DesignSystemImage { .init(resource: .location24) }
@@ -519,6 +523,8 @@ public extension DesignSystemImages {
             public static var tabMobileAlertDot: DesignSystemImage { .init(resource: .tabMobileAlertDot24) }
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew24) }
             public static var tag: DesignSystemImage { .init(resource: .tag24) }
+            public static var thinking: DesignSystemImage { .init(resource: .thinking24) }
+            public static var timer: DesignSystemImage { .init(resource: .timer24) }
             public static var trash: DesignSystemImage { .init(resource: .trash24) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize24) }
             public static var vpn: DesignSystemImage { .init(resource: .VPN_24) }

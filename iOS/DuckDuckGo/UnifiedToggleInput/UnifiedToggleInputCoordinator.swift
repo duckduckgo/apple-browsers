@@ -19,7 +19,6 @@
 
 import AIChat
 import Combine
-import os.log
 import Subscription
 import UIKit
 
@@ -62,6 +61,11 @@ enum ExternalSubmissionType {
     case prompt
 }
 
+private struct PromptSubmissionConfiguration {
+    let modelId: String?
+    let reasoningEffort: AIChatReasoningEffort?
+}
+
 // MARK: - Subscription State
 
 struct SubscriptionState {
@@ -99,6 +103,24 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { $attachmentUsage }
+    var persistedReasoningEffort: AIChatReasoningEffort? {
+        guard let selectedModel else { return nil }
+        guard persistedReasoningMode != nil || selectedModel.supportsReasoningPicker else { return nil }
+
+        return selectedModel.resolvedReasoningEffort(from: persistedReasoningMode)
+    }
+    private var promptSubmissionModelId: String? {
+        hasSubmittedPrompt ? nil : persistedModelId
+    }
+    private var promptSubmissionConfiguration: PromptSubmissionConfiguration {
+        PromptSubmissionConfiguration(
+            modelId: promptSubmissionModelId,
+            reasoningEffort: persistedReasoningEffort
+        )
+    }
+    var voicePromptSubmissionConfiguration: (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
+        (promptSubmissionModelId, nil)
+    }
 
     @Published var aiChatStatus: AIChatStatusValue = .unknown
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown
@@ -141,6 +163,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState == .aiTab(.expanded)
     }
 
+    var isInputEditing: Bool {
+        isOmnibarSession || isAITabExpanded
+    }
+
     var isActive: Bool {
         displayState != .hidden
     }
@@ -181,6 +207,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     init(
         isToggleEnabled: Bool,
+        isFireTab: Bool = false,
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
         modelsService: AIChatModelsProviding = AIChatModelsService(),
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
@@ -194,12 +221,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             preferences: preferences,
             subscriptionManager: subscriptionManager
         )
-        viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled)
+        viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled, isFireTab: isFireTab)
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler
         )
         floatingSubmitViewController = UnifiedToggleInputFloatingSubmitViewController()
+        floatingSubmitViewController.refreshFireMode(fireMode: isFireTab)
         super.init()
         viewController.delegate = self
         attachmentPresenter.onExpandIfNeeded = { [weak self] in
@@ -315,7 +343,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.apply(renderState.viewConfig, animated: false)
         applyToolbarPresentation()
         viewController.deactivateInput()
-        contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+        contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         intentSubject.send(.hide)
     }
 
@@ -347,18 +375,18 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             textState = .prefilledSelected
         }
 
-        contentViewController.setDismissButtonVisible(renderState.isContentVisible)
-        let expandedHeight = omnibarEditingHeight()
+        contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
+        let expandedHeight = editingHeight()
 
         if cardPosition == .top && isToggleEnabled {
             viewController.setExpanded(false, animated: false)
             viewController.setExpandedWithToggleHidden(true)
-            let toggleHiddenHeight = omnibarEditingHeight()
+            let toggleHiddenHeight = editingHeight()
             intentSubject.send(.showOmnibarEditing(expandedHeight: toggleHiddenHeight, pendingExpandedHeight: expandedHeight))
         } else if cardPosition == .top {
             viewController.setExpanded(false, animated: false)
             viewController.setExpandedWithToggleHidden(true)
-            let omnibarMatchingHeight = omnibarEditingHeight()
+            let omnibarMatchingHeight = editingHeight()
             intentSubject.send(.showOmnibarEditing(expandedHeight: omnibarMatchingHeight))
         } else {
             intentSubject.send(.showOmnibarEditing(expandedHeight: expandedHeight))
@@ -385,7 +413,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState = .hidden
         cardPosition = .bottom
         isInputVisibleForKeyboard = true
-        setText("")
+        // Text clear is deferred to dismiss completion — avoids placeholder flash mid-collapse.
         resetToolsSelection()
         clearAttachments()
 
@@ -394,12 +422,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.apply(renderState.viewConfig, animated: false)
             applyToolbarPresentation()
             viewController.deactivateInput()
-            contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+            contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         } else {
             applyToolbarPresentation()
             viewController.deactivateInput()
             let renderState = computeRenderState()
-            contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+            contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         }
         intentSubject.send(.hideOmnibarEditing(animated: animateDismiss))
     }
@@ -420,7 +448,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.animateToggleReveal(additionalAnimations: additionalAnimations)
     }
 
-    func omnibarEditingHeight() -> CGFloat {
+    func editingHeight() -> CGFloat {
         let screenWidth = viewController.view.window?.bounds.width ?? viewController.view.bounds.width
         let height = viewController.view.systemLayoutSizeFitting(
             CGSize(width: screenWidth, height: UIView.layoutFittingCompressedSize.height),
@@ -484,6 +512,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func updateOmnibarInputVisibility(_ isInputVisible: Bool) {
+        guard isInputVisibleForKeyboard != isInputVisible else { return }
         isInputVisibleForKeyboard = isInputVisible
         let isAITabSearch = displayState == .aiTab(.expanded) && inputMode == .search
 
@@ -499,19 +528,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             displayState = .omnibar(.active)
             let renderState = computeRenderState()
             viewController.apply(renderState.viewConfig, animated: false)
-            contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+            contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
             intentSubject.send(.showOmnibarActive)
         case (.omnibar(.active), true):
             cancelTopOmnibarKeyboardPresentationFallback()
             isAwaitingTopOmnibarKeyboardPresentation = false
-        case (.aiTab(.expanded), false) where isAITabSearch:
+        case (.aiTab(.expanded), _) where isAITabSearch:
             let renderState = computeRenderState()
             viewController.apply(renderState.viewConfig, animated: false)
-            contentViewController.setDismissButtonVisible(renderState.isContentVisible)
-        case (.aiTab(.expanded), true) where isAITabSearch:
-            let renderState = computeRenderState()
-            viewController.apply(renderState.viewConfig, animated: false)
-            contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+            contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         default:
             break
         }
@@ -530,8 +555,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
+    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
+        contentViewController.setEscapeHatch(model, onTapped: onTapped)
+    }
+
     func updateVoiceSearchAvailability(_ enabled: Bool) {
         viewController.isVoiceSearchAvailable = enabled
+    }
+
+    func updateIsFireTab(_ isFireTab: Bool) {
+        guard viewController.handler.isFireTab != isFireTab else { return }
+        viewController.handler.isFireTab = isFireTab
+        viewController.refreshFireMode(fireMode: isFireTab)
+        floatingSubmitViewController.refreshFireMode(fireMode: isFireTab)
+        contentViewController.refreshFireMode(fireMode: isFireTab)
     }
 
     private func cancelTopOmnibarKeyboardPresentationFallback() {
@@ -564,8 +601,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .omnibar(.inactive)
         let renderState = computeRenderState()
-        viewController.apply(renderState.viewConfig, animated: false)
-        contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+        // Animated so a concurrent mode change doesn't get snapped to final layout non-animatedly.
+        viewController.apply(renderState.viewConfig, animated: true)
+        contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         intentSubject.send(.showOmnibarInactive)
     }
 
@@ -585,13 +623,21 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func submitVoicePrompt(_ text: String) {
         guard let userScript = boundUserScript else { return }
-        let modelId = hasSubmittedPrompt ? nil : persistedModelId
+        let configuration = voicePromptSubmissionConfiguration
         hasSubmittedPrompt = true
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
         resetToolsSelection()
         showCollapsed()
-        userScript.submitPrompt(text, images: nil, modelId: modelId)
+        userScript.submitPrompt(text, images: nil, modelId: configuration.modelId, reasoningEffort: configuration.reasoningEffort)
+    }
+
+    func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
+        let configuration = promptSubmissionConfiguration
+        hasSubmittedPrompt = true
+        updateModelChipVisibility()
+        syncHasSubmittedPromptToHandler()
+        return (configuration.modelId, configuration.reasoningEffort)
     }
 
     func handleExternalSubmission(_ type: ExternalSubmissionType) {
@@ -641,7 +687,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func applyDismissButtonVisibility() {
         let renderState = computeRenderState()
-        contentViewController.setDismissButtonVisible(renderState.isContentVisible)
+        contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
     }
 
     // MARK: - Render State
@@ -700,6 +746,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isToolbarSubmitHidden: cardPosition == .top && isOmnibarSession,
             inactiveAppearance: inactiveAppearance,
             isFloatingSubmitVisible: isFloatingSubmitVisible,
+            isToggleEnabled: isToggleEnabled,
             contentInputMode: inputMode,
             inputMode: inputMode
         )
@@ -714,6 +761,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var subscriptionState: SubscriptionState { modelStore.subscriptionState }
     var persistedModelId: String? { modelStore.persistedModelId }
     var currentModelId: String? { modelStore.currentModelId }
+    var persistedReasoningMode: AIChatReasoningMode? { modelStore.selectedReasoningMode }
+    var selectedModel: AIChatModel? { modelStore.selectedModel }
     var selectedModelSupportsImageUpload: Bool { modelStore.selectedModelSupportsImageUpload }
     var selectedTool: AIChatRAGTool? { toolsController.selectedTool }
 
@@ -735,6 +784,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func updateSelectedModel(_ modelId: String) {
         modelStore.updateSelectedModel(modelId)
         handleModelsUpdated()
+    }
+
+    func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
+        modelStore.updateSelectedReasoningMode(mode)
+        updateReasoningPicker()
     }
 
     func selectTool(_ tool: AIChatRAGTool) {
@@ -765,6 +819,32 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         ) { [weak self] modelId in
             self?.updateSelectedModel(modelId)
         }
+    }
+
+    private func buildReasoningPickerMenu() -> UIMenu? {
+        guard let selectedModel, selectedModel.supportsReasoningPicker else { return nil }
+
+        let selectedMode = resolvedSelectedReasoningMode
+        let actions = selectedModel.availableReasoningModes.map { mode in
+            UIAction(
+                title: mode.unifiedToggleInputTitle,
+                subtitle: mode.unifiedToggleInputSubtitle,
+                image: mode.unifiedToggleInputMenuImage,
+                state: mode == selectedMode ? .on : .off
+            ) { [weak self] _ in
+                self?.updateSelectedReasoningMode(mode)
+            }
+        }
+
+        return UIMenu(options: .singleSelection, children: actions)
+    }
+
+    private func updateReasoningPicker() {
+        let selectedMode = resolvedSelectedReasoningMode
+        let shouldHide = !(selectedModel?.supportsReasoningPicker ?? false)
+        viewController.selectedReasoningMode = selectedMode
+        viewController.isReasoningButtonHidden = shouldHide
+        viewController.reasoningPickerMenu = shouldHide ? nil : buildReasoningPickerMenu()
     }
 
     // MARK: - Attachments
@@ -833,7 +913,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
         commitCurrentToggleState()
-        setText("")
 
         switch mode {
         case .search:
@@ -849,7 +928,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             let images = selectedModelSupportsImageUpload
                 ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
                 : nil
-            let modelId = hasSubmittedPrompt ? nil : persistedModelId
+            let configuration = promptSubmissionConfiguration
             clearAttachments()
             hasSubmittedPrompt = true
             updateModelChipVisibility()
@@ -858,12 +937,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             if isOmnibarSession {
                 deactivateToOmnibar()
             } else {
+                // showCollapsed has no dismiss hook; clear synchronously.
+                setText("")
                 showCollapsed()
             }
             if let userScript = boundUserScript {
-                userScript.submitPrompt(text, images: images, modelId: modelId, tools: tools)
+                userScript.submitPrompt(text, images: images, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
             } else {
-                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: modelId, tools: tools, images: images)
+                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images)
             }
         }
     }
@@ -902,6 +983,12 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {
         delegate?.unifiedToggleInputDidChangeHeight()
     }
+
+    func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController) {
+        // The inline X dismisses the same way the floating X does — forward to the
+        // content container's shared handler so both controls route through one path.
+        contentViewController.onDismissRequested?()
+    }
 }
 
 private extension UnifiedToggleInputCoordinator {
@@ -922,6 +1009,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func updateModelChipVisibility() {
         viewController.isModelChipHidden = hasSubmittedPrompt
+        updateReasoningPicker()
     }
 
     func syncHasSubmittedPromptToHandler() {
@@ -930,7 +1018,10 @@ private extension UnifiedToggleInputCoordinator {
 
     func resetSessionState() {
         isNewChatPending = false
-        setText("")
+        // While the UTI is hidden, dismiss completion owns the visible text — clearing here would flash the placeholder.
+        if isActive {
+            setText("")
+        }
         aiChatStatus = .unknown
         aiChatInputBoxVisibility = .unknown
         attachmentUsage = nil
@@ -956,6 +1047,7 @@ private extension UnifiedToggleInputCoordinator {
     func handleModelsUpdated() {
         toolsController.clearSelectionIfUnsupported(for: modelStore)
         updateModelChipLabel()
+        updateReasoningPicker()
         updateImageButtonVisibility()
         refreshToolsPresentation()
     }
@@ -963,7 +1055,6 @@ private extension UnifiedToggleInputCoordinator {
     func refreshToolsPresentation() {
         let presentation = toolsController.presentation(
             displayState: displayState,
-            inputMode: inputMode,
             modelStore: modelStore
         )
         let toolsMenu = presentation.toolsMenu.map { [weak self] menu in
@@ -996,6 +1087,10 @@ private extension UnifiedToggleInputCoordinator {
     func updateImageButtonEnabledState() {
         let canAttachMore = remainingImagesForPicker > 0 && !viewController.isGenerating
         viewController.isImageButtonEnabled = canAttachMore
+    }
+
+    var resolvedSelectedReasoningMode: AIChatReasoningMode? {
+        selectedModel?.resolvedReasoningMode(from: persistedReasoningMode)
     }
 
     // MARK: Subscriptions

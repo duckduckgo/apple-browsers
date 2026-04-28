@@ -119,8 +119,11 @@ final class AIChatViewControllerManager {
                     autoSend: Bool = false,
                     flowType: AIChatOnboardingFlowType = .default,
                     tools: [AIChatRAGTool]? = nil,
+                    modelId: String? = nil,
+                    reasoningEffort: AIChatReasoningEffort? = nil,
                     on viewController: UIViewController) {
         open(query, payload: payload, autoSend: autoSend, flowType: flowType, tools: tools,
+             modelId: modelId, reasoningEffort: reasoningEffort,
              presentationMode: .modal, viewController: viewController)
     }
 
@@ -141,10 +144,13 @@ final class AIChatViewControllerManager {
                                autoSend: Bool = false,
                                flowType: AIChatOnboardingFlowType = .default,
                                tools: [AIChatRAGTool]? = nil,
+                               modelId: String? = nil,
+                               reasoningEffort: AIChatReasoningEffort? = nil,
                                in containerView: UIView,
                                parentViewController: UIViewController,
                                completion: (() -> Void)? = nil) {
         open(query, payload: payload, autoSend: autoSend, flowType: flowType, tools: tools,
+             modelId: modelId, reasoningEffort: reasoningEffort,
              presentationMode: .container, containerView: containerView,
              viewController: parentViewController, completion: completion)
     }
@@ -175,6 +181,8 @@ final class AIChatViewControllerManager {
                       autoSend: Bool = false,
                       flowType: AIChatOnboardingFlowType = .default,
                       tools: [AIChatRAGTool]? = nil,
+                      modelId: String? = nil,
+                      reasoningEffort: AIChatReasoningEffort? = nil,
                       presentationMode: AIChatPresentationMode,
                       containerView: UIView? = nil,
                       viewController: UIViewController? = nil,
@@ -206,6 +214,8 @@ final class AIChatViewControllerManager {
                     autoSend: autoSend,
                     flowType: flowType,
                     tools: tools,
+                    modelId: modelId,
+                    reasoningEffort: reasoningEffort,
                     presentationMode: presentationMode,
                     containerView: containerView,
                     viewController: viewController,
@@ -220,6 +230,8 @@ final class AIChatViewControllerManager {
                 autoSend: autoSend,
                 flowType: flowType,
                 tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
                 presentationMode: presentationMode,
                 containerView: containerView,
                 viewController: viewController,
@@ -236,6 +248,8 @@ final class AIChatViewControllerManager {
                               autoSend: Bool,
                               flowType: AIChatOnboardingFlowType = .default,
                               tools: [AIChatRAGTool]?,
+                              modelId: String?,
+                              reasoningEffort: AIChatReasoningEffort?,
                               presentationMode: AIChatPresentationMode,
                               containerView: UIView?,
                               viewController: UIViewController?,
@@ -250,6 +264,8 @@ final class AIChatViewControllerManager {
                 autoSend: autoSend,
                 flowType: flowType,
                 tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
                 on: viewController,
                 voiceMode: voiceMode
             )
@@ -261,6 +277,8 @@ final class AIChatViewControllerManager {
                 autoSend: autoSend,
                 flowType: flowType,
                 tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
                 in: containerView,
                 parentViewController: viewController,
                 completion: completion
@@ -278,6 +296,8 @@ final class AIChatViewControllerManager {
                                        autoSend: Bool,
                                        flowType: AIChatOnboardingFlowType = .default,
                                        tools: [AIChatRAGTool]?,
+                                       modelId: String?,
+                                       reasoningEffort: AIChatReasoningEffort?,
                                        on viewController: UIViewController,
                                        voiceMode: Bool = false) {
         let aiChatViewController = createAIChatViewController(presentationMode: .modal)
@@ -288,6 +308,8 @@ final class AIChatViewControllerManager {
             autoSend: autoSend,
             flowType: flowType,
             tools: tools,
+            modelId: modelId,
+            reasoningEffort: reasoningEffort,
             voiceMode: voiceMode
         )
         let roundedPageSheet = RoundedPageSheetContainerViewController(
@@ -308,6 +330,8 @@ final class AIChatViewControllerManager {
                                         autoSend: Bool,
                                         flowType: AIChatOnboardingFlowType = .default,
                                         tools: [AIChatRAGTool]?,
+                                        modelId: String?,
+                                        reasoningEffort: AIChatReasoningEffort?,
                                         in containerView: UIView,
                                         parentViewController: UIViewController,
                                         completion: (() -> Void)? = nil) {
@@ -318,7 +342,9 @@ final class AIChatViewControllerManager {
             payload: payload,
             autoSend: autoSend,
             flowType: flowType,
-            tools: tools
+            tools: tools,
+            modelId: modelId,
+            reasoningEffort: reasoningEffort
         )
 
         parentViewController.addChild(aiChatViewController)
@@ -409,6 +435,8 @@ final class AIChatViewControllerManager {
                                          autoSend: Bool,
                                          flowType: AIChatOnboardingFlowType = .default,
                                          tools: [AIChatRAGTool]?,
+                                         modelId: String?,
+                                         reasoningEffort: AIChatReasoningEffort?,
                                          voiceMode: Bool = false) {
         if voiceMode {
             aiChatViewController.loadVoiceMode()
@@ -420,7 +448,9 @@ final class AIChatViewControllerManager {
                 query,
                 autoSend: autoSend,
                 flowType: flowType,
-                tools: tools
+                tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort
             )
         }
 

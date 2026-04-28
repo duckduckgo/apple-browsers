@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Atidaryti fone";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Nauja „Fire“ kortelė";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Atidaryk „Fire“ kortelėje";
 /* Create New Tab action */
 "action.title.newTabAction" = "Nauja kortelė";
 
@@ -207,6 +212,24 @@
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fotografuoti";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Analitinėms užduotims";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Išplėstinis samprotavimas";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Greitai atsako";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Greitas";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Sudėtingoms užduotims";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Samprotavimas";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Tinkinti atsakymus";
@@ -360,12 +383,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Ieškoti DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Dabar paieškos pasiūlymuose bus rodomos ir neseniai aplankytos svetainės. Išjunkite nustatymuose arba bet kada išvalykite naudodami mygtuką 🔥 „Fire Button“.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Tas pats privatumas.\nGeresni paieškos pasiūlymai!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Perjungti skirtuką";
@@ -876,6 +893,9 @@
 
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Ne, dėkoju";
+
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Ne dabar";
 
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Saugiai išsaugokite slaptažodį įrenginyje naudodami „DuckDuckGo“ slaptažodžių ir automatinio pildymo parinktį.";
@@ -1489,6 +1509,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Išsiųstas su jūsų žinute Duck.ai";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Naujausi pokalbiai";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Naujausi pokalbiai";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Peržiūrėti visus pokalbius";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Pridėkite „Duck.ai“ balso sparčiuosius klavišus į savo valdymo centrą";
 
@@ -1498,8 +1527,14 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Pridėkite puslapio turinį";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Klausti apie puslapį";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Apibendrinti šį puslapį";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Apibendrinti puslapį";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Pridėti „Duck.ai“ į valdymo centrą";
@@ -1557,6 +1592,12 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Kalbėkite su „Duck.ai“ naudodami „Siri“!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Visi pokalbiai – %@ privatūs";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "privatūs";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "„iOS“ skirta „DuckDuckGo“";
@@ -1837,6 +1878,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Perjungia į šį skirtuką";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Paskutinį kartą naudota „Fire“ kortelė";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Grįžti į %@";
 
@@ -2146,6 +2189,47 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Pasirinkite, ką ištrinti";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Prisijunk prie svetainės su kita paskyra";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Naršyk ir nesaugok vietinės istorijos";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Šalink interneto svetainių triktis";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Skirtukai „Fire“ yra izoliuoti nuo kitų naršyklės duomenų. Jų duomenys sunaikinami, kai tik juos visus uždarote. Jie suteikia tokią pačią apsaugą nuo sekimo kaip ir kiti skirtukai.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Nauja „Fire“ kortelė";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "„Fire“ kortelės";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Naujas";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Naujiena! Naršyk nesaugant vietinės istorijos arba prisijunk prie svetainių su kita paskyra.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Ne dabar";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Išbandyk „Fire“ korteles";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Išbandyk „Fire“ korteles";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Išbandyk skirtukus „Fire Tabs“, kad naršytum nesaugodamas vietinės istorijos.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Naujiena: skirtukai „Fire Tabs“";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "„Fire“ kortelė";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "„Airstream“";
 
@@ -2210,7 +2294,7 @@
 "import.passwords.promo.title" = "Importuok slaptažodžius į „DuckDuckGo“";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Klauskite privačiai";
+"input.field.placeholder.duckai" = "Klausk bet ko privačiai";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Užduok papildomą klausimą...";
@@ -2268,6 +2352,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Ieškoti arba įvesti adresą";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Nauja „Fire“ kortelė";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Nauja kortelė";
@@ -3160,6 +3247,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skenuojama...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Ištrinti „Fire“ korteles ir jų duomenis?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Ištrinti skirtukus ir svetainės duomenis?";
 
@@ -4115,7 +4204,7 @@
 "sync.delete.all.confirm.action" = "Ištrinti serverio duomenis";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Visi įrenginiai bus atjungti, o sinchronizuoti duomenys bus ištrinti iš serverio.";
+"sync.delete.all.confirm.message" = "Jūsų atsarginė kopija bus ištrinta iš serverio. Visi įrenginiai bus atjungti nuo sinchronizavimo, bet iš nė vieno įrenginio niekas nebus ištrinta.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Ištrinti serverio duomenis?";
@@ -4207,15 +4296,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Skirtukas neperskaitytas";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Uždaryk „Fire“ kortelę";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Uždaryti kortelę";
 /* Accessibility label on remove button */
 "tab.close.home" = "Uždaryti pagrindinio puslapio skirtuką";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Uždaryti „%1$@“ adresu %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "„Fire“ kortelė";
+
+/* New tab title */
+"tab.new.title" = "Nauja kortelė";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Atidaryti pagrindinio puslapio skirtuką";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Atidaryk naują kortelę";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Atidaryk „Fire“ kortelę";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Atidaryti „%1$@“ adresu %2$@";
 

@@ -112,6 +112,11 @@
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Megnyitás a háttérben";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Új Fire lap";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Megnyitás Fire lapon";
 /* Create New Tab action */
 "action.title.newTabAction" = "Új lap";
 
@@ -207,6 +212,24 @@
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fénykép készítése";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Elemezési feladatokhoz";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Kibővített érvelés";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Gyors válaszok";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Gyors";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Összetett feladatokhoz";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Érvelés";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Válaszok testreszabása";
@@ -360,12 +383,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "DuckDuckGo keresés";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "A keresési javaslatok között már a legutóbb meglátogatott webhelyek is szerepelnek. A Beállítások alatt kikapcsolhatod, vagy bármikor törölheted a 🔥 Tűz gombbal.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Ugyanolyan adatvédelem.\nJobb keresési javaslatok!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Váltás lapra";
@@ -876,6 +893,9 @@
 
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Nem, köszönöm";
+
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Most nem";
 
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Tárold biztonságosan a jelszavaidat az eszközödön a DuckDuckGo Jelszavak és automatikus kitöltés funkciójával.";
@@ -1489,6 +1509,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Üzeneteddel együtt elküldve a Duck.ai-nak";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Legutóbbi csevegések";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Legutóbbi csevegések";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Összes csevegés megtekintése";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Duck.ai hang gyorsparancsának hozzáadása a Vezérlőközponthoz";
 
@@ -1498,8 +1527,14 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Oldal tartalmának csatolása";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Kérdezz az oldalról";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Oldal összefoglalása";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Oldal összefoglalása";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Duck.ai hozzáadása a Vezérlőközponthoz";
@@ -1557,6 +1592,12 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Beszélgess a Duck.ai-jal a Siri segítségével!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Minden csevegés %@ privát";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "privát";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo iOS verzió";
@@ -1837,6 +1878,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Erre a lapra vált";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Utoljára használt Fire lap";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Visszalépés erre: %@";
 
@@ -2146,6 +2189,47 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Törlendő elemek kiválasztása";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Bejelentkezés egy webhelyre másik fiókkal";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Böngészés a helyi előzmények mentése nélkül";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Webhelyek hibaelhárítása";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "A Fire lapok a böngésző egyéb adataitól el vannak különítve. Az összes bezárásakor a hozzájuk tartozó adatok törlésre kerülnek. Ugyanolyan nyomkövetés elleni védelmet kínálnak, mint a többi lap.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Új Fire lap";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire lapok";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Új";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Újdonság! Böngészés a helyi előzmények mentése nélkül, vagy bejelentkezés a webhelyekre másik fiókkal.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Most nem";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Fire lapok kipróbálása";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Fire lapok kipróbálása";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Próbáld ki a Fire lapok funkciót, hogy a helyi előzmények mentése nélkül böngészhess.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Új: Fire lapok";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire lap";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Levegő";
 
@@ -2210,7 +2294,7 @@
 "import.passwords.promo.title" = "Jelszavak importálása a DuckDuckGóba";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Kérdezz privátban";
+"input.field.placeholder.duckai" = "Kérdezz bármit privátban";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Tegyél fel egy kapcsolódó kérdést...";
@@ -2268,6 +2352,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Keresés vagy cím megadása";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Új Fire lap";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Új lap";
@@ -3160,6 +3247,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Beolvasás…";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Törlöd a Fire lapokat és azok adatait?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Törlöd a lapokat és a webhelyadatokat?";
 
@@ -4115,7 +4204,7 @@
 "sync.delete.all.confirm.action" = "Szerveradatok törlése";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "A rendszer minden eszközt lecsatlakoztat, és a szinkronizált adatokat törli a szerverről.";
+"sync.delete.all.confirm.message" = "A biztonsági mentés törölve lesz a szerverről. A rendszer minden eszközt leválaszt a szinkronizálásról, de semmi sem lesz törölve az eszközökről.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Szerveradatok törlése?";
@@ -4207,15 +4296,30 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Olvasatlan lap";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Fire lap bezárása";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Lap bezárása";
 /* Accessibility label on remove button */
 "tab.close.home" = "Kezdőlap bezárása";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "\"%1$@\" bezárása itt: %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire lap";
+
+/* New tab title */
+"tab.new.title" = "Új lap";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Kezdőlap megnyitása";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Új lap megnyitása";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Fire lap megnyitása";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "\"%1$@\" megnyitása itt: %2$@";
 

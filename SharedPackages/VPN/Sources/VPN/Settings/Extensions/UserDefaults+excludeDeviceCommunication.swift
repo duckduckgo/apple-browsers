@@ -24,7 +24,11 @@ extension UserDefaults {
         "networkProtectionSettingExcludeDeviceCommunication"
     }
 
+    #if os(macOS)
+    static let excludeDeviceCommunicationDefaultValue = false
+    #else
     static let excludeDeviceCommunicationDefaultValue = true
+    #endif
 
     @objc
     dynamic var networkProtectionSettingExcludeDeviceCommunication: Bool {

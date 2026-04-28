@@ -219,28 +219,19 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     // MARK: - Voice Chat
 
-    func testOpenNewVoiceChat_OpensTabWithVoiceModeURLInNewSelectedTab() {
-        // Given — a stubbed AI chat URL so the voice-mode transform is deterministic
-        let baseURL = URL(string: "https://duck.ai/")!
-        let voiceController = AIChatOmnibarController(
-            aiChatTabOpener: mockTabOpener,
-            tabCollectionViewModel: tabCollectionViewModel,
-            featureFlagger: featureFlagger,
-            searchPreferencesPersistor: searchPreferencesPersistor,
-            preferences: mockPreferences,
-            modelsService: mockModelsService,
-            subscriptionManager: mockSubscriptionManager,
-            aiChatURLProvider: { baseURL }
-        )
-
+    func testOpenNewVoiceChat_OpensNewSelectedTabWithVoiceModeTrigger() {
         // When
-        voiceController.openNewVoiceChat()
+        controller.openNewVoiceChat()
 
-        // Then — tab opener invoked with the voice-mode URL and a new selected tab behavior,
-        // matching the `Duck.ai → New Voice Chat` menu action.
+        // Then — tab opener invoked with the `.mode(voice)` trigger and a new selected tab.
+        // The mode is handed off via the prompt payload (Duck.ai routes on mode), not via a
+        // `?mode=voice` URL parameter — same handoff mechanism image-generation uses.
         XCTAssertTrue(mockTabOpener.openAIChatTabCalled)
-        XCTAssertEqual(mockTabOpener.lastURL, AIChatURLParameters.voiceModeURL(from: baseURL))
         XCTAssertEqual(mockTabOpener.lastBehavior, .newTab(selected: true))
+        guard case .mode(let mode) = mockTabOpener.lastTrigger else {
+            return XCTFail("Expected .mode trigger, got \(String(describing: mockTabOpener.lastTrigger))")
+        }
+        XCTAssertEqual(mode, AIChatNativePrompt.voiceMode)
     }
 
     // MARK: - Text Update Tests

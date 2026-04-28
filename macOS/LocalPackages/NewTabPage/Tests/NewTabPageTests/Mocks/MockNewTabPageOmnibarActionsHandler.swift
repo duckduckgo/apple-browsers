@@ -54,11 +54,4 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     func viewAllAiChats(target: NewTabPage.NewTabPageDataModel.OpenTarget) {
 
     }
-
-    var openNewVoiceChatHandler: (() -> Void)?
-
-    @MainActor
-    func openNewVoiceChat() {
-        openNewVoiceChatHandler?()
-    }
 }

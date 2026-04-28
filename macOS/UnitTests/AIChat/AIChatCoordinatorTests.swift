@@ -1128,6 +1128,8 @@ class MockAIChatTabOpener: AIChatTabOpening {
             lastRestorationData = data
         case .existingChat:
             break
+        case .mode:
+            break
         }
 
         openMethodCalledExpectation?.fulfill()

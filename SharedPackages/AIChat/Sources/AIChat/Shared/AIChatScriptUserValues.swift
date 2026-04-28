@@ -174,6 +174,9 @@ public struct AIChatNativeConfigValues: Codable {
 public struct AIChatNativePrompt: Codable, Equatable {
     /// Mode value for image generation prompts.
     public static let imageGenerationMode = "image-generation"
+    /// Mode value for voice-chat prompts. Duck.ai routes to the voice flow purely from this
+    /// mode in the handoff payload — no `?mode=voice` URL parameter is required.
+    public static let voiceMode = "voice-mode"
 
     public let platform: String
     public let tool: Tool?

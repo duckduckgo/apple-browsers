@@ -63,7 +63,6 @@ final class AIChatOmnibarController {
     private let suggestionsReader: AIChatSuggestionsReading?
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
-    private let aiChatURLProvider: () -> URL
     private var preferences: AIChatPreferencesPersisting
     private var cancellables = Set<AnyCancellable>()
     private var sharedTextStateCancellable: AnyCancellable?
@@ -161,8 +160,7 @@ final class AIChatOmnibarController {
         suggestionsReader: AIChatSuggestionsReading? = nil,
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         modelsService: AIChatModelsProviding = AIChatModelsService(),
-        subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager,
-        aiChatURLProvider: @escaping () -> URL = { AIChatRemoteSettings().aiChatURL }
+        subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -173,7 +171,6 @@ final class AIChatOmnibarController {
         self.preferences = preferences
         self.modelsService = modelsService
         self.subscriptionManager = subscriptionManager
-        self.aiChatURLProvider = aiChatURLProvider
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
@@ -183,10 +180,11 @@ final class AIChatOmnibarController {
     }
 
     /// Opens a new voice-chat tab from the AI chat omnibar. Mirrors the `Duck.ai → New Voice Chat`
-    /// menu action: a new selected tab loaded with the voice-mode URL.
+    /// menu action: opens a new selected Duck.ai tab and hands off `mode: voice-mode` via the prompt
+    /// handler (no `?mode=voice` URL param — Duck.ai routes purely on the prompt mode, same as
+    /// image generation).
     func openNewVoiceChat() {
-        let url = AIChatURLParameters.voiceModeURL(from: aiChatURLProvider())
-        aiChatTabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
+        aiChatTabOpener.openAIChatTab(with: .mode(AIChatNativePrompt.voiceMode), behavior: .newTab(selected: true))
         PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNative, frequency: .dailyAndStandard, includeAppVersionParameter: true)
     }
 

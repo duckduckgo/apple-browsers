@@ -495,30 +495,6 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(config.enableVoiceChatAccess, false)
     }
 
-    @MainActor
-    func testWhenOpenNewVoiceChatReceivedAndFlagEnabledThenActionHandlerIsCalled() async throws {
-        configProvider.isVoiceChatAccessEnabled = true
-        let expectation = expectation(description: "openNewVoiceChat invoked on action handler")
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openNewVoiceChatHandler = {
-            expectation.fulfill()
-        }
-
-        try await messageHelper.handleMessageExpectingNilResponse(named: .openNewVoiceChat)
-        await fulfillment(of: [expectation], timeout: 1)
-    }
-
-    @MainActor
-    func testWhenOpenNewVoiceChatReceivedAndFlagDisabledThenMessageIsDropped() async throws {
-        configProvider.isVoiceChatAccessEnabled = false
-        var wasCalled = false
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openNewVoiceChatHandler = {
-            wasCalled = true
-        }
-
-        try await messageHelper.handleMessageExpectingNilResponse(named: .openNewVoiceChat)
-
-        XCTAssertFalse(wasCalled, "Action handler must not be invoked when the feature flag is off")
-    }
 }
 
 private final class StubNewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {

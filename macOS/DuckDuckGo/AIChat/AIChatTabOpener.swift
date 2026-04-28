@@ -48,6 +48,12 @@ enum AIChatOpenTrigger {
     /// Opens an existing AI chat by its chat ID.
     /// - Parameter chatId: The unique identifier of the chat to open.
     case existingChat(chatId: String)
+
+    /// Opens a new AI chat session pre-set with a `mode` value in the prompt handoff.
+    /// Used for mode-driven entry points (e.g. voice) where there is no user query but Duck.ai
+    /// must route to a specific flow based on the mode — same mechanism image-generation submissions use.
+    /// - Parameter mode: The mode string forwarded in the native prompt payload (e.g. `AIChatNativePrompt.voiceMode`).
+    case mode(String)
 }
 
 /// Protocol defining the interface for opening AI chat tabs.
@@ -115,6 +121,11 @@ struct AIChatTabOpener: AIChatTabOpening {
         case .existingChat(let chatId):
             let chatURL = buildChatURL(for: chatId)
             aiChatTabManaging.openAIChat(chatURL, with: behavior, hasPrompt: false)
+
+        case .mode(let mode):
+            let prompt = AIChatNativePrompt.queryPrompt("", autoSubmit: false, mode: mode)
+            promptHandler.setData(prompt)
+            aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: behavior, hasPrompt: true)
         }
     }
 

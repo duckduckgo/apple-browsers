@@ -258,8 +258,7 @@ extension AIChatMenu.Actions {
                 tabOpener.openAIChatTab(with: .newChat, behavior: .newTab(selected: true))
             },
             openNewVoiceChat: {
-                let url = AIChatURLParameters.voiceModeURL(from: remoteSettings.aiChatURL)
-                tabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
+                tabOpener.openAIChatTab(with: .mode(AIChatNativePrompt.voiceMode), behavior: .newTab(selected: true))
             },
             openNewImageChat: {
                 let url = AIChatURLParameters.imageModeURL(from: remoteSettings.aiChatURL)

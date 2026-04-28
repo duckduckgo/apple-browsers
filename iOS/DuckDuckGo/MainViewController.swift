@@ -3136,6 +3136,7 @@ class MainViewController: UIViewController {
             return
         }
 
+        unifiedToggleInputCoordinator?.dismissOmnibarKeyboard()
         prepareTabForRequest {
             currentTab.loadVoiceMode()
         }

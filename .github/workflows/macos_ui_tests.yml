@@ -71,7 +71,7 @@ jobs:
     uses: ./.github/workflows/should_run_pr_checks.yml
 
   create-notarized-app:
-    name: Build Notarized Review app
+    name: Build Notarized Review app (${{ inputs.build-type }})
 
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'

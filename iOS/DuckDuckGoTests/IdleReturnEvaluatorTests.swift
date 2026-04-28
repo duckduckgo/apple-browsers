@@ -61,6 +61,7 @@ final class IdleReturnEvaluatorTests {
         return mock
     }
 
+    @available(iOS 16, *)
     @Test("When feature is unavailable then didReturnAfterIdle returns false", .timeLimit(.minutes(1)))
     func whenFeatureUnavailableThenReturnsFalse() {
         let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(featureAvailable: false))
@@ -68,12 +69,14 @@ final class IdleReturnEvaluatorTests {
         #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: date))
     }
 
+    @available(iOS 16, *)
     @Test("When lastBackgroundDate is nil then didReturnAfterIdle returns false", .timeLimit(.minutes(1)))
     func whenLastBackgroundDateNilThenReturnsFalse() {
         let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility())
         #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: nil))
     }
 
+    @available(iOS 16, *)
     @Test("When under threshold then didReturnAfterIdle returns false", .timeLimit(.minutes(1)))
     func whenUnderThresholdThenReturnsFalse() {
         let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(thresholdSeconds: 120))
@@ -81,6 +84,7 @@ final class IdleReturnEvaluatorTests {
         #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: underThreshold))
     }
 
+    @available(iOS 16, *)
     @Test("When over threshold then didReturnAfterIdle returns true", .timeLimit(.minutes(1)))
     func whenOverThresholdThenReturnsTrue() {
         let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(thresholdSeconds: 120))
@@ -88,6 +92,7 @@ final class IdleReturnEvaluatorTests {
         #expect(evaluator.didReturnAfterIdle(lastBackgroundDate: overThreshold))
     }
 
+    @available(iOS 16, *)
     @Test("When at exactly threshold then didReturnAfterIdle returns true", .timeLimit(.minutes(1)))
     func whenAtThresholdThenReturnsTrue() {
         let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(thresholdSeconds: 120))
@@ -95,12 +100,14 @@ final class IdleReturnEvaluatorTests {
         #expect(evaluator.didReturnAfterIdle(lastBackgroundDate: atThreshold))
     }
 
+    @available(iOS 16, *)
     @Test("When effective option is .newTab then treatmentForIdleReturn is .ntp", .timeLimit(.minutes(1)))
     func whenEffectiveOptionIsNewTabThenTreatmentIsNTP() {
         let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(effectiveOption: .newTab))
         #expect(evaluator.treatmentForIdleReturn() == .ntp)
     }
 
+    @available(iOS 16, *)
     @Test("When effective option is .lastUsedTab then treatmentForIdleReturn is .lut", .timeLimit(.minutes(1)))
     func whenEffectiveOptionIsLastUsedTabThenTreatmentIsLUT() {
         let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(effectiveOption: .lastUsedTab))

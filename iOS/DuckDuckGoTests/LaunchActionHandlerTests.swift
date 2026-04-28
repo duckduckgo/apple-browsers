@@ -335,6 +335,7 @@ final class LaunchActionHandlerTests {
 
     // MARK: - Idle return
 
+    @available(iOS 16, *)
     @Test("When idle return with NTP treatment then showNewTabPageAfterIdleReturn is called and keyboard is not", .timeLimit(.minutes(1)))
     func whenIdleReturnNTPTreatmentThenIdleReturnHandlerIsCalled() {
         let date = Date()
@@ -350,6 +351,7 @@ final class LaunchActionHandlerTests {
         #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
     }
 
+    @available(iOS 16, *)
     @Test("When idle return with LUT treatment then markLastUsedTabAsResumedAfterIdle is called and keyboard shows", .timeLimit(.minutes(1)))
     func whenIdleReturnLUTTreatmentThenLUTHandlerIsCalled() {
         let date = Date()
@@ -367,6 +369,7 @@ final class LaunchActionHandlerTests {
         #expect(keyboardPresenter.lastBackgroundDate == date)
     }
 
+    @available(iOS 16, *)
     @Test("When no idle return then showKeyboardOnLaunch is called and neither delegate is called", .timeLimit(.minutes(1)))
     func whenNoIdleReturnThenKeyboardIsCalled() {
         let date = Date()
@@ -383,6 +386,7 @@ final class LaunchActionHandlerTests {
         #expect(keyboardPresenter.lastBackgroundDate == date)
     }
 
+    @available(iOS 16, *)
     @Test("When isFirstForeground is true then keyboard presenter receives nil so keyboard shows on cold start", .timeLimit(.minutes(1)))
     func whenFirstForegroundThenKeyboardReceivesNil() {
         let date = Date()

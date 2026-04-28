@@ -27,6 +27,7 @@ struct PostIdleSessionWideEventDataTests {
 
     // MARK: - Metadata
 
+    @available(iOS 16, *)
     @Test("Metadata exposes expected pixel and feature names", .timeLimit(.minutes(1)))
     func metadataExposesExpectedNames() {
         #expect(PostIdleSessionWideEventData.metadata.pixelName == "post_idle_session")
@@ -37,6 +38,7 @@ struct PostIdleSessionWideEventDataTests {
 
     // MARK: - jsonParameters
 
+    @available(iOS 16, *)
     @Test("Default flow produces surface-only parameters and no status reason", .timeLimit(.minutes(1)))
     func defaultFlowProducesSurfaceOnly() {
         let data = PostIdleSessionWideEventData(surface: .ntp)
@@ -51,6 +53,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(params["feature.data.ext.back_pressed"] as? Bool == false)
     }
 
+    @available(iOS 16, *)
     @Test("Bar used reason emits status_reason", .timeLimit(.minutes(1)))
     func barUsedReasonEmitsStatusReason() {
         let data = PostIdleSessionWideEventData(surface: .ntp)
@@ -58,6 +61,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == "bar_used")
     }
 
+    @available(iOS 16, *)
     @Test("Return-to-page reason emits status_reason", .timeLimit(.minutes(1)))
     func returnToPageReasonEmitsStatusReason() {
         let data = PostIdleSessionWideEventData(surface: .ntp)
@@ -65,6 +69,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == "return_to_page_tapped")
     }
 
+    @available(iOS 16, *)
     @Test("Tab switcher reason emits status_reason", .timeLimit(.minutes(1)))
     func tabSwitcherReasonEmitsStatusReason() {
         let data = PostIdleSessionWideEventData(surface: .ntp)
@@ -72,6 +77,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == "tab_switcher_selected")
     }
 
+    @available(iOS 16, *)
     @Test("App backgrounded reason emits status_reason", .timeLimit(.minutes(1)))
     func appBackgroundedReasonEmitsStatusReason() {
         let data = PostIdleSessionWideEventData(surface: .ntp)
@@ -79,6 +85,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == "app_backgrounded")
     }
 
+    @available(iOS 16, *)
     @Test("Favorite selected reason emits status_reason", .timeLimit(.minutes(1)))
     func favoriteSelectedReasonEmitsStatusReason() {
         let data = PostIdleSessionWideEventData(surface: .ntp)
@@ -86,6 +93,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == "favorite_selected")
     }
 
+    @available(iOS 16, *)
     @Test("Chat selected reason emits status_reason", .timeLimit(.minutes(1)))
     func chatSelectedReasonEmitsStatusReason() {
         let data = PostIdleSessionWideEventData(surface: .ntp)
@@ -93,12 +101,14 @@ struct PostIdleSessionWideEventDataTests {
         #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == "chat_selected")
     }
 
+    @available(iOS 16, *)
     @Test("LUT surface emits lut", .timeLimit(.minutes(1)))
     func lutSurfaceEmitsLut() {
         let data = PostIdleSessionWideEventData(surface: .lut)
         #expect(data.jsonParameters()["feature.data.ext.surface"] as? String == "lut")
     }
 
+    @available(iOS 16, *)
     @Test("Boolean flags propagate when set", .timeLimit(.minutes(1)))
     func booleanFlagsPropagateWhenSet() {
         let data = PostIdleSessionWideEventData(surface: .ntp,
@@ -113,6 +123,7 @@ struct PostIdleSessionWideEventDataTests {
 
     // MARK: - Durations
 
+    @available(iOS 16, *)
     @Test("Session duration is computed in ms when sessionInterval is closed", .timeLimit(.minutes(1)))
     func sessionDurationIsComputedInMs() {
         let start = Date()
@@ -123,6 +134,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(params["feature.data.ext.session_duration_ms"] as? Int == 2500)
     }
 
+    @available(iOS 16, *)
     @Test("First interaction duration is computed in ms when interval is closed", .timeLimit(.minutes(1)))
     func firstInteractionDurationIsComputedInMs() {
         let start = Date()
@@ -133,6 +145,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(params["feature.data.ext.time_to_first_interaction_ms"] as? Int == 500)
     }
 
+    @available(iOS 16, *)
     @Test("Both intervals share the same start by default", .timeLimit(.minutes(1)))
     func bothIntervalsShareSameStart() {
         let start = Date()
@@ -143,6 +156,7 @@ struct PostIdleSessionWideEventDataTests {
 
     // MARK: - Completion decision
 
+    @available(iOS 16, *)
     @Test("App launch trigger always completes as UNKNOWN with app_terminated reason", .timeLimit(.minutes(1)))
     func appLaunchAlwaysCompletesAsUnknownAppTerminated() async {
         let data = PostIdleSessionWideEventData(surface: .ntp)
@@ -156,6 +170,7 @@ struct PostIdleSessionWideEventDataTests {
         }
     }
 
+    @available(iOS 16, *)
     @Test("App launch trigger completes orphan with all surface variants", .timeLimit(.minutes(1)))
     func appLaunchCompletesAllSurfaceVariants() async {
         for surface in PostIdleSessionWideEventData.Surface.allCases {
@@ -171,6 +186,7 @@ struct PostIdleSessionWideEventDataTests {
 
     // MARK: - Codable
 
+    @available(iOS 16, *)
     @Test("Round-trips through JSONEncoder/Decoder preserves all fields", .timeLimit(.minutes(1)))
     func codableRoundTripPreservesAllFields() throws {
         let start = Date(timeIntervalSince1970: 1_700_000_000)

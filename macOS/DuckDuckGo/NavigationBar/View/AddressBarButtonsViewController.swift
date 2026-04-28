@@ -150,12 +150,12 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var aiChatButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var askAIChatButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var permissionCenterButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var permissionCenterButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var askAIChatButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var privacyShieldButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var privacyShieldButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var imageButtonLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var zoomButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet private weak var permissionButtons: NSView!
 
     /// Width of the left buttons container (Privacy Dashboard button, Permissions buttons…)
     /// Used to adjust the Passive Address Bar leading constraint
@@ -616,15 +616,15 @@ final class AddressBarButtonsViewController: NSViewController {
 
         // Dispatch to next run loop to ensure UI updates after Combine propagation
         tabViewModel?.$usedPermissions.dropFirst().receive(on: DispatchQueue.main).sink { [weak self] _ in
-            self?.updateAllPermissionButtons()
+            self?.updatePermissionCenterButton()
         }.store(in: &permissionsCancellables)
         tabViewModel?.tab.popupHandling?.pageInitiatedPopupPublisher.sink { [weak self] _ in
-            self?.updateAllPermissionButtons()
+            self?.updatePermissionCenterButton()
         }.store(in: &permissionsCancellables)
         tabViewModel?.$permissionAuthorizationQuery
             .receive(on: DispatchQueue.main)
             .dropFirst().sink { [weak self] _ in
-                self?.updateAllPermissionButtons()
+                self?.updatePermissionCenterButton()
         }.store(in: &permissionsCancellables)
 
         // Show informational popover when permission blocked due to system being disabled
@@ -698,18 +698,6 @@ final class AddressBarButtonsViewController: NSViewController {
                 updateAIChatButtonDetachIndicator(for: tabID)
             }
             .store(in: &cancellables)
-    }
-
-    private func updateLegacyPermissionButtons() {
-        permissionButtons.isShown = false
-    }
-
-    private func updateAllPermissionButtons() {
-        // Legacy permission buttons
-        updateLegacyPermissionButtons()
-
-        // New permission button
-        updatePermissionCenterButton()
     }
 
     // MARK: - Permission Center
@@ -1099,6 +1087,7 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyShieldButtonHeightConstraint.constant = addressBarButtonSize
         zoomButtonHeightConstraint.constant = addressBarButtonSize
         permissionCenterButtonWidthConstraint.constant = addressBarButtonSize
+        permissionCenterButtonHeightConstraint.constant = addressBarButtonSize
     }
 
     private func setupButtonIcons() {
@@ -1692,7 +1681,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         updateImageButton()
         updatePrivacyDashboardButton()
-        updateAllPermissionButtons()
+        updatePermissionCenterButton()
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
         if !isToggleFeatureEnabled {
@@ -1779,7 +1768,7 @@ final class AddressBarButtonsViewController: NSViewController {
             onPermissionRemoved: { [weak self] in
                 // Dispatch to next run loop to allow Combine publishers to propagate changes
                 DispatchQueue.main.async {
-                    self?.updateAllPermissionButtons()
+                    self?.updatePermissionCenterButton()
                 }
             },
             openPopup: { [weak tabViewModel] query in
@@ -2068,7 +2057,7 @@ final class AddressBarButtonsViewController: NSViewController {
         if case .url(let url, _, _) = tabViewModel.tab.content,
            adBlockingAvailability.shouldShowAnimation(for: url) {
             updatePrivacyEntryPointIcon()
-            updateAllPermissionButtons()
+            updatePermissionCenterButton()
             return
         }
 
@@ -2090,7 +2079,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         updatePrivacyEntryPointIcon()
-        updateAllPermissionButtons()
+        updatePermissionCenterButton()
     }
 
     /// Stops animations. Shield visibility is managed by `updatePrivacyEntryPointIcon()`.
@@ -2488,7 +2477,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
             updatePermissionCenterButtonIcon()
             // Check for other pending permission requests after popover closes
             DispatchQueue.main.async { [weak self] in
-                self?.updateAllPermissionButtons()
+                self?.updatePermissionCenterButton()
             }
         case is PopupBlockedPopover:
             if let button = popover.positioningView as? AddressBarButton {
@@ -2500,7 +2489,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
             updatePermissionCenterButtonIcon()
             // Check for other pending permission requests after popover closes
             DispatchQueue.main.async { [weak self] in
-                self?.updateAllPermissionButtons()
+                self?.updatePermissionCenterButton()
             }
         case is PermissionCenterPopover:
             permissionCenterButton.backgroundColor = .clear

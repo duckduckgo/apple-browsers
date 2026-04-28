@@ -143,19 +143,18 @@ private extension MainViewController {
         viewCoordinator.hideUnifiedInputContent()
         unifiedToggleInputCoordinator?.contentViewController.setContentInset(top: 0, bottom: 0)
         hideSuggestionTray()
-        viewCoordinator.suggestionTrayContainer.isHidden = false
     }
 
     func applyBottomOmnibarVisibility(_ state: UnifiedToggleInputDisplayState.OmnibarState) {
         guard let coordinator = unifiedToggleInputCoordinator,
               coordinator.cardPosition == .bottom,
               viewCoordinator.addressBarPosition.isBottom else {
-            recomputeOmnibarEditingHeightIfNeeded()
+            recomputeNavigationBarContainerHeightIfNeeded()
             return
         }
         applyBottomOmnibarAnchor(state)
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-        recomputeOmnibarEditingHeightIfNeeded()
+        recomputeNavigationBarContainerHeightIfNeeded()
     }
 
     func applyBottomOmnibarAnchor(_ state: UnifiedToggleInputDisplayState.OmnibarState) {

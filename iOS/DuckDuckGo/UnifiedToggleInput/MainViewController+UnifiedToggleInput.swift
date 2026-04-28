@@ -137,12 +137,12 @@ extension MainViewController {
         }
     }
 
-    func recomputeOmnibarEditingHeightIfNeeded() {
+    func recomputeNavigationBarContainerHeightIfNeeded() {
         guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.isOmnibarSession else {
+              coordinator.isInputEditing else {
             return
         }
-        let height = coordinator.omnibarEditingHeight()
+        let height = coordinator.editingHeight()
         guard viewCoordinator.constraints.navigationBarContainerHeight.constant != height else { return }
         viewCoordinator.constraints.navigationBarContainerHeight.constant = height
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
@@ -195,7 +195,7 @@ private extension MainViewController {
         coordinator.attachmentsChangePublisher
             .sink { [weak self] in
                 guard let self, let coordinator = unifiedToggleInputCoordinator else { return }
-                if coordinator.isAITabExpanded || coordinator.isOmnibarSession {
+                if coordinator.isInputEditing {
                     adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
                 }
             }
@@ -608,11 +608,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidChangeHeight() {
-        if unifiedToggleInputCoordinator?.isOmnibarSession == true {
-            recomputeOmnibarEditingHeightIfNeeded()
-        } else {
-            unifiedToggleInputCoordinator?.pushContentInsets()
-        }
+        recomputeNavigationBarContainerHeightIfNeeded()
     }
 }
 

@@ -251,6 +251,11 @@ extension TabExtensionsBuilder {
         add {
             FindInPageTabExtension()
         }
+        if args.isTabBurner {
+            add {
+                SubscriptionPromoTabExtension()
+            }
+        }
         add {
             DownloadsTabExtension(downloadManager: dependencies.downloadManager,
                                   downloadsPreferences: dependencies.downloadsPreferences,

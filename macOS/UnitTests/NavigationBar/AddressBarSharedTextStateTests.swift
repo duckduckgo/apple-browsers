@@ -18,6 +18,7 @@
 
 import XCTest
 import Combine
+import AIChat
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AddressBarSharedTextStateTests: XCTestCase {
@@ -298,6 +299,265 @@ final class AddressBarSharedTextStateTests: XCTestCase {
         // State should be clean
         XCTAssertFalse(sut.hasUserInteractedWithText)
         XCTAssertEqual(sut.text, "")
+    }
+
+    // MARK: - Duck.ai Mode Tests
+
+    func testWhenInitialized_ThenIsInDuckAIModeIsFalse() {
+        XCTAssertFalse(sut.isInDuckAIMode)
+    }
+
+    func testWhenSetDuckAIModeTrue_ThenIsInDuckAIModeIsTrue() {
+        sut.setDuckAIMode(true)
+        XCTAssertTrue(sut.isInDuckAIMode)
+    }
+
+    func testWhenSetDuckAIModeFalse_ThenIsInDuckAIModeIsFalse() {
+        sut.setDuckAIMode(true)
+        sut.setDuckAIMode(false)
+        XCTAssertFalse(sut.isInDuckAIMode)
+    }
+
+    func testWhenResetCalled_ThenIsInDuckAIModeIsFalse() {
+        sut.setDuckAIMode(true)
+        sut.reset()
+        XCTAssertFalse(sut.isInDuckAIMode)
+    }
+
+    func testWhenSetDuckAIModeToSameValue_ThenPublisherDoesNotEmitAgain() {
+        sut.setDuckAIMode(true)
+        let expectation = expectation(description: "Publisher does not emit for no-op assignment")
+        expectation.isInverted = true
+
+        sut.$isInDuckAIMode
+            .dropFirst() // skip current value
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        sut.setDuckAIMode(true) // no-op
+
+        wait(for: [expectation], timeout: 0.2)
+    }
+
+    func testWhenSetDuckAIModeChanges_ThenPublisherEmits() {
+        let expectation = expectation(description: "Publisher emits on state change")
+        var received: [Bool] = []
+
+        sut.$isInDuckAIMode
+            .dropFirst()
+            .sink { value in
+                received.append(value)
+                if received.count == 2 { expectation.fulfill() }
+            }
+            .store(in: &cancellables)
+
+        sut.setDuckAIMode(true)
+        sut.setDuckAIMode(false)
+
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(received, [true, false])
+    }
+
+    func testWhenResetCalled_WithDuckAIModeAlreadyFalse_ThenPublisherDoesNotRedundantlyEmit() {
+        let expectation = expectation(description: "Publisher does not emit for no-op reset")
+        expectation.isInverted = true
+
+        sut.$isInDuckAIMode
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        sut.reset() // isInDuckAIMode was already false
+
+        wait(for: [expectation], timeout: 0.2)
+    }
+
+    func testWhenDuckAIModeEnabled_AndTextIsUpdated_ThenModeIsPreserved() {
+        sut.setDuckAIMode(true)
+        sut.updateText("prompt text")
+
+        XCTAssertTrue(sut.isInDuckAIMode)
+        XCTAssertEqual(sut.text, "prompt text")
+    }
+
+    // MARK: - AI Chat Tool Mode Tests
+
+    func testWhenInitialized_ThenAIChatToolModeIsNil() {
+        XCTAssertNil(sut.aiChatToolMode)
+    }
+
+    func testWhenSetAIChatToolModeToImageGeneration_ThenStored() {
+        sut.setAIChatToolMode(.imageGeneration)
+        XCTAssertEqual(sut.aiChatToolMode, .imageGeneration)
+    }
+
+    func testWhenSetAIChatToolModeToWebSearch_ThenStored() {
+        sut.setAIChatToolMode(.webSearch)
+        XCTAssertEqual(sut.aiChatToolMode, .webSearch)
+    }
+
+    func testWhenSetAIChatToolModeToNil_ThenCleared() {
+        sut.setAIChatToolMode(.imageGeneration)
+        sut.setAIChatToolMode(nil)
+        XCTAssertNil(sut.aiChatToolMode)
+    }
+
+    func testWhenSetAIChatToolModeToSameValue_ThenPublisherDoesNotReemit() {
+        sut.setAIChatToolMode(.imageGeneration)
+
+        let expectation = expectation(description: "Publisher does not emit for no-op assignment")
+        expectation.isInverted = true
+
+        sut.$aiChatToolMode
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        sut.setAIChatToolMode(.imageGeneration) // no-op
+
+        wait(for: [expectation], timeout: 0.2)
+    }
+
+    // MARK: - AI Chat Attachments Tests
+
+    func testWhenInitialized_ThenAIChatAttachmentsIsEmpty() {
+        XCTAssertTrue(sut.aiChatAttachments.isEmpty)
+    }
+
+    func testWhenSetAIChatAttachments_ThenStored() {
+        let attachment = makeAttachment()
+        sut.setAIChatAttachments([attachment])
+
+        XCTAssertEqual(sut.aiChatAttachments.count, 1)
+        XCTAssertEqual(sut.aiChatAttachments.first?.id, attachment.id)
+    }
+
+    func testWhenSetAIChatAttachmentsWithSameIds_ThenPublisherDoesNotReemit() {
+        let attachment = makeAttachment()
+        sut.setAIChatAttachments([attachment])
+
+        let expectation = expectation(description: "Publisher does not emit when attachment ids are unchanged")
+        expectation.isInverted = true
+
+        sut.$aiChatAttachments
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        // Re-submit the SAME attachment instance — tab-switch restore path replays the current list; the
+        // idempotency guard stops that from churning subscribers.
+        sut.setAIChatAttachments([attachment])
+
+        wait(for: [expectation], timeout: 0.2)
+    }
+
+    func testWhenSetAIChatAttachmentsWithDifferentIds_ThenPublisherReemits() {
+        let first = makeAttachment()
+        sut.setAIChatAttachments([first])
+
+        let expectation = expectation(description: "Publisher emits when attachment list changes")
+        var received: [[AIChatImageAttachment]] = []
+
+        sut.$aiChatAttachments
+            .dropFirst()
+            .sink { attachments in
+                received.append(attachments)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        let second = makeAttachment()
+        sut.setAIChatAttachments([first, second])
+
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(received.first?.count, 2)
+    }
+
+    // MARK: - Selection Range Tests
+
+    func testWhenInitialized_ThenSelectionRangeIsZero() {
+        XCTAssertEqual(sut.selectionRange, NSRange(location: 0, length: 0))
+    }
+
+    func testWhenUpdateSelection_ThenStored() {
+        sut.updateText("hello world")
+        sut.updateSelection(NSRange(location: 6, length: 5))
+
+        XCTAssertEqual(sut.selectionRange, NSRange(location: 6, length: 5))
+    }
+
+    func testWhenUpdateSelectionBeyondTextLength_ThenClampedToTextEnd() {
+        sut.updateText("hi")
+        sut.updateSelection(NSRange(location: 99, length: 0))
+
+        XCTAssertEqual(sut.selectionRange, NSRange(location: 2, length: 0))
+    }
+
+    func testWhenUpdateSelectionUpperBoundBeyondTextLength_ThenLengthClamped() {
+        sut.updateText("hello")
+        sut.updateSelection(NSRange(location: 2, length: 10))
+
+        XCTAssertEqual(sut.selectionRange, NSRange(location: 2, length: 3))
+    }
+
+    // MARK: - Reset with clearingDuckAIState Tests
+
+    func testWhenResetWithClearingDuckAIStateTrue_ThenAllDuckAIFieldsCleared() {
+        sut.updateText("prompt")
+        sut.updateSelection(NSRange(location: 3, length: 0))
+        sut.setDuckAIMode(true)
+        sut.setAIChatToolMode(.imageGeneration)
+        sut.setAIChatAttachments([makeAttachment()])
+
+        sut.reset(clearingDuckAIState: true)
+
+        XCTAssertEqual(sut.text, "")
+        XCTAssertEqual(sut.selectionRange, NSRange(location: 0, length: 0))
+        XCTAssertFalse(sut.hasUserInteractedWithText)
+        XCTAssertFalse(sut.isInDuckAIMode)
+        XCTAssertNil(sut.aiChatToolMode)
+        XCTAssertTrue(sut.aiChatAttachments.isEmpty)
+    }
+
+    func testWhenResetWithClearingDuckAIStateFalse_ThenAllDuckAIStatePreserved() {
+        // Tab-switch restore must not wipe ANY of the incoming tab's preserved duck.ai state — including
+        // the prompt text and selection. The unfocused duck.ai bar (`applyDuckAIUnfocusedValue`) reads
+        // from `text` to render the preserved prompt, so wiping it here would leave the bar showing the
+        // empty placeholder on every tab-switch-back.
+        sut.updateText("prompt")
+        sut.updateSelection(NSRange(location: 3, length: 0))
+        sut.setDuckAIMode(true)
+        sut.setAIChatToolMode(.webSearch)
+        let attachment = makeAttachment()
+        sut.setAIChatAttachments([attachment])
+
+        sut.reset(clearingDuckAIState: false)
+
+        XCTAssertEqual(sut.text, "prompt", "Text should survive a tab-switch reset")
+        XCTAssertEqual(sut.selectionRange, NSRange(location: 3, length: 0), "Selection should survive a tab-switch reset")
+        XCTAssertTrue(sut.hasUserInteractedWithText, "User-interaction flag should survive a tab-switch reset")
+        XCTAssertTrue(sut.isInDuckAIMode, "isInDuckAIMode should survive a tab-switch reset")
+        XCTAssertEqual(sut.aiChatToolMode, .webSearch, "Tool mode should survive a tab-switch reset")
+        XCTAssertEqual(sut.aiChatAttachments.count, 1, "Attachments should survive a tab-switch reset")
+        XCTAssertEqual(sut.aiChatAttachments.first?.id, attachment.id)
+    }
+
+    func testWhenResetWithoutParameter_ThenBehavesAsClearingDuckAIStateTrue() {
+        // Backwards-compat: existing call sites (e.g. in navigation path) use reset() without argument
+        // and must continue to do a full clear.
+        sut.setDuckAIMode(true)
+        sut.setAIChatToolMode(.imageGeneration)
+
+        sut.reset()
+
+        XCTAssertFalse(sut.isInDuckAIMode)
+        XCTAssertNil(sut.aiChatToolMode)
+    }
+
+    // MARK: - Helpers
+
+    private func makeAttachment(id: UUID = UUID()) -> AIChatImageAttachment {
+        AIChatImageAttachment(id: id, image: NSImage(), fileName: "\(id.uuidString).png", fileURL: nil, skipResize: true)
     }
 
     // MARK: - Thread Safety Tests

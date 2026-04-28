@@ -287,7 +287,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     @MainActor
     private func presentDebugWebView(url: URL) async {
         let privacyConfig = DBPPrivacyConfigurationManager()
-        let prefs = ContentScopeProperties.makeDBPOperationsProperties()
+        let prefs = ContentScopeProperties.contentScopePropertiesForDBP()
 
         guard let handler = try? DataBrokerProtectionWebViewHandler(
             privacyConfig: privacyConfig,

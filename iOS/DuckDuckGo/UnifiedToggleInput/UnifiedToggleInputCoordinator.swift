@@ -272,6 +272,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         viewController.apply(renderState.viewConfig, animated: false)
         applyToolbarPresentation()
+        updateToolbarAIVoiceChat()
         viewController.deactivateInput()
         intentSubject.send(.showCollapsed)
     }
@@ -287,6 +288,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         viewController.apply(renderState.viewConfig, animated: false)
         applyToolbarPresentation()
+        updateToolbarAIVoiceChat()
         fetchModels()
 
         if let prefilledText, !prefilledText.isEmpty {

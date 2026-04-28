@@ -64,7 +64,7 @@ public class DataBrokerProtectionAgentManagerProvider {
 
         let ipcServer = DefaultDataBrokerProtectionIPCServer(machServiceName: Bundle.main.bundleIdentifier!)
 
-        let contentScopeProperties = ContentScopeProperties.makeDBPOperationsProperties()
+        let contentScopeProperties = ContentScopeProperties.contentScopePropertiesForDBP()
 
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)

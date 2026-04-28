@@ -41,7 +41,17 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
     }
 
     private let lock = NSLock()
-    private var inner: DuckAiNativeStorageHandling
+    private var _inner: DuckAiNativeStorageHandling
+    private var inner: DuckAiNativeStorageHandling {
+        get {
+            lock.lock(); defer { lock.unlock() }
+            return _inner
+        }
+        set {
+            lock.lock(); defer { lock.unlock() }
+            _inner = newValue
+        }
+    }
     private var openedID: UUID
 
     private let baseDirectoryURL: URL
@@ -74,7 +84,7 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
                                              pixelFiring: pixelFiring) else {
             return nil
         }
-        self.inner = handler
+        self._inner = handler
         self.openedID = id
         Self.cleanupPendingRemovalDirectories(in: baseDirectoryURL,
                                               dataStoreIDManager: dataStoreIDManager)
@@ -98,12 +108,12 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
                                          keyStoreAccessGroup: keyStoreAccessGroup,
                                          pixelFiring: pixelFiring) else {
             Logger.aiChat.error("[NativeStorage] Failed to open fire-mode store at id \(currentID); clearing in place instead")
-            try? inner.deleteAllChats()
-            try? inner.deleteAllFiles()
-            try? inner.deleteAllEntries()
+            try? _inner.deleteAllChats()
+            try? _inner.deleteAllFiles()
+            try? _inner.deleteAllEntries()
             return
         }
-        inner = new
+        _inner = new
         openedID = currentID
 
         DispatchQueue.global(qos: .utility).async { [baseDirectoryURL, dataStoreIDManager] in
@@ -111,11 +121,6 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
             try? FileManager.default.removeItem(at: url)
             dataStoreIDManager.removePendingRemovalFireModeID(previousID)
         }
-    }
-
-    private var current: DuckAiNativeStorageHandling {
-        lock.lock(); defer { lock.unlock() }
-        return inner
     }
 
     // MARK: - Helpers
@@ -153,13 +158,13 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
 
     // MARK: - DuckAiNativeStorageHandling forwarding
 
-    func putEntry(key: String, value: Any) throws { try current.putEntry(key: key, value: value) }
+    func putEntry(key: String, value: Any) throws { try inner.putEntry(key: key, value: value) }
 
     /// Reads through to `consentSeedSource` for the small consent allow-list when the
     /// fire-mode store doesn't have the key — keeps the user from being re-prompted
     /// after `replaceAllEntries` or a fresh fire-mode UUID rotation.
     func getEntry(key: String) throws -> Any? {
-        if let value = try current.getEntry(key: key) { return value }
+        if let value = try inner.getEntry(key: key) { return value }
         guard let consentSeedSource,
               DuckAiNativeStorageConsent.entryKeys.contains(key) else {
             return nil
@@ -168,7 +173,7 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
     }
 
     func getAllEntries() throws -> [String: Any] {
-        var entries = try current.getAllEntries()
+        var entries = try inner.getAllEntries()
         guard let consentSeedSource else { return entries }
         for key in DuckAiNativeStorageConsent.entryKeys where entries[key] == nil {
             if let value = try? consentSeedSource.getEntry(key: key) {
@@ -178,25 +183,25 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
         return entries
     }
 
-    func deleteEntry(key: String) throws { try current.deleteEntry(key: key) }
-    func deleteAllEntries() throws { try current.deleteAllEntries() }
-    func replaceAllEntries(_ entries: [String: Any]) throws { try current.replaceAllEntries(entries) }
+    func deleteEntry(key: String) throws { try inner.deleteEntry(key: key) }
+    func deleteAllEntries() throws { try inner.deleteAllEntries() }
+    func replaceAllEntries(_ entries: [String: Any]) throws { try inner.replaceAllEntries(entries) }
 
-    func putChat(chatId: String, data: Data) throws { try current.putChat(chatId: chatId, data: data) }
-    func putChats(_ chats: [DuckAiChatRecord]) throws { try current.putChats(chats) }
-    func getChat(chatId: String) throws -> DuckAiChatRecord? { try current.getChat(chatId: chatId) }
-    func getAllChats() throws -> [DuckAiChatRecord] { try current.getAllChats() }
-    func deleteChat(chatId: String) throws { try current.deleteChat(chatId: chatId) }
-    func deleteAllChats() throws { try current.deleteAllChats() }
+    func putChat(chatId: String, data: Data) throws { try inner.putChat(chatId: chatId, data: data) }
+    func putChats(_ chats: [DuckAiChatRecord]) throws { try inner.putChats(chats) }
+    func getChat(chatId: String) throws -> DuckAiChatRecord? { try inner.getChat(chatId: chatId) }
+    func getAllChats() throws -> [DuckAiChatRecord] { try inner.getAllChats() }
+    func deleteChat(chatId: String) throws { try inner.deleteChat(chatId: chatId) }
+    func deleteAllChats() throws { try inner.deleteAllChats() }
 
-    func putFile(uuid: String, chatId: String, data: Data) throws { try current.putFile(uuid: uuid, chatId: chatId, data: data) }
-    func getFile(uuid: String) throws -> DuckAiFileContent? { try current.getFile(uuid: uuid) }
-    func listFiles() throws -> [DuckAiFileMetadata] { try current.listFiles() }
-    func deleteFile(uuid: String) throws { try current.deleteFile(uuid: uuid) }
-    func deleteFiles(chatId: String) throws { try current.deleteFiles(chatId: chatId) }
-    func deleteAllFiles() throws { try current.deleteAllFiles() }
+    func putFile(uuid: String, chatId: String, data: Data) throws { try inner.putFile(uuid: uuid, chatId: chatId, data: data) }
+    func getFile(uuid: String) throws -> DuckAiFileContent? { try inner.getFile(uuid: uuid) }
+    func listFiles() throws -> [DuckAiFileMetadata] { try inner.listFiles() }
+    func deleteFile(uuid: String) throws { try inner.deleteFile(uuid: uuid) }
+    func deleteFiles(chatId: String) throws { try inner.deleteFiles(chatId: chatId) }
+    func deleteAllFiles() throws { try inner.deleteAllFiles() }
 
-    func isMigrationDone() throws -> Bool { try current.isMigrationDone() }
-    func isMigrationDone(key: String) throws -> Bool { try current.isMigrationDone(key: key) }
-    func markMigrationDone(key: String) throws { try current.markMigrationDone(key: key) }
+    func isMigrationDone() throws -> Bool { try inner.isMigrationDone() }
+    func isMigrationDone(key: String) throws -> Bool { try inner.isMigrationDone(key: key) }
+    func markMigrationDone(key: String) throws { try inner.markMigrationDone(key: key) }
 }

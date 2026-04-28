@@ -179,7 +179,7 @@ jobs:
         if: matrix.destination != 'ios-simulator'
         working-directory: ${{ matrix.working-directory }}
         run: |
-          xcodebuild build-for-testing \
+          xcodebuild build \
             -scheme "${{ matrix.scheme }}" \
             -destination "${{ matrix.destination }}" \
             -derivedDataPath "DerivedData" \
@@ -187,7 +187,6 @@ jobs:
             -skipPackagePluginValidation \
             -skipMacroValidation \
             -disableAutomaticPackageResolution \
-            ENABLE_TESTABILITY=true \
             ONLY_ACTIVE_ARCH=YES
 
       - name: Perform CodeQL Analysis

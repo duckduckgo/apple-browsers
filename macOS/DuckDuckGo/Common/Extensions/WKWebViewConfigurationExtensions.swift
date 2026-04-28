@@ -80,31 +80,6 @@ extension WKWebViewConfiguration {
 
 }
 
-extension WKWebViewConfiguration {
-
-    enum ProcessNameSelector {
-        static let processName = NSSelectorFromString("_processDisplayName")
-        static let setProcessName = NSSelectorFromString("_setProcessDisplayName:")
-    }
-
-    var systemProcessName: String? {
-        get {
-            guard responds(to: ProcessNameSelector.processName) else {
-                return nil
-            }
-
-            return value(forKey: NSStringFromSelector(ProcessNameSelector.processName)) as? String
-        }
-        set {
-            guard responds(to: ProcessNameSelector.setProcessName) else {
-                return
-            }
-
-            perform(ProcessNameSelector.setProcessName, with: newValue)
-        }
-    }
-}
-
 extension WKPreferences {
 
     // !!! Do not change the key names as they are directly mirrored into WKPreferences keys !!!

@@ -52,7 +52,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private var dataBrokerForceOptOutWindowController: NSWindowController?
     private var logMonitorWindowController: NSWindowController?
     private var debugWebViewHandler: DataBrokerProtectionWebViewHandler?
-    private let nullCCFDelegate = NullCCFCommunicationDelegate()
+    private let nullCCFDelegateReference = NullCCFCommunicationDelegate()
     private let currentEndpointMenuItem = NSMenuItem(title: "Current Endpoint:")
     private let defaultEndpointMenuItem = NSMenuItem(title: "Use Default Endpoint", action: #selector(DataBrokerProtectionDebugMenu.useDBPDefaultEndpoint))
     private let customEndpointMenuItem = NSMenuItem(title: "Use Custom Endpoint...", action: #selector(DataBrokerProtectionDebugMenu.useDBPCustomEndpoint))
@@ -292,7 +292,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         guard let handler = try? DataBrokerProtectionWebViewHandler(
             privacyConfig: privacyConfig,
             prefs: prefs,
-            delegate: nullCCFDelegate,
+            delegate: nullCCFDelegateReference,
             executionConfig: BrokerJobExecutionConfig(),
             shouldContinueActionHandler: { true },
             applicationNameForUserAgent: WebViewUserAgentProvider.applicationNameForUserAgent

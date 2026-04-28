@@ -451,8 +451,9 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
         resumeActiveContinuation(with: .failure(DataBrokerProtectionError.webContentProcessTerminated))
     }
 
-    public func webView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge,
-                 completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+    public func webView(_ webView: WKWebView,
+                        didReceive challenge: URLAuthenticationChallenge,
+                        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         if !isFakeBroker {
             completionHandler(.performDefaultHandling, nil)
             return

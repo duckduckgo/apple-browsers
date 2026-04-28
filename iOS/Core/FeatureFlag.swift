@@ -347,6 +347,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725495563625
     case adBlockingExtension
 
+    /// Ad Blocking Extension public rollout subfeature
+    case adBlockingExtensionRollout
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692854?focus=true
     case supportsSyncChatsDeletion
 
@@ -649,6 +652,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout)))
         case .adBlockingExtension:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.featureEnabled)))
+        case .adBlockingExtensionRollout:
+            Config(source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.featureRollout)))
         case .autofillOnboardingDismissExperiment:
             Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.onboardingDismissExperiment)), cohortType: AutofillOnboardingDismissExperimentCohort.self)
         case .supportsSyncChatsDeletion:

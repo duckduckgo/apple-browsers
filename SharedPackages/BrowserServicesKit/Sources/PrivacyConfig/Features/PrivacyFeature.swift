@@ -720,6 +720,13 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case embeddedRollout
 }
 
+public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .adBlockingExtension }
+
+    case featureEnabled
+    case featureRollout
+}
+
 public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .forceDarkModeOnWebsites }
 
@@ -798,8 +805,3 @@ public enum TabSwitcherTrackerCountSubfeature: String, PrivacySubfeature {
     case featureEnabled
 }
 
-public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .adBlockingExtension }
-
-    case featureEnabled
-}

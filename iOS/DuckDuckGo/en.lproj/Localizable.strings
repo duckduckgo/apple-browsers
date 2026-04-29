@@ -4018,6 +4018,27 @@ Take back control of your personal information with the browser designed for dat
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Remove Device?";
 
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Code copied";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup enabled";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Recovery code copied";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Couldn't enable Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Turn Off";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Your bookmarks and passwords on this device won't be affected.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Turn Off Sync & Backup?";
+
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Remove";
 

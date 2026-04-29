@@ -922,6 +922,21 @@ private extension DataBrokerProtectionIOSManager {
 
 private extension DataBrokerProtectionIOSManager {
 
+    /// Handles common completion work for immediate scan operations.
+    /// The queue also runs completion for interrupted scans; only normal completions may persist first-write-wins freemium state.
+    func handleScanOperationsCompletion(scanCompletedNormally: Bool) async {
+        guard let hasMatches = try? database.hasMatches() else { return }
+        if hasMatches {
+            eventsHandler.fire(.firstScanCompletedAndMatchesFound)
+        }
+        guard scanCompletedNormally else { return }
+        await freemiumDBPUserStateManager.recordFirstScanResultIfNeeded(hasMatches: hasMatches)
+    }
+
+}
+
+extension DataBrokerProtectionIOSManager {
+
     @MainActor
     func startImmediateScanOperations() async {
         Logger.dataBrokerProtection.log("Starting immediate scan operations")
@@ -930,21 +945,24 @@ private extension DataBrokerProtectionIOSManager {
         }
 
         await checkForEmailConfirmationData()
+        // Completion also runs for interrupted scans; the error handler is the normal-finish signal.
+        var scanCompletedNormally = false
         queueManager.startImmediateScanOperationsIfPermitted(
             showWebView: false,
             jobDependencies: jobDependencies,
             errorHandler: { [weak self] errors in
                 if errors?.oneTimeError == nil {
+                    scanCompletedNormally = true
                     self?.eventsHandler.fire(.firstScanCompleted)
                 }
             }
         ) { [weak self] in
-            if let hasMatches = try? self?.database.hasMatches(), hasMatches {
-                self?.eventsHandler.fire(.firstScanCompletedAndMatchesFound)
-            }
-
-            DispatchQueue.main.async {
-                backgroundAssertion.release()
+            guard let self else { return }
+            Task {
+                await self.handleScanOperationsCompletion(scanCompletedNormally: scanCompletedNormally)
+                DispatchQueue.main.async {
+                    backgroundAssertion.release()
+                }
             }
         }
     }
@@ -1033,24 +1051,27 @@ extension DataBrokerProtectionIOSManager: DBPContinuedProcessingDelegate {
         }
 
         await checkForEmailConfirmationData()
+        // Same completion semantics as `startImmediateScanOperations()`.
+        var scanCompletedNormally = false
         queueManager.startImmediateScanOperationsIfPermitted(
             showWebView: false,
             jobDependencies: jobDependencies,
             errorHandler: { [weak self] errors in
                 if errors?.oneTimeError == nil {
+                    scanCompletedNormally = true
                     self?.eventsHandler.fire(.firstScanCompleted)
                 }
             }
         ) { [weak self] in
-            if let hasMatches = try? self?.database.hasMatches(), hasMatches {
-                self?.eventsHandler.fire(.firstScanCompletedAndMatchesFound)
-            }
-
-            DispatchQueue.main.async {
-                Task { [weak self] in
-                    await self?.continuedProcessingCoordinator.didEmit(event: .scanPhaseCompleted)
+            guard let self else { return }
+            Task {
+                await self.handleScanOperationsCompletion(scanCompletedNormally: scanCompletedNormally)
+                DispatchQueue.main.async {
+                    Task { [weak self] in
+                        await self?.continuedProcessingCoordinator.didEmit(event: .scanPhaseCompleted)
+                    }
+                    backgroundAssertion.release()
                 }
-                backgroundAssertion.release()
             }
         }
     }

@@ -357,7 +357,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         setInitialInputMode(effectiveInputMode)
         self.cardPosition = cardPosition
         viewController.handler.hidesVoiceButton = false
-        updateToolbarAIVoiceChat()
         isInputVisibleForKeyboard = true
         hasSubmittedPrompt = false
         resetToolsSelection()
@@ -413,7 +412,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState = .hidden
         cardPosition = .bottom
         isInputVisibleForKeyboard = true
-        setText("")
+        // Text clear is deferred to dismiss completion — avoids placeholder flash mid-collapse.
         resetToolsSelection()
         clearAttachments()
 
@@ -475,14 +474,27 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard didModeChange || needsViewSync else { return }
 
         inputMode = effectiveMode
-        if needsViewSync {
-            viewController.setInputMode(effectiveMode, animated: animated)
+
+        // Wraps toolbar-height update + content-swap broadcast in one CATransaction so they animate
+        // together; otherwise the content snaps while the toolbar is still growing.
+        let applyModeChange = { [self] in
+            if needsViewSync {
+                viewController.setInputMode(effectiveMode, animated: animated)
+            }
+            if didModeChange {
+                modeChangeSubject.send(effectiveMode)
+            }
         }
-        if didModeChange {
-            modeChangeSubject.send(effectiveMode)
+
+        if animated {
+            UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+                applyModeChange()
+            }
+        } else {
+            applyModeChange()
         }
-        updateToolbarAIVoiceChat()
-        refreshToolsPresentation()
+
+        applyToolbarPresentation()
         if didModeChange, effectiveMode == .search {
             clearAttachments()
         }
@@ -913,7 +925,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
         commitCurrentToggleState()
-        setText("")
 
         switch mode {
         case .search:
@@ -938,6 +949,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             if isOmnibarSession {
                 deactivateToOmnibar()
             } else {
+                // showCollapsed has no dismiss hook; clear synchronously.
+                setText("")
                 showCollapsed()
             }
             if let userScript = boundUserScript {
@@ -1017,7 +1030,10 @@ private extension UnifiedToggleInputCoordinator {
 
     func resetSessionState() {
         isNewChatPending = false
-        setText("")
+        // While the UTI is hidden, dismiss completion owns the visible text — clearing here would flash the placeholder.
+        if isActive {
+            setText("")
+        }
         aiChatStatus = .unknown
         aiChatInputBoxVisibility = .unknown
         attachmentUsage = nil
@@ -1036,6 +1052,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func applyToolbarPresentation() {
         refreshToolsPresentation()
+        updateToolbarAIVoiceChat()
     }
 
     // MARK: Tools

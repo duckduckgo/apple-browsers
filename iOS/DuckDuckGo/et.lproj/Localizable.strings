@@ -4272,6 +4272,27 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Kas seade eemaldada?";
 
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kood kopeeritud";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup lubatud";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Taastamiskood kopeeritud";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Sync & Backupi ei õnnestunud lubada";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Lülita välja";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "See ei mõjuta sinu seadmes olevaid järjehoidjaid ja paroole.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Kas lülitada Sync & Backup välja?";
+
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Eemaldage";
 

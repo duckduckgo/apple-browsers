@@ -172,8 +172,8 @@ final class DownloadsViewController: NSViewController {
         ]
 
         NSLayoutConstraint.activate([
-            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
-            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
+            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 13),
 
             openDownloadsFolderButton.widthAnchor.constraint(equalToConstant: 32),
             openDownloadsFolderButton.heightAnchor.constraint(equalToConstant: 32),
@@ -183,12 +183,12 @@ final class DownloadsViewController: NSViewController {
             clearDownloadsButton.widthAnchor.constraint(equalToConstant: 32),
             clearDownloadsButton.heightAnchor.constraint(equalToConstant: 32),
             clearDownloadsButton.leadingAnchor.constraint(equalTo: openDownloadsFolderButton.trailingAnchor),
-            view.trailingAnchor.constraint(equalTo: clearDownloadsButton.trailingAnchor, constant: 11),
+            view.trailingAnchor.constraint(equalTo: clearDownloadsButton.trailingAnchor, constant: 16),
             clearDownloadsButton.centerYAnchor.constraint(equalTo: openDownloadsFolderButton.centerYAnchor),
 
             separator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             separator.widthAnchor.constraint(equalTo: view.widthAnchor, constant: -2),
-            separator.topAnchor.constraint(equalTo: view.topAnchor, constant: 43),
+            separator.topAnchor.constraint(equalTo: view.topAnchor, constant: 44),
 
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),

@@ -123,10 +123,14 @@ private extension MainViewController {
     }
 
     func handleHideOmnibarEditingIntent(animated: Bool) {
+        let onDismissed: () -> Void = { [weak self] in
+            self?.unifiedToggleInputCoordinator?.clearText()
+        }
         if animated {
-            viewCoordinator.hideUnifiedToggleInputOmnibar()
+            viewCoordinator.hideUnifiedToggleInputOmnibar(completion: onDismissed)
         } else {
             viewCoordinator.finishUnifiedToggleInputOmnibarDismiss()
+            onDismissed()
         }
         resetUnifiedInputContentAfterHide()
         viewCoordinator.suggestionTrayContainer.backgroundColor = .clear
@@ -136,6 +140,8 @@ private extension MainViewController {
         unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
         viewCoordinator.hideUnifiedToggleInput()
         resetUnifiedInputContentAfterHide()
+        // Avoid leaking text into the next input session.
+        unifiedToggleInputCoordinator?.clearText()
     }
 
     func resetUnifiedInputContentAfterHide() {

@@ -311,5 +311,17 @@
         "key": "d",
         "type": "integer",
         "description": "Days since install when the value is between 0 and 28 inclusive during onboarding"
+    },
+    "onboardingSource": {
+        "key": "source",
+        "type": "string",
+        "description": "User's entry point into the onboarding flow",
+        "enum": ["default", "duckai_cpp"]
+    },
+    "onboardingFlow": {
+        "key": "flow",
+        "type": "string",
+        "description": "Version of the onboarding flow the user entered",
+        "enum": ["default", "duckai_experiment"]
     }
 }

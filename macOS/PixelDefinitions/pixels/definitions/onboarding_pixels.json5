@@ -53,13 +53,31 @@
         "description": "Fired on the Welcome step of the linear onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
     },
     "m_mac_onboarding_set-default": {
         "description": "Fired on the Set Default Browser step of the linear onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
     },
     "m_mac_onboarding_add-to-dock": {
         "description": "Fired on the Add to Dock row of the System Settings step of the linear onboarding flow.",
@@ -71,20 +89,40 @@
             "onboardingEventType",
             "onboardingClickedValue",
             "onboardingInstallType",
-            "onboardingDaysSinceInstall"
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
         ]
     },
     "m_mac_onboarding_import-data": {
         "description": "Fired on the Import row of the System Settings step of the linear onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
     },
     "m_mac_onboarding_duck-player": {
         "description": "Fired on the Duck Player step of the linear onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
     },
     "m_mac_onboarding_customization": {
         "description": "Fired on the Customization step of the linear onboarding flow.",
@@ -92,6 +130,7 @@
         "triggers": ["other"],
         "parameters": [
             "appVersion",
+            "pixelSource",
             "onboardingEventType",
             {
                 "key": "value",
@@ -99,7 +138,9 @@
                 "description": "Comma-separated list of enabled customizations (bookmarks_bar, restore_session, home_button) or dismiss if all customizations were skipped"
             },
             "onboardingInstallType",
-            "onboardingDaysSinceInstall"
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
         ]
     },
     "m_mac_onboarding_search-experience": {
@@ -108,6 +149,7 @@
         "triggers": ["other"],
         "parameters": [
             "appVersion",
+            "pixelSource",
             "onboardingEventType",
             {
                 "key": "value",
@@ -116,7 +158,9 @@
                 "enum": ["search_only", "search_plus_duckai"]
             },
             "onboardingInstallType",
-            "onboardingDaysSinceInstall"
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
         ]
     },
     "m_mac_onboarding_search": {
@@ -125,6 +169,7 @@
         "triggers": ["other"],
         "parameters": [
             "appVersion",
+            "pixelSource",
             "onboardingEventType",
             {
                 "key": "value",
@@ -133,14 +178,25 @@
                 "enum": ["custom", "dismiss", "suggested"]
             },
             "onboardingInstallType",
-            "onboardingDaysSinceInstall"
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
         ]
     },
     "m_mac_onboarding_search-results": {
         "description": "Fired on the Search Done step of the contextual onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
     },
     "m_mac_onboarding_visit-site": {
         "description": "Fired on the Visit A Site step of the contextual onboarding flow.",
@@ -148,6 +204,7 @@
         "triggers": ["other"],
         "parameters": [
             "appVersion",
+            "pixelSource",
             "onboardingEventType",
             {
                 "key": "value",
@@ -156,25 +213,54 @@
                 "enum": ["custom", "dismiss", "suggested"]
             },
             "onboardingInstallType",
-            "onboardingDaysSinceInstall"
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
         ]
     },
     "m_mac_onboarding_trackers-blocked": {
         "description": "Fired on the Trackers Blocked step of the contextual onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
     },
     "m_mac_onboarding_fire-button": {
         "description": "Fired on the Fire Button step of the contextual onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
     },
     "m_mac_onboarding_end": {
         "description": "Fired on the final step of the contextual onboarding flow.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "onboardingEventType", "onboardingClickedValue", "onboardingInstallType", "onboardingDaysSinceInstall"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow"
+        ]
     }
 }

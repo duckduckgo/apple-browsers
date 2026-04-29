@@ -4291,7 +4291,7 @@
 "sync.simplified.turn.off.message" = "Bu cihazdaki yer işaretleriniz ve şifreleriniz etkilenmeyecektir.";
 
 /* Alert title when turning off sync */
-"sync.simplified.turn.off.title" = "Sync & Backup kaptılsın mı?";
+"sync.simplified.turn.off.title" = "Sync & Backup kapatılsın mı?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Kaldır";

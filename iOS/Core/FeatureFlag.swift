@@ -194,6 +194,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866471806081
     case showAIChatAddressBarChoiceScreen
 
+    case showAIChatAddressBarChoiceScreenRedesign
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714634010
     case newDeviceSyncPrompt
 
@@ -549,6 +551,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.feature(.daxEasterEggPermanentLogo)))
         case .showAIChatAddressBarChoiceScreen:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen)))
+        case .showAIChatAddressBarChoiceScreenRedesign:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreenRedesign)))
         case .newDeviceSyncPrompt:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt)), supportsLocalOverriding: false)
         case .syncAutoRestore:

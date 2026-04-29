@@ -348,6 +348,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Show AI Chat address bar choice screen
     case showAIChatAddressBarChoiceScreen
 
+    /// Show AI Chat address bar choice screen (redesigned)
+    case showAIChatAddressBarChoiceScreenRedesign
+
     /// Adds toggle for controlling  'Ask Follow-Up Questions' setting.
     case serpSettingsFollowUpQuestions
 

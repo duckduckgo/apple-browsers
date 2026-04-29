@@ -123,6 +123,12 @@ final class DuckAISuggestionsCoordinator {
         viewController = vc
     }
 
+    /// Forwards the "Return to tab" card model to the suggestions view so the hatch sits
+    /// above all three sections, below the UTI input. Pass `nil` to remove.
+    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
+        viewController?.setEscapeHatch(model, onTapped: onTapped)
+    }
+
     func tearDown() {
         cancellables.removeAll()
         onContentChanged = nil

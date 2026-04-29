@@ -121,10 +121,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var escapeHatchModel: EscapeHatchModel?
     private var escapeHatchTapHandler: (() -> Void)?
 
-    private var duckAISuggestionsHaveContent: Bool {
-        duckAISuggestionsCoordinator?.hasContent ?? false
-    }
-
     private(set) var daxLogoManager: DaxLogoManager
     private var isDaxLogoForcedHidden = false
     private var notificationCancellable: AnyCancellable?
@@ -265,9 +261,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         escapeHatchModel = model
         escapeHatchTapHandler = onTapped
         suggestionTrayManager?.setEscapeHatch(model)
-        // Duck.ai-mode suggestions surface no longer hosts the escape hatch — the multi-section
-        // suggestions VC always renders chats / URLs / search-DDG row, leaving no natural slot
-        // for a "Return to tab" card. The Search-side tray retains it.
+        // Fire tabs render their own dedicated empty state via DaxLogoManager — the hatch
+        // is suppressed there to avoid stacking two competing affordances.
+        let duckAIHatchModel = switchBarHandler.isFireTab ? nil : model
+        let duckAIHatchHandler = switchBarHandler.isFireTab ? nil : onTapped
+        duckAISuggestionsCoordinator?.setEscapeHatch(duckAIHatchModel, onTapped: duckAIHatchHandler)
         updateEscapeHatchTopInset()
     }
 
@@ -528,6 +526,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
 
         swipeContainerManager.installDuckAISuggestions(using: coordinator, textPublisher: switchBarHandler.currentTextPublisher)
+        if let escapeHatchModel, !switchBarHandler.isFireTab {
+            coordinator.setEscapeHatch(escapeHatchModel, onTapped: escapeHatchTapHandler)
+        }
         duckAISuggestionsCoordinator = coordinator
     }
 

@@ -34,7 +34,7 @@ final class DuckAIURLSuggestionsLoader {
 
     @Published private(set) var topURLs: [Suggestion] = []
 
-    private let dataSource: AutocompleteSuggestionsDataSource
+    private let dataSource: SuggestionLoadingDataSource
     private let maxResults: Int
     private var loader: SuggestionLoader?
     /// Records the most recently dispatched query so a slow callback can be discarded
@@ -47,7 +47,7 @@ final class DuckAIURLSuggestionsLoader {
     private(set) var lastCompletedFetchQuery: String?
     private var cancellables = Set<AnyCancellable>()
 
-    init(dataSource: AutocompleteSuggestionsDataSource, maxResults: Int = defaultMaxResults) {
+    init(dataSource: SuggestionLoadingDataSource, maxResults: Int = defaultMaxResults) {
         self.dataSource = dataSource
         self.maxResults = maxResults
     }
@@ -89,9 +89,18 @@ final class DuckAIURLSuggestionsLoader {
             guard let self else { return }
             // Discard out-of-order completions: a later query has already been dispatched.
             guard self.latestDispatchedQuery == query else { return }
-            guard error == nil, let result else { return }
+            // Mark the fetch as settled regardless of error — otherwise `hasSettled` stays
+            // permanently false on remote-API failures and Dax suppression never clears.
             self.lastCompletedFetchQuery = query
-            self.topURLs = Self.urlOnlyTopHits(from: result, max: self.maxResults)
+            // `SuggestionLoader` returns a non-nil `result` with local matches (bookmarks,
+            // history, open tabs) even when the remote API errors. Use it if present;
+            // only when the entire load failed (nil result) do we clear to avoid leaving
+            // a stale previous query's URLs visible.
+            if let result {
+                self.topURLs = Self.urlOnlyTopHits(from: result, max: self.maxResults)
+            } else if !self.topURLs.isEmpty {
+                self.topURLs = []
+            }
         }
     }
 
@@ -102,4 +111,12 @@ final class DuckAIURLSuggestionsLoader {
         lastCompletedFetchQuery = nil
         topURLs = []
     }
+
+#if DEBUG
+    /// Test-only setter. The production setter is `private` because `topURLs` is owned by
+    /// the fetcher closure; tests need to drive it without spinning up a real `SuggestionLoader`.
+    func publishURLsForTesting(_ urls: [Suggestion]) {
+        topURLs = urls
+    }
+#endif
 }

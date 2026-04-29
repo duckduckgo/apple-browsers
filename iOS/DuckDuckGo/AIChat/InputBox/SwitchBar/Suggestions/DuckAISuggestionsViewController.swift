@@ -23,6 +23,7 @@ import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Suggestions
+import SwiftUI
 import UIKit
 
 protocol DuckAISuggestionsViewControllerDelegate: AnyObject {
@@ -51,7 +52,15 @@ final class DuckAISuggestionsViewController: UIViewController {
         static let cellHeight: CGFloat = 44
         static let cellHeightWithSubtitle: CGFloat = 58
         static let horizontalInset: CGFloat = 16
-        static let topContentInset: CGFloat = -20
+        // Negative top inset cancels `insetGrouped`'s built-in first-section padding so the
+        // first card sits flush below the UTI input. When the escape hatch occupies the
+        // table header view, the header's internal top padding provides the equivalent
+        // breathing room so we drop the negative offset.
+        static let topContentInsetWithoutHatch: CGFloat = -20
+        static let topContentInsetWithHatch: CGFloat = 0
+        static let escapeHatchHeaderHeight: CGFloat = 72
+        static let escapeHatchTopPadding: CGFloat = 16
+        static let escapeHatchBottomPadding: CGFloat = 16
     }
 
     weak var delegate: DuckAISuggestionsViewControllerDelegate?
@@ -77,13 +86,18 @@ final class DuckAISuggestionsViewController: UIViewController {
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         tableView.sectionFooterHeight = 0
-        tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
+        // Disable readable-width inset so cells extend to the same horizontal edges as the UTI
+        // input bar above them; without this, iPad readable-width pulls cells narrower than UTI.
+        tableView.cellLayoutMarginsFollowReadableWidth = false
+        tableView.contentInset = UIEdgeInsets(top: Constants.topContentInsetWithoutHatch, left: 0, bottom: 0, right: 0)
         return tableView
     }()
 
     private var chats: [AIChatSuggestion] { chatViewModel.filteredSuggestions }
     private var urls: [Suggestion] { urlLoader.topURLs }
     private var hasSearchRow: Bool { !queryProvider().isEmpty }
+
+    private var escapeHatchHostingController: UIHostingController<ReturnToTabCard>?
 
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
@@ -137,6 +151,81 @@ final class DuckAISuggestionsViewController: UIViewController {
         UIView.performWithoutAnimation {
             tableView.reloadData()
         }
+    }
+
+    // MARK: - Escape hatch
+
+    /// Installs (or removes) the "Return to tab" card above all sections, mirroring the
+    /// pre-multi-section layout where the hatch sat at the top of the chat history list.
+    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
+        if let existing = escapeHatchHostingController {
+            existing.willMove(toParent: nil)
+            existing.view.removeFromSuperview()
+            existing.removeFromParent()
+            escapeHatchHostingController = nil
+        }
+
+        if let model, let onTapped {
+            let hosting = UIHostingController(rootView: ReturnToTabCard(model: model, onTap: onTapped))
+            hosting.view.backgroundColor = .clear
+            addChild(hosting)
+            escapeHatchHostingController = hosting
+            updateTableHeader()
+            hosting.didMove(toParent: self)
+        } else {
+            updateTableHeader()
+        }
+        updateContentInsetForHatch()
+    }
+
+    private func updateContentInsetForHatch() {
+        guard isViewLoaded else { return }
+        let top = (escapeHatchHostingController != nil) ? Constants.topContentInsetWithHatch : Constants.topContentInsetWithoutHatch
+        tableView.contentInset = UIEdgeInsets(top: top, left: 0, bottom: 0, right: 0)
+    }
+
+    private func updateTableHeader() {
+        guard isViewLoaded else { return }
+
+        guard let hosting = escapeHatchHostingController else {
+            UIView.performWithoutAnimation { tableView.tableHeaderView = nil }
+            return
+        }
+
+        let totalHeight = Constants.escapeHatchTopPadding + Constants.escapeHatchHeaderHeight + Constants.escapeHatchBottomPadding
+        let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: width, height: totalHeight))
+        container.backgroundColor = UIColor(designSystemColor: .background)
+
+        hosting.view.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(hosting.view)
+        let maxWidth = HomeMessageCollectionViewCell.maximumWidth
+        let preferredWidth = hosting.view.widthAnchor.constraint(equalToConstant: maxWidth)
+        preferredWidth.priority = .defaultHigh
+        let minimumLeading = hosting.view.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: Constants.horizontalInset)
+        minimumLeading.priority = .required - 1
+        let minimumTrailing = hosting.view.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -Constants.horizontalInset)
+        minimumTrailing.priority = .required - 1
+        NSLayoutConstraint.activate([
+            hosting.view.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            hosting.view.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
+            preferredWidth,
+            minimumLeading,
+            minimumTrailing,
+            hosting.view.topAnchor.constraint(equalTo: container.topAnchor, constant: Constants.escapeHatchTopPadding),
+            hosting.view.heightAnchor.constraint(equalToConstant: Constants.escapeHatchHeaderHeight)
+        ])
+
+        UIView.performWithoutAnimation { tableView.tableHeaderView = container }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        // Header view's frame doesn't auto-size with the tableView's width; rebuild on layout.
+        guard escapeHatchHostingController != nil,
+              let header = tableView.tableHeaderView,
+              header.frame.width != tableView.bounds.width else { return }
+        updateTableHeader()
     }
 
     // MARK: - Cell config

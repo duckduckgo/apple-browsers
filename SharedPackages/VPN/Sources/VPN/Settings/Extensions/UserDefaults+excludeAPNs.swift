@@ -1,7 +1,7 @@
 //
-//  UserDefaults+enforceRoutes.swift
+//  UserDefaults+excludeAPNs.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,28 +20,28 @@ import Combine
 import Foundation
 
 extension UserDefaults {
-    private var enforceRoutesKey: String {
-        "networkProtectionSettingEnforceRoutes"
+    private var excludeAPNsKey: String {
+        "networkProtectionSettingExcludeAPNs"
     }
 
-    static let enforceRoutesDefaultValue = true
+    static let excludeAPNsDefaultValue = false
 
     @objc
-    dynamic var networkProtectionSettingEnforceRoutes: Bool {
+    dynamic var networkProtectionSettingExcludeAPNs: Bool {
         get {
-            value(forKey: enforceRoutesKey) as? Bool ?? Self.enforceRoutesDefaultValue
+            value(forKey: excludeAPNsKey) as? Bool ?? Self.excludeAPNsDefaultValue
         }
 
         set {
-            set(newValue, forKey: enforceRoutesKey)
+            set(newValue, forKey: excludeAPNsKey)
         }
     }
 
-    var networkProtectionSettingEnforceRoutesPublisher: AnyPublisher<Bool, Never> {
-        publisher(for: \.networkProtectionSettingEnforceRoutes).eraseToAnyPublisher()
+    var networkProtectionSettingExcludeAPNsPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.networkProtectionSettingExcludeAPNs).eraseToAnyPublisher()
     }
 
-    func resetNetworkProtectionSettingEnforceRoutes() {
-        removeObject(forKey: enforceRoutesKey)
+    func resetNetworkProtectionSettingExcludeAPNs() {
+        removeObject(forKey: excludeAPNsKey)
     }
 }

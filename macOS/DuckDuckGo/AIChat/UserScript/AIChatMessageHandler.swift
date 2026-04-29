@@ -103,7 +103,7 @@ extension AIChatMessageHandler {
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !isFireWindow,
             supportsMultipleContexts: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatMultiplePageContexts),
             supportsTabPicker: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatAttachMoreTabs),
-            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && !isFireWindow
+            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage)
         )
     }
 

@@ -172,6 +172,7 @@ class MainViewController: UIViewController {
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     private let tutorialSettings: TutorialSettings
     private let contextualOnboardingLogic: ContextualOnboardingLogic
@@ -294,7 +295,8 @@ class MainViewController: UIViewController {
                                                   featureFlagger: featureFlagger,
                                                   featureDiscovery: featureDiscovery,
                                                   aiChatSettings: aiChatSettings,
-                                                  productSurfaceTelemetry: productSurfaceTelemetry)
+                                                  productSurfaceTelemetry: productSurfaceTelemetry,
+                                                  duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
         manager.delegate = self
         manager.isFireModeProvider = { [weak self] in self?.tabManager.currentBrowsingMode == .fire }
         return manager
@@ -374,6 +376,7 @@ class MainViewController: UIViewController {
         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+        duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
         appSettings: AppSettings,
         previewsSource: TabPreviewsSource,
         tabManager: TabManager,
@@ -440,6 +443,7 @@ class MainViewController: UIViewController {
         self.userScriptsDependencies = userScriptsDependencies
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.favoritesViewModel = FavoritesListViewModel(bookmarksDatabase: bookmarksDatabase, favoritesDisplayMode: appSettings.favoritesDisplayMode)
         self.bookmarksCachingSearch = BookmarksCachingSearch(bookmarksStore: CoreDataBookmarksSearchStore(bookmarksStore: bookmarksDatabase))
         self.appSettings = appSettings

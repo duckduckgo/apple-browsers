@@ -171,6 +171,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let autoconsentManagement = AutoconsentManagement()
     let attributedMetricManager: AttributedMetricManager
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    let burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry?
 
     @MainActor
     private(set) lazy var autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinator = AutoconsentStatsPopoverCoordinator(
@@ -848,20 +849,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if featureFlagger.isFeatureOn(.aiChatNativeStorage),
            let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-            let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
+            let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
             do {
-                let keyStoreProvider = DuckAiKeyStoreProvider()
-                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(
-                    containerURL: nativeStorageContainerURL,
-                    keyStoreProvider: keyStoreProvider,
-                    pixelFiring: DuckAiNativeStoragePixelAdapter()
-                ).handler
+                duckAiNativeStorageHandler = try DuckAiNativeStorageHandler(
+                    .disk(path: nativeStorageContainerURL,
+                          keyStoreProvider: DuckAiKeyStoreProvider(),
+                          pixelFiring: DuckAiNativeStoragePixelAdapter())
+                )
             } catch {
                 Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
                 duckAiNativeStorageHandler = nil
             }
+            burnerDuckAiStorageRegistry = BurnerDuckAiStorageRegistry(diskHandler: duckAiNativeStorageHandler)
         } else {
             duckAiNativeStorageHandler = nil
+            burnerDuckAiStorageRegistry = nil
         }
 
         aiChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: featureFlagger,
@@ -1181,7 +1183,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.attributedMetricManager = AttributedMetricManager(pixelKit: PixelKit.shared,
                                                                dataStoring: attributedMetricDataStorage,
                                                                featureFlagger: featureFlagger,
-                                                               originProvider: AttributedMetricOriginFileProvider(),
+                                                               originProvider: DefaultAttributedMetricOriginProvider(loadOrigin: {
+                                                                   getXattr(named: AttributionXattr.origin, from: Bundle.main.bundlePath)
+                                                               }),
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
                                                                returningUserProvider: returningUserProvider,
@@ -1350,7 +1354,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DefaultVariantManager().assignVariantIfNeeded { _ in
             // MARK: perform first time launch logic here
         }
-        AttributionXattrCanaryValidator().validateAndReport()
 
         let statisticsLoader = AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil
         statisticsLoader?.load()

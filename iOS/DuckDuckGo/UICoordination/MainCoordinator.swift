@@ -194,6 +194,7 @@ final class MainCoordinator {
                                 launchSourceManager: launchSourceManager,
                                 darkReaderFeatureSettings: darkReaderFeatureSettings,
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
+                                duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
                                 fireModePromotionEligibility: fireModePromotionsCoordinator)
         let fireExecutor = FireExecutor(tabManager: tabManager,
@@ -212,6 +213,7 @@ final class MainCoordinator {
                                         privacyStats: privacyStats,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
+                                        fireModeStorageController: contentBlockingService.fireModeStorageController,
                                         wideEvent: wideEvent)
         let syncAutoRestoreHandler = SyncAutoRestoreHandler(
             decisionManager: syncAutoRestoreDecisionManager,
@@ -233,6 +235,7 @@ final class MainCoordinator {
                                         userScriptsDependencies: contentBlockingService.userScriptsDependencies,
                                         contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
+                                        duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
                                         tabManager: tabManager,

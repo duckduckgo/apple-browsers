@@ -222,31 +222,35 @@ final class DuckAISuggestionsViewController: UIViewController {
             return
         }
 
-        let totalHeight = Constants.escapeHatchTopPadding + Constants.escapeHatchCardHeight + Constants.escapeHatchBottomPadding
-        let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width
-        let container = UIView(frame: CGRect(x: 0, y: 0, width: width, height: totalHeight))
-        container.backgroundColor = UIColor(designSystemColor: .background)
+        // Wrap the entire setup so the SwiftUI hosting view's first layout doesn't get a default position
+        // animation when the hatch reappears after typing.
+        UIView.performWithoutAnimation {
+            let totalHeight = Constants.escapeHatchTopPadding + Constants.escapeHatchCardHeight + Constants.escapeHatchBottomPadding
+            let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width
+            let container = UIView(frame: CGRect(x: 0, y: 0, width: width, height: totalHeight))
+            container.backgroundColor = UIColor(designSystemColor: .background)
 
-        hosting.view.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(hosting.view)
-        let maxWidth = HomeMessageCollectionViewCell.maximumWidth
-        let preferredWidth = hosting.view.widthAnchor.constraint(equalToConstant: maxWidth)
-        preferredWidth.priority = .defaultHigh
-        let minimumLeading = hosting.view.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: Constants.horizontalInset)
-        minimumLeading.priority = .required - 1
-        let minimumTrailing = hosting.view.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -Constants.horizontalInset)
-        minimumTrailing.priority = .required - 1
-        NSLayoutConstraint.activate([
-            hosting.view.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            hosting.view.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
-            preferredWidth,
-            minimumLeading,
-            minimumTrailing,
-            hosting.view.topAnchor.constraint(equalTo: container.topAnchor, constant: Constants.escapeHatchTopPadding),
-            hosting.view.heightAnchor.constraint(equalToConstant: Constants.escapeHatchCardHeight)
-        ])
-
-        UIView.performWithoutAnimation { tableView.tableHeaderView = container }
+            hosting.view.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(hosting.view)
+            let maxWidth = HomeMessageCollectionViewCell.maximumWidth
+            let preferredWidth = hosting.view.widthAnchor.constraint(equalToConstant: maxWidth)
+            preferredWidth.priority = .defaultHigh
+            let minimumLeading = hosting.view.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: Constants.horizontalInset)
+            minimumLeading.priority = .required - 1
+            let minimumTrailing = hosting.view.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -Constants.horizontalInset)
+            minimumTrailing.priority = .required - 1
+            NSLayoutConstraint.activate([
+                hosting.view.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+                hosting.view.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
+                preferredWidth,
+                minimumLeading,
+                minimumTrailing,
+                hosting.view.topAnchor.constraint(equalTo: container.topAnchor, constant: Constants.escapeHatchTopPadding),
+                hosting.view.heightAnchor.constraint(equalToConstant: Constants.escapeHatchCardHeight)
+            ])
+            container.layoutIfNeeded()
+            tableView.tableHeaderView = container
+        }
     }
 
     override func viewDidLayoutSubviews() {

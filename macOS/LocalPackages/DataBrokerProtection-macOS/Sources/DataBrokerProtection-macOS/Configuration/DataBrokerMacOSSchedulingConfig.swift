@@ -45,7 +45,7 @@ public struct DataBrokerMacOSSchedulingConfig {
         }
     }
 
-    public let activitySchedulerQOS: QualityOfService = .userInitiated
+    public let activitySchedulerQOS: QualityOfService = .utility
 
     public init(mode: DataBrokerMacOSSchedulingConfigMode) {
         self.mode = mode

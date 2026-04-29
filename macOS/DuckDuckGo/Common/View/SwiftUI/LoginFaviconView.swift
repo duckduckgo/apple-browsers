@@ -24,10 +24,23 @@ struct LoginFaviconView: View {
     let domain: String
     let generatedIconLetters: String
     let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
+    let osVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
+
+    private var displayableFaviconImage: NSImage? {
+        // Workaround for favicon rendering crashes on Ventura 13.7.8 and newer 13.x patches.
+        switch (osVersion.majorVersion, osVersion.minorVersion, osVersion.patchVersion) {
+        case let (13, minor, _) where minor > 7:
+            return nil
+        case let (13, 7, patch) where patch >= 8:
+            return nil
+        default:
+            return faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image
+        }
+    }
 
     var body: some View {
         Group {
-            if let image = faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image {
+            if let image = displayableFaviconImage {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -42,7 +55,7 @@ struct LoginFaviconView: View {
     }
 
     var favicon: NSImage? {
-        return faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image ?? .login
+        return displayableFaviconImage ?? .login
     }
 
 }

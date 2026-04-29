@@ -117,11 +117,16 @@ final class AIChatWebViewController: UIViewController {
 
 extension AIChatWebViewController {
 
+    /// Local aliases for AI Chat URL query parameters used when building query handoff URLs.
     struct QueryParameters {
-        static let queryKey = "q"
-        static let autoSendKey = "prompt"
-        static let autoSendValue = "1"
-        static let toolChoice = "toolChoice"
+        /// Prompt text key.
+        static let queryKey = AIChatURLParameters.promptQueryName
+        /// Auto-submit flag key.
+        static let autoSendKey = AIChatURLParameters.autoSubmitPromptQueryName
+        /// Auto-submit flag value.
+        static let autoSendValue = AIChatURLParameters.autoSubmitPromptQueryValue
+        /// Tool selection key (can appear multiple times).
+        static let toolChoice = AIChatURLParameters.toolChoiceName
     }
 
     func reload() {
@@ -133,8 +138,23 @@ extension AIChatWebViewController {
         webView.load(request)
     }
 
-    func loadQuery(_ query: String, autoSend: Bool, tools: [AIChatRAGTool]?) {
-        let url = buildQueryURL(query: query, autoSend: autoSend, tools: tools)
+    func loadQuery(_ query: String, autoSend: Bool, flowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?, modelId: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) {
+        if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let prompt = AIChatNativePrompt.queryPrompt(
+                query,
+                autoSubmit: autoSend,
+                toolChoice: tools?.map(\.rawValue),
+                modelId: modelId,
+                reasoningEffort: reasoningEffort
+            )
+            AIChatPromptHandler.shared.setData(prompt)
+        }
+        let url = buildQueryURL(
+            query: query,
+            autoSend: autoSend,
+            flowType: flowType,
+            tools: tools
+        )
         webView.load(URLRequest(url: url))
     }
 
@@ -147,7 +167,7 @@ extension AIChatWebViewController {
         AIChatURLParameters.voiceModeURL(from: chatModel.aiChatURL)
     }
 
-    private func buildQueryURL(query: String, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL {
+    private func buildQueryURL(query: String, autoSend: Bool, flowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?) -> URL {
         guard var components = URLComponents(url: chatModel.aiChatURL, resolvingAgainstBaseURL: false) else {
             return chatModel.aiChatURL
         }
@@ -162,6 +182,12 @@ extension AIChatWebViewController {
         if autoSend {
             queryItems.removeAll { $0.name == QueryParameters.autoSendKey }
             queryItems.append(URLQueryItem(name: QueryParameters.autoSendKey, value: QueryParameters.autoSendValue))
+        }
+        if let flowValue = flowType.flowQueryValue {
+            queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
+            queryItems.append(URLQueryItem(name: AIChatURLParameters.flowQueryName, value: flowValue))
+        } else {
+            queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
         }
 
         if let tools = tools, !tools.isEmpty {

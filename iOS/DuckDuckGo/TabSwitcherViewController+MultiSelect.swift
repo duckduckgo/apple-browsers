@@ -110,7 +110,7 @@ extension TabSwitcherViewController {
                 attachPopoverTo: sender,
                 tabViewModel: nil,
                 pixelSource: .tabSwitcher,
-                daxDialogsManager: daxDialogsManager,
+                fireContext: .default(daxDialogsManager: daxDialogsManager),
                 browsingMode: selectedBrowsingMode,
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAll(fireRequest)
@@ -119,8 +119,9 @@ extension TabSwitcherViewController {
             )
         }
 
-        Pixel.fire(pixel: .forgetAllPressedTabSwitching)
-        DailyPixel.fire(pixel: .forgetAllPressedTabSwitcherDaily)
+        let browsingModeParam = [PixelParameters.browsingMode: selectedBrowsingMode.pixelParamValue]
+        Pixel.fire(pixel: .forgetAllPressedTabSwitching, withAdditionalParameters: browsingModeParam)
+        DailyPixel.fire(pixel: .forgetAllPressedTabSwitcherDaily, withAdditionalParameters: browsingModeParam)
         ViewHighlighter.hideAll()
         presentFireConfirmation()
     }
@@ -279,9 +280,9 @@ extension TabSwitcherViewController {
         barsHandler.update(state)
         barsHandler.configureButtonActions(tabsStyle: tabsStyle, canShowSelectionMenu: canShowSelectionMenu)
 
-        titleBarView.topItem?.titleView = isEditing ? nil : segmentedPickerHostingController?.view
-        titleBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
-        titleBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
+        titleBarView.setCenterView(isEditing ? nil : segmentedPickerHostingController?.view)
+        titleBarView.setLeadingButtons(barsHandler.topBarLeftButtons)
+        titleBarView.setTrailingButtons(barsHandler.topBarRightButtons)
         toolbar.items = barsHandler.bottomBarItems
         toolbar.isHidden = barsHandler.isBottomBarHidden
         collectionView.contentInset.bottom = barsHandler.isBottomBarHidden ? 0 : toolbar.frame.height

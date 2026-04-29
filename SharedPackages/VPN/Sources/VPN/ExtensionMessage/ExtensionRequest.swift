@@ -28,6 +28,7 @@ public enum VPNCommand: Codable {
     case simulateSubscriptionExpirationInTunnel
     case quitAgent
     case createLogSnapshot
+    case triggerLeakCheck
 }
 
 public enum ExtensionRequest: Codable {

@@ -19,9 +19,7 @@
 import AppKit
 import CommonObjCExtensions
 import DesignResourcesKitIcons
-import FeatureFlags
 import Foundation
-import PrivacyConfig
 import WebKit
 
 enum PermissionType: Hashable {
@@ -81,37 +79,19 @@ extension PermissionType {
         return [.camera, .microphone, .geolocation, .notification]
     }
 
-    func canPersistGrantedDecision(featureFlagger: FeatureFlagger) -> Bool {
-        if featureFlagger.isFeatureOn(.newPermissionView) {
-            switch self {
-            case .camera, .microphone, .externalScheme, .popups, .geolocation, .notification, .autoplayPolicy:
-                return true
-            }
-        } else {
-            switch self {
-            case .camera, .microphone, .externalScheme, .popups, .notification, .autoplayPolicy:
-                return true
-            case .geolocation:
-                return false
-            }
+    var canPersistGrantedDecision: Bool {
+        switch self {
+        case .camera, .microphone, .externalScheme, .popups, .geolocation, .notification, .autoplayPolicy:
+            return true
         }
     }
 
-    func canPersistDeniedDecision(featureFlagger: FeatureFlagger) -> Bool {
-        if featureFlagger.isFeatureOn(.newPermissionView) {
-            switch self {
-            case .camera, .microphone, .geolocation, .externalScheme, .notification, .autoplayPolicy:
-                return true
-            case .popups:
-                return false
-            }
-        } else {
-            switch self {
-            case .camera, .microphone, .geolocation, .notification, .autoplayPolicy:
-                return true
-            case .popups, .externalScheme:
-                return false
-            }
+    var canPersistDeniedDecision: Bool {
+        switch self {
+        case .camera, .microphone, .geolocation, .externalScheme, .notification, .autoplayPolicy:
+            return true
+        case .popups:
+            return false
         }
     }
 

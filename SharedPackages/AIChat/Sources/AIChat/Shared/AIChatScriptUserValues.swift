@@ -87,6 +87,7 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsAIChatSync: Bool
     public let supportsMultipleContexts: Bool
     public let supportsTabPicker: Bool
+    public let supportsNativeStorage: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -105,7 +106,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsHomePageEntryPoint: true,
                                         supportsOpenAIChatLink: true,
                                         supportsAIChatSync: false,
-                                        supportsMultipleContexts: false)
+                                        supportsMultipleContexts: false,
+                                        supportsNativeStorage: false)
 #endif
 
 #if os(macOS)
@@ -124,7 +126,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsHomePageEntryPoint: true,
                                         supportsOpenAIChatLink: true,
                                         supportsAIChatSync: false,
-                                        supportsMultipleContexts: false)
+                                        supportsMultipleContexts: false,
+                                        supportsNativeStorage: false)
 #endif
     }
 
@@ -144,7 +147,8 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsOpenAIChatLink: Bool = true,
                 supportsAIChatSync: Bool,
                 supportsMultipleContexts: Bool = false,
-                supportsTabPicker: Bool = false) {
+                supportsTabPicker: Bool = false,
+                supportsNativeStorage: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -163,10 +167,14 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsAIChatSync = supportsAIChatSync
         self.supportsMultipleContexts = supportsMultipleContexts
         self.supportsTabPicker = supportsTabPicker
+        self.supportsNativeStorage = supportsNativeStorage
     }
 }
 
 public struct AIChatNativePrompt: Codable, Equatable {
+    /// Mode value for image generation prompts.
+    public static let imageGenerationMode = "image-generation"
+
     public let platform: String
     public let tool: Tool?
     public let pageContext: AIChatPageContextData?
@@ -197,6 +205,47 @@ public struct AIChatNativePrompt: Codable, Equatable {
         public let images: [NativePromptImage]?
         public let modelId: String?
         public let mode: String?
+        public let reasoningEffort: AIChatReasoningEffort?
+
+        private enum CodingKeys: String, CodingKey {
+            case prompt
+            case autoSubmit
+            case toolChoice
+            case images
+            case modelId
+            case mode
+            case reasoningEffort
+        }
+
+        public init(
+            prompt: String,
+            autoSubmit: Bool,
+            toolChoice: [String]?,
+            images: [NativePromptImage]?,
+            modelId: String?,
+            mode: String?,
+            reasoningEffort: AIChatReasoningEffort?
+        ) {
+            self.prompt = prompt
+            self.autoSubmit = autoSubmit
+            self.toolChoice = toolChoice
+            self.images = images
+            self.modelId = modelId
+            self.mode = mode
+            self.reasoningEffort = reasoningEffort
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            prompt = try container.decode(String.self, forKey: .prompt)
+            autoSubmit = try container.decode(Bool.self, forKey: .autoSubmit)
+            toolChoice = try container.decodeIfPresent([String].self, forKey: .toolChoice)
+            images = try container.decodeIfPresent([NativePromptImage].self, forKey: .images)
+            modelId = try container.decodeIfPresent(String.self, forKey: .modelId)
+            mode = try container.decodeIfPresent(String.self, forKey: .mode)
+            let rawReasoningEffort = try container.decodeIfPresent(String.self, forKey: .reasoningEffort)
+            reasoningEffort = rawReasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
+        }
     }
 
     public struct TextSummary: Codable, Equatable {
@@ -303,8 +352,8 @@ public struct AIChatNativePrompt: Codable, Equatable {
         try container.encodeIfPresent(pageContext, forKey: .pageContext)
     }
 
-    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, modelId: String? = nil, pageContext: AIChatPageContextData? = nil, mode: String? = nil) -> AIChatNativePrompt {
-        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, modelId: modelId, mode: mode)), pageContext: pageContext)
+    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, modelId: String? = nil, pageContext: AIChatPageContextData? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext)
     }
 
     public static func summaryPrompt(_ text: String, url: URL?, title: String?) -> AIChatNativePrompt {

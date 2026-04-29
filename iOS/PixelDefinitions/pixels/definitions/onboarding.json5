@@ -19,5 +19,47 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_preonboarding_duckai_toggle-screen-impression_unique": {
+        "description": "Fires when the onboarding experiment toggle screen is shown",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_preonboarding_duckai_toggle-continue-pressed_search": {
+        "description": "Fires when the user continues with Search selected on the onboarding experiment toggle screen",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_preonboarding_duckai_toggle-continue-pressed_ai": {
+        "description": "Fires when the user continues with Search & Duck.ai selected on the onboarding experiment toggle screen",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_preonboarding_duckai_fire-dialog-impression_unique": {
+        "description": "Fires when the Duck.ai experiment in-chat Fire onboarding dialog is shown",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_preonboarding_duckai_fire-button-pressed": {
+        "description": "Fires when the user taps Fire while Duck.ai in-chat Fire onboarding is active",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_preonboarding_duckai_final-dialog-impression_unique": {
+        "description": "Fires when the Duck.ai experiment completion dialog is shown after clearing chat",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

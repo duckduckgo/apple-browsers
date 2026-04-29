@@ -33,6 +33,7 @@ import PrivacyConfig
 import Subscription
 import SwiftUI
 import UserScript
+import WebExtensions
 import WebKit
 
 protocol BrowserTabViewControllerDelegate: AnyObject {
@@ -100,8 +101,10 @@ final class BrowserTabViewController: NSViewController {
     private let accessibilityPreferences: AccessibilityPreferences
     private let duckPlayer: DuckPlayer
     private let subscriptionManager: any SubscriptionManager
+    private weak var subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let pinningManager: PinningManager
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding
 
     private let tld: TLD
 
@@ -175,8 +178,10 @@ final class BrowserTabViewController: NSViewController {
          accessibilityPreferences: AccessibilityPreferences,
          duckPlayer: DuckPlayer,
          subscriptionManager: any SubscriptionManager = NSApp.delegateTyped.subscriptionManager,
+         subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate? = NSApp.delegateTyped.subscriptionPromoDelegate,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          pinningManager: PinningManager,
+         adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
          tld: TLD = NSApp.delegateTyped.tld
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -202,8 +207,10 @@ final class BrowserTabViewController: NSViewController {
         self.accessibilityPreferences = accessibilityPreferences
         self.duckPlayer = duckPlayer
         self.subscriptionManager = subscriptionManager
+        self.subscriptionPromoDelegate = subscriptionPromoDelegate
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.pinningManager = pinningManager
+        self.adBlockingAvailability = adBlockingAvailability
 
         self.tld = tld
         containerStackView = NSStackView()
@@ -675,40 +682,23 @@ final class BrowserTabViewController: NSViewController {
         // once a dialog is presented we reset the is dismissed flag
         self.wasContextualOnboardingDialogDismissed = false
 
-        let onDismissAction: () -> Void = { [weak self] in
-            guard let self else { return }
-            // we mark the flag for dialog dismissed
-            wasContextualOnboardingDialogDismissed = true
-            delegate?.dismissViewHighlight()
-            self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
-            if let lastDialog = onboardingDialogTypeProvider.lastDialog {
-                self.onboardingPixelReporter.measureDialogDismissed(dialogType: lastDialog)
-            }
-        }
-
-        let onGotItPressed = { [weak self] in
-            guard let self else { return }
-
-            onboardingDialogTypeProvider.gotItPressed()
-
-            let currentState = onboardingDialogTypeProvider.lastDialog
-
-            // Reset highlight animations
-            delegate?.dismissViewHighlight()
-
-            // Process state
-            if case .tryFireButton = currentState {
-                delegate?.highlightFireButton()
-            }
-        }
-
         let daxView = onboardingDialogFactory.makeView(
             for: dialogType,
             delegate: tab,
-            onDismiss: onDismissAction,
-            onGotItPressed: onGotItPressed,
+            onDismiss: { [weak self] in
+                self?.handleContextualOnboardingOnDismiss()
+            },
+            onManualDismiss: { [weak self] in
+                self?.handleContextualOnboardingOnManualDismiss()
+            },
+            onGotItPressed: { [weak self] in
+                self?.handleContextualOnboardingOnGotItPressed(dialogType: dialogType)
+            },
             onFireButtonPressed: { [weak delegate] in
                 delegate?.dismissViewHighlight()
+            },
+            onSuggestionPressed: { [weak onboardingPixelReporter] in
+                onboardingPixelReporter?.measureSuggestionPressed()
             })
         let hostingController = NSHostingController(rootView: AnyView(daxView))
         insertChild(hostingController, in: containerStackView, at: 0)
@@ -726,6 +716,32 @@ final class BrowserTabViewController: NSViewController {
             delegate?.highlightFireButton()
         } else if case .trackers = dialogType {
             delegate?.highlightPrivacyShield()
+        }
+    }
+
+    private func handleContextualOnboardingOnDismiss() {
+        wasContextualOnboardingDialogDismissed = true
+        delegate?.dismissViewHighlight()
+        removeChild(in: containerStackView, webViewContainer: webViewContainer)
+        if let lastDialog = onboardingDialogTypeProvider.lastDialog {
+            onboardingPixelReporter.measureDialogDismissed(dialogType: lastDialog)
+        }
+    }
+
+    private func handleContextualOnboardingOnManualDismiss() {
+        if let lastDialog = onboardingDialogTypeProvider.lastDialog {
+            onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: lastDialog)
+        }
+        handleContextualOnboardingOnDismiss()
+    }
+
+    private func handleContextualOnboardingOnGotItPressed(dialogType: ContextualDialogType) {
+        onboardingDialogTypeProvider.gotItPressed()
+        onboardingPixelReporter.measureGotItPressed(dialogType: dialogType)
+        let currentState = onboardingDialogTypeProvider.lastDialog
+        delegate?.dismissViewHighlight()
+        if case .tryFireButton = currentState {
+            delegate?.highlightFireButton()
         }
     }
 
@@ -1098,7 +1114,11 @@ final class BrowserTabViewController: NSViewController {
             // We only use HTML New Tab Page in regular windows for now
             if tabCollectionViewModel.isBurner {
                 removeAllTabContent()
-                addAndLayoutChildBesideSidebar(burnerHomePageViewControllerCreatingIfNeeded())
+                let burnerHomePage = burnerHomePageViewControllerCreatingIfNeeded()
+                if let tab = tabViewModel?.tab {
+                    burnerHomePage.updatePromoState(for: tab)
+                }
+                addAndLayoutChildBesideSidebar(burnerHomePage)
             } else {
                 updateTabIfNeeded(tabViewModel: tabViewModel)
             }
@@ -1183,15 +1203,17 @@ final class BrowserTabViewController: NSViewController {
     func generateNativePreviewIfNeeded() {
         guard let tabViewModel = tabViewModel, !tabViewModel.tab.content.displaysContentInWebView, !tabViewModel.isShowingErrorPage else { return }
 
-        var containsHostingView: Bool
+        let containsHostingView: Bool
         switch tabViewModel.tab.content {
         case .onboarding:
             return
         case .newtab:
-            guard tabCollectionViewModel.isBurner else {
+            guard tabCollectionViewModel.isBurner,
+                  let burnerHomePage = burnerHomePageViewController else {
                 return
             }
-            containsHostingView = false
+            tabViewModel.tab.tabSnapshots?.renderSnapshotSync(from: burnerHomePage.view)
+            return
         case .settings:
             containsHostingView = true
         default:
@@ -1214,10 +1236,32 @@ final class BrowserTabViewController: NSViewController {
     var burnerHomePageViewController: BurnerHomePageViewController?
     private func burnerHomePageViewControllerCreatingIfNeeded() -> BurnerHomePageViewController {
         return burnerHomePageViewController ?? {
-            let burnerHomePageViewController = BurnerHomePageViewController()
+            var dateProvider: () -> Date = Date.init
+            let buildType = StandardApplicationBuildType()
+            if buildType.isDebugBuild || buildType.isReviewBuild {
+                let debugStore = SubscriptionPromoDebugStore(keyValueStore: UserDefaults.standard)
+                dateProvider = { debugStore.simulatedTodayDate }
+            }
+            let burnerHomePageViewController = BurnerHomePageViewController(
+                subscriptionManager: subscriptionManager,
+                featureFlagger: featureFlagger,
+                promoDelegate: subscriptionPromoDelegate,
+                dateProvider: dateProvider
+            )
+            burnerHomePageViewController.openSubscriptionPage = { [weak self] in
+                self?.openSubscriptionPurchasePage()
+            }
             self.burnerHomePageViewController = burnerHomePageViewController
             return burnerHomePageViewController
         }()
+    }
+
+    private func openSubscriptionPurchasePage() {
+        guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(
+            SubscriptionFunnelOrigin.fireWindowPromo.rawValue
+        )?.url else { return }
+        let tab = Tab(content: .url(url, source: .link), shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
+        tabCollectionViewModel.append(tab: tab)
     }
 
     // MARK: - DataBrokerProtection
@@ -1263,10 +1307,11 @@ final class BrowserTabViewController: NSViewController {
                 dockPreferences: dockPreferences,
                 accessibilityPreferences: accessibilityPreferences,
                 duckPlayerPreferences: duckPlayer.preferences,
-                youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences(duckPlayerPreferences: duckPlayer.preferences),
+                youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences(duckPlayerPreferences: duckPlayer.preferences, pixelFiring: PixelKit.shared),
                 subscriptionManager: subscriptionManager,
                 winBackOfferVisibilityManager: winBackOfferVisibilityManager,
-                pinningManager: pinningManager
+                pinningManager: pinningManager,
+                adBlockingAvailability: adBlockingAvailability
             )
             preferencesViewController.delegate = self
             self.preferencesViewController = preferencesViewController

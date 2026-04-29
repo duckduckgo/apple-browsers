@@ -1,0 +1,62 @@
+name: Process test results
+description: Inject xcresult crash details into a JUnit XML report and render a job-summary table.
+
+inputs:
+  junit-path:
+    description: Path to the JUnit XML file, relative to working-directory.
+    required: true
+  log-path:
+    description: Path to the xcodebuild log, relative to working-directory.
+    required: true
+  title:
+    description: Title for the rendered job-summary table.
+    required: true
+  test-outcome:
+    description: Outcome of the preceding test step. The crash injector only runs when this is 'failure'.
+    required: true
+  working-directory:
+    description: Directory to run the steps in. Composite actions do not inherit the caller's defaults.run.working-directory, so this must be passed explicitly.
+    required: true
+  xcresult-glob:
+    description: Glob (relative to working-directory) used to locate the latest .xcresult bundle. The newest match is used.
+    required: false
+    default: DerivedData/Logs/Test/*.xcresult
+  crash-reports-dir:
+    description: Directory containing .ips crash reports.
+    required: false
+    default: ~/Library/Logs/DiagnosticReports
+
+runs:
+  using: composite
+  steps:
+    - name: Inject crashes into JUnit XML
+      if: always() && inputs.test-outcome == 'failure'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        xcresult=$(ls -dt ${{ inputs.xcresult-glob }} 2>/dev/null | head -n 1)
+        if [[ -z "$xcresult" ]]; then
+          exit 0
+        fi
+        "${GITHUB_WORKSPACE}/scripts/inject-xcresult-crashes-into-junit.py" \
+          "$xcresult" "${{ inputs.junit-path }}" \
+          --log "${{ inputs.log-path }}" \
+          --crash-reports-dir "${{ inputs.crash-reports-dir }}"
+
+    - name: Render test report
+      if: always()
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        junit="${{ inputs.junit-path }}"
+        if [[ -f "$junit" ]]; then
+          crash_details="${junit%.xml}-crash-details.json"
+          crash_details_arg=()
+          if [[ -f "$crash_details" ]]; then
+            crash_details_arg=(--crash-details-json "$crash_details")
+          fi
+          "${GITHUB_WORKSPACE}/scripts/render-test-report.py" \
+            --junit "$junit" \
+            --title "${{ inputs.title }}" \
+            "${crash_details_arg[@]}"
+        fi

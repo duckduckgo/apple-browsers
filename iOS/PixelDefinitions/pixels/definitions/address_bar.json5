@@ -12,7 +12,7 @@
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "browsingMode"]
     },
     "m_addressbar_focus_clear_entry_aichat": {
         "description": "Fires when user clears address bar entry while on AI Chat",

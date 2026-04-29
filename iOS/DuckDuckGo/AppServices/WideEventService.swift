@@ -49,6 +49,7 @@ actor WideEventService {
         await processCompletion(VPNConnectionWideEventData.self, trigger: trigger)
         await processSubscriptionPurchaseCompletion(trigger: trigger)
         await processCompletion(DataImportWideEventData.self, trigger: trigger)
+        await processCompletion(PostIdleSessionWideEventData.self, trigger: trigger)
 
         isProcessing = false
     }
@@ -91,13 +92,7 @@ struct WideEventFeatureFlagAdapter: WideEventFeatureFlagProviding {
     }
 
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-#if DEBUG || ALPHA || EXPERIMENTAL
-            return false
-#else
-            return featureFlagger.isFeatureOn(.wideEventPostEndpoint)
-#endif
-        }
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }

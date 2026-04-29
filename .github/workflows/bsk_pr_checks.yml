@@ -79,11 +79,7 @@ jobs:
         if: env.cache_key_hash
         uses: actions/cache@v4
         with:
-          path: |
-            SharedPackages/BrowserServicesKit/.build/artifacts
-            SharedPackages/BrowserServicesKit/.build/checkouts
-            SharedPackages/BrowserServicesKit/.build/repositories
-            SharedPackages/BrowserServicesKit/.build/workspace-state.json
+          path: SharedPackages/BrowserServicesKit/DerivedData/SourcePackages
           key: ${{ runner.os }}-bsk-spm-${{ env.cache_key_hash }}
           restore-keys: |
             ${{ runner.os }}-bsk-spm-
@@ -91,26 +87,21 @@ jobs:
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
 
-      - name: Build BSK
-        run: set -o pipefail && swift build | tee build-log.txt | xcbeautify
-
-      - name: Configure system logging
-        run: |
-          sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
-          sudo killall logd || true
-
-      - name: Start log stream in background
-        run: |
-          log stream --debug --info --predicate 'process == "xctest" OR process == "swiftpm-xctest-helper"' --style syslog > xctest.log 2>&1 &
-          echo $! > log_stream.pid
-
       - name: Run tests
         id: run-unit-tests
-        run: >
-          set -o pipefail && swift test --enable-swift-testing
-          | tee -a build-log.txt
-          | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g'
-          | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+        run: |
+          set -o pipefail && xcodebuild test \
+            -scheme BrowserServicesKit \
+            -destination 'platform=macOS' \
+            -derivedDataPath DerivedData \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            -test-iterations 3 \
+            -retry-tests-on-failure \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee build-log.txt \
+            | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
+            | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'
@@ -129,21 +120,15 @@ jobs:
           pixel-params: |
             runner: ${{ env.RUNS_ON }}
 
-      - name: Stop log stream
+      - name: Process test results
         if: always()
-        run: |
-          if [ -f log_stream.pid ]; then
-            kill $(cat log_stream.pid) || true
-          fi
-
-      - name: Upload XCTest log stream output
-        if: failure()
-        uses: actions/upload-artifact@v4
+        uses: ./.github/actions/process-test-results
         with:
-          name: bsk-xctest-log-stream.log
-          path: |
-            SharedPackages/BrowserServicesKit/xctest.log
-          retention-days: 7
+          working-directory: SharedPackages/BrowserServicesKit
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: BSK (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4
@@ -152,6 +137,7 @@ jobs:
           name: bsk-macos-unittests.xml
           path: |
             SharedPackages/BrowserServicesKit/package-tests.xml
+            SharedPackages/BrowserServicesKit/package-tests-crash-details.json
           retention-days: 7
 
       - name: Publish Unit Tests Report
@@ -161,7 +147,8 @@ jobs:
           check_name: BSK Test Report (macOS)
           report_paths: SharedPackages/BrowserServicesKit/package-tests.xml
           require_tests: true
-          check_retries: true
+          check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+          job_summary: 'false'
 
       - name: Update Asana with failed unit tests
         if: always() && steps.run-unit-tests.outcome == 'failure'
@@ -182,19 +169,12 @@ jobs:
           name: build-log.txt
           path: SharedPackages/BrowserServicesKit/build-log.txt
 
-      - name: Wait for crash reports to be generated
-        if: failure()
-        run: |
-          sleep 30
-          ls -l ~/Library/Logs/DiagnosticReports
-
-      - name: Upload crash reports
+      - name: Upload xcresult bundle
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: "bsk-crash-reports-macOS"
-          path: |
-            ~/Library/Logs/DiagnosticReports/xctest-*.ips
+          name: bsk-macos-xcresult
+          path: SharedPackages/BrowserServicesKit/DerivedData/Logs/Test/*.xcresult
           retention-days: 7
           if-no-files-found: ignore
 
@@ -312,6 +292,16 @@ jobs:
         with:
           pixel-name: m_ci_apple_status_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}
 
+      - name: Process test results
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/BrowserServicesKit
+          junit-path: bsk-ios-unittests.xml
+          log-path: ios-build-log.txt
+          title: BSK (iOS)
+          test-outcome: ${{ steps.run-unit-tests-ios.outcome }}
+
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4
         if: always()
@@ -319,6 +309,7 @@ jobs:
           name: bsk-ios-unittests.xml
           path: |
             SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
+            SharedPackages/BrowserServicesKit/bsk-ios-unittests-crash-details.json
           retention-days: 7
 
       - name: Publish Unit Tests Report
@@ -328,7 +319,8 @@ jobs:
           check_name: BSK Test Report (iOS)
           report_paths: SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
           require_tests: true
-          check_retries: true
+          check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+          job_summary: 'false'
 
       - name: Update Asana with failed unit tests
         if: always() && steps.run-unit-tests-ios.outcome == 'failure'
@@ -348,6 +340,15 @@ jobs:
         with:
           name: ios-build-log.txt
           path: SharedPackages/BrowserServicesKit/ios-build-log.txt
+
+      - name: Upload xcresult bundle
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: bsk-ios-xcresult
+          path: SharedPackages/BrowserServicesKit/DerivedData/Logs/Test/*.xcresult
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Wait for crash reports to be generated
         if: failure()

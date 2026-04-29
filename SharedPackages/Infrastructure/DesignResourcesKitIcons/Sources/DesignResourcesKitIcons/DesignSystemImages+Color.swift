@@ -187,7 +187,7 @@ public extension DesignSystemImages {
                 .init(resource: .keyCheckColor24)
             }
             public static var keyImport: DesignSystemImage { .init(resource: .keyColorImport24) }
-            public static var lightning: DesignSystemImage { .init(resource: .lightning24) }
+            public static var lightning: DesignSystemImage { .init(resource: .lightningColor24) }
             public static var lock: DesignSystemImage { .init(resource: .lockColor24) }
             public static var microphone: DesignSystemImage { .init(resource: .microphoneColor24) }
             public static var microphoneAdd: DesignSystemImage { .init(resource: .microphoneAdd24) }

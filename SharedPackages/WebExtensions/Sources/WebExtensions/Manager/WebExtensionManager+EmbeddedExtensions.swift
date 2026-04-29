@@ -27,11 +27,16 @@ extension WebExtensionManager {
 
     /// Syncs embedded extensions from the registry based on the enabled types.
     /// Installs/upgrades enabled extensions and uninstalls disabled ones.
-    /// Call this after `loadInstalledExtensions()`.
+    /// Call this after `loadInstalledExtensions()`, or use `loadAndSyncExtensions(enabledTypes:)`.
     /// - Parameter enabledTypes: The set of extension types that should be installed.
     ///   Extensions not in this set will be uninstalled if previously installed.
     @MainActor
     public func syncEmbeddedExtensions(enabledTypes: Set<DuckDuckGoWebExtensionType>) async {
+        guard !isLoadingInstalledExtensions else {
+            Logger.webExtensions.debug("⏳ Skipping sync — load in progress, sync will run after load completes")
+            return
+        }
+
         Logger.webExtensions.debug("🔄 Syncing embedded extensions...")
 
         for descriptor in EmbeddedWebExtensionRegistry.all {
@@ -81,7 +86,7 @@ extension WebExtensionManager {
                     Logger.webExtensions.info("⬆️ Upgrading embedded extension \(descriptor.type.rawValue): \(installed.version ?? "?") → \(bundledMetadata.version ?? "?")")
                     let oldVersion = installed.version
                     try uninstallExtension(identifier: installed.uniqueIdentifier)
-                    try await installEmbeddedExtension(from: bundledURL, type: descriptor.type)
+                    try await installEmbeddedExtension(from: bundledURL, type: descriptor.type, requiresExtraction: bundledMetadata.requiresExtraction)
                     pixelFiring.fire(.embeddedUpgraded(type: descriptor.type, fromVersion: oldVersion, toVersion: bundledMetadata.version))
                 } else {
                     Logger.webExtensions.debug("👌 Embedded extension \(descriptor.type.rawValue) is up to date (v\(installed.version ?? "?"))")
@@ -89,7 +94,7 @@ extension WebExtensionManager {
                 }
             } else {
                 Logger.webExtensions.info("📦 Installing embedded extension \(descriptor.type.rawValue) v\(bundledMetadata.version ?? "?")")
-                try await installEmbeddedExtension(from: bundledURL, type: descriptor.type)
+                try await installEmbeddedExtension(from: bundledURL, type: descriptor.type, requiresExtraction: bundledMetadata.requiresExtraction)
                 pixelFiring.fire(.embeddedInstalled(type: descriptor.type))
             }
         } catch {
@@ -122,11 +127,15 @@ extension WebExtensionManager {
 
     /// Installs an embedded extension from the given URL.
     @MainActor
-    private func installEmbeddedExtension(from sourceURL: URL, type: DuckDuckGoWebExtensionType) async throws {
+    private func installEmbeddedExtension(from sourceURL: URL, type: DuckDuckGoWebExtensionType, requiresExtraction: Bool) async throws {
         Logger.webExtensions.debug("🔄 Installing embedded extension: \(type.rawValue)")
 
         let identifier = UUID().uuidString
-        _ = try storageProvider.copyExtension(from: sourceURL, identifier: identifier)
+        if requiresExtraction {
+            _ = try storageProvider.extractExtension(from: sourceURL, identifier: identifier)
+        } else {
+            _ = try storageProvider.copyExtension(from: sourceURL, identifier: identifier)
+        }
 
         do {
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)

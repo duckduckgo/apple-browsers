@@ -23,6 +23,24 @@ import PersistenceTestingUtils
 @testable import Core
 @testable import DuckDuckGo
 
+// MARK: - TextEntryMode Display Gating
+
+final class TextEntryModeDisplayTests: XCTestCase {
+
+    func testAIChatFallsBackToSearchWhenSearchInputDisabled() {
+        XCTAssertEqual(TextEntryMode.aiChat.displayed(isAIChatSearchInputEnabled: false), .search)
+    }
+
+    func testAIChatPreservedWhenSearchInputEnabled() {
+        XCTAssertEqual(TextEntryMode.aiChat.displayed(isAIChatSearchInputEnabled: true), .aiChat)
+    }
+
+    func testSearchAlwaysPreserved() {
+        XCTAssertEqual(TextEntryMode.search.displayed(isAIChatSearchInputEnabled: true), .search)
+        XCTAssertEqual(TextEntryMode.search.displayed(isAIChatSearchInputEnabled: false), .search)
+    }
+}
+
 // MARK: - DefaultOmnibarMode Resolution
 
 final class DefaultOmnibarModeResolutionTests: XCTestCase {

@@ -145,6 +145,7 @@ final class AIChatHistoryManager {
     func subscribeToTextChanges<P: Publisher>(_ textPublisher: P) where P.Output == String, P.Failure == Never {
         textPublisher
             .debounce(for: .milliseconds(Constants.debounceMilliseconds), scheduler: DispatchQueue.main)
+            .removeDuplicates()
             .sink { [weak self] text in
                 guard let self else { return }
                 self.fetchSuggestionsIfNeeded(query: text)

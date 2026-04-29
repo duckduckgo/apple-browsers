@@ -2042,6 +2042,7 @@
 		CB6D178D2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D178C2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift */; };
 		CB6D178F2FA213DD00ECD5AE /* URL+SuggestionDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D178E2FA213DD00ECD5AE /* URL+SuggestionDisplay.swift */; };
 		CB6D17912FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17902FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift */; };
+		CB6D17972FA232E000ECD5AE /* Suggestion+URLFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17962FA232E000ECD5AE /* Suggestion+URLFilter.swift */; };
 		CB7CF9FA2F9A6C100051BEE9 /* CircularButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7CF9F92F9A6C100051BEE9 /* CircularButton.swift */; };
 		CB7E0A212D5E1D96002A7C0C /* UIInteractionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */; };
 		CB7E0A232D5E1E55002A7C0C /* LaunchActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */; };
@@ -4600,6 +4601,7 @@
 		CB6D178C2FA2138200ECD5AE /* DuckAISuggestionsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsViewController.swift; sourceTree = "<group>"; };
 		CB6D178E2FA213DD00ECD5AE /* URL+SuggestionDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+SuggestionDisplay.swift"; sourceTree = "<group>"; };
 		CB6D17902FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsCoordinator.swift; sourceTree = "<group>"; };
+		CB6D17962FA232E000ECD5AE /* Suggestion+URLFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Suggestion+URLFilter.swift"; sourceTree = "<group>"; };
 		CB7407BC2AF6D56D0090A41C /* pl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pl; path = pl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CB75AA132AF6D5AA00AED266 /* sl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sl; path = sl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CB7CF9F92F9A6C100051BEE9 /* CircularButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularButton.swift; sourceTree = "<group>"; };
@@ -7106,6 +7108,7 @@
 				7B059F0E2D0387E900371ED0 /* Widgets */,
 				C18390C52F5077EA001939B9 /* UnifiedToggleInput */,
 				CB6D178E2FA213DD00ECD5AE /* URL+SuggestionDisplay.swift */,
+				CB6D17962FA232E000ECD5AE /* Suggestion+URLFilter.swift */,
 			);
 			path = DuckDuckGo;
 			sourceTree = "<group>";
@@ -12223,6 +12226,7 @@
 				9F8E0F262CC9395D001EA7C5 /* Logger+Onboarding.swift in Sources */,
 				AA3D854523D9942200788410 /* AppIconSettingsViewController.swift in Sources */,
 				7B059F142D03881000371ED0 /* ControlCenterWidgetEducationView.swift in Sources */,
+				CB6D17972FA232E000ECD5AE /* Suggestion+URLFilter.swift in Sources */,
 				85C297042476C1FD0063A335 /* DaxDialogsSettings.swift in Sources */,
 				8505836F219F424500ED4EDB /* UIViewExtension.swift in Sources */,
 				AB98765432109876543210BA /* ProductionSubscriptionPurchaseDebugView.swift in Sources */,

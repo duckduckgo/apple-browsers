@@ -47,10 +47,9 @@ final class DuckAIURLSuggestionsLoader {
     /// Pure function so the URL filtering + cap behavior is unit-testable
     /// without spinning up a real loader or data source.
     static func urlOnlyTopHits(from result: SuggestionResult, max: Int) -> [Suggestion] {
-        let urlOnly = result.topHits.filter(\.isURLSuggestion)
-            + result.duckduckgoSuggestions.filter(\.isURLSuggestion)
-            + result.localSuggestions.filter(\.isURLSuggestion)
-        return Array(urlOnly.prefix(max))
+        let urlOnly = result.filteringToURLsOnly()
+        let combined = urlOnly.topHits + urlOnly.duckduckgoSuggestions + urlOnly.localSuggestions
+        return Array(combined.prefix(max))
     }
 
     func subscribeToTextChanges<P: Publisher>(_ textPublisher: P)
@@ -66,7 +65,9 @@ final class DuckAIURLSuggestionsLoader {
 
     func fetch(query: String) {
         guard !query.isEmpty else {
-            topURLs = []
+            // Avoid re-publishing an already-empty list — `@Published` emits even when value
+            // doesn't change, which would trigger an unnecessary downstream reload.
+            if !topURLs.isEmpty { topURLs = [] }
             return
         }
 
@@ -85,14 +86,5 @@ final class DuckAIURLSuggestionsLoader {
         loader = nil
         cancellables.removeAll()
         topURLs = []
-    }
-}
-
-private extension Suggestion {
-    var isURLSuggestion: Bool {
-        switch self {
-        case .website, .bookmark, .historyEntry, .openTab: return true
-        case .phrase, .internalPage, .unknown, .askAIChat: return false
-        }
     }
 }

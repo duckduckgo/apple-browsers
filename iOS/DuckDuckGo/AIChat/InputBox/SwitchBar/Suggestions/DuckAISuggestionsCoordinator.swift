@@ -51,19 +51,11 @@ final class DuckAISuggestionsCoordinator {
     var hasCompletedInitialChatFetch: Bool { chatManager.hasCompletedInitialFetch }
 
     /// True when the suggestions surface has anything to render for the current query.
-    /// Used by container view controllers to decide whether to show the Duck.ai empty state.
+    /// Any non-empty query renders at least the always-visible "Search DuckDuckGo" row.
     var hasContent: Bool {
-        Self.hasContent(
-            chatCount: chatViewModel.filteredSuggestions.count,
-            urlCount: urlLoader.topURLs.count,
-            queryNonEmpty: !queryProvider().isEmpty
-        )
-    }
-
-    /// Pure decision so the aggregation rule is unit-testable without spinning up the
-    /// fetchers or view model.
-    nonisolated static func hasContent(chatCount: Int, urlCount: Int, queryNonEmpty: Bool) -> Bool {
-        chatCount > 0 || urlCount > 0 || queryNonEmpty
+        !chatViewModel.filteredSuggestions.isEmpty
+            || !urlLoader.topURLs.isEmpty
+            || !queryProvider().isEmpty
     }
 
     init(chatManager: AIChatHistoryManager,

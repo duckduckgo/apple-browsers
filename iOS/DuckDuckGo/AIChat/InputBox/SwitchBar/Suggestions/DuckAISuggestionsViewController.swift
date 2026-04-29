@@ -61,13 +61,16 @@ final class DuckAISuggestionsViewController: UIViewController {
     private let queryProvider: () -> String
     private let isIPadExperience: Bool
 
-    /// Coalesce reload triggers into one debounced pipeline. Sized to absorb the typical gap
-    /// between when the chat fetcher settles and when the URL fetcher settles (~60–80ms in
-    /// practice) so both updates land in a single reload — otherwise sections appear/disappear
-    /// at staggered moments.
+    /// Debounce sized to absorb the gap between chat-fetcher and URL-fetcher settle times so a
+    /// single reload renders both. Smaller and one fetcher's slower result triggers a second reload.
     private static let reloadCoalesceMilliseconds = 120
 
     private var cancellables = Set<AnyCancellable>()
+
+    /// Cached section composition — recomputed at the start of each reload and read by every
+    /// `UITableViewDataSource` / `UITableViewDelegate` method during that reload, so the
+    /// `liveSections` derivation runs once per reload instead of per row/section.
+    private var cachedLiveSections: [Section] = []
 
     private lazy var tableView: UITableView = {
         let t = UITableView(frame: .zero, style: .insetGrouped)
@@ -125,9 +128,9 @@ final class DuckAISuggestionsViewController: UIViewController {
             .store(in: &cancellables)
     }
 
-    /// The set of sections that currently render rows. Empty sections are excluded entirely so
-    /// `insetGrouped` doesn't reserve their header padding above the first visible section.
-    private var liveSections: [Section] {
+    /// Empty sections are excluded so `insetGrouped` doesn't reserve their header padding
+    /// above the first visible section.
+    private func computeLiveSections() -> [Section] {
         var sections: [Section] = []
         if !chats.isEmpty { sections.append(.chats) }
         if !urls.isEmpty { sections.append(.urls) }
@@ -137,6 +140,7 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     private func reload() {
         guard isViewLoaded else { return }
+        cachedLiveSections = computeLiveSections()
         UIView.performWithoutAnimation {
             tableView.reloadData()
         }
@@ -145,84 +149,71 @@ final class DuckAISuggestionsViewController: UIViewController {
     // MARK: - Cell config
 
     private func configureChatCell(_ cell: UITableViewCell, with chat: AIChatSuggestion) {
-        var config = cell.defaultContentConfiguration()
-        config.text = chat.title
-        config.textProperties.font = UIFont.daxBodyRegular()
-        config.textProperties.color = UIColor(designSystemColor: .textPrimary)
-        config.textProperties.numberOfLines = 1
-        config.textProperties.lineBreakMode = .byTruncatingTail
         let icon = chat.isPinned ? DesignSystemImages.Glyphs.Size24.pin : DesignSystemImages.Glyphs.Size24.aiChat
-        applyIcon(icon, to: &config)
-        applyLayoutMargins(&config)
-        cell.contentConfiguration = config
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        applyConfiguration(to: cell, title: chat.title, subtitle: nil, icon: icon)
     }
 
     private func configureURLCell(_ cell: UITableViewCell, with suggestion: Suggestion) {
-        var config = cell.defaultContentConfiguration()
+        let title: String
+        let subtitle: String?
         let icon: UIImage
         switch suggestion {
         case .website(let url):
-            config.text = url.formattedForSuggestion()
+            title = url.formattedForSuggestion()
+            subtitle = nil
             icon = DesignSystemImages.Glyphs.Size24.globe
-        case .bookmark(let title, let url, let isFavorite, _):
-            config.text = title
-            config.secondaryText = url.formattedForSuggestion()
+        case .bookmark(let bookmarkTitle, let url, let isFavorite, _):
+            title = bookmarkTitle
+            subtitle = url.formattedForSuggestion()
             icon = isFavorite ? DesignSystemImages.Glyphs.Size24.bookmarkFavorite : DesignSystemImages.Glyphs.Size24.bookmark
-        case .historyEntry(let title, let url, _) where url.isDuckDuckGoSearch:
-            config.text = url.searchQuery ?? ""
-            config.secondaryText = UserText.autocompleteSearchDuckDuckGo
+        case .historyEntry(_, let url, _) where url.isDuckDuckGoSearch:
+            title = url.searchQuery ?? ""
+            subtitle = UserText.autocompleteSearchDuckDuckGo
             icon = DesignSystemImages.Glyphs.Size24.history
-            _ = title
-        case .historyEntry(let title, let url, _):
-            config.text = title ?? url.formattedForSuggestion()
-            if title != nil { config.secondaryText = url.formattedForSuggestion() }
+        case .historyEntry(let historyTitle, let url, _):
+            title = historyTitle ?? url.formattedForSuggestion()
+            subtitle = historyTitle == nil ? nil : url.formattedForSuggestion()
             icon = DesignSystemImages.Glyphs.Size24.history
-        case .openTab(let title, let url, _, _):
-            config.text = title
-            config.secondaryText = "\(UserText.autocompleteSwitchToTab) · \(url.formattedForSuggestion())"
+        case .openTab(let tabTitle, let url, _, _):
+            title = tabTitle
+            subtitle = "\(UserText.autocompleteSwitchToTab) · \(url.formattedForSuggestion())"
             icon = DesignSystemImages.Glyphs.Size24.tabsMobile
         case .phrase, .internalPage, .unknown, .askAIChat:
-            // Filter guarantees URL types only; this branch is unreachable.
+            assertionFailure("DuckAIURLSuggestionsLoader filter must keep only URL-typed suggestions; got \(suggestion)")
             return
         }
-        config.textProperties.font = UIFont.daxBodyRegular()
-        config.textProperties.color = UIColor(designSystemColor: .textPrimary)
-        config.textProperties.numberOfLines = 1
-        config.textProperties.lineBreakMode = .byTruncatingTail
-        config.secondaryTextProperties.font = UIFont.daxFootnoteRegular()
-        config.secondaryTextProperties.color = UIColor(designSystemColor: .textSecondary)
-        config.secondaryTextProperties.numberOfLines = 1
-        config.secondaryTextProperties.lineBreakMode = .byTruncatingTail
-        applyIcon(icon, to: &config)
-        applyLayoutMargins(&config)
-        cell.contentConfiguration = config
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        applyConfiguration(to: cell, title: title, subtitle: subtitle, icon: icon)
     }
 
     private func configureSearchCell(_ cell: UITableViewCell, query: String) {
+        applyConfiguration(
+            to: cell,
+            title: query,
+            subtitle: UserText.autocompleteSearchDuckDuckGo,
+            icon: DesignSystemImages.Glyphs.Size24.findSearchSmall
+        )
+    }
+
+    private func applyConfiguration(to cell: UITableViewCell,
+                                    title: String,
+                                    subtitle: String?,
+                                    icon: UIImage) {
         var config = cell.defaultContentConfiguration()
-        config.text = query
-        config.secondaryText = UserText.autocompleteSearchDuckDuckGo
+        config.text = title
         config.textProperties.font = UIFont.daxBodyRegular()
         config.textProperties.color = UIColor(designSystemColor: .textPrimary)
         config.textProperties.numberOfLines = 1
         config.textProperties.lineBreakMode = .byTruncatingTail
-        config.secondaryTextProperties.font = UIFont.daxFootnoteRegular()
-        config.secondaryTextProperties.color = UIColor(designSystemColor: .textSecondary)
-        applyIcon(DesignSystemImages.Glyphs.Size24.findSearchSmall, to: &config)
-        applyLayoutMargins(&config)
-        cell.contentConfiguration = config
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
-    }
-
-    private func applyIcon(_ image: UIImage, to config: inout UIListContentConfiguration) {
-        config.image = image.withRenderingMode(.alwaysTemplate)
+        if let subtitle {
+            config.secondaryText = subtitle
+            config.secondaryTextProperties.font = UIFont.daxFootnoteRegular()
+            config.secondaryTextProperties.color = UIColor(designSystemColor: .textSecondary)
+            config.secondaryTextProperties.numberOfLines = 1
+            config.secondaryTextProperties.lineBreakMode = .byTruncatingTail
+        }
+        config.image = icon.withRenderingMode(.alwaysTemplate)
         config.imageProperties.tintColor = UIColor(designSystemColor: .icons)
         config.imageProperties.maximumSize = CGSize(width: Constants.iconSize, height: Constants.iconSize)
-    }
-
-    private func applyLayoutMargins(_ config: inout UIListContentConfiguration) {
         config.directionalLayoutMargins = NSDirectionalEdgeInsets(
             top: 0,
             leading: Constants.horizontalInset,
@@ -230,17 +221,17 @@ final class DuckAISuggestionsViewController: UIViewController {
             trailing: Constants.horizontalInset
         )
         config.imageToTextPadding = Constants.iconTextSpacing
+        cell.contentConfiguration = config
+        cell.backgroundColor = UIColor(designSystemColor: .surface)
     }
 }
 
 extension DuckAISuggestionsViewController: UITableViewDataSource {
 
-    func numberOfSections(in tableView: UITableView) -> Int { liveSections.count }
+    func numberOfSections(in tableView: UITableView) -> Int { cachedLiveSections.count }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        let live = liveSections
-        guard section < live.count else { return 0 }
-        switch live[section] {
+        switch cachedLiveSections[section] {
         case .chats: return chats.count
         case .urls: return urls.count
         case .search: return 1
@@ -249,14 +240,10 @@ extension DuckAISuggestionsViewController: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: Constants.cellIdentifier, for: indexPath)
-        let live = liveSections
-        guard indexPath.section < live.count else { return cell }
-        switch live[indexPath.section] {
+        switch cachedLiveSections[indexPath.section] {
         case .chats:
-            guard indexPath.row < chats.count else { return cell }
             configureChatCell(cell, with: chats[indexPath.row])
         case .urls:
-            guard indexPath.row < urls.count else { return cell }
             configureURLCell(cell, with: urls[indexPath.row])
         case .search:
             configureSearchCell(cell, query: queryProvider())
@@ -272,15 +259,11 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        let live = liveSections
-        guard indexPath.section < live.count else { return Constants.cellHeight }
-        switch live[indexPath.section] {
+        switch cachedLiveSections[indexPath.section] {
         case .chats:
             return Constants.cellHeight
         case .urls:
-            // URL rows render with a subtitle except for plain `.website`; using the larger height
-            // for all keeps row layout consistent within the section.
-            guard indexPath.row < urls.count else { return Constants.cellHeight }
+            // `.website` renders without a subtitle; everything else has one.
             switch urls[indexPath.row] {
             case .website: return Constants.cellHeight
             default: return Constants.cellHeightWithSubtitle
@@ -296,14 +279,10 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let live = liveSections
-        guard indexPath.section < live.count else { return }
-        switch live[indexPath.section] {
+        switch cachedLiveSections[indexPath.section] {
         case .chats:
-            guard indexPath.row < chats.count else { return }
             delegate?.duckAISuggestionsDidSelectChat(chats[indexPath.row])
         case .urls:
-            guard indexPath.row < urls.count else { return }
             delegate?.duckAISuggestionsDidSelectURL(urls[indexPath.row])
         case .search:
             delegate?.duckAISuggestionsDidSelectSearchDuckDuckGo(query: queryProvider())

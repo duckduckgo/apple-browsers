@@ -1936,7 +1936,7 @@ class MainViewController: UIViewController {
 
         if let coordinator = unifiedToggleInputCoordinator {
             coordinator.deactivateToOmnibar()
-            if coordinator.isAITabState, !tab.isAITab {
+            if !tab.isAITab {
                 coordinator.hide()
                 coordinator.unbind()
             }

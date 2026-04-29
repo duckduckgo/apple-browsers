@@ -37,7 +37,7 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSelectSuggestion(_ suggestion: Suggestion)
     func unifiedInputEditingStateDidSelectChatHistory(url: URL)
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab)
-    func unifiedInputEditingStateDidRequestFireMode()
+    func unifiedInputEditingStateDidRequestTryFireMode()
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode)
 }
 
@@ -118,12 +118,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var isContentActive = false
     private var needsVisibleRefresh = true
     private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
+    private var escapeHatchModel: EscapeHatchModel?
+    private var escapeHatchTapHandler: (() -> Void)?
 
     private var chatHasSuggestions: Bool {
         aiChatHistoryManager?.hasSuggestions ?? false
     }
 
-    private let daxLogoManager: DaxLogoManager
+    private(set) var daxLogoManager: DaxLogoManager
+    private var isDaxLogoForcedHidden = false
     private var notificationCancellable: AnyCancellable?
 
     private weak var contentAnimator: UIViewPropertyAnimator?
@@ -137,7 +140,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.switchBarHandler = switchBarHandler
-        self.daxLogoManager = DaxLogoManager()
+        self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -163,6 +166,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         installComponents()
         setupSubscriptions()
         observeRemoteMessagesChanges()
+        observeAddressBarPositionChanges()
 
         suggestionTrayManager?.showInitialSuggestions()
         updateDaxVisibility()
@@ -171,9 +175,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if aiChatHistoryManager == nil && featureFlagger.isFeatureOn(.aiChatSuggestions) && aiChatSettings.isChatSuggestionsEnabled {
-            installChatHistoryList()
-        }
+        installChatHistoryListIfNeeded()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -195,7 +197,24 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func setLogoHidden(_ hidden: Bool) {
+        isDaxLogoForcedHidden = hidden
         daxLogoManager.setForcedHidden(hidden)
+    }
+
+    func refreshFireMode(fireMode: Bool) {
+        rebuildDaxLogoManager(isFireTab: fireMode)
+        rebuildChatHistoryManager()
+    }
+
+    private func rebuildDaxLogoManager(isFireTab: Bool) {
+        daxLogoManager.tearDown()
+        daxLogoManager = DaxLogoManager(isFireTab: isFireTab)
+        // Replay cached forcedHidden so rebuilds don't silently un-hide the dax logo / fire empty state.
+        daxLogoManager.setForcedHidden(isDaxLogoForcedHidden)
+        guard isViewLoaded else { return }
+        installDaxLogoView()
+        applyRequestedContentInset()
+        updateDaxVisibility()
     }
 
     var isSwipeEnabled: Bool = true {
@@ -238,6 +257,50 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             visibleModeAnimation: false,
             animateContentUpdates: false
         )
+    }
+
+    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
+        escapeHatchModel = model
+        escapeHatchTapHandler = onTapped
+        suggestionTrayManager?.setEscapeHatch(model)
+        aiChatHistoryManager?.setEscapeHatch(model, onTapped: onTapped)
+        updateEscapeHatchTopInset()
+    }
+
+    /// Updates top insets for escape hatch positioning on both suggestion tray and chat history.
+    /// The two tabs use different view technologies (SwiftUI NTP vs UITableView) that handle
+    /// safe area differently, so chat history needs per-position compensation to align visually.
+    private func updateEscapeHatchTopInset() {
+        let insets = Self.computeEscapeHatchInsets(
+            hasEscapeHatch: escapeHatchModel != nil,
+            isBottomBar: !isUsingTopBarPosition,
+            chatHasSuggestions: chatHasSuggestions,
+            isLandscape: isLandscapeOrientation
+        )
+        suggestionTrayManager?.setAdditionalTopInset(insets.tray)
+        aiChatHistoryManager?.setAdditionalTopInset(insets.chat)
+    }
+
+    static func computeEscapeHatchInsets(hasEscapeHatch: Bool,
+                                         isBottomBar: Bool,
+                                         chatHasSuggestions: Bool,
+                                         isLandscape: Bool) -> (tray: CGFloat, chat: CGFloat) {
+        // Tray: bottom bar needs space for dismiss button; top bar gets a small pull-up.
+        let suggestionInsetBase: CGFloat = hasEscapeHatch && isBottomBar ? Metrics.escapeHatchBaseTopInset : 0
+        let trayTopBarPullUp: CGFloat = hasEscapeHatch && !isBottomBar ? Metrics.escapeHatchTopBarTrayPullUp : 0
+        let tray = suggestionInsetBase + trayTopBarPullUp
+
+        // Chat history uses the same base, then applies corrections:
+        // - compensation: UITableView vs SwiftUI NTP safe-area difference in bottom bar
+        // - emptyListBoost: vertical centering of hatch when chat list is empty (portrait top bar only)
+        // - landscapeAlignment: small pull-up so chat hatch aligns with Search tray in landscape
+        let compensation: CGFloat = hasEscapeHatch && isBottomBar ? Metrics.chatHistoryBottomBarCompensation : 0
+        let emptyListBoost: CGFloat = hasEscapeHatch && !chatHasSuggestions && !isBottomBar && !isLandscape
+            ? Metrics.escapeHatchEmptyListBoost : 0
+        let landscapeAlignment: CGFloat = hasEscapeHatch && isLandscape ? Metrics.landscapeDuckAiAlignmentPullUp : 0
+        let chat = suggestionInsetBase - compensation + emptyListBoost + landscapeAlignment
+
+        return (tray: tray, chat: chat)
     }
 
     func setText(_ text: String) {
@@ -409,8 +472,23 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
         manager.delegate = self
-        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: nil)
+        let trayEscapeHatch = switchBarHandler.isFireTab ? nil : escapeHatchModel
+        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: trayEscapeHatch)
         suggestionTrayManager = manager
+    }
+
+    private func installChatHistoryListIfNeeded() {
+        guard aiChatHistoryManager == nil,
+              featureFlagger.isFeatureOn(.aiChatSuggestions),
+              aiChatSettings.isChatSuggestionsEnabled else { return }
+        installChatHistoryList()
+    }
+
+    private func rebuildChatHistoryManager() {
+        guard aiChatHistoryManager != nil else { return }
+        aiChatHistoryManager?.tearDown()
+        aiChatHistoryManager = nil
+        installChatHistoryListIfNeeded()
     }
 
     private func installChatHistoryList() {
@@ -426,6 +504,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             self.updateDaxVisibility()
         }
         aiChatHistoryManager = manager
+        if let escapeHatchModel, !switchBarHandler.isFireTab {
+            manager.setEscapeHatch(escapeHatchModel, onTapped: escapeHatchTapHandler)
+        }
+
         manager.hasSuggestionsPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -459,7 +541,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func installDaxLogoView() {
-        daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, anchorView: contentContainerView, isTopBarPosition: false)
+        daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, isTopBarPosition: false)
     }
 
     private func setupSubscriptions() {
@@ -482,6 +564,20 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         guard isUsingTopBarPosition != isAdjustedForTopBar else { return }
         isAdjustedForTopBar = isUsingTopBarPosition
         updateSectionTitle()
+        updateEscapeHatchTopInset()
+    }
+
+    private func observeAddressBarPositionChanges() {
+        NotificationCenter.default
+            .publisher(for: AppUserDefaults.Notifications.addressBarPositionChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.onAddressBarPositionChanged() }
+            .store(in: &cancellables)
+    }
+
+    private func onAddressBarPositionChanged() {
+        isUsingTopBarPosition = !forceBottomBarLayout && (appSettings.currentAddressBarPosition == .top || isLandscapeOrientation)
+        updateLayoutForCurrentOrientation()
     }
 
     private func observeRemoteMessagesChanges() {
@@ -555,8 +651,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             right: 0
         )
         insets.top += Metrics.contentTopInset
+        daxLogoManager.setFireTabContentInsets(insets)
         guard swipeContainerManager?.containerViewController.additionalSafeAreaInsets != insets else { return }
         swipeContainerManager?.containerViewController.additionalSafeAreaInsets = insets
+        // layoutIfNeeded inside the active CATransaction so the inset change animates with the parent.
+        swipeContainerManager?.containerViewController.view.layoutIfNeeded()
     }
 
     @objc private func handleFloatingDismissTap() {
@@ -589,13 +688,23 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let isChatHistoryPending = aiChatHistoryManager != nil
             && aiChatHistoryManager?.hasCompletedInitialFetch != true
             && switchBarHandler.currentToggleState == .aiChat
+            && !switchBarHandler.isFireTab
         let isURLFallbackShowingContent = isShowingURLFallback && isShowingTray
 
         let hasContent = (shouldDisplaySuggestionTray && isShowingTray) || isHorizontallyCompactLayoutEnabled
-        let isHomeDaxVisible = !hasContent && !shouldDisplayFavoritesOverlay
+        let homeDaxInputs = HomeDaxInputs(
+            hasContent: hasContent,
+            shouldDisplayFavoritesOverlay: shouldDisplayFavoritesOverlay,
+            hasEscapeHatch: escapeHatchModel != nil,
+            hasFavorites: suggestionTrayManager?.hasFavorites ?? false,
+            hasRemoteMessages: suggestionTrayManager?.hasRemoteMessages ?? false
+        )
+        let isHomeDaxVisible = daxLogoManager.shouldShowHomeDax(homeDaxInputs)
         let isAIDaxVisible = !hasContent && !isShowingChatHistory && !isChatHistoryPending && !isURLFallbackShowingContent
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
+        let escapeHatchOffset: CGFloat = (escapeHatchModel != nil && !switchBarHandler.isFireTab) ? Metrics.escapeHatchLogoOffset : 0
+        daxLogoManager.setEscapeHatchBaseOffset(escapeHatchOffset)
         updateSectionTitle()
     }
 
@@ -634,6 +743,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .panel)
         static let contentTopInset: CGFloat = 10
+        static let escapeHatchBaseTopInset: CGFloat = 44
+        static let chatHistoryBottomBarCompensation: CGFloat = 1
+        static let escapeHatchLogoOffset: CGFloat = 120
+        // Vertically centers the escape hatch card when the chat history list is empty (no recent chats)
+        static let escapeHatchEmptyListBoost: CGFloat = 165
+        // Pulls the suggestion tray (NTP/Favorites) upward in UTI top bar to tighten gap between UTI input and hatch.
+        static let escapeHatchTopBarTrayPullUp: CGFloat = -10
+        // Landscape-only small alignment pull-up for chat history hatch so it visually matches Search tray position.
+        static let landscapeDuckAiAlignmentPullUp: CGFloat = -1
     }
 }
 
@@ -689,6 +807,7 @@ private extension UnifiedInputContentContainerViewController {
 
         let applyContentUpdates = {
             self.updateDaxVisibility()
+            self.updateEscapeHatchTopInset()
             self.applyRequestedContentInset()
             if let visibleModeAnimation {
                 self.swipeContainerManager?.syncVisibleMode(animated: visibleModeAnimation)
@@ -777,8 +896,8 @@ extension UnifiedInputContentContainerViewController: SuggestionTrayManagerDeleg
         delegate?.unifiedInputEditingStateDidRequestSwitchTab(tab)
     }
 
-    func suggestionTrayManagerDidRequestFireMode(_ manager: SuggestionTrayManager) {
-        delegate?.unifiedInputEditingStateDidRequestFireMode()
+    func suggestionTrayManagerDidRequestTryFireMode(_ manager: SuggestionTrayManager) {
+        delegate?.unifiedInputEditingStateDidRequestTryFireMode()
     }
 
     func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager) {

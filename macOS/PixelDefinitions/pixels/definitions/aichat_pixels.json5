@@ -80,13 +80,13 @@
         "description": "Fired when user submits their first prompt in a new Duck.ai conversation",
         "owners": ["pikorddg"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_sent_prompt_ongoing_chat": {
         "description": "Fired when user submits a prompt in an ongoing Duck.ai conversation",
         "owners": ["pikorddg"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_sidebar_resized": {
         "description": "Fired when user finishes dragging the sidebar resize grip (after 500 ms debounce)",

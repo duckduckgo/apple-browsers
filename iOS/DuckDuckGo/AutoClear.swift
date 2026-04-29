@@ -24,6 +24,7 @@ import Core
 protocol AutoClearing {
 
     var isClearingEnabled: Bool { get }
+    var isTabClearingEnabled: Bool { get }
     func clearDataIfEnabled(launching: Bool, applicationState: DataStoreWarmup.ApplicationState) async
 
     var isClearingDue: Bool { get }
@@ -40,6 +41,11 @@ final class AutoClear: AutoClearing {
 
     var isClearingEnabled: Bool {
         return AutoClearSettingsModel(settings: appSettings) != nil
+    }
+
+    var isTabClearingEnabled: Bool {
+        guard let settings = AutoClearSettingsModel(settings: appSettings) else { return false }
+        return settings.action.contains(.tabs)
     }
 
     init(worker: FireExecuting,

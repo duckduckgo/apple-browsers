@@ -325,6 +325,96 @@
 /* Sync Settings - Recovery section header */
 "sync.settings.recovery.section.header" = "Helyreállítás";
 
+/* Sync settings 'Already set up' section header containing useful options */
+"sync.simplified.already.set.up.section.header" = "Már be van állítva egy másik eszközön?";
+
+/* Prompt body text after enabling sync */
+"sync.simplified.another.device.body" = "Könyvjelzőid, automatikus kitöltési adataid és Duck.ai-csevegéseid biztonságosan mentve vannak. Most pedig a számítógépeddel és a táblagépeddel is szinkronizálhatod őket.";
+
+/* Primary button to sync another device when sync is enabled */
+"sync.simplified.another.device.button" = "Szinkronizálás másik eszközzel";
+
+/* Prompt title after enabling sync */
+"sync.simplified.another.device.title" = "Szinkronizálod az adataidat egy másik eszközzel?";
+
+/* Bookmarks section header in sync settings */
+"sync.simplified.bookmarks.section.header" = "Könyvjelzők";
+
+/* Text shown next to toggle while sync is being set up */
+"sync.simplified.connecting" = "Csatlakozás…";
+
+/* Sync settings 'Copy Recovery Code' button */
+"sync.simplified.copy.recovery.code.button" = "Helyreállítási kód másolása";
+
+/* Sync settings action button title to turn off sync and delete server data */
+"sync.simplified.delete.sync.data.button" = "Szinkronizálás kikapcsolása és szerveradatok törlése";
+
+/* Sync settings 'Download Recovery Code' button */
+"sync.simplified.download.recovery.code.button" = "Helyreállítási kód letöltése";
+
+/* Button subtitle to get the DuckDuckGo desktop browser */
+"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo Mac és Windows rendszerre";
+
+/* Button title to get the DuckDuckGo desktop browser. */
+"sync.simplified.get.desktop.browser.title" = "Asztali böngésző letöltése";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message" = "Mentsd el a könyvjelzőidet, az automatikus kitöltési adataidat és a Duck.ai csevegéseidet, és szinkronizáld őket az eszközeiden végpontok közötti titkosítással.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic" = "Mentsd el a könyvjelzőidet és az automatikus kitöltési adataidat, és szinkronizáld őket az eszközeiden végpontok közötti titkosítással.";
+
+/* Part of instruction prompt referring to the DuckDuckGo app. */
+"sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo alkalmazás";
+
+/* Floating prompt over QR code scanner preview */
+"sync.simplified.scan-or-view-code.camera.prompt" = "Irányítsd a kamerát a QR-kódra a beolvasáshoz";
+
+/* Status text when connecting devices to sync */
+"sync.simplified.scan-or-view-code.connecting.status" = "Csatlakozás…";
+
+/* Instruction shown during sync setup flow */
+"sync.simplified.scan-or-view-code.connecting.title" = "Tartsd megnyitva a DuckDuckGo alkalmazást mindkét eszközön";
+
+/* Button to navigate to manual sync code entry */
+"sync.simplified.scan-or-view-code.manually.enter.code" = "Kód manuális megadása";
+
+/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
+"sync.simplified.scan-or-view-code.paste.code.instructions" = "Egy másik szinkronizált eszköz DuckDuckGo alkalmazásában lépj a **Beállítások > Sync & Backup > Szinkronizálás másik eszközzel** menüpontra, válaszd ki a **Szövegkód megtekintése** opciót, majd illeszd be ide a kódot az eszköz szinkronizálásához.";
+
+/* Status text while verifying a pasted sync code */
+"sync.simplified.scan-or-view-code.paste.code.verifying" = "Kód ellenőrzése";
+
+/* First line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Nyisd meg a DuckDuckGo alkalmazást a másik eszközödön.";
+
+/* Second line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line2" = "A QR-kódot a Beállítások > Sync & Backup > Szinkronizálás másik eszközzel menüpontban találod.";
+
+/* Title of button to share a sync code */
+"sync.simplified.scan-or-view-code.share" = "Kód megosztása";
+
+/* Button title to show QR code scanner */
+"sync.simplified.scan-or-view-code.tab.scan" = "QR-kód beolvasása";
+
+/* Button title to view your sync code */
+"sync.simplified.scan-or-view-code.tab.view.code" = "Kód megtekintése";
+
+/* Navigation title for simplified QR scanning screen */
+"sync.simplified.scan-or-view-code.title" = "Eszközök szinkronizálása";
+
+/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
+"sync.simplified.scan-or-view-code.view.instructions" = "Szkenneld be vagy illeszd be ezt a kódot a másik eszközön";
+
+/* Sync & Backup enabled / disabled toggle title */
+"sync.simplified.toggle.title" = "Szinkronizálás és biztonsági mentés";
+
+/* Use Recovery Code sync setup button label */
+"sync.simplified.use.recovery.code.button" = "Helyreállítási kód használata";
+
+/* Sync With Another Device sync setup button label */
+"sync.simplified.with.another.device.button" = "Szinkronizálás másik eszközzel";
+
 /* Sync & Backup Title */
 "sync.title" = "Szinkronizálás és biztonsági mentés";
 

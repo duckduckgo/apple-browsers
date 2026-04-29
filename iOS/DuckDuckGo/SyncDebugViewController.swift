@@ -18,7 +18,6 @@
 //
 
 import UIKit
-import BackgroundTasks
 import Core
 import Persistence
 import Bookmarks
@@ -29,7 +28,6 @@ class SyncDebugViewController: UITableViewController {
 
     private let titles = [
         Sections.info: "Info",
-        Sections.autoRestore: "Auto-Restore",
         Sections.models: "Models",
         Sections.environment: "Environment"
     ]
@@ -37,7 +35,6 @@ class SyncDebugViewController: UITableViewController {
     enum Sections: Int, CaseIterable {
 
         case info
-        case autoRestore
         case models
         case environment
 
@@ -50,6 +47,7 @@ class SyncDebugViewController: UITableViewController {
         case toggleFavoritesDisplayMode
         case resetFaviconsFetcherOnboardingDialog
         case getRecoveryCode
+        case resetSyncAnotherDevicePrompt
 
     }
 
@@ -61,14 +59,6 @@ class SyncDebugViewController: UITableViewController {
 
     }
 
-    enum AutoRestoreRows: Int, CaseIterable {
-
-        case decisionToggle
-        case recoverAccount
-        case simulateAppReinstallForAutoRestore
-
-    }
-
     enum EnvironmentRows: Int, CaseIterable {
 
         case toggle
@@ -77,18 +67,14 @@ class SyncDebugViewController: UITableViewController {
 
     private let bookmarksDatabase: CoreDataDatabase
     private let sync: DDGSyncing
-    private let keyValueStore: ThrowingKeyValueStoring
-    private let autoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager
 
     var syncCancellable: Cancellable?
 
     init?(coder: NSCoder,
           sync: DDGSyncing,
-          keyValueStore: ThrowingKeyValueStoring,
           bookmarksDatabase: CoreDataDatabase) {
 
         self.sync = sync
-        self.keyValueStore = keyValueStore
         self.bookmarksDatabase = bookmarksDatabase
 
         super.init(coder: coder)
@@ -134,25 +120,8 @@ class SyncDebugViewController: UITableViewController {
                 cell.textLabel?.text = "Reset Favicons Fetcher onboarding dialog"
             case .some(.getRecoveryCode):
                 cell.textLabel?.text = "Paste and Copy Recovery Code"
-            case .none:
-                break
-            }
-
-        case .autoRestore:
-            switch AutoRestoreRows(rawValue: indexPath.row) {
-            case .decisionToggle:
-                cell.textLabel?.text = "Auto-Restore Opt-In"
-                let toggle = UISwitch()
-                toggle.isOn = currentAutoRestoreDecision()
-                toggle.addTarget(self, action: #selector(autoRestoreToggleChanged(_:)), for: .valueChanged)
-                cell.accessoryView = toggle
-                cell.selectionStyle = .none
-            case .recoverAccount:
-                cell.textLabel?.text = "Recover account"
-                cell.detailTextLabel?.text = "Enable Sync from preserved account"
-            case .simulateAppReinstallForAutoRestore:
-                cell.textLabel?.text = "Simulate app reinstall"
-                cell.detailTextLabel?.text = "Clears sync enabled state, keeps keychain account"
+            case .resetSyncAnotherDevicePrompt:
+                cell.textLabel?.text = "Reset Sync Another Device prompt"
             case .none:
                 break
             }
@@ -212,7 +181,6 @@ class SyncDebugViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch Sections(rawValue: section) {
         case .info: return InfoRows.allCases.count
-        case .autoRestore: return AutoRestoreRows.allCases.count
         case .models: return ModelRows.allCases.count
         case .environment: return EnvironmentRows.allCases.count
         case .none: return 0
@@ -247,27 +215,9 @@ class SyncDebugViewController: UITableViewController {
                 udWrapper.wrappedValue = false
             case .getRecoveryCode:
                 showCopyPasteCodeAlert()
+            case .resetSyncAnotherDevicePrompt:
+                UserDefaults.standard.removeObject(forKey: "sync.simplified.sync-another-device-prompt.shown")
             default: break
-            }
-        case .autoRestore:
-            switch AutoRestoreRows(rawValue: indexPath.row) {
-            case .recoverAccount:
-                Task { [weak self] in
-                    guard let self else { return }
-                    guard let ddgSync = sync as? DDGSync else {
-                        await self.presentAutoRestoreErrorAlert(message: "Sync service does not support recovery.")
-                        return
-                    }
-                    do {
-                        try await ddgSync.enableSyncFromPreservedAccount()
-                    } catch {
-                        await self.presentAutoRestoreErrorAlert(message: error.localizedDescription)
-                    }
-                }
-            case .simulateAppReinstallForAutoRestore:
-                presentSimulateReinstallConfirmationAlert()
-            case .decisionToggle, .none:
-                break
             }
         case .models:
             switch ModelRows(rawValue: indexPath.row) {
@@ -309,30 +259,6 @@ class SyncDebugViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
 
-    @objc private func autoRestoreToggleChanged(_ sender: UISwitch) {
-        do {
-            try autoRestoreDecisionManager.persistDecision(sender.isOn)
-        } catch {
-            sender.setOn(!sender.isOn, animated: true)
-            presentAutoRestoreErrorAlert(message: "Failed to update Auto-Restore decision.")
-        }
-    }
-
-    private func currentAutoRestoreDecision() -> Bool {
-        autoRestoreDecisionManager.existingDecision() ?? false
-    }
-
-    @MainActor
-    private func presentAutoRestoreErrorAlert(message: String) {
-        let alertController = UIAlertController(
-            title: "Auto-Restore",
-            message: message,
-            preferredStyle: .alert
-        )
-        alertController.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alertController, animated: true)
-    }
-
     private func showCopyPasteCodeAlert() {
         let alertController = UIAlertController(title: "Paste and Copy Recovery Code", message: nil, preferredStyle: .alert)
 
@@ -354,41 +280,6 @@ class SyncDebugViewController: UITableViewController {
 
         // Present the alert
         present(alertController, animated: true, completion: nil)
-    }
-
-    private func presentSimulateReinstallConfirmationAlert() {
-        let alertController = UIAlertController(
-            title: "Simulate App Reinstall?",
-            message: "This clears local Sync state while keeping keychain account data for Auto-Restore testing.",
-            preferredStyle: .alert
-        )
-        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        alertController.addAction(UIAlertAction(title: "Reset", style: .destructive) { [weak self] _ in
-            self?.simulateAppReinstallForAutoRestore()
-        })
-        present(alertController, animated: true)
-    }
-
-    private func simulateAppReinstallForAutoRestore() {
-        do {
-            try keyValueStore.removeObject(forKey: DDGSync.Constants.syncEnabledKey)
-            try keyValueStore.removeObject(forKey: DDGSync.Constants.keychainAttrMigratedKey)
-        } catch {
-            presentAutoRestoreErrorAlert(message: "Failed to reset Sync state: \(error.localizedDescription)")
-            return
-        }
-
-        // Clear legacy fallback values so migration logic does not re-enable Sync state.
-        UserDefaults.standard.removeObject(forKey: DDGSync.Constants.syncEnabledKey)
-        UserDefaults.standard.removeObject(forKey: DDGSync.Constants.keychainAttrMigratedKey)
-
-        let alertController = UIAlertController(
-            title: "Sync State Reset",
-            message: "Force quit and relaunch the app to apply reinstall-like Sync initialization behavior.",
-            preferredStyle: .alert
-        )
-        alertController.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alertController, animated: true)
     }
 
 }

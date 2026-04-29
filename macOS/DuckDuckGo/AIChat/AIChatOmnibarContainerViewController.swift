@@ -77,6 +77,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let toolsButton = AIChatOmnibarToolButton()
     private let imageGenActiveButton = AIChatOmnibarToolButton()
     private let webSearchActiveButton = AIChatOmnibarToolButton()
+    private let reasoningPickerButton = AIChatOmnibarToolButton()
     private let modelPickerButton = AIChatModelPickerButton()
     private let attachmentsContainerView = AIChatImageAttachmentsContainerView()
 
@@ -94,6 +95,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Tracks ongoing resize tasks by attachment ID. Used to ensure resizes complete before submission.
     private var resizeTasks: [UUID: Task<Void, Never>] = [:]
+    /// When true, the attachments view is being reinstalled from the current tab's shared state (on tab switch).
+    /// Used to suppress the `onAttachmentsChanged` → `persistAttachmentsToActiveTab` writeback during that window.
+    private var isRestoringAttachmentsFromSharedState = false
+    /// True while `cleanup()` is tearing down the panel. The clear-attachments call inside cleanup must not
+    /// persist an empty list back to shared state — on a tab-switch dismissal, cleanup runs before the controller's
+    /// `$selectedTabViewModel` sink has swapped `sharedTextState` to the incoming tab, so any persist at this point
+    /// would zero out the *outgoing* tab's attachments.
+    private var isCleaningUp = false
 
     /// Constraint for suggestions view height
     private var suggestionsHeightConstraint: NSLayoutConstraint?
@@ -134,9 +143,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Called when a tool button receives a Tab key press. Wire this to advance focus to the next visible button.
     var onToolButtonTabPressed: (() -> Void)?
 
-    /// Ordered list of focusable tool buttons. Tab cycles through visible/enabled buttons in this order.
+    /// Ordered list of focusable tool buttons. Tab cycles through visible/enabled buttons in this
+    /// order, then proceeds to the model picker. Reasoning picker is last so focus flows
+    /// left-to-right through the left-side tools, then the reasoning chip (which sits visually
+    /// adjacent to the model picker), then the model picker itself.
     private var focusableToolButtons: [AIChatOmnibarToolButton] {
-        [imageUploadButton, toolsButton, imageGenActiveButton, webSearchActiveButton]
+        [imageUploadButton, toolsButton, imageGenActiveButton, webSearchActiveButton, reasoningPickerButton]
     }
 
     var isImageUploadButtonAvailableForFocus: Bool {
@@ -318,8 +330,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     // MARK: - Tool Button Visibility
 
     private var shouldShowToolsButton: Bool {
-        omnibarController.isOmnibarToolsEnabled
-            && (omnibarController.isImageGenerationEnabled || omnibarController.isWebSearchEnabled)
+        omnibarController.isOmnibarToolsEnabled && (isImageGenerationItemVisible || isWebSearchItemVisible)
+    }
+
+    private var isImageGenerationItemVisible: Bool {
+        omnibarController.isImageGenerationEnabled
+    }
+
+    private var isWebSearchItemVisible: Bool {
+        omnibarController.isWebSearchEnabled && omnibarController.selectedModelSupportsWebSearch
+    }
+
+    private var shouldShowWebSearchChip: Bool {
+        shouldShowToolsButton && omnibarController.isWebSearchMode && omnibarController.selectedModelSupportsWebSearch
     }
 
     private var shouldShowImageUpload: Bool {
@@ -339,7 +362,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func updateToolButtonsVisibility(isEnabled: Bool) {
         toolsButton.isHidden = !shouldShowToolsButton
         imageGenActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isImageGenerationMode
-        webSearchActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isWebSearchMode
+        webSearchActiveButton.isHidden = !shouldShowWebSearchChip
         imageUploadButton.isHidden = !shouldShowAttachments || !shouldShowImageUpload
         imageUploadButton.isEnabled = !attachmentsContainerView.isFull
         modelPickerButton.isHidden = !shouldShowModelPicker
@@ -352,6 +375,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         updateToolsLeadingConstraint()
         updateToolModeUI()
+        updateReasoningPickerVisibility()
         onPassthroughHeightNeedsUpdate?()
     }
 
@@ -490,6 +514,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         webSearchActiveButton.isHidden = true
         containerView.addSubview(webSearchActiveButton)
 
+        reasoningPickerButton.translatesAutoresizingMaskIntoConstraints = false
+        reasoningPickerButton.target = self
+        reasoningPickerButton.action = #selector(reasoningPickerButtonClicked)
+        reasoningPickerButton.font = .systemFont(ofSize: 12, weight: .regular)
+        reasoningPickerButton.toolTip = UserText.aiChatReasoningEffortPickerButtonTooltip
+        reasoningPickerButton.setAccessibilityLabel(UserText.aiChatReasoningEffortPickerButtonTooltip)
+        reasoningPickerButton.onTabPressed = { [weak self] in guard let self else { return }; self.advanceFocusAfter(self.reasoningPickerButton) }
+        reasoningPickerButton.isHidden = true
+        containerView.addSubview(reasoningPickerButton)
+
         modelPickerButton.translatesAutoresizingMaskIntoConstraints = false
         modelPickerButton.target = self
         modelPickerButton.action = #selector(modelPickerButtonClicked)
@@ -501,7 +535,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         attachmentsContainerView.translatesAutoresizingMaskIntoConstraints = false
         attachmentsContainerView.onAttachmentsChanged = { [weak self] in
-            self?.updateAttachmentsLayout()
+            guard let self else { return }
+            self.updateAttachmentsLayout()
+            /// Skip the persist write during restore (tab switch reinstall — would echo back the list we just read)
+            /// and during cleanup (panel teardown — at that moment the controller's `sharedTextState` may still be
+            /// pointing at the outgoing tab, and persisting an empty list would wipe that tab's saved attachments).
+            if !self.isRestoringAttachmentsFromSharedState && !self.isCleaningUp {
+                self.omnibarController.persistAttachmentsToActiveTab(self.attachmentsContainerView.attachments)
+            }
         }
         attachmentsContainerView.onAttachmentWillRemove = { [weak self] id in
             PixelKit.fire(AIChatPixel.aiChatAddressBarImageRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
@@ -534,6 +575,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             submitButton.heightAnchor.constraint(equalToConstant: Constants.submitButtonSize),
 
             modelPickerButton.heightAnchor.constraint(equalToConstant: Constants.modelPickerHeight),
+
+            reasoningPickerButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
+            reasoningPickerButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+            reasoningPickerButton.trailingAnchor.constraint(equalTo: modelPickerButton.leadingAnchor, constant: -Constants.toolButtonSpacing),
 
             imageUploadButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset),
             imageUploadButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
@@ -592,6 +637,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             imageGenActiveButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
             webSearchActiveButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
             imageUploadButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
+            reasoningPickerButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
             modelPickerButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset)
         ])
 
@@ -657,8 +703,22 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// The last known suggestions height before image gen mode suppressed it.
     private var lastKnownSuggestionsHeight: CGFloat = 0
 
+    /// Whether suggestions are collapsed due to the address bar being unfocused while in duck.ai mode.
+    private var isSuggestionsCollapsedByUnfocus: Bool = false
+
     private var shouldSuppressSuggestions: Bool {
-        omnibarController.isImageGenerationMode || !attachmentsContainerView.attachments.isEmpty
+        omnibarController.isImageGenerationMode || !attachmentsContainerView.attachments.isEmpty || isSuggestionsCollapsedByUnfocus
+    }
+
+    /// Collapses/expands the suggestions row without affecting tools, submit button, or model picker.
+    /// Used to reflect unfocused duck.ai mode, where the panel stays on screen but suggestions are hidden.
+    func setSuggestionsCollapsedByUnfocus(_ collapsed: Bool) {
+        guard isSuggestionsCollapsedByUnfocus != collapsed else { return }
+        isSuggestionsCollapsedByUnfocus = collapsed
+        suggestionsView.isHidden = shouldSuppressSuggestions
+        suggestionsHeight = -1
+        updateSuggestionsHeight(shouldSuppressSuggestions ? 0 : lastKnownSuggestionsHeight)
+        onPassthroughHeightNeedsUpdate?()
     }
 
     private func updateSuggestionsHeight(_ newHeight: CGFloat) {
@@ -687,8 +747,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         observeWindowFrameChanges()
     }
 
+    /// Shows or hides the drop shadow that extends below the panel. The panel itself stays visible.
+    /// Used to mirror the address-bar shadow behaviour: on focus the shadow is drawn, on unfocus it's removed.
+    func setShadowVisible(_ visible: Bool) {
+        if visible {
+            addShadowToWindow()
+        } else {
+            shadowView.removeFromSuperview()
+        }
+    }
+
     /// Stops event monitoring. Call this when the view controller is about to be dismissed.
     func cleanup() {
+        isCleaningUp = true
+        defer { isCleaningUp = false }
         backgroundView.stopListening()
         shadowView.removeFromSuperview()
         windowFrameObserver?.cancel()
@@ -703,6 +775,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.modelName = persistedModelShortName
 
         omnibarController.cleanup()
+
+        // Reset cached height state so the next open doesn't reuse stale values from the previous session.
+        // Without this, switching tabs after suggestions loaded leaves `lastKnownSuggestionsHeight` > 0,
+        // and the next activation sizes the panel as if suggestions were still present.
+        isSuggestionsCollapsedByUnfocus = false
+        lastKnownSuggestionsHeight = 0
+        suggestionsHeight = 0
+        suggestionsHeightConstraint?.constant = 0
     }
 
     private func addShadowToWindow() {
@@ -775,7 +855,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             menu.addItem(createImageItem)
         }
 
-        if omnibarController.isWebSearchEnabled {
+        if isWebSearchItemVisible {
             let webSearchItem = NSMenuItem()
             webSearchItem.attributedTitle = toolsMenuItemAttributedTitle(
                 title: UserText.aiChatWebSearchButtonLabel,
@@ -908,6 +988,27 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 await task.value
             }
         }
+        omnibarController.onActiveTabAttachmentsRestoreRequested = { [weak self] attachments in
+            self?.restoreAttachmentsFromSharedState(attachments)
+        }
+    }
+
+    /// Reinstalls the attachments view from the incoming tab's persisted list on tab switch.
+    /// Any in-flight resize tasks are cancelled because they were associated with the outgoing tab's
+    /// view instances; the persisted attachments already hold the best-available image we had for them.
+    private func restoreAttachmentsFromSharedState(_ attachments: [AIChatImageAttachment]) {
+        isRestoringAttachmentsFromSharedState = true
+        defer { isRestoringAttachmentsFromSharedState = false }
+
+        for task in resizeTasks.values {
+            task.cancel()
+        }
+        resizeTasks.removeAll()
+
+        attachmentsContainerView.removeAllAttachments()
+        for attachment in attachments {
+            attachmentsContainerView.addAttachment(attachment)
+        }
     }
 
     private func clearAttachments() {
@@ -983,6 +1084,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 modelPickerButton.modelName = persistedModelShortName
                 // Refresh image upload visibility with updated supportsImageUpload
                 updateImageUploadVisibility(supportsImageUpload: omnibarController.selectedModelSupportsImageUpload)
+                // Refresh tool button visibility so the Web Search chip reflects the loaded
+                // model's `supportedTools` (belt-and-braces — the controller also clears
+                // `activeToolMode` when the persisted model doesn't support web search).
+                updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
+                updateReasoningPickerVisibility()
             }
     }
 
@@ -1031,7 +1137,63 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.updateSelectedModel(model.id)
         modelPickerButton.modelName = model.shortName
         updateImageUploadVisibility(supportsImageUpload: model.supportsImageUpload)
+        // Refresh tool button visibility so the tools button disappears / reappears when the
+        // new model changes what the menu would show (e.g. only Web Search is flag-enabled and
+        // the newly selected model doesn't support it — the button would otherwise pop an empty menu).
+        updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
+        updateReasoningPickerVisibility()
         PixelKit.fire(AIChatPixel.aiChatAddressBarModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+    }
+
+    // MARK: - Reasoning Picker
+
+    @objc private func reasoningPickerButtonClicked() {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+
+        let currentEffort = omnibarController.displayedReasoningEffort
+        for effort in omnibarController.pickerReasoningEfforts {
+            let item = NSMenuItem(title: "", action: #selector(reasoningEffortSelected(_:)), keyEquivalent: "")
+            item.attributedTitle = toolsMenuItemAttributedTitle(title: effort.title, subtitle: effort.subtitle)
+            item.target = self
+            item.representedObject = effort
+            item.image = effort.icon
+            if effort == currentEffort {
+                item.state = .on
+            }
+            menu.addItem(item)
+        }
+
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: -5), in: reasoningPickerButton)
+    }
+
+    @objc private func reasoningEffortSelected(_ sender: NSMenuItem) {
+        guard let effort = sender.representedObject as? AIChatReasoningEffort else { return }
+        omnibarController.updateSelectedReasoningEffort(effort)
+        updateReasoningPickerAppearance(effort)
+        PixelKit.fire(AIChatPixel.aiChatAddressBarReasoningEffortSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+    }
+
+    private func updateReasoningPickerVisibility() {
+        guard omnibarController.isReasoningEffortEnabled else {
+            reasoningPickerButton.isHidden = true
+            return
+        }
+        let efforts = omnibarController.pickerReasoningEfforts
+        reasoningPickerButton.isHidden = efforts.count <= 1 || omnibarController.isImageGenerationMode
+        guard let fallback = efforts.first else { return }
+        // Display only. The controller owns stale-effort cleanup (on model switch and on models
+        // refetch) so we never write to persistence from here — a saved value that isn't supported
+        // by the current model is ignored for display and not attached to submissions.
+        // `displayedReasoningEffort` maps stored bucket-equivalents (e.g. `.medium` → `.high`)
+        // to the picker's representation so the chip label/icon stay in sync with what's
+        // actually submitted.
+        updateReasoningPickerAppearance(omnibarController.displayedReasoningEffort ?? fallback)
+    }
+
+    private func updateReasoningPickerAppearance(_ effort: AIChatReasoningEffort) {
+        reasoningPickerButton.label = effort.title
+        reasoningPickerButton.image = effort.icon
     }
 
     private func updateImageUploadVisibility(supportsImageUpload: Bool) {
@@ -1081,6 +1243,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         imageUploadButton.tintColor = toolButtonTintColor
         imageUploadButton.hoverBackgroundColor = .buttonMouseOver
         imageUploadButton.pressedBackgroundColor = .buttonMouseDown
+        reasoningPickerButton.tintColor = toolButtonTintColor
+        reasoningPickerButton.hoverBackgroundColor = .buttonMouseOver
+        reasoningPickerButton.pressedBackgroundColor = .buttonMouseDown
         modelPickerButton.tintColor = toolButtonTintColor
 
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius

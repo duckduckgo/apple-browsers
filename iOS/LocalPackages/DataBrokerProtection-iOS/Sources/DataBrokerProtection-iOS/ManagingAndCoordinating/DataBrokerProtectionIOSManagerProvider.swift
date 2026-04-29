@@ -44,7 +44,7 @@ public class DataBrokerProtectionIOSManagerProvider {
 
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
-                                  featureFlagger: DBPFeatureFlagging,
+                                  featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging,
                                   userNotificationService: DataBrokerProtectionUserNotificationService,
                                   pixelKit: PixelKit,
                                   wideEvent: WideEventManaging,
@@ -52,6 +52,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
                                   feedbackViewCreator: @escaping () -> (any View),
                                   eventsHandler: EventMapping<JobEvent>,
+                                  freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
                                   isWebViewInspectable: Bool = false,
                                   freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
@@ -164,7 +165,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             wideEvent: wideEvent,
             eventsHandler: eventsHandler,
             isWebViewInspectable: isWebViewInspectable,
-            freeTrialConversionService: freeTrialConversionService
+            freeTrialConversionService: freeTrialConversionService,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager
         )
     }
 }

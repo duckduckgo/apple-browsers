@@ -115,13 +115,13 @@ final class LogViewerViewController: UIViewController {
 
         view.addSubview(tableView)
         view.addSubview(loadingSpinner)
-        
+
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
+
             loadingSpinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingSpinner.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
@@ -136,7 +136,7 @@ final class LogViewerViewController: UIViewController {
     
     
     @objc private func exportButtonTapped() {
-        guard let logFileURL = dataSource.exportLogsToFile() else {
+        guard let logFileURL = dataSource.exportLogsToFile(entries: filteredEntries) else {
             let alert = UIAlertController(
                 title: "Export Failed",
                 message: "Failed to create log file for export.",
@@ -175,7 +175,7 @@ final class LogViewerViewController: UIViewController {
     
     private func applySearchFilter() {
         let searchText = searchController.searchBar.text
-        
+
         if let searchText = searchText, !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let searchFilter = LogFilter(
                 subsystemFilter: dataSource.currentFilter.subsystemFilter,
@@ -185,12 +185,11 @@ final class LogViewerViewController: UIViewController {
                 filterEmptySubsystems: dataSource.currentFilter.filterEmptySubsystems,
                 filterAppleLogs: dataSource.currentFilter.filterAppleLogs
             )
-            
             filteredEntries = dataSource.logEntries.filter { searchFilter.matches($0) }
         } else {
             filteredEntries = dataSource.logEntries
         }
-        
+
         tableView.reloadData()
         scrollToBottom()
     }

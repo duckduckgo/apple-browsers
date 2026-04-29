@@ -24,26 +24,26 @@ import Common
 import Core
 
 struct FireConfirmationPresenter {
-    
+
     @MainActor
     func presentFireConfirmation(on viewController: UIViewController,
                                  attachPopoverTo source: AnyObject,
                                  tabViewModel: TabViewModel?,
                                  pixelSource: FireRequest.Source,
-                                 daxDialogsManager: DaxDialogsManaging,
+                                 fireContext: ScopedFireConfirmationViewModel.FireContext,
                                  browsingMode: BrowsingMode,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         let sourceRect = (source as? UIView)?.bounds ?? .zero
-        presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, daxDialogsManager: daxDialogsManager, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
+        presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, fireContext: fireContext, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
     }
-    
+
     @MainActor
     func presentFireConfirmation(on viewController: UIViewController,
                                  sourceRect: CGRect,
                                  tabViewModel: TabViewModel?,
                                  pixelSource: FireRequest.Source,
-                                 daxDialogsManager: DaxDialogsManaging,
+                                 fireContext: ScopedFireConfirmationViewModel.FireContext,
                                  browsingMode: BrowsingMode,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
@@ -51,39 +51,43 @@ struct FireConfirmationPresenter {
             assertionFailure("No key window available")
             return
         }
-        presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, daxDialogsManager: daxDialogsManager, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
+        presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, fireContext: fireContext, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
     }
-    
+
     // MARK: - Scope-based Confirmation
-    
+
     @MainActor
-        private func presentScopeConfirmationSheet(on viewController: UIViewController,
-                                                   from source: AnyObject,
-                                                   sourceRect: CGRect,
-                                                   tabViewModel: TabViewModel?,
-                                                   pixelSource: FireRequest.Source,
-                                                   daxDialogsManager: DaxDialogsManaging,
-                                                   browsingMode: BrowsingMode,
-                                                   onConfirm: @escaping (FireRequest) -> Void,
-                                                   onCancel: @escaping () -> Void) {
-            let viewModel = ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
-                                                            source: pixelSource,
-                                                            fireContext: .default(daxDialogsManager: daxDialogsManager),
-                                                            browsingMode: browsingMode,
-                onConfirm: { [weak viewController] fireOptions in
-                    viewController?.dismiss(animated: true) {
-                        onConfirm(fireOptions)
-                    }
-                },
-                onCancel: { [weak viewController] in
-                    viewController?.dismiss(animated: true) {
-                        onCancel()
-                    }
-                }
-            )
-            
-            let confirmationView = ScopedFireConfirmationView(viewModel: viewModel)
-            let hostingController = makeHostingController(with: confirmationView)
+    private func presentScopeConfirmationSheet(on viewController: UIViewController,
+                                               from source: AnyObject,
+                                               sourceRect: CGRect,
+                                               tabViewModel: TabViewModel?,
+                                               pixelSource: FireRequest.Source,
+                                               fireContext: ScopedFireConfirmationViewModel.FireContext,
+                                               browsingMode: BrowsingMode,
+                                               onConfirm: @escaping (FireRequest) -> Void,
+                                               onCancel: @escaping () -> Void) {
+        let viewModel = ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
+                                                        source: pixelSource,
+                                                        fireContext: fireContext,
+                                                        browsingMode: browsingMode,
+                                                        onConfirm: { [weak viewController] fireOptions in
+                                                            viewController?.dismiss(animated: true) {
+                                                                onConfirm(fireOptions)
+                                                            }
+                                                        },
+                                                        onCancel: { [weak viewController] in
+                                                            viewController?.dismiss(animated: true) {
+                                                                onCancel()
+                                                            }
+                                                        })
+
+        let confirmationView = ScopedFireConfirmationView(viewModel: viewModel)
+        let hostingController = makeHostingController(with: confirmationView)
+        // Prevent swipe-to-dismiss for the experiment flow: the user must make an
+        // explicit choice (fire or cancel) to keep the locked-controls state consistent.
+        if case .duckAIOnboarding = fireContext {
+            hostingController.isModalInPresentation = true
+        }
             let presentingWidth = viewController.view.frame.width
             configurePresentation(for: hostingController,
                                   source: source,

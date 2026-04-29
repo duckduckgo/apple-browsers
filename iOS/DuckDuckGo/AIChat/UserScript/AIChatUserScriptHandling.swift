@@ -92,6 +92,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
+    func responseReceived(params: Any, message: UserScriptMessage) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) async -> Encodable?
     func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
@@ -127,6 +128,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
     private var contextualModePixelHandler: AIChatContextualModePixelFiring?
     private let keyValueStore: KeyValueStoring
+    private let isNativeStorageBridgeAvailable: Bool
 
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
@@ -145,7 +147,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
          aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-         aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()) {
+         aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
+         isNativeStorageBridgeAvailable: Bool = false) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
         self.featureFlagger = featureFlagger
@@ -153,6 +156,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.promptHandler = promptHandler
         self.aichatFullModeFeature = aichatFullModeFeature
         self.aichatContextualModeFeature = aichatContextualModeFeature
+        self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
         setUpSyncStatusObserver()
     }
 
@@ -192,6 +196,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
             }
         }
+        return nil
+    }
+
+    func responseReceived(params: Any, message: UserScriptMessage) async -> Encodable? {
+        let payload = params as? [String: Any]
+        NotificationCenter.default.post(name: .aiChatResponseReceived, object: nil, userInfo: payload)
         return nil
     }
 
@@ -266,7 +276,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !fireMode,
-            supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts)
+            supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts),
+            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable
         )
     }
 

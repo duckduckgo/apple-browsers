@@ -40,7 +40,7 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
         static let sectionHeaderLeading: CGFloat = 8
         static let cellIconSize: CGFloat = 20
         static let cellIconGap: CGFloat = 8
-        static let cellVerticalPadding: CGFloat = 14
+        static let cellVerticalPadding: CGFloat = 10
         static let cellLeadingPadding: CGFloat = 6
         static let separatorHorizontalInset: CGFloat = 8
         static let separatorContainerHeight: CGFloat = 21
@@ -123,8 +123,12 @@ final class AIChatRecentChatsPopupViewController: UIViewController {
         let cardTop = pillFrame.minY - Constants.cornerRadius
         let cardLeading = pillFrame.minX + Constants.popupLeadingOffset
 
+        let desiredTop = shadowContainer.topAnchor.constraint(equalTo: view.topAnchor, constant: cardTop)
+        desiredTop.priority = .defaultHigh
+
         NSLayoutConstraint.activate([
-            shadowContainer.topAnchor.constraint(equalTo: view.topAnchor, constant: cardTop),
+            desiredTop,
+            shadowContainer.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor),
             shadowContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: cardLeading),
             shadowContainer.widthAnchor.constraint(equalToConstant: Constants.popupWidth),
         ])
@@ -168,25 +172,31 @@ private extension AIChatRecentChatsPopupViewController {
     }
 
     func buildContent() {
-        guard !viewModel.suggestions.isEmpty else { return }
+        if viewModel.showNewChat {
+            let newChatRow = makeNewChatRow()
+            stackView.addArrangedSubview(newChatRow)
 
-        // Section header
-        let headerLabel = makeSectionHeader(UserText.aiChatRecentChatsSectionTitle)
-        stackView.addArrangedSubview(headerLabel)
-
-        // Chat rows
-        for (index, suggestion) in viewModel.suggestions.enumerated() {
-            let row = makeChatRow(for: suggestion, index: index)
-            stackView.addArrangedSubview(row)
+            if !viewModel.suggestions.isEmpty {
+                let separator = makeSeparator()
+                stackView.addArrangedSubview(separator)
+            }
         }
 
-        if viewModel.showViewAll {
+        if !viewModel.suggestions.isEmpty {
+            let headerLabel = makeSectionHeader(UserText.aiChatRecentChatsSectionTitle)
+            stackView.addArrangedSubview(headerLabel)
+
+            for (index, suggestion) in viewModel.suggestions.enumerated() {
+                let row = makeChatRow(for: suggestion, index: index)
+                stackView.addArrangedSubview(row)
+            }
+
             let separatorContainer = makeSeparator()
             stackView.addArrangedSubview(separatorContainer)
-
-            let footer = makeViewAllChatsRow()
-            stackView.addArrangedSubview(footer)
         }
+
+        let footer = makeViewAllChatsRow()
+        stackView.addArrangedSubview(footer)
     }
 
     // MARK: - Row Builders
@@ -314,10 +324,52 @@ private extension AIChatRecentChatsPopupViewController {
         return container
     }
 
+    func makeNewChatRow() -> UIView {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(newChatTapped))
+        container.addGestureRecognizer(tapGesture)
+
+        let iconView = UIImageView()
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        iconView.contentMode = .scaleAspectFit
+        iconView.tintColor = UIColor(designSystemColor: .icons)
+        iconView.image = DesignSystemImages.Glyphs.Size24.compose.withRenderingMode(.alwaysTemplate)
+
+        let titleLabel = UILabel()
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.text = UserText.actionNewAIChat
+        titleLabel.font = .daxBodyRegular()
+        titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
+
+        container.addSubview(iconView)
+        container.addSubview(titleLabel)
+
+        NSLayoutConstraint.activate([
+            iconView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Constants.cellLeadingPadding),
+            iconView.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            iconView.widthAnchor.constraint(equalToConstant: Constants.cellIconSize),
+            iconView.heightAnchor.constraint(equalToConstant: Constants.cellIconSize),
+
+            titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: Constants.cellIconGap),
+            titleLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+
+            container.heightAnchor.constraint(equalToConstant: Constants.cellIconSize + Constants.cellVerticalPadding * 2),
+        ])
+
+        return container
+    }
+
     // MARK: - Actions
 
     @objc func backgroundTapped() {
         viewModel.didDismiss()
+    }
+
+    @objc func newChatTapped() {
+        viewModel.didSelectNewChat()
     }
 
     @objc func chatRowTapped(_ gesture: UITapGestureRecognizer) {

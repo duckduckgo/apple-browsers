@@ -17,9 +17,10 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import RemoteMessaging
+import SwiftUI
+import UIComponents
 
 struct NewTabPageView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass

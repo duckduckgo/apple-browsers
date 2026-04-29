@@ -455,8 +455,12 @@ public extension String {
 
         let firstBytes = Set(keys.map { $0.utf8[0] })
 
+        // Output size can exceed template size when replacement values are
+        // larger than their placeholders; size the reservation accordingly
+        // to avoid repeated capacity doublings during append.
+        let estimatedSize = templateUTF8.count + keys.reduce(0) { $0 + $1.value.count }
         var result = [UInt8]()
-        result.reserveCapacity(templateUTF8.count)
+        result.reserveCapacity(estimatedSize)
 
         var i = 0
         while i < templateUTF8.count {

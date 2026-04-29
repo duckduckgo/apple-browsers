@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import Common
 import DesignResourcesKitIcons
 import FeatureFlags
 import PrivacyConfig
@@ -1187,15 +1188,10 @@ final class TabBarViewItem: NSCollectionViewItem {
     // MARK: - Active Permission Icons in Favicon
 
     private var isShowingActivePermissionIcon: Bool {
-        featureFlagger.isFeatureOn(.newPermissionView) && !activePermissionTypes.isEmpty
+        !activePermissionTypes.isEmpty
     }
 
     private func updateActivePermissionIcons() {
-        guard featureFlagger.isFeatureOn(.newPermissionView) else {
-            stopActivePermissionIconTimer()
-            return
-        }
-
         // Collect all active permissions (camera, microphone, geolocation)
         var activeTypes: [PermissionType] = []
         if usedPermissions.camera.isActive {
@@ -1402,9 +1398,7 @@ extension TabBarViewItem: NSMenuDelegate {
             }
         }
 
-        if !isBurner {
-            addSuspendResumeMenuItem(to: menu)
-        }
+        addSuspendResumeMenuItem(to: menu)
 
         if tabViewModel?.canKillWebContentProcess == true {
             menu.addItem(.separator())
@@ -1506,14 +1500,23 @@ extension TabBarViewItem: NSMenuDelegate {
         guard
             featureFlagger.isFeatureOn(.tabSuspension),
             featureFlagger.isFeatureOn(.tabSuspensionDebugging),
-            let tabViewModel,
-            case .url = tabViewModel.tabContent
+            let tabViewModel
         else {
             return
         }
 
+        // These menu items are only ever visible to internal users so we don't need translations.
+
         let isSuspended = tabViewModel.isSuspended
-        // This item is only ever visible to internal users so we don't need translations.
+        let statusMenuItem = NSMenuItem(title: "isSuspended: \(isSuspended)", action: nil, keyEquivalent: "")
+        statusMenuItem.isEnabled = false
+        menu.addItem(.separator())
+        menu.addItem(statusMenuItem)
+
+        guard !isBurner, case .url = tabViewModel.tabContent else {
+            return
+        }
+
         let title = isSuspended ? "Resume Tab" : "Suspend Tab"
         let canToggleSuspension = isSuspended || tabViewModel.canBeSuspended
         let isEnabled = !isSelected && canToggleSuspension
@@ -1521,7 +1524,6 @@ extension TabBarViewItem: NSMenuDelegate {
         let menuItem = NSMenuItem(title: title, action: #selector(suspendTabAction(_:)), keyEquivalent: "")
         menuItem.target = self
         menuItem.isEnabled = isEnabled
-        menu.addItem(.separator())
         menu.addItem(menuItem)
     }
 

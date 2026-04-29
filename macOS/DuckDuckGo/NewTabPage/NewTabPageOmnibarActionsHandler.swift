@@ -50,7 +50,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         // Check for the keyboard shortcut to open the chat
         if isShiftPressed() {
-            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil)
+            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil)
             return
         }
 
@@ -117,11 +117,23 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
     }
 
-    func submitChat(_ chat: String, target: NewTabPage.NewTabPageDataModel.OpenTarget, modelId: String?, images: [NewTabPage.NewTabPageDataModel.SubmitChatImage]?) {
+    func submitChat(_ chat: String,
+                    target: NewTabPage.NewTabPageDataModel.OpenTarget,
+                    modelId: String?,
+                    images: [NewTabPage.NewTabPageDataModel.SubmitChatImage]?,
+                    mode: String?,
+                    toolChoice: [String]?,
+                    reasoningEffort: String?) {
         firePixel(NewTabPagePixel.promptSubmitted)
 
         if let images, !images.isEmpty {
             PixelKit.fire(AIChatPixel.aiChatNtpSubmitWithImage(imageCount: images.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
+        }
+
+        if mode == AIChatNativePrompt.imageGenerationMode {
+            PixelKit.fire(AIChatPixel.aiChatNtpImageGenerationSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        } else if toolChoice?.contains(AIChatRAGTool.webSearch.rawValue) == true {
+            PixelKit.fire(AIChatPixel.aiChatNtpWebSearchSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
 
         let tabOpener = AIChatTabOpener(
@@ -137,10 +149,17 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
         tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)
 
-        // Re-set prompt after tab opener to include images and model selection
-        // (tab opener overwrites with a plain query)
+        // Re-set prompt after tab opener to include images, mode, tool choice, model selection,
+        // and reasoning effort (tab opener overwrites with a plain query)
         let nativeImages = images?.map { AIChatNativePrompt.NativePromptImage(data: $0.data, format: $0.format) }
-        let nativePrompt = AIChatNativePrompt.queryPrompt(chat, autoSubmit: true, images: nativeImages, modelId: modelId)
+        let nativeReasoningEffort = reasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
+        let nativePrompt = AIChatNativePrompt.queryPrompt(chat,
+                                                          autoSubmit: true,
+                                                          toolChoice: toolChoice,
+                                                          images: nativeImages,
+                                                          modelId: modelId,
+                                                          mode: mode,
+                                                          reasoningEffort: nativeReasoningEffort)
         promptHandler.setData(nativePrompt)
     }
 

@@ -325,6 +325,96 @@
 /* Sync Settings - Recovery section header */
 "sync.settings.recovery.section.header" = "Oporavak";
 
+/* Sync settings 'Already set up' section header containing useful options */
+"sync.simplified.already.set.up.section.header" = "Je li već postavljena na drugom uređaju?";
+
+/* Prompt body text after enabling sync */
+"sync.simplified.another.device.body" = "Vaše knjižne oznake, podaci o automatskom popunjavanju i Duck.ai čavrljanja sigurnosno su pohranjeni. Sada ih sinkroniziraj s računalom ili tabletom.";
+
+/* Primary button to sync another device when sync is enabled */
+"sync.simplified.another.device.button" = "Sinkroniziraj drugi uređaj";
+
+/* Prompt title after enabling sync */
+"sync.simplified.another.device.title" = "Sinkronizirati vaše podatke s drugim uređajem?";
+
+/* Bookmarks section header in sync settings */
+"sync.simplified.bookmarks.section.header" = "Knjižne oznake";
+
+/* Text shown next to toggle while sync is being set up */
+"sync.simplified.connecting" = "Povezivanje u tijeku...";
+
+/* Sync settings 'Copy Recovery Code' button */
+"sync.simplified.copy.recovery.code.button" = "Kopiraj kôd za oporavak";
+
+/* Sync settings action button title to turn off sync and delete server data */
+"sync.simplified.delete.sync.data.button" = "Isključi sinkronizaciju i izbriši podatke poslužitelja";
+
+/* Sync settings 'Download Recovery Code' button */
+"sync.simplified.download.recovery.code.button" = "Preuzmi kôd za oporavak";
+
+/* Button subtitle to get the DuckDuckGo desktop browser */
+"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo za Mac i Windows";
+
+/* Button title to get the DuckDuckGo desktop browser. */
+"sync.simplified.get.desktop.browser.title" = "Nabavi preglednik za PC";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message" = "Spremi svoje oznake, podatke automatskog popunjavanja i Duck.ai čavrljanja te ih sinkroniziraj između svojih uređaja pomoću end-to-end enkripcije.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic" = "Spremi svoje knjižne oznake i podatke za automatsko popunjavanje te ih sinkroniziraj između uređaja pomoću end-to-end enkripcije.";
+
+/* Part of instruction prompt referring to the DuckDuckGo app. */
+"sync.simplified.scan-or-view-code.app.name" = "Aplikacija DuckDuckGo";
+
+/* Floating prompt over QR code scanner preview */
+"sync.simplified.scan-or-view-code.camera.prompt" = "Usmjeri kameru prema QR-u za skeniranje";
+
+/* Status text when connecting devices to sync */
+"sync.simplified.scan-or-view-code.connecting.status" = "Povezivanje u tijeku...";
+
+/* Instruction shown during sync setup flow */
+"sync.simplified.scan-or-view-code.connecting.title" = "Drži DuckDuckGo otvoren na oba uređaja";
+
+/* Button to navigate to manual sync code entry */
+"sync.simplified.scan-or-view-code.manually.enter.code" = "Ručno unesi šifru";
+
+/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
+"sync.simplified.scan-or-view-code.paste.code.instructions" = "Idi na **Postavke > Sync & Backup > Sinkroniziraj s drugim uređajem** i odaberi **Prikaži tekstualni kôd** u aplikaciji DuckDuckGo na drugom sinkroniziranom uređaju i zalijepi kod ovdje da bi sinkronizirao ovaj uređaj.";
+
+/* Status text while verifying a pasted sync code */
+"sync.simplified.scan-or-view-code.paste.code.verifying" = "Potvrda šifre u tijeku";
+
+/* First line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Otvori aplikaciju DuckDuckGo na svom drugom uređaju.";
+
+/* Second line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line2" = "QR kôd pronađi u Postavke > Sync & Backup > Sinkronizacija s drugim uređajem.";
+
+/* Title of button to share a sync code */
+"sync.simplified.scan-or-view-code.share" = "Podijeli kôd";
+
+/* Button title to show QR code scanner */
+"sync.simplified.scan-or-view-code.tab.scan" = "Skeniraj QR kôd";
+
+/* Button title to view your sync code */
+"sync.simplified.scan-or-view-code.tab.view.code" = "Pogledaj kôd";
+
+/* Navigation title for simplified QR scanning screen */
+"sync.simplified.scan-or-view-code.title" = "Sinkroniziraj svoje uređaje";
+
+/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
+"sync.simplified.scan-or-view-code.view.instructions" = "Skeniraj ili zalijepi ovaj kôd na svoj drugi";
+
+/* Sync & Backup enabled / disabled toggle title */
+"sync.simplified.toggle.title" = "Sinkronizacija i sigurnosno kopiranje";
+
+/* Use Recovery Code sync setup button label */
+"sync.simplified.use.recovery.code.button" = "Upotrijebi kôd za oporavak";
+
+/* Sync With Another Device sync setup button label */
+"sync.simplified.with.another.device.button" = "Sinkronizacija s drugim uređajem";
+
 /* Sync & Backup Title */
 "sync.title" = "Sinkronizacija i sigurnosno kopiranje";
 

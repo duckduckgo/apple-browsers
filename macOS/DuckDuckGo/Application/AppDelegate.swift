@@ -130,6 +130,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) weak var subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
     var privacyDashboardWindow: NSWindow?
 
+    @MainActor private(set) lazy var quickFeedbackService: QuickFeedbackService = {
+        let diagnosticsCollector = QuickFeedbackDiagnosticsCollector(
+            tabAndWindowCountProvider: windowControllersManager,
+            memoryUsageMonitor: memoryUsageMonitor,
+            launchDate: appLaunchDate
+        )
+        return QuickFeedbackService(
+            diagnosticsCollector: diagnosticsCollector,
+            firePublisher: fireCoordinator.fireViewModel.fire.burningDataPublisher
+        )
+    }()
+
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
     let tabSuspensionService: TabSuspensionService

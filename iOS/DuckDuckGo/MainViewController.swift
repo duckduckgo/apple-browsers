@@ -1563,6 +1563,7 @@ class MainViewController: UIViewController {
 
         let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
         controller.setEscapeHatch(hatch)
+        controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
         currentNTPEscapeHatch = hatch
         
         if hasCompletedInitialLoad {
@@ -2267,6 +2268,8 @@ class MainViewController: UIViewController {
             applySmallWidth()
         }
 
+        updateNewTabPageLayoutForCurrentChromeMode()
+
         DispatchQueue.main.async {
             // Do this async otherwise the toolbar buttons skew to the right
             if self.viewCoordinator.constraints.navigationBarContainerTop.constant >= 0,
@@ -2279,7 +2282,6 @@ class MainViewController: UIViewController {
             
             // Do this on the next UI thread pass so we definitely have the right width
             self.applyWidthToTrayController()
-            self.newTabPageViewController?.widthChanged()
         }
     }
 
@@ -2303,6 +2305,11 @@ class MainViewController: UIViewController {
             let bottomOmniBarHeight = appSettings.currentAddressBarPosition.isBottom ? omniBar.barView.expectedHeight : 0
             self.suggestionTrayController?.fill(bottomOffset: bottomOmniBarHeight)
         }
+    }
+
+    private func updateNewTabPageLayoutForCurrentChromeMode() {
+        newTabPageViewController?.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
+        newTabPageViewController?.widthChanged()
     }
     
     private var isInMinimalChromeLayout: Bool = false

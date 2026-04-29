@@ -14,7 +14,6 @@
 //
 
 #include "../Common.xcconfig"
-#include "../UITestsTargetBinary.xcconfig"
 
 CODE_SIGN_IDENTITY[config=Review][sdk=macosx*] =
 CODE_SIGN_STYLE[config=Review][sdk=macosx*] = Manual
@@ -32,14 +31,10 @@ GENERATE_INFOPLIST_FILE = YES
 LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks @loader_path/../Frameworks
 LOCALIZATION_PREFERS_STRING_CATALOGS = YES
 
-MACOSX_DEPLOYMENT_TARGET = 11.4
+MACOSX_DEPLOYMENT_TARGET = 12.3
 
-PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.UI-Tests
+PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.UI-TestsAppStore
 PRODUCT_NAME = $(TARGET_NAME)
 PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] =
 SWIFT_EMIT_LOC_STRINGS = NO
-
-// UI_TESTS_TARGET_APP is defined in UITestsTargetBinary.xcconfig
-TEST_TARGET_NAME_non_sandbox = DuckDuckGo Privacy Browser
-TEST_TARGET_NAME_sandbox = DuckDuckGo Privacy Browser App Store
-TEST_TARGET_NAME = $(TEST_TARGET_NAME_$(UI_TESTS_TARGET_APP))
+TEST_TARGET_NAME = DuckDuckGo Privacy Browser App Store

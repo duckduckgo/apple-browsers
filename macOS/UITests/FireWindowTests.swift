@@ -52,8 +52,7 @@ class FireWindowTests: UITestCase {
         app.openFireWindow()
         openThreeSitesOnFireWindow()
 
-        app.terminate()
-        app.launch()
+        app.relaunch()
 
         assertSitesOpenedInNormalWindowAreRestored()
         assertSitesOpenedOnFireWindowAreNotRestored()

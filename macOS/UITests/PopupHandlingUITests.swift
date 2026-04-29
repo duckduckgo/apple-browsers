@@ -308,8 +308,7 @@ final class PopupHandlingUITests: UITestCase {
         popupWindow.buttons[XCUIIdentifierCloseWindow].click()
 
         // Restart app: Verify permission persists after restart
-        app.terminate()
-        app.launch()
+        app.relaunch()
 
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()

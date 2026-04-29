@@ -71,7 +71,8 @@ class StateRestorationTests: UITestCase {
         )
 
         app.typeKey("q", modifierFlags: [.command])
-        app.launch()
+        // swiftlint:disable:next ui_test_no_app_launch
+        app.launch() // intentional: relaunch after cmd-Q (proper app quit, not terminate())
 
         XCTAssertTrue(
             app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -106,8 +107,7 @@ class StateRestorationTests: UITestCase {
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
-        app.terminate()
-        app.launch()
+        app.relaunch()
 
         XCTAssertTrue(
             app.windows.webViews[secondPageTitle].waitForNonExistence(timeout: UITests.Timeouts.elementExistence),

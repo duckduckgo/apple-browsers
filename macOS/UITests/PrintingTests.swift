@@ -31,8 +31,7 @@ class PrintingTests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
+        app = XCUIApplication.setUp()
 
         // Create PDF URL using the test server pattern
         let testPDFBundle = Bundle(for: type(of: self))
@@ -46,7 +45,6 @@ class PrintingTests: UITestCase {
         printDialog = app.sheets.containing(.button, identifier: "Print").firstMatch
         saveDialog = app.sheets.containing(.button, identifier: "Save").firstMatch
 
-        app.launch()
         app.enforceSingleWindow()
     }
 

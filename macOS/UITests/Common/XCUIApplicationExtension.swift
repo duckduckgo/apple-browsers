@@ -129,6 +129,15 @@ extension XCUIApplication {
         return app
     }
 
+    /// Terminate the app and re-launch it, preserving the configured
+    /// `launchEnvironment` and `launchArguments`. Use this in place of
+    /// `app.terminate(); app.launch()` so the `ui_test_no_app_launch`
+    /// SwiftLint rule remains effective in test code.
+    func relaunch() {
+        terminate()
+        launch()
+    }
+
     @nonobjc var path: String? {
         value(forKey: "path") as? String
     }

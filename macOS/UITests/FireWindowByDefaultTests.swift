@@ -106,7 +106,8 @@ class FireWindowByDefaultTests: UITestCase {
 
         // Quit the application
         app.typeKey("q", modifierFlags: [.command])
-        app.launch()
+        // swiftlint:disable:next ui_test_no_app_launch
+        app.launch() // intentional: relaunch after cmd-Q (proper app quit, not terminate())
 
         _ = app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
 

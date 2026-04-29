@@ -14,3 +14,29 @@ disabled_rules:
 large_tuple:
   warning: 6
   error: 10
+
+custom_rules:
+  ui_test_must_subclass_uitestcase:
+    name: "UI test must subclass UITestCase"
+    # Match `class FooTests: XCTestCase` declarations in macOS UI tests.
+    # `UITestCase` itself is the only legitimate `: XCTestCase` subclass and is
+    # excluded below. New UI test classes must extend `UITestCase` so they get
+    # `XCUIApplication.setUp()` (UITEST_MODE env, swizzling, screenshot
+    # observer) for free; subclassing XCTestCase directly bypasses all of that.
+    regex: 'class\s+\w+\s*:\s*XCTestCase\b'
+    excluded: ".*Common/UITests\\.swift"
+    message: "UI tests must subclass UITestCase (defined in macOS/UITests/Common/UITests.swift), not XCTestCase. UITestCase wires up the project's launch + screenshot infrastructure."
+    severity: error
+
+  ui_test_no_app_launch:
+    name: "Avoid app.launch() in UI tests"
+    # Direct calls to `app.launch()` skip XCUIApplication.setUp(), which sets
+    # UITEST_MODE=1 and applies feature flags / launch arguments. The legitimate
+    # initial launch lives in XCUIApplicationExtension.setUp() (and the
+    # `relaunch()` helper there). For deliberate quit-and-relaunch flows
+    # (e.g. cmd-Q + launch), use a `// swiftlint:disable:next ui_test_no_app_launch`
+    # comment to acknowledge the intent.
+    regex: '\bapp\.launch\s*\(\s*\)'
+    excluded: ".*Common/XCUIApplicationExtension\\.swift"
+    message: "Don't call app.launch() directly. Use XCUIApplication.setUp() for initial launch (UITestCase does this) or app.relaunch() after terminate(). UITestCase already handles the first launch."
+    severity: error

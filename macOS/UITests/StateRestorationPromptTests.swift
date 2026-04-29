@@ -63,8 +63,7 @@ class StateRestorationPromptTests: UITestCase {
 
         waitForSessionFileToBeUpdated(since: lastSaved)
 
-        app.terminate()
-        app.launch()
+        app.relaunch()
         app.openNewWindow()
 
         app.acceptSessionRestore()
@@ -102,8 +101,7 @@ class StateRestorationPromptTests: UITestCase {
 
         waitForSessionFileToBeUpdated(since: lastSaved)
 
-        app.terminate()
-        app.launch()
+        app.relaunch()
         app.openNewWindow()
 
         app.rejectSessionRestore()

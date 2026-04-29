@@ -321,7 +321,8 @@ class DownloadsUITests: UITestCase {
 
         // Quit and relaunch
         app.typeKey("q", modifierFlags: [.command])
-        app.launch()
+        // swiftlint:disable:next ui_test_no_app_launch
+        app.launch() // intentional: relaunch after cmd-Q (proper app quit, not terminate())
         _ = app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
         app.enforceSingleWindow()
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -375,7 +376,8 @@ class DownloadsUITests: UITestCase {
 
         // Quit and relaunch to restore session
         app.typeKey("q", modifierFlags: [.command])
-        app.launch()
+        // swiftlint:disable:next ui_test_no_app_launch
+        app.launch() // intentional: relaunch after cmd-Q (proper app quit, not terminate())
         _ = app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
 
         XCTAssertTrue(webView.staticTexts["Page loaded!"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -610,7 +612,8 @@ class DownloadsUITests: UITestCase {
         // Restart app and verify the same file is listed
         app.typeKey("q", modifierFlags: [.command])
 
-        app.launch()
+        // swiftlint:disable:next ui_test_no_app_launch
+        app.launch() // intentional: relaunch after cmd-Q (proper app quit, not terminate())
         _=app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
         app.enforceSingleWindow()
         // wait for the New Tab page to load

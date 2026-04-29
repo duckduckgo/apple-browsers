@@ -34,6 +34,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     var errorHandler: CapturingSyncPausedStateManager!
     var ddgSyncing: MockDDGSyncing!
     var syncAutoRestoreHandler: MockSyncAutoRestoreHandler!
+    var syncSetupExperimentPixels: MockSyncSetupExperimentPixelFiring!
     var testRecoveryCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMDZGODhFNzEtNDFBRS00RTUxLUE2UkRtRkEwOTcwMDE5QkYwIiwicHJpbWFyeV9rZXkiOiI1QTk3U3dsQVI5RjhZakJaU09FVXBzTktnSnJEYnE3aWxtUmxDZVBWazgwPSJ9fQ=="
 
     @MainActor
@@ -67,6 +68,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.syncSeamlessAccountSwitching])
         syncAutoRestoreHandler = MockSyncAutoRestoreHandler()
         syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
+        syncSetupExperimentPixels = MockSyncSetupExperimentPixelFiring()
         vc = SyncSettingsViewController(
             syncService: ddgSyncing,
             syncBookmarksAdapter: bookmarksAdapter,
@@ -74,7 +76,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncCreditCardsAdapter: creditCardsAdapter,
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
-            syncAutoRestoreHandler: syncAutoRestoreHandler
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncSetupExperimentPixels: syncSetupExperimentPixels
         )
     }
 
@@ -83,6 +86,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         errorHandler = nil
         vc = nil
         syncAutoRestoreHandler = nil
+        syncSetupExperimentPixels = nil
         super.tearDown()
     }
 
@@ -357,6 +361,70 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         XCTAssertTrue(secondAttemptAllowed)
         XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, ["device-id", "device-id"])
         XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 2)
+    }
+
+    @MainActor
+    func testWhenControllerDidFinishTransmittingRecoveryKeyThenNoSuccessExperimentMetricIsFired() {
+        vc.controllerDidFinishTransmittingRecoveryKey()
+
+        XCTAssertFalse(syncSetupExperimentPixels.firedMetrics.contains("setup_ended_successful"))
+    }
+
+    @MainActor
+    func testWhenConnectReceiverWasNewlyEnabledThenSuccessExperimentMetricIsFired() {
+        vc.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: false, setupSource: .connect, codeSource: .qrCode)
+
+        XCTAssertTrue(syncSetupExperimentPixels.firedMetrics.contains("setup_ended_successful"))
+    }
+
+    @MainActor
+    func testWhenControllerDidCreateSyncAccountThenSignupConnectIsFiredWithoutSuccess() {
+        vc.controllerDidCreateSyncAccount()
+
+        XCTAssertTrue(syncSetupExperimentPixels.firedMetrics.contains("signup_connect"))
+        XCTAssertFalse(syncSetupExperimentPixels.firedMetrics.contains("setup_ended_successful"))
+    }
+
+    @MainActor
+    func testWhenConnectReceiverWasAlreadyEnabledThenSuccessExperimentMetricIsNotFired() {
+        vc.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: true, setupSource: .connect, codeSource: .qrCode)
+
+        XCTAssertFalse(syncSetupExperimentPixels.firedMetrics.contains("setup_ended_successful"))
+    }
+
+    @MainActor
+    func testWhenLoginCompletedAsSharerThenSuccessExperimentMetricIsFired() {
+        vc.handleSuccessfulSetupOutcome(.loginCompleted(setupRole: .sharer))
+
+        XCTAssertTrue(syncSetupExperimentPixels.firedMetrics.contains("setup_ended_successful"))
+    }
+
+    @MainActor
+    func testWhenLoginCompletedAsExchangeReceiverThenSuccessExperimentMetricIsFired() {
+        vc.handleSuccessfulSetupOutcome(.loginCompleted(setupRole: .receiver(.exchange, .qrCode)))
+
+        XCTAssertTrue(syncSetupExperimentPixels.firedMetrics.contains("setup_ended_successful"))
+    }
+
+    @MainActor
+    func testWhenLoginCompletedAsRecoveryReceiverThenSuccessExperimentMetricIsFired() {
+        vc.handleSuccessfulSetupOutcome(.loginCompleted(setupRole: .receiver(.recovery, .pastedCode)))
+
+        XCTAssertTrue(syncSetupExperimentPixels.firedMetrics.contains("setup_ended_successful"))
+    }
+
+    @MainActor
+    func testWhenLoginCompletedAsDeepLinkExchangeReceiverThenSuccessExperimentMetricIsFired() {
+        vc.handleSuccessfulSetupOutcome(.loginCompleted(setupRole: .receiver(.exchange, .deepLink)))
+
+        XCTAssertTrue(syncSetupExperimentPixels.firedMetrics.contains("setup_ended_successful"))
+    }
+
+    @MainActor
+    func testWhenLoginCompletedAsConnectReceiverThenSuccessExperimentMetricIsNotFired() {
+        vc.handleSuccessfulSetupOutcome(.loginCompleted(setupRole: .receiver(.connect, .qrCode)))
+
+        XCTAssertFalse(syncSetupExperimentPixels.firedMetrics.contains("setup_ended_successful"))
     }
 
     func x_test_syncCodeEntered_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async {

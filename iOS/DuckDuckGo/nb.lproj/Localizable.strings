@@ -213,6 +213,24 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Ta et bilde";
 
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Til analytiske oppgaver";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Utvidet resonnering";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Svarer raskt";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Rask";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "For komplekse oppgaver";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Resonnement";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Tilpass svar";
 
@@ -4253,6 +4271,27 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Vil du fjerne enheten?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Koden er kopiert";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup er aktivert";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Gjenopprettingskoden er kopiert";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Kunne ikke aktivere Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Slå av";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Bokmerkene og passordene dine på denne enheten blir ikke berørt.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Vil du slå av Sync & Backup?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Fjern";

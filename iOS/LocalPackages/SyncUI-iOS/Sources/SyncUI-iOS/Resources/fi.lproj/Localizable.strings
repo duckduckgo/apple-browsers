@@ -325,6 +325,96 @@
 /* Sync Settings - Recovery section header */
 "sync.settings.recovery.section.header" = "Palautus";
 
+/* Sync settings 'Already set up' section header containing useful options */
+"sync.simplified.already.set.up.section.header" = "Onko se jo määritetty toisessa laitteessa?";
+
+/* Prompt body text after enabling sync */
+"sync.simplified.another.device.body" = "Kirjanmerkkisi, automaattisen täytön tietosi ja Duck.ai-keskustelusi varmuuskopioidaan turvallisesti. Pidä ne nyt synkronoituna tietokoneesi tai tablettisi välillä.";
+
+/* Primary button to sync another device when sync is enabled */
+"sync.simplified.another.device.button" = "Synkronoi toinen laite";
+
+/* Prompt title after enabling sync */
+"sync.simplified.another.device.title" = "Synkronoidaanko tietosi toisen laitteen kanssa?";
+
+/* Bookmarks section header in sync settings */
+"sync.simplified.bookmarks.section.header" = "Kirjanmerkit";
+
+/* Text shown next to toggle while sync is being set up */
+"sync.simplified.connecting" = "Yhdistetään...";
+
+/* Sync settings 'Copy Recovery Code' button */
+"sync.simplified.copy.recovery.code.button" = "Kopioi palautuskoodi";
+
+/* Sync settings action button title to turn off sync and delete server data */
+"sync.simplified.delete.sync.data.button" = "Poista synkronointi käytöstä ja poista palvelintiedot";
+
+/* Sync settings 'Download Recovery Code' button */
+"sync.simplified.download.recovery.code.button" = "Lataa palautuskoodi";
+
+/* Button subtitle to get the DuckDuckGo desktop browser */
+"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo Mac- ja Windows-laitteeseen";
+
+/* Button title to get the DuckDuckGo desktop browser. */
+"sync.simplified.get.desktop.browser.title" = "Hanki pöytäkoneselain";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message" = "Tallenna kirjanmerkit, automaattisen täytön tiedot ja Duck.ai-keskustelut ja synkronoi ne laitteidesi välillä päästä päähän -salauksella.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic" = "Tallenna kirjanmerkit ja automaattisen täytön tiedot ja synkronoi ne laitteidesi välillä päästä päähän -salauksella.";
+
+/* Part of instruction prompt referring to the DuckDuckGo app. */
+"sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo-sovellus";
+
+/* Floating prompt over QR code scanner preview */
+"sync.simplified.scan-or-view-code.camera.prompt" = "Skannaa osoittamalla kamera QR-koodiin";
+
+/* Status text when connecting devices to sync */
+"sync.simplified.scan-or-view-code.connecting.status" = "Yhdistetään...";
+
+/* Instruction shown during sync setup flow */
+"sync.simplified.scan-or-view-code.connecting.title" = "Pidä DuckDuckGo auki molemmissa laitteissa";
+
+/* Button to navigate to manual sync code entry */
+"sync.simplified.scan-or-view-code.manually.enter.code" = "Syötä koodi manuaalisesti";
+
+/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
+"sync.simplified.scan-or-view-code.paste.code.instructions" = "Siirry kohtaan **Asetukset > Synkronointi ja varmuuskopiointi > Synkronoi toisen laitteen kanssa** ja valitse **Näytä tekstikoodi** DuckDuckGo-sovelluksessa toisessa synkronoidussa laitteessa ja liitä koodi tähän tämän laitteen synkronoimiseksi.";
+
+/* Status text while verifying a pasted sync code */
+"sync.simplified.scan-or-view-code.paste.code.verifying" = "Koodin tarkistaminen";
+
+/* First line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Avaa DuckDuckGo-sovellus toisessa laitteessasi.";
+
+/* Second line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line2" = "Etsi QR-koodi kohdasta Asetukset > Synkronoi ja varmuuskopioi > Synkronoi toisen laitteen kanssa.";
+
+/* Title of button to share a sync code */
+"sync.simplified.scan-or-view-code.share" = "Jaa koodi";
+
+/* Button title to show QR code scanner */
+"sync.simplified.scan-or-view-code.tab.scan" = "Skannaa QR-koodi";
+
+/* Button title to view your sync code */
+"sync.simplified.scan-or-view-code.tab.view.code" = "Näytä koodi";
+
+/* Navigation title for simplified QR scanning screen */
+"sync.simplified.scan-or-view-code.title" = "Synkronoi laitteesi";
+
+/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
+"sync.simplified.scan-or-view-code.view.instructions" = "Skannaa tai liitä tämä koodi toisessa laitteessasi";
+
+/* Sync & Backup enabled / disabled toggle title */
+"sync.simplified.toggle.title" = "Synkronoi ja varmuuskopioi";
+
+/* Use Recovery Code sync setup button label */
+"sync.simplified.use.recovery.code.button" = "Käytä palautuskoodia";
+
+/* Sync With Another Device sync setup button label */
+"sync.simplified.with.another.device.button" = "Synkronoi toisen laitteen kanssa";
+
 /* Sync & Backup Title */
 "sync.title" = "Synkronoi ja varmuuskopioi";
 

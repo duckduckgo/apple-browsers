@@ -205,7 +205,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 private final class SpyUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, images: [AIChatNativePrompt.NativePromptImage]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?) {
         submittedImages = images
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}
@@ -218,6 +218,7 @@ private final class StubAIChatPreferences: AIChatPreferencesPersisting {
     var selectedReasoningEffort: String?
     var selectedModelId: String?
     var selectedModelShortName: String?
+    var selectedReasoningMode: AIChatReasoningMode?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }

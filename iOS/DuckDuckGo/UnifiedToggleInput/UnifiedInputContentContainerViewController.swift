@@ -654,6 +654,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         daxLogoManager.setFireTabContentInsets(insets)
         guard swipeContainerManager?.containerViewController.additionalSafeAreaInsets != insets else { return }
         swipeContainerManager?.containerViewController.additionalSafeAreaInsets = insets
+        // layoutIfNeeded inside the active CATransaction so the inset change animates with the parent.
+        swipeContainerManager?.containerViewController.view.layoutIfNeeded()
     }
 
     @objc private func handleFloatingDismissTap() {

@@ -213,6 +213,24 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Ota kuva";
 
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Analyyttisiä tehtäviä varten";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Laajennettu päättely";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Vastaa nopeasti";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Nopea";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Monimutkaisia tehtäviä varten";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Perustelut";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Mukauta vastauksia";
 
@@ -4253,6 +4271,27 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Poistetaanko laite?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Koodi kopioitu";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Synkronointi ja varmuuskopiointi käytössä";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Palautuskoodi kopioitu";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Synkronointia ja varmuuskopiointia ei voitu ottaa käyttöön";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Kytke pois päältä";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Tämä ei vaikuta tämän laitteen kirjanmerkkeihisi ja salasanoihisi.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Poistetaanko synkronointi ja varmuuskopiointi käytöstä?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Poista";

@@ -213,6 +213,24 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Направете снимка";
 
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "За аналитични задачи";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Разширена обосновка";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Бързи отговори";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Бързо";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "За сложни задачи";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Обосновка";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Персонализиране на отговорите";
 
@@ -4253,6 +4271,27 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Премахване на устройство?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Кодът е копиран";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Функцията Sync & Backup е активирана";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Кодът за възстановяване е копиран";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Неуспешно активиране на Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Изключване";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Вашите отметки и пароли на това устройство няма да бъдат засегнати.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Изключване на Sync & Backup?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Премахване";

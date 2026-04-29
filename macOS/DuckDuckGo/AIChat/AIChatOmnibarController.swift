@@ -392,8 +392,7 @@ final class AIChatOmnibarController {
     /// user actually picked still flows through unchanged (e.g. a stored `medium` keeps submitting
     /// `medium` even after the model gains `high` support).
     var selectedModelReasoningEfforts: [AIChatReasoningEffort] {
-        (models.first(where: { $0.id == persistedModelId })?.supportedReasoningEffort ?? [])
-            .compactMap(AIChatReasoningEffort.init(rawValue:))
+        models.first(where: { $0.id == persistedModelId })?.supportedReasoningEffort ?? []
     }
 
     /// Display-only variant of `selectedModelReasoningEfforts` for the picker menu. Picker
@@ -453,15 +452,15 @@ final class AIChatOmnibarController {
         isWebSearchMode ? [AIChatRAGTool.webSearch.rawValue] : nil
     }
 
-    /// The reasoning effort to include in the prompt payload as a raw server-contract value.
+    /// The reasoning effort to include in the prompt payload.
     /// Returns nil when the feature flag is off, image generation mode is active, or the current
     /// model doesn't list the persisted effort as supported — so we never send a stale value that
     /// no longer applies to the active request.
-    var effectiveReasoningEffort: String? {
+    var effectiveReasoningEffort: AIChatReasoningEffort? {
         guard isReasoningEffortEnabled, !isImageGenerationMode else { return nil }
         guard let effort = selectedReasoningEffort,
               selectedModelReasoningEfforts.contains(effort) else { return nil }
-        return effort.rawValue
+        return effort
     }
 
     /// Updates the selected model ID and persists it (along with its short name) for future sessions.

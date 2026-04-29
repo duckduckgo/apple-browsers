@@ -213,6 +213,24 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Zrób zdjęcie";
 
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Do zadań analitycznych";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Rozszerzone rozumowanie";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Szybkie odpowiedzi";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Szybko";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Dla złożonych zadań";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Rozumowanie";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Dostosuj odpowiedzi";
 
@@ -4253,6 +4271,27 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Usunąć urządzenie?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kod skopiowany";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Synchronizacja i kopia zapasowa włączone";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Skopiowano kod odzyskiwania";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Nie udało się włączyć Synchronizacji i kopii zapasowej";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Wyłącz";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Wyłączenie synchronizacji nie wpłynie na zakładki i hasła na tym urządzeniu.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Wyłączyć Synchronizację i kopię zapasową?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Usuń";

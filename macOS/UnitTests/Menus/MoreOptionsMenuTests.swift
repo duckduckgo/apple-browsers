@@ -989,6 +989,7 @@ final class MockFreemiumDBPFeature: FreemiumDBPFeature {
     var isAvailableSubject = PassthroughSubject<Bool, Never>()
 
     var mockFeatureFlagEnabled: Bool?
+    var mockIsAvailableIgnoringPurchaseCapability: Bool?
 
     var isFeatureFlagEnabled: Bool {
         mockFeatureFlagEnabled ?? featureAvailable
@@ -996,6 +997,10 @@ final class MockFreemiumDBPFeature: FreemiumDBPFeature {
 
     var isAvailable: Bool {
         featureAvailable
+    }
+
+    var isAvailableIgnoringPurchaseCapability: Bool {
+        mockIsAvailableIgnoringPurchaseCapability ?? featureAvailable
     }
 
     var isAvailablePublisher: AnyPublisher<Bool, Never> {

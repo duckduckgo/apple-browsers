@@ -258,6 +258,9 @@ extension TunnelControllerIPCService: XPCServerInterface {
             quitAgent()
         case .createLogSnapshot:
             assertionFailure("Unsupported on macOS")
+        case .triggerLeakCheck:
+            // Intentional no-op: handled by the extension
+            break
         }
     }
 

@@ -146,6 +146,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.toolsMenu = newValue }
     }
 
+    var reasoningPickerMenu: UIMenu? {
+        get { inputBarView.reasoningPickerMenu }
+        set { inputBarView.reasoningPickerMenu = newValue }
+    }
+
     var isModelChipHidden: Bool {
         get { inputBarView.isModelChipHidden }
         set { inputBarView.isModelChipHidden = newValue }
@@ -156,9 +161,19 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.selectedTool = newValue }
     }
 
+    var selectedReasoningMode: AIChatReasoningMode? {
+        get { inputBarView.selectedReasoningMode }
+        set { inputBarView.selectedReasoningMode = newValue }
+    }
+
     var isToolsButtonHidden: Bool {
         get { inputBarView.isToolsButtonHidden }
         set { inputBarView.isToolsButtonHidden = newValue }
+    }
+
+    var isReasoningButtonHidden: Bool {
+        get { inputBarView.isReasoningButtonHidden }
+        set { inputBarView.isReasoningButtonHidden = newValue }
     }
 
     var isImageButtonHidden: Bool {

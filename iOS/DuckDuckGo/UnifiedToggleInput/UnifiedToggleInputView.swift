@@ -144,6 +144,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.toolsMenu = newValue }
     }
 
+    var reasoningPickerMenu: UIMenu? {
+        get { toolsToolbar.reasoningPickerMenu }
+        set { toolsToolbar.reasoningPickerMenu = newValue }
+    }
+
     var isModelChipHidden: Bool {
         get { toolsToolbar.isModelChipHidden }
         set { toolsToolbar.isModelChipHidden = newValue }
@@ -154,9 +159,19 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.selectedTool = newValue }
     }
 
+    var selectedReasoningMode: AIChatReasoningMode? {
+        get { toolsToolbar.selectedReasoningMode }
+        set { toolsToolbar.selectedReasoningMode = newValue }
+    }
+
     var isToolsButtonHidden: Bool {
         get { toolsToolbar.isToolsButtonHidden }
         set { toolsToolbar.isToolsButtonHidden = newValue }
+    }
+
+    var isReasoningButtonHidden: Bool {
+        get { toolsToolbar.isReasoningButtonHidden }
+        set { toolsToolbar.isReasoningButtonHidden = newValue }
     }
 
     /// Called inside animation blocks when a hierarchy-wide layout pass is needed
@@ -720,7 +735,7 @@ private extension UnifiedToggleInputView {
         toggleView.alpha = 0
         toggleView.onModeChanged = { [weak self] mode in
             guard let self else { return }
-            self.handler.setToggleState(mode)
+            // Intent only — coordinator is the single writer of handler.currentToggleState.
             self.delegate?.unifiedToggleInputViewDidChangeMode(self, mode: mode)
             if self.isExpanded {
                 self.textEntryView.becomeFirstResponder()

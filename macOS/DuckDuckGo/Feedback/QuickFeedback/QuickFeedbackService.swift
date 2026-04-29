@@ -28,6 +28,7 @@ final class QuickFeedbackService: NSObject {
     private var windowController: QuickFeedbackWindowController?
     private var screenshotData: Data?
     private let diagnosticsCollector: QuickFeedbackDiagnosticsCollector
+    private let appVersion: AppVersion
 
     private let dataStore: WKWebsiteDataStore
     private var cancellables = Set<AnyCancellable>()
@@ -63,9 +64,11 @@ final class QuickFeedbackService: NSObject {
 
     init(
         diagnosticsCollector: QuickFeedbackDiagnosticsCollector,
+        appVersion: AppVersion = AppVersion(),
         firePublisher: AnyPublisher<Fire.BurningData?, Never>
     ) {
         self.diagnosticsCollector = diagnosticsCollector
+        self.appVersion = appVersion
         // macOS 14+ uses an isolated persistent store so Fire doesn't clear
         // the Asana session. On older macOS (no forIdentifier API), we fall
         // back to .default() where Fire will clear cookies. Acceptable since
@@ -220,10 +223,10 @@ final class QuickFeedbackService: NSObject {
             .replacingOccurrences(of: "%OS_VERSION%", with: "")
             .replacingOccurrences(of: "%APP_VERSION%", with: "")
 
-        let appVersionModel = AppVersionModel()
+        let appVersionModel = AppVersionModel(appVersion: appVersion)
 
         let payload: [String: Any] = [
-            "osVersion": AppVersion.shared.osVersionMajorMinorPatch,
+            "osVersion": appVersion.osVersionMajorMinorPatch,
             "appVersion": "\(appVersionModel.versionLabelShort) (\(appVersionModel.distributionLabel))",
             "quickMode": true,
             "diagnostics": diagnosticsCollector.collectDiagnostics(),

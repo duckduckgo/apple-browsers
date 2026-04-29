@@ -24,13 +24,16 @@ final class QuickFeedbackDiagnosticsCollector {
 
     private weak var tabAndWindowCountProvider: TabAndWindowCountProviding?
     private let memoryUsageMonitor: MemoryUsageMonitoring
+    private let appVersion: AppVersion
     private let launchDate: Date
 
     init(tabAndWindowCountProvider: TabAndWindowCountProviding?,
          memoryUsageMonitor: MemoryUsageMonitoring,
+         appVersion: AppVersion = AppVersion(),
          launchDate: Date) {
         self.tabAndWindowCountProvider = tabAndWindowCountProvider
         self.memoryUsageMonitor = memoryUsageMonitor
+        self.appVersion = appVersion
         self.launchDate = launchDate
     }
 
@@ -39,10 +42,10 @@ final class QuickFeedbackDiagnosticsCollector {
 
         lines.append("--- Diagnostics (auto-collected) ---")
 
-        let appVersionModel = AppVersionModel()
+        let appVersionModel = AppVersionModel(appVersion: appVersion)
         lines.append("App Version: \(appVersionModel.versionLabelShort) (\(appVersionModel.distributionLabel))")
 
-        lines.append("macOS: \(AppVersion.shared.osVersionMajorMinorPatch)")
+        lines.append("macOS: \(appVersion.osVersionMajorMinorPatch)")
 
         lines.append("Architecture: \(compiledArchitecture)")
 

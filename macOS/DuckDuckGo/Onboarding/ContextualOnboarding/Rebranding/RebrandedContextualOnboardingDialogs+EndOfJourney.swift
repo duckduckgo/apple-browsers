@@ -31,7 +31,6 @@ extension OnboardingRebranding {
             static let tailOffset: CGFloat = 0.99
         }
 
-        let panelHeight: CGFloat
         let highFiveAction: () -> Void
         let onManualDismiss: () -> Void
 

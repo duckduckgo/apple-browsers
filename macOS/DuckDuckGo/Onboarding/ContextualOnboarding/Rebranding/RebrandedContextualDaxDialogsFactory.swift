@@ -196,8 +196,6 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         let gotIt = shouldFollowUp ? onGotItPressed : onDismissGotIt
         return OnboardingRebranding.OnboardingSearchDoneDialog(
             shouldFollowUp: shouldFollowUp,
-            initialPanelHeight: 0,
-            followUpPanelHeight: 0,
             viewModel: viewModel,
             gotItAction: gotIt,
             onManualDismiss: onManualDismiss,
@@ -220,8 +218,6 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         let viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: onboardingPixelReporter, fireCoordinator: fireCoordinator, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
         return OnboardingRebranding.OnboardingTrackersBlockedDialog(
             shouldFollowUp: true,
-            initialPanelHeight: 0,
-            followUpPanelHeight: 0,
             message: message,
             blockedTrackersCTAAction: gotIt,
             viewModel: viewModel,
@@ -232,7 +228,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
 
     private func tryFireButtonDialog(onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {
         let viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: onboardingPixelReporter, fireCoordinator: fireCoordinator, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
-        return OnboardingRebranding.OnboardingFireDialog(viewModel: viewModel, panelHeight: 0, onManualDismiss: onManualDismiss)
+        return OnboardingRebranding.OnboardingFireDialog(viewModel: viewModel, onManualDismiss: onManualDismiss, onContentTransition: nil)
     }
 
     private func highFiveDialog(onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void) -> some View {
@@ -240,7 +236,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             onDismiss()
             onGotItPressed()
         }
-        return OnboardingRebranding.OnboardingEndOfJourneyDialog(panelHeight: 0, highFiveAction: action, onManualDismiss: onManualDismiss)
+        return OnboardingRebranding.OnboardingEndOfJourneyDialog(highFiveAction: action, onManualDismiss: onManualDismiss)
     }
 }
 
@@ -296,8 +292,8 @@ private struct ContextualDialogView: View {
 extension View {
     /// Renders the bubble with consistent vertical padding, letting the panel size itself
     /// entirely from the bubble's intrinsic height. No floor — long text in any language
-    /// grows the panel naturally. The `height` parameter is ignored.
-    func contextualOnboardingPanelLayout(height: CGFloat) -> some View {
+    /// grows the panel naturally.
+    func contextualOnboardingPanelLayout() -> some View {
         HStack(spacing: 0) {
             Spacer()
             self

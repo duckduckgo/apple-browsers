@@ -33,18 +33,12 @@ extension OnboardingRebranding {
         @State private var showNextScreen: Bool = false
 
         let shouldFollowUp: Bool
-        let initialPanelHeight: CGFloat
-        let followUpPanelHeight: CGFloat
         let viewModel: OnboardingSiteSuggestionsViewModel
         let gotItAction: () -> Void
         let onManualDismiss: () -> Void
         /// Fires when the bubble transitions in-place to the follow-up content,
         /// so the host can swap the background illustration to match.
         let onContentTransition: (() -> Void)?
-
-        private var panelHeight: CGFloat {
-            showNextScreen ? followUpPanelHeight : initialPanelHeight
-        }
 
         var body: some View {
             // The follow-up tryASite screen needs its own Dax overlay and bubble tail, so render
@@ -77,7 +71,7 @@ extension OnboardingRebranding {
                         .buttonStyle(theme.primaryButtonStyle.style)
                     }
                 }
-                .contextualOnboardingPanelLayout(height: panelHeight)
+                .contextualOnboardingPanelLayout()
                 .transition(.opacity)
             }
         }

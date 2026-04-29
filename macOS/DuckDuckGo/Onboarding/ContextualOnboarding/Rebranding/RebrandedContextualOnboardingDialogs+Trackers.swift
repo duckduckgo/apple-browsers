@@ -45,8 +45,6 @@ extension OnboardingRebranding {
         @State private var showNextScreen: Bool = false
 
         let shouldFollowUp: Bool
-        let initialPanelHeight: CGFloat
-        let followUpPanelHeight: CGFloat
         let message: NSAttributedString
         let blockedTrackersCTAAction: () -> Void
         let viewModel: OnboardingFireButtonDialogViewModel
@@ -55,10 +53,6 @@ extension OnboardingRebranding {
         /// so the host can swap the background illustration to match.
         let onContentTransition: (() -> Void)?
 
-        private var panelHeight: CGFloat {
-            showNextScreen ? followUpPanelHeight : initialPanelHeight
-        }
-
         var body: some View {
             // The fire dialog is a plain tail-less bubble — an inline content swap inside the
             // trackers bubble would leave its tail and wing in place, so render OnboardingFireDialog
@@ -66,7 +60,6 @@ extension OnboardingRebranding {
             if showNextScreen {
                 OnboardingRebranding.OnboardingFireDialog(
                     viewModel: viewModel,
-                    panelHeight: followUpPanelHeight,
                     onManualDismiss: onManualDismiss
                 )
                 .transition(.opacity)

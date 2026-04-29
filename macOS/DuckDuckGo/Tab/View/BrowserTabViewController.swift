@@ -123,6 +123,7 @@ final class BrowserTabViewController: NSViewController {
     private var lastURL: URL?
     private weak var lastTab: Tab?
     private var wasContextualOnboardingDialogDismissed = false
+    private var presentedContextualOnboardingDialogType: ContextualDialogType?
     private let onboardingPixelReporter: OnboardingPixelReporting
 
     private(set) var transientTabContentViewController: NSViewController?
@@ -654,6 +655,7 @@ final class BrowserTabViewController: NSViewController {
             containerStackView.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
+        presentedContextualOnboardingDialogType = nil
     }
 
     private func presentContextualOnboarding(showLastDialog: Bool = false) {
@@ -689,6 +691,7 @@ final class BrowserTabViewController: NSViewController {
         self.wasContextualOnboardingDialogDismissed = false
 
         removeExistingDialog()
+        presentedContextualOnboardingDialogType = dialogType
 
         let daxView = onboardingDialogFactory.makeView(
             for: dialogType,
@@ -1497,10 +1500,17 @@ extension BrowserTabViewController: TabDelegate {
         //  - If the dialog was dismissed it will not reload when leaving and coming back to the Window
         //  - It tells presentContextualOnboarding that should show the lastDialog if possible
         //  - Skip for pop-up windows; contextual onboarding is excluded there
-        //  - Skip if a dialog is already displayed; recreating the NSHostingController would
-        //    reset the SwiftUI @State inside the dialog (typewriter animation, content fade-in)
-        let hasExistingDialog = containerStackView.arrangedSubviews.contains { $0 !== webViewContainer }
-        if !isInPopUpWindow && !wasContextualOnboardingDialogDismissed && onboardingDialogTypeProvider.state != .onboardingCompleted && !hasExistingDialog {
+        //  - Skip if the displayed dialog already matches the expected one; re-creating the
+        //    hosting controller would restart the typewriter animation. If they differ, fall
+        //    through so the stale dialog gets replaced (or cleared if expected is nil).
+        let tab = tabViewModel?.tab
+        let expectedDialogType = tab.flatMap { onboardingDialogTypeProvider.lastDialogForTab($0) }
+        let displayedMatchesExpected = presentedContextualOnboardingDialogType != nil
+            && presentedContextualOnboardingDialogType == expectedDialogType
+        if !isInPopUpWindow
+            && !wasContextualOnboardingDialogDismissed
+            && onboardingDialogTypeProvider.state != .onboardingCompleted
+            && !displayedMatchesExpected {
             presentContextualOnboarding(showLastDialog: true)
         }
     }

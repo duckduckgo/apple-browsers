@@ -54,6 +54,5 @@ public class OnboardingFireButtonDialogViewModel: ObservableObject {
 
     func skipFireButton() {
         onGotItPressed()
-        onDismiss()
     }
 }

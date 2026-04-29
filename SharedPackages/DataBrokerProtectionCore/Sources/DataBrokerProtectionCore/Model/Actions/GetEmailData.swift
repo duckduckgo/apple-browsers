@@ -32,21 +32,25 @@ struct GetEmailDataAction: Action {
     let id: String
     let actionType: ActionType
     let pollingTime: TimeInterval
+    let extract: [String]
     let json: Data?
 
     enum CodingKeys: CodingKey {
         case id
         case actionType
         case pollingTime
+        case extract
     }
 
     init(id: String,
          actionType: ActionType,
          pollingTime: TimeInterval,
+         extract: [String] = [],
          json: Data? = nil) {
         self.id = id
         self.actionType = actionType
         self.pollingTime = pollingTime
+        self.extract = extract
         self.json = json
     }
 
@@ -55,6 +59,7 @@ struct GetEmailDataAction: Action {
         id = try container.decode(String.self, forKey: .id)
         actionType = try container.decode(ActionType.self, forKey: .actionType)
         pollingTime = try container.decode(TimeInterval.self, forKey: .pollingTime)
+        extract = try container.decodeIfPresent([String].self, forKey: .extract) ?? []
         json = nil
     }
 
@@ -63,12 +68,16 @@ struct GetEmailDataAction: Action {
         try container.encode(id, forKey: .id)
         try container.encode(actionType, forKey: .actionType)
         try container.encode(pollingTime, forKey: .pollingTime)
+        if !extract.isEmpty {
+            try container.encode(extract, forKey: .extract)
+        }
     }
 
     func with(json: Data?) -> GetEmailDataAction {
         GetEmailDataAction(id: id,
                            actionType: actionType,
                            pollingTime: pollingTime,
+                           extract: extract,
                            json: json)
     }
 }

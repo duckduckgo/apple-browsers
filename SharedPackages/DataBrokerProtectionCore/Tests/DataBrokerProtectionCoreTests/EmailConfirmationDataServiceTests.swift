@@ -201,6 +201,7 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
                                                 attemptId: UUID(),
                                                 pollingInterval: 0.01,
                                                 totalTimeout: 1,
+                                                extract: ["verificationCode", "token"],
                                                 shouldRunNextStep: { true })
 
         XCTAssertEqual(mockEmailServiceV1.fetchCallCount, 1)
@@ -221,10 +222,31 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
                                                 attemptId: UUID(),
                                                 pollingInterval: 0.01,
                                                 totalTimeout: 1,
+                                                extract: ["verificationCode"],
                                                 shouldRunNextStep: { true })
 
         XCTAssertEqual(mockEmailServiceV1.fetchCallCount, 3)
         XCTAssertEqual(result, ["verificationCode": "999"])
+    }
+
+    func testGetEmailDataWithEmptyExtractReturnsEmptyBagOnFirstReady() async throws {
+        mockEmailServiceV1.responses = [
+            .init(items: [.init(email: "test@duck.com",
+                                attemptId: "a",
+                                status: .ready,
+                                errorCode: nil,
+                                data: [.init(name: "verificationCode", value: "123456")],
+                                emailReceivedAt: nil)])
+        ]
+
+        let result = try await sut.getEmailData(email: "test@duck.com",
+                                                attemptId: UUID(),
+                                                pollingInterval: 0.01,
+                                                totalTimeout: 1,
+                                                extract: [],
+                                                shouldRunNextStep: { true })
+
+        XCTAssertEqual(result, [:])
     }
 
     func testGetEmailDataTimesOutWhileStillPending() async {
@@ -242,6 +264,7 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
                                            attemptId: UUID(),
                                            pollingInterval: 0.01,
                                            totalTimeout: 0.05,
+                                           extract: [],
                                            shouldRunNextStep: { true })
             XCTFail("Expected timeout")
         } catch EmailError.linkExtractionTimedOut {
@@ -266,6 +289,7 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
                                            attemptId: UUID(),
                                            pollingInterval: 0.01,
                                            totalTimeout: 1,
+                                           extract: [],
                                            shouldRunNextStep: { true })
             XCTFail("Expected throw")
         } catch EmailError.extractionError {
@@ -290,6 +314,7 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
                                            attemptId: UUID(),
                                            pollingInterval: 0.01,
                                            totalTimeout: 1,
+                                           extract: [],
                                            shouldRunNextStep: { true })
             XCTFail("Expected throw")
         } catch EmailError.unknownStatusReceived {
@@ -307,12 +332,80 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
                                            attemptId: UUID(),
                                            pollingInterval: 0.01,
                                            totalTimeout: 1,
+                                           extract: [],
                                            shouldRunNextStep: { true })
             XCTFail("Expected throw")
         } catch EmailError.unknownStatusReceived {
             // Expected
         } catch {
             XCTFail("Expected EmailError.unknownStatusReceived, got \(error)")
+        }
+    }
+
+    func testGetEmailDataKeepsPollingWhenExtractKeysMissingFromReadyResponse() async throws {
+        let email = "test@duck.com"
+        mockEmailServiceV1.responses = [
+            .init(items: [.init(email: email, attemptId: "a", status: .ready, errorCode: nil,
+                                data: [.init(name: "link", value: "https://x.test/link")],
+                                emailReceivedAt: nil)]),
+            .init(items: [.init(email: email, attemptId: "a", status: .ready, errorCode: nil,
+                                data: [.init(name: "link", value: "https://x.test/link"),
+                                       .init(name: "verificationCode", value: "999")],
+                                emailReceivedAt: nil)])
+        ]
+
+        let result = try await sut.getEmailData(email: email,
+                                                attemptId: UUID(),
+                                                pollingInterval: 0.01,
+                                                totalTimeout: 1,
+                                                extract: ["verificationCode"],
+                                                shouldRunNextStep: { true })
+
+        XCTAssertEqual(mockEmailServiceV1.fetchCallCount, 2)
+        XCTAssertEqual(result, ["verificationCode": "999"])
+    }
+
+    func testGetEmailDataFiltersReturnedKeysToExtract() async throws {
+        mockEmailServiceV1.responses = [
+            .init(items: [.init(email: "test@duck.com",
+                                attemptId: "a",
+                                status: .ready,
+                                errorCode: nil,
+                                data: [.init(name: "verificationCode", value: "123456"),
+                                       .init(name: "link", value: "https://x.test/ignore")],
+                                emailReceivedAt: nil)])
+        ]
+
+        let result = try await sut.getEmailData(email: "test@duck.com",
+                                                attemptId: UUID(),
+                                                pollingInterval: 0.01,
+                                                totalTimeout: 1,
+                                                extract: ["verificationCode"],
+                                                shouldRunNextStep: { true })
+
+        XCTAssertEqual(result, ["verificationCode": "123456"])
+    }
+
+    func testGetEmailDataTimesOutWhenExtractKeyNeverArrives() async {
+        let readyWithoutRequestedKey = EmailDataResponseV1(items: [
+            .init(email: "test@duck.com", attemptId: "a", status: .ready, errorCode: nil,
+                  data: [.init(name: "link", value: "https://x.test/link")],
+                  emailReceivedAt: nil)
+        ])
+        mockEmailServiceV1.responses = Array(repeating: readyWithoutRequestedKey, count: 100)
+
+        do {
+            _ = try await sut.getEmailData(email: "test@duck.com",
+                                           attemptId: UUID(),
+                                           pollingInterval: 0.01,
+                                           totalTimeout: 0.05,
+                                           extract: ["verificationCode"],
+                                           shouldRunNextStep: { true })
+            XCTFail("Expected timeout")
+        } catch EmailError.linkExtractionTimedOut {
+            // Expected
+        } catch {
+            XCTFail("Expected linkExtractionTimedOut, got \(error)")
         }
     }
 
@@ -331,6 +424,7 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
                                            attemptId: UUID(),
                                            pollingInterval: 0.01,
                                            totalTimeout: 1,
+                                           extract: [],
                                            shouldRunNextStep: { false })
             XCTFail("Expected throw")
         } catch EmailError.cancelled {

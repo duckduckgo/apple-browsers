@@ -295,6 +295,7 @@ public extension SubJobWebRunning {
                 attemptId: stageCalculator.attemptId,
                 pollingInterval: action.pollingTime,
                 totalTimeout: totalTimeout,
+                extract: action.extract,
                 shouldRunNextStep: shouldRunNextStep
             )
             for (key, value) in fetched {

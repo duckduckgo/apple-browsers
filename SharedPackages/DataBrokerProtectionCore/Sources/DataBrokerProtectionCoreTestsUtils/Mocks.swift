@@ -451,6 +451,7 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
     public private(set) var lastGetEmailDataEmail: String?
     public private(set) var lastGetEmailDataPollingInterval: TimeInterval?
     public private(set) var lastGetEmailDataTotalTimeout: TimeInterval?
+    public private(set) var lastGetEmailDataExtract: [String]?
 
     public init() {}
 
@@ -496,11 +497,13 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
                              attemptId: UUID,
                              pollingInterval: TimeInterval,
                              totalTimeout: TimeInterval,
+                             extract: [String],
                              shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData {
         getEmailDataCallCount += 1
         lastGetEmailDataEmail = email
         lastGetEmailDataPollingInterval = pollingInterval
         lastGetEmailDataTotalTimeout = totalTimeout
+        lastGetEmailDataExtract = extract
 
         if let error = getEmailDataThrowError {
             throw error
@@ -522,6 +525,7 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
         lastGetEmailDataEmail = nil
         lastGetEmailDataPollingInterval = nil
         lastGetEmailDataTotalTimeout = nil
+        lastGetEmailDataExtract = nil
     }
 }
 

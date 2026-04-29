@@ -47,13 +47,14 @@ public protocol EmailConfirmationDataServiceProvider {
                              attemptId: UUID,
                              shouldRunNextStep: @escaping () -> Bool) async throws -> URL
 
-    /// Polls the V1 email-data endpoint for a single email until `status == .ready` or
-    /// `totalTimeout` wall-clock elapses. Throws `EmailError.linkExtractionTimedOut` on timeout;
-    /// backend `.error`/`.unknown` statuses are translated into `EmailError`.
+    /// Polls until every `extract` key is present in the response (or `totalTimeout` elapses).
+    /// Returned bag is filtered to those keys. Empty `extract` returns an empty bag on first
+    /// `ready` — broker JSON is expected to always populate `extract`.
     func getEmailData(email: String,
                       attemptId: UUID,
                       pollingInterval: TimeInterval,
                       totalTimeout: TimeInterval,
+                      extract: [String],
                       shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData
 }
 
@@ -135,8 +136,9 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                              attemptId: UUID,
                              pollingInterval: TimeInterval,
                              totalTimeout: TimeInterval,
+                             extract: [String],
                              shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData {
-        Logger.service.log("✉️ [EmailConfirmationDataService] Polling email-data for \(email, privacy: .public), attemptId: \(attemptId.uuidString, privacy: .public), totalTimeout: \(totalTimeout, privacy: .public)s")
+        Logger.service.log("✉️ [EmailConfirmationDataService] Polling email-data for \(email, privacy: .public), attemptId: \(attemptId.uuidString, privacy: .public), totalTimeout: \(totalTimeout, privacy: .public)s, extract: \(extract.joined(separator: ","), privacy: .public)")
         let deadline = Date().addingTimeInterval(totalTimeout)
         let pollingTimeInNanoseconds = UInt64(pollingInterval * 1000) * NSEC_PER_MSEC
         let item = EmailDataRequestItemV1(email: email, attemptId: attemptId.uuidString)
@@ -154,8 +156,14 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
 
             switch responseItem.status {
             case .ready:
+                let returnedKeys = Set(responseItem.data.map(\.name))
+                guard extract.allSatisfy(returnedKeys.contains) else {
+                    Logger.service.log("✉️ [EmailConfirmationDataService] Ready but missing extract keys for \(email, privacy: .public). Sleeping \(pollingInterval, privacy: .public)s")
+                    try await Task.sleep(nanoseconds: pollingTimeInNanoseconds)
+                    continue
+                }
                 var emailData: ExtractedEmailData = [:]
-                for datum in responseItem.data {
+                for datum in responseItem.data where extract.contains(datum.name) {
                     emailData[datum.name] = datum.value
                 }
                 return emailData

@@ -815,6 +815,7 @@ final class MockEmailConfirmationDataService: EmailConfirmationDataServiceProvid
                       attemptId: UUID,
                       pollingInterval: TimeInterval,
                       totalTimeout: TimeInterval,
+                      extract: [String],
                       shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData {
         [:]
     }

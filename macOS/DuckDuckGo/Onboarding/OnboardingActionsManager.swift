@@ -191,6 +191,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: OnboardingSharedPixelHandler(
                 platform: .macOS,
+                source: .defaultSource,
+                flow: .defaultFlow,
                 installType: reinstallUserDetection.isReinstallingUser ? .reinstall : .newInstall,
                 installDateProvider: installDateProvider
              )

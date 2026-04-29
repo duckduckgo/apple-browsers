@@ -22,17 +22,40 @@ import PixelKit
 
 public protocol OnboardingSharedPixelHandling {
     func fire(_ event: OnboardingSharedPixelEvent)
+
+    /// Sets the variant of the onboarding flow the user has entered.
+    /// The variant is added to the parameters on every subsequent pixel fired by the handler.
+    func setVariant(_ variant: OnboardingFlowVariant)
+}
+
+public enum OnboardingFlowVariant: String {
+    case search = "search"
+    case duckAISearch = "search_plus_duckai-search"
+    case duckAIChat = "search_plus_duckai-chat"
 }
 
 final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     private struct ParameterKeys {
         static let installType = "it"
         static let daysSinceInstall = "d"
+        static let source = "source"
+        static let flow = "flow"
+        static let variant = "variant"
     }
 
     public enum InstallType: String {
         case newInstall = "new"
         case reinstall
+    }
+
+    public enum OnboardingSource: String {
+        case defaultSource = "default"
+        case duckAICustomProductPage = "duckai_cpp"
+    }
+
+    public enum OnboardingFlowType: String {
+        case defaultFlow = "default"
+        case duckAIExperiment = "duckai_experiment"
     }
 
     public enum Platform: String {
@@ -49,19 +72,26 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
         }
     }
 
-    let platform: Platform
-    let installType: InstallType?
-    let installDateProvider: () -> Date?
-    let currentDateProvider: () -> Date
-    let pixelFiring: PixelFiring?
+    private let platform: Platform
+    private let installType: InstallType?
+    private let source: OnboardingSource
+    private let flow: OnboardingFlowType
+    private let installDateProvider: () -> Date?
+    private let currentDateProvider: () -> Date
+    private let pixelFiring: PixelFiring?
 
-    var daysSinceInstall: Int? {
+    private var variant: OnboardingFlowVariant?
+
+    private var daysSinceInstall: Int? {
         guard let installDate = installDateProvider() else { return nil }
         return Calendar.current.numberOfDaysBetween(installDate, and: currentDateProvider())
     }
 
-    var installParameters: [String: String] {
-        var additionalParameters: [String: String] = [:]
+    private var additionalParameters: [String: String] {
+        var additionalParameters: [String: String] = [
+            ParameterKeys.source: source.rawValue,
+            ParameterKeys.flow: flow.rawValue
+        ]
 
         if let installType {
             additionalParameters[ParameterKeys.installType] = installType.rawValue
@@ -75,11 +105,15 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     }
 
     public init(platform: Platform,
+                source: OnboardingSource,
+                flow: OnboardingFlowType,
                 installType: InstallType?,
                 installDateProvider: @escaping () -> Date?,
                 currentDateProvider: @escaping () -> Date = { Date() },
                 pixelFiring: PixelFiring? = PixelKit.shared) {
         self.platform = platform
+        self.source = source
+        self.flow = flow
         self.installType = installType
         self.installDateProvider = installDateProvider
         self.currentDateProvider = currentDateProvider
@@ -87,11 +121,19 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     }
 
     public func fire(_ event: OnboardingSharedPixelEvent) {
+        var additionalParameters = self.additionalParameters
+        if let variant {
+            additionalParameters[ParameterKeys.variant] = variant.rawValue
+        }
 
         pixelFiring?.fire(event,
                           frequency: .uniqueByNameAndParameters,
-                          withAdditionalParameters: installParameters,
+                          withAdditionalParameters: additionalParameters,
                           withNamePrefix: platform.pixelPrefix)
+    }
+
+    public func setVariant(_ variant: OnboardingFlowVariant) {
+        self.variant = variant
     }
 
 }

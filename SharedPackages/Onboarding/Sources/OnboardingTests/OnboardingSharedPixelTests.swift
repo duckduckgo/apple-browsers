@@ -43,15 +43,34 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.namePrefix, "m_mac_")
     }
 
-    func testWhenFiringPixelEventThenUsesExpectedNameAndEventType() throws {
+    func testWhenFiringPixelEventThenUsesExpectedNameAndNonOptionalParameters() throws {
         let pixelFiring = PixelKitMock()
-        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+        let pixelHandler = makeHandler(source: .defaultSource, flow: .defaultFlow, pixelFiring: pixelFiring)
 
         pixelHandler.fire(.welcome(.shown))
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(event.pixel.name, "onboarding_welcome")
         XCTAssertEqual(event.pixel.parameters?["e"], "shown")
+        XCTAssertEqual(event.pixel.standardParameters, [.pixelSource])
+        XCTAssertEqual(event.additionalParameters?["source"], "default")
+        XCTAssertEqual(event.additionalParameters?["flow"], "default")
+    }
+
+    func testWhenVariantIsSetThenVariantParameterIsIncluded() throws {
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        pixelHandler.fire(.searchResults(.shown))
+
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertNil(event.additionalParameters?["variant"])
+
+        pixelHandler.setVariant(.duckAISearch)
+        pixelHandler.fire(.searchResults(.shown))
+
+        let eventWithVariant = try XCTUnwrap(pixelFiring.actualFireCalls.last)
+        XCTAssertEqual(eventWithVariant.additionalParameters?["variant"], "search_plus_duckai-search")
     }
 
     func testWhenFiringPixelEventThenFrequencyIsUniqueByNameAndParameters() throws {
@@ -220,11 +239,16 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
 private extension OnboardingSharedPixelTests {
     func makeHandler(platform: OnboardingSharedPixelHandler.Platform = .macOS,
+                     source: OnboardingSharedPixelHandler.OnboardingSource = .defaultSource,
+                     flow: OnboardingSharedPixelHandler.OnboardingFlowType = .defaultFlow,
                      installType: OnboardingSharedPixelHandler.InstallType? = nil,
+                     onboardingSource: OnboardingSharedPixelHandler.OnboardingSource? = nil,
                      installDateProvider: @escaping () -> Date? = { nil },
                      currentDateProvider: @escaping () -> Date = { Date() },
                      pixelFiring: PixelFiring? = nil) -> OnboardingSharedPixelHandler {
         OnboardingSharedPixelHandler(platform: platform,
+                                     source: source,
+                                     flow: flow,
                                      installType: installType,
                                      installDateProvider: installDateProvider,
                                      currentDateProvider: currentDateProvider,

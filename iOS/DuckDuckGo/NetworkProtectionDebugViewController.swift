@@ -179,8 +179,10 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
         cell.textLabel?.font = .daxBodyRegular()
+        cell.textLabel?.textColor = .label
         cell.detailTextLabel?.text = nil
         cell.accessoryType = .none
+        cell.isUserInteractionEnabled = true
 
         switch Sections(rawValue: indexPath.section) {
 

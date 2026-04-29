@@ -58,7 +58,15 @@
         "FireWindowTests\/testCrendentialsAreAutoFilledInFireWindows()",
         "NewPermissionViewTests\/test_locationPermissions_whenAccepted_showCorrectStateInBrowser()",
         "NewPermissionViewTests\/test_locationPermissions_whenNeverAllowIsSelected_alwaysDenies()",
-        "PermissionsTests"
+        "PermissionsTests",
+        "PrintingTests",
+        "PrintingTests\/test_pdf_contextMenuOpenWithPreview_opensPreviewAndValidatesContent()",
+        "PrintingTests\/test_pdf_contextMenuPrint_opensPrintDialog()",
+        "PrintingTests\/test_pdf_contextMenuSaveAs_opensDialogAndSavesPDF()",
+        "PrintingTests\/test_pdf_keyboardShortcutPrint_opensPrintDialog()",
+        "PrintingTests\/test_pdf_keyboardShortcutSaveAs_opensDialogAndSavesPDF()",
+        "PrintingTests\/test_pdf_saveToPDF_createsValidPDFFile()",
+        "PrintingTests\/test_pinnedTab_printingBehaviorAcrossWindows()"
       ],
       "target" : {
         "containerPath" : "container:DuckDuckGo-macOS.xcodeproj",

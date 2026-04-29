@@ -1943,7 +1943,17 @@ class MainViewController: UIViewController {
 
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
         dismissOmniBar()
+        resetUnifiedToggleInputForTabTransition(to: tab)
         attachTab(tab: tab)
+    }
+
+    private func resetUnifiedToggleInputForTabTransition(to tab: TabViewController) {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        coordinator.deactivateToOmnibar()
+        if !tab.isAITab {
+            coordinator.hide()
+            coordinator.unbind()
+        }
     }
 
     private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
@@ -1953,13 +1963,7 @@ class MainViewController: UIViewController {
         previousTab?.dismiss()
         hideNotificationBarIfBrokenSitePromptShown()
 
-        if let coordinator = unifiedToggleInputCoordinator {
-            coordinator.deactivateToOmnibar()
-            if !tab.isAITab {
-                coordinator.hide()
-                coordinator.unbind()
-            }
-        }
+        resetUnifiedToggleInputForTabTransition(to: tab)
 
         let shouldSaveTabs = tab.tabModel.viewed == false
         tab.tabModel.viewed = true

@@ -49,8 +49,8 @@ extension OnboardingRebranding {
 
         static let daxAnimation = DaxAnimation(
             animationName: "Dax-EndOfJourney-TryWebsite",
-            size: CGSize(width: 153, height: 169.67),
-            position: .left(bottomPadding: -60.0, xOffset: -40.0),
+            size: CGSize(width: 153*2, height: 169.67*2),
+            position: .left(bottomPadding: -70.0, xOffset: -80.0),
             largeScreenPosition: .left(bottomPadding: 0.0, xOffset: 0.0)
         )
 

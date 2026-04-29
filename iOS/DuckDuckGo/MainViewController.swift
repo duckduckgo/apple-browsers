@@ -2159,6 +2159,7 @@ class MainViewController: UIViewController {
     func dismissOmniBar() {
         hideSuggestionTray()
         viewCoordinator.omniBar.endEditing()
+        unifiedToggleInputCoordinator?.deactivateToOmnibar()
         refreshOmniBar()
     }
 
@@ -3425,7 +3426,6 @@ extension MainViewController: BrowserChromeDelegate {
         }
         postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
         newTabPageViewController?.chromeDelegate = nil
-        unifiedToggleInputCoordinator?.deactivateToOmnibar()
         dismissOmniBar()
         viewCoordinator.omniBar.cancel()
         switch suggestion {
@@ -3488,7 +3488,6 @@ extension MainViewController: OmniBarDelegate {
 
     func onChatHistorySelected(url: URL) {
         postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
-        unifiedToggleInputCoordinator?.deactivateToOmnibar()
         loadUrlInNewTab(url, inheritedAttribution: nil)
     }
 

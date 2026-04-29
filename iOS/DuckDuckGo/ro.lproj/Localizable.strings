@@ -4272,6 +4272,27 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Elimini dispozitivul?";
 
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Cod copiat";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup activat";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Codul de recuperare a fost copiat";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Nu s-a putut activa Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Oprește";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Marcajele și parolele de pe acest dispozitiv nu vor fi afectate.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Oprești Sync & Backup?";
+
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Elimină";
 

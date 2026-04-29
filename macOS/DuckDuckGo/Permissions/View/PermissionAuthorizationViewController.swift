@@ -64,19 +64,7 @@ final class PermissionAuthorizationViewController: NSViewController {
 
     let systemPermissionManager = SystemPermissionManager()
 
-    @IBOutlet var descriptionLabel: NSTextField!
-    @IBOutlet var domainNameLabel: NSTextField!
-    @IBOutlet var alwaysAllowCheckbox: NSButton!
-    @IBOutlet var alwaysAllowStackView: NSStackView!
-    @IBOutlet var learnMoreStackView: NSStackView!
-    @IBOutlet var denyButton: NSButton!
-    @IBOutlet var buttonsBottomConstraint: NSLayoutConstraint!
-    @IBOutlet var learnMoreBottomConstraint: NSLayoutConstraint!
-    @IBOutlet weak var linkButton: LinkButton!
-    @IBOutlet weak var allowButton: NSButton!
-
     private var swiftUIHostingView: NSHostingView<PermissionAuthorizationSwiftUIView>?
-    private let newPermissionView: Bool
 
     /// Indicates whether the authorization flow is still in progress (user hasn't clicked Allow/Deny yet).
     /// This prevents the popover from being closed prematurely during two-step flows (e.g., geolocation).
@@ -84,130 +72,32 @@ final class PermissionAuthorizationViewController: NSViewController {
 
     weak var query: PermissionAuthorizationQuery? {
         didSet {
-            if newPermissionView {
-                setupSwiftUIView()
-            } else {
-                updateText()
-            }
+            setupSwiftUIView()
         }
     }
 
-    // Programmatic initializer for SwiftUI mode
-    init(newPermissionView: Bool) {
-        self.newPermissionView = newPermissionView
+    init() {
         super.init(nibName: nil, bundle: nil)
     }
 
-    // Storyboard initializer
+    @available(*, unavailable)
     required init?(coder: NSCoder) {
-        self.newPermissionView = false
-        super.init(coder: coder)
+        fatalError("PermissionAuthorizationViewController: Use init() instead")
     }
 
     override func loadView() {
-        if newPermissionView {
-            // Create a simple container view for SwiftUI
-            view = NSView()
-        } else {
-            // Load from nib/storyboard
-            super.loadView()
-        }
+        view = NSView()
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        if newPermissionView {
-            setupSwiftUIView()
-        } else {
-            updateText()
-        }
-    }
-
-    override func viewWillAppear() {
-        guard !newPermissionView else { return }
-
-        alwaysAllowCheckbox.state = .off
-        if query?.shouldShowCancelInsteadOfDeny == true {
-            denyButton.title = UserText.cancel
-        } else {
-            denyButton.title = UserText.permissionPopoverDenyButton
-        }
-        denyButton.setAccessibilityIdentifier("PermissionAuthorizationViewController.denyButton")
-    }
-
-    private func updateText() {
-        guard !newPermissionView,
-              isViewLoaded,
-              let query = query,
-              !query.permissions.isEmpty
-        else { return }
-
-        switch query.permissions[0] {
-        case .camera, .microphone:
-            descriptionLabel.stringValue = String(format: UserText.devicePermissionAuthorizationFormat,
-                                                  query.domain,
-                                                  query.permissions.localizedDescription.lowercased())
-        case .popups:
-            descriptionLabel.stringValue = String(format: UserText.popupWindowsPermissionAuthorizationFormat,
-                                                  query.domain,
-                                                  query.permissions.localizedDescription.lowercased())
-        case .notification:
-            descriptionLabel.stringValue = String(format: UserText.notificationPermissionAuthorizationFormat,
-                                                  query.domain)
-        case .externalScheme where query.domain.isEmpty:
-            descriptionLabel.stringValue = String(format: UserText.externalSchemePermissionAuthorizationNoDomainFormat,
-                                                  query.permissions.localizedDescription)
-        case .externalScheme:
-            descriptionLabel.stringValue = String(format: UserText.externalSchemePermissionAuthorizationFormat,
-                                                  query.domain,
-                                                  query.permissions.localizedDescription)
-        case .geolocation:
-            descriptionLabel.stringValue = String(format: UserText.locationPermissionAuthorizationFormat, query.domain)
-        case .autoplayPolicy:
-            break // Autoplay policy does not use authorization flow
-        }
-        alwaysAllowCheckbox.title = UserText.permissionAlwaysAllowOnDomainCheckbox
-        domainNameLabel.stringValue = query.domain.isEmpty ? "" : "“" + query.domain + "”"
-        alwaysAllowStackView.isHidden = !query.shouldShowAlwaysAllowCheckbox
-        learnMoreStackView.isHidden = !query.permissions.contains(.geolocation)
-        learnMoreBottomConstraint.isActive = !learnMoreStackView.isHidden
-        buttonsBottomConstraint.isActive = !learnMoreBottomConstraint.isActive
-        linkButton.title = UserText.permissionPopupLearnMoreLink
-        allowButton.title = UserText.permissionPopupAllowButton
-        allowButton.setAccessibilityIdentifier("PermissionAuthorizationViewController.allowButton")
-    }
-
-    @IBAction func alwaysAllowLabelClick(_ sender: Any) {
-        guard !newPermissionView else { return }
-        alwaysAllowCheckbox.setNextState()
-    }
-
-    @IBAction func grantAction(_ sender: NSButton) {
-        guard !newPermissionView else { return }
-        self.dismiss()
-        query?.handleDecision(grant: true, remember: query!.shouldShowAlwaysAllowCheckbox && alwaysAllowCheckbox.state == .on)
-    }
-
-    @IBAction func denyAction(_ sender: NSButton) {
-        guard !newPermissionView else { return }
-        self.dismiss()
-        guard let query = query,
-              !query.shouldShowCancelInsteadOfDeny
-        else { return }
-
-        query.handleDecision(grant: false)
-    }
-
-    @IBAction func learnMoreAction(_ sender: NSButton) {
-        guard !newPermissionView else { return }
-        Application.appDelegate.windowControllersManager.show(url: "https://help.duckduckgo.com/privacy/device-location-services".url, source: .ui, newTab: true)
+        setupSwiftUIView()
     }
 
     // MARK: - SwiftUI View Setup
 
     private func setupSwiftUIView() {
-        guard newPermissionView, let query = query, !query.permissions.isEmpty else { return }
+        guard let query = query, !query.permissions.isEmpty else { return }
 
         // Remove all existing subviews to ensure clean state
         view.subviews.forEach { $0.removeFromSuperview() }
@@ -277,7 +167,7 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     private func fireAuthorizationPixel(decision: PermissionPixel.AuthorizationDecision) {
-        guard newPermissionView, let query = query else { return }
+        guard let query = query else { return }
         // Fire pixel for each permission type in the query
         for permissionType in query.permissions {
             PixelKit.fire(PermissionPixel.authorizationDecision(permissionType: permissionType, decision: decision))

@@ -74,7 +74,7 @@ function waitForElement(tag, text, timeout = 5000) {
 
 function fillOutForm() {
     openDropdown('Which product area or team does this feedback relate to?');
-    selectOption('Native Apps');
+    selectOption('Native Apps & Extensions');
 
     waitForElement('label', 'Which platform?')
         .then(() => {

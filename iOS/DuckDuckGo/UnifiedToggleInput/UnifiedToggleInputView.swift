@@ -735,7 +735,7 @@ private extension UnifiedToggleInputView {
         toggleView.alpha = 0
         toggleView.onModeChanged = { [weak self] mode in
             guard let self else { return }
-            self.handler.setToggleState(mode)
+            // Intent only — coordinator is the single writer of handler.currentToggleState.
             self.delegate?.unifiedToggleInputViewDidChangeMode(self, mode: mode)
             if self.isExpanded {
                 self.textEntryView.becomeFirstResponder()

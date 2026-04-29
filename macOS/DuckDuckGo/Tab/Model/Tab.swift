@@ -320,8 +320,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         webView.setAccessibilityIdentifier("WebView")
 
         permissions = PermissionModel(permissionManager: permissionManager,
-                                      geolocationService: geolocationService,
-                                      featureFlagger: featureFlagger)
+                                      geolocationService: geolocationService)
 
         let userContentControllerPromise = Future<UserContentController, Never>.promise()
         let userScriptsPublisher = userContentControllerPromise.future

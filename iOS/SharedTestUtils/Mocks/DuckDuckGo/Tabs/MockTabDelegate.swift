@@ -110,6 +110,8 @@ final class MockTabDelegate: TabDelegate {
 
     func tabContentProcessDidTerminate(tab: DuckDuckGo.TabViewController) {}
 
+    func tabDidEngageWithPage(_ tab: DuckDuckGo.TabViewController) {}
+
     func tabDidRequestFireButtonPulse(tab: DuckDuckGo.TabViewController) {
         didRequestFireButtonPulseCalled = true
     }

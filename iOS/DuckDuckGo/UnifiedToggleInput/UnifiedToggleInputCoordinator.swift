@@ -19,7 +19,6 @@
 
 import AIChat
 import Combine
-import os.log
 import Subscription
 import UIKit
 
@@ -62,6 +61,11 @@ enum ExternalSubmissionType {
     case prompt
 }
 
+private struct PromptSubmissionConfiguration {
+    let modelId: String?
+    let reasoningEffort: AIChatReasoningEffort?
+}
+
 // MARK: - Subscription State
 
 struct SubscriptionState {
@@ -99,6 +103,24 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { $attachmentUsage }
+    var persistedReasoningEffort: AIChatReasoningEffort? {
+        guard let selectedModel else { return nil }
+        guard persistedReasoningMode != nil || selectedModel.supportsReasoningPicker else { return nil }
+
+        return selectedModel.resolvedReasoningEffort(from: persistedReasoningMode)
+    }
+    private var promptSubmissionModelId: String? {
+        hasSubmittedPrompt ? nil : persistedModelId
+    }
+    private var promptSubmissionConfiguration: PromptSubmissionConfiguration {
+        PromptSubmissionConfiguration(
+            modelId: promptSubmissionModelId,
+            reasoningEffort: persistedReasoningEffort
+        )
+    }
+    var voicePromptSubmissionConfiguration: (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
+        (promptSubmissionModelId, nil)
+    }
 
     @Published var aiChatStatus: AIChatStatusValue = .unknown
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown
@@ -390,7 +412,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState = .hidden
         cardPosition = .bottom
         isInputVisibleForKeyboard = true
-        setText("")
+        // Text clear is deferred to dismiss completion — avoids placeholder flash mid-collapse.
         resetToolsSelection()
         clearAttachments()
 
@@ -452,12 +474,26 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard didModeChange || needsViewSync else { return }
 
         inputMode = effectiveMode
-        if needsViewSync {
-            viewController.setInputMode(effectiveMode, animated: animated)
+
+        // Wraps toolbar-height update + content-swap broadcast in one CATransaction so they animate
+        // together; otherwise the content snaps while the toolbar is still growing.
+        let applyModeChange = { [self] in
+            if needsViewSync {
+                viewController.setInputMode(effectiveMode, animated: animated)
+            }
+            if didModeChange {
+                modeChangeSubject.send(effectiveMode)
+            }
         }
-        if didModeChange {
-            modeChangeSubject.send(effectiveMode)
+
+        if animated {
+            UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+                applyModeChange()
+            }
+        } else {
+            applyModeChange()
         }
+
         applyToolbarPresentation()
         if didModeChange, effectiveMode == .search {
             clearAttachments()
@@ -599,13 +635,21 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func submitVoicePrompt(_ text: String) {
         guard let userScript = boundUserScript else { return }
-        let modelId = hasSubmittedPrompt ? nil : persistedModelId
+        let configuration = voicePromptSubmissionConfiguration
         hasSubmittedPrompt = true
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
         resetToolsSelection()
         showCollapsed()
-        userScript.submitPrompt(text, images: nil, modelId: modelId)
+        userScript.submitPrompt(text, images: nil, modelId: configuration.modelId, reasoningEffort: configuration.reasoningEffort)
+    }
+
+    func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
+        let configuration = promptSubmissionConfiguration
+        hasSubmittedPrompt = true
+        updateModelChipVisibility()
+        syncHasSubmittedPromptToHandler()
+        return (configuration.modelId, configuration.reasoningEffort)
     }
 
     func handleExternalSubmission(_ type: ExternalSubmissionType) {
@@ -729,6 +773,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var subscriptionState: SubscriptionState { modelStore.subscriptionState }
     var persistedModelId: String? { modelStore.persistedModelId }
     var currentModelId: String? { modelStore.currentModelId }
+    var persistedReasoningMode: AIChatReasoningMode? { modelStore.selectedReasoningMode }
+    var selectedModel: AIChatModel? { modelStore.selectedModel }
     var selectedModelSupportsImageUpload: Bool { modelStore.selectedModelSupportsImageUpload }
     var selectedTool: AIChatRAGTool? { toolsController.selectedTool }
 
@@ -750,6 +796,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func updateSelectedModel(_ modelId: String) {
         modelStore.updateSelectedModel(modelId)
         handleModelsUpdated()
+    }
+
+    func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
+        modelStore.updateSelectedReasoningMode(mode)
+        updateReasoningPicker()
     }
 
     func selectTool(_ tool: AIChatRAGTool) {
@@ -780,6 +831,32 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         ) { [weak self] modelId in
             self?.updateSelectedModel(modelId)
         }
+    }
+
+    private func buildReasoningPickerMenu() -> UIMenu? {
+        guard let selectedModel, selectedModel.supportsReasoningPicker else { return nil }
+
+        let selectedMode = resolvedSelectedReasoningMode
+        let actions = selectedModel.availableReasoningModes.map { mode in
+            UIAction(
+                title: mode.unifiedToggleInputTitle,
+                subtitle: mode.unifiedToggleInputSubtitle,
+                image: mode.unifiedToggleInputMenuImage,
+                state: mode == selectedMode ? .on : .off
+            ) { [weak self] _ in
+                self?.updateSelectedReasoningMode(mode)
+            }
+        }
+
+        return UIMenu(options: .singleSelection, children: actions)
+    }
+
+    private func updateReasoningPicker() {
+        let selectedMode = resolvedSelectedReasoningMode
+        let shouldHide = !(selectedModel?.supportsReasoningPicker ?? false)
+        viewController.selectedReasoningMode = selectedMode
+        viewController.isReasoningButtonHidden = shouldHide
+        viewController.reasoningPickerMenu = shouldHide ? nil : buildReasoningPickerMenu()
     }
 
     // MARK: - Attachments
@@ -848,7 +925,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
         commitCurrentToggleState()
-        setText("")
 
         switch mode {
         case .search:
@@ -864,7 +940,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             let images = selectedModelSupportsImageUpload
                 ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
                 : nil
-            let modelId = hasSubmittedPrompt ? nil : persistedModelId
+            let configuration = promptSubmissionConfiguration
             clearAttachments()
             hasSubmittedPrompt = true
             updateModelChipVisibility()
@@ -873,12 +949,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             if isOmnibarSession {
                 deactivateToOmnibar()
             } else {
+                // showCollapsed has no dismiss hook; clear synchronously.
+                setText("")
                 showCollapsed()
             }
             if let userScript = boundUserScript {
-                userScript.submitPrompt(text, images: images, modelId: modelId, tools: tools)
+                userScript.submitPrompt(text, images: images, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
             } else {
-                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: modelId, tools: tools, images: images)
+                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images)
             }
         }
     }
@@ -943,6 +1021,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func updateModelChipVisibility() {
         viewController.isModelChipHidden = hasSubmittedPrompt
+        updateReasoningPicker()
     }
 
     func syncHasSubmittedPromptToHandler() {
@@ -951,7 +1030,10 @@ private extension UnifiedToggleInputCoordinator {
 
     func resetSessionState() {
         isNewChatPending = false
-        setText("")
+        // While the UTI is hidden, dismiss completion owns the visible text — clearing here would flash the placeholder.
+        if isActive {
+            setText("")
+        }
         aiChatStatus = .unknown
         aiChatInputBoxVisibility = .unknown
         attachmentUsage = nil
@@ -978,6 +1060,7 @@ private extension UnifiedToggleInputCoordinator {
     func handleModelsUpdated() {
         toolsController.clearSelectionIfUnsupported(for: modelStore)
         updateModelChipLabel()
+        updateReasoningPicker()
         updateImageButtonVisibility()
         refreshToolsPresentation()
     }
@@ -1017,6 +1100,10 @@ private extension UnifiedToggleInputCoordinator {
     func updateImageButtonEnabledState() {
         let canAttachMore = remainingImagesForPicker > 0 && !viewController.isGenerating
         viewController.isImageButtonEnabled = canAttachMore
+    }
+
+    var resolvedSelectedReasoningMode: AIChatReasoningMode? {
+        selectedModel?.resolvedReasoningMode(from: persistedReasoningMode)
     }
 
     // MARK: Subscriptions

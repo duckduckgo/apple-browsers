@@ -213,6 +213,24 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fénykép készítése";
 
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Elemezési feladatokhoz";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Kibővített érvelés";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Gyors válaszok";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Gyors";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Összetett feladatokhoz";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Érvelés";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Válaszok testreszabása";
 
@@ -4253,6 +4271,27 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Eszköz eltávolítása?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kód másolva";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup engedélyezve";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Helyreállítási kód másolva";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Sync & Backup engedélyezése sikertelen";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Kikapcsolás";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Az eszközön található könyvjelzőidet és jelszavaidat ez nem érinti.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Kikapcsolod a Sync & Backup funkciót?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Eltávolítás";

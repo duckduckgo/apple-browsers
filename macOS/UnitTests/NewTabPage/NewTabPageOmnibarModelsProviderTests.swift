@@ -114,7 +114,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
 
     func testWhenModelHasSupportedReasoningEffortThenItIsMappedToItem() async {
         mockModelsService.modelsToReturn = [
-            makeRemoteModel(id: "reasoning-model", supportedReasoningEffort: ["none", "low", "medium"], accessTier: ["free"])
+            makeRemoteModel(id: "reasoning-model", supportedReasoningEffort: [.none, .low, .medium], accessTier: ["free"])
         ]
 
         let sections = await provider.fetchAIModelSections()
@@ -216,7 +216,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         shortName: String? = nil,
         supportsImageUpload: Bool = false,
         supportedTools: [String] = [],
-        supportedReasoningEffort: [String] = [],
+        supportedReasoningEffort: [AIChatReasoningEffort] = [],
         accessTier: [String]
     ) -> AIChatRemoteModel {
         AIChatRemoteModel(
@@ -227,8 +227,8 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
             entityHasAccess: true,
             supportsImageUpload: supportsImageUpload,
             supportedTools: supportedTools,
-            supportedReasoningEffort: supportedReasoningEffort,
-            accessTier: accessTier
+            accessTier: accessTier,
+            supportedReasoningEffort: supportedReasoningEffort
         )
     }
 

@@ -210,10 +210,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
 
-    /// New permission management view
-    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1211985993948718?focus=true
-    case newPermissionView
-
     /// Shows a survey when quitting the app for the first time in a determined period
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1212242893241885?focus=true
     case firstTimeQuitSurvey
@@ -295,10 +291,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
     case aiChatSidebarFloating
-
-    /// Private Process Name Flag
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
-    case privateProcessName
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213610208091978?focus=true
     case aiChatChromeSidebar
@@ -527,8 +519,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.feature(.popupBlocking)), category: .popupBlocking)
         case .webNotifications:
             Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webNotifications)), category: .webNotifications)
-        case .newPermissionView:
-            Config(source: .remoteReleasable(.feature(.combinedPermissionView)))
         case .firstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey)))
         case .autofillPasswordSearchPrioritizeDomain:
@@ -579,8 +569,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.ntpWebSearch)), category: .duckAI)
         case .aiChatSidebarFloating:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebarFloating)), category: .duckAI)
-        case .privateProcessName:
-            Config(source: .disabled)
         case .aiChatChromeSidebar:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.sidebar)), category: .duckAI)
         case .webViewLookUpAction:

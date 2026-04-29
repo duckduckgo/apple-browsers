@@ -17,19 +17,10 @@
 //
 
 import AppKit
+import AIChat
 import DesignResourcesKitIcons
 
-/// Reasoning effort levels the Duck.ai omnibar can offer. Raw values match the server contract
-/// (`supportedReasoningEffort` from `duckchat/v1/models` and the `reasoningEffort` request field),
-/// so unknown values from the backend are silently filtered at the UI boundary and can be added
-/// later by extending this enum without changing the wire shape.
-enum AIChatReasoningEffort: String, CaseIterable {
-    case none
-    case minimal
-    case low
-    case medium
-    case high
-
+extension AIChatReasoningEffort {
     /// Label shown on the picker chip and as the menu item's primary text.
     var title: String {
         switch self {

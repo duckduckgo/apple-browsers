@@ -32,6 +32,7 @@ public protocol AIChatPreferencesPersisting {
     /// Emits the new value whenever `selectedReasoningEffort` changes through this persistor instance.
     /// Consumers that need cross-component sync must share the same instance.
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { get }
+    var selectedReasoningMode: AIChatReasoningMode? { get set }
 }
 
 /// Reference type so that a single instance can be shared across components (e.g. the native address-bar
@@ -42,6 +43,7 @@ public final class AIChatPreferencesPersistor: AIChatPreferencesPersisting {
         case selectedModelId = "aichat.omnibar.selected-model-id"
         case selectedModelShortName = "aichat.omnibar.selected-model-short-name"
         case selectedReasoningEffort = "aichat.omnibar.selected-reasoning-effort"
+        case selectedReasoningMode = "aichat.omnibar.selected-reasoning-mode"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -97,5 +99,22 @@ public final class AIChatPreferencesPersistor: AIChatPreferencesPersisting {
 
     public var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
         selectedReasoningEffortSubject.eraseToAnyPublisher()
+    }
+
+    public var selectedReasoningMode: AIChatReasoningMode? {
+        get {
+            guard let rawValue = try? keyValueStore.object(forKey: Key.selectedReasoningMode.rawValue) as? String else {
+                return nil
+            }
+
+            return AIChatReasoningMode(rawValue: rawValue)
+        }
+        set {
+            if let value = newValue?.rawValue {
+                try? keyValueStore.set(value, forKey: Key.selectedReasoningMode.rawValue)
+            } else {
+                try? keyValueStore.removeObject(forKey: Key.selectedReasoningMode.rawValue)
+            }
+        }
     }
 }

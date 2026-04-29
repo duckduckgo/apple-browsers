@@ -194,6 +194,7 @@ final class MainCoordinator {
                                 launchSourceManager: launchSourceManager,
                                 darkReaderFeatureSettings: darkReaderFeatureSettings,
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
+                                duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
                                 fireModePromotionEligibility: fireModePromotionsCoordinator)
         let fireExecutor = FireExecutor(tabManager: tabManager,
@@ -212,6 +213,7 @@ final class MainCoordinator {
                                         privacyStats: privacyStats,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
+                                        fireModeStorageController: contentBlockingService.fireModeStorageController,
                                         wideEvent: wideEvent)
         let syncAutoRestoreHandler = SyncAutoRestoreHandler(
             decisionManager: syncAutoRestoreDecisionManager,
@@ -233,6 +235,7 @@ final class MainCoordinator {
                                         userScriptsDependencies: contentBlockingService.userScriptsDependencies,
                                         contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
+                                        duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
                                         tabManager: tabManager,
@@ -651,14 +654,7 @@ extension MainCoordinator: URLHandling {
                 controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
                 return true
             }
-            guard application.applicationState == .active, let currentTab = controller.currentTab else {
-                return false
-            }
-            // If app is in active state, treat this navigation as something initiated form the context of the current tab.
-            controller.tab(currentTab,
-                           didRequestNewTabForUrl: url,
-                           openedByPage: true,
-                           inheritingAttribution: nil)
+            return false
         }
         return true
     }
@@ -756,6 +752,10 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
             guard let self else { return }
             self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
         }
+    }
+
+    func markLastUsedTabAsResumedAfterIdle() {
+        controller.postIdleSessionInstrumentation.sessionStarted(surface: .lut)
     }
 
 }

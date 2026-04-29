@@ -294,6 +294,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         case .setExcludeLocalNetworks(let excludeLocalNetworks):
             try await handleSetExcludeLocalNetworks(excludeLocalNetworks)
         case .setConnectOnLogin,
+                .setExcludeAPNs,
+                .setExcludeCellularServices,
+                .setExcludeDeviceCommunication,
                 .setNotifyStatusChanges,
                 .setRegistrationKeyValidity,
                 .setSelectedServer,
@@ -387,14 +390,18 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             // always-on
             protocolConfiguration.disconnectOnSleep = false
 
-            // kill switch
-            protocolConfiguration.enforceRoutes = true
-
-            // this setting breaks Connection Tester
+            protocolConfiguration.enforceRoutes = settings.enforceRoutes
             protocolConfiguration.includeAllNetworks = settings.includeAllNetworks
+            protocolConfiguration.excludeLocalNetworks = settings.excludeLocalNetworks
 
-            // This messes up the routing, so please keep it always disabled
-            protocolConfiguration.excludeLocalNetworks = false
+            if #available(macOS 13.3, *) {
+                protocolConfiguration.excludeAPNs = settings.excludeAPNs
+                protocolConfiguration.excludeCellularServices = settings.excludeCellularServices
+            }
+
+            if #available(macOS 14.4, *) {
+                protocolConfiguration.excludeDeviceCommunication = settings.excludeDeviceCommunication
+            }
 
             return protocolConfiguration
         }()

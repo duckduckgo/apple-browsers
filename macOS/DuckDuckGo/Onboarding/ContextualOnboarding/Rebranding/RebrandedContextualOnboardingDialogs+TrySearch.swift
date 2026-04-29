@@ -33,7 +33,6 @@ extension OnboardingRebranding {
             static let tailOffset: CGFloat = 0.99
         }
 
-
         let title = NSAttributedString(string: UserText.ContextualOnboarding.onboardingTryASearchTitle)
         let message = NSAttributedString(string: UserText.ContextualOnboarding.onboardingTryASearchMessage)
         let viewModel: OnboardingSearchSuggestionsViewModel

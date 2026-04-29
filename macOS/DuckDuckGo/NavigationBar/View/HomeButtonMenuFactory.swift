@@ -36,7 +36,7 @@ struct HomeButtonMenuFactory {
     }
 
     private static func makeMenuItem(prefs: AppearancePreferences, pinningManager: PinningManager) -> NSMenuItem {
-        let item = NSMenuItem(title: UserText.mainMenuHomeButton)
+        let item = NSMenuItem(title: UserText.mainMenuHomeButton).withImage(.home12)
 
         let isButtonVisible = pinningManager.isPinned(.homeButton)
         let buttonPosition = prefs.homeButtonPosition

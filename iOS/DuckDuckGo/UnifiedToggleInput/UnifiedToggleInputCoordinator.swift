@@ -1090,8 +1090,6 @@ private extension UnifiedToggleInputCoordinator {
 
     func handleToolsMenuSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
         switch identifier {
-        case .customizeResponses:
-            viewController.handler.customizeResponsesButtonTapped()
         case .webSearch:
             toolsController.toggleSelection(for: .webSearch, modelStore: modelStore)
             refreshToolsPresentation()

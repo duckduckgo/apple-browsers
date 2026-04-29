@@ -84,11 +84,18 @@ final class SwipeContainerManager: NSObject {
     // MARK: - Public Methods
 
 
-    /// Installs the chat history manager in the chat page container
-    /// - Parameter manager: The AIChatHistoryManager to install
+    /// Installs the chat history manager in the chat page container.
+    /// Used by the legacy `OmniBarEditingStateViewController` (non-UTI path).
     @MainActor
     func installChatHistory(using manager: AIChatHistoryManager) {
         manager.installInContainerView(chatPageContainer, parentViewController: containerViewController)
+    }
+
+    /// Installs the Duck.ai multi-section suggestions coordinator in the chat page container.
+    /// Used by `UnifiedInputContentContainerViewController` (UTI path).
+    @MainActor
+    func installDuckAISuggestions(using coordinator: DuckAISuggestionsCoordinator) {
+        coordinator.installInContainerView(chatPageContainer, parentViewController: containerViewController)
     }
 
     /// Overlays the search page on the visible area, or returns it to its natural position.

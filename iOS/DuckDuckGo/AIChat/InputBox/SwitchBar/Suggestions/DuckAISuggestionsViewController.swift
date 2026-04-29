@@ -67,18 +67,18 @@ final class DuckAISuggestionsViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var tableView: UITableView = {
-        let t = UITableView(frame: .zero, style: .insetGrouped)
-        t.translatesAutoresizingMaskIntoConstraints = false
-        t.delegate = self
-        t.dataSource = self
-        t.alwaysBounceVertical = true
-        t.keyboardDismissMode = .onDrag
-        t.register(UITableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
-        t.backgroundColor = UIColor(designSystemColor: .background)
-        t.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
-        t.sectionFooterHeight = 0
-        t.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
-        return t
+        let tableView = UITableView(frame: .zero, style: .insetGrouped)
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.alwaysBounceVertical = true
+        tableView.keyboardDismissMode = .onDrag
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
+        tableView.backgroundColor = UIColor(designSystemColor: .background)
+        tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
+        tableView.sectionFooterHeight = 0
+        tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
+        return tableView
     }()
 
     private var chats: [AIChatSuggestion] { chatViewModel.filteredSuggestions }

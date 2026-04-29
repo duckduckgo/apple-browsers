@@ -337,21 +337,35 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         NSAppearance.withAppAppearance {
             if enabled {
-                // Voice-chat mode uses the accent-alt palette (background + content-primary
-                // foreground) so the action reads as visually distinct from a standard submit.
                 if submitButtonMode == .voice {
-                    submitButton.layer?.backgroundColor = NSColor(designSystemColor: .accentAltPrimary).cgColor
+                    // Voice spec: icon stays at content-primary across all three states; only the
+                    // fill progresses through the accent-alt palette on hover and press.
+                    // `MouseOverButton` swaps the layer fill automatically based on these properties.
+                    submitButton.backgroundColor = NSColor(designSystemColor: .accentAltPrimary)
+                    submitButton.mouseOverColor = NSColor(designSystemColor: .accentAltSecondary)
+                    submitButton.mouseDownColor = NSColor(designSystemColor: .accentAltTertiary)
                     submitButton.normalTintColor = NSColor(designSystemColor: .accentAltContentPrimary)
-                    submitButton.mouseOverTintColor = NSColor(designSystemColor: .accentAltContentSecondary)
+                    submitButton.mouseOverTintColor = nil
+                    submitButton.mouseDownTintColor = nil
                 } else {
-                    submitButton.layer?.backgroundColor = NSColor(designSystemColor: .accentPrimary).cgColor
-                    submitButton.normalTintColor = .white
-                    submitButton.mouseOverTintColor = NSColor(designSystemColor: .buttonsPrimaryText).withAlphaComponent(0.8)
+                    // Submit spec: icon stays at accent/content-primary across all three states;
+                    // only the fill progresses through accent/primary → secondary → tertiary on
+                    // hover/press. `MouseOverButton` swaps the layer fill automatically based on
+                    // these properties.
+                    submitButton.backgroundColor = NSColor(designSystemColor: .accentPrimary)
+                    submitButton.mouseOverColor = NSColor(designSystemColor: .accentSecondary)
+                    submitButton.mouseDownColor = NSColor(designSystemColor: .accentTertiary)
+                    submitButton.normalTintColor = NSColor(designSystemColor: .accentContentPrimary)
+                    submitButton.mouseOverTintColor = nil
+                    submitButton.mouseDownTintColor = nil
                 }
             } else {
-                submitButton.layer?.backgroundColor = NSColor.clear.cgColor
+                submitButton.backgroundColor = nil
+                submitButton.mouseOverColor = nil
+                submitButton.mouseDownColor = nil
                 submitButton.normalTintColor = NSColor.secondaryLabelColor
                 submitButton.mouseOverTintColor = NSColor.secondaryLabelColor
+                submitButton.mouseDownTintColor = nil
             }
         }
     }
@@ -491,6 +505,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         submitButton.bezelStyle = .shadowlessSquare
         submitButton.isBordered = false
         submitButton.wantsLayer = true
+        // The `MouseOverButton`-managed hover/press sub-layer reads `cornerRadius` from this property
+        // when rendering its background — needed so the voice-chat fill renders rounded.
+        submitButton.cornerRadius = Constants.submitButtonCornerRadius
         submitButton.target = self
         submitButton.action = #selector(submitButtonClicked)
 

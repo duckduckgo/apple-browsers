@@ -235,19 +235,20 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setExpanded(expanded, animated: animated)
     }
 
-    /// See `UnifiedToggleInputView.prepareForOmnibarEditingShow`.
     func prepareForOmnibarEditingShow() {
         inputBarView.prepareForOmnibarEditingShow()
     }
 
-    /// See `UnifiedToggleInputView.applyOmnibarEditingShowPose`.
     func applyOmnibarEditingShowPose() {
         inputBarView.applyOmnibarEditingShowPose()
     }
 
-    /// See `UnifiedToggleInputView.applyOmnibarEditingDismissPose`.
     func applyOmnibarEditingDismissPose() {
         inputBarView.applyOmnibarEditingDismissPose()
+    }
+
+    func finalizeOmnibarEditingDismiss() {
+        inputBarView.finalizeOmnibarEditingDismiss()
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {
@@ -256,6 +257,26 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func selectAllText() {
         inputBarView.selectAllText()
+    }
+
+    var placeholderWindowX: CGFloat? { inputBarView.placeholderWindowX }
+
+    var placeholderTextColor: UIColor {
+        get { inputBarView.placeholderTextColor }
+        set { inputBarView.placeholderTextColor = newValue }
+    }
+
+    func animatePlaceholderColorTransition(from: UIColor, to color: UIColor, duration: TimeInterval) {
+        inputBarView.animatePlaceholderColorTransition(from: from, to: color, duration: duration)
+    }
+
+    func setTextHorizontalShift(_ shift: CGFloat) {
+        inputBarView.setTextHorizontalShift(shift)
+    }
+
+    @discardableResult
+    func alignPlaceholderHorizontally(toWindowX windowX: CGFloat) -> CGFloat {
+        inputBarView.alignPlaceholderHorizontally(toWindowX: windowX)
     }
 
     func updateToggleEnabled(_ enabled: Bool) {

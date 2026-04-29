@@ -25,9 +25,10 @@ import PixelKit
 public actor VPNLeakCheckService {
 
     public typealias TunnelInterfaceProvider = @Sendable () async -> NWInterface?
+    public typealias EgressInfoProvider = @Sendable () async -> LeakCheckEgressInfo?
 
     private let configuration: LeakCheckConfiguration
-    private var egressInfo: LeakCheckEgressInfo
+    private let egressInfo: EgressInfoProvider
     private let tunnelInterface: TunnelInterfaceProvider
     private let httpClient: LeakCheckHTTPClient
     private let stunClient: LeakCheckSTUNClient
@@ -39,17 +40,19 @@ public actor VPNLeakCheckService {
     private var scheduledCheck: Task<Void, Never>?
     private var isStopped = false
 
-    /// The service resolves the tunnel `NWInterface` live at the start of every check via
-    /// `tunnelInterface`. This avoids caching a stale or nil interface from initialization time —
-    /// if the kernel hadn't yet published the utun device when the service was created, subsequent
-    /// checks will pick it up automatically.
+    /// The service resolves both the tunnel `NWInterface` and the egress info live at the start of
+    /// every check via `tunnelInterface` and `egressInfo`. This avoids caching stale values from
+    /// initialization time — for example, if a rekey has selected a different server underneath,
+    /// the next check picks up the new server automatically without anyone having to push an
+    /// update.
     ///
-    /// When `tunnelInterface` returns nil, the check is skipped entirely — no wide event is fired.
-    /// Running unpinned tests can't distinguish "tunnel is healthy" from "tunnel is leaking",
-    /// so the result would be meaningless either way.
+    /// When either provider returns nil, the check is skipped entirely — no wide event is fired.
+    /// Running without a tunnel-pinned interface, or without a reference IP to compare against,
+    /// can't distinguish "tunnel is healthy" from "tunnel is leaking", so the result would be
+    /// meaningless either way.
     public init(
         configuration: LeakCheckConfiguration = .default,
-        egressInfo: LeakCheckEgressInfo,
+        egressInfo: @escaping EgressInfoProvider,
         tunnelInterface: @escaping TunnelInterfaceProvider,
         httpClient: LeakCheckHTTPClient,
         stunClient: LeakCheckSTUNClient,
@@ -85,7 +88,7 @@ public actor VPNLeakCheckService {
     }
 
     /// Schedules a leak check that runs after the trigger's natural delay
-    /// (`tunnelStartDelay` for `.tunnelStart`, immediate for `.reassert`/`.periodic`).
+    /// (`tunnelStartDelay` for `.tunnelStart`, immediate for `.reassert`/`.periodic`/`.rekey`).
     ///
     /// The latest schedule wins: a pending scheduled check is cancelled and replaced. This collapses
     /// rapid bursts (e.g. manual start → reconnect) into a single check using the freshest trigger,
@@ -106,11 +109,6 @@ public actor VPNLeakCheckService {
             guard !Task.isCancelled else { return }
             await self?.runCheck(trigger: trigger)
         }
-    }
-
-    public func updateEgressInfo(_ newInfo: LeakCheckEgressInfo) {
-        Logger.networkProtectionIPLeakCheck.log("Updated egress info reference")
-        egressInfo = newInfo
     }
 
     public static func completeAllPendingFlows(wideEvent: WideEventManaging) {
@@ -136,8 +134,12 @@ public actor VPNLeakCheckService {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — already in flight (trigger: \(trigger.rawValue, privacy: .public))")
             return
         }
+        // `.reassert` and `.rekey` both signal a tunnel path change (failure recovery /
+        // reconfiguration in the first case, server reselection in the second), so they bypass
+        // cooldown and always run — we want to validate the new path immediately.
         if !bypassCooldown,
            trigger != .reassert,
+           trigger != .rekey,
            let last = lastCompletionDate,
            Date().timeIntervalSince(last) < configuration.cooldown {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — cooldown active (trigger: \(trigger.rawValue, privacy: .public))")
@@ -162,7 +164,10 @@ public actor VPNLeakCheckService {
 
         Logger.networkProtectionIPLeakCheck.log("🟢 Starting leak check (trigger: \(trigger.rawValue, privacy: .public))")
 
-        let egressInfoSnapshot = egressInfo
+        guard let egressInfoSnapshot = await egressInfo() else {
+            Logger.networkProtectionIPLeakCheck.log("🔴 Skipping leak check — egress info unavailable (trigger: \(trigger.rawValue, privacy: .public))")
+            return
+        }
         guard let tunnelInterfaceSnapshot = await tunnelInterface() else {
             Logger.networkProtectionIPLeakCheck.log("🔴 Skipping leak check — tunnel interface unavailable (trigger: \(trigger.rawValue, privacy: .public))")
             return

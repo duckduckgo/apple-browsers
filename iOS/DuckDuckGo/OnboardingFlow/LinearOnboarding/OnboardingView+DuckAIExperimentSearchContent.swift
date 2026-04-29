@@ -103,6 +103,10 @@ extension OnboardingView {
         @State private var hasStartedEntranceSequence = false
         @State private var hasPassedInitialFocusDelay = false
         @State private var shouldFocusWhenInitialDelayPasses = false
+        /// Local trigger for the rebranded title's `TypingText` animation. The legacy path drives
+        /// typing through the parent-owned `animateTitle` binding; the rebranded call site doesn't
+        /// pass one, so the typing start is held in local state instead.
+        @State private var rebrandedAnimateTitle = false
 
         // MARK: Constants
         private static let pickerItems: [ImageSegmentedPickerItem] = [
@@ -152,7 +156,11 @@ extension OnboardingView {
                 // Header text inside the onboarding bubble.
                 Group {
                     if visualStyle == .rebranded {
-                        Text(UserText.Onboarding.DuckAIQueryExperiment.title)
+                        TypingText(
+                            UserText.Onboarding.DuckAIQueryExperiment.title,
+                            startAnimating: $rebrandedAnimateTitle,
+                            onTypingFinished: handleTitleAnimationFinished
+                        )
                     } else {
                         AnimatableTypingText(
                             UserText.Onboarding.DuckAIQueryExperiment.title,
@@ -218,8 +226,11 @@ extension OnboardingView {
                 shouldFocusWhenInitialDelayPasses = false
                 suggestionSequenceStarted = false
                 scheduleInitialFocusGate()
+                // Both visual styles run through `handleTitleAnimationFinished` once typing
+                // completes; only the binding driving the start differs (rebranded uses local
+                // `@State`, legacy uses the parent-supplied binding).
                 if visualStyle == .rebranded {
-                    startStaticTitleEntranceSequence()
+                    rebrandedAnimateTitle = true
                 } else {
                     animateTitle.wrappedValue = true
                 }
@@ -266,18 +277,6 @@ extension OnboardingView {
                     guard hasStartedEntranceSequence, showInteractiveControls, !isTransitioningOut else { return }
                     requestInputFocus()
                 }
-                startSuggestionSequenceIfNeeded()
-            }
-        }
-
-        private func startStaticTitleEntranceSequence() {
-            guard !hasStartedEntranceSequence else { return }
-            hasStartedEntranceSequence = true
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.controlsRevealDelayAfterTitleAnimation) {
-                guard hasStartedEntranceSequence, !isTransitioningOut else { return }
-                showInteractiveControls = true
-                requestInputFocus()
                 startSuggestionSequenceIfNeeded()
             }
         }

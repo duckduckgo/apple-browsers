@@ -53,10 +53,11 @@ final class DuckAISuggestionsViewController: UIViewController {
         static let topContentInset: CGFloat = 12
         static let escapeHatchCardHeight: CGFloat = 72
         static let escapeHatchTopPadding: CGFloat = 16
-        static let escapeHatchBottomPadding: CGFloat = 16
-        static let recentChatsHeaderHeight: CGFloat = 40
+        /// 24pt gap below the hatch — matches Search-side breathing room around section title.
+        static let escapeHatchBottomPadding: CGFloat = 24
+        static let recentChatsHeaderHeight: CGFloat = 48
         /// Gap between the "Recent Chats" title baseline and the first chat cell.
-        static let recentChatsHeaderBottomPadding: CGFloat = 16
+        static let recentChatsHeaderBottomPadding: CGFloat = 24
     }
 
     weak var delegate: DuckAISuggestionsViewControllerDelegate?
@@ -100,6 +101,8 @@ final class DuckAISuggestionsViewController: UIViewController {
     private var currentEscapeHatch: EscapeHatch?
     /// Extra top inset applied to the whole table — used to clear the floating (x) dismiss button when bottom-bar UTI is active.
     private var additionalTopInset: CGFloat = 0
+    /// While the user is actively querying, the hatch is hidden (mirrors Search-side, where typing covers the NTP+hatch with the autocomplete view).
+    private var isQueryActive = false
 
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
@@ -178,6 +181,16 @@ final class DuckAISuggestionsViewController: UIViewController {
         updateContentInset()
     }
 
+    /// Hide the hatch the moment the user starts typing; restore on backspace-to-empty.
+    /// Also force-reloads so the "Recent Chats" section title (gated on `hasSearchRow`) hides/reappears immediately,
+    /// without waiting for the fetcher-settle reload-coalesce.
+    func setQueryActive(_ active: Bool) {
+        guard active != isQueryActive else { return }
+        isQueryActive = active
+        rebuildHatch()
+        reload()
+    }
+
     private func rebuildHatch() {
         if let existing = escapeHatchHostingController {
             existing.willMove(toParent: nil)
@@ -185,7 +198,7 @@ final class DuckAISuggestionsViewController: UIViewController {
             existing.removeFromParent()
             escapeHatchHostingController = nil
         }
-        if let hatch = currentEscapeHatch {
+        if let hatch = currentEscapeHatch, !isQueryActive {
             let hosting = UIHostingController(rootView: ReturnToTabCard(model: hatch.model, onTap: hatch.onTapped))
             hosting.view.backgroundColor = .clear
             addChild(hosting)

@@ -268,9 +268,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         updateEscapeHatchTopInset()
     }
 
-    /// Bottom-bar UTI floats the (x) dismiss button at the top — push the whole Duck.ai list down so it doesn't overlap.
+    /// Mirrors the Search-side tray's inset rule: bottom-bar adds dismiss-button clearance, top-bar pulls up to tighten the UTI↔hatch gap.
     private var duckAITopInset: CGFloat {
-        isUsingTopBarPosition ? 0 : Metrics.escapeHatchBaseTopInset
+        if isUsingTopBarPosition {
+            return escapeHatchModel != nil ? Metrics.escapeHatchTopBarTrayPullUp : 0
+        }
+        return Metrics.escapeHatchBaseTopInset
     }
 
     /// Updates both surfaces' top insets so the (x) dismiss button doesn't overlap their content in bottom-bar mode.

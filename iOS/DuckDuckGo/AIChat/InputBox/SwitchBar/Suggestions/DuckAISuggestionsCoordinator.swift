@@ -96,6 +96,14 @@ final class DuckAISuggestionsCoordinator {
         )
         vc.delegate = self
 
+        // Hide the hatch the moment the user starts typing; restore on backspace-to-empty (mirrors Search-side autocomplete covering NTP).
+        shared
+            .map { !$0.isEmpty }
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak vc] active in vc?.setQueryActive(active) }
+            .store(in: &cancellables)
+
         parentViewController.addChild(vc)
         containerView.addSubview(vc.view)
         vc.view.translatesAutoresizingMaskIntoConstraints = false

@@ -15,7 +15,7 @@ on:
         - review
         - release
         - alpha
-        - sandbox-review
+        - sandbox-review # Builds sandboxed app for running locally (for App Store UI Tests)
       create-dmg:
         description: "Create DMG image"
         default: false

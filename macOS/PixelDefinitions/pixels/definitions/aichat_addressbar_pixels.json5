@@ -47,7 +47,7 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_suggestion_aichat_submitted_keyboard": {
         "description": "Fired when user submits a prompt from the suggestion for duck.ai by pressing enter",
@@ -83,7 +83,7 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_image_attached": {
         "description": "Fired when user attaches an image via the file picker in the duck.ai omnibar",

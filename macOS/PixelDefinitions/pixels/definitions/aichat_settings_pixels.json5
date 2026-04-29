@@ -89,7 +89,7 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_onboarding_finished_toggle_off": {
         "description": "Fired when the user completes onboarding with the Duck.ai toggle disabled",

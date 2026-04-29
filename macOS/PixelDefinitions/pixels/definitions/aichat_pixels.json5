@@ -75,7 +75,7 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_start_new_conversation": {
         "description": "Fired when user submits their first prompt in a new Duck.ai conversation",

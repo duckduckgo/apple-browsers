@@ -21,7 +21,7 @@
         "description": "Fired when user dismisses the unexpected app termination popover and chooses to restore tabs",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_unclean-exit_popup_browser-closed": {
         "description": "Fired when the browser is closed while the unexpected app termination popover is still open",

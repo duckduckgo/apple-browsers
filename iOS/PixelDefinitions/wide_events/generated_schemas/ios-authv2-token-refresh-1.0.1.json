@@ -107,9 +107,7 @@
                                 "domain": { "type": "string", "description": "The top level error domain" },
                                 "code": { "type": "integer", "description": "The top level error code" },
                                 "underlying_domain": { "type": "string", "description": "The underlying error domain" },
-                                "underlying_code": { "type": "integer", "description": "The underlying error code" },
-                                "underlying_domain2": { "type": "string", "description": "The second underlying error domain" },
-                                "underlying_code2": { "type": "integer", "description": "The second underlying error code" }
+                                "underlying_code": { "type": "integer", "description": "The underlying error code" }
                             }
                         }
                     }

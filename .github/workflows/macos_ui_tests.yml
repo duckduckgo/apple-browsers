@@ -78,7 +78,7 @@ jobs:
 
     uses: ./.github/workflows/macos_build_notarized.yml
     with:
-      release-type: "${{ inputs.build-type == 'appstore' && 'sandbox-review' || 'review' }}"
+      release-type: "${{ inputs.build-type == 'appstore' && 'sandbox-review' || 'review' }}" # Use sandbox-review release-type for App Store UI Tests
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true

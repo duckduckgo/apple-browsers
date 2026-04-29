@@ -357,7 +357,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         setInitialInputMode(effectiveInputMode)
         self.cardPosition = cardPosition
         viewController.handler.hidesVoiceButton = false
-        updateToolbarAIVoiceChat()
         isInputVisibleForKeyboard = true
         hasSubmittedPrompt = false
         resetToolsSelection()
@@ -495,8 +494,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             applyModeChange()
         }
 
-        updateToolbarAIVoiceChat()
-        refreshToolsPresentation()
+        applyToolbarPresentation()
         if didModeChange, effectiveMode == .search {
             clearAttachments()
         }
@@ -1054,6 +1052,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func applyToolbarPresentation() {
         refreshToolsPresentation()
+        updateToolbarAIVoiceChat()
     }
 
     // MARK: Tools

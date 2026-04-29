@@ -116,6 +116,24 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)
     }
 
+    @MainActor
+    func testWhenSubmitAIChatWithReasoningEffort_ThenPromptUsesTypedReasoningEffort() {
+        handler.submitChat("duckduckgo",
+                           target: .sameTab,
+                           modelId: "gpt-5.2",
+                           images: nil,
+                           mode: nil,
+                           toolChoice: nil,
+                           reasoningEffort: "low")
+
+        let prompt = promptHandler.consumeData()
+        let expectedPrompt = AIChatNativePrompt.queryPrompt("duckduckgo",
+                                                           autoSubmit: true,
+                                                           modelId: "gpt-5.2",
+                                                           reasoningEffort: .low)
+        XCTAssertEqual(prompt, expectedPrompt)
+    }
+
     // MARK: - openAiChat pixels
 
     @MainActor

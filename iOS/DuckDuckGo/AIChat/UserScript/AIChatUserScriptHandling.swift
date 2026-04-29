@@ -274,7 +274,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !fireMode,
             supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts),
-            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && !fireMode
+            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage)
         )
     }
 

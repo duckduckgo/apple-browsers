@@ -20,8 +20,6 @@ import PixelKit
 
 /**
  * This enum keeps pixels related to permissions management.
- *
- * These pixels are only fired when the newPermissionView feature flag is enabled.
  */
 enum PermissionPixel: PixelKitEvent {
 

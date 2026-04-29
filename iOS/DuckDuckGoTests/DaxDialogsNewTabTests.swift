@@ -269,4 +269,13 @@ class MockDaxDialogsSettings: DaxDialogsSettings {
     var chatPathVisitSiteSeen: Bool = false
 
     var isChatFirstPath: Bool = false
+
+    var chatPathPhase: DaxDialogs.ChatPathPhase {
+        guard isChatFirstPath && fireMessageExperimentShown else { return .none }
+        if !chatPathVisitSiteSeen { return .visitSite }
+        let seenBrowsingDialog = browsingWithTrackersShown || browsingWithoutTrackersShown || browsingMajorTrackingSiteShown
+        guard seenBrowsingDialog else { return .visitSite }
+        if !browsingFinalDialogShown { return .trackerToEOJ }
+        return .none
+    }
 }

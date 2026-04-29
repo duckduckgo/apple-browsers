@@ -631,6 +631,37 @@ class AppPrivacyConfigurationTests: XCTestCase {
         XCTAssertEqual(config.stateFor(AutofillSubfeature.credentialsAutofill), .disabled(.disabledInConfig))
     }
 
+    let exampleDisabledParentMissingSubfeatureConfig =
+    """
+    {
+        "features": {
+            "autofill": {
+                "state": "disabled",
+                "exceptions": [],
+                "features": {}
+            }
+        },
+        "unprotectedTemporary": []
+    }
+    """.data(using: .utf8)!
+
+    func testWhenCheckingSubfeatureState_andSubfeatureMissing_andParentDisabled_thenParentStateOverridesDefaultValue() {
+        let mockEmbeddedData = MockEmbeddedDataProvider(data: exampleDisabledParentMissingSubfeatureConfig, etag: "test")
+        let manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                                  fetchedData: nil,
+                                                  embeddedDataProvider: mockEmbeddedData,
+                                                  localProtection: MockDomainsProtectionStore(),
+                                                  internalUserDecider: MockInternalUserDecider())
+
+        let config = manager.privacyConfig
+
+        // Parent is disabled in config; the subfeature key isn't present. The parent kill-switch must win
+        // over `defaultValue` so a remote disable cannot be bypassed by a missing-subfeature fallback.
+        XCTAssertEqual(config.stateFor(AutofillSubfeature.credentialsAutofill), .disabled(.disabledInConfig))
+        XCTAssertFalse(config.isSubfeatureEnabled(AutofillSubfeature.credentialsAutofill, defaultValue: true))
+        XCTAssertFalse(config.isSubfeatureEnabled(AutofillSubfeature.credentialsAutofill, defaultValue: false))
+    }
+
     let exampleDisabledFeatureMinVersionOverridingSubfeatureConfig =
     """
     {

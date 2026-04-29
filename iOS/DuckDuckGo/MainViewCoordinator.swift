@@ -214,11 +214,9 @@ class MainViewCoordinator {
         unifiedToggleInputContainer.layer.removeAllAnimations()
         navigationBarCollectionView.isUserInteractionEnabled = false
 
-        // Snap the regular omnibar out (no fade) on show — intentional asymmetry with dismiss,
-        // which fades it back in. Both surfaces share the same screen space at full visual
-        // density (placeholder text + icons + segmented toggle), so crossfading on show
-        // produces double-vision. Dismiss works because the UTI is shrinking + collapsing as
-        // it fades, so densities don't compete.
+        // Snap (not fade) on show — intentional asymmetry with dismiss. Both surfaces are
+        // full-density (placeholder + icons + toggle), so crossfading shows double-vision.
+        // Dismiss can fade because the UTI is shrinking + collapsing while it fades.
         navigationBarCollectionView.alpha = 0
         unifiedToggleInputContainer.alpha = 1
         unifiedToggleInputContainer.isHidden = false

@@ -20192,6 +20192,18 @@
         }
       }
     },
+    "contextual.onboarding.try-fire-button.skip" : {
+      "comment" : "Skip button on the Fire Button contextual onboarding dialog that dismisses without firing.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skip"
+          }
+        }
+      }
+    },
     "contextual.onboarding.try-fire-button.title" : {
       "comment" : "Message of a popover on the browser that invites the user to try visiting the browser Fire Button, the parameter is another string (do not remove * and \n\n%1$@",
       "extractionState" : "extracted_with_value",

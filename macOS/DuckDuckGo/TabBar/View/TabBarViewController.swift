@@ -88,6 +88,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var aiChatMenuConfigCancellable: AnyCancellable?
     private var aiChatButtonHoverCancellable: AnyCancellable?
     private var duckAIChromeButtonsVisibilityCancellable: AnyCancellable?
+    private var didPerformInitialChromeSidebarApply = false
     private var duckAIChromeDividerInsetConstraint: NSLayoutConstraint?
     private var duckAIChromeDividerFullConstraint: NSLayoutConstraint?
     private var currentAIChatPresentationMode: AIChatPresentationMode = .hidden
@@ -343,6 +344,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         enableScrollButtons()
         subscribeToChildWindows()
         setupAccessibility()
+
+        performInitialChromeSidebarApplyIfNeeded()
+    }
+
+    private func performInitialChromeSidebarApplyIfNeeded() {
+        guard !didPerformInitialChromeSidebarApply else { return }
+        didPerformInitialChromeSidebarApply = true
+        applyChromeSidebarFeatureFlagState(isEnabled: isChromeSidebarFeatureEnabled)
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -682,13 +691,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         )
         let showFullHeight = isInteracting || currentAIChatPresentationMode != .hidden
 
+        // Always deactivate the outgoing constraint before activating the incoming one so that
+        // both height constraints on the divider are never simultaneously active.
         if showFullHeight {
-            duckAIChromeDividerInsetConstraint?.isActive = false
-            duckAIChromeDividerFullConstraint?.isActive = true
+            duckAIChromeDividerInsetConstraint?.setActive(false)
+            duckAIChromeDividerFullConstraint?.setActive(true)
         } else {
-            duckAIChromeDividerFullConstraint?.isActive = false
-            duckAIChromeDividerInsetConstraint?.isActive = true
+            duckAIChromeDividerFullConstraint?.setActive(false)
+            duckAIChromeDividerInsetConstraint?.setActive(true)
         }
+
         let colorsProvider = theme.colorsProvider
         duckAIChromeDivider?.backgroundColor = showFullHeight ?
             colorsProvider.separatorActiveColor : colorsProvider.separatorColor
@@ -777,7 +789,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             .map { [weak self] in
                 self?.isChromeSidebarFeatureEnabled ?? false
             }
-            .prepend(isChromeSidebarFeatureEnabled)
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isEnabled in

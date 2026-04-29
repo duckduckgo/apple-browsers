@@ -544,6 +544,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncIdentities
     case aiChatSync
     case simplifiedSyncSetupExperiment
+    case allowSingleDeviceOnConnectScreen
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -571,6 +572,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
+    case subscriptionPromoFireWindow
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

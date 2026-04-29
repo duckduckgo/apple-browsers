@@ -119,6 +119,11 @@ struct Launching: LaunchingHandling {
         )
 
         let duckAiNativeStorageHandler = Self.makeNativeStorageHandler(featureFlagger: featureFlagger)
+        let fireModeStorageController = FireModeNativeStorageController(
+            featureFlagger: featureFlagger,
+            consentSeedSource: duckAiNativeStorageHandler,
+            appConfigurationGroupName: Global.appConfigurationGroupName
+        )
 
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
                                                             contentBlocking: contentBlocking,
@@ -128,7 +133,8 @@ struct Launching: LaunchingHandling {
                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                             syncErrorHandler: syncService.syncErrorHandler,
                                                             webExtensionAvailability: webExtensionAvailability,
-                                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                            fireModeStorageController: fireModeStorageController)
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
         let configurationService = RemoteConfigurationService()
@@ -341,14 +347,13 @@ struct Launching: LaunchingHandling {
               let groupContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName) else {
             return nil
         }
-        let containerURL = groupContainer.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
+        let containerURL = groupContainer.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
         do {
-            let keyStoreProvider = DuckAiKeyStoreProvider(accessGroup: Global.appConfigurationGroupName)
-            return try DuckAiNativeStorageProvider(
-                containerURL: containerURL,
-                keyStoreProvider: keyStoreProvider,
-                pixelFiring: DuckAiNativeStoragePixelAdapter()
-            ).handler
+            return try DuckAiNativeStorageHandler(
+                .disk(path: containerURL,
+                      keyStoreProvider: DuckAiKeyStoreProvider(accessGroup: Global.appConfigurationGroupName),
+                      pixelFiring: DuckAiNativeStoragePixelAdapter())
+            )
         } catch {
             Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
             return nil

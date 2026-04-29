@@ -25,20 +25,30 @@ struct QRCodeView: View {
     let string: String
     let desiredSize: Int
     let backgroundColor: Color
+    let flexible: Bool
 
-    init(string: String, desiredSize: Int, backgroundColor: Color = .white) {
+    init(string: String, desiredSize: Int, backgroundColor: Color = .white, flexible: Bool = false) {
         self.string = string
         self.desiredSize = desiredSize
         self.backgroundColor = backgroundColor
+        self.flexible = flexible
     }
 
     var body: some View {
-        Image(uiImage: generateQRCode(from: string, renderSize: 2 * desiredSize, backgroundColor: backgroundColor))
+        let image = Image(uiImage: generateQRCode(from: string, renderSize: 2 * desiredSize, backgroundColor: backgroundColor))
             .resizable()
             .interpolation(.none)
             .padding(4)
             .background(backgroundColor)
-            .frame(width: CGFloat(desiredSize), height: CGFloat(desiredSize))
+
+        if flexible {
+            image
+                .aspectRatio(1, contentMode: .fit)
+                .frame(maxWidth: CGFloat(desiredSize), maxHeight: CGFloat(desiredSize))
+        } else {
+            image
+                .frame(width: CGFloat(desiredSize), height: CGFloat(desiredSize))
+        }
     }
 
     func generateQRCode(from text: String, renderSize: Int, backgroundColor: Color) -> UIImage {

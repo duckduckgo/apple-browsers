@@ -17,6 +17,31 @@
                     "QuickActionWidget-systemSmall,FavoritesWidget-systemLarge",
                     "VPNStatusWidget-systemSmall,QuickActionsWidget-systemSmall,FavoritesWidget-systemMedium,FavoritesWidget-systemLarge"
                 ]
+            },
+            {
+                "key": "privacy_config_embedded_etag",
+                "description": "ETag of the privacy configuration bundled with the app, or 'none' if unavailable",
+                "type": "string"
+            },
+            {
+                "key": "privacy_config_fetched_etag",
+                "description": "ETag of the remotely fetched privacy configuration, or 'none' if unavailable",
+                "type": "string"
+            },
+            {
+                "key": "current_etag",
+                "description": "Identifier of the privacy configuration currently in use",
+                "type": "string"
+            },
+            {
+                "key": "is_internal",
+                "description": "Whether the user is flagged as an internal user",
+                "type": "boolean"
+            },
+            {
+                "key": "feature_state_enabled",
+                "description": "Whether the widgetReporting subfeature is enabled in the current privacy configuration",
+                "type": "boolean"
             }
         ]
     },

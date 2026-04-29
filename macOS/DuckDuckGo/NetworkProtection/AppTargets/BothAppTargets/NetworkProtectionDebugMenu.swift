@@ -53,6 +53,11 @@ final class NetworkProtectionDebugMenu: NSMenu {
     private let disableRekeyingMenuItem = NSMenuItem(title: "Disable Rekeying", action: #selector(NetworkProtectionDebugMenu.toggleRekeyingDisabled))
 
     private let excludeLocalNetworksMenuItem = NSMenuItem(title: "excludeLocalNetworks", action: #selector(NetworkProtectionDebugMenu.toggleShouldExcludeLocalRoutes))
+    private let excludeAPNsMenuItem = NSMenuItem(title: "excludeAPNs", action: #selector(NetworkProtectionDebugMenu.toggleExcludeAPNs))
+    private let excludeCellularServicesMenuItem = NSMenuItem(title: "excludeCellularServices", action: #selector(NetworkProtectionDebugMenu.toggleExcludeCellularServices))
+    private let excludeDeviceCommunicationMenuItem = NSMenuItem(title: "excludeDeviceCommunication", action: #selector(NetworkProtectionDebugMenu.toggleExcludeDeviceCommunication))
+
+    private let resetTunnelSettingsMenuItem = NSMenuItem(title: "Reset to Defaults", action: #selector(NetworkProtectionDebugMenu.resetTunnelSettings))
 
     private let networkProtectionDeviceManager: NetworkProtectionDeviceManager
     private let pinningManager: PinningManager
@@ -118,6 +123,11 @@ final class NetworkProtectionDebugMenu: NSMenu {
             }
 
             NSMenuItem(title: "Tunnel Settings") {
+                resetTunnelSettingsMenuItem
+                    .targetting(self)
+
+                NSMenuItem.separator()
+
                 shouldIncludeAllNetworksMenuItem
                     .targetting(self)
 
@@ -125,6 +135,15 @@ final class NetworkProtectionDebugMenu: NSMenu {
                     .targetting(self)
 
                 shouldEnforceRoutesMenuItem
+                    .targetting(self)
+
+                excludeAPNsMenuItem
+                    .targetting(self)
+
+                excludeCellularServicesMenuItem
+                    .targetting(self)
+
+                excludeDeviceCommunicationMenuItem
                     .targetting(self)
             }
 
@@ -134,6 +153,9 @@ final class NetworkProtectionDebugMenu: NSMenu {
                 .targetting(self)
 
             NSMenuItem(title: "Log Feedback Metadata to Console", action: #selector(NetworkProtectionDebugMenu.logFeedbackMetadataToConsole))
+                .targetting(self)
+
+            NSMenuItem(title: "Export Diagnostics…", action: #selector(NetworkProtectionDebugMenu.exportDiagnostics))
                 .targetting(self)
 
             NSMenuItem(title: "Onboarding")
@@ -318,6 +340,27 @@ final class NetworkProtectionDebugMenu: NSMenu {
         }
     }
 
+    @objc func exportDiagnostics(_ sender: Any?) {
+        Task { @MainActor in
+            do {
+                let exporter = NetworkProtectionDiagnosticsExporter(subscriptionManager: Application.appDelegate.subscriptionManager)
+                let diagnosticsURLs = try await exporter.exportToDesktop()
+
+                let alert = NSAlert()
+                alert.messageText = "VPN diagnostics exported"
+                alert.informativeText = "Saved overview and log files to your Desktop."
+                alert.addButton(withTitle: "Show in Finder")
+                alert.addButton(withTitle: "OK")
+
+                if await alert.runModal() == .alertFirstButtonReturn {
+                    NSWorkspace.shared.activateFileViewerSelecting(diagnosticsURLs)
+                }
+            } catch {
+                await NSAlert(error: error).runModal()
+            }
+        }
+    }
+
     /// Sets the selected server.
     ///
     @objc func setSelectedServer(_ menuItem: NSMenuItem) {
@@ -377,6 +420,42 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     @objc func toggleShouldExcludeLocalRoutes(_ sender: Any?) {
         settings.excludeLocalNetworks.toggle()
+
+        Task {
+            try await Task.sleep(interval: 0.1)
+            try await debugUtilities.restartAdapter()
+        }
+    }
+
+    @objc func toggleExcludeAPNs(_ sender: Any?) {
+        settings.excludeAPNs.toggle()
+
+        Task {
+            try await Task.sleep(interval: 0.1)
+            try await debugUtilities.restartAdapter()
+        }
+    }
+
+    @objc func toggleExcludeCellularServices(_ sender: Any?) {
+        settings.excludeCellularServices.toggle()
+
+        Task {
+            try await Task.sleep(interval: 0.1)
+            try await debugUtilities.restartAdapter()
+        }
+    }
+
+    @objc func toggleExcludeDeviceCommunication(_ sender: Any?) {
+        settings.excludeDeviceCommunication.toggle()
+
+        Task {
+            try await Task.sleep(interval: 0.1)
+            try await debugUtilities.restartAdapter()
+        }
+    }
+
+    @objc func resetTunnelSettings(_ sender: Any?) {
+        settings.resetTunnelFlagsToDefaults()
 
         Task {
             try await Task.sleep(interval: 0.1)
@@ -546,6 +625,29 @@ final class NetworkProtectionDebugMenu: NSMenu {
         shouldIncludeAllNetworksMenuItem.state = settings.includeAllNetworks ? .on : .off
         excludeLocalNetworksMenuItem.state = settings.excludeLocalNetworks ? .on : .off
         disableRekeyingMenuItem.state = settings.disableRekeying ? .on : .off
+
+        if #available(macOS 13.3, *) {
+            excludeAPNsMenuItem.state = settings.excludeAPNs ? .on : .off
+            excludeAPNsMenuItem.isEnabled = true
+            excludeCellularServicesMenuItem.state = settings.excludeCellularServices ? .on : .off
+            excludeCellularServicesMenuItem.isEnabled = true
+        } else {
+            excludeAPNsMenuItem.title = "excludeAPNs (macOS 13.3+)"
+            excludeAPNsMenuItem.state = .off
+            excludeAPNsMenuItem.isEnabled = false
+            excludeCellularServicesMenuItem.title = "excludeCellularServices (macOS 13.3+)"
+            excludeCellularServicesMenuItem.state = .off
+            excludeCellularServicesMenuItem.isEnabled = false
+        }
+
+        if #available(macOS 14.4, *) {
+            excludeDeviceCommunicationMenuItem.state = settings.excludeDeviceCommunication ? .on : .off
+            excludeDeviceCommunicationMenuItem.isEnabled = true
+        } else {
+            excludeDeviceCommunicationMenuItem.title = "excludeDeviceCommunication (macOS 14.4+)"
+            excludeDeviceCommunicationMenuItem.state = .off
+            excludeDeviceCommunicationMenuItem.isEnabled = false
+        }
     }
 
     private func updateUpsellMenuToggleTitle() {

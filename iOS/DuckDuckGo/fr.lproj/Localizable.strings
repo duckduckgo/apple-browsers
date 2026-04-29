@@ -213,6 +213,24 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Prends une photo";
 
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Pour les tâches analytiques";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Raisonnement étendu";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Réponds rapidement";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Rapide";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Pour des tâches complexes";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Raisonnement";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Personnaliser les réponses";
 
@@ -2181,7 +2199,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Résoudre les problèmes des sites Web";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Les onglets Fire Tabs sont isolés des autres données du navigateur, et leurs données sont supprimées lorsque vous les fermez tous. Ils sont dotés de la même protection contre le pistage que les autres onglets.";
+"fire.mode.empty.state.description" = "Les onglets Fire sont isolés des autres données du navigateur. Leurs données sont supprimées lorsque vous les fermez tous. Ils sont dotés de la même protection contre le pistage que les autres onglets.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Nouveau Fire Tab";
@@ -2193,7 +2211,7 @@
 "fire.mode.menu.promotion.badge" = "Nouveau";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Naviguez sans enregistrer l’historique local ni vous connecter à des sites avec un autre compte.";
+"fire.mode.ntp.promotion.description" = "Nouveau ! Naviguez sans enregistrer l'historique local ni vous connecter à des sites avec un autre compte.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Pas maintenant";
@@ -2203,6 +2221,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Essayez les Onglets Fire";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Essayez les onglets Fire pour naviguer sans enregistrer l'historique local.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Nouveau : les onglets Fire";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Onglet Fire";
@@ -2328,6 +2352,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Rechercher ou saisir une adresse";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Nouveau Fire Tab";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Nouvel onglet";
@@ -4177,7 +4204,7 @@
 "sync.delete.all.confirm.action" = "Supprimer les données du serveur";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Tous les appareils seront déconnectés et vos données synchronisées seront supprimées du serveur.";
+"sync.delete.all.confirm.message" = "Votre sauvegarde sera supprimée du serveur. Tous les appareils seront déconnectés de la synchronisation, mais rien ne sera supprimé sur aucun appareil.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Supprimer les données du serveur ?";

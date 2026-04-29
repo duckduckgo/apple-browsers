@@ -112,6 +112,22 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("getAIChatNativeConfigValues propagates fire-window provider value", .timeLimit(.minutes(1)))
+    func testWhenFireWindowProviderReturnsTrueThenGetAIChatNativeConfigValuesPassesTrue() async {
+        handler.isFireWindowProvider = { true }
+        _ = await handler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock())
+        #expect(messageHandler.getNativeConfigValuesCalls == [true])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("getAIChatNativeConfigValues defaults to false when no provider set", .timeLimit(.minutes(1)))
+    func testWhenFireWindowProviderIsNilThenGetAIChatNativeConfigValuesPassesFalse() async {
+        handler.isFireWindowProvider = nil
+        _ = await handler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock())
+        #expect(messageHandler.getNativeConfigValuesCalls == [false])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("getAIChatNativePrompt calls messageHandler", .timeLimit(.minutes(1)))
     func testThatGetAIChatNativePromptCallsMessageHandler() async {
         _ = await handler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock())
@@ -767,9 +783,11 @@ struct AIChatUserScriptHandlerTests {
 
     // MARK: - Sync helpers
 
-    private func makeFeatureFlagger(aiChatSyncEnabled: Bool) -> MockFeatureFlagger {
+    private func makeFeatureFlagger(aiChatSyncEnabled: Bool = false,
+                                    aiChatNativeStorageEnabled: Bool = false) -> MockFeatureFlagger {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub["aiChatSync"] = aiChatSyncEnabled
+        featureFlagger.featuresStub["aiChatNativeStorage"] = aiChatNativeStorageEnabled
         return featureFlagger
     }
 
@@ -868,6 +886,26 @@ struct AIChatUserScriptHandlerTests {
 
         #expect(handler.getNativeConfigValues(isFireWindow: false).supportsAIChatSync == false)
         #expect(handler.getNativeConfigValues(isFireWindow: true).supportsAIChatSync == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("When aiChatNativeStorage is enabled and not a fire window, supportsNativeStorage is true", .timeLimit(.minutes(1)))
+    func testWhenAIChatNativeStorageEnabledAndNotFireWindowThenSupportsNativeStorageIsTrue() {
+        let featureFlagger = makeFeatureFlagger(aiChatNativeStorageEnabled: true)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared)
+
+        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeStorage == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("When aiChatNativeStorage is enabled and is a fire window, supportsNativeStorage is true", .timeLimit(.minutes(1)))
+    func testWhenAIChatNativeStorageEnabledAndFireWindowThenSupportsNativeStorageIsTrue() {
+        let featureFlagger = makeFeatureFlagger(aiChatNativeStorageEnabled: true)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared)
+
+        #expect(handler.getNativeConfigValues(isFireWindow: true).supportsNativeStorage == true)
     }
 }
 // swiftlint:enable inclusive_language

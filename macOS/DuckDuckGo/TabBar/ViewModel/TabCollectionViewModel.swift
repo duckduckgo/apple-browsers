@@ -19,10 +19,12 @@
 import AppKit
 import Combine
 import Common
+import FeatureFlags
 import Foundation
 import History
 import os.log
 import PixelKit
+import PrivacyConfig
 import WebKit
 
 /**
@@ -162,6 +164,7 @@ final class TabCollectionViewModel: NSObject {
         case noTabSelected
     }
 
+    private let featureFlagger: FeatureFlagger
     private let dataClearingPixelsReporter: DataClearingPixelsReporter
 
     init(
@@ -172,6 +175,7 @@ final class TabCollectionViewModel: NSObject {
         startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
         tabsPreferences: TabsPreferences = NSApp.delegateTyped.tabsPreferences,
         accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         windowControllersManager: WindowControllersManagerProtocol? = nil,
         dataClearingPixelsReporter: DataClearingPixelsReporter = .init()
     ) {
@@ -182,6 +186,7 @@ final class TabCollectionViewModel: NSObject {
         self.startupPreferences = startupPreferences
         self.tabsPreferences = tabsPreferences
         self.accessibilityPreferences = accessibilityPreferences
+        self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
         self.dataClearingPixelsReporter = DataClearingPixelsReporter()
         super.init()
@@ -440,13 +445,18 @@ final class TabCollectionViewModel: NSObject {
         tabCollection.append(tab: tab)
         if tab.content == .newtab {
             NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
+            if isBurner, featureFlagger.isFeatureOn(.subscriptionPromoFireWindow) {
+                var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
+                if persistor.fireTabVisitCount < SubscriptionPromoConstants.requiredVisitCount {
+                    persistor.fireTabVisitCount += 1
+                }
+            }
         }
         let insertionIndex = tabCollection.tabs.indices.index(before: tabCollection.tabs.endIndex)
+        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
+        delegate?.tabCollectionViewModelDidAppend(self, selected: selected)
         if selected {
             selectUnpinnedTab(at: insertionIndex, forceChange: forceChange)
-            delegate?.tabCollectionViewModelDidAppend(self, selected: true)
-        } else {
-            delegate?.tabCollectionViewModelDidAppend(self, selected: false)
         }
         return insertionIndex
     }
@@ -469,12 +479,12 @@ final class TabCollectionViewModel: NSObject {
         }
 
         tabCollection.append(tabs: tabs)
+        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
+        delegate?.tabCollectionViewModelDidMultipleChanges(self)
         if shouldSelectLastTab {
             let newSelectionIndex = tabCollection.tabs.count - 1
             selectUnpinnedTab(at: newSelectionIndex)
         }
-
-        delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
     func append(tabs: [Tab], andSelect shouldSelectLastTab: Bool) {
@@ -505,10 +515,15 @@ final class TabCollectionViewModel: NSObject {
         }
 
         tabCollection.insert(tab, at: index.item)
+        // Notify the delegate before updating selection: setting `selectionIndex`
+        // publishes `selectedTabViewModel`, which can synchronously re-enter via
+        // `TabLazyLoader` → `materialize` → `replaceTab` → `didReplaceTabAt` and
+        // call `reloadItems` on the collection view while it still has the
+        // pre-insert item count, raising NSInternalInconsistencyException.
+        delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
         if selected {
             select(at: index)
         }
-        delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
     }
 
     func insert(_ tab: Tab, at index: TabIndex, selected: Bool = true) {

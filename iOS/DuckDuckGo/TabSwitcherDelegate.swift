@@ -22,7 +22,7 @@ import Core
 protocol TabSwitcherDelegate: AnyObject {
 
     func tabSwitcherDidRequestNewTab(tabSwitcher: TabSwitcherViewController)
-    func tabSwitcherDidRequestNewFireTab(tabSwitcher: TabSwitcherViewController)
+    func tabSwitcherDidRequestNewFireTab(tabSwitcher: TabSwitcherViewController, source: FireModeSwitchSource)
     func tabSwitcherDidRequestNewNormalTab(tabSwitcher: TabSwitcherViewController)
 
     /// Called when the tab switcher is dismissed. Carries the final browsing mode

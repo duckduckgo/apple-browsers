@@ -28,7 +28,7 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
         /// Fires when the bubble transitions in-place to the highFive content,
         /// so the host can swap the background illustration to match.
-        var onContentTransition: (() -> Void)? = nil
+        let onContentTransition: (() -> Void)?
 
         @State private var showNextScreen: Bool = false
 

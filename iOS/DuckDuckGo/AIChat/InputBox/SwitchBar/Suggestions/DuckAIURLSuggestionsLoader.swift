@@ -41,6 +41,10 @@ final class DuckAIURLSuggestionsLoader {
     /// when a newer query has already taken its place. `SuggestionLoader` doesn't expose
     /// cancellation, so out-of-order completions would otherwise overwrite fresh results.
     private var latestDispatchedQuery: String?
+    /// Query string of the most recently settled fetch (success or empty-skip). Callers
+    /// compare this against the current text to detect "fetcher hasn't caught up yet" and
+    /// treat the published `topURLs` as still-pending.
+    private(set) var lastCompletedFetchQuery: String?
     private var cancellables = Set<AnyCancellable>()
 
     init(dataSource: AutocompleteSuggestionsDataSource, maxResults: Int = defaultMaxResults) {
@@ -73,6 +77,7 @@ final class DuckAIURLSuggestionsLoader {
             // Avoid re-publishing an already-empty list — `@Published` emits even when value
             // doesn't change, which would trigger an unnecessary downstream reload.
             if !topURLs.isEmpty { topURLs = [] }
+            lastCompletedFetchQuery = query
             return
         }
 
@@ -85,6 +90,7 @@ final class DuckAIURLSuggestionsLoader {
             // Discard out-of-order completions: a later query has already been dispatched.
             guard self.latestDispatchedQuery == query else { return }
             guard error == nil, let result else { return }
+            self.lastCompletedFetchQuery = query
             self.topURLs = Self.urlOnlyTopHits(from: result, max: self.maxResults)
         }
     }
@@ -93,6 +99,7 @@ final class DuckAIURLSuggestionsLoader {
         loader = nil
         cancellables.removeAll()
         latestDispatchedQuery = nil
+        lastCompletedFetchQuery = nil
         topURLs = []
     }
 }

@@ -63,6 +63,10 @@ final class AIChatHistoryManager {
 
     var titleLayoutConfiguration: AIChatHistoryListViewController.TitleLayoutConfiguration?
     private(set) var hasCompletedInitialFetch = false
+    /// Query string of the most recently completed (non-cancelled) fetch. Callers compare
+    /// this against the current text to detect "fetcher hasn't caught up yet" and treat
+    /// derived state (e.g. `hasSuggestions`) as still-pending.
+    private(set) var lastCompletedFetchQuery: String?
     private var cancellables = Set<AnyCancellable>()
     private var currentFetchTask: Task<Void, Never>?
 
@@ -168,6 +172,7 @@ final class AIChatHistoryManager {
             guard !Task.isCancelled else { return }
             viewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
             hasCompletedInitialFetch = true
+            lastCompletedFetchQuery = query
             let hasSuggestions = !(suggestions.pinned.isEmpty && suggestions.recent.isEmpty)
             onFetchCompleted?(query, hasSuggestions)
         }
@@ -177,6 +182,7 @@ final class AIChatHistoryManager {
     func tearDown() {
         currentFetchTask?.cancel()
         currentFetchTask = nil
+        lastCompletedFetchQuery = nil
         cancellables.removeAll()
 
         if let historyVC = historyViewController {

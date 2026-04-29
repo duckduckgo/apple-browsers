@@ -55,6 +55,15 @@ final class DuckAISuggestionsCoordinator {
     /// (e.g., to suppress the Dax empty state during the brief loading window).
     var hasCompletedInitialChatFetch: Bool { chatManager.hasCompletedInitialFetch }
 
+    /// True when both fetchers have settled with results for `query`. Container view
+    /// controllers use this to suppress the Duck.ai empty state (Dax logo) while the
+    /// fetchers are still catching up to a recent text change — otherwise the user can see
+    /// a brief flash when one fetcher's result for the new query lands ahead of the other's.
+    func hasSettled(forQuery query: String) -> Bool {
+        chatManager.lastCompletedFetchQuery == query
+            && urlLoader.lastCompletedFetchQuery == query
+    }
+
     /// True when the suggestions surface has anything to render for the current query.
     /// Any non-empty query renders at least the always-visible "Search DuckDuckGo" row.
     var hasContent: Bool {

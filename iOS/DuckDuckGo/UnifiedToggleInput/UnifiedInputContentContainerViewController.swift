@@ -674,8 +674,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
         let isShowingDuckAISuggestions = duckAISuggestionsCoordinator?.hasContent == true
+        // Suppress the Duck.ai empty state (Dax) whenever fetchers haven't settled for the
+        // current query — covers both the initial-load window and the keystroke-to-result lag,
+        // which would otherwise cause Dax to flash when the user backspaces to empty after
+        // a no-match query (one fetcher's empty result lands before the other's).
         let isDuckAISuggestionsPending = duckAISuggestionsCoordinator != nil
-            && duckAISuggestionsCoordinator?.hasCompletedInitialChatFetch != true
+            && duckAISuggestionsCoordinator?.hasSettled(forQuery: switchBarHandler.currentText) != true
             && switchBarHandler.currentToggleState == .aiChat
             && !switchBarHandler.isFireTab
 

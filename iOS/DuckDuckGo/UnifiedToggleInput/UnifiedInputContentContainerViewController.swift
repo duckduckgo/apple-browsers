@@ -261,21 +261,26 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         escapeHatchModel = model
         escapeHatchTapHandler = onTapped
         suggestionTrayManager?.setEscapeHatch(model)
-        // Fire tabs render their own dedicated empty state via DaxLogoManager — the hatch
-        // is suppressed there to avoid stacking two competing affordances.
+        // Fire tabs render their own empty state via DaxLogoManager — suppress the hatch to avoid stacking affordances.
         let duckAIHatchModel = switchBarHandler.isFireTab ? nil : model
         let duckAIHatchHandler = switchBarHandler.isFireTab ? nil : onTapped
         duckAISuggestionsCoordinator?.setEscapeHatch(duckAIHatchModel, onTapped: duckAIHatchHandler)
         updateEscapeHatchTopInset()
     }
 
-    /// Updates the suggestion tray's top inset to make room for the escape hatch when present.
+    /// Bottom-bar UTI floats the (x) dismiss button at the top — push the whole Duck.ai list down so it doesn't overlap.
+    private var duckAITopInset: CGFloat {
+        isUsingTopBarPosition ? 0 : Metrics.escapeHatchBaseTopInset
+    }
+
+    /// Updates both surfaces' top insets so the (x) dismiss button doesn't overlap their content in bottom-bar mode.
     private func updateEscapeHatchTopInset() {
-        let inset = Self.computeSuggestionTrayEscapeHatchInset(
+        let trayInset = Self.computeSuggestionTrayEscapeHatchInset(
             hasEscapeHatch: escapeHatchModel != nil,
             isBottomBar: !isUsingTopBarPosition
         )
-        suggestionTrayManager?.setAdditionalTopInset(inset)
+        suggestionTrayManager?.setAdditionalTopInset(trayInset)
+        duckAISuggestionsCoordinator?.setAdditionalTopInset(duckAITopInset)
     }
 
     static func computeSuggestionTrayEscapeHatchInset(hasEscapeHatch: Bool,
@@ -526,6 +531,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
 
         swipeContainerManager.installDuckAISuggestions(using: coordinator, textPublisher: switchBarHandler.currentTextPublisher)
+        coordinator.setAdditionalTopInset(duckAITopInset)
         if let escapeHatchModel, !switchBarHandler.isFireTab {
             coordinator.setEscapeHatch(escapeHatchModel, onTapped: escapeHatchTapHandler)
         }

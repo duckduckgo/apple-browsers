@@ -93,50 +93,33 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         XCTAssertFalse(vc.children.first === firstChild, "second call should replace the previous hosting controller")
     }
 
-    // MARK: - contentInset switching
-
-    func test_setEscapeHatch_withModel_appliesWithHatchInset() throws {
-        let vc = makeViewController()
-        let table = try tableView(in: vc)
-        XCTAssertEqual(table.contentInset.top, -20, "without-hatch inset is the lazy initializer default")
-
-        vc.setEscapeHatch(.testFixture, onTapped: {})
-
-        XCTAssertEqual(table.contentInset.top, 0,
-                       "with hatch present, inset switches so the header sits ~16pt below UTI")
-    }
-
-    func test_setEscapeHatch_withNil_restoresWithoutHatchInset() throws {
-        let vc = makeViewController()
-        vc.setEscapeHatch(.testFixture, onTapped: {})
-        XCTAssertEqual(try tableView(in: vc).contentInset.top, 0)
-
-        vc.setEscapeHatch(nil, onTapped: nil)
-
-        XCTAssertEqual(try tableView(in: vc).contentInset.top, -20)
-    }
-
     // MARK: - Live sections
     // Earlier stale-section caching caused relayout crashes — guard against regression by asserting numberOfSections directly.
 
     func test_liveSections_emptyEverything_returnsZero() throws {
         let harness = makeHarness(query: "")
+        let table = try tableView(in: harness.viewController)
+        table.reloadData()
 
-        XCTAssertEqual(try tableView(in: harness.viewController).numberOfSections, 0)
+        XCTAssertEqual(table.numberOfSections, 0)
     }
 
     func test_liveSections_queryOnly_returnsSearchRowOnly() throws {
         let harness = makeHarness(query: "x")
+        let table = try tableView(in: harness.viewController)
+        table.reloadData()
 
-        XCTAssertEqual(try tableView(in: harness.viewController).numberOfSections, 1,
+        XCTAssertEqual(table.numberOfSections, 1,
                        "non-empty query → always-visible Search-DuckDuckGo row")
     }
 
     func test_liveSections_chatsOnly_returnsChatsAndSearch() throws {
         let harness = makeHarness(query: "x")
         harness.chatViewModel.setChats(pinned: [], recent: [makeChat(id: "1")])
+        let table = try tableView(in: harness.viewController)
+        table.reloadData()
 
-        XCTAssertEqual(try tableView(in: harness.viewController).numberOfSections, 2)
+        XCTAssertEqual(table.numberOfSections, 2)
     }
 
     func test_liveSections_allThree_returnsThree() throws {
@@ -145,8 +128,10 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         harness.urlLoader.publishURLsForTesting([
             .website(url: try XCTUnwrap(URL(string: "https://example.com/")))
         ])
+        let table = try tableView(in: harness.viewController)
+        table.reloadData()
 
-        XCTAssertEqual(try tableView(in: harness.viewController).numberOfSections, 3)
+        XCTAssertEqual(table.numberOfSections, 3)
     }
 }
 

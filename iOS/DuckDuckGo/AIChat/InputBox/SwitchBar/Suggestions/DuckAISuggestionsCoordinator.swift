@@ -113,6 +113,10 @@ final class DuckAISuggestionsCoordinator {
         viewController?.setEscapeHatch(model, onTapped: onTapped)
     }
 
+    func setAdditionalTopInset(_ inset: CGFloat) {
+        viewController?.setAdditionalTopInset(inset)
+    }
+
     func tearDown() {
         cancellables.removeAll()
         onContentChanged = nil

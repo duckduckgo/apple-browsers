@@ -49,13 +49,14 @@ final class DuckAISuggestionsViewController: UIViewController {
         static let cellHeight: CGFloat = 44
         static let cellHeightWithSubtitle: CGFloat = 58
         static let horizontalInset: CGFloat = 16
-        // Without-hatch: cancels insetGrouped's first-section padding so the first card sits flush below UTI.
-        // With-hatch: 0; the header view's internal top padding provides equivalent breathing room.
-        static let topContentInsetWithoutHatch: CGFloat = -20
-        static let topContentInsetWithHatch: CGFloat = 0
-        static let escapeHatchHeaderHeight: CGFloat = 72
+        /// Extra clearance above the natural insetGrouped top padding so the first cell stays below the floating (x) dismiss button.
+        static let topContentInset: CGFloat = 12
+        static let escapeHatchCardHeight: CGFloat = 72
         static let escapeHatchTopPadding: CGFloat = 16
         static let escapeHatchBottomPadding: CGFloat = 16
+        static let recentChatsHeaderHeight: CGFloat = 40
+        /// Gap between the "Recent Chats" title baseline and the first chat cell.
+        static let recentChatsHeaderBottomPadding: CGFloat = 16
     }
 
     weak var delegate: DuckAISuggestionsViewControllerDelegate?
@@ -79,10 +80,9 @@ final class DuckAISuggestionsViewController: UIViewController {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
-        tableView.sectionFooterHeight = 0
         // Without this, iPad readable-width pulls cells narrower than the UTI input above.
         tableView.cellLayoutMarginsFollowReadableWidth = false
-        tableView.contentInset = UIEdgeInsets(top: Constants.topContentInsetWithoutHatch, left: 0, bottom: 0, right: 0)
+        tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
         return tableView
     }()
 
@@ -90,8 +90,16 @@ final class DuckAISuggestionsViewController: UIViewController {
     private var urls: [Suggestion] { urlLoader.topURLs }
     private var hasSearchRow: Bool { !queryProvider().isEmpty }
 
+    private struct EscapeHatch: Equatable {
+        let model: EscapeHatchModel
+        let onTapped: () -> Void
+        static func == (lhs: EscapeHatch, rhs: EscapeHatch) -> Bool { lhs.model == rhs.model }
+    }
+
     private var escapeHatchHostingController: UIHostingController<ReturnToTabCard>?
-    private var currentEscapeHatchModel: EscapeHatchModel?
+    private var currentEscapeHatch: EscapeHatch?
+    /// Extra top inset applied to the whole table — used to clear the floating (x) dismiss button when bottom-bar UTI is active.
+    private var additionalTopInset: CGFloat = 0
 
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
@@ -136,9 +144,13 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     /// Returns the section at `indexPath` if the path is still in range; nil for stale paths during animated relayouts.
     private func resolvedSection(at indexPath: IndexPath) -> Section? {
+        resolvedSection(at: indexPath.section)
+    }
+
+    private func resolvedSection(at section: Int) -> Section? {
         let live = liveSections
-        guard indexPath.section < live.count else { return nil }
-        return live[indexPath.section]
+        guard section < live.count else { return nil }
+        return live[section]
     }
 
     private func reload() {
@@ -153,33 +165,40 @@ final class DuckAISuggestionsViewController: UIViewController {
     /// Installs/removes the "Return to tab" card above all sections. No-op when the model hasn't changed
     /// — called repeatedly from container layout/refresh paths so a tear-down + rebuild on every call is needless churn.
     func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
-        guard model != currentEscapeHatchModel else { return }
-        currentEscapeHatchModel = model
+        let next: EscapeHatch? = (model.flatMap { m in onTapped.map { EscapeHatch(model: m, onTapped: $0) } })
+        guard next != currentEscapeHatch else { return }
+        currentEscapeHatch = next
+        rebuildHatch()
+    }
 
+    /// Pushes the whole table down to clear the floating (x) dismiss button. Called by the container when bar position changes.
+    func setAdditionalTopInset(_ inset: CGFloat) {
+        guard inset != additionalTopInset else { return }
+        additionalTopInset = inset
+        updateContentInset()
+    }
+
+    private func rebuildHatch() {
         if let existing = escapeHatchHostingController {
             existing.willMove(toParent: nil)
             existing.view.removeFromSuperview()
             existing.removeFromParent()
             escapeHatchHostingController = nil
         }
-
-        if let model, let onTapped {
-            let hosting = UIHostingController(rootView: ReturnToTabCard(model: model, onTap: onTapped))
+        if let hatch = currentEscapeHatch {
+            let hosting = UIHostingController(rootView: ReturnToTabCard(model: hatch.model, onTap: hatch.onTapped))
             hosting.view.backgroundColor = .clear
             addChild(hosting)
             escapeHatchHostingController = hosting
-            updateTableHeader()
             hosting.didMove(toParent: self)
-        } else {
-            updateTableHeader()
         }
-        updateContentInsetForHatch()
+        updateTableHeader()
+        updateContentInset()
     }
 
-    private func updateContentInsetForHatch() {
+    private func updateContentInset() {
         guard isViewLoaded else { return }
-        let top = (escapeHatchHostingController != nil) ? Constants.topContentInsetWithHatch : Constants.topContentInsetWithoutHatch
-        tableView.contentInset = UIEdgeInsets(top: top, left: 0, bottom: 0, right: 0)
+        tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset + additionalTopInset, left: 0, bottom: 0, right: 0)
     }
 
     private func updateTableHeader() {
@@ -190,7 +209,7 @@ final class DuckAISuggestionsViewController: UIViewController {
             return
         }
 
-        let totalHeight = Constants.escapeHatchTopPadding + Constants.escapeHatchHeaderHeight + Constants.escapeHatchBottomPadding
+        let totalHeight = Constants.escapeHatchTopPadding + Constants.escapeHatchCardHeight + Constants.escapeHatchBottomPadding
         let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width
         let container = UIView(frame: CGRect(x: 0, y: 0, width: width, height: totalHeight))
         container.backgroundColor = UIColor(designSystemColor: .background)
@@ -211,7 +230,7 @@ final class DuckAISuggestionsViewController: UIViewController {
             minimumLeading,
             minimumTrailing,
             hosting.view.topAnchor.constraint(equalTo: container.topAnchor, constant: Constants.escapeHatchTopPadding),
-            hosting.view.heightAnchor.constraint(equalToConstant: Constants.escapeHatchHeaderHeight)
+            hosting.view.heightAnchor.constraint(equalToConstant: Constants.escapeHatchCardHeight)
         ])
 
         UIView.performWithoutAnimation { tableView.tableHeaderView = container }
@@ -311,12 +330,11 @@ extension DuckAISuggestionsViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int { liveSections.count }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        let live = liveSections
-        guard section < live.count else { return 0 }
-        switch live[section] {
+        switch resolvedSection(at: section) {
         case .chats: return chats.count
         case .urls: return urls.count
         case .search: return 1
+        case nil: return 0
         }
     }
 
@@ -362,8 +380,33 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
         }
     }
 
-    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat { 0 }
-    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat { 0 }
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        guard resolvedSection(at: section) == .chats, !hasSearchRow else { return 0 }
+        return Constants.recentChatsHeaderHeight
+    }
+
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard resolvedSection(at: section) == .chats, !hasSearchRow else { return nil }
+        return makeRecentChatsHeaderView()
+    }
+
+    private func makeRecentChatsHeaderView() -> UIView {
+        let container = UIView()
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = UserText.aiChatRecentChatsSectionTitle
+        label.font = UIFont.daxTitle3()
+        label.textColor = UIColor(designSystemColor: .textPrimary)
+        container.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: container.layoutMarginsGuide.leadingAnchor),
+            label.trailingAnchor.constraint(lessThanOrEqualTo: container.layoutMarginsGuide.trailingAnchor),
+            label.topAnchor.constraint(equalTo: container.topAnchor),
+            label.bottomAnchor.constraint(lessThanOrEqualTo: container.bottomAnchor, constant: -Constants.recentChatsHeaderBottomPadding)
+        ])
+        return container
+    }
+
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? { nil }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

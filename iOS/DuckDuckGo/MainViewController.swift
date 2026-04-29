@@ -4213,6 +4213,7 @@ extension MainViewController: OmniBarDelegate {
         let wasAfterIdle = currentTab?.openedAfterIdle ?? false
         ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
         viewCoordinator.omniBar.endEditing()
+        unifiedToggleInputCoordinator?.deactivateToOmnibar()
         if let currentTab {
             closeTab(currentTab)
         }

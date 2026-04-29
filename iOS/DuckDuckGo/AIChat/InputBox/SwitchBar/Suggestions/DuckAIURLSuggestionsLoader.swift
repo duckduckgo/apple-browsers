@@ -37,6 +37,10 @@ final class DuckAIURLSuggestionsLoader {
     private let dataSource: AutocompleteSuggestionsDataSource
     private let maxResults: Int
     private var loader: SuggestionLoader?
+    /// Records the most recently dispatched query so a slow callback can be discarded
+    /// when a newer query has already taken its place. `SuggestionLoader` doesn't expose
+    /// cancellation, so out-of-order completions would otherwise overwrite fresh results.
+    private var latestDispatchedQuery: String?
     private var cancellables = Set<AnyCancellable>()
 
     init(dataSource: AutocompleteSuggestionsDataSource, maxResults: Int = defaultMaxResults) {
@@ -64,6 +68,7 @@ final class DuckAIURLSuggestionsLoader {
     }
 
     func fetch(query: String) {
+        latestDispatchedQuery = query
         guard !query.isEmpty else {
             // Avoid re-publishing an already-empty list — `@Published` emits even when value
             // doesn't change, which would trigger an unnecessary downstream reload.
@@ -77,6 +82,8 @@ final class DuckAIURLSuggestionsLoader {
         )
         loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
             guard let self else { return }
+            // Discard out-of-order completions: a later query has already been dispatched.
+            guard self.latestDispatchedQuery == query else { return }
             guard error == nil, let result else { return }
             self.topURLs = Self.urlOnlyTopHits(from: result, max: self.maxResults)
         }
@@ -85,6 +92,7 @@ final class DuckAIURLSuggestionsLoader {
     func tearDown() {
         loader = nil
         cancellables.removeAll()
+        latestDispatchedQuery = nil
         topURLs = []
     }
 }

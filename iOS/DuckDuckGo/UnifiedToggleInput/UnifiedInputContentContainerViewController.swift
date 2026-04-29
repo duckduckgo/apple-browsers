@@ -515,28 +515,17 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             chatManager: chatManager,
             urlLoader: urlLoader,
             chatViewModel: chatViewModel,
-            isIPadExperience: false,
             queryProvider: { [weak self] in self?.switchBarHandler.currentText ?? "" }
         )
         coordinator.delegate = self
+        coordinator.onContentChanged = { [weak self] in
+            // Dax visibility and section composition depend on coordinator content.
+            self?.refreshVisibleContent(suggestionRefresh: .none, animateContentUpdates: true)
+        }
 
         chatManager.onFetchCompleted = { [weak self] _, _ in
             self?.updateDaxVisibility()
         }
-        // Re-render container state when either fetcher's result set changes — the Dax-visible
-        // gate and section visibility both depend on it.
-        chatManager.hasSuggestionsPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.refreshVisibleContent(suggestionRefresh: .none, animateContentUpdates: true)
-            }
-            .store(in: &cancellables)
-        urlLoader.$topURLs
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.refreshVisibleContent(suggestionRefresh: .none, animateContentUpdates: true)
-            }
-            .store(in: &cancellables)
 
         swipeContainerManager.installDuckAISuggestions(using: coordinator, textPublisher: switchBarHandler.currentTextPublisher)
         duckAISuggestionsCoordinator = coordinator

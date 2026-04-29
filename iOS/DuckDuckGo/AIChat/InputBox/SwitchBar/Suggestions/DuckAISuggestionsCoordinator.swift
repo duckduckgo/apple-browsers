@@ -37,11 +37,16 @@ final class DuckAISuggestionsCoordinator {
 
     weak var delegate: DuckAISuggestionsCoordinatorDelegate?
 
+    /// Called whenever either fetcher's result set changes. Container view controllers use
+    /// this to refresh their derived state (e.g. Dax-empty-state visibility) without
+    /// subscribing directly to the fetchers — keeping the lifetime of those subscriptions
+    /// tied to the coordinator's `tearDown` rather than the container's `cancellables` set.
+    var onContentChanged: (() -> Void)?
+
     private let chatManager: AIChatHistoryManager
     private let urlLoader: DuckAIURLSuggestionsLoader
     private let chatViewModel: AIChatSuggestionsViewModel
     private let queryProvider: () -> String
-    private let isIPadExperience: Bool
 
     private var viewController: DuckAISuggestionsViewController?
     private var cancellables = Set<AnyCancellable>()
@@ -61,13 +66,11 @@ final class DuckAISuggestionsCoordinator {
     init(chatManager: AIChatHistoryManager,
          urlLoader: DuckAIURLSuggestionsLoader,
          chatViewModel: AIChatSuggestionsViewModel,
-         isIPadExperience: Bool,
          queryProvider: @escaping () -> String) {
         self.chatManager = chatManager
         self.urlLoader = urlLoader
         self.chatViewModel = chatViewModel
         self.queryProvider = queryProvider
-        self.isIPadExperience = isIPadExperience
     }
 
     func start<P: Publisher>(in containerView: UIView,
@@ -79,10 +82,21 @@ final class DuckAISuggestionsCoordinator {
         chatManager.subscribeToTextChanges(shared)
         urlLoader.subscribeToTextChanges(shared)
 
+        // Subscriptions live in the coordinator's own `cancellables` so they're released by
+        // `tearDown`. Storing them in the container VC's set leaked one per install/dismiss
+        // cycle, with each leaked subscription pinning the prior chat manager + URL loader.
+        chatManager.hasSuggestionsPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.onContentChanged?() }
+            .store(in: &cancellables)
+        urlLoader.$topURLs
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.onContentChanged?() }
+            .store(in: &cancellables)
+
         let vc = DuckAISuggestionsViewController(
             chatViewModel: chatViewModel,
             urlLoader: urlLoader,
-            isIPadExperience: isIPadExperience,
             queryProvider: queryProvider
         )
         vc.delegate = self
@@ -102,6 +116,7 @@ final class DuckAISuggestionsCoordinator {
 
     func tearDown() {
         cancellables.removeAll()
+        onContentChanged = nil
         chatManager.tearDown()
         urlLoader.tearDown()
         if let vc = viewController {

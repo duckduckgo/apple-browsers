@@ -59,18 +59,12 @@ final class DuckAISuggestionsViewController: UIViewController {
     private let chatViewModel: AIChatSuggestionsViewModel
     private let urlLoader: DuckAIURLSuggestionsLoader
     private let queryProvider: () -> String
-    private let isIPadExperience: Bool
 
     /// Debounce sized to absorb the gap between chat-fetcher and URL-fetcher settle times so a
     /// single reload renders both. Smaller and one fetcher's slower result triggers a second reload.
     private static let reloadCoalesceMilliseconds = 120
 
     private var cancellables = Set<AnyCancellable>()
-
-    /// Cached section composition — recomputed at the start of each reload and read by every
-    /// `UITableViewDataSource` / `UITableViewDelegate` method during that reload, so the
-    /// `liveSections` derivation runs once per reload instead of per row/section.
-    private var cachedLiveSections: [Section] = []
 
     private lazy var tableView: UITableView = {
         let t = UITableView(frame: .zero, style: .insetGrouped)
@@ -93,11 +87,9 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
-         isIPadExperience: Bool,
          queryProvider: @escaping () -> String) {
         self.chatViewModel = chatViewModel
         self.urlLoader = urlLoader
-        self.isIPadExperience = isIPadExperience
         self.queryProvider = queryProvider
         super.init(nibName: nil, bundle: nil)
     }
@@ -129,8 +121,10 @@ final class DuckAISuggestionsViewController: UIViewController {
     }
 
     /// Empty sections are excluded so `insetGrouped` doesn't reserve their header padding
-    /// above the first visible section.
-    private func computeLiveSections() -> [Section] {
+    /// above the first visible section. Recomputed on every datasource/delegate read so
+    /// UITableView's relayout passes (which sometimes call delegate methods with the old
+    /// index path) always see consistent data.
+    private var liveSections: [Section] {
         var sections: [Section] = []
         if !chats.isEmpty { sections.append(.chats) }
         if !urls.isEmpty { sections.append(.urls) }
@@ -140,7 +134,6 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     private func reload() {
         guard isViewLoaded else { return }
-        cachedLiveSections = computeLiveSections()
         UIView.performWithoutAnimation {
             tableView.reloadData()
         }
@@ -228,10 +221,12 @@ final class DuckAISuggestionsViewController: UIViewController {
 
 extension DuckAISuggestionsViewController: UITableViewDataSource {
 
-    func numberOfSections(in tableView: UITableView) -> Int { cachedLiveSections.count }
+    func numberOfSections(in tableView: UITableView) -> Int { liveSections.count }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        switch cachedLiveSections[section] {
+        let live = liveSections
+        guard section < live.count else { return 0 }
+        switch live[section] {
         case .chats: return chats.count
         case .urls: return urls.count
         case .search: return 1
@@ -240,10 +235,14 @@ extension DuckAISuggestionsViewController: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: Constants.cellIdentifier, for: indexPath)
-        switch cachedLiveSections[indexPath.section] {
+        let live = liveSections
+        guard indexPath.section < live.count else { return cell }
+        switch live[indexPath.section] {
         case .chats:
+            guard indexPath.row < chats.count else { return cell }
             configureChatCell(cell, with: chats[indexPath.row])
         case .urls:
+            guard indexPath.row < urls.count else { return cell }
             configureURLCell(cell, with: urls[indexPath.row])
         case .search:
             configureSearchCell(cell, query: queryProvider())
@@ -258,12 +257,18 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
         view.window?.endEditing(true)
     }
 
+    // UITableView occasionally invokes delegate methods with index paths from the previous
+    // data set (e.g. during animated relayout passes), so each method tolerates a stale index
+    // by returning a safe default.
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        switch cachedLiveSections[indexPath.section] {
+        let live = liveSections
+        guard indexPath.section < live.count else { return Constants.cellHeight }
+        switch live[indexPath.section] {
         case .chats:
             return Constants.cellHeight
         case .urls:
             // `.website` renders without a subtitle; everything else has one.
+            guard indexPath.row < urls.count else { return Constants.cellHeight }
             switch urls[indexPath.row] {
             case .website: return Constants.cellHeight
             default: return Constants.cellHeightWithSubtitle
@@ -279,10 +284,14 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        switch cachedLiveSections[indexPath.section] {
+        let live = liveSections
+        guard indexPath.section < live.count else { return }
+        switch live[indexPath.section] {
         case .chats:
+            guard indexPath.row < chats.count else { return }
             delegate?.duckAISuggestionsDidSelectChat(chats[indexPath.row])
         case .urls:
+            guard indexPath.row < urls.count else { return }
             delegate?.duckAISuggestionsDidSelectURL(urls[indexPath.row])
         case .search:
             delegate?.duckAISuggestionsDidSelectSearchDuckDuckGo(query: queryProvider())

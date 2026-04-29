@@ -182,6 +182,14 @@ final class SettingsViewModel: ObservableObject {
         runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
     }
 
+    var canShowFreemiumPIRSettingsEntryPoint: Bool {
+        isPIREnabled
+            && featureFlagger.isFeatureOn(.dbpFreemiumPIR)
+            && meetsLocaleRequirement
+            && !state.subscription.isSignedIn
+            && dataBrokerProtectionViewControllerProvider != nil
+    }
+
     var dbpMeetsProfileRunPrequisite: Bool {
         get {
             (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false

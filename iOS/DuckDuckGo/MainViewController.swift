@@ -2057,6 +2057,10 @@ class MainViewController: UIViewController {
         omniBarTabSwitcherButton?.isFireMode = isFireMode
     }
 
+    private func displayedTextEntryMode(for tab: Tab) -> TextEntryMode {
+        tab.preferredTextEntryMode.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+    }
+
     func refreshOmniBar() {
         updateOmniBarLoadingState()
         viewCoordinator.omniBar.refreshFireMode(fireMode: isCurrentTabFireTab())
@@ -2068,7 +2072,7 @@ class MainViewController: UIViewController {
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             if let tabModel = tabManager.currentTabsModel.currentTab {
-                viewCoordinator.omniBar.setSelectedTextEntryMode(tabModel.preferredTextEntryMode)
+                viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tabModel))
             }
             updateBrowsingMenuHeaderDataSource()
             if let tab = currentTab {
@@ -2101,7 +2105,7 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
-            viewCoordinator.omniBar.setSelectedTextEntryMode(tab.tabModel.preferredTextEntryMode)
+            viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tab.tabModel))
         }
 
         restorePostFireAddressBarPickerIfNeeded()
@@ -4048,8 +4052,8 @@ extension MainViewController: OmniBarDelegate {
         // Restore the tab's committed mode — the user may have toggled without submitting.
         // Safe on iPhone: the experimental editing state prevents textFieldDidEndEditing from
         // firing (text field never becomes first responder during that flow).
-        if let tabMode = tabManager.currentTabsModel.currentTab?.preferredTextEntryMode {
-            viewCoordinator.omniBar.setSelectedTextEntryMode(tabMode)
+        if let tab = tabManager.currentTabsModel.currentTab {
+            viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tab))
         }
     }
 
@@ -4274,7 +4278,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func preferredTextEntryModeForCurrentTab() -> TextEntryMode? {
-        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode
+        tabManager.currentTabsModel.currentTab.map { displayedTextEntryMode(for: $0) }
     }
 
     /// Saves the current omnibar toggle state to the tab on submission,

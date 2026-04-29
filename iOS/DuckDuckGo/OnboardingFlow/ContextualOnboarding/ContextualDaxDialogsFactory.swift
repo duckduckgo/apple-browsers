@@ -319,7 +319,7 @@ extension DefaultDaxDialogsSettings: ContextualOnboardingSettings {
 
     /// The current phase of the Duck.ai chat-first onboarding path.
     var chatPathPhase: DaxDialogs.ChatPathPhase {
-        guard fireMessageExperimentShown else { return .none }
+        guard isChatFirstPath && fireMessageExperimentShown else { return .none }
         if !chatPathVisitSiteSeen { return .visitSite }
         if !browsingFinalDialogShown { return .trackerToEOJ }
         return .none

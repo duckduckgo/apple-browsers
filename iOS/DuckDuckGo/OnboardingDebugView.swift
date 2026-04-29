@@ -163,6 +163,7 @@ final class OnboardingDebugViewModel: ObservableObject {
         settings.browsingFinalDialogShown = false
         settings.subscriptionPromotionDialogShown = false
         settings.chatPathVisitSiteSeen = false
+        settings.isChatFirstPath = false
         tutorialSettings.hasSkippedOnboarding = false
     }
 

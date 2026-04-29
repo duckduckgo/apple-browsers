@@ -5652,7 +5652,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "These devices will be disconnected and your synced data will be deleted from the server."
+            "value" : "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device."
           }
         },
         "es" : {

@@ -68,6 +68,7 @@
         "triggers": ["other"],
         "parameters": [
             "appVersion",
+            "pixelSource",
             "onboardingEventType",
             "onboardingClickedValue",
             "onboardingInstallType",
@@ -227,6 +228,7 @@
         "triggers": ["other"],
         "parameters": [
             "appVersion",
+            "pixelSource",
             "onboardingEventType",
             "onboardingClickedValue",
             "onboardingInstallType",

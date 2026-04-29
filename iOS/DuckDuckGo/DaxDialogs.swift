@@ -75,6 +75,9 @@ protocol ContextualOnboardingLogic {
     /// Marks that the "try visiting a site" step has been shown in the chat-first (Duck.ai) onboarding path.
     func setChatPathVisitSiteSeen()
 
+    /// Marks the user as having entered the Duck.ai chat-first onboarding path.
+    func setAsChatFirstPath()
+
     /// The current phase of the Duck.ai chat-first onboarding path.
     var chatPathPhase: DaxDialogs.ChatPathPhase { get }
 
@@ -519,8 +522,12 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         settings.chatPathVisitSiteSeen = true
     }
 
+    func setAsChatFirstPath() {
+        settings.isChatFirstPath = true
+    }
+
     var chatPathPhase: ChatPathPhase {
-        guard settings.fireMessageExperimentShown else { return .none }
+        guard settings.isChatFirstPath && settings.fireMessageExperimentShown else { return .none }
         if !settings.chatPathVisitSiteSeen { return .visitSite }
         if !settings.browsingFinalDialogShown { return .trackerToEOJ }
         return .none
@@ -628,7 +635,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
         // Chat-first path: fire was seen before any site was visited (Duck.ai experiment flow).
         // The visit-site and trackers-blocked steps come AFTER fire in this path.
-        if settings.fireMessageExperimentShown && !nonDDGBrowsingMessageSeen {
+        if settings.isChatFirstPath && settings.fireMessageExperimentShown && !nonDDGBrowsingMessageSeen {
             if !settings.chatPathVisitSiteSeen {
                 // Show the "try visiting a site" prompt for the chat-first path.
                 return .subsequent

@@ -372,7 +372,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.deactivateToOmnibar()
 
         XCTAssertEqual(sut.displayState, .hidden)
-        XCTAssertEqual(sut.textState, .empty)
+        // Text is preserved through deactivate; the dismiss completion handler clears it after the animation.
+        XCTAssertEqual(sut.textState, .prefilledSelected)
         XCTAssertFalse(sut.isOmnibarSession)
     }
 
@@ -1357,6 +1358,32 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.handleExternalSubmission(.prompt)
         XCTAssertEqual(mockToggleModeStorage.restore(), .aiChat)
         XCTAssertEqual(mockDelegate.committedMode, .aiChat)
+    }
+
+    // MARK: - Toolbar Voice Chat State Sync
+
+    func test_showCollapsed_whenAIVoiceChatEnabled_setsToolbarVoiceChatActive() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showCollapsed()
+        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
+    func test_showExpanded_inSearchMode_clearsToolbarVoiceChatActive() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showExpanded(inputMode: .search)
+        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
+    func test_deactivateToOmnibar_refreshesToolbarVoiceChatFlag() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+
+        sut.updateInputMode(.search, animated: false)
+        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+
+        sut.deactivateToOmnibar()
+        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
     }
 
     // MARK: - Helpers

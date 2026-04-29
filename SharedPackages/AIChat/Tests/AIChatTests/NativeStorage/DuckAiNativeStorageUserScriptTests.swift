@@ -86,6 +86,15 @@ final class DuckAiNativeStorageUserScriptTests: XCTestCase {
         _ = try await handler(["key": "chats"], WKScriptMessage.mock())
         XCTAssertFalse(mockPixelFiring.firedEvents.contains { if case .migrationAlreadyDone = $0 { return true }; return false })
     }
+
+    func testWhenInFireModeAndHandlerUnavailableThenStorageOperationsDoNotFallBackToDisk() async throws {
+        sut.fireModeStorageProvider = { .unavailable }
+
+        let putHandler = try XCTUnwrap(sut.handler(forMethodNamed: "putEntry"))
+        _ = try await putHandler(["key": "setting_kae", "value": "disk"], WKScriptMessage.mock())
+
+        XCTAssertEqual(mockHandler.putEntryCalls, 0)
+    }
 }
 
 // MARK: - Test helpers
@@ -102,8 +111,9 @@ final class MockDuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     var stubbedIsMigrationDone = false
     var stubbedGetAllEntries: [String: Any] = [:]
     var stubbedGetAllEntriesError: Error?
+    var putEntryCalls = 0
 
-    func putEntry(key: String, value: Any) throws {}
+    func putEntry(key: String, value: Any) throws { putEntryCalls += 1 }
     func getEntry(key: String) throws -> Any? { nil }
     func getAllEntries() throws -> [String: Any] {
         if let stubbedGetAllEntriesError { throw stubbedGetAllEntriesError }

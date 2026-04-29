@@ -409,18 +409,18 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             // always-on
             protocolConfiguration.disconnectOnSleep = false
 
-            // Enforce routes
-            protocolConfiguration.enforceRoutes = true
+            protocolConfiguration.enforceRoutes = settings.enforceRoutes
+            protocolConfiguration.includeAllNetworks = settings.includeAllNetworks
+            protocolConfiguration.excludeLocalNetworks = settings.excludeLocalNetworks
 
-            // We will control excluded networks through includedRoutes / excludedRoutes
-            protocolConfiguration.excludeLocalNetworks = false
-
-            #if DEBUG
-            if #available(iOS 17.4, *) {
-                // This is useful to ensure debugging is never blocked by the VPN
-                protocolConfiguration.excludeDeviceCommunication = true
+            if #available(iOS 16.4, *) {
+                protocolConfiguration.excludeAPNs = settings.excludeAPNs
+                protocolConfiguration.excludeCellularServices = settings.excludeCellularServices
             }
-            #endif
+
+            if #available(iOS 17.4, *) {
+                protocolConfiguration.excludeDeviceCommunication = settings.excludeDeviceCommunication
+            }
 
             return protocolConfiguration
         }()

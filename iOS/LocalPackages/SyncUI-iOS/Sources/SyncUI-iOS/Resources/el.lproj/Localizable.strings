@@ -325,6 +325,96 @@
 /* Sync Settings - Recovery section header */
 "sync.settings.recovery.section.header" = "Ανάκτηση";
 
+/* Sync settings 'Already set up' section header containing useful options */
+"sync.simplified.already.set.up.section.header" = "Έχετε ήδη ρυθμιστεί σε άλλη συσκευή;";
+
+/* Prompt body text after enabling sync */
+"sync.simplified.another.device.body" = "Οι σελιδοδείκτες σας, τα δεδομένα αυτόματης συμπλήρωσης και οι συνομιλίες στο Duck.ai δημιουργούν με ασφάλεια αντίγραφα ασφαλείας. Τώρα, διατηρήστε τα συγχρονισμένα με τον υπολογιστή ή το tablet σας.";
+
+/* Primary button to sync another device when sync is enabled */
+"sync.simplified.another.device.button" = "Συγχρονισμός άλλης συσκευής";
+
+/* Prompt title after enabling sync */
+"sync.simplified.another.device.title" = "Θέλετε να συγχρονίσετε τα δεδομένα σας με άλλη συσκευή;";
+
+/* Bookmarks section header in sync settings */
+"sync.simplified.bookmarks.section.header" = "Σελιδοδείκτες";
+
+/* Text shown next to toggle while sync is being set up */
+"sync.simplified.connecting" = "Σύνδεση...";
+
+/* Sync settings 'Copy Recovery Code' button */
+"sync.simplified.copy.recovery.code.button" = "Αντιγραφή κωδικού ανάκτησης";
+
+/* Sync settings action button title to turn off sync and delete server data */
+"sync.simplified.delete.sync.data.button" = "Απενεργοποίηση συγχρονισμού και διαγραφή δεδομένων διακομιστή";
+
+/* Sync settings 'Download Recovery Code' button */
+"sync.simplified.download.recovery.code.button" = "Λήψη κώδικα ανάκτησης";
+
+/* Button subtitle to get the DuckDuckGo desktop browser */
+"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo για Mac και Windows";
+
+/* Button title to get the DuckDuckGo desktop browser. */
+"sync.simplified.get.desktop.browser.title" = "Αποκτήστε το πρόγραμμα περιήγησης για υπολογιστές";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message" = "Αποθηκεύστε τους σελιδοδείκτες, τα δεδομένα αυτόματης συμπλήρωσης και τις συνομιλίες Duck.ai και συγχρονίστε τα μεταξύ των συσκευών σας με κρυπτογράφηση από άκρο σε άκρο.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic" = "Αποθηκεύστε τους σελιδοδείκτες και τα δεδομένα αυτόματης συμπλήρωσης και συγχρονίστε τα μεταξύ των συσκευών σας με κρυπτογράφηση από άκρο σε άκρο.";
+
+/* Part of instruction prompt referring to the DuckDuckGo app. */
+"sync.simplified.scan-or-view-code.app.name" = "Εφαρμογή DuckDuckGo";
+
+/* Floating prompt over QR code scanner preview */
+"sync.simplified.scan-or-view-code.camera.prompt" = "Στρέψτε την κάμερα στο QR για σάρωση";
+
+/* Status text when connecting devices to sync */
+"sync.simplified.scan-or-view-code.connecting.status" = "Σύνδεση...";
+
+/* Instruction shown during sync setup flow */
+"sync.simplified.scan-or-view-code.connecting.title" = "Κρατήστε το DuckDuckGo ανοιχτό και στις δύο συσκευές";
+
+/* Button to navigate to manual sync code entry */
+"sync.simplified.scan-or-view-code.manually.enter.code" = "Μη αυτόματη εισαγωγή κωδικού";
+
+/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
+"sync.simplified.scan-or-view-code.paste.code.instructions" = "Μεταβείτε στις **Ρυθμίσεις > Sync & Backup > Συγχρονισμός με άλλη συσκευή** και επιλέξτε **Προβολή κωδικού κειμένου** στην εφαρμογή DuckDuckGo σε μια άλλη συγχρονισμένη συσκευή και επικολλήστε τον κώδικα εδώ για να συγχρονίσετε αυτήν τη συσκευή.";
+
+/* Status text while verifying a pasted sync code */
+"sync.simplified.scan-or-view-code.paste.code.verifying" = "Επαλήθευση κωδικού";
+
+/* First line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Ανοίξτε την εφαρμογή DuckDuckGo στην άλλη συσκευή σας.";
+
+/* Second line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line2" = "Βρείτε τον κωδικό QR στις Ρυθμίσεις > Sync & Backup > Συγχρονισμός με άλλη συσκευή.";
+
+/* Title of button to share a sync code */
+"sync.simplified.scan-or-view-code.share" = "Κοινή χρήση κωδικού";
+
+/* Button title to show QR code scanner */
+"sync.simplified.scan-or-view-code.tab.scan" = "Σάρωση κώδικα QR";
+
+/* Button title to view your sync code */
+"sync.simplified.scan-or-view-code.tab.view.code" = "Προβολή κωδικού";
+
+/* Navigation title for simplified QR scanning screen */
+"sync.simplified.scan-or-view-code.title" = "Συγχρονίστε τις συσκευές σας";
+
+/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
+"sync.simplified.scan-or-view-code.view.instructions" = "Σαρώστε ή επικολλήστε αυτόν τον κωδικό στην άλλη";
+
+/* Sync & Backup enabled / disabled toggle title */
+"sync.simplified.toggle.title" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας";
+
+/* Use Recovery Code sync setup button label */
+"sync.simplified.use.recovery.code.button" = "Χρήση κωδικού ανάκτησης";
+
+/* Sync With Another Device sync setup button label */
+"sync.simplified.with.another.device.button" = "Συγχρονισμός με άλλη συσκευή";
+
 /* Sync & Backup Title */
 "sync.title" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας";
 

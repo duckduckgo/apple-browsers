@@ -4272,6 +4272,27 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "デバイスを削除しますか？";
 
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "コードがコピーされました";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backupが有効になりました";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "リカバリーコードをコピーしました";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Sync & Backupを有効にできませんでした";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "オフにする";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "このデバイスのブックマークやパスワードには影響しません。";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Sync & Backupをオフにしますか？";
+
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "削除";
 

@@ -706,14 +706,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let backgroundColor = UIColor(designSystemColor: .panel)
         static let contentTopInset: CGFloat = 10
         static let escapeHatchBaseTopInset: CGFloat = 44
-        static let chatHistoryBottomBarCompensation: CGFloat = 1
         static let escapeHatchLogoOffset: CGFloat = 120
-        // Vertically centers the escape hatch card when the chat history list is empty (no recent chats)
-        static let escapeHatchEmptyListBoost: CGFloat = 165
         // Pulls the suggestion tray (NTP/Favorites) upward in UTI top bar to tighten gap between UTI input and hatch.
         static let escapeHatchTopBarTrayPullUp: CGFloat = -10
-        // Landscape-only small alignment pull-up for chat history hatch so it visually matches Search tray position.
-        static let landscapeDuckAiAlignmentPullUp: CGFloat = -1
     }
 }
 

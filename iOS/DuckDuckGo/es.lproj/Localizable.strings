@@ -4272,6 +4272,27 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "¿Eliminar dispositivo?";
 
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Código copiado";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup activado";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Código de recuperación copiado";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "No se ha podido activar Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Desactivar";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Los marcadores y contraseñas de este dispositivo no se verán afectados.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "¿Desactivar Sync & Backup?";
+
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Eliminar";
 

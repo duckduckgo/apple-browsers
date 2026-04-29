@@ -1,5 +1,5 @@
 //
-//  AttributedMetricOriginFileProviderTests.swift
+//  DefaultAttributedMetricOriginProviderTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -20,16 +20,16 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import AttributedMetric
 
-final class AttributedMetricOriginFileProviderTests: XCTestCase {
+final class DefaultAttributedMetricOriginProviderTests: XCTestCase {
     private var sut: AttributedMetricOriginProvider!
 
     override func tearDown() {
         sut = nil
     }
 
-    func testWhenFileAndValueExistThenReturnOriginValue() {
+    func testWhenLoadOriginReturnsValueThenReturnOriginValue() {
         // GIVEN
-        sut = AttributedMetricOriginFileProvider(bundle: .test)
+        sut = DefaultAttributedMetricOriginProvider(loadOrigin: { "app_search" })
 
         // WHEN
         let result = sut.origin
@@ -38,9 +38,9 @@ final class AttributedMetricOriginFileProviderTests: XCTestCase {
         XCTAssertEqual(result, "app_search")
     }
 
-    func testWhenFileDoesNotExistThenReturnNil() {
+    func testWhenLoadOriginReturnsNilThenReturnNil() {
         // GIVEN
-        sut = AttributedMetricOriginFileProvider(resourceName: #function, bundle: .test)
+        sut = DefaultAttributedMetricOriginProvider(loadOrigin: { nil })
 
         // WHEN
         let result = sut.origin
@@ -49,9 +49,9 @@ final class AttributedMetricOriginFileProviderTests: XCTestCase {
         XCTAssertNil(result)
     }
 
-    func testWhenFileExistAndIsEmptyThenReturnNil() {
+    func testWhenLoadOriginReturnsEmptyThenReturnNil() {
         // GIVEN
-        sut = AttributedMetricOriginFileProvider(resourceName: "Origin-empty", bundle: .test)
+        sut = DefaultAttributedMetricOriginProvider(loadOrigin: { "" })
 
         // WHEN
         let result = sut.origin
@@ -59,8 +59,26 @@ final class AttributedMetricOriginFileProviderTests: XCTestCase {
         // THEN
         XCTAssertNil(result)
     }
-}
 
-private extension Bundle {
-    static let test = Bundle(for: AttributedMetricOriginFileProviderTests.self)
+    func testWhenLoadOriginReturnsWhitespaceThenReturnNil() {
+        // GIVEN
+        sut = DefaultAttributedMetricOriginProvider(loadOrigin: { "  \n  " })
+
+        // WHEN
+        let result = sut.origin
+
+        // THEN
+        XCTAssertNil(result)
+    }
+
+    func testWhenLoadOriginReturnsValueWithWhitespaceThenReturnTrimmedValue() {
+        // GIVEN
+        sut = DefaultAttributedMetricOriginProvider(loadOrigin: { "  app_search\n" })
+
+        // WHEN
+        let result = sut.origin
+
+        // THEN
+        XCTAssertEqual(result, "app_search")
+    }
 }

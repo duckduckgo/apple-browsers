@@ -30,11 +30,11 @@ protocol AIChatDeleting {
 
 struct AIChatDeleter: AIChatDeleting {
 
-    private let historyCleanerProvider: (WKWebsiteDataStore?) -> HistoryCleaning
+    private let historyCleanerProvider: (WKWebsiteDataStore?, _ isFireMode: Bool) -> HistoryCleaning
     private let aiChatSyncCleaner: AIChatSyncCleaning
     private let idManager: DataStoreIDManaging
 
-    init(historyCleanerProvider: @escaping (WKWebsiteDataStore?) -> HistoryCleaning,
+    init(historyCleanerProvider: @escaping (WKWebsiteDataStore?, _ isFireMode: Bool) -> HistoryCleaning,
          aiChatSyncCleaner: AIChatSyncCleaning,
          idManager: DataStoreIDManaging = DataStoreIDManager.shared) {
         self.historyCleanerProvider = historyCleanerProvider
@@ -55,7 +55,7 @@ struct AIChatDeleter: AIChatDeleting {
             dataStore = nil
         }
 
-        let cleaner = historyCleanerProvider(dataStore)
+        let cleaner = historyCleanerProvider(dataStore, isFireMode)
         let result = await cleaner.deleteAIChat(chatID: chatID)
         switch result {
         case .success:

@@ -60,6 +60,20 @@ final class DuckAiNativeStorageBootstrapScriptRefresherTests: XCTestCase {
         XCTAssertTrue(bootstrap.source.contains("\"setting_kae\":\"d\""))
     }
 
+    func testWhenInFireModeAndHandlerUnavailableThenBootstrapDoesNotIncludeDiskEntries() throws {
+        mockHandler.stubbedGetAllEntries = ["setting_kae": "disk"]
+        let sut = DuckAiNativeStorageBootstrapScriptRefresher(
+            handler: mockHandler,
+            originRules: [.exactOrSubdomain(hostname: "duck.ai")]
+        )
+        sut.fireModeStorageProvider = { .unavailable }
+
+        sut.refresh(on: userContentController, staticScripts: [])
+
+        let bootstrap = try XCTUnwrap(userContentController.userScripts.first { $0.source.contains("__nativeStorageEntries") })
+        XCTAssertFalse(bootstrap.source.contains("\"setting_kae\":\"disk\""))
+    }
+
     func testWhenRefreshedTwiceThenOnlyOneBootstrapRemains() {
         let sut = DuckAiNativeStorageBootstrapScriptRefresher(
             handler: mockHandler,

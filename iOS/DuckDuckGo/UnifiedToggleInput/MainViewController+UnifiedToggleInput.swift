@@ -590,8 +590,8 @@ extension MainViewController: UnifiedToggleInputDelegate {
         tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
     }
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, images: [AIChatNativePrompt.NativePromptImage]?) {
-        openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, images: images)
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?) {
+        openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
@@ -623,9 +623,16 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
     }
 
     func unifiedInputEditingStateDidSubmitPrompt(_ query: String, tools: [AIChatRAGTool]?) {
+        let submissionConfiguration = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalSubmission(.prompt)
-        openAIChat(query, autoSend: true, tools: tools)
+        openAIChat(
+            query,
+            autoSend: true,
+            tools: tools,
+            modelId: submissionConfiguration?.modelId,
+            reasoningEffort: submissionConfiguration?.reasoningEffort
+        )
     }
 
     func unifiedInputEditingStateDidSelectFavorite(_ favorite: BookmarkEntity) {

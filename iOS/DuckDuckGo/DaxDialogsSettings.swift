@@ -56,6 +56,9 @@ protocol DaxDialogsSettings: AnyObject {
     /// Whether the user entered the Duck.ai chat-first onboarding path.
     /// Set when the user completes the fire-education step in the Duck.ai experiment flow.
     var isChatFirstPath: Bool { get set }
+
+    /// The current phase of the Duck.ai chat-first onboarding path, derived from persisted state flags.
+    var chatPathPhase: DaxDialogs.ChatPathPhase { get }
 }
 
 class DefaultDaxDialogsSettings: DaxDialogsSettings {
@@ -107,4 +110,17 @@ class DefaultDaxDialogsSettings: DaxDialogsSettings {
 
     @UserDefaultsWrapper(key: .daxIsChatFirstPath, defaultValue: false)
     var isChatFirstPath: Bool
+
+    var chatPathPhase: DaxDialogs.ChatPathPhase {
+        guard isChatFirstPath && fireMessageExperimentShown else { return .none }
+        if !chatPathVisitSiteSeen { return .visitSite }
+        // Require the user to have actually browsed a non-DDG site and seen a tracker dialog before
+        // advancing to .trackerToEOJ; without this guard, the phase would jump to .trackerToEOJ the
+        // moment the "try visiting a site" NTP dialog appears (via onFirstAppear), triggering the
+        // "You've got this" EOJ before the user has visited any site.
+        let seenBrowsingDialog = browsingWithTrackersShown || browsingWithoutTrackersShown || browsingMajorTrackingSiteShown
+        guard seenBrowsingDialog else { return .visitSite }
+        if !browsingFinalDialogShown { return .trackerToEOJ }
+        return .none
+    }
 }

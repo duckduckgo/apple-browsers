@@ -49,7 +49,9 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
             animator.delegate = delegate
         }
     }
-    
+
+    var onUserScrolled: (() -> Void)?
+
     private let animator = BarsAnimator()
     
     private var observation: NSKeyValueObservation?
@@ -82,8 +84,9 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard !scrollView.isZooming else { return }
-        
+
         guard scrollView.isDragging else { return }
+        onUserScrolled?()
         guard canHideBars(for: scrollView) else {
             if animator.barsState != .revealed {
                 animator.revealBars(animated: true)

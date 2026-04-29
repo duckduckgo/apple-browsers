@@ -188,6 +188,11 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager(),
             daxDialogsManager: DummyDaxDialogsManager(),
             dbpIOSPublicInterface: nil,
+            freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
+                featureFlagger: featureFlagger,
+                runPrerequisitesDelegate: nil,
+                subscriptionAuthenticationStateProvider: SubscriptionManagerMock()
+            ),
             launchSourceManager: LaunchSourceManager(),
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()),

@@ -37,7 +37,9 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         static let minimumConfigurationRefreshInterval: TimeInterval = 60 * 60 * 4
         static let endpoint: URL = {
             #if DEBUG
-                URL(string: "https://raw.githubusercontent.com/duckduckgo/remote-messaging-config/main/samples/ios/sample1.json")!
+                // Temporary PIR Freemium RMF test config. Revert before shipping.
+                URL(string: "https://raw.githubusercontent.com/duckduckgo/remote-messaging-config/jozsef/"
+                    + "freemium-pir-rmf-entry-point/live/ios-config/ios-config.json")!
             #else
                 URL(string: "https://staticcdn.duckduckgo.com/remotemessaging/config/v1/ios-config.json")!
             #endif
@@ -65,6 +67,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         configurationURLProvider: ConfigurationURLProviding,
         syncService: DDGSyncing,
         winBackOfferService: WinBackOfferService,
+        freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
@@ -74,7 +77,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             duckPlayerStorage: duckPlayerStorage,
             syncService: syncService,
             winBackOfferService: winBackOfferService,
-            dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate
+            dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate,
+            freemiumPIREligibilityChecker: freemiumPIREligibilityChecker
         )
         let configFetcher = RemoteMessagingConfigFetcher(
             configurationFetcher: ConfigurationFetcher(store: configurationStore, urlSession: .session(), configurationURLProvider: configurationURLProvider, eventMapping: nil),

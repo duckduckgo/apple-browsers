@@ -101,6 +101,26 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
+    // MARK: - FreemiumPIREligible
+
+    func testWhenIsFreemiumPIREligibleMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isFreemiumPIREligible: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIREligibleMatchingAttribute(value: true, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenIsFreemiumPIREligibleDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isFreemiumPIREligible: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIREligibleMatchingAttribute(value: true, fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenIsNotFreemiumPIREligibleMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isFreemiumPIREligible: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIREligibleMatchingAttribute(value: false, fallback: nil)),
+                       .match)
+    }
+
     // MARK: - PIRCurrentUser
 
     func testWhenIsCurrentPIRUserMatchesThenReturnMatch() throws {
@@ -127,7 +147,10 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
-    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], isSyncEnabled: Bool = false, isCurrentPIRUser: Bool = false) {
+    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [],
+                                           isSyncEnabled: Bool = false,
+                                           isFreemiumPIREligible: Bool = false,
+                                           isCurrentPIRUser: Bool = false) {
         matcher = MobileUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
             featureDiscovery: mockFeatureDiscovery,
@@ -154,6 +177,7 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             enabledFeatureFlags: [],
             isSyncEnabled: isSyncEnabled,
             shouldShowWinBackOfferUrgencyMessage: false,
+            isFreemiumPIREligible: isFreemiumPIREligible,
             isCurrentPIRUser: isCurrentPIRUser
         )
     }

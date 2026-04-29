@@ -74,6 +74,7 @@ final class SettingsViewModel: ObservableObject {
     private let urlOpener: URLOpener
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
+    private let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
@@ -183,10 +184,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var canShowFreemiumPIRSettingsEntryPoint: Bool {
-        isPIREnabled
-            && featureFlagger.isFeatureOn(.dbpFreemiumPIR)
-            && meetsLocaleRequirement
-            && !state.subscription.isSignedIn
+        freemiumPIREligibilityChecker.canShowEntryPoint()
             && dataBrokerProtectionViewControllerProvider != nil
     }
 
@@ -903,6 +901,7 @@ final class SettingsViewModel: ObservableObject {
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
@@ -941,6 +940,7 @@ final class SettingsViewModel: ObservableObject {
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
+        self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies

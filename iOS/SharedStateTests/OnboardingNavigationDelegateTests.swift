@@ -68,7 +68,12 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             errorEvents: nil,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
             duckPlayerStorage: MockDuckPlayerStorage(),
-            configurationURLProvider: MockConfigurationURLProvider()
+            configurationURLProvider: MockConfigurationURLProvider(),
+            freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
+                featureFlagger: MockFeatureFlagger(),
+                runPrerequisitesDelegate: nil,
+                subscriptionAuthenticationStateProvider: SubscriptionManagerMock()
+            )
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter())
         let tabsModel = TabsModel(desktop: true)

@@ -292,7 +292,7 @@ extension MainViewController {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
             let hasEntitlement = (try? await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)) ?? false
 
-            if hasEntitlement {
+            if hasEntitlement || freemiumPIREligibilityChecker.canShowEntryPoint() {
                 launchSettings(completion: {
                     $0.triggerDeepLinkNavigation(to: .dbp)
                 }, deepLinkTarget: .dbp)
@@ -450,6 +450,7 @@ extension MainViewController {
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
+                                                  freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,

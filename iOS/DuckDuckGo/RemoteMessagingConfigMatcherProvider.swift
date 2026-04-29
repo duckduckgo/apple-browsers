@@ -43,7 +43,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         themeManager: ThemeManaging = ThemeManager.shared,
         syncService: DDGSyncing,
         winBackOfferService: WinBackOfferService,
-        dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
+        dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil,
+        freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
@@ -54,6 +55,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.syncService = syncService
         self.winBackOfferService = winBackOfferService
         self.dbpRunPrerequisitesDelegate = dbpRunPrerequisitesDelegate
+        self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -65,6 +67,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let syncService: DDGSyncing
     let winBackOfferService: WinBackOfferService
     let dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
+    let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
         var bookmarksCount = 0
@@ -112,6 +115,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         } else {
             isCurrentPIRUser = false
         }
+
+        let isFreemiumPIREligible = freemiumPIREligibilityChecker.canShowEntryPoint()
 
         let surveyActionMapper: DefaultRemoteMessagingSurveyURLBuilder
 
@@ -178,6 +183,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        enabledFeatureFlags: enabledFeatureFlags,
                                                        isSyncEnabled: isSyncEnabled,
                                                        shouldShowWinBackOfferUrgencyMessage: shouldShowWinBackOfferUrgencyMessage,
+                                                       isFreemiumPIREligible: isFreemiumPIREligible,
                                                        isCurrentPIRUser: isCurrentPIRUser),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,

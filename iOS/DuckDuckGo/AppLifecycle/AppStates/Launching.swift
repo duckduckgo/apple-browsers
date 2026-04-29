@@ -157,6 +157,11 @@ struct Launching: LaunchingHandling {
         let winBackOfferService = WinBackOfferFactory.makeService(keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
                                                                   featureFlagger: featureFlagger,
                                                                   daxDialogs: daxDialogs)
+        let freemiumPIREligibilityChecker = DefaultFreemiumPIREligibilityChecker(
+            featureFlagger: featureFlagger,
+            runPrerequisitesDelegate: dbpService.dbpIOSPublicInterface,
+            subscriptionAuthenticationStateProvider: AppDependencyProvider.shared.subscriptionManager
+        )
 
         let remoteMessagingImageLoader = RemoteMessagingImageLoader(
             dataProvider: RemoteMessagingImageLoader.defaultDataProvider,
@@ -171,6 +176,7 @@ struct Launching: LaunchingHandling {
                                                             configurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
                                                             syncService: syncService.sync,
                                                             winBackOfferService: winBackOfferService,
+                                                            freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                                             subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                             remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
@@ -261,6 +267,7 @@ struct Launching: LaunchingHandling {
                                               dbpIOSPublicInterface: dbpService.dbpIOSPublicInterface,
                                               launchSourceManager: launchSourceManager,
                                               winBackOfferService: winBackOfferService,
+                                              freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                               modalPromptCoordinationService: modalPromptCoordinationService,
                                               mobileCustomization: mobileCustomization,
                                               productSurfaceTelemetry: productSurfaceTelemetry,

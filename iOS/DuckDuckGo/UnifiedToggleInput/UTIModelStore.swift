@@ -59,9 +59,17 @@ final class UTIModelStore {
         preferences.selectedModelId
     }
 
+    var selectedReasoningMode: AIChatReasoningMode? {
+        preferences.selectedReasoningMode
+    }
+
+    var selectedModel: AIChatModel? {
+        guard let persistedModelId else { return nil }
+        return models.first(where: { $0.id == persistedModelId })
+    }
+
     var selectedModelSupportsImageUpload: Bool {
-        guard !models.isEmpty else { return false }
-        return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? false
+        selectedModel?.supportsImageUpload ?? false
     }
 
     func selectedModelSupports(tool: AIChatRAGTool) -> Bool {
@@ -85,6 +93,7 @@ final class UTIModelStore {
                 guard !Task.isCancelled else { return }
                 self.models = Self.resolveModels(from: remoteModels, userTier: state.userTier)
                 self.clearStaleModelSelectionIfNeeded()
+                self.clearStaleReasoningModeIfNeeded()
                 self.onModelsUpdated?()
             } catch {
                 os_log(.error, "Failed to fetch models: %{public}@", error.localizedDescription)
@@ -95,6 +104,12 @@ final class UTIModelStore {
     func updateSelectedModel(_ modelId: String) {
         preferences.selectedModelId = modelId
         preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
+        clearStaleReasoningModeIfNeeded()
+    }
+
+    func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
+        guard selectedModel?.availableReasoningModes.contains(mode) == true else { return }
+        preferences.selectedReasoningMode = mode
     }
 
     static func resolveModels(from remoteModels: [AIChatRemoteModel], userTier: AIChatUserTier) -> [AIChatModel] {
@@ -109,7 +124,8 @@ final class UTIModelStore {
                     supportedImageFormats: remote.supportsImageUpload ? ["png", "jpeg", "webp"] : [],
                     supportedTools: remote.supportedTools.compactMap(AIChatRAGTool.init(rawValue:)),
                     entityHasAccess: remote.entityHasAccess,
-                    accessTier: remote.accessTier
+                    accessTier: remote.accessTier,
+                    supportedReasoningEffort: remote.supportedReasoningEffort
                 )
             }
             return AIChatModel(remoteModel: remote, userTier: userTier)
@@ -146,6 +162,19 @@ final class UTIModelStore {
         if isStale {
             preferences.selectedModelId = nil
             preferences.selectedModelShortName = nil
+        }
+    }
+
+    func clearStaleReasoningModeIfNeeded() {
+        guard let selectedReasoningMode = preferences.selectedReasoningMode else { return }
+
+        guard let selectedModel else {
+            preferences.selectedReasoningMode = nil
+            return
+        }
+
+        if !selectedModel.availableReasoningModes.contains(selectedReasoningMode) {
+            preferences.selectedReasoningMode = nil
         }
     }
 }

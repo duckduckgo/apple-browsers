@@ -127,6 +127,11 @@
                 "type": "string"
             },
             {
+                "key": "day_average",
+                "description": "Legacy (snake_case) name for dayAverage, sent by older app versions prior to the rename",
+                "type": "string"
+            },
+            {
                 "key": "version",
                 "description": "Bucket version identifier for the metric calculation",
                 "type": "string"
@@ -157,6 +162,11 @@
             {
                 "key": "dayAverage",
                 "description": "Number of days with data used to compute the average",
+                "type": "string"
+            },
+            {
+                "key": "day_average",
+                "description": "Legacy (snake_case) name for dayAverage, sent by older app versions prior to the rename",
                 "type": "string"
             },
             {
@@ -193,6 +203,11 @@
                 "type": "string"
             },
             {
+                "key": "day_average",
+                "description": "Legacy (snake_case) name for dayAverage, sent by older app versions prior to the rename",
+                "type": "string"
+            },
+            {
                 "key": "version",
                 "description": "Bucket version identifier for the metric calculation",
                 "type": "string"
@@ -223,6 +238,11 @@
             {
                 "key": "dayAverage",
                 "description": "Number of days with data used to compute the average",
+                "type": "string"
+            },
+            {
+                "key": "day_average",
+                "description": "Legacy (snake_case) name for dayAverage, sent by older app versions prior to the rename",
                 "type": "string"
             },
             {

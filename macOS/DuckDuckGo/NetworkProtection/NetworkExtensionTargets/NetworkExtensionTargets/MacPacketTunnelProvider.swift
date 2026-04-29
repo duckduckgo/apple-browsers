@@ -23,6 +23,7 @@ import NetworkExtension
 import Networking
 import os.log
 import PixelKit
+import PrivacyConfig
 import Subscription
 import VPN
 import WireGuard
@@ -698,11 +699,14 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         source = "vpnAppExtension"
 #endif
 
+        let internalUserDecider = DefaultInternalUserDecider(store: UserDefaults.appConfiguration)
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: internalUserDecider.isInternalUser)
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: source,
+                       channel: channel,
                        defaultHeaders: defaultHeaders,
                        defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
@@ -723,15 +727,8 @@ private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
     let settings: VPNSettings
 
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-            let buildType = StandardApplicationBuildType()
-            if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
-                return false
-            } else {
-                return settings.wideEventPostEndpointEnabled
-            }
-        }
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }
 

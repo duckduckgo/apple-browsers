@@ -35,9 +35,12 @@ import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
 import SERPSettings
 import Networking
+import WebExtensions
 
 enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
+
+    static let youTubeAdBlockingEnabledDidChangeNotification = Notification.Name("youTubeAdBlockingEnabledDidChange")
 }
 
 struct YouTubeAdBlockingKeys: StoringKeys {
@@ -75,7 +78,8 @@ final class SettingsViewModel: ObservableObject {
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     private let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
-    
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding
+
     private lazy var newBadgeVisibilityManager: NewBadgeVisibilityManaging = {
         NewBadgeVisibilityManager(
             keyValueStore: keyValueStore,
@@ -658,8 +662,14 @@ final class SettingsViewModel: ObservableObject {
         Binding<Bool>(
             get: { self.state.youTubeAdBlockingEnabled },
             set: {
+                guard $0 != self.state.youTubeAdBlockingEnabled else { return }
                 try? self.youTubeAdBlockingStorage.set($0, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
                 self.state.youTubeAdBlockingEnabled = $0
+                DailyPixel.fireDailyAndCount(
+                    pixel: $0 ? .webExtensionAdBlockingEnabled : .webExtensionAdBlockingDisabled,
+                    pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+                )
+                NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
             }
         )
     }
@@ -892,7 +902,8 @@ final class SettingsViewModel: ObservableObject {
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
          autoplaySettings: AutoplaySettings = DefaultAutoplaySettings(),
-         darkReaderFeatureSettings: DarkReaderFeatureSettings
+         darkReaderFeatureSettings: DarkReaderFeatureSettings,
+         adBlockingAvailability: AdBlockingAvailabilityProviding
     ) {
 
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
@@ -931,6 +942,7 @@ final class SettingsViewModel: ObservableObject {
             daxDialogsStatusProvider: legacyViewProvider.daxDialogsManager
         )
         self.whatsNewCoordinator = whatsNewCoordinator
+        self.adBlockingAvailability = adBlockingAvailability
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -985,7 +997,7 @@ extension SettingsViewModel {
             subscription: SettingsState.defaults.subscription,
             sync: getSyncState(),
             syncSource: nil,
-            duckPlayerEnabled: !featureFlagger.isFeatureOn(.adBlockingExtension) && (featureFlagger.isFeatureOn(.duckPlayer) || shouldDisplayDuckPlayerContingencyMessage),
+            duckPlayerEnabled: !adBlockingAvailability.isFeatureAvailable && (featureFlagger.isFeatureOn(.duckPlayer) || shouldDisplayDuckPlayerContingencyMessage),
             duckPlayerMode: duckPlayerSettings.mode,
             duckPlayerOpenInNewTab: duckPlayerSettings.openInNewTab,
             duckPlayerOpenInNewTabEnabled: featureFlagger.isFeatureOn(.duckPlayerOpenInNewTab),
@@ -993,8 +1005,8 @@ extension SettingsViewModel {
             duckPlayerNativeUISERPEnabled: duckPlayerSettings.nativeUISERPEnabled,
             duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode,
             autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode,
-            youTubeAdBlockingAvailable: featureFlagger.isFeatureOn(.adBlockingExtension),
-            youTubeAdBlockingEnabled: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? true
+            youTubeAdBlockingAvailable: adBlockingAvailability.isFeatureAvailable,
+            youTubeAdBlockingEnabled: (try? youTubeAdBlockingStorage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false
         )
 
         // Subscribe to DuckPlayerSettings updates

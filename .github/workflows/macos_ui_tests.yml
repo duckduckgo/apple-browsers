@@ -15,6 +15,13 @@ on:
         description: "Run one or more UITestCases (optional, space-separated, e.g. 'AutocompleteTests' or 'AutocompleteTests BookmarksTests')"
         type: string
         required: false
+      build-type:
+        description: "Build type: 'dmg' for Developer ID DMG app, 'appstore' for sandboxed App Store app"
+        type: choice
+        default: dmg
+        options:
+        - dmg
+        - appstore
   workflow_call:
     inputs:
       all_os_versions:
@@ -29,6 +36,11 @@ on:
         description: "Run one or more UITestCases (optional, space-separated, e.g. 'AutocompleteTests' or 'AutocompleteTests BookmarksTests')"
         type: string
         required: false
+      build-type:
+        description: "Build type: 'dmg' for Developer ID DMG app, 'appstore' for sandboxed App Store app"
+        type: string
+        required: false
+        default: dmg
   schedule:
     - cron: '0 3 * * 1-5' # 3AM UTC offsetted to legacy to avoid action-junit-report@v4 bug
   push:
@@ -50,7 +62,7 @@ concurrency:
   # and the value of `${{ github.workflow }}-${{ github.ref }}` would be the same for PR Checks and UI Tests, which would prevent them
   # from being run concurrently. We're adding a suffix here to tell PR Checks and UI Tests apart and allow for running the two
   # side by side in the code freeze workflow.
-  group: ${{ github.workflow }}-${{ github.ref }}-ui-tests
+  group: ${{ github.workflow }}-${{ github.ref }}-ui-tests-${{ inputs.build-type }}
   cancel-in-progress: true
 
 jobs:
@@ -59,14 +71,14 @@ jobs:
     uses: ./.github/workflows/should_run_pr_checks.yml
 
   create-notarized-app:
-    name: Build Notarized Review app
+    name: Build Notarized Review app (${{ inputs.build-type }})
 
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
 
     uses: ./.github/workflows/macos_build_notarized.yml
     with:
-      release-type: review
+      release-type: "${{ inputs.build-type == 'appstore' && 'sandbox-review' || 'review' }}" # Use sandbox-review release-type for App Store UI Tests
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
@@ -172,10 +184,17 @@ jobs:
         include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
 
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}-${{ matrix.test }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}-${{ matrix.test }}-${{ inputs.build-type }}
       cancel-in-progress: true
 
     timeout-minutes: 120
+
+    env:
+      scheme: ${{ inputs.build-type == 'appstore' && 'macOS UI Tests App Store CI' || 'macOS UI Tests CI' }}
+      app-name: ${{ inputs.build-type == 'appstore' && 'DuckDuckGo App Store Review' || 'DuckDuckGo Review' }}
+      app-bundle-id: ${{ inputs.build-type == 'appstore' && 'com.duckduckgo.mobile.ios.review' || 'com.duckduckgo.macos.browser.review' }}
+      release-type: ${{ inputs.build-type == 'appstore' && 'sandbox-review' || 'review' }}
+      extra-xcargs: ${{ inputs.build-type == 'appstore' && 'UI_TESTS_TARGET_APP=sandbox' || '' }}
 
     steps:
     - name: Register SSH keys for private repos
@@ -290,7 +309,7 @@ jobs:
     - name: Start log stream in background
       working-directory: macOS
       run: |
-        log stream --debug --info --predicate 'process == "DuckDuckGo Review" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
+        log stream --debug --info --predicate 'process == "${{ env.app-name }}" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
         echo $! > log_stream.pid
 
     - name: Resolve package dependencies
@@ -302,7 +321,7 @@ jobs:
         for attempt in $(seq 1 $max_attempts); do
           echo "Attempt $attempt of $max_attempts"
           if xcodebuild -resolvePackageDependencies \
-            -scheme "macOS UI Tests CI" \
+            -scheme "${{ env.scheme }}" \
             -derivedDataPath DerivedData \
             2>&1 | tee resolve.log; then
             echo "Package resolution succeeded"
@@ -329,11 +348,12 @@ jobs:
       working-directory: macOS
       run: |
         set -o pipefail && xcodebuild build-for-testing \
-          -scheme "macOS UI Tests CI" \
+          -scheme "${{ env.scheme }}" \
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
+          ${{ env.extra-xcargs }} \
         | tee xcodebuild.log \
         | xcbeautify
 
@@ -358,27 +378,27 @@ jobs:
     - name: Extract and Copy app to /DerivedData
       working-directory: macOS
       run: |
-        cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
+        cd DuckDuckGo-${{ env.release-type }}-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
 
         # Find the extracted app bundle and rename if needed
         extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
         if [[ -n "${extracted_app}" ]]; then
           extracted_app_name=$(basename "${extracted_app}")
-          if [[ "${extracted_app_name}" != "DuckDuckGo Review.app" ]]; then
-            echo "Renaming extracted app from '${extracted_app_name}' to 'DuckDuckGo Review.app'"
-            mv "${extracted_app}" "DuckDuckGo Review.app"
+          if [[ "${extracted_app_name}" != "${{ env.app-name }}.app" ]]; then
+            echo "Renaming extracted app from '${extracted_app_name}' to '${{ env.app-name }}.app'"
+            mv "${extracted_app}" "${{ env.app-name }}.app"
           fi
         fi
 
-        mv -f "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
+        mv -f "${{ env.app-name }}.app" "../DerivedData/Build/Products/Review/${{ env.app-name }}.app"
 
     - name: Run UI Tests
       id: run-ui-tests
       working-directory: macOS
       run: |
-        defaults write com.duckduckgo.macos.browser.review moveToApplicationsFolderAlertSuppress 1
+        defaults write ${{ env.app-bundle-id }} moveToApplicationsFolderAlertSuppress 1
         set -o pipefail && xcodebuild test-without-building \
-          -scheme "macOS UI Tests CI" \
+          -scheme "${{ env.scheme }}" \
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
@@ -386,6 +406,7 @@ jobs:
           -retry-tests-on-failure \
           -test-repetition-relaunch-enabled YES \
           '-only-testing:UI Tests/${{ matrix.test }}' \
+          ${{ env.extra-xcargs }} \
         | tee -a xcodebuild.log \
         | tee ui-tests.log
 

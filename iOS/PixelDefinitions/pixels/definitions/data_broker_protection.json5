@@ -4,18 +4,7 @@
         "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpDataBroker",
-            "dbpParentBroker",
-            "dbpAttemptId",
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
-            }
-        ]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpParentBroker", "dbpAttemptId"]
     },
     "m_ios_dbp_optout_stage_email-generate": {
         "description": "Fired at the email generation stage of an opt-out attempt.",
@@ -99,12 +88,7 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId",
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
-            }
+            "dbpActionId"
         ]
     },
     "m_ios_dbp_optout_stage_condition-found": {
@@ -273,11 +257,6 @@
                 "description": "VPN bypass status when the attempt succeeded",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
-            },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
             }
         ]
     },
@@ -294,6 +273,16 @@
             "dbpBrokerVersion",
             "dbpAttemptId",
             "dbpAttemptDuration",
+            {
+                "key": "error_category",
+                "description": "High-level error classification",
+                "type": "string"
+            },
+            {
+                "key": "error_details",
+                "description": "Error description supplied by the failing stage",
+                "type": "string"
+            },
             {
                 "key": "stage",
                 "description": "The stage where the failure occurred",
@@ -325,11 +314,6 @@
                 "description": "VPN bypass status when the failure happened",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
-            },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
             }
         ]
     },
@@ -636,7 +620,7 @@
                 "key": "error_code",
                 "description": "Backend item error code",
                 "type": "string",
-                "enum": ["server_error", "extraction_error", "request_error"]
+                "enum": ["server_error", "extraction_error", "request_error", "unknown"]
             }
         ]
     },
@@ -1012,7 +996,7 @@
         "description": "Fired when a scan or opt-out action fails while processing a data broker.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -1044,7 +1028,7 @@
         "description": "Fired when a data broker scan or opt-out operation fails with an HTTP error.",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -1064,7 +1048,7 @@
         "description": "Fired when a data broker scan or opt-out operation fails with a non-HTTP, non-action error.",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -1078,25 +1062,6 @@
                 "type": "string"
             },
             "dbpIsFreeScan"
-        ]
-    },
-    "m_ios_dbp_data_broker_action-payload_typed-fallback_unexpected": {
-        "description": "Fired when a broker action is unexpectedly injected using typed fallback payload instead of raw JSON.",
-        "owners": ["quanganhdo"],
-        "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpDataBroker",
-            "dbpBrokerVersion",
-            "dbpActionType",
-            {
-                "key": "stepType",
-                "description": "Step type where typed-fallback payload injection occurred",
-                "type": "string",
-                "enum": ["scan", "optOut", "unknown"]
-            }
         ]
     },
     "m_ios_dbp_notification_sent_first_scan_complete": {
@@ -1210,11 +1175,6 @@
                 "key": "optout_submit_success_rate",
                 "description": "The opt-out submission success rate for this broker",
                 "type": "number"
-            },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
             }
         ]
     },
@@ -1230,11 +1190,6 @@
                 "key": "optout_submit_success_rate",
                 "description": "The global opt-out submission success rate",
                 "type": "number"
-            },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
             }
         ]
     }

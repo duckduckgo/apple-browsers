@@ -30,9 +30,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     let isUsingExpandedBottomBarHeight: Bool = false
     /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
     let isUsingFadeOutAnimation: Bool = false
+    let shouldDisableAutocorrectOnEmpty: Bool = true
     let isCurrentTextValidURL: Bool = false
     let modeParameters: [String: String] = [:]
-    var isFireTab: Bool = false // TODO: - Handle injecting and updating this. And customizing the new tinput view for fire tabs.
+    var isFireTab: Bool
 
     // MARK: - SwitchBarHandling — Dynamic State
 
@@ -142,9 +143,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     // MARK: - Initialization
 
-    init(isVoiceSearchEnabled: Bool, isToggleEnabled: Bool = true) {
+    init(isVoiceSearchEnabled: Bool, isToggleEnabled: Bool = true, isFireTab: Bool = false) {
         self.isVoiceSearchEnabled = isVoiceSearchEnabled
         self.isToggleEnabled = isToggleEnabled
+        self.isFireTab = isFireTab
         updateButtonState()
     }
 

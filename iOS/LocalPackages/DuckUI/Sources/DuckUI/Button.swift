@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import UIComponents
 
 private struct PrimaryButtonColors {
     let standard: Color
@@ -144,6 +145,7 @@ public struct SecondaryDestructiveButtonStyle: ButtonStyle {
                     .stroke(borderColor, lineWidth: 1)
             )
             .cornerRadius(Consts.cornerRadius)
+            .contentShape(RoundedRectangle(cornerRadius: Consts.cornerRadius))
     }
 }
 

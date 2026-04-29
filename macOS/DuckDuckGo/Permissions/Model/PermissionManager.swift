@@ -19,9 +19,7 @@
 import Foundation
 import Combine
 import Common
-import FeatureFlags
 import os.log
-import PrivacyConfig
 
 protocol PermissionManagerProtocol: AnyObject {
 
@@ -46,15 +44,13 @@ protocol PermissionManagerProtocol: AnyObject {
 final class PermissionManager: PermissionManagerProtocol {
 
     private let store: PermissionStore
-    private let featureFlagger: FeatureFlagger
     private var permissions = [String: [PermissionType: StoredPermission]]()
 
     private let permissionSubject = PassthroughSubject<PublishedPermission, Never>()
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { permissionSubject.eraseToAnyPublisher() }
 
-    init(store: PermissionStore, featureFlagger: FeatureFlagger) {
+    init(store: PermissionStore) {
         self.store = store
-        self.featureFlagger = featureFlagger
         loadPermissions()
     }
 
@@ -100,15 +96,10 @@ final class PermissionManager: PermissionManagerProtocol {
         let domain = domain.droppingWwwPrefix()
 
         // Check if permission is already stored with the same decision
-        // Note: permission(forDomain:...) returns .ask by default, so we also check hasPermissionPersisted
-        // when newPermissionView is enabled (to allow storing .ask explicitly)
+        // Also check hasPermissionPersisted to allow storing .ask explicitly for permission center visibility
         let currentDecision = self.permission(forDomain: domain, permissionType: permissionType)
-        if featureFlagger.isFeatureOn(.newPermissionView) {
-            let isAlreadyPersisted = hasPermissionPersisted(forDomain: domain, permissionType: permissionType)
-            guard currentDecision != decision || !isAlreadyPersisted else { return }
-        } else {
-            guard currentDecision != decision else { return }
-        }
+        let isAlreadyPersisted = hasPermissionPersisted(forDomain: domain, permissionType: permissionType)
+        guard currentDecision != decision || !isAlreadyPersisted else { return }
 
         defer {
             self.permissionSubject.send( (domain, permissionType, decision) )

@@ -51,7 +51,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
     func testWhenFetchingModelsThenFieldsAreMappedCorrectly() async {
         mockModelsService.modelsToReturn = [
             makeRemoteModel(id: "gpt-4o-mini", name: "GPT-4o mini", shortName: "4o-mini",
-                            supportsImageUpload: true, accessTier: ["free"])
+                            supportsImageUpload: true, supportedTools: ["WebSearch", "NewsSearch"], accessTier: ["free"])
         ]
 
         let sections = await provider.fetchAIModelSections()
@@ -62,6 +62,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertEqual(item?.shortName, "4o-mini")
         XCTAssertTrue(item?.isEnabled == true)
         XCTAssertTrue(item?.supportsImageUpload == true)
+        XCTAssertEqual(item?.supportedTools, ["WebSearch", "NewsSearch"])
     }
 
     func testWhenFreeUserThenPremiumModelsAreDisabled() async {
@@ -107,6 +108,30 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertTrue(allIds.contains("plus-model"))
         XCTAssertTrue(allIds.contains("free-model"))
         XCTAssertFalse(allIds.contains("pro-only"))
+    }
+
+    // MARK: - Reasoning Effort Tests
+
+    func testWhenModelHasSupportedReasoningEffortThenItIsMappedToItem() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "reasoning-model", supportedReasoningEffort: [.none, .low, .medium], accessTier: ["free"])
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+        let item = sections.flatMap(\.items).first(where: { $0.id == "reasoning-model" })
+
+        XCTAssertEqual(item?.supportedReasoningEffort, ["none", "low", "medium"])
+    }
+
+    func testWhenModelHasNoReasoningSupportThenMappedItemHasEmptyArray() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "plain-model", accessTier: ["free"])
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+        let item = sections.flatMap(\.items).first(where: { $0.id == "plain-model" })
+
+        XCTAssertEqual(item?.supportedReasoningEffort, [])
     }
 
     // MARK: - Section Structure Tests
@@ -190,6 +215,8 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         name: String = "Model",
         shortName: String? = nil,
         supportsImageUpload: Bool = false,
+        supportedTools: [String] = [],
+        supportedReasoningEffort: [AIChatReasoningEffort] = [],
         accessTier: [String]
     ) -> AIChatRemoteModel {
         AIChatRemoteModel(
@@ -199,8 +226,9 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
             provider: "openai",
             entityHasAccess: true,
             supportsImageUpload: supportsImageUpload,
-            supportedTools: [],
-            accessTier: accessTier
+            supportedTools: supportedTools,
+            accessTier: accessTier,
+            supportedReasoningEffort: supportedReasoningEffort
         )
     }
 

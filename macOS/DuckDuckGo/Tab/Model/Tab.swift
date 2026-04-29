@@ -301,7 +301,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         let configuration = webViewConfiguration ?? WKWebViewConfiguration()
         configuration.applyStandardConfiguration(contentBlocking: privacyFeatures.contentBlocking,
                                                  burnerMode: burnerMode,
-                                                 privateProcessName: featureFlagger.isFeatureOn(.privateProcessName),
                                                  earlyAccessHandlers: specialPagesUserScript.map { [$0] } ?? [])
         self.webViewConfiguration = configuration
         let userContentController = configuration.userContentController as? UserContentController
@@ -321,8 +320,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         webView.setAccessibilityIdentifier("WebView")
 
         permissions = PermissionModel(permissionManager: permissionManager,
-                                      geolocationService: geolocationService,
-                                      featureFlagger: featureFlagger)
+                                      geolocationService: geolocationService)
 
         let userContentControllerPromise = Future<UserContentController, Never>.promise()
         let userScriptsPublisher = userContentControllerPromise.future
@@ -1563,8 +1561,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     func renderingProgressDidChange(progressEvents: UInt) {
         // Emit only after first paint event, when the white background content is not visible anymore
-        let events = _WKRenderingProgressEvents(rawValue: progressEvents)
-        if events.contains(.firstVisuallyNonEmptyLayout) {
+        if progressEvents >= _WKRenderingProgressEvents.firstVisuallyNonEmptyLayout.rawValue {
             webViewRenderingProgressDidChangePublisher.send()
         }
     }

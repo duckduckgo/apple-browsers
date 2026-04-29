@@ -43,6 +43,9 @@ class SwitchBarTextEntryView: UIView {
 
         // Increased buttons spacing
         static let additionalVerticalButtonsPadding: CGFloat = 6
+
+        // Matches UnifiedToggleInputView.Constants.animationDuration so icons ride the focus animation.
+        static let buttonStateAnimationDuration: TimeInterval = 0.25
     }
 
     private let handler: SwitchBarHandling
@@ -145,22 +148,20 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func setupView() {
-        if handler.isFireTab {
-            overrideUserInterfaceStyle = .dark
-        }
-        
+        applyFireModeAppearance(isFireTab: handler.isFireTab)
+
         let fontMetrics = UIFontMetrics(forTextStyle: .body)
         let textFont = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
         textView.font = textFont
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = UIColor.clear
-        textView.tintColor = handler.isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
         textView.textColor = UIColor(designSystemColor: .textPrimary)
         textView.autocorrectionType = .no
         textView.autocapitalizationType = .none
         textView.delegate = self
         textView.isScrollEnabled = false
         textView.showsVerticalScrollIndicator = false
+        textView.accessibilityIdentifier = "searchEntry"
 
         placeholderLabel.font = textFont
         placeholderLabel.adjustsFontForContentSizeCategory = true
@@ -293,7 +294,7 @@ class SwitchBarTextEntryView: UIView {
         case .aiChat:
             textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
             textView.returnKeyType = .default
-            if handler.isUsingFadeOutAnimation && textView.text.isEmpty {
+            if handler.shouldDisableAutocorrectOnEmpty && textView.text.isEmpty {
                 disableAutoCorrectionAndSpellChecking()
             } else {
                 enableAutoCorrectionAndSpellChecking()
@@ -312,12 +313,15 @@ class SwitchBarTextEntryView: UIView {
         buttonsView.isAIVoiceChatEnabled = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
 
         if newButtonState != currentButtonState {
-            currentButtonState = newButtonState
-
-            // Prevent unexpected animations of this change
-            UIView.performWithoutAnimation {
-                adjustTextViewContentInset()
-                buttonsView.layoutIfNeeded()
+            // Snapshot crossfade so icons fade in/out without UIStackView's `isHidden` jank.
+            UIView.transition(with: buttonsView,
+                              duration: Constants.buttonStateAnimationDuration,
+                              options: .transitionCrossDissolve) {
+                UIView.performWithoutAnimation {
+                    self.currentButtonState = newButtonState
+                    self.adjustTextViewContentInset()
+                    self.layoutIfNeeded()
+                }
             }
         }
     }
@@ -451,6 +455,17 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
+    func refreshFireMode(fireMode: Bool) {
+        applyFireModeAppearance(isFireTab: fireMode)
+    }
+
+    private func applyFireModeAppearance(isFireTab: Bool) {
+        overrideUserInterfaceStyle = isFireTab ? .dark : .unspecified
+        textView.tintColor = isFireTab
+            ? UIColor(singleUseColor: .fireModeAccent)
+            : UIColor(designSystemColor: .accent)
+    }
+
     private func setupSubscriptions() {
         handler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
@@ -516,7 +531,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateAutoCorrectionSetupForAIChat(for text: String) {
-        guard handler.isUsingFadeOutAnimation && currentMode == .aiChat else { return }
+        guard handler.shouldDisableAutocorrectOnEmpty, currentMode == .aiChat else { return }
 
         let isTextEmpty = text.isEmpty
         let stateChanged = isTextEmpty != wasTextEmptyForAutocorrection
@@ -588,7 +603,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         updatePlaceholderVisibility()
         updateButtonState()
         updateTextViewHeight()
-        handler.updateCurrentText(textView.text ?? "")
+        handler.updateCurrentText((textView.text ?? "").strippingDictationPlaceholder)
         handler.markUserInteraction()
 
         // On iPad, reload input views on each keystroke (old behavior, without fade-out animation)

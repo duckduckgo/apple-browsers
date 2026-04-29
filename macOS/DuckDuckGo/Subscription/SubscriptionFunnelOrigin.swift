@@ -48,6 +48,9 @@ enum SubscriptionFunnelOrigin: String {
 
     /// User entered the funnel via the New Tab Page next steps card.
     case newTabPageNextStepsCard = "funnel_onboarding_macOS__nextstepscard"
+
+    /// User entered the funnel via the subscription promo on the Fire Window home page.
+    case fireWindowPromo = "funnel_newtab_macos__firewindowvpn"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.

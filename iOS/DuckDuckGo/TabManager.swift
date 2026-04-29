@@ -49,7 +49,17 @@ protocol TabManaging {
     /// Closes the tab and navigates to homepage reusing an existing homepage or creating a new one
     @MainActor func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool)
     @MainActor func closeTabAndOpenNewChat(_ tab: Tab, clearTabHistory: Bool)
-    @MainActor func setBrowsingMode(_ mode: BrowsingMode)
+    @MainActor func setBrowsingMode(_ mode: BrowsingMode, source: FireModeSwitchSource)
+}
+
+enum FireModeSwitchSource: String {
+    case tabSelection = "tab_selection"
+    case longPressTabsIcon = "long_press_tabs_icon"
+    case menuPromotion = "menu_promotion"
+    case ntpPromotion = "ntp_promotion"
+    case longPressLink = "long_press_link"
+    case tabSwitcherLongPress = "tab_switcher_long_press"
+    case keyCommand = "key_command"
 }
 
 /// Receives lifecycle events for TabViewController instances managed by TabManager.
@@ -147,6 +157,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let toggleModeStorage: ToggleModeStoring
     private let fireModePromotionEligibility: FireModePromotionCoordinating?
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -191,10 +202,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          launchSourceManager: LaunchSourceManaging,
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
          fireModePromotionEligibility: FireModePromotionCoordinating? = nil
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.tabsModelProvider = tabsModelProvider
         self.previewsSource = previewsSource
         self.interactionStateSource = interactionStateSource
@@ -234,11 +247,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         registerForNotifications()
     }
 
-    /// Resolves the preferred text entry mode for a newly created tab based on the user's default omnibar mode setting.
     private func resolvedTextEntryMode() -> TextEntryMode {
-        aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode {
-            toggleModeStorage.restore()
-        }
+        aiChatSettings.defaultOmnibarMode
+            .resolvedTextEntryMode { toggleModeStorage.restore() }
+            .displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
     }
 
     func setWebExtensionManager(_ manager: WebExtensionManaging?) {
@@ -246,7 +258,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
     
     @MainActor
-    func setBrowsingMode(_ mode: BrowsingMode) {
+    func setBrowsingMode(_ mode: BrowsingMode, source: FireModeSwitchSource) {
         guard mode != currentBrowsingMode else {
             return
         }
@@ -255,7 +267,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         if mode == .fire {
             fireModePromotionEligibility?.markFireModeVisited()
         }
-        // TODO: - Fire pixel
+        Pixel.fire(pixel: .browsingModeSwitched, withAdditionalParameters: [
+            PixelParameters.browsingMode: mode.pixelParamValue,
+            PixelParameters.source: source.rawValue
+        ])
     }
 
     func tabsModel(for mode: BrowsingMode) -> TabsModelManaging {
@@ -323,7 +338,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               darkReaderFeatureSettings: darkReaderFeatureSettings,
                                                               autoplaySettings: autoplaySettings,
-                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -435,7 +451,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               darkReaderFeatureSettings: darkReaderFeatureSettings,
                                                               autoplaySettings: autoplaySettings,
-                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,
@@ -489,7 +506,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     @MainActor
     @discardableResult
     func select(_ tab: Tab, dismissCurrent: Bool = true, in tabsModel: TabsModelManaging? = nil) -> TabViewController? {
-        setBrowsingMode(tab.mode)
+        setBrowsingMode(tab.mode, source: .tabSelection)
         let model = tabsModel ?? currentTabsModel
         if dismissCurrent {
             current()?.dismiss()
@@ -553,10 +570,17 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         // In normal mode, removing the last tab auto-inserts a blank tab, so we skip
         // inserting newTab (the auto-created tab serves the same purpose).
         // In fire mode (allowsEmpty), no auto-insert happens, so we must always insert newTab.
-        if model.tabs.count == 1 && !model.allowsEmpty {
+        if model.tabs.count == 1 && !model.allowsEmpty && newTab.link == nil {
             // Since we're not re-inserting we should use the proper removal to ensure
             //  things are cleaned up properly.
             remove(tab: tab, clearTabHistory: clearTabHistory, in: model)
+        } else if model.tabs.count == 1 && !model.allowsEmpty {
+            // newTab has content (e.g. AI chat URL) so the auto-created blank won't suffice.
+            // Use removeTabs (no auto-insert) to avoid ending up with both newTab and an
+            // auto-created blank tab.
+            model.removeTabs([tab])
+            model.insert(tab: newTab, placement: .atEnd, selectNewTab: false)
+            clean(tabs: [tab], clearTabHistory: clearTabHistory)
         } else {
             model.insert(tab: newTab, placement: .replacing(tab), selectNewTab: false)
             clean(tabs: [tab], clearTabHistory: clearTabHistory)

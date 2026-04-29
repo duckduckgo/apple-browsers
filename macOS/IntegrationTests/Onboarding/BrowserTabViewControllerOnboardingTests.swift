@@ -459,7 +459,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         viewController.delegate = delegate
         XCTAssertFalse(delegate.didCallHighlightFireButton)
         tab.navigateFromOnboarding(to: url)
-        wait(for: [expectation], timeout: 3.0)
+        wait(for: [expectation], timeout: 5.0)
 
         // WHEN
         factory.performOnGotItPressed()
@@ -518,6 +518,57 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         XCTAssertTrue(delegate.didCallDismissViewHighlight)
     }
 
+    func testWhenDialogSuggestionPressed_ThenPixelReporterMeasuresSuggestionPressed() throws {
+        // GIVEN
+        dialogProvider.dialog = .tryASearch
+        let url = URL.duckDuckGo
+        let delegate = BrowserTabViewControllerDelegateSpy()
+        viewController.delegate = delegate
+        tab.navigateFromOnboarding(to: url)
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertFalse(pixelReporter.measureSuggestionPressedCalled)
+
+        // WHEN
+        factory.performOnSuggestionPressed()
+
+        // THEN
+        XCTAssertTrue(pixelReporter.measureSuggestionPressedCalled)
+    }
+
+    func testWhenDialogManuallyDismissed_ThenPixelReporterMeasuresManuallyDismissed() throws {
+        // GIVEN
+        dialogProvider.dialog = .tryASearch
+        let url = URL.duckDuckGo
+        let delegate = BrowserTabViewControllerDelegateSpy()
+        viewController.delegate = delegate
+        tab.navigateFromOnboarding(to: url)
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertNil(pixelReporter.manuallyDismissedDialog)
+
+        // WHEN
+        factory.performOnManualDismiss()
+
+        // THEN
+        XCTAssertEqual(pixelReporter.manuallyDismissedDialog, .tryASearch)
+    }
+
+    func testWhenDialogGotItPressed_ThenPixelReporterMeasuresGotItPressed() {
+        // GIVEN
+        dialogProvider.dialog = .defaultSearchDone
+        let url = URL.duckDuckGo
+        let delegate = BrowserTabViewControllerDelegateSpy()
+        viewController.delegate = delegate
+        tab.navigateFromOnboarding(to: url)
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertNil(pixelReporter.gotItPressedDialog)
+
+        // WHEN
+        factory.performOnGotItPressed()
+
+        // THEN
+        XCTAssertEqual(pixelReporter.gotItPressedDialog, .defaultSearchDone)
+    }
+
 }
 
 class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
@@ -561,17 +612,19 @@ class CapturingDialogFactory: ContextualDaxDialogsFactory {
     private var onGotItPressed: (() -> Void)?
     private var onFireButtonPressed: (() -> Void)?
     private var onManualDismissPressed: (() -> Void)?
+    private var onSuggestionPressed: (() -> Void)?
 
     init(expectation: XCTestExpectation) {
         self.expectation = expectation
     }
 
-    func makeView(for type: ContextualDialogType, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> AnyView {
+    func makeView(for type: ContextualDialogType, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
         capturedType = type
         capturedDelegate = delegate
         self.onGotItPressed = onGotItPressed
         self.onFireButtonPressed = onFireButtonPressed
-        self.onManualDismissPressed = onDismiss
+        self.onManualDismissPressed = onManualDismiss
+        self.onSuggestionPressed = onSuggestionPressed
         expectation.fulfill()
         return AnyView(OnboardingFinalDialog(highFiveAction: {}, onManualDismiss: {}))
     }
@@ -586,6 +639,10 @@ class CapturingDialogFactory: ContextualDaxDialogsFactory {
 
     func performOnManualDismiss() {
         onManualDismissPressed?()
+    }
+
+    func performOnSuggestionPressed() {
+        onSuggestionPressed?()
     }
 
 }
@@ -620,7 +677,11 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     var measureFireButtonTryItCalled = false
     var measureLastDialogShownCalled = false
     var measureSiteVisitedCalled = false
+    var measureSuggestionPressedCalled = false
     var dismissedDialog: ContextualDialogType?
+    var manuallyDismissedDialog: ContextualDialogType?
+    var shownDialog: ContextualDialogType?
+    var gotItPressedDialog: ContextualDialogType?
 
     func measureFireButtonSkipped() {
         measureFireButtonSkippedCalled = true
@@ -652,6 +713,22 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
 
     func measureDialogDismissed(dialogType: ContextualDialogType) {
         dismissedDialog = dialogType
+    }
+
+    func measureDialogManuallyDismissed(dialogType: ContextualDialogType) {
+        manuallyDismissedDialog = dialogType
+    }
+
+    func measureSuggestionPressed() {
+        measureSuggestionPressedCalled = true
+    }
+
+    func measureDialogShown(dialogType: ContextualDialogType) {
+        shownDialog = dialogType
+    }
+
+    func measureGotItPressed(dialogType: ContextualDialogType) {
+        gotItPressedDialog = dialogType
     }
 }
  private class DockCustomizerMock: DockCustomization {

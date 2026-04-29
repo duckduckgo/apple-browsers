@@ -428,4 +428,14 @@ final class StringExtensionTests: XCTestCase {
         XCTAssertEqual(result, "world")
     }
 
+    func testApplyingReplacementsHandlesValueMuchLargerThanPlaceholder() {
+        let largeValue = String(repeating: "x", count: 1_100_000)
+        let template = "before $K$ after"
+        let result = template.applyingReplacements(["$K$": largeValue])
+
+        XCTAssertEqual(result.count, "before  after".count + largeValue.count)
+        XCTAssertTrue(result.hasPrefix("before "))
+        XCTAssertTrue(result.hasSuffix(" after"))
+    }
+
 }

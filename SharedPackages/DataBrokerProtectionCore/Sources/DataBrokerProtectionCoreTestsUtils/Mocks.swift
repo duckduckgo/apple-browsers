@@ -850,8 +850,12 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public func updateRemovedDate(for extractedProfileId: Int64, with date: Date?) throws {
     }
 
+    public var hasMatchesToReturn = false
+    public var hasMatchesError: Error?
+
     public func hasMatches() throws -> Bool {
-        false
+        if let error = hasMatchesError { throw error }
+        return hasMatchesToReturn
     }
 
     public func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker] {
@@ -1283,8 +1287,12 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         optOutToReturn
     }
 
+    public var hasMatchesToReturn = false
+    public var hasMatchesError: Error?
+
     public func hasMatches() throws -> Bool {
-        false
+        if let error = hasMatchesError { throw error }
+        return hasMatchesToReturn
     }
 
     public func matchRemovedByUser(_ matchID: Int64) throws {
@@ -1977,29 +1985,29 @@ public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJob
     }
 }
 
-public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
+public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     public let isRemoteBrokerDeliveryFeatureOn: Bool
     public let isEmailConfirmationDecouplingFeatureOn: Bool
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
     public let isForegroundRunningWhenDashboardOpenFeatureOn: Bool
-    public let isClickActionDelayReductionOptimizationOn: Bool
     public let isContinuedProcessingFeatureOn: Bool
     public let isWebViewUserAgentOn: Bool
+    public let isFreemiumPIREnabled: Bool
 
     public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
                 isEmailConfirmationDecouplingFeatureOn: Bool = false,
                 isForegroundRunningOnAppActiveFeatureOn: Bool = true,
                 isForegroundRunningWhenDashboardOpenFeatureOn: Bool = true,
-                isClickActionDelayReductionOptimizationOn: Bool = false,
                 isContinuedProcessingFeatureOn: Bool = true,
-                isWebViewUserAgentOn: Bool = false) {
+                isWebViewUserAgentOn: Bool = false,
+                isFreemiumPIREnabled: Bool = false) {
         self.isRemoteBrokerDeliveryFeatureOn = isRemoteBrokerDeliveryFeatureOn
         self.isEmailConfirmationDecouplingFeatureOn = isEmailConfirmationDecouplingFeatureOn
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isForegroundRunningWhenDashboardOpenFeatureOn = isForegroundRunningWhenDashboardOpenFeatureOn
-        self.isClickActionDelayReductionOptimizationOn = isClickActionDelayReductionOptimizationOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isWebViewUserAgentOn = isWebViewUserAgentOn
+        self.isFreemiumPIREnabled = isFreemiumPIREnabled
     }
 }
 

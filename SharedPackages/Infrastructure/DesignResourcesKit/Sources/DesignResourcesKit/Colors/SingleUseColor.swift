@@ -52,6 +52,7 @@ public enum SingleUseColor {
     case fireModeAccentDark
     case fireModeAccentTertiary
     case fireModeBackground
+    case fireModeCardBackground
 }
 
 // MARK: - Onboarding Rebranding 2026

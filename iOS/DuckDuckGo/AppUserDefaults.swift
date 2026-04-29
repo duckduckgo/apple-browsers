@@ -108,6 +108,7 @@ public class AppUserDefaults: AppSettings {
         static let autofillDebugScriptEnabledKey = "com.duckduckgo.ios.debug.autofillDebugScriptEnabled"
         static let contentScopeDebugStateEnabledKey = "com.duckduckgo.ios.debug.contentScopeDebugStateEnabled"
         static let onboardingIsNewUserKey = "com.duckduckgo.ios.debug.onboardingIsNewUser"
+        static let shakeToOpenDebugMenuEnabledKey = "com.duckduckgo.ios.debug.shakeToOpenDebugMenuEnabled"
     }
 
     private var userDefaults: UserDefaults? {
@@ -451,6 +452,16 @@ public class AppUserDefaults: AppSettings {
         }
     }
 
+    var shakeToOpenDebugMenuEnabled: Bool {
+        get {
+            return userDefaults?.object(forKey: DebugKeys.shakeToOpenDebugMenuEnabledKey) as? Bool ?? true
+        }
+
+        set {
+            userDefaults?.set(newValue, forKey: DebugKeys.shakeToOpenDebugMenuEnabledKey)
+        }
+    }
+
     var autofillDebugScriptEnabled: Bool {
         get {
             return userDefaults?.object(forKey: DebugKeys.autofillDebugScriptEnabledKey) as? Bool ?? false
@@ -631,6 +642,7 @@ public class AppUserDefaults: AppSettings {
 
     @UserDefaultsWrapper(key: .autoClearAIChatHistory, defaultValue: false)
     var autoClearAIChatHistory: Bool
+
 }
 
 extension AppUserDefaults: AppConfigurationFetchStatistics {

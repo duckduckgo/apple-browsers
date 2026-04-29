@@ -31,12 +31,15 @@ public enum ContextualOnboardingBackgroundType {
     case fireDialog
     case endOfJourney
     case endOfJourneyNTP
+    case endOfJourneyNTPChat
     case privacyProTrial
 
     var alignment: Alignment {
         switch self {
         case .tryASearch, .tryASearchCompleted, .tryVisitingASiteNTP, .trackers, .fireDialog:
             return .bottomTrailing
+        case .endOfJourneyNTPChat:
+            return .bottomLeading
         case .endOfJourney, .endOfJourneyNTP, .privacyProTrial:
             return .bottom
         }
@@ -58,6 +61,8 @@ public enum ContextualOnboardingBackgroundType {
             return OnboardingRebrandingImages.Contextual.endOfJourneyBackground
         case .endOfJourneyNTP:
             return OnboardingRebrandingImages.Contextual.endOfJourneyBackgroundNewTab
+        case .endOfJourneyNTPChat:
+            return OnboardingRebrandingImages.Contextual.successChatBackground
         case .privacyProTrial:
             return OnboardingRebrandingImages.Contextual.subscriptionPromoBackground
         }
@@ -206,7 +211,7 @@ extension OnboardingRebranding.OnboardingStyles {
             switch backgroundType {
             case .tryASearchCompleted, .trackers, .fireDialog, .endOfJourney:
                 return Self.maxHeightContextualAssets.build(v: vSizeClass, h: hSizeClass)
-            case .tryASearch, .tryVisitingASiteNTP, .endOfJourneyNTP, .privacyProTrial:
+            case .tryASearch, .tryVisitingASiteNTP, .endOfJourneyNTP, .endOfJourneyNTPChat, .privacyProTrial:
                 return Self.maxHeightNewTabPageAssets.build(v: vSizeClass, h: hSizeClass)
             }
             #else

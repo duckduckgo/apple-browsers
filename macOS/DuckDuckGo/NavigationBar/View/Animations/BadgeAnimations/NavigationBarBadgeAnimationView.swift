@@ -30,6 +30,7 @@ final class NavigationBarBadgeAnimationView: NSView {
         case cookiePopupManaged
         case cookiePopupHidden
         case trackersBlocked(count: Int)
+        case youTubeAdBlockOn
     }
 
     func prepareAnimation(_ type: AnimationType) {
@@ -41,17 +42,20 @@ final class NavigationBarBadgeAnimationView: NSView {
         case .cookiePopupManaged:
             viewToAnimate = BadgeNotificationContainerView(isCosmetic: false)
         case .trackersBlocked(let count):
-            // Create text generator for proper localization during counting animation
             let textGenerator: (Int) -> String = { currentCount in
                 UserText.omnibarNotificationTrackersBlocked(currentCount)
             }
-            // Use initial text for fallback (same as iOS)
             let text = UserText.omnibarNotificationTrackersBlocked(count)
             viewToAnimate = BadgeNotificationContainerView(
                 customText: text,
                 useShieldIcon: true,
                 trackerCount: count,
                 textGenerator: textGenerator
+            )
+        case .youTubeAdBlockOn:
+            viewToAnimate = BadgeNotificationContainerView(
+                customText: UserText.omnibarNotificationYouTubeAdBlockOn,
+                useVideoPlayerIcon: true
             )
         }
 

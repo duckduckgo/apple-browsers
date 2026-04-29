@@ -51,15 +51,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockUserDefaults = UserDefaults(suiteName: mockSuiteName)
         mockUserDefaults.removePersistentDomain(forName: mockSuiteName)
 
-        let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger, userDefaults: mockUserDefaults)
-        aiChatUserScriptHandler = AIChatUserScriptHandler(
-            experimentalAIChatManager: experimentalAIChatManager,
-            syncHandler: mockAIChatSyncHandler,
-            featureFlagger: mockFeatureFlagger,
-            keyValueStore: mockUserDefaults,
-            aichatFullModeFeature: mockAIChatFullModeFeature,
-            aichatContextualModeFeature: mockAIChatContextualModeFeature
-        )
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
         aiChatUserScriptHandler.setPayloadHandler(mockPayloadHandler)
     }
 
@@ -71,6 +63,19 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockAIChatFullModeFeature = nil
         mockAIChatContextualModeFeature = nil
         super.tearDown()
+    }
+
+    private func makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: Bool = false) -> AIChatUserScriptHandler {
+        let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger, userDefaults: mockUserDefaults)
+        return AIChatUserScriptHandler(
+            experimentalAIChatManager: experimentalAIChatManager,
+            syncHandler: mockAIChatSyncHandler,
+            featureFlagger: mockFeatureFlagger,
+            keyValueStore: mockUserDefaults,
+            aichatFullModeFeature: mockAIChatFullModeFeature,
+            aichatContextualModeFeature: mockAIChatContextualModeFeature,
+            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable
+        )
     }
 
     func testGetAIChatNativeConfigValues() {
@@ -88,6 +93,69 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsAIChatSync, false)
     }
     
+    func testWhenNativeStorageFeatureIsOnAndBridgeIsAvailableAndNotInFireModeThenSupportsNativeStorageIsTrue() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeStorage]
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true)
+        aiChatUserScriptHandler.isFireModeProvider = { false }
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertEqual(configValues?.supportsNativeStorage, true)
+    }
+
+    func testWhenNativeStorageFeatureIsOnAndBridgeIsAvailableAndInFireModeThenSupportsNativeStorageIsTrue() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeStorage]
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true)
+        aiChatUserScriptHandler.isFireModeProvider = { true }
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertEqual(configValues?.supportsNativeStorage, true)
+    }
+
+    func testWhenNativeStorageFeatureIsOnAndBridgeIsUnavailableThenSupportsNativeStorageIsFalse() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeStorage]
+        aiChatUserScriptHandler.isFireModeProvider = { false }
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertEqual(configValues?.supportsNativeStorage, false)
+    }
+
+    func testWhenNativeStorageFeatureIsOffAndBridgeIsAvailableThenSupportsNativeStorageIsFalse() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true)
+        aiChatUserScriptHandler.isFireModeProvider = { false }
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertEqual(configValues?.supportsNativeStorage, false)
+    }
+
+    func testWhenNativeStorageFeatureIsOffAndNotInFireModeThenSupportsNativeStorageIsFalse() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+        aiChatUserScriptHandler.isFireModeProvider = { false }
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertEqual(configValues?.supportsNativeStorage, false)
+    }
+
     func testGetAIChatNativeConfigValuesWithFullModeFeatureAvailable() {
         // Given
         mockAIChatFullModeFeature.isAvailable = true
@@ -170,6 +238,52 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         DispatchQueue.main.async {
             expectation.fulfill()
         }
+        await fulfillment(of: [expectation])
+    }
+
+    func testResponseReceivedPostsNotification() async {
+        // Given
+        let expectation = expectation(forNotification: .aiChatResponseReceived, object: nil)
+        let message = MockUserScriptMessage(name: "test", body: [:])
+
+        // When
+        let result = await aiChatUserScriptHandler.responseReceived(params: [:], message: message)
+
+        // Then
+        XCTAssertNil(result)
+        await fulfillment(of: [expectation])
+    }
+
+    func testResponseReceivedPostsPayloadInUserInfo() async {
+        // Given
+        let payload: [String: Any] = ["messageId": "123", "text": "hello"]
+        let expectation = expectation(forNotification: .aiChatResponseReceived, object: nil) { notification in
+            let userInfo = notification.userInfo
+            return userInfo?["messageId"] as? String == "123"
+                && userInfo?["text"] as? String == "hello"
+        }
+        let message = MockUserScriptMessage(name: "test", body: payload)
+
+        // When
+        let result = await aiChatUserScriptHandler.responseReceived(params: payload, message: message)
+
+        // Then
+        XCTAssertNil(result)
+        await fulfillment(of: [expectation])
+    }
+
+    func testResponseReceivedPostsNilUserInfoWhenParamsAreNotDictionary() async {
+        // Given
+        let expectation = expectation(forNotification: .aiChatResponseReceived, object: nil) { notification in
+            notification.userInfo == nil
+        }
+        let message = MockUserScriptMessage(name: "test", body: "not-a-dictionary")
+
+        // When
+        let result = await aiChatUserScriptHandler.responseReceived(params: "not-a-dictionary", message: message)
+
+        // Then
+        XCTAssertNil(result)
         await fulfillment(of: [expectation])
     }
 

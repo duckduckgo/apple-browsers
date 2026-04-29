@@ -57,7 +57,7 @@ public extension URL {
 
     static let surrogates = URL(string: "\(staticBase)/surrogates.txt")!
 
-    // The following URLs shall match the ones in update_embedded.sh. 
+    // The following URLs shall match the ones in update_embedded.sh.
     // Danger checks that the URLs match on every PR. If the code changes, the regex that Danger uses may need an update.
     static let privacyConfig = URL(string: "\(staticBase)/trackerblocking/config/v4/ios-config.json")!
     static let trackerDataSet = URL(string: "\(staticBase)/trackerblocking/v5/current/ios-tds.json")!

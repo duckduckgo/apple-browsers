@@ -128,14 +128,17 @@ extension AIChatViewController {
 
 // MARK: - Public functions
 extension AIChatViewController {
-    public func loadQuery(_ query: String, autoSend: Bool, tools: [AIChatRAGTool]?) {
+    public func loadQuery(_ query: String, autoSend: Bool, flowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?, modelId: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) {
         // Ensure the webViewController is added before loading the query
         if webViewController == nil {
             addWebViewController()
         }
         webViewController?.loadQuery(query,
                                      autoSend: autoSend,
-                                     tools: tools)
+                                     flowType: flowType,
+                                     tools: tools,
+                                     modelId: modelId,
+                                     reasoningEffort: reasoningEffort)
     }
 
     public func reload() {

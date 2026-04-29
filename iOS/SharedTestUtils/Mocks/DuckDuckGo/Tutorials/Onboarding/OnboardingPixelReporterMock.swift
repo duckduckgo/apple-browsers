@@ -60,6 +60,14 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureSearchExperienceSelectionImpression = false
     private(set) var didCallMeasureChooseAIChat = false
     private(set) var didCallMeasureChooseSearchOnly = false
+    private(set) var didCallMeasureDuckAIQueryExperimentSelectionImpression = false
+    private(set) var didCallMeasureDuckAIQueryExperimentChooseSearchOnly = false
+    private(set) var didCallMeasureDuckAIQueryExperimentChooseAIChat = false
+    private(set) var didCallMeasureDuckAIQueryExperimentQuerySubmission = false
+    private(set) var didCaptureDuckAIQueryExperimentPromptSourceValue: String?
+    private(set) var didCaptureDuckAIQueryExperimentSelection: DuckAIQueryExperimentMode?
+    private(set) var didCallMeasureDuckAIExperimentFireButtonCTAAction = false
+    private(set) var didCallMeasureDuckAIExperimentFinalDialogImpression = false
 
     private(set) var didCallMeasureTrySearchDialogNewTabDismissButtonTapped = false
     private(set) var didCallMeasureSearchResultDialogDismissButtonTapped = false
@@ -184,6 +192,24 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureChooseSearchOnly = true
     }
 
+    func measureDuckAIQueryExperimentSelectionImpression() {
+        didCallMeasureDuckAIQueryExperimentSelectionImpression = true
+    }
+
+    func measureDuckAIQueryExperimentChooseSearchOnly() {
+        didCallMeasureDuckAIQueryExperimentChooseSearchOnly = true
+    }
+
+    func measureDuckAIQueryExperimentChooseAIChat() {
+        didCallMeasureDuckAIQueryExperimentChooseAIChat = true
+    }
+
+    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryExperimentMode, promptSource: DuckAIQueryExperimentPromptSource) {
+        didCallMeasureDuckAIQueryExperimentQuerySubmission = true
+        didCaptureDuckAIQueryExperimentPromptSourceValue = promptSource.rawValue
+        didCaptureDuckAIQueryExperimentSelection = selection
+    }
+
     func measureTrySearchDialogNewTabDismissButtonTapped() {
         didCallMeasureTrySearchDialogNewTabDismissButtonTapped = true
     }
@@ -206,6 +232,14 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
 
     func measureFireDialogDismissButtonTapped() {
         didCallMeasureFireDialogDismissButtonTapped = true
+    }
+
+    func measureDuckAIExperimentFireButtonCTAAction() {
+        didCallMeasureDuckAIExperimentFireButtonCTAAction = true
+    }
+
+    func measureDuckAIExperimentFinalDialogImpression() {
+        didCallMeasureDuckAIExperimentFinalDialogImpression = true
     }
 
     func measureEndOfJourneyDialogNewTabDismissButtonTapped() {

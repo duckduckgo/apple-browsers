@@ -214,6 +214,17 @@ final class TabSnapshotExtension {
         Logger.tabSnapshots.debug("Snapshot of native page rendered")
     }
 
+    @MainActor
+    func renderSnapshotSync(from view: NSView) {
+        guard let snapshot = viewSnapshotRenderer.renderSnapshotSync(view: view) else {
+            clearSnapshot()
+            return
+        }
+
+        snapshotData = SnapshotData.snapshotDataForRegularView(from: snapshot)
+        Logger.tabSnapshots.debug("Snapshot of native page rendered")
+    }
+
     private func isAllowedURL(_ url: URL) -> Bool {
         // If duck url allow exception only if it's DuckPlayer or Onboarding or History.
         guard url.navigationalScheme == .duck else { return true }
@@ -294,6 +305,7 @@ protocol TabSnapshotExtensionProtocol: AnyObject, NavigationResponder {
     func setIdentifier(_ identifier: UUID)
     func renderWebViewSnapshot() async
     func renderSnapshot(from view: @escaping () -> NSView?) async
+    func renderSnapshotSync(from view: NSView)
 
 }
 

@@ -158,6 +158,17 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         }
     }
 
+    public func getChat(chatId: String) throws -> DuckAiChatRecord? {
+        do {
+            return try dbQueue.read { db in
+                guard let record = try ChatRecord.fetchOne(db, key: chatId) else { return nil }
+                return DuckAiChatRecord(chatId: record.chatId, data: record.data)
+            }
+        } catch {
+            throw DuckAiNativeDataStoreError.databaseError(error)
+        }
+    }
+
     public func getAllChats() throws -> [DuckAiChatRecord] {
         do {
             return try dbQueue.read { db in
@@ -275,6 +286,33 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring {
         do {
             try dbQueue.write { db in
                 try db.execute(sql: "DELETE FROM duck_ai_files WHERE uuid = ?", arguments: [normalizedUUID])
+            }
+        } catch {
+            throw DuckAiNativeDataStoreError.databaseError(error)
+        }
+    }
+
+    public func deleteFiles(chatId: String) throws {
+        let fileNames: [String]
+        do {
+            fileNames = try dbQueue.read { db in
+                try FileRecord
+                    .filter(Column("chatId") == chatId)
+                    .fetchAll(db)
+                    .map { $0.filePath }
+            }
+        } catch {
+            throw DuckAiNativeDataStoreError.databaseError(error)
+        }
+
+        for fileName in fileNames {
+            let fileURL = filesDirectoryURL.appendingPathComponent(fileName)
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+
+        do {
+            try dbQueue.write { db in
+                try db.execute(sql: "DELETE FROM duck_ai_files WHERE chatId = ?", arguments: [chatId])
             }
         } catch {
             throw DuckAiNativeDataStoreError.databaseError(error)

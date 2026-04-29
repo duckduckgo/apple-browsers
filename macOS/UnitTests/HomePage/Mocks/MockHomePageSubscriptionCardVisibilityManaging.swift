@@ -30,4 +30,6 @@ final class MockHomePageSubscriptionCardVisibilityManaging: HomePageSubscription
         shouldShowSubscriptionCard = false
         dismissCalled = true
     }
+
+    func refreshVisibilityAfterDebugReset() {}
 }

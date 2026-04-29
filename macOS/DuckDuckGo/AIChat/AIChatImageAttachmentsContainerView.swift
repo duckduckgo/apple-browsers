@@ -120,5 +120,9 @@ final class AIChatImageAttachmentsContainerView: NSView {
 
         attachments[index] = newAttachment
         thumbnailView.updateImage(newAttachment.image)
+        /// Notify so the list with its resized image gets persisted into the current tab's shared state.
+        /// Placeholders (original, un-resized) are persisted at add-time; without this, a tab switch right after
+        /// the resize would re-install the placeholder and lose the smaller, resized version.
+        onAttachmentsChanged?()
     }
 }

@@ -40,17 +40,20 @@ final class AIChatMessageHandler: AIChatMessageHandling {
     private let payloadHandler: AIChatPayloadHandler
     private let chatRestorationDataHandler: AIChatRestorationDataHandler
     private let pageContextHandler: AIChatPageContextHandler
+    private let isNativeStorageBridgeAvailable: Bool
 
     init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
          payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
          chatRestorationDataHandler: AIChatRestorationDataHandler = AIChatRestorationDataHandler(),
-         pageContextHandler: AIChatPageContextHandler = AIChatPageContextHandler()) {
+         pageContextHandler: AIChatPageContextHandler = AIChatPageContextHandler(),
+         isNativeStorageBridgeAvailable: Bool = false) {
         self.featureFlagger = featureFlagger
         self.promptHandler = promptHandler
         self.payloadHandler = payloadHandler
         self.chatRestorationDataHandler = chatRestorationDataHandler
         self.pageContextHandler = pageContextHandler
+        self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
     }
 
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable? {
@@ -102,7 +105,8 @@ extension AIChatMessageHandler {
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !isFireWindow,
             supportsMultipleContexts: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatMultiplePageContexts),
-            supportsTabPicker: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatAttachMoreTabs)
+            supportsTabPicker: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatAttachMoreTabs),
+            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable
         )
     }
 

@@ -25,5 +25,10 @@ protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity)
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController)
     func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab)
-    func newTabPageDidRequestFireMode(_ controller: NewTabPageViewController)
+    func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController)
+    func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController)
+}
+
+extension NewTabPageControllerDelegate {
+    func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) { }
 }

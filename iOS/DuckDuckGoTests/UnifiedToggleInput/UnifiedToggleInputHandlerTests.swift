@@ -64,6 +64,17 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertFalse(sut.isCurrentTextValidURL)
     }
 
+    // MARK: - Fire Tab
+
+    func test_initialState_isFireTab_defaultsFalse() {
+        XCTAssertFalse(sut.isFireTab)
+    }
+
+    func test_init_withFireTabTrue_setsIsFireTab() {
+        sut = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isFireTab: true)
+        XCTAssertTrue(sut.isFireTab)
+    }
+
     // MARK: - updateCurrentText
 
     func test_updateCurrentText_setsCurrentText() {

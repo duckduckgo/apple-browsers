@@ -443,6 +443,11 @@
                 "type": "string",
                 "description": "The funnel that led to the subscription flow",
                 "pattern": "^funnel_"
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Legacy context name carried over from flows started on older app versions, prior to the funnel_name migration. New flows use feature.data.ext.funnel_name."
             }
         ]
     },
@@ -520,6 +525,11 @@
                 "type": "string",
                 "description": "The funnel that led to the restore flow",
                 "pattern": "^funnel_"
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Legacy context name carried over from flows started on older app versions, prior to the funnel_name migration. New flows use feature.data.ext.funnel_name."
             }
         ]
     },
@@ -609,8 +619,7 @@
             {
                 "key": "feature.data.ext.funnel_name",
                 "type": "string",
-                "description": "The funnel that led to the plan change flow",
-                "pattern": "^funnel_"
+                "description": "The funnel that led to the plan change flow. Note: older app versions sent shorter, non-prefixed values (e.g. 'cancel-downgrade')."
             }
         ]
     },

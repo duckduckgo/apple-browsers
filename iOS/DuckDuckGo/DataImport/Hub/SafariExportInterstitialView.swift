@@ -76,8 +76,7 @@ struct SafariExportInterstitialView: View {
         .background(Color(designSystemColor: .background))
     }
 
-    private var
-    shouldUseExpandedButtonLayout: Bool {
+    private var shouldUseExpandedButtonLayout: Bool {
         if UIDevice.current.userInterfaceIdiom == .pad {
             return true
         }

@@ -117,7 +117,8 @@ extension NewTabPageActionsManager {
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor
         )
         let aiChatsProvider = NewTabPageOmnibarAiChatsProvider(
             featureFlagger: featureFlagger,

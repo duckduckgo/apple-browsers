@@ -100,17 +100,19 @@ final class UserScripts: UserScriptsProvider {
             webExtensionAvailability: sourceProvider.webExtensionAvailability
         )
 
+        let isNativeStorageBridgeAvailable = featureFlagger.isFeatureOn(.aiChatNativeStorage) && duckAiNativeStorageHandler != nil
         let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
         let aiChatSettings = AIChatSettings()
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager,
                                                           syncHandler: AIChatSyncHandler(sync: sourceProvider.sync,
                                                                                          httpRequestErrorHandler: sourceProvider.syncErrorHandler.handleAiChatsError),
-                                                          featureFlagger: featureFlagger)
+                                                          featureFlagger: featureFlagger,
+                                                          isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings, featureFlagger: featureFlagger))
 
-        if featureFlagger.isFeatureOn(.aiChatNativeStorage),
+        if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
             var originRules: [HostnameMatchingRule] = [
                 .exactOrSubdomain(hostname: "duck.ai"),

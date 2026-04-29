@@ -128,6 +128,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
     private var contextualModePixelHandler: AIChatContextualModePixelFiring?
     private let keyValueStore: KeyValueStoring
+    private let isNativeStorageBridgeAvailable: Bool
 
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
@@ -146,7 +147,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
          aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-         aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()) {
+         aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
+         isNativeStorageBridgeAvailable: Bool = false) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
         self.featureFlagger = featureFlagger
@@ -154,6 +156,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.promptHandler = promptHandler
         self.aichatFullModeFeature = aichatFullModeFeature
         self.aichatContextualModeFeature = aichatContextualModeFeature
+        self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
         setUpSyncStatusObserver()
     }
 
@@ -274,7 +277,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !fireMode,
             supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts),
-            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage)
+            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable
         )
     }
 

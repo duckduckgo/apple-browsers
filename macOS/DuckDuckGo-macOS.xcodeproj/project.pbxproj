@@ -634,7 +634,6 @@
 		3706FB51293F65D500E42796 /* NSScreenExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B3E0DC2657E9CF0040E0A2 /* NSScreenExtension.swift */; };
 		3706FB52293F65D500E42796 /* NSBezierPathExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65E6B9F26D9F10600095F96 /* NSBezierPathExtension.swift */; };
 		3706FB53293F65D500E42796 /* WebsiteDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6820E325502F19005ED0D5 /* WebsiteDataStore.swift */; };
-		3706FB54293F65D500E42796 /* PermissionContextMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C852926942AC90048FEBE /* PermissionContextMenu.swift */; };
 		3706FB55293F65D500E42796 /* ContextMenuSubfeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85D438B5256E7C9E00F3BAF8 /* ContextMenuSubfeature.swift */; };
 		3706FB56293F65D500E42796 /* NSSavePanelExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B693954726F04BEA0015B914 /* NSSavePanelExtension.swift */; };
 		3706FB57293F65D500E42796 /* AppPrivacyConfigurationDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9826B0A12747DFEB0092F683 /* AppPrivacyConfigurationDataProvider.swift */; };
@@ -792,7 +791,6 @@
 		3706FC2D293F65D500E42796 /* Tab+NSSecureCoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B68458B725C7E8B200DC17B6 /* Tab+NSSecureCoding.swift */; };
 		3706FC2E293F65D500E42796 /* NSNotificationName+EmailManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85378D9F274E6F42007C5CBF /* NSNotificationName+EmailManager.swift */; };
 		3706FC2F293F65D500E42796 /* MouseOverButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B693954926F04BEB0015B914 /* MouseOverButton.swift */; };
-		3706FC31293F65D500E42796 /* PermissionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C85412694590B0048FEBE /* PermissionButton.swift */; };
 		3706FC34293F65D500E42796 /* PermissionAuthorizationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C84E22692DC9F0048FEBE /* PermissionAuthorizationViewController.swift */; };
 		3706FC35293F65D500E42796 /* BookmarkNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B92929326670D2A00AD2C21 /* BookmarkNode.swift */; };
 		3706FC36293F65D500E42796 /* LongPressButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B693954426F04BE90015B914 /* LongPressButton.swift */; };
@@ -883,7 +881,7 @@
 		3706FCD6293F65D500E42796 /* httpsMobileV2FalsePositives.json in Resources */ = {isa = PBXBuildFile; fileRef = 4B67742A255DBEB800025BD8 /* httpsMobileV2FalsePositives.json */; };
 		3706FCD8293F65D500E42796 /* BookmarksBar.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4BD18F04283F151F00058124 /* BookmarksBar.storyboard */; };
 		3706FCDB293F65D500E42796 /* Feedback.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA3863C427A1E28F00749AB5 /* Feedback.storyboard */; };
-		3706FCE1293F65D500E42796 /* PermissionAuthorization.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B64C84DD2692D7400048FEBE /* PermissionAuthorization.storyboard */; };
+
 		3706FCE6293F65D500E42796 /* social_images in Resources */ = {isa = PBXBuildFile; fileRef = EA18D1C9272F0DC8006DC101 /* social_images */; };
 		3706FCEA293F65D500E42796 /* PasswordManager.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 85625993269C8F9600EE44BC /* PasswordManager.storyboard */; };
 		3706FCED293F65D500E42796 /* httpsMobileV2Bloom.bin in Resources */ = {isa = PBXBuildFile; fileRef = 4B677428255DBEB800025BD8 /* httpsMobileV2Bloom.bin */; };
@@ -2359,7 +2357,7 @@
 		8400DC4F2C6E2770006509D2 /* SteppedScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8400DC4D2C6E2770006509D2 /* SteppedScrollView.swift */; };
 		8402A7BD2E9F8C5B00ACA20C /* FireCoordinatorIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8402A7BA2E9F7CA000ACA20C /* FireCoordinatorIntegrationTests.swift */; };
 		8402A7BE2E9F8C5B00ACA20C /* FireCoordinatorIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8402A7BA2E9F7CA000ACA20C /* FireCoordinatorIntegrationTests.swift */; };
-		8409BD742ED878B200E39FA7 /* PopupHandlingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8409BD732ED878B200E39FA7 /* PopupHandlingUITests.swift */; };
+
 		8409BD782ED878C400E39FA7 /* popup-delayed.html in Resources */ = {isa = PBXBuildFile; fileRef = 8409BD752ED878C400E39FA7 /* popup-delayed.html */; };
 		8409BD792ED878C400E39FA7 /* popup-servicenow.html in Resources */ = {isa = PBXBuildFile; fileRef = 8409BD772ED878C400E39FA7 /* popup-servicenow.html */; };
 		8409BD7A2ED878C400E39FA7 /* popup-links.html in Resources */ = {isa = PBXBuildFile; fileRef = 8409BD762ED878C400E39FA7 /* popup-links.html */; };
@@ -3188,15 +3186,13 @@
 		B645D8F629FA95440024461F /* WKProcessPoolExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B645D8F529FA95440024461F /* WKProcessPoolExtension.swift */; };
 		B645D8F729FA95440024461F /* WKProcessPoolExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B645D8F529FA95440024461F /* WKProcessPoolExtension.swift */; };
 		B647EFBB2922584B00BA628D /* AdClickAttributionTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B647EFBA2922584B00BA628D /* AdClickAttributionTabExtension.swift */; };
-		B64C84DE2692D7400048FEBE /* PermissionAuthorization.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B64C84DD2692D7400048FEBE /* PermissionAuthorization.storyboard */; };
+
 		B64C84E32692DC9F0048FEBE /* PermissionAuthorizationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C84E22692DC9F0048FEBE /* PermissionAuthorizationViewController.swift */; };
 		B64C84EB2692DD650048FEBE /* PermissionAuthorizationPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C84EA2692DD650048FEBE /* PermissionAuthorizationPopover.swift */; };
 		B64C84F1269310120048FEBE /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C84F0269310120048FEBE /* PermissionManager.swift */; };
-		B64C852A26942AC90048FEBE /* PermissionContextMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C852926942AC90048FEBE /* PermissionContextMenu.swift */; };
 		B64C853026943BC10048FEBE /* Permissions.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B64C852E26943BC10048FEBE /* Permissions.xcdatamodeld */; };
 		B64C853826944B880048FEBE /* StoredPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C853726944B880048FEBE /* StoredPermission.swift */; };
 		B64C853D26944B940048FEBE /* PermissionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C853C26944B940048FEBE /* PermissionStore.swift */; };
-		B64C85422694590B0048FEBE /* PermissionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C85412694590B0048FEBE /* PermissionButton.swift */; };
 		B64CE01E2B8622D700126CA5 /* AddressBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */; };
 		B64CE01F2B8622D700126CA5 /* AddressBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */; };
 		B64E42872B908501006C1346 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = B65CD8D22B316E1700A595BB /* SnapshotTesting */; };
@@ -4218,7 +4214,7 @@
 		EE3424612BA0853900173B1B /* VPNUninstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE34245D2BA0853900173B1B /* VPNUninstaller.swift */; };
 		EE3ED86E2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE3ED86D2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift */; };
 		EE3ED86F2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE3ED86D2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift */; };
-		EE42CBCC2BC8004700AD411C /* PermissionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE42CBCB2BC8004700AD411C /* PermissionsTests.swift */; };
+
 		EE4624E42E69DB53001CD9E6 /* FeatureFlagger+Sync.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4624E32E69DB49001CD9E6 /* FeatureFlagger+Sync.swift */; };
 		EE4624E52E69DB53001CD9E6 /* FeatureFlagger+Sync.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4624E32E69DB49001CD9E6 /* FeatureFlagger+Sync.swift */; };
 		EE4E15FC2EBCB98A006D1C2D /* NewReportFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4E15FB2EBCB983006D1C2D /* NewReportFeedbackView.swift */; };
@@ -5676,7 +5672,7 @@
 		8400DC4A2C6E26AE006509D2 /* BookmarksBarCollectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarCollectionView.swift; sourceTree = "<group>"; };
 		8400DC4D2C6E2770006509D2 /* SteppedScrollView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SteppedScrollView.swift; sourceTree = "<group>"; };
 		8402A7BA2E9F7CA000ACA20C /* FireCoordinatorIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireCoordinatorIntegrationTests.swift; sourceTree = "<group>"; };
-		8409BD732ED878B200E39FA7 /* PopupHandlingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupHandlingUITests.swift; sourceTree = "<group>"; };
+
 		8409BD752ED878C400E39FA7 /* popup-delayed.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "popup-delayed.html"; sourceTree = "<group>"; };
 		8409BD762ED878C400E39FA7 /* popup-links.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "popup-links.html"; sourceTree = "<group>"; };
 		8409BD772ED878C400E39FA7 /* popup-servicenow.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "popup-servicenow.html"; sourceTree = "<group>"; };
@@ -6199,15 +6195,13 @@
 		B644B43929D565DB003FA9AB /* SearchNonexistentDomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchNonexistentDomainTests.swift; sourceTree = "<group>"; };
 		B645D8F529FA95440024461F /* WKProcessPoolExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKProcessPoolExtension.swift; sourceTree = "<group>"; };
 		B647EFBA2922584B00BA628D /* AdClickAttributionTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdClickAttributionTabExtension.swift; sourceTree = "<group>"; };
-		B64C84DD2692D7400048FEBE /* PermissionAuthorization.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = PermissionAuthorization.storyboard; sourceTree = "<group>"; };
+
 		B64C84E22692DC9F0048FEBE /* PermissionAuthorizationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuthorizationViewController.swift; sourceTree = "<group>"; };
 		B64C84EA2692DD650048FEBE /* PermissionAuthorizationPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuthorizationPopover.swift; sourceTree = "<group>"; };
 		B64C84F0269310120048FEBE /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
-		B64C852926942AC90048FEBE /* PermissionContextMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionContextMenu.swift; sourceTree = "<group>"; };
 		B64C852F26943BC10048FEBE /* Permissions.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Permissions.xcdatamodel; sourceTree = "<group>"; };
 		B64C853726944B880048FEBE /* StoredPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredPermission.swift; sourceTree = "<group>"; };
 		B64C853C26944B940048FEBE /* PermissionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionStore.swift; sourceTree = "<group>"; };
-		B64C85412694590B0048FEBE /* PermissionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionButton.swift; sourceTree = "<group>"; };
 		B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarTests.swift; sourceTree = "<group>"; };
 		B65349A9265CF45000DCC645 /* DispatchQueueExtensionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchQueueExtensionsTests.swift; sourceTree = "<group>"; };
 		B6553691268440D700085A79 /* WKProcessPool+GeolocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WKProcessPool+GeolocationProvider.swift"; sourceTree = "<group>"; };
@@ -6765,7 +6759,7 @@
 		EE339227291BDEFD009F62C1 /* JSAlertController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSAlertController.swift; sourceTree = "<group>"; };
 		EE34245D2BA0853900173B1B /* VPNUninstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUninstaller.swift; sourceTree = "<group>"; };
 		EE3ED86D2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DismissableSyncDeviceButtonModel.swift; sourceTree = "<group>"; };
-		EE42CBCB2BC8004700AD411C /* PermissionsTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PermissionsTests.swift; sourceTree = "<group>"; };
+
 		EE4624E32E69DB49001CD9E6 /* FeatureFlagger+Sync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FeatureFlagger+Sync.swift"; sourceTree = "<group>"; };
 		EE4E15FB2EBCB983006D1C2D /* NewReportFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewReportFeedbackView.swift; sourceTree = "<group>"; };
 		EE54F7B22BBFEA48006218DB /* BookmarksAndFavoritesTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksAndFavoritesTests.swift; sourceTree = "<group>"; };
@@ -9537,10 +9531,8 @@
 				844905502E55C9C80054F4FD /* MaliciousSiteProtectionUITests.swift */,
 				8449054A2E55BBD60054F4FD /* NavigationProtectionUITests.swift */,
 				56A054522C2592CE007D8FAB /* OnboardingUITests.swift */,
-				EE42CBCB2BC8004700AD411C /* PermissionsTests.swift */,
 				1DE28D602EEB4A7E00C07F15 /* NewPermissionViewTests.swift */,
 				BB4339DA2C7F9606005D7ED7 /* PinnedTabsTests.swift */,
-				8409BD732ED878B200E39FA7 /* PopupHandlingUITests.swift */,
 				842FE38A2E0C28EF00E4F9E4 /* PrintingTests.swift */,
 				8449054E2E55BBEE0054F4FD /* PrivacyDashboardUITests.swift */,
 				5680BCA62F17EC6400BD624E /* SSLErrorTests.swift */,
@@ -11835,13 +11827,10 @@
 		B64C84DC2692D6FC0048FEBE /* View */ = {
 			isa = PBXGroup;
 			children = (
-				B64C84DD2692D7400048FEBE /* PermissionAuthorization.storyboard */,
 				B64C84E22692DC9F0048FEBE /* PermissionAuthorizationViewController.swift */,
 				1D532BB32ED8D3D300D219FA /* PermissionAuthorizationSwiftUIView.swift */,
 				B64C84EA2692DD650048FEBE /* PermissionAuthorizationPopover.swift */,
 				B6BBF17327475B15004F850E /* PopupBlockedPopover.swift */,
-				B64C852926942AC90048FEBE /* PermissionContextMenu.swift */,
-				B64C85412694590B0048FEBE /* PermissionButton.swift */,
 				1D532BDD2EDC3E3F00D219FA /* PermissionCenterView.swift */,
 				1D532BE02EDC3E4D00D219FA /* PermissionCenterViewController.swift */,
 				7B6879222EF07ECA00F9964B /* SystemPermissionWarningView.swift */,
@@ -14015,7 +14004,6 @@
 				3706FCD8293F65D500E42796 /* BookmarksBar.storyboard in Resources */,
 				3706FCDB293F65D500E42796 /* Feedback.storyboard in Resources */,
 				B658BAB72B0F848D00D1F2C7 /* Localizable.xcstrings in Resources */,
-				3706FCE1293F65D500E42796 /* PermissionAuthorization.storyboard in Resources */,
 				CD2AB5C62C8222FE0019EB49 /* phishingFilterSet.json in Resources */,
 				7B122A992DE4717400B84F63 /* AppStoreInfoPlist.xcstrings in Resources */,
 				3706FCE6293F65D500E42796 /* social_images in Resources */,
@@ -14246,7 +14234,6 @@
 				4BD18F05283F151F00058124 /* BookmarksBar.storyboard in Resources */,
 				AA3863C527A1E28F00749AB5 /* Feedback.storyboard in Resources */,
 				B658BAB62B0F845D00D1F2C7 /* Localizable.xcstrings in Resources */,
-				B64C84DE2692D7400048FEBE /* PermissionAuthorization.storyboard in Resources */,
 				CD2AB5C52C8222FE0019EB49 /* phishingFilterSet.json in Resources */,
 				EA18D1CA272F0DC8006DC101 /* social_images in Resources */,
 				BD384AC92BBC821A00EF3735 /* vpn-dark-mode.json in Resources */,
@@ -15107,7 +15094,6 @@
 				EEC4A66A2B2C87D300F7C0AA /* VPNLocationView.swift in Sources */,
 				3706FB52293F65D500E42796 /* NSBezierPathExtension.swift in Sources */,
 				3706FB53293F65D500E42796 /* WebsiteDataStore.swift in Sources */,
-				3706FB54293F65D500E42796 /* PermissionContextMenu.swift in Sources */,
 				3706FB55293F65D500E42796 /* ContextMenuSubfeature.swift in Sources */,
 				3706FB56293F65D500E42796 /* NSSavePanelExtension.swift in Sources */,
 				B6B5F5802B024105008DB58A /* DataImportSummaryView.swift in Sources */,
@@ -15664,7 +15650,6 @@
 				B6F1B02F2BCE6B47005E863C /* TunnelControllerProvider.swift in Sources */,
 				31A83FB62BE28D7D00F74E67 /* UserText+DBP.swift in Sources */,
 				C18194602C7CDD0E00381092 /* PromotionViewModel.swift in Sources */,
-				3706FC31293F65D500E42796 /* PermissionButton.swift in Sources */,
 				317307262CD248DB00C492AB /* AutofillToolbarOnboardingPopover.swift in Sources */,
 				BBBD2A092E2FE548005E7664 /* PillCollectionView.swift in Sources */,
 				9F6434622BEC82B700D2D8A0 /* AttributionPixelHandler.swift in Sources */,
@@ -16774,7 +16759,6 @@
 				8449054F2E55BBEE0054F4FD /* PrivacyDashboardUITests.swift in Sources */,
 				844905412E54A3540054F4FD /* AddressBarUITests.swift in Sources */,
 				844905452E54ADD40054F4FD /* AutoconsentUITests.swift in Sources */,
-				EE42CBCC2BC8004700AD411C /* PermissionsTests.swift in Sources */,
 				4B7948192F81DFC400DA4028 /* TabNavigationMenuItemTests.swift in Sources */,
 				1DE28D612EEB4A7E00C07F15 /* NewPermissionViewTests.swift in Sources */,
 				844905432E54A3600054F4FD /* AddressBarSpoofingUITests.swift in Sources */,
@@ -16782,7 +16766,6 @@
 				7B4CE8E726F02135009134B1 /* TabBarTests.swift in Sources */,
 				3CB3A2D4D123A64803F4E2EE /* TabSuspensionTests.swift in Sources */,
 				BB0346F52CEB80B400D23E05 /* DownloadsUITests.swift in Sources */,
-				8409BD742ED878B200E39FA7 /* PopupHandlingUITests.swift in Sources */,
 				84A03D2E2DDC275200A3685B /* BookmarksBarVisibilityTests.swift in Sources */,
 				EEBCE6822BA444FA00B9DF00 /* XCUIElementExtension.swift in Sources */,
 				31DE49212EE2299500F3940A /* AIChatMultilinePasteTests.swift in Sources */,
@@ -17352,7 +17335,6 @@
 				AD32D0D17A9A40B8B0B6A2BB /* RebrandedContextualOnboardingDialogs+EndOfJourney.swift in Sources */,
 				4F25DAF90625497DB96B6E8D /* ContextualDaxDialogsProvider.swift in Sources */,
 				37A0BA202D747A9300130447 /* WindowControllersManager+URLOpening.swift in Sources */,
-				B64C852A26942AC90048FEBE /* PermissionContextMenu.swift in Sources */,
 				85D438B6256E7C9E00F3BAF8 /* ContextMenuSubfeature.swift in Sources */,
 				C153E7C52C8B21B500B9BAD7 /* Logger+FreemiumDBP.swift in Sources */,
 				B693955526F04BEC0015B914 /* NSSavePanelExtension.swift in Sources */,
@@ -17915,7 +17897,6 @@
 				BBBC5F692EA7C037003505EE /* SERPSettingsEventHandler.swift in Sources */,
 				9D9AE8692AA76CDC0026E7DC /* LoginItem+NetworkProtection.swift in Sources */,
 				9F9C49F92BC7BC970099738D /* BookmarkAllTabsDialogView.swift in Sources */,
-				B64C85422694590B0048FEBE /* PermissionButton.swift in Sources */,
 				B5F7BDC92EBD1D9D00ECE33A /* TabFaviconView.swift in Sources */,
 				37F9AEB12D131705007FD19B /* NewTabPageLinkOpener.swift in Sources */,
 				B64C84E32692DC9F0048FEBE /* PermissionAuthorizationViewController.swift in Sources */,

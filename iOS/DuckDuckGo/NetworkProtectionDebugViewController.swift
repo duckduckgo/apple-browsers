@@ -98,6 +98,7 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         case startSnooze
         case createLogSnapshot
         case viewLogSnapshots
+        case triggerLeakCheck
     }
 
     enum NetworkPathRows: Int, CaseIterable {
@@ -494,6 +495,8 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             cell.textLabel?.text = "Create Log Snapshot"
         case .viewLogSnapshots:
             cell.textLabel?.text = "View Log Snapshots"
+        case .triggerLeakCheck:
+            cell.textLabel?.text = "Trigger VPN Leak Check Now"
         case .none:
             break
         }
@@ -538,6 +541,10 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             }
         case .viewLogSnapshots:
             showLogSnapshotsViewer()
+        case .triggerLeakCheck:
+            Task {
+                await NetworkProtectionDebugUtilities().triggerLeakCheck()
+            }
         case .none:
             break
         }

@@ -1934,6 +1934,12 @@ class MainViewController: UIViewController {
         previousTab?.dismiss()
         hideNotificationBarIfBrokenSitePromptShown()
 
+        unifiedToggleInputCoordinator?.deactivateToOmnibar()
+        if let previousTab, previousTab.isAITab, !tab.isAITab {
+            unifiedToggleInputCoordinator?.hide()
+            unifiedToggleInputCoordinator?.unbind()
+        }
+
         let shouldSaveTabs = tab.tabModel.viewed == false
         tab.tabModel.viewed = true
         if shouldSaveTabs {
@@ -3385,6 +3391,7 @@ extension MainViewController: BrowserChromeDelegate {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         newTabPageViewController?.chromeDelegate = nil
+        unifiedToggleInputCoordinator?.deactivateToOmnibar()
         dismissOmniBar()
         viewCoordinator.omniBar.cancel()
         switch suggestion {
@@ -3446,6 +3453,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onChatHistorySelected(url: URL) {
+        unifiedToggleInputCoordinator?.deactivateToOmnibar()
         loadUrlInNewTab(url, inheritedAttribution: nil)
     }
 
@@ -4213,7 +4221,6 @@ extension MainViewController: OmniBarDelegate {
         let wasAfterIdle = currentTab?.openedAfterIdle ?? false
         ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
         viewCoordinator.omniBar.endEditing()
-        unifiedToggleInputCoordinator?.deactivateToOmnibar()
         if let currentTab {
             closeTab(currentTab)
         }

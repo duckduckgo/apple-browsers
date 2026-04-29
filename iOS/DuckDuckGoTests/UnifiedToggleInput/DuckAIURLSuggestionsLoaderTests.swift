@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Suggestions
 import XCTest
 @testable import DuckDuckGo
@@ -75,5 +76,53 @@ final class DuckAIURLSuggestionsLoaderTests: XCTestCase {
         XCTAssertEqual(urls.count, 2)
         XCTAssertEqual(urls.first?.url?.host, "top.com")
         XCTAssertEqual(urls.last?.url?.host, "ddg.com")
+    }
+
+    // MARK: - Settle tracking
+    //
+    // `hasSettled(forQuery:)` on the coordinator gates the Dax empty-state. If the loader
+    // never records `lastCompletedFetchQuery`, Dax stays permanently suppressed.
+    // Empty-query fetches must settle synchronously.
+
+    func test_emptyQueryFetch_setsLastCompletedFetchQuerySynchronously() {
+        let loader = DuckAIURLSuggestionsLoader(dataSource: StubLoadingDataSource())
+        XCTAssertNil(loader.lastCompletedFetchQuery)
+
+        loader.fetch(query: "")
+
+        XCTAssertEqual(loader.lastCompletedFetchQuery, "")
+    }
+
+    func test_emptyQueryFetch_clearsTopURLsOnlyWhenNonEmpty() {
+        let loader = DuckAIURLSuggestionsLoader(dataSource: StubLoadingDataSource())
+        loader.publishURLsForTesting([.website(url: URL(string: "https://example.com/")!)])
+        var emissions: [[Suggestion]] = []
+        let cancellable = loader.$topURLs.sink { emissions.append($0) }
+        emissions.removeAll()
+
+        loader.fetch(query: "")
+
+        XCTAssertEqual(emissions.count, 1, "non-empty → empty transition emits exactly once")
+        XCTAssertTrue(emissions.first?.isEmpty ?? false)
+
+        emissions.removeAll()
+        loader.fetch(query: "")
+
+        XCTAssertTrue(emissions.isEmpty, "already-empty must not re-emit (downstream reload-coalesce relies on this)")
+        cancellable.cancel()
+    }
+}
+
+private final class StubLoadingDataSource: SuggestionLoadingDataSource {
+    var platform: Platform { .mobile }
+    func bookmarks(for suggestionLoading: SuggestionLoading) -> [Bookmark] { [] }
+    func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] { [] }
+    func internalPages(for suggestionLoading: SuggestionLoading) -> [InternalPage] { [] }
+    func openTabs(for suggestionLoading: SuggestionLoading) -> [BrowserTab] { [] }
+    func suggestionLoading(_ suggestionLoading: SuggestionLoading,
+                           suggestionDataFromUrl url: URL,
+                           withParameters parameters: [String: String],
+                           completion: @escaping (Data?, Error?) -> Void) {
+        completion(nil, nil)
     }
 }

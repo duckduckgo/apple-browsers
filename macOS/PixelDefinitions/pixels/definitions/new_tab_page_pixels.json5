@@ -137,7 +137,7 @@
         "owners": ["rachelmcr"],
         "triggers": ["new_tab"],
         "suffixes": [],
-        "parameters": [, "channel"]
+        "parameters": ["channel"]
     },
     "m_mac_new-tab-page_next-steps_emailProtection_clicked": {
         "description": "Fires when a user clicks on the Email Protection Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
@@ -242,7 +242,7 @@
         "owners": ["rachelmcr"],
         "triggers": ["new_tab"],
         "suffixes": [],
-        "parameters": [, "channel"]
+        "parameters": ["channel"]
     },
     "m_mac_new-tab-page_next-steps_personalizeBrowser_clicked": {
         "description": "Fires when a user clicks on the Personalize Browser Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
@@ -284,6 +284,6 @@
         "owners": ["rachelmcr"],
         "triggers": ["new_tab"],
         "suffixes": [],
-        "parameters": [, "channel"]
+        "parameters": ["channel"]
     }
 }

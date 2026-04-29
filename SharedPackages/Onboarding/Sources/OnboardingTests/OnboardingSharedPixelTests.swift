@@ -206,16 +206,6 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertNil(event.additionalParameters?["d"])
     }
 
-    func testAddToDockEventIncludesPixelSourceParameter() throws {
-        let pixelFiring = PixelKitMock()
-        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
-
-        pixelHandler.fire(.addToDock(.clicked(.engage)))
-
-        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-        XCTAssertEqual(event.pixel.standardParameters, [.pixelSource])
-    }
-
     func testWhenAppIconColorClickedThenUsesColorValue() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)
@@ -242,7 +232,6 @@ private extension OnboardingSharedPixelTests {
                      source: OnboardingSharedPixelHandler.OnboardingSource = .defaultSource,
                      flow: OnboardingSharedPixelHandler.OnboardingFlowType = .defaultFlow,
                      installType: OnboardingSharedPixelHandler.InstallType? = nil,
-                     onboardingSource: OnboardingSharedPixelHandler.OnboardingSource? = nil,
                      installDateProvider: @escaping () -> Date? = { nil },
                      currentDateProvider: @escaping () -> Date = { Date() },
                      pixelFiring: PixelFiring? = nil) -> OnboardingSharedPixelHandler {

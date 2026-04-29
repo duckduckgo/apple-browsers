@@ -46,6 +46,10 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
    - `mcp__sentry__find_projects`, `mcp__sentry__find_releases`, `mcp__sentry__list_issues`, `mcp__sentry__get_sentry_resource`
    - `mcp__plugin_asana_asana__asana_get_task`, `mcp__plugin_asana_asana__asana_update_task`, `mcp__plugin_asana_asana__asana_search_tasks`, `mcp__plugin_asana_asana__asana_create_task`
 2. **Resolve releases + version filter.** Call `find_releases` with `query="<version>"` (e.g. `1.186`) to enumerate all release strings matching the series — needed for `firstRelease:` in step 3. Keep **all** of them (main app + extensions — do not filter down to a single prefix). For event matching, build the `app_version` filter directly from the user input: a series like `1.186` becomes `app_version:1.186.*`, an exact version like `1.186.0` stays `app_version:1.186.0`.
+
+   **Match the user-supplied version literally.** The version parameter is authoritative. Never substitute a different version (e.g. falling back to a previously-shipped release because the requested one looks "wrong" or returns no data). If you suspect a typo, ask the user; do not silently retarget.
+
+   **Crash-free release short-circuit (runs before step 3).** If `find_releases(query="<version>")` returns no releases **and** a confirmation query `list_issues(query="is:unresolved app_version:<version_filter>", sort="freq", limit=1)` returns zero issues, the version is a **crash-free release** — typically an internal-testing or code-frozen build that has no events in Sentry yet. This is a valid outcome of the check, not an error: pre-release runs exist specifically to verify there are no new crashes in internal testing. Write the "Crash-free release" report (template below) to the user's Asana task via `asana_update_task` with `html_notes`, and **STOP** — do not run steps 3–11. Do not query a previous version's data, do not file tracking tasks, do not dispatch subagents.
 3. **Two Sentry queries, sorted by `freq`:**
    - All unresolved in the series: `is:unresolved app_version:1.186.*` (wildcard) or `is:unresolved app_version:1.186.0` (exact) — limit 30+. Pass the value unquoted; quoting (e.g. `app_version:"1.186.*"`) breaks wildcard matching.
    - New-in-series only: `is:unresolved firstRelease:[<all releases from step 2>]` — limit 50+ (iOS routinely hits 60–70 new issues). Include extension releases in the list or you'll miss extension regressions.
@@ -161,6 +165,27 @@ New-in-{version}.x only: <a href="...">firstRelease filter</a>
 </body>
 ```
 
+## Crash-free release report (html_notes)
+
+Used by step 2's short-circuit when `find_releases` returns no releases and `list_issues` returns zero issues for the requested version. Write this to the user's Asana task and stop — no tracking tasks, no subagents, no fallback to a prior version.
+
+```html
+<body>
+<strong>{iOS|macOS} Sentry review — release {version}</strong>
+
+Reviewed on {today}. Scope: unresolved issues with events in <code>app_version:{version_filter}</code>.
+
+<strong>Result: crash-free release</strong>
+• <code>find_releases(query="{version}")</code> returned no releases on the <code>{apple-ios|apple-macos}</code> project.
+• <code>list_issues(query="is:unresolved app_version:{version_filter}")</code> returned zero issues.
+
+This outcome is expected for builds that are still in internal testing or code freeze: no events have reached Sentry yet, so there are no new regressions to triage for this version.
+
+<strong>Recommended next step</strong>
+Re-run <code>/ddg-sentry-report {project} {version} {asana_url}</code> once the build has shipped to a wider audience and Sentry has accumulated events.
+</body>
+```
+
 ## Per-issue tracking task body (html_notes)
 
 Derived from task `1214265935091414`. Created in step 9 when no existing task is found for the short-ID (or when reopening a regressed task — in the regression case, append a "Regression seen in <version>" section to the existing body rather than rewriting it). Omit the **Pull request** section — these tasks are filed during triage, before any fix is in flight. Include the `Likely caused by` line only if step 6 produced a confident attribution; drop the **Root Cause Analysis** + **Call chain** + **Likely category** + **Fix sketch** sections only when a subagent legitimately did not run per step 8's skip rules (just keep the Sentry link header). If the subagent *did* run, its output is required — even a "not actionable, OS-runtime noise" conclusion goes in as a one-paragraph RCA + brief call chain + likely category.
@@ -194,6 +219,7 @@ Likely caused by <a href="https://github.com/duckduckgo/apple-browsers/pull/<NNN
 | Passing `regionUrl=https://errors.duckduckgo.com` to Sentry MCP | Omit `regionUrl`. MCP only allows `sentry.io` hosts; it returns `ddg.sentry.io` URLs you rewrite client-side. |
 | Using `list_issues` with `query="release:1.186.0"` (string) | Prefer `app_version:1.186.0` (exact) or `app_version:1.186.*` (series) for event matching. |
 | Quoting the `app_version` value (e.g. `app_version:"1.186.*"`) | Breaks wildcard matching. Pass the value unquoted. |
+| Substituting a different version when the requested one returns no events | The user-supplied version is authoritative — match it literally. If `find_releases` returns no releases AND `list_issues` returns zero issues, take the step 2 short-circuit: write the "Crash-free release" report and stop. Do NOT silently retarget to a previously-shipped version (e.g. querying `7.217.0` when the user asked for `7.218.0`). Pre-release runs exist specifically to verify that internal-testing builds have no new crashes; substituting a different version files redundant tracking tasks against the wrong Asana task and defeats the check. If a version looks like a typo, ask the user. |
 | Investigating culprits for a `[Duplicate]` tracking task without checking the parent task's tags | When a tracking task is marked `[Duplicate]`, look up the parent task it points to and use that task's fix-version tags for the skip/reopen/investigate gating decision. |
 | Filtering events by `release:DuckDuckGo@...` (single prefix) | Silently drops extension crashes (e.g. `com.duckduckgo.macos.vpn.network-extension@...`). Use `app_version:` for the event-matching query; use the full multi-prefix release list only for `firstRelease:`. |
 | Confusing `app_version:` vs `firstRelease:` | `app_version:` = events whose version tag matches (cross-target). `firstRelease:` = issue's *first-ever* event was in one of these release strings (true regressions) — needs explicit release strings, so include all targets. |

@@ -79,6 +79,11 @@ extension MainViewController {
             return
         }
 
+        // Don't react to tab/page refreshes while the user is editing the omnibar — would unbind the session and wipe the typed text.
+        if coordinator.isOmnibarSession {
+            return
+        }
+
         let action = refreshAction(for: tab, coordinator: coordinator)
 
         switch action {

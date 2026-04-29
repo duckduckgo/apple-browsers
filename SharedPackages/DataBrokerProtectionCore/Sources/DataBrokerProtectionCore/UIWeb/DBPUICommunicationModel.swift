@@ -256,11 +256,12 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
     public let relatives: [String]
     public let foundDate: Double
     public let optOutSubmittedDate: Double?
+    public let formSubmittedDate: Double?
     public let estimatedRemovalDate: Double?
     public let removedDate: Double?
     public let hasMatchingRecordOnParentBroker: Bool
 
-    public init(id: Int64?, dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
+    public init(id: Int64?, dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, formSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
         self.id = id
         self.dataBroker = dataBroker
         self.name = name
@@ -269,6 +270,7 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
         self.relatives = relatives
         self.foundDate = foundDate
         self.optOutSubmittedDate = optOutSubmittedDate
+        self.formSubmittedDate = formSubmittedDate
         self.estimatedRemovalDate = estimatedRemovalDate
         self.removedDate = removedDate
         self.hasMatchingRecordOnParentBroker = hasMatchingRecordOnParentBroker
@@ -308,10 +310,19 @@ extension DBPUIDataBrokerProfileMatch {
         }
         let estimatedRemovalDate = Calendar.current.date(byAdding: .day, value: 14, to: optOutSubmittedDate ?? foundDate)
 
-        // Check for any matching records on the parent broker
-        let hasFoundParentMatch = parentBrokerOptOutJobData?.contains { parentOptOut in
+        // Strict-match parent lookup: still used for `hasMatchingRecordOnParentBroker`. We do *not*
+        // use this matcher for the `formSubmittedDate` fallback — see TD note [5]: the strict
+        // matcher rejected nearly every real-world child↔parent pairing because brokers scrape
+        // names with different middle-name granularity and age inconsistently.
+        let matchingParentOptOut = parentBrokerOptOutJobData?.first { parentOptOut in
             extractedProfile.doesMatchExtractedProfile(parentOptOut.extractedProfile)
-        } ?? false
+        }
+
+        // Broker-level fallback for child brokers (TD note [5]): every child record is downstream
+        // of the parent, so any submission we made to the parent is a removal request that may
+        // clear this record. Most recent so the value reflects the latest activity.
+        let formSubmittedDate = Self.formSubmittedDate(in: optOutJobData.historyEvents)
+            ?? parentBrokerOptOutJobData.flatMap { Self.mostRecentSubmission(across: $0) }
 
         self.init(id: extractedProfile.id,
                   dataBroker: dataBroker,
@@ -321,9 +332,36 @@ extension DBPUIDataBrokerProfileMatch {
                   relatives: extractedProfile.relatives ?? [String](),
                   foundDate: foundDate.timeIntervalSince1970,
                   optOutSubmittedDate: optOutSubmittedDate?.timeIntervalSince1970,
+                  formSubmittedDate: formSubmittedDate?.timeIntervalSince1970,
                   estimatedRemovalDate: estimatedRemovalDate?.timeIntervalSince1970,
                   removedDate: extractedProfile.removedDate?.timeIntervalSince1970,
-                  hasMatchingRecordOnParentBroker: hasFoundParentMatch)
+                  hasMatchingRecordOnParentBroker: matchingParentOptOut != nil)
+    }
+
+    /// Derives the moment the form-submission action against the broker successfully completed,
+    /// from history events already loaded on the read path. For brokers requiring email confirmation
+    /// this is the first `.optOutSubmittedAndAwaitingEmailConfirmation` event; otherwise the first
+    /// `.optOutRequested` event, which is logged at form submission for non-email brokers and
+    /// after email confirmation for email brokers (in which case the email-confirmation event,
+    /// logged earlier, is what we actually want).
+    private static func formSubmittedDate(in historyEvents: [HistoryEvent]) -> Date? {
+        if let firstEmailConfirmation = historyEvents
+            .filter({ $0.type == .optOutSubmittedAndAwaitingEmailConfirmation })
+            .min(by: { $0.date < $1.date }) {
+            return firstEmailConfirmation.date
+        }
+        return historyEvents
+            .filter { $0.type == .optOutRequested }
+            .min(by: { $0.date < $1.date })?.date
+    }
+
+    /// The most recent `formSubmittedDate` derivation across the given opt-out jobs, regardless of
+    /// whether their extracted profiles match anything. Used for the child→parent broker-level
+    /// fallback.
+    private static func mostRecentSubmission(across jobs: [OptOutJobData]) -> Date? {
+        jobs.lazy
+            .compactMap { formSubmittedDate(in: $0.historyEvents) }
+            .max()
     }
 
     /// Generates an array of `DBPUIDataBrokerProfileMatch` objects from the provided query data.

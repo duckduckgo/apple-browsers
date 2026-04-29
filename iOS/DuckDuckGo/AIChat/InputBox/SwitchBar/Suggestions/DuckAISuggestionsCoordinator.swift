@@ -75,9 +75,11 @@ final class DuckAISuggestionsCoordinator {
                              textPublisher: P) where P.Output == String, P.Failure == Never {
         guard viewController == nil else { return }
 
-        let shared = textPublisher.share()
-        chatManager.subscribeToTextChanges(shared)
-        urlLoader.subscribeToTextChanges(shared)
+        // Each subscriber gets its own subscription rather than going through `share()` — the upstream is `@Published`-backed
+        // (replays on subscribe), and `share()` only delivers the replay to the first subscriber, leaving later ones missing
+        // the initial value. With independent subscriptions all fetchers see the current text.
+        chatManager.subscribeToTextChanges(textPublisher)
+        urlLoader.subscribeToTextChanges(textPublisher)
 
         // Subscriptions live in coordinator-owned cancellables — container-owned ones leaked one set per install/dismiss cycle.
         chatManager.hasSuggestionsPublisher
@@ -97,7 +99,7 @@ final class DuckAISuggestionsCoordinator {
         vc.delegate = self
 
         // Hide the hatch the moment the user starts typing; restore on backspace-to-empty (mirrors Search-side autocomplete covering NTP).
-        shared
+        textPublisher
             .map { !$0.isEmpty }
             .removeDuplicates()
             .receive(on: DispatchQueue.main)

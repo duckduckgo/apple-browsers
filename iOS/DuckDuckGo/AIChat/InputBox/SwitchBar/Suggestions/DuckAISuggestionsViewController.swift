@@ -381,15 +381,23 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
             return Constants.cellHeight
         case .urls:
             guard indexPath.row < urls.count else { return Constants.cellHeight }
-            // .website is the only URL case rendered without a subtitle.
-            switch urls[indexPath.row] {
-            case .website: return Constants.cellHeight
-            default: return Constants.cellHeightWithSubtitle
-            }
+            return Self.urlSuggestionHasSubtitle(urls[indexPath.row])
+                ? Constants.cellHeightWithSubtitle
+                : Constants.cellHeight
         case .search:
             return Constants.cellHeightWithSubtitle
         case nil:
             return Constants.cellHeight
+        }
+    }
+
+    /// Mirrors the subtitle logic in `configureURLCell` so cell heights match what's actually rendered.
+    private static func urlSuggestionHasSubtitle(_ suggestion: Suggestion) -> Bool {
+        switch suggestion {
+        case .website: return false
+        case .historyEntry(let title, let url, _): return url.isDuckDuckGoSearch || title != nil
+        case .bookmark, .openTab: return true
+        case .phrase, .internalPage, .unknown, .askAIChat: return false
         }
     }
 

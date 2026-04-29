@@ -4272,6 +4272,27 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Αφαίρεση συσκευής;";
 
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Ο κώδικας αντιγράφηκε";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Το Sync & Backup ενεργοποιήθηκε";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Αντιγραφή κωδικού ανάκτησης";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Δεν ήταν δυνατή η ενεργοποίηση του Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Απενεργοποίηση";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Οι σελιδοδείκτες και οι κωδικοί πρόσβασής σας σε αυτήν τη συσκευή δεν θα επηρεαστούν.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Απενεργοποίηση Sync & Backup;";
+
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Αφαίρεση";
 

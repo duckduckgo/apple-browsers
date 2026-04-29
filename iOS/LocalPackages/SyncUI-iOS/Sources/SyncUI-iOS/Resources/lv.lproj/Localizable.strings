@@ -325,6 +325,96 @@
 /* Sync Settings - Recovery section header */
 "sync.settings.recovery.section.header" = "Atgūšana";
 
+/* Sync settings 'Already set up' section header containing useful options */
+"sync.simplified.already.set.up.section.header" = "Vai jau ir iestatīts citā ierīcē?";
+
+/* Prompt body text after enabling sync */
+"sync.simplified.another.device.body" = "Tavas grāmatzīmes, automātiskās aizpildes dati un Duck.ai tērzēšanas sarunas tiek droši dublētas. Tagad sinhronizē tos ar datoru vai planšetdatoru.";
+
+/* Primary button to sync another device when sync is enabled */
+"sync.simplified.another.device.button" = "Sinhronizēt citu ierīci";
+
+/* Prompt title after enabling sync */
+"sync.simplified.another.device.title" = "Vai sinhronizēt datus ar citu ierīci?";
+
+/* Bookmarks section header in sync settings */
+"sync.simplified.bookmarks.section.header" = "Grāmatzīmes";
+
+/* Text shown next to toggle while sync is being set up */
+"sync.simplified.connecting" = "Savieno...";
+
+/* Sync settings 'Copy Recovery Code' button */
+"sync.simplified.copy.recovery.code.button" = "Kopēt atkopšanas kodu";
+
+/* Sync settings action button title to turn off sync and delete server data */
+"sync.simplified.delete.sync.data.button" = "Izslēgt sinhronizāciju un dzēst servera datus";
+
+/* Sync settings 'Download Recovery Code' button */
+"sync.simplified.download.recovery.code.button" = "Lejupielādēt atkopšanas kodu";
+
+/* Button subtitle to get the DuckDuckGo desktop browser */
+"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo operētājsistēmām Mac un Windows";
+
+/* Button title to get the DuckDuckGo desktop browser. */
+"sync.simplified.get.desktop.browser.title" = "Iegūsti galddatora pārlūku";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message" = "Saglabā savas grāmatzīmes, automātiskās aizpildes datus un Duck.ai tērzēšanas sarunas un sinhronizē tās starp ierīcēm, izmantojot pilnīgu šifrēšanu.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic" = "Saglabā savas grāmatzīmes un automātiskās aizpildes datus un sinhronizē tos starp ierīcēm, izmantojot pilnīgu šifrēšanu.";
+
+/* Part of instruction prompt referring to the DuckDuckGo app. */
+"sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo lietotne";
+
+/* Floating prompt over QR code scanner preview */
+"sync.simplified.scan-or-view-code.camera.prompt" = "Pavērs kameru uz kvadrātkodu, lai skenētu";
+
+/* Status text when connecting devices to sync */
+"sync.simplified.scan-or-view-code.connecting.status" = "Savieno...";
+
+/* Instruction shown during sync setup flow */
+"sync.simplified.scan-or-view-code.connecting.title" = "Atstāj DuckDuckGo atvērtu abās ierīcēs";
+
+/* Button to navigate to manual sync code entry */
+"sync.simplified.scan-or-view-code.manually.enter.code" = "Ievadīt kodu manuāli";
+
+/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
+"sync.simplified.scan-or-view-code.paste.code.instructions" = "Dodies uz **Iestatījumi > Sync & Backup > Sinhronizēt ar citu ierīci** un citā sinhronizētā ierīcē lietotnē DuckDuckGo atlasiet **Skatīt teksta kodu** un ielīmē kodu šeit, lai sinhronizētu šo ierīci.";
+
+/* Status text while verifying a pasted sync code */
+"sync.simplified.scan-or-view-code.paste.code.verifying" = "Pārbauda kodu";
+
+/* First line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Atver DuckDuckGo lietotni savā citā ierīcē.";
+
+/* Second line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line2" = "Kvadrātkodu atrodi sadaļā Iestatījumi > Sync & Backup > Sinhronizēt ar citu ierīci.";
+
+/* Title of button to share a sync code */
+"sync.simplified.scan-or-view-code.share" = "Kopīgot kodu";
+
+/* Button title to show QR code scanner */
+"sync.simplified.scan-or-view-code.tab.scan" = "Kvadrātkoda skenēšana";
+
+/* Button title to view your sync code */
+"sync.simplified.scan-or-view-code.tab.view.code" = "Skatīt kodu";
+
+/* Navigation title for simplified QR scanning screen */
+"sync.simplified.scan-or-view-code.title" = "Sinhronizē savas ierīces";
+
+/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
+"sync.simplified.scan-or-view-code.view.instructions" = "Noskenē vai ielīmē šo kodu savā otrā ierīcē";
+
+/* Sync & Backup enabled / disabled toggle title */
+"sync.simplified.toggle.title" = "Sinhronizācija un dublēšana";
+
+/* Use Recovery Code sync setup button label */
+"sync.simplified.use.recovery.code.button" = "Izmantot atkopšanas kodu";
+
+/* Sync With Another Device sync setup button label */
+"sync.simplified.with.another.device.button" = "Sinhronizēt ar citu ierīci";
+
 /* Sync & Backup Title */
 "sync.title" = "Sinhronizācija un dublēšana";
 

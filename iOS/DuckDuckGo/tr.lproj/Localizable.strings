@@ -4272,6 +4272,27 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Cihaz Kaldırılsın mı?";
 
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kod kopyalandı";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup etkin";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Kurtarma Kodu Kopyalandı";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Sync & Backup etkinleştirilemedi";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Kapat";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Bu cihazdaki yer işaretleriniz ve şifreleriniz etkilenmeyecektir.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Sync & Backup kapatılsın mı?";
+
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Kaldır";
 

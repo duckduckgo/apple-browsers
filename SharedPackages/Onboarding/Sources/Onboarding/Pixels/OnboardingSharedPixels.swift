@@ -219,14 +219,7 @@ public extension OnboardingSharedPixelEvent {
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
-        switch self {
-        case .addToDock:
-            // Include pixel source for Add to Dock step, to measure engagement in macOS App Store vs DMG versions.
-            // The DMG step adds the app to the Dock programmatically while the App Store step only shows instructions.
-            return [.pixelSource]
-        default:
-            return nil
-        }
+        [.pixelSource]
     }
 
     var error: NSError? {

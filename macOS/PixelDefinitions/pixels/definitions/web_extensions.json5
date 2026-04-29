@@ -4,7 +4,7 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_web_extension_install_error": {
         "description": "Fires when a web extension installation fails.",
@@ -18,7 +18,7 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_web_extension_uninstall_error": {
         "description": "Fires when a web extension uninstallation fails.",
@@ -32,7 +32,7 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_web_extension_uninstall_all_error": {
         "description": "Fires when uninstalling all web extensions fails (at least one extension failed to uninstall).",
@@ -46,7 +46,7 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_web_extension_load_error": {
         "description": "Fires during app startup when loading installed web extensions fails (at least one extension failed to load).",
@@ -60,7 +60,7 @@
         "owners": ["tomasstrba", "miasma13"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_web_extension_embedded_upgraded": {
         "description": "Fires when the embedded (bundled) web extension is upgraded to a newer version.",
@@ -79,7 +79,8 @@
                 "key": "to_version",
                 "type": "string",
                 "description": "The new version of the embedded extension after upgrade"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_web_extension_embedded_install_error": {
@@ -142,7 +143,7 @@
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_web_extension_ad_blocking_upgraded": {
         "description": "Fires when the ad blocking web extension is upgraded to a newer version.",
@@ -161,7 +162,8 @@
                 "key": "to_version",
                 "type": "string",
                 "description": "The new version of the ad blocking extension after upgrade"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_web_extension_ad_blocking_install_error": {
@@ -176,14 +178,14 @@
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_web_extension_ad_blocking_disabled": {
         "description": "Fires when the user disables YouTube ad blocking in settings.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_web_extension_scriptlet_fetch_success": {
         "description": "Fires when scriptlets are successfully fetched from the server and saved to cache.",
@@ -207,7 +209,8 @@
                 "key": "count",
                 "type": "string",
                 "description": "The number of scriptlet files fetched"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_web_extension_scriptlet_fetch_error": {
@@ -265,7 +268,8 @@
                 "key": "version",
                 "type": "string",
                 "description": "The version of the installed scriptlets"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_web_extension_scriptlet_install_error": {
@@ -299,7 +303,8 @@
                 "key": "is_enabled",
                 "type": "string",
                 "description": "Whether ad blocking is currently enabled (true/false)"
-            }
+            },
+            "channel"
         ]
     }
 }

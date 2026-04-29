@@ -19,7 +19,7 @@
         "owners": ["ayoy"],
         "triggers": ["other"],
         "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_debug_unified_url_prediction_mismatch": {
         "description": "Only for internal users that have opted in to this pixel - fires when the unified URL prediction mechanism predicted the wrong URL than the pre-existing native logic.",
@@ -46,7 +46,7 @@
         "description": "Fired when a site loading navigation completes successfully.",
         "owners": ["diegoreymendez"],
         "triggers": ["page_load"],
-        "parameters": ["appVersion", "pixelSource", "duration", "navigation_type"]
+        "parameters": ["appVersion", "pixelSource", "duration", "navigation_type", "channel"]
     },
     "m_mac_site_loading_failure": {
         "description": "Fired when a site loading navigation fails.",
@@ -60,7 +60,8 @@
             "errorCode",
             "errorDomain",
             "underlyingErrorCode",
-            "underlyingErrorDomain"
+            "underlyingErrorDomain",
+            "channel"
         ]
     },
     "m_mac_site_loading_timing": {
@@ -94,7 +95,8 @@
                 "key": "consentHeuristicEnabled",
                 "type": "integer",
                 "description": "Whether the user is in CPM heuristic experiment treatment group"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_site_loading_performance": {

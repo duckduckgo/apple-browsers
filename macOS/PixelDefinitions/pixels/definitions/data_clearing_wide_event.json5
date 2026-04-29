@@ -158,7 +158,8 @@
                 "type": "string",
                 "description": "Context name for the flow",
                 "enum": ["funnel_default_macos"]
-            }
+            },
+            "channel"
         ]
     }
 }

@@ -256,7 +256,7 @@ final class BrowsingMenuViewController: UIViewController {
         separator.isHidden = headerEntries.isEmpty
 
         for entry in headerEntries {
-            let button = BrowsingMenuButton.loadFromXib()
+            let button = BrowsingMenuButton.make()
             button.configure(with: entry) { [weak self] completion in
                 self?.wasActionSelected = true
                 self?.dismiss(animated: true, completion: completion)

@@ -256,12 +256,6 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return
         }
 
-        guard featureFlagger.isFeatureOn(.newPermissionView) else {
-            Logger.general.debug("WebNotificationsHandler: Blocked - newPermissionView flag disabled (ID: \(payload.id))")
-            await sendErrorEvent(id: payload.id, to: original.webView)
-            return
-        }
-
         guard let url = await original.webView?.url,
               let domain = url.host else {
             Logger.general.debug("WebNotificationsHandler: Missing domain for permission check (ID: \(payload.id))")
@@ -313,11 +307,6 @@ final class WebNotificationsHandler: NSObject, Subfeature {
 
         guard isWebNotificationsEnabled else {
             Logger.general.debug("WebNotificationsHandler: Permission denied - feature flag disabled")
-            return RequestPermissionResponse(permission: Permission.denied.rawValue)
-        }
-
-        guard featureFlagger.isFeatureOn(.newPermissionView) else {
-            Logger.general.debug("WebNotificationsHandler: Permission denied - newPermissionView flag disabled")
             return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
 

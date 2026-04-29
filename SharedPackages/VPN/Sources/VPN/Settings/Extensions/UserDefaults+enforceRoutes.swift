@@ -24,10 +24,12 @@ extension UserDefaults {
         "networkProtectionSettingEnforceRoutes"
     }
 
+    static let enforceRoutesDefaultValue = true
+
     @objc
     dynamic var networkProtectionSettingEnforceRoutes: Bool {
         get {
-            bool(forKey: enforceRoutesKey)
+            value(forKey: enforceRoutesKey) as? Bool ?? Self.enforceRoutesDefaultValue
         }
 
         set {

@@ -172,6 +172,7 @@ class MainViewController: UIViewController {
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     private let tutorialSettings: TutorialSettings
     private let contextualOnboardingLogic: ContextualOnboardingLogic
@@ -181,6 +182,7 @@ class MainViewController: UIViewController {
     let featureFlagger: FeatureFlagger
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
+    let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
     let fireModeCapability: FireModeCapable
@@ -294,7 +296,8 @@ class MainViewController: UIViewController {
                                                   featureFlagger: featureFlagger,
                                                   featureDiscovery: featureDiscovery,
                                                   aiChatSettings: aiChatSettings,
-                                                  productSurfaceTelemetry: productSurfaceTelemetry)
+                                                  productSurfaceTelemetry: productSurfaceTelemetry,
+                                                  duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
         manager.delegate = self
         manager.isFireModeProvider = { [weak self] in self?.tabManager.currentBrowsingMode == .fire }
         return manager
@@ -374,6 +377,7 @@ class MainViewController: UIViewController {
         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+        duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
         appSettings: AppSettings,
         previewsSource: TabPreviewsSource,
         tabManager: TabManager,
@@ -440,6 +444,7 @@ class MainViewController: UIViewController {
         self.userScriptsDependencies = userScriptsDependencies
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.favoritesViewModel = FavoritesListViewModel(bookmarksDatabase: bookmarksDatabase, favoritesDisplayMode: appSettings.favoritesDisplayMode)
         self.bookmarksCachingSearch = BookmarksCachingSearch(bookmarksStore: CoreDataBookmarksSearchStore(bookmarksStore: bookmarksDatabase))
         self.appSettings = appSettings
@@ -462,6 +467,7 @@ class MainViewController: UIViewController {
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.lastActiveTabStore = lastActiveTabStore
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
+        self.postIdleSessionInstrumentation = DefaultPostIdleSessionInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent)
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.fireproofing = fireproofing
         self.favicons = favicons
@@ -605,6 +611,9 @@ class MainViewController: UIViewController {
         
         chromeManager = BrowserChromeManager()
         chromeManager.delegate = self
+        chromeManager.onUserScrolled = { [weak self] in
+            self?.postIdleSessionInstrumentation.pageEngaged()
+        }
         initTabButton()
         initBookmarksButton()
         setUpUnifiedToggleInputIfNeeded()
@@ -1109,6 +1118,7 @@ class MainViewController: UIViewController {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
         }
+        postIdleSessionInstrumentation.sessionCancelledByBackground()
 
         /// Resign the web view's first responder when backgrounding with the tab switcher
         /// visible. The tab switcher uses .overCurrentContext so the WKWebView stays in the
@@ -1224,13 +1234,13 @@ class MainViewController: UIViewController {
 
         let coordinator = unifiedToggleInputCoordinator
         let isAITabCollapsed = coordinator?.displayState == .aiTab(.collapsed)
-        let isBottomExpandedUTIKeyboardAnchored = (coordinator?.isOmnibarSession == true || coordinator?.isAITabExpanded == true)
+        let isBottomExpandedUTIKeyboardAnchored = coordinator?.isInputEditing == true
             && coordinator?.cardPosition == .bottom
             && viewCoordinator.isNavigationBarContainerBottomKeyboardBased
 
         let baseInputHeight: CGFloat
-        if let coordinator, coordinator.isAITabExpanded || coordinator.isOmnibarSession {
-            baseInputHeight = coordinator.omnibarEditingHeight()
+        if let coordinator, coordinator.isInputEditing {
+            baseInputHeight = coordinator.editingHeight()
         } else {
             baseInputHeight = omniBarHeight
         }
@@ -1470,8 +1480,9 @@ class MainViewController: UIViewController {
         return nil
     }
 
-    private func buildEscapeHatch() -> EscapeHatchModel? {
-        guard idleReturnEligibilityManager.isEligibleForNTPAfterIdle() else {
+    private func buildEscapeHatch(openedAfterIdle: Bool) -> EscapeHatchModel? {
+        guard openedAfterIdle,
+              idleReturnEligibilityManager.isEligibleForNTPAfterIdle() else {
             return nil
         }
         let currentTab = tabManager.currentTabsModel.currentTab
@@ -1495,6 +1506,9 @@ class MainViewController: UIViewController {
             showTabSwitcher()
             return
         }
+
+        viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
+        refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
         viewCoordinator.logoContainer.isHidden = false
         findInPageView?.isHidden = true
@@ -1547,7 +1561,7 @@ class MainViewController: UIViewController {
 
         newTabPageViewController = controller
 
-        let hatch = buildEscapeHatch()
+        let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
         controller.setEscapeHatch(hatch)
         currentNTPEscapeHatch = hatch
         
@@ -1586,7 +1600,7 @@ class MainViewController: UIViewController {
         // about to shown to the user.
         if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
             fireNewTabPixels()
-            ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
+            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle)
         }
 
         if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
@@ -1594,6 +1608,13 @@ class MainViewController: UIViewController {
         }
 
         syncService.scheduler.requestSyncImmediately()
+    }
+
+    private func fireNTPShownInstrumentation(openedAfterIdle: Bool) {
+        ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
+        if openedAfterIdle {
+            postIdleSessionInstrumentation.sessionStarted(surface: .ntp)
+        }
     }
 
     func fireNewTabPixels() {
@@ -1856,6 +1877,7 @@ class MainViewController: UIViewController {
                       flowType: AIChatOnboardingFlowType = .default,
                       tools: [AIChatRAGTool]? = nil,
                       modelId: String? = nil,
+                      reasoningEffort: AIChatReasoningEffort? = nil,
                       images: [AIChatNativePrompt.NativePromptImage]? = nil) {
         guard let currentTab else {
             assertionFailure("load called with no current tab")
@@ -1864,6 +1886,7 @@ class MainViewController: UIViewController {
         if currentTab.tabModel.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
         }
+        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
         prepareTabForRequest {
             currentTab.load(
                 query,
@@ -1872,6 +1895,7 @@ class MainViewController: UIViewController {
                 flowType: flowType,
                 tools: tools,
                 modelId: modelId,
+                reasoningEffort: reasoningEffort,
                 images: images
             )
         }
@@ -2203,7 +2227,7 @@ class MainViewController: UIViewController {
             }
 
             ViewHighlighter.updatePositions()
-            self.recomputeOmnibarEditingHeightIfNeeded()
+            self.recomputeNavigationBarContainerHeightIfNeeded()
         }
 
         hideNotificationBarIfBrokenSitePromptShown()
@@ -3070,6 +3094,7 @@ class MainViewController: UIViewController {
                     flowType: AIChatOnboardingFlowType = .default,
                     tools: [AIChatRAGTool]? = nil,
                     modelId: String? = nil,
+                    reasoningEffort: AIChatReasoningEffort? = nil,
                     images: [AIChatNativePrompt.NativePromptImage]? = nil,
                     fromDeepLink: Bool = false) {
 
@@ -3081,6 +3106,7 @@ class MainViewController: UIViewController {
                 flowType: flowType,
                 tools: tools,
                 modelId: modelId,
+                reasoningEffort: reasoningEffort,
                 images: images,
                 fromDeepLink: fromDeepLink
             )
@@ -3091,6 +3117,8 @@ class MainViewController: UIViewController {
                 autoSend: autoSend,
                 flowType: flowType,
                 tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
                 on: self
             )
         }
@@ -3153,6 +3181,7 @@ class MainViewController: UIViewController {
                                  flowType: AIChatOnboardingFlowType = .default,
                                  tools: [AIChatRAGTool]? = nil,
                                  modelId: String? = nil,
+                                 reasoningEffort: AIChatReasoningEffort? = nil,
                                  images: [AIChatNativePrompt.NativePromptImage]? = nil,
                                  fromDeepLink: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
@@ -3166,7 +3195,7 @@ class MainViewController: UIViewController {
             return
         }
 
-        load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, images: images)
+        load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images)
     }
     
     /// Executes the closure if the current tab is an AI tab
@@ -3357,6 +3386,7 @@ extension MainViewController: BrowserChromeDelegate {
             return
         }
 
+        postIdleSessionInstrumentation.sessionEnded(reason: .favoriteSelected)
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
         favicons.loadFavicon(forDomain: url.host, intoCache: .fireproof, fromCache: .tabs)
@@ -3373,6 +3403,7 @@ extension MainViewController: BrowserChromeDelegate {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
+        postIdleSessionInstrumentation.sessionEnded(reason: .barUsed)
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
         viewCoordinator.omniBar.cancel()
@@ -3435,6 +3466,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onChatHistorySelected(url: URL) {
+        postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
         loadUrlInNewTab(url, inheritedAttribution: nil)
     }
 
@@ -3818,6 +3850,7 @@ extension MainViewController: OmniBarDelegate {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
+        postIdleSessionInstrumentation.backPressed()
         performCancel()
     }
 
@@ -3838,17 +3871,20 @@ extension MainViewController: OmniBarDelegate {
             PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue
         ])
         guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         performCancel()
         newTab()
     }
 
     private func newFireTabLongPressMenuAction() {
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
         performCancel()
         newTab()
     }
 
     private func newNormalTabLongPressMenuAction() {
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         performCancel()
         newTab()
@@ -4152,6 +4188,7 @@ extension MainViewController: OmniBarDelegate {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
+        postIdleSessionInstrumentation.backPressed()
     }
 
     /// Delegate method called when the AI Chat left button is tapped
@@ -4201,6 +4238,7 @@ extension MainViewController: OmniBarDelegate {
         }
         let wasAfterIdle = currentTab?.openedAfterIdle ?? false
         ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
+        postIdleSessionInstrumentation.sessionEnded(reason: .returnToPageTapped)
         viewCoordinator.omniBar.endEditing()
         if let currentTab {
             closeTab(currentTab)
@@ -4212,6 +4250,7 @@ extension MainViewController: OmniBarDelegate {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
+        postIdleSessionInstrumentation.toggleUsed()
         iPadAIChatQuery = currentIPadAIQuery()
         guard iPadTabChatHistoryCoordinator.isInstalled else { return }
         if isModeToggleInAIChatMode {
@@ -4365,6 +4404,7 @@ extension MainViewController: NewTabPageControllerDelegate {
         guard tab !== currentTab else { return }
         let wasAfterIdle = currentTab?.openedAfterIdle ?? false
         ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
+        postIdleSessionInstrumentation.sessionEnded(reason: .returnToPageTapped)
         if let currentTab {
             closeTab(currentTab)
         }
@@ -4393,6 +4433,10 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestFireMode(tab: TabViewController) {
         navigateToFireMode(source: .menuPromotion)
+    }
+
+    func tabDidEngageWithPage(_ tab: TabViewController) {
+        postIdleSessionInstrumentation.pageEngaged()
     }
 
     var isAIChatEnabled: Bool {
@@ -4968,6 +5012,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.tabSwitcherSelectedFromNTP(afterIdle: tab.openedAfterIdle)
         }
+        postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         tabManager.currentTabsModel.currentTab?.openedAfterIdle = false
         hideNotificationBarIfBrokenSitePromptShown()
         updatePreviewForCurrentTab {

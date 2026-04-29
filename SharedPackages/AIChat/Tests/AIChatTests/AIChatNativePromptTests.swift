@@ -265,6 +265,26 @@ struct AIChatNativePromptTests {
     }
 
     @Test
+    func encodingQueryWithReasoningEffort() throws {
+        let prompt = AIChatNativePrompt.queryPrompt("Describe this", autoSubmit: true, modelId: "gpt-5.2", reasoningEffort: .medium)
+        let jsonDict = try encodePrompt(prompt)
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        #expect(queryDict["modelId"] as? String == "gpt-5.2")
+        #expect(queryDict["reasoningEffort"] as? String == "medium")
+    }
+
+    @Test
+    func encodingQueryWithNoReasoningEffort() throws {
+        let prompt = AIChatNativePrompt.queryPrompt("Answer quickly", autoSubmit: true, modelId: "gpt-5.2", reasoningEffort: AIChatReasoningEffort.none)
+        let jsonDict = try encodePrompt(prompt)
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        #expect(queryDict["modelId"] as? String == "gpt-5.2")
+        #expect(queryDict["reasoningEffort"] as? String == "none")
+    }
+
+    @Test
     func encodingQueryWithoutOptionalFields() throws {
         let prompt = AIChatNativePrompt.queryPrompt("hello", autoSubmit: true)
         let jsonDict = try encodePrompt(prompt)
@@ -272,10 +292,11 @@ struct AIChatNativePromptTests {
         let queryDict = try #require(jsonDict["query"] as? [String: Any])
         #expect(queryDict["prompt"] as? String == "hello")
         #expect(queryDict["autoSubmit"] as? Bool == true)
-        // Optional fields should be nil/absent
-        #expect(queryDict["modelId"] == nil || queryDict["modelId"] is NSNull)
-        #expect(queryDict["images"] == nil || queryDict["images"] is NSNull)
-        #expect(queryDict["toolChoice"] == nil || queryDict["toolChoice"] is NSNull)
+        #expect(queryDict["modelId"] == nil)
+        #expect(queryDict["images"] == nil)
+        #expect(queryDict["toolChoice"] == nil)
+        #expect(queryDict["mode"] == nil)
+        #expect(queryDict["reasoningEffort"] == nil)
     }
 
     @Test
@@ -299,6 +320,46 @@ struct AIChatNativePromptTests {
 
         let images = [AIChatNativePrompt.NativePromptImage(data: "base64data", format: "png")]
         let expected = AIChatNativePrompt.queryPrompt("Describe this", autoSubmit: true, images: images, modelId: "gpt-4o")
+        #expect(prompt == expected)
+    }
+
+    @Test
+    func decodingQueryWithReasoningEffort() throws {
+        let json = """
+            {
+                "platform": "\(Platform.name)",
+                "tool": "query",
+                "query": {
+                    "prompt": "Think through this",
+                    "autoSubmit": true,
+                    "modelId": "claude-opus-4-6",
+                    "reasoningEffort": "low"
+                }
+            }
+            """
+
+        let prompt = try decodePrompt(from: json)
+        let expected = AIChatNativePrompt.queryPrompt("Think through this", autoSubmit: true, modelId: "claude-opus-4-6", reasoningEffort: .low)
+        #expect(prompt == expected)
+    }
+
+    @Test
+    func decodingQueryWithUnknownReasoningEffortIgnoresReasoningEffort() throws {
+        let json = """
+            {
+                "platform": "\(Platform.name)",
+                "tool": "query",
+                "query": {
+                    "prompt": "Think through this",
+                    "autoSubmit": true,
+                    "modelId": "future-model",
+                    "reasoningEffort": "future-effort"
+                }
+            }
+            """
+
+        let prompt = try decodePrompt(from: json)
+        let expected = AIChatNativePrompt.queryPrompt("Think through this", autoSubmit: true, modelId: "future-model")
         #expect(prompt == expected)
     }
 

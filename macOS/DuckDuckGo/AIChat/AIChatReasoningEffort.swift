@@ -17,24 +17,16 @@
 //
 
 import AppKit
+import AIChat
 import DesignResourcesKitIcons
 
-/// Reasoning effort levels the Duck.ai omnibar can offer. Raw values match the server contract
-/// (`supportedReasoningEffort` from `duckchat/v1/models` and the `reasoningEffort` request field),
-/// so unknown values from the backend are silently filtered at the UI boundary and can be added
-/// later by extending this enum without changing the wire shape.
-enum AIChatReasoningEffort: String, CaseIterable {
-    case none
-    case minimal
-    case low
-    case medium
-
+extension AIChatReasoningEffort {
     /// Label shown on the picker chip and as the menu item's primary text.
     var title: String {
         switch self {
         case .none, .minimal: return UserText.aiChatReasoningEffortFastTitle
         case .low: return UserText.aiChatReasoningEffortLowTitle
-        case .medium: return UserText.aiChatReasoningEffortMediumTitle
+        case .medium, .high: return UserText.aiChatReasoningEffortMediumTitle
         }
     }
 
@@ -43,7 +35,7 @@ enum AIChatReasoningEffort: String, CaseIterable {
         switch self {
         case .none, .minimal: return UserText.aiChatReasoningEffortFastSubtitle
         case .low: return UserText.aiChatReasoningEffortLowSubtitle
-        case .medium: return UserText.aiChatReasoningEffortMediumSubtitle
+        case .medium, .high: return UserText.aiChatReasoningEffortMediumSubtitle
         }
     }
 
@@ -52,7 +44,7 @@ enum AIChatReasoningEffort: String, CaseIterable {
         switch self {
         case .none, .minimal: return DesignSystemImages.Glyphs.Size16.thunderbolt
         case .low: return DesignSystemImages.Glyphs.Size16.thinking
-        case .medium: return DesignSystemImages.Glyphs.Size16.timer
+        case .medium, .high: return DesignSystemImages.Glyphs.Size16.timer
         }
     }
 }

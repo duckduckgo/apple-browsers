@@ -29,6 +29,7 @@ public protocol AIChatInputBoxHandling {
     var didPressCustomizeResponsesButton: PassthroughSubject<Void, Never> { get }
 
     var persistedModelId: String? { get }
+    var persistedReasoningEffort: AIChatReasoningEffort? { get }
 
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { get }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { get }

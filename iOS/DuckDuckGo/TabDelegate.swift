@@ -119,6 +119,9 @@ protocol TabDelegate: AnyObject {
     func closeFindInPage(tab: TabViewController)
 
     func tabContentProcessDidTerminate(tab: TabViewController)
+
+    /// User activated an in-page link in this tab.
+    func tabDidEngageWithPage(_ tab: TabViewController)
     
     func tabDidRequestFireButtonPulse(tab: TabViewController)
 

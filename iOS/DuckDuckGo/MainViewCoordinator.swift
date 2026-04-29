@@ -269,7 +269,7 @@ class MainViewCoordinator {
     // MARK: - Omnibar Editing Layout
 
     @MainActor
-    func hideUnifiedToggleInputOmnibar() {
+    func hideUnifiedToggleInputOmnibar(completion: (() -> Void)? = nil) {
         if addressBarPosition.isBottom {
             setNavBarContainerBottomToToolbar()
         }
@@ -285,6 +285,7 @@ class MainViewCoordinator {
             // Skip cleanup if the animation was superseded — otherwise it stomps fresh state from a concurrent show.
             guard position == .end else { return }
             self.finishUnifiedToggleInputOmnibarDismiss()
+            completion?()
         }
         omnibarDismissAnimator = animator
         animator.startAnimation()

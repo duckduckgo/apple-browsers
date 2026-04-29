@@ -64,10 +64,10 @@ public struct AIChatRemoteModel: Decodable, Equatable {
     public let entityHasAccess: Bool
     public let supportsImageUpload: Bool
     public let supportedTools: [String]
-    public let supportedReasoningEffort: [String]
     public let accessTier: [String]
+    public let supportedReasoningEffort: [AIChatReasoningEffort]
 
-    public init(id: String, name: String, modelShortName: String? = nil, provider: String, entityHasAccess: Bool, supportsImageUpload: Bool, supportedTools: [String], supportedReasoningEffort: [String] = [], accessTier: [String]) {
+    public init(id: String, name: String, modelShortName: String? = nil, provider: String, entityHasAccess: Bool, supportsImageUpload: Bool, supportedTools: [String], accessTier: [String], supportedReasoningEffort: [AIChatReasoningEffort] = []) {
         self.id = id
         self.name = name
         self.modelShortName = modelShortName
@@ -75,8 +75,8 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         self.entityHasAccess = entityHasAccess
         self.supportsImageUpload = supportsImageUpload
         self.supportedTools = supportedTools
-        self.supportedReasoningEffort = supportedReasoningEffort
         self.accessTier = accessTier
+        self.supportedReasoningEffort = supportedReasoningEffort
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -92,8 +92,8 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         self.entityHasAccess = try container.decode(Bool.self, forKey: .entityHasAccess)
         self.supportsImageUpload = try container.decode(Bool.self, forKey: .supportsImageUpload)
         self.supportedTools = try container.decode([String].self, forKey: .supportedTools)
-        // Tolerate older payloads that don't include the field; default to no reasoning support.
-        self.supportedReasoningEffort = try container.decodeIfPresent([String].self, forKey: .supportedReasoningEffort) ?? []
+        self.supportedReasoningEffort = try container.decodeIfPresent([String].self, forKey: .supportedReasoningEffort)?
+            .compactMap(AIChatReasoningEffort.init(rawValue:)) ?? []
         self.accessTier = try container.decode([String].self, forKey: .accessTier)
     }
 }

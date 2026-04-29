@@ -82,7 +82,8 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         XCTAssertTrue(vc.children.isEmpty, "hatch hosting controller should be removed from children")
     }
 
-    func test_setEscapeHatch_calledTwiceWithModel_replacesExistingHostingController() {
+    func test_setEscapeHatch_calledTwiceWithDifferentModels_replacesExistingHostingController() {
+        // Each `.testFixture` build a new Tab with a fresh uid, so the two models compare unequal.
         let vc = makeViewController()
         vc.setEscapeHatch(.testFixture, onTapped: {})
         let firstChild = vc.children.first
@@ -90,7 +91,19 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         vc.setEscapeHatch(.testFixture, onTapped: {})
 
         XCTAssertEqual(vc.children.count, 1)
-        XCTAssertFalse(vc.children.first === firstChild, "second call should replace the previous hosting controller")
+        XCTAssertFalse(vc.children.first === firstChild, "different model → hosting controller is replaced")
+    }
+
+    func test_setEscapeHatch_calledTwiceWithIdenticalModel_isNoOp() {
+        let vc = makeViewController()
+        let model: EscapeHatchModel = .testFixture
+        vc.setEscapeHatch(model, onTapped: {})
+        let firstChild = vc.children.first
+
+        vc.setEscapeHatch(model, onTapped: {})
+
+        XCTAssertEqual(vc.children.count, 1)
+        XCTAssertTrue(vc.children.first === firstChild, "identical model → short-circuit; existing hosting controller is preserved")
     }
 
     // MARK: - Live sections

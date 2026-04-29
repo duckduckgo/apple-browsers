@@ -524,13 +524,12 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     func setAsChatFirstPath() {
         settings.isChatFirstPath = true
+        // Reset visit-site progress so stale state from a previous run doesn't skip straight to EOJ.
+        settings.chatPathVisitSiteSeen = false
     }
 
     var chatPathPhase: ChatPathPhase {
-        guard settings.isChatFirstPath && settings.fireMessageExperimentShown else { return .none }
-        if !settings.chatPathVisitSiteSeen { return .visitSite }
-        if !settings.browsingFinalDialogShown { return .trackerToEOJ }
-        return .none
+        settings.chatPathPhase
     }
 
     var isAIChatEnabled: Bool {
@@ -635,22 +634,14 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
         // Chat-first path: fire was seen before any site was visited (Duck.ai experiment flow).
         // The visit-site and trackers-blocked steps come AFTER fire in this path.
-        if settings.isChatFirstPath && settings.fireMessageExperimentShown && !nonDDGBrowsingMessageSeen {
-            if !settings.chatPathVisitSiteSeen {
-                // Show the "try visiting a site" prompt for the chat-first path.
+        // Once nonDDGBrowsingMessageSeen becomes true, the EOJ is shown via
+        // presentChatPathOnboardingCompletionIfNeeded; suppress the standard .final here
+        // to prevent a duplicate dialog and duplicate pixel fires.
+        // (Standard-path users never set isChatFirstPath, so they fall through to .final below.)
+        if settings.isChatFirstPath && settings.fireMessageExperimentShown {
+            if !nonDDGBrowsingMessageSeen && !settings.chatPathVisitSiteSeen {
                 return .subsequent
             }
-            // Visit-site step was shown; wait for the user to visit a site with trackers.
-            // The trackers-blocked browsing dialog will surface naturally when they browse,
-            // and the EOJ dialog will follow once nonDDGBrowsingMessageSeen becomes true.
-            return nil
-        }
-
-        // Chat-path trackerToEOJ phase: fire and visit-site seen, user has now browsed with trackers.
-        // The EOJ dialog is shown via presentChatPathOnboardingCompletionIfNeeded; suppress the
-        // standard .final here to prevent a duplicate dialog and duplicate pixel fires.
-        // (Standard-path users never set chatPathVisitSiteSeen, so they fall through to .final below.)
-        if settings.fireMessageExperimentShown && settings.chatPathVisitSiteSeen {
             return nil
         }
 

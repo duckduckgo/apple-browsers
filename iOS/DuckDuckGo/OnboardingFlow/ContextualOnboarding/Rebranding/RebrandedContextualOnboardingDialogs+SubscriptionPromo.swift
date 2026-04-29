@@ -65,17 +65,10 @@ extension OnboardingRebranding {
                             message: message,
                             messageTextAlignment: .center
                         ) {
-                            VStack(spacing: 8) {
-                                Button(action: proceedAction) {
-                                    Text(proceedText)
-                                }
-                                .buttonStyle(theme.primaryButtonStyle.style)
-
-                                Button(action: dismissAction) {
-                                    Text(dismissText)
-                                }
-                                .buttonStyle(theme.secondaryButtonStyle.style)
+                            Button(action: proceedAction) {
+                                Text(proceedText)
                             }
+                            .buttonStyle(theme.primaryButtonStyle.style)
                         }
                     }
                 }

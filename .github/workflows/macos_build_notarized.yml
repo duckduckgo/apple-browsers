@@ -15,6 +15,7 @@ on:
         - review
         - release
         - alpha
+        - sandbox-review # Builds sandboxed app for running locally (for App Store UI Tests)
       create-dmg:
         description: "Create DMG image"
         default: false
@@ -146,6 +147,9 @@ jobs:
           "alpha")
             bundle exec fastlane sync_signing_dmg_alpha
             ;;
+          "sandbox-review")
+            bundle exec fastlane sync_signing_sandbox_review
+            ;;
         esac
 
     - name: Retry sync code signing assets
@@ -167,6 +171,9 @@ jobs:
             ;;
           "alpha")
             bundle exec fastlane sync_signing_dmg_alpha
+            ;;
+          "sandbox-review")
+            bundle exec fastlane sync_signing_sandbox_review
             ;;
         esac
 

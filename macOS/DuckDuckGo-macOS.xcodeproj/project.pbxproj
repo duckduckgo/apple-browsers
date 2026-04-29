@@ -5016,6 +5016,9 @@
 		37657FC62DB9513B003D749E /* TabCrashIndicatorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabCrashIndicatorModel.swift; sourceTree = "<group>"; };
 		3765CAAB2E4B509800A26678 /* PageContextUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageContextUserScript.swift; sourceTree = "<group>"; };
 		3765CAAE2E4B70DC00A26678 /* PageContextTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageContextTabExtension.swift; sourceTree = "<group>"; };
+		37668BEB2F9B9EB5005FCE46 /* DuckDuckGoAppStoreReviewUITests.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoAppStoreReviewUITests.entitlements; sourceTree = "<group>"; };
+		37668BEC2F9BAC20005FCE46 /* UITestsTargetBinary.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = UITestsTargetBinary.xcconfig; sourceTree = "<group>"; };
+		37668BED2F9C0E6A005FCE46 /* UI Tests App Store.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "UI Tests App Store.xctestplan"; sourceTree = "<group>"; };
 		376731842C7EF97400EB097B /* ColorSchemeLosslessStringConvertibleExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorSchemeLosslessStringConvertibleExtensionTests.swift; sourceTree = "<group>"; };
 		3767318A2C7F32C500EB097B /* GradientBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientBackground.swift; sourceTree = "<group>"; };
 		3767318D2C7F32E900EB097B /* SolidColorBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolidColorBackground.swift; sourceTree = "<group>"; wrapsLines = 1; };
@@ -8003,6 +8006,7 @@
 				376CC8B5296EBA8F006B63A7 /* BuildNumber.xcconfig */,
 				376CC8B4296EB630006B63A7 /* AppStore.xcconfig */,
 				7B5291892A169BC90022E406 /* DeveloperID.xcconfig */,
+				37668BEC2F9BAC20005FCE46 /* UITestsTargetBinary.xcconfig */,
 				378C76D8296842FD0092E949 /* App */,
 				4B4D604E2A0B293C00BCD287 /* Extensions */,
 				378C76D92968433B0092E949 /* Tests */,
@@ -9544,6 +9548,7 @@
 				642A608704E4BE38779B6162 /* TabSuspensionTests.swift */,
 				8438BB162F2874270084DE69 /* WarnBeforeQuitUITests.swift */,
 				376E708D2BD686260082B7EB /* UI Tests.xctestplan */,
+				37668BED2F9C0E6A005FCE46 /* UI Tests App Store.xctestplan */,
 				4B7948142F81DE2600DA4028 /* TabNavigationTestHelpers.swift */,
 				4B7948162F81DFC100DA4028 /* TabNavigationInterfaceTests.swift */,
 				4B7948182F81DFC400DA4028 /* TabNavigationMenuItemTests.swift */,
@@ -10602,6 +10607,7 @@
 				377E54382937B7C400780A0A /* DuckDuckGoAppStoreCI.entitlements */,
 				37E1116C2C578F1B00583C19 /* DuckDuckGoAppStoreDebug.entitlements */,
 				4BA808FF2CDE78F600338EE4 /* DuckDuckGoAppStoreReview.entitlements */,
+				37668BEB2F9B9EB5005FCE46 /* DuckDuckGoAppStoreReviewUITests.entitlements */,
 				4B5F15032A1570F10060320F /* DuckDuckGoDebug.entitlements */,
 				4B65143C26392483005B46EB /* Email */,
 				B68412192B6A16030092F66A /* ErrorPage */,

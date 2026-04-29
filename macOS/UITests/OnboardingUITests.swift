@@ -135,10 +135,11 @@ final class OnboardingUITests: UITestCase {
     }
 
     func resetApplicationData() throws {
+        let bundleID = try XCTUnwrap(XCUIApplication().bundleID)
         let commands = [
-            "/usr/bin/defaults delete com.duckduckgo.macos.browser.review",
-            "/bin/rm -rf ~/Library/Containers/com.duckduckgo.macos.browser.review/Data",
-            "/usr/bin/defaults write com.duckduckgo.macos.browser.review moveToApplicationsFolderAlertSuppress 1"
+            "/usr/bin/defaults delete \(bundleID)",
+            "/bin/rm -rf ~/Library/Containers/\(bundleID)/Data",
+            "/usr/bin/defaults write \(bundleID) moveToApplicationsFolderAlertSuppress 1"
         ]
 
         for command in commands {

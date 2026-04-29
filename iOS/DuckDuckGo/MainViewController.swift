@@ -1934,10 +1934,12 @@ class MainViewController: UIViewController {
         previousTab?.dismiss()
         hideNotificationBarIfBrokenSitePromptShown()
 
-        unifiedToggleInputCoordinator?.deactivateToOmnibar()
-        if let previousTab, previousTab.isAITab, !tab.isAITab {
-            unifiedToggleInputCoordinator?.hide()
-            unifiedToggleInputCoordinator?.unbind()
+        if let coordinator = unifiedToggleInputCoordinator {
+            coordinator.deactivateToOmnibar()
+            if coordinator.isAITabState, !tab.isAITab {
+                coordinator.hide()
+                coordinator.unbind()
+            }
         }
 
         let shouldSaveTabs = tab.tabModel.viewed == false

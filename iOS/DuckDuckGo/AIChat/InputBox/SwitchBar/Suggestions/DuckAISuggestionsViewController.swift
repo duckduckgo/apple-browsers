@@ -45,8 +45,9 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     private enum Constants {
         static let cellIdentifier = "DuckAISuggestionsCell"
-        static let iconSize: CGFloat = 16
-        static let iconTextSpacing: CGFloat = 12
+        // Match Search-side autocomplete styling.
+        static let iconSize: CGFloat = 24
+        static let iconTextSpacing: CGFloat = 10
         static let cellHeight: CGFloat = 44
         static let cellHeightWithSubtitle: CGFloat = 58
         static let horizontalInset: CGFloat = 16
@@ -59,6 +60,12 @@ final class DuckAISuggestionsViewController: UIViewController {
     private let urlLoader: DuckAIURLSuggestionsLoader
     private let queryProvider: () -> String
     private let isIPadExperience: Bool
+
+    /// Coalesce reload triggers into one debounced pipeline. Sized to absorb the typical gap
+    /// between when the chat fetcher settles and when the URL fetcher settles (~60–80ms in
+    /// practice) so both updates land in a single reload — otherwise sections appear/disappear
+    /// at staggered moments.
+    private static let reloadCoalesceMilliseconds = 120
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -106,21 +113,33 @@ final class DuckAISuggestionsViewController: UIViewController {
             tableView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
         ])
 
-        chatViewModel.$filteredSuggestions
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.tableView.reloadData() }
-            .store(in: &cancellables)
-
-        urlLoader.$topURLs
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.tableView.reloadData() }
+        // Reload only on fetcher settle. Text changes alone would fire a reload that renders
+        // stale fetcher data with the new search-row title, briefly showing inconsistent state.
+        // The fetchers themselves debounce the text publisher, so any text change ultimately
+        // triggers a reload via this pipeline (~150–200ms later) — same lag as Search-side.
+        let chatChanges = chatViewModel.$filteredSuggestions.map { _ in () }.eraseToAnyPublisher()
+        let urlChanges = urlLoader.$topURLs.map { _ in () }.eraseToAnyPublisher()
+        Publishers.MergeMany([chatChanges, urlChanges])
+            .debounce(for: .milliseconds(Self.reloadCoalesceMilliseconds), scheduler: DispatchQueue.main)
+            .sink { [weak self] in self?.reload() }
             .store(in: &cancellables)
     }
 
-    /// Re-renders so the always-visible "Search DuckDuckGo" row appears/disappears with the query.
-    func handleQueryChanged() {
+    /// The set of sections that currently render rows. Empty sections are excluded entirely so
+    /// `insetGrouped` doesn't reserve their header padding above the first visible section.
+    private var liveSections: [Section] {
+        var sections: [Section] = []
+        if !chats.isEmpty { sections.append(.chats) }
+        if !urls.isEmpty { sections.append(.urls) }
+        if hasSearchRow { sections.append(.search) }
+        return sections
+    }
+
+    private func reload() {
         guard isViewLoaded else { return }
-        tableView.reloadData()
+        UIView.performWithoutAnimation {
+            tableView.reloadData()
+        }
     }
 
     // MARK: - Cell config
@@ -128,7 +147,7 @@ final class DuckAISuggestionsViewController: UIViewController {
     private func configureChatCell(_ cell: UITableViewCell, with chat: AIChatSuggestion) {
         var config = cell.defaultContentConfiguration()
         config.text = chat.title
-        config.textProperties.font = .preferredFont(forTextStyle: .body)
+        config.textProperties.font = UIFont.daxBodyRegular()
         config.textProperties.color = UIColor(designSystemColor: .textPrimary)
         config.textProperties.numberOfLines = 1
         config.textProperties.lineBreakMode = .byTruncatingTail
@@ -167,10 +186,11 @@ final class DuckAISuggestionsViewController: UIViewController {
             // Filter guarantees URL types only; this branch is unreachable.
             return
         }
-        config.textProperties.font = .preferredFont(forTextStyle: .body)
+        config.textProperties.font = UIFont.daxBodyRegular()
         config.textProperties.color = UIColor(designSystemColor: .textPrimary)
         config.textProperties.numberOfLines = 1
         config.textProperties.lineBreakMode = .byTruncatingTail
+        config.secondaryTextProperties.font = UIFont.daxFootnoteRegular()
         config.secondaryTextProperties.color = UIColor(designSystemColor: .textSecondary)
         config.secondaryTextProperties.numberOfLines = 1
         config.secondaryTextProperties.lineBreakMode = .byTruncatingTail
@@ -184,10 +204,11 @@ final class DuckAISuggestionsViewController: UIViewController {
         var config = cell.defaultContentConfiguration()
         config.text = query
         config.secondaryText = UserText.autocompleteSearchDuckDuckGo
-        config.textProperties.font = .preferredFont(forTextStyle: .body)
+        config.textProperties.font = UIFont.daxBodyRegular()
         config.textProperties.color = UIColor(designSystemColor: .textPrimary)
         config.textProperties.numberOfLines = 1
         config.textProperties.lineBreakMode = .byTruncatingTail
+        config.secondaryTextProperties.font = UIFont.daxFootnoteRegular()
         config.secondaryTextProperties.color = UIColor(designSystemColor: .textSecondary)
         applyIcon(DesignSystemImages.Glyphs.Size24.findSearchSmall, to: &config)
         applyLayoutMargins(&config)
@@ -214,20 +235,23 @@ final class DuckAISuggestionsViewController: UIViewController {
 
 extension DuckAISuggestionsViewController: UITableViewDataSource {
 
-    func numberOfSections(in tableView: UITableView) -> Int { Section.allCases.count }
+    func numberOfSections(in tableView: UITableView) -> Int { liveSections.count }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        switch Section(rawValue: section) {
+        let live = liveSections
+        guard section < live.count else { return 0 }
+        switch live[section] {
         case .chats: return chats.count
         case .urls: return urls.count
-        case .search: return hasSearchRow ? 1 : 0
-        case .none: return 0
+        case .search: return 1
         }
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: Constants.cellIdentifier, for: indexPath)
-        switch Section(rawValue: indexPath.section) {
+        let live = liveSections
+        guard indexPath.section < live.count else { return cell }
+        switch live[indexPath.section] {
         case .chats:
             guard indexPath.row < chats.count else { return cell }
             configureChatCell(cell, with: chats[indexPath.row])
@@ -236,8 +260,6 @@ extension DuckAISuggestionsViewController: UITableViewDataSource {
             configureURLCell(cell, with: urls[indexPath.row])
         case .search:
             configureSearchCell(cell, query: queryProvider())
-        case .none:
-            break
         }
         return cell
     }
@@ -250,7 +272,9 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        switch Section(rawValue: indexPath.section) {
+        let live = liveSections
+        guard indexPath.section < live.count else { return Constants.cellHeight }
+        switch live[indexPath.section] {
         case .chats:
             return Constants.cellHeight
         case .urls:
@@ -263,8 +287,6 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
             }
         case .search:
             return Constants.cellHeightWithSubtitle
-        case .none:
-            return Constants.cellHeight
         }
     }
 
@@ -274,7 +296,9 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        switch Section(rawValue: indexPath.section) {
+        let live = liveSections
+        guard indexPath.section < live.count else { return }
+        switch live[indexPath.section] {
         case .chats:
             guard indexPath.row < chats.count else { return }
             delegate?.duckAISuggestionsDidSelectChat(chats[indexPath.row])
@@ -283,8 +307,6 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
             delegate?.duckAISuggestionsDidSelectURL(urls[indexPath.row])
         case .search:
             delegate?.duckAISuggestionsDidSelectSearchDuckDuckGo(query: queryProvider())
-        case .none:
-            break
         }
     }
 }

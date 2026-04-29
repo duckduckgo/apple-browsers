@@ -78,12 +78,15 @@ final class DuckAISuggestionsCoordinator {
         self.isIPadExperience = isIPadExperience
     }
 
-    func installInContainerView(_ containerView: UIView,
-                                parentViewController: UIViewController) {
+    func start<P: Publisher>(in containerView: UIView,
+                             parentViewController: UIViewController,
+                             textPublisher: P) where P.Output == String, P.Failure == Never {
         guard viewController == nil else { return }
 
-        // The chat manager previously installed its own VC; with the new architecture the
-        // coordinator owns the multi-section VC and the manager is fetch-only.
+        let shared = textPublisher.share()
+        chatManager.subscribeToTextChanges(shared)
+        urlLoader.subscribeToTextChanges(shared)
+
         let vc = DuckAISuggestionsViewController(
             chatViewModel: chatViewModel,
             urlLoader: urlLoader,
@@ -103,22 +106,6 @@ final class DuckAISuggestionsCoordinator {
         ])
         vc.didMove(toParent: parentViewController)
         viewController = vc
-    }
-
-    func subscribeToTextChanges<P: Publisher>(_ textPublisher: P)
-        where P.Output == String, P.Failure == Never {
-        let shared = textPublisher.share()
-        chatManager.subscribeToTextChanges(shared)
-        urlLoader.subscribeToTextChanges(shared)
-
-        // Always-visible "Search DuckDuckGo" row depends on whether the query is empty,
-        // so the VC has to re-render when the text changes even if neither fetcher's data
-        // does (e.g. when the user clears all text — both data sources clear together but
-        // the search row also has to disappear in the same frame).
-        shared
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.viewController?.handleQueryChanged() }
-            .store(in: &cancellables)
     }
 
     func tearDown() {

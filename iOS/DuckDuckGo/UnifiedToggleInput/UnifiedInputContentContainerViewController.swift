@@ -538,8 +538,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             }
             .store(in: &cancellables)
 
-        swipeContainerManager.installDuckAISuggestions(using: coordinator)
-        coordinator.subscribeToTextChanges(switchBarHandler.currentTextPublisher)
+        swipeContainerManager.installDuckAISuggestions(using: coordinator, textPublisher: switchBarHandler.currentTextPublisher)
         duckAISuggestionsCoordinator = coordinator
     }
 

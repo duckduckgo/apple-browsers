@@ -22,10 +22,7 @@ import Combine
 import Foundation
 import Suggestions
 
-/// Fetches the same top-ranked URL hits as the Search-side autocomplete and
-/// caps them at `maxResults`, used by the Duck.ai suggestions list to render
-/// its "Top URLs" section. Reuses `SuggestionLoader` + `AutocompleteSuggestionsDataSource`
-/// so ranking is identical to the Search side.
+/// Reuses Search-side `SuggestionLoader` ranking; produces top-N URL-typed suggestions for the Duck.ai list.
 @MainActor
 final class DuckAIURLSuggestionsLoader {
 
@@ -36,14 +33,13 @@ final class DuckAIURLSuggestionsLoader {
 
     private let dataSource: SuggestionLoadingDataSource
     private let maxResults: Int
-    private var loader: SuggestionLoader?
-    /// Records the most recently dispatched query so a slow callback can be discarded
-    /// when a newer query has already taken its place. `SuggestionLoader` doesn't expose
-    /// cancellation, so out-of-order completions would otherwise overwrite fresh results.
+    private lazy var loader = SuggestionLoader(
+        shouldLoadSuggestionsForUserInput: { _ in true },
+        isUrlIgnored: { _ in false }
+    )
+    /// Out-of-order guard: `SuggestionLoader` has no cancellation, so a slow callback for a stale query would otherwise win.
     private var latestDispatchedQuery: String?
-    /// Query string of the most recently settled fetch (success or empty-skip). Callers
-    /// compare this against the current text to detect "fetcher hasn't caught up yet" and
-    /// treat the published `topURLs` as still-pending.
+    /// Settle-tracking: callers compare against current text to detect "fetcher hasn't caught up yet" and gate Dax visibility.
     private(set) var lastCompletedFetchQuery: String?
     private var cancellables = Set<AnyCancellable>()
 
@@ -52,12 +48,9 @@ final class DuckAIURLSuggestionsLoader {
         self.maxResults = maxResults
     }
 
-    /// Pure function so the URL filtering + cap behavior is unit-testable
-    /// without spinning up a real loader or data source.
+    /// Pure function so the URL filtering + cap behavior is unit-testable without a real loader.
     static func urlOnlyTopHits(from result: SuggestionResult, max: Int) -> [Suggestion] {
-        let urlOnly = result.filteringToURLsOnly()
-        let combined = urlOnly.topHits + urlOnly.duckduckgoSuggestions + urlOnly.localSuggestions
-        return Array(combined.prefix(max))
+        Array(result.filteringToURLsOnly().all.prefix(max))
     }
 
     func subscribeToTextChanges<P: Publisher>(_ textPublisher: P)
@@ -74,28 +67,18 @@ final class DuckAIURLSuggestionsLoader {
     func fetch(query: String) {
         latestDispatchedQuery = query
         guard !query.isEmpty else {
-            // Avoid re-publishing an already-empty list — `@Published` emits even when value
-            // doesn't change, which would trigger an unnecessary downstream reload.
+            // Skip re-emitting an already-empty list — @Published emits unconditionally and would trigger a needless reload.
             if !topURLs.isEmpty { topURLs = [] }
             lastCompletedFetchQuery = query
             return
         }
 
-        loader = SuggestionLoader(
-            shouldLoadSuggestionsForUserInput: { _ in true },
-            isUrlIgnored: { _ in false }
-        )
-        loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
+        loader.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
             guard let self else { return }
-            // Discard out-of-order completions: a later query has already been dispatched.
             guard self.latestDispatchedQuery == query else { return }
-            // Mark the fetch as settled regardless of error — otherwise `hasSettled` stays
-            // permanently false on remote-API failures and Dax suppression never clears.
+            // Always settle, even on error — otherwise `hasSettled` stays false forever and Dax suppression never clears.
             self.lastCompletedFetchQuery = query
-            // `SuggestionLoader` returns a non-nil `result` with local matches (bookmarks,
-            // history, open tabs) even when the remote API errors. Use it if present;
-            // only when the entire load failed (nil result) do we clear to avoid leaving
-            // a stale previous query's URLs visible.
+            // Local matches (bookmarks/history/open tabs) come back even when the remote API errors — keep them.
             if let result {
                 self.topURLs = Self.urlOnlyTopHits(from: result, max: self.maxResults)
             } else if !self.topURLs.isEmpty {
@@ -105,7 +88,6 @@ final class DuckAIURLSuggestionsLoader {
     }
 
     func tearDown() {
-        loader = nil
         cancellables.removeAll()
         latestDispatchedQuery = nil
         lastCompletedFetchQuery = nil
@@ -113,8 +95,7 @@ final class DuckAIURLSuggestionsLoader {
     }
 
 #if DEBUG
-    /// Test-only setter. The production setter is `private` because `topURLs` is owned by
-    /// the fetcher closure; tests need to drive it without spinning up a real `SuggestionLoader`.
+    /// Test-only setter; production writes go through the fetcher closure.
     func publishURLsForTesting(_ urls: [Suggestion]) {
         topURLs = urls
     }

@@ -28,19 +28,13 @@ protocol DuckAISuggestionsCoordinatorDelegate: AnyObject {
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String)
 }
 
-/// Single surface that owns the chat-suggestion fetcher, the URL-suggestion fetcher,
-/// and the multi-section view controller for Duck.ai mode. Replaces the older
-/// `AIChatHistoryManager`-direct usage in container view controllers and keeps the
-/// internal composition private.
+/// Owns the chat fetcher, URL fetcher, and multi-section VC for Duck.ai mode; container talks to this instead of the fetchers directly.
 @MainActor
 final class DuckAISuggestionsCoordinator {
 
     weak var delegate: DuckAISuggestionsCoordinatorDelegate?
 
-    /// Called whenever either fetcher's result set changes. Container view controllers use
-    /// this to refresh their derived state (e.g. Dax-empty-state visibility) without
-    /// subscribing directly to the fetchers — keeping the lifetime of those subscriptions
-    /// tied to the coordinator's `tearDown` rather than the container's `cancellables` set.
+    /// Fires when either fetcher's results change. Subscribed via the coordinator's own cancellables so lifetime tracks `tearDown`.
     var onContentChanged: (() -> Void)?
 
     private let chatManager: AIChatHistoryManager
@@ -51,21 +45,15 @@ final class DuckAISuggestionsCoordinator {
     private var viewController: DuckAISuggestionsViewController?
     private var cancellables = Set<AnyCancellable>()
 
-    /// Forwarded for callers that need to know whether the initial chat fetch has settled
-    /// (e.g., to suppress the Dax empty state during the brief loading window).
     var hasCompletedInitialChatFetch: Bool { chatManager.hasCompletedInitialFetch }
 
-    /// True when both fetchers have settled with results for `query`. Container view
-    /// controllers use this to suppress the Duck.ai empty state (Dax logo) while the
-    /// fetchers are still catching up to a recent text change — otherwise the user can see
-    /// a brief flash when one fetcher's result for the new query lands ahead of the other's.
+    /// True when both fetchers have settled for `query`. Container gates Dax visibility on this to avoid mid-keystroke flashes.
     func hasSettled(forQuery query: String) -> Bool {
         chatManager.lastCompletedFetchQuery == query
             && urlLoader.lastCompletedFetchQuery == query
     }
 
-    /// True when the suggestions surface has anything to render for the current query.
-    /// Any non-empty query renders at least the always-visible "Search DuckDuckGo" row.
+    /// True when the surface has anything to render. Any non-empty query renders at least the "Search DuckDuckGo" row.
     var hasContent: Bool {
         !chatViewModel.filteredSuggestions.isEmpty
             || !urlLoader.topURLs.isEmpty
@@ -91,9 +79,7 @@ final class DuckAISuggestionsCoordinator {
         chatManager.subscribeToTextChanges(shared)
         urlLoader.subscribeToTextChanges(shared)
 
-        // Subscriptions live in the coordinator's own `cancellables` so they're released by
-        // `tearDown`. Storing them in the container VC's set leaked one per install/dismiss
-        // cycle, with each leaked subscription pinning the prior chat manager + URL loader.
+        // Subscriptions live in coordinator-owned cancellables — container-owned ones leaked one set per install/dismiss cycle.
         chatManager.hasSuggestionsPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.onContentChanged?() }
@@ -123,8 +109,6 @@ final class DuckAISuggestionsCoordinator {
         viewController = vc
     }
 
-    /// Forwards the "Return to tab" card model to the suggestions view so the hatch sits
-    /// above all three sections, below the UTI input. Pass `nil` to remove.
     func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
         viewController?.setEscapeHatch(model, onTapped: onTapped)
     }

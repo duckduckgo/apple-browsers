@@ -79,13 +79,11 @@ final class DuckAIURLSuggestionsLoaderTests: XCTestCase {
     }
 
     // MARK: - Settle tracking
-    //
-    // `hasSettled(forQuery:)` on the coordinator gates the Dax empty-state. If the loader
-    // never records `lastCompletedFetchQuery`, Dax stays permanently suppressed.
-    // Empty-query fetches must settle synchronously.
+    // `hasSettled(forQuery:)` on the coordinator gates Dax visibility — if the loader never records
+    // `lastCompletedFetchQuery`, Dax stays permanently suppressed. Empty-query fetches must settle synchronously.
 
     func test_emptyQueryFetch_setsLastCompletedFetchQuerySynchronously() {
-        let loader = DuckAIURLSuggestionsLoader(dataSource: StubLoadingDataSource())
+        let loader = DuckAIURLSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource())
         XCTAssertNil(loader.lastCompletedFetchQuery)
 
         loader.fetch(query: "")
@@ -94,7 +92,7 @@ final class DuckAIURLSuggestionsLoaderTests: XCTestCase {
     }
 
     func test_emptyQueryFetch_clearsTopURLsOnlyWhenNonEmpty() {
-        let loader = DuckAIURLSuggestionsLoader(dataSource: StubLoadingDataSource())
+        let loader = DuckAIURLSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource())
         loader.publishURLsForTesting([.website(url: URL(string: "https://example.com/")!)])
         var emissions: [[Suggestion]] = []
         let cancellable = loader.$topURLs.sink { emissions.append($0) }
@@ -113,16 +111,3 @@ final class DuckAIURLSuggestionsLoaderTests: XCTestCase {
     }
 }
 
-private final class StubLoadingDataSource: SuggestionLoadingDataSource {
-    var platform: Platform { .mobile }
-    func bookmarks(for suggestionLoading: SuggestionLoading) -> [Bookmark] { [] }
-    func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] { [] }
-    func internalPages(for suggestionLoading: SuggestionLoading) -> [InternalPage] { [] }
-    func openTabs(for suggestionLoading: SuggestionLoading) -> [BrowserTab] { [] }
-    func suggestionLoading(_ suggestionLoading: SuggestionLoading,
-                           suggestionDataFromUrl url: URL,
-                           withParameters parameters: [String: String],
-                           completion: @escaping (Data?, Error?) -> Void) {
-        completion(nil, nil)
-    }
-}

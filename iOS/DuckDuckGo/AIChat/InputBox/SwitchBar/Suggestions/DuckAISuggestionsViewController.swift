@@ -32,9 +32,7 @@ protocol DuckAISuggestionsViewControllerDelegate: AnyObject {
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String)
 }
 
-/// Three-section suggestions list shown beneath the Duck.ai-mode input.
-/// Sections: recent chats / top URL hits / "Search DuckDuckGo" send-to-search row.
-/// The "Search DuckDuckGo" row is symmetric with the Search-side "Ask privately" row.
+/// Three-section suggestions list under the Duck.ai-mode input: recent chats / top URL hits / "Search DuckDuckGo" row.
 @MainActor
 final class DuckAISuggestionsViewController: UIViewController {
 
@@ -46,16 +44,13 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     private enum Constants {
         static let cellIdentifier = "DuckAISuggestionsCell"
-        // Match Search-side autocomplete styling.
         static let iconSize: CGFloat = 24
         static let iconTextSpacing: CGFloat = 10
         static let cellHeight: CGFloat = 44
         static let cellHeightWithSubtitle: CGFloat = 58
         static let horizontalInset: CGFloat = 16
-        // Negative top inset cancels `insetGrouped`'s built-in first-section padding so the
-        // first card sits flush below the UTI input. When the escape hatch occupies the
-        // table header view, the header's internal top padding provides the equivalent
-        // breathing room so we drop the negative offset.
+        // Without-hatch: cancels insetGrouped's first-section padding so the first card sits flush below UTI.
+        // With-hatch: 0; the header view's internal top padding provides equivalent breathing room.
         static let topContentInsetWithoutHatch: CGFloat = -20
         static let topContentInsetWithHatch: CGFloat = 0
         static let escapeHatchHeaderHeight: CGFloat = 72
@@ -69,8 +64,7 @@ final class DuckAISuggestionsViewController: UIViewController {
     private let urlLoader: DuckAIURLSuggestionsLoader
     private let queryProvider: () -> String
 
-    /// Debounce sized to absorb the gap between chat-fetcher and URL-fetcher settle times so a
-    /// single reload renders both. Smaller and one fetcher's slower result triggers a second reload.
+    /// Sized to absorb the gap between chat-fetcher and URL-fetcher settle times so a single reload renders both.
     private static let reloadCoalesceMilliseconds = 120
 
     private var cancellables = Set<AnyCancellable>()
@@ -86,8 +80,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         tableView.sectionFooterHeight = 0
-        // Disable readable-width inset so cells extend to the same horizontal edges as the UTI
-        // input bar above them; without this, iPad readable-width pulls cells narrower than UTI.
+        // Without this, iPad readable-width pulls cells narrower than the UTI input above.
         tableView.cellLayoutMarginsFollowReadableWidth = false
         tableView.contentInset = UIEdgeInsets(top: Constants.topContentInsetWithoutHatch, left: 0, bottom: 0, right: 0)
         return tableView
@@ -98,6 +91,7 @@ final class DuckAISuggestionsViewController: UIViewController {
     private var hasSearchRow: Bool { !queryProvider().isEmpty }
 
     private var escapeHatchHostingController: UIHostingController<ReturnToTabCard>?
+    private var currentEscapeHatchModel: EscapeHatchModel?
 
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
@@ -122,10 +116,7 @@ final class DuckAISuggestionsViewController: UIViewController {
             tableView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
         ])
 
-        // Reload only on fetcher settle. Text changes alone would fire a reload that renders
-        // stale fetcher data with the new search-row title, briefly showing inconsistent state.
-        // The fetchers themselves debounce the text publisher, so any text change ultimately
-        // triggers a reload via this pipeline (~150–200ms later) — same lag as Search-side.
+        // Reload on fetcher settle (not text change), so the search-row title and section data update together.
         let chatChanges = chatViewModel.$filteredSuggestions.map { _ in () }.eraseToAnyPublisher()
         let urlChanges = urlLoader.$topURLs.map { _ in () }.eraseToAnyPublisher()
         Publishers.MergeMany([chatChanges, urlChanges])
@@ -134,16 +125,20 @@ final class DuckAISuggestionsViewController: UIViewController {
             .store(in: &cancellables)
     }
 
-    /// Empty sections are excluded so `insetGrouped` doesn't reserve their header padding
-    /// above the first visible section. Recomputed on every datasource/delegate read so
-    /// UITableView's relayout passes (which sometimes call delegate methods with the old
-    /// index path) always see consistent data.
+    /// MUST stay computed: UITableView calls delegate methods with stale index paths during animated relayouts.
     private var liveSections: [Section] {
         var sections: [Section] = []
         if !chats.isEmpty { sections.append(.chats) }
         if !urls.isEmpty { sections.append(.urls) }
         if hasSearchRow { sections.append(.search) }
         return sections
+    }
+
+    /// Returns the section at `indexPath` if the path is still in range; nil for stale paths during animated relayouts.
+    private func resolvedSection(at indexPath: IndexPath) -> Section? {
+        let live = liveSections
+        guard indexPath.section < live.count else { return nil }
+        return live[indexPath.section]
     }
 
     private func reload() {
@@ -155,9 +150,12 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     // MARK: - Escape hatch
 
-    /// Installs (or removes) the "Return to tab" card above all sections, mirroring the
-    /// pre-multi-section layout where the hatch sat at the top of the chat history list.
+    /// Installs/removes the "Return to tab" card above all sections. No-op when the model hasn't changed
+    /// — called repeatedly from container layout/refresh paths so a tear-down + rebuild on every call is needless churn.
     func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
+        guard model != currentEscapeHatchModel else { return }
+        currentEscapeHatchModel = model
+
         if let existing = escapeHatchHostingController {
             existing.willMove(toParent: nil)
             existing.view.removeFromSuperview()
@@ -324,9 +322,7 @@ extension DuckAISuggestionsViewController: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: Constants.cellIdentifier, for: indexPath)
-        let live = liveSections
-        guard indexPath.section < live.count else { return cell }
-        switch live[indexPath.section] {
+        switch resolvedSection(at: indexPath) {
         case .chats:
             guard indexPath.row < chats.count else { return cell }
             configureChatCell(cell, with: chats[indexPath.row])
@@ -335,6 +331,8 @@ extension DuckAISuggestionsViewController: UITableViewDataSource {
             configureURLCell(cell, with: urls[indexPath.row])
         case .search:
             configureSearchCell(cell, query: queryProvider())
+        case nil:
+            break
         }
         return cell
     }
@@ -346,24 +344,21 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
         view.window?.endEditing(true)
     }
 
-    // UITableView occasionally invokes delegate methods with index paths from the previous
-    // data set (e.g. during animated relayout passes), so each method tolerates a stale index
-    // by returning a safe default.
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        let live = liveSections
-        guard indexPath.section < live.count else { return Constants.cellHeight }
-        switch live[indexPath.section] {
+        switch resolvedSection(at: indexPath) {
         case .chats:
             return Constants.cellHeight
         case .urls:
-            // `.website` renders without a subtitle; everything else has one.
             guard indexPath.row < urls.count else { return Constants.cellHeight }
+            // .website is the only URL case rendered without a subtitle.
             switch urls[indexPath.row] {
             case .website: return Constants.cellHeight
             default: return Constants.cellHeightWithSubtitle
             }
         case .search:
             return Constants.cellHeightWithSubtitle
+        case nil:
+            return Constants.cellHeight
         }
     }
 
@@ -373,9 +368,7 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let live = liveSections
-        guard indexPath.section < live.count else { return }
-        switch live[indexPath.section] {
+        switch resolvedSection(at: indexPath) {
         case .chats:
             guard indexPath.row < chats.count else { return }
             delegate?.duckAISuggestionsDidSelectChat(chats[indexPath.row])
@@ -384,6 +377,8 @@ extension DuckAISuggestionsViewController: UITableViewDelegate {
             delegate?.duckAISuggestionsDidSelectURL(urls[indexPath.row])
         case .search:
             delegate?.duckAISuggestionsDidSelectSearchDuckDuckGo(query: queryProvider())
+        case nil:
+            break
         }
     }
 }

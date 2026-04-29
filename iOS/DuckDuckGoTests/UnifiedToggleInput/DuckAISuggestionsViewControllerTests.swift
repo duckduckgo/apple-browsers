@@ -34,7 +34,7 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
 
     private func makeHarness(query: String = "") -> Harness {
         let viewModel = AIChatSuggestionsViewModel()
-        let loader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource())
+        let loader = DuckAIURLSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource())
         let vc = DuckAISuggestionsViewController(
             chatViewModel: viewModel,
             urlLoader: loader,
@@ -116,12 +116,8 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
         XCTAssertEqual(try tableView(in: vc).contentInset.top, -20)
     }
 
-    // MARK: - Live sections (empty-section exclusion)
-    //
-    // The view collapses empty sections so `insetGrouped` doesn't reserve their header
-    // padding. Each test exercises one combination of (chats, urls, query) and asserts the
-    // resulting section count via `numberOfSections(in:)`. Earlier crashes were caused by
-    // stale section caching, so verifying this explicitly is genuinely worth a unit test.
+    // MARK: - Live sections
+    // Earlier stale-section caching caused relayout crashes — guard against regression by asserting numberOfSections directly.
 
     func test_liveSections_emptyEverything_returnsZero() throws {
         let harness = makeHarness(query: "")
@@ -155,20 +151,6 @@ final class DuckAISuggestionsViewControllerTests: XCTestCase {
 }
 
 // MARK: - Test doubles
-
-private final class StubSuggestionLoadingDataSource: SuggestionLoadingDataSource {
-    var platform: Platform { .mobile }
-    func bookmarks(for suggestionLoading: SuggestionLoading) -> [Bookmark] { [] }
-    func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] { [] }
-    func internalPages(for suggestionLoading: SuggestionLoading) -> [InternalPage] { [] }
-    func openTabs(for suggestionLoading: SuggestionLoading) -> [BrowserTab] { [] }
-    func suggestionLoading(_ suggestionLoading: SuggestionLoading,
-                           suggestionDataFromUrl url: URL,
-                           withParameters parameters: [String: String],
-                           completion: @escaping (Data?, Error?) -> Void) {
-        completion(nil, nil)
-    }
-}
 
 private extension EscapeHatchModel {
     static var testFixture: EscapeHatchModel {

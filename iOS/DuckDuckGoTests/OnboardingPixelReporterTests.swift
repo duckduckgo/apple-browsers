@@ -20,6 +20,8 @@
 import XCTest
 import Core
 import Onboarding
+import Persistence
+import PersistenceTestingUtils
 import PixelKit
 import PixelKitTestingUtilities
 import PrivacyConfig
@@ -32,6 +34,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
     private var now: Date!
     private var userDefaultsMock: UserDefaults!
     private var sharedPixelHandlerMock: MockOnboardingSharedPixelHandling!
+    private var sharedPixelsStorageMock: (any KeyedStoring<OnboardingSharedPixelsKeys>)!
 
     override func setUpWithError() throws {
         statisticsStoreMock = MockStatisticsStore()
@@ -41,7 +44,9 @@ final class OnboardingPixelReporterTests: XCTestCase {
         calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
         userDefaultsMock = UserDefaults(suiteName: Self.suiteName)
         sharedPixelHandlerMock = MockOnboardingSharedPixelHandling()
-        sut = OnboardingPixelReporter(pixel: OnboardingPixelFireMock.self, uniquePixel: OnboardingUniquePixelFireMock.self, experimentPixel: OnboardingExperimentPixelFireMock.self, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock, onboardingSharedPixelHandler: sharedPixelHandlerMock)
+        let mockStore = InMemoryKeyValueStore()
+        sharedPixelsStorageMock = mockStore.keyedStoring()
+        sut = OnboardingPixelReporter(pixel: OnboardingPixelFireMock.self, uniquePixel: OnboardingUniquePixelFireMock.self, experimentPixel: OnboardingExperimentPixelFireMock.self, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock, sharedPixelHandler: sharedPixelHandlerMock, sharedPixelsStorage: sharedPixelsStorageMock)
         try super.setUpWithError()
     }
 
@@ -49,6 +54,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         OnboardingPixelFireMock.tearDown()
         OnboardingUniquePixelFireMock.tearDown()
         OnboardingExperimentPixelFireMock.tearDown()
+        sharedPixelsStorageMock = nil
         sharedPixelHandlerMock = nil
         statisticsStoreMock = nil
         now = nil
@@ -58,7 +64,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    func testWhenMeasureOnboardingIntroImpressionThenLegacyIntroShownUniqueAndWelcomeShownSharedPixelsFire() {
+    func testWhenMeasureOnboardingIntroImpressionThenLegacyIntroShownUniqueAndWelcomeShownPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroShownUnique
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
@@ -77,6 +83,39 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.welcome(.shown)])
+    }
+
+    func testWhenSetPixelReportingMetadataWithNoPersistedMetadataThenExpectedDefaultMetadataReceived() {
+        // GIVEN
+        XCTAssertNil(sharedPixelHandlerMock.receivedSource)
+        XCTAssertNil(sharedPixelHandlerMock.receivedFlow)
+        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
+
+        // WHEN
+        sut.setPixelReportingMetadata()
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .default)
+        XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .default)
+        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
+    }
+
+    func testWhenSetPixelReportingMetadataWithPersistedMetadataThenPersistedMetadataReceived() {
+        // GIVEN
+        sharedPixelsStorageMock.onboardingSource = .duckAICustomProductPage
+        sharedPixelsStorageMock.onboardingFlow = .duckAIExperiment
+        sharedPixelsStorageMock.onboardingVariant = .search
+        XCTAssertNil(sharedPixelHandlerMock.receivedSource)
+        XCTAssertNil(sharedPixelHandlerMock.receivedFlow)
+        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
+
+        // WHEN
+        sut.setPixelReportingMetadata()
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
+        XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAIExperiment)
+        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .search)
     }
 
     func testWhenMeasureSkipOnboardingCTAIsCalledThenLegacySkipPressedAndWelcomeDismissSharedPixelsFire() {
@@ -612,26 +651,34 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.search(.shown)])
     }
 
-    func testWhenMeasureDuckAIQueryExperimentQuerySubmissionWithCustomPromptThenSearchCustomSharedPixelFires() {
+    func testWhenMeasureDuckAIQueryExperimentQuerySubmissionWithCustomPromptThenSearchCustomSharedPixelFiresAndVariantIsSetAndPersisted() {
         // GIVEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
+        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
+        XCTAssertNil(sharedPixelsStorageMock.onboardingVariant)
 
         // WHEN
         sut.measureDuckAIQueryExperimentQuerySubmission(selection: .search, promptSource: .custom)
 
         // THEN
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.search(.clicked(.custom))])
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchChatToggle(.clicked(.customSearch))])
+        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .duckAISearch)
+        XCTAssertEqual(sharedPixelsStorageMock.onboardingVariant, .duckAISearch)
     }
 
-    func testWhenMeasureDuckAIQueryExperimentQuerySubmissionWithSuggestedPromptThenSearchSuggestedSharedPixelFires() {
+    func testWhenMeasureDuckAIQueryExperimentQuerySubmissionWithSuggestedPromptThenSearchSuggestedSharedPixelFiresAndVariantIsSetAndPersisted() {
         // GIVEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
+        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
+        XCTAssertNil(sharedPixelsStorageMock.onboardingVariant)
 
         // WHEN
         sut.measureDuckAIQueryExperimentQuerySubmission(selection: .duckAI, promptSource: .option1)
 
         // THEN
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.search(.clicked(.suggested))])
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchChatToggle(.clicked(.suggestedChat))])
+        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .duckAIChat)
+        XCTAssertEqual(sharedPixelsStorageMock.onboardingVariant, .duckAIChat)
     }
 
     // MARK: - Manual Dismiss
@@ -1031,13 +1078,15 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchExperience(.clicked(.searchPlusDuckAI))])
     }
 
-    func testWhenMeasureChooseSearchOnlyIsCalledThenLegacySearchOnlySelectedAndSearchExperienceSearchOnlySharedPixelsFire() {
+    func testWhenMeasureChooseSearchOnlyIsCalledThenLegacySearchOnlySelectedAndSearchExperienceSearchOnlySharedPixelsFireAndVariantIsSetAndPersisted() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroSearchOnlySelected
         XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
         XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
+        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
+        XCTAssertNil(sharedPixelsStorageMock.onboardingVariant)
 
         // WHEN
         sut.measureChooseSearchOnly()
@@ -1048,6 +1097,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchExperience(.clicked(.searchOnly))])
+        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .search)
+        XCTAssertEqual(sharedPixelsStorageMock.onboardingVariant, .search)
     }
 
     func testWhenMeasureTryVisitSiteDialogSuggestedSiteTappedThenVisitSiteSuggestedSharedPixelFires() {

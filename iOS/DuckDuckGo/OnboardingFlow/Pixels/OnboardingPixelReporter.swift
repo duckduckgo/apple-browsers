@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Core
 import PrivacyConfig
 import Onboarding
+import Persistence
 import PixelKit
 import PixelExperimentKit
 
@@ -75,6 +76,7 @@ protocol OnboardingIntroImpressionReporting {
 }
 
 protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
+    func setPixelReportingMetadata()
     func measureContinueOnboardingCTAAction()
     func measureSkipOnboardingCTAAction()
     func measureConfirmSkipOnboardingCTAAction()
@@ -154,6 +156,7 @@ final class OnboardingPixelReporter {
     private let dateProvider: () -> Date
     private let userDefaults: UserDefaults
     private let sharedPixelHandler: OnboardingSharedPixelHandling
+    private let sharedPixelsStorage: any KeyedStoring<OnboardingSharedPixelsKeys>
     private let siteVisitedUserDefaultsKey = "com.duckduckgo.ios.site-visited"
 
     init(
@@ -164,7 +167,8 @@ final class OnboardingPixelReporter {
         calendar: Calendar = .current,
         dateProvider: @escaping () -> Date = Date.init,
         userDefaults: UserDefaults = UserDefaults.app,
-        onboardingSharedPixelHandler: OnboardingSharedPixelHandling? = nil
+        sharedPixelHandler: OnboardingSharedPixelHandling? = nil,
+        sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil
     ) {
         self.pixel = pixel
         self.uniquePixel = uniquePixel
@@ -173,11 +177,12 @@ final class OnboardingPixelReporter {
         self.calendar = calendar
         self.dateProvider = dateProvider
         self.userDefaults = userDefaults
-        self.sharedPixelHandler = onboardingSharedPixelHandler ?? OnboardingSharedPixelHandler(
+        self.sharedPixelHandler = sharedPixelHandler ?? OnboardingSharedPixelHandler(
             platform: .iOS,
             installTypeProvider: { OnboardingManager().isNewUser ? .newInstall : .reinstall },
             installDateProvider: { statisticsStore.installDate }
         )
+        self.sharedPixelsStorage = if let sharedPixelsStorage { sharedPixelsStorage } else { UserDefaults.app.keyedStoring() }
     }
 
     private func fire(event: Pixel.Event, unique: Bool, additionalParameters: [String: String] = [:], includedParameters: [Pixel.QueryParameters] = [.appVersion]) {
@@ -255,6 +260,18 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
                 value: value.rawValue
             )
         }
+    }
+
+    private func setOnboardingVariant(_ variant: OnboardingVariantPixelParameter) {
+        sharedPixelsStorage.onboardingVariant = variant
+        sharedPixelHandler.setVariant(variant)
+    }
+
+    func setPixelReportingMetadata() {
+        let source = sharedPixelsStorage.value(for: \.onboardingSource) ?? .default
+        let flow = sharedPixelsStorage.value(for: \.onboardingFlow) ?? .default
+        let variant = sharedPixelsStorage.value(for: \.onboardingVariant)
+        sharedPixelHandler.setMetadata(source: source, flow: flow, variant: variant)
     }
 
     func measureContinueOnboardingCTAAction() {
@@ -345,6 +362,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     func measureChooseSearchOnly() {
         fire(event: .onboardingIntroSearchOnlySelected, unique: false)
         sharedPixelHandler.fire(.searchExperience(.clicked(.searchOnly)))
+        setOnboardingVariant(.search)
     }
 
     func measureDuckAIQueryExperimentSelectionImpression() {
@@ -381,11 +399,19 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
             )
         }
 
-        switch promptSource {
-        case .custom:
-            sharedPixelHandler.fire(.search(.clicked(.custom)))
-        case .option1, .option2, .option3:
-            sharedPixelHandler.fire(.search(.clicked(.suggested)))
+        switch (promptSource, selection) {
+        case (.custom, .duckAI):
+            sharedPixelHandler.fire(.searchChatToggle(.clicked(.customChat)))
+            setOnboardingVariant(.duckAIChat)
+        case (.custom, .search):
+            sharedPixelHandler.fire(.searchChatToggle(.clicked(.customSearch)))
+            setOnboardingVariant(.duckAISearch)
+        case (_, .duckAI):
+            sharedPixelHandler.fire(.searchChatToggle(.clicked(.suggestedChat)))
+            setOnboardingVariant(.duckAIChat)
+        case (_, .search):
+            sharedPixelHandler.fire(.searchChatToggle(.clicked(.suggestedSearch)))
+            setOnboardingVariant(.duckAISearch)
         }
     }
 

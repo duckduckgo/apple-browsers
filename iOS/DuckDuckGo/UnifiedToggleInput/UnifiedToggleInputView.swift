@@ -212,6 +212,7 @@ final class UnifiedToggleInputView: UIView {
     var onAttachTapped: (() -> Void)?
     var onAttachmentRemoved: ((UUID) -> Void)?
     var onInlineDismissTapped: (() -> Void)?
+    var onAIChatShortcutTapped: (() -> Void)?
 
     // MARK: - Attachment API
 
@@ -842,6 +843,10 @@ private extension UnifiedToggleInputView {
         textEntryView.onTextInputActivated = { [weak self] in
             guard let self, !self.isExpanded else { return }
             self.delegate?.unifiedToggleInputViewDidTapWhileCollapsed(self)
+        }
+
+        textEntryView.onAIChatShortcutTapped = { [weak self] in
+            self?.onAIChatShortcutTapped?()
         }
 
         setupConstraints()

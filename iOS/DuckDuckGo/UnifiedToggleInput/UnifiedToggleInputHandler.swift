@@ -222,6 +222,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
             nextButtonState = .stopGeneratingAndSearchGoTo
         } else if isGenerating && !isExpanded && currentToggleState == .aiChat {
             nextButtonState = .stopGeneratingOnly
+        } else if !currentText.isEmpty && !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
+            nextButtonState = .clearAndAIChatShortcut
         } else if !currentText.isEmpty {
             nextButtonState = .clearOnly
         } else if !isToggleEnabled && currentToggleState == .aiChat && !isExpanded {

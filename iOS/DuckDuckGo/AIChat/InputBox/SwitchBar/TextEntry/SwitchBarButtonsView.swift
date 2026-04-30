@@ -30,10 +30,11 @@ enum SwitchBarButtonState {
     case stopGeneratingAndSearchGoTo
     case aiChatShortcutOnly
     case voiceAndAIChatShortcut
+    case clearAndAIChatShortcut
 
     var showsClearButton: Bool {
         switch self {
-        case .clearOnly:
+        case .clearOnly, .clearAndAIChatShortcut:
             return true
         case .noButtons, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo,
              .stopGeneratingOnly, .stopGeneratingAndSearchGoTo,
@@ -48,7 +49,7 @@ enum SwitchBarButtonState {
             return true
         case .noButtons, .clearOnly, .searchGoToOnly,
              .stopGeneratingOnly, .stopGeneratingAndSearchGoTo,
-             .aiChatShortcutOnly:
+             .aiChatShortcutOnly, .clearAndAIChatShortcut:
             return false
         }
     }
@@ -58,14 +59,14 @@ enum SwitchBarButtonState {
         case .searchGoToOnly, .voiceAndSearchGoTo, .stopGeneratingAndSearchGoTo:
             return true
         case .noButtons, .clearOnly, .voiceOnly, .stopGeneratingOnly,
-             .aiChatShortcutOnly, .voiceAndAIChatShortcut:
+             .aiChatShortcutOnly, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
             return false
         }
     }
 
     var showsSeparator: Bool {
         switch self {
-        case .voiceAndSearchGoTo, .stopGeneratingAndSearchGoTo, .voiceAndAIChatShortcut:
+        case .voiceAndSearchGoTo, .stopGeneratingAndSearchGoTo, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
             return true
         case .noButtons, .clearOnly, .voiceOnly, .searchGoToOnly, .stopGeneratingOnly,
              .aiChatShortcutOnly:
@@ -78,14 +79,14 @@ enum SwitchBarButtonState {
         case .stopGeneratingOnly, .stopGeneratingAndSearchGoTo:
             return true
         case .noButtons, .clearOnly, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo,
-             .aiChatShortcutOnly, .voiceAndAIChatShortcut:
+             .aiChatShortcutOnly, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
             return false
         }
     }
 
     var showsAIChatShortcutButton: Bool {
         switch self {
-        case .aiChatShortcutOnly, .voiceAndAIChatShortcut:
+        case .aiChatShortcutOnly, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
             return true
         case .noButtons, .clearOnly, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo,
              .stopGeneratingOnly, .stopGeneratingAndSearchGoTo:
@@ -99,7 +100,7 @@ enum SwitchBarButtonState {
             return false
         case .clearOnly, .voiceOnly, .searchGoToOnly, .voiceAndSearchGoTo,
              .stopGeneratingOnly, .stopGeneratingAndSearchGoTo,
-             .aiChatShortcutOnly, .voiceAndAIChatShortcut:
+             .aiChatShortcutOnly, .voiceAndAIChatShortcut, .clearAndAIChatShortcut:
             return true
         }
     }

@@ -313,18 +313,19 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         providerEvents.fire(.rekeyAttempt(.begin))
 
-        let preRekeyEgress = await MainActor.run { self.currentEgressInfo() }
+        let preRekeyEgress = await currentEgressInfo()
 
         do {
             try await updateTunnelConfiguration(
                 updateMethod: .selectServer(currentServerSelectionMethod),
                 reassert: false,
                 regenerateKey: true)
-            let postRekeyEgress = await MainActor.run { self.currentEgressInfo() }
             // A rekey that landed back on the same server can't have changed the egress path, so
             // skip the leak check and let the periodic timer handle the routine validation. We
             // only force an immediate check when the server (or its IP) actually changed.
-            if preRekeyEgress != postRekeyEgress {
+            // If `postRekeyEgress` is nil the tunnel has dropped state out from under us; the
+            // service would skip the check anyway, so don't bother scheduling.
+            if let postRekeyEgress = await currentEgressInfo(), preRekeyEgress != postRekeyEgress {
                 await leakCheckService?.scheduleCheck(trigger: .rekey)
             }
             providerEvents.fire(.rekeyAttempt(.success))

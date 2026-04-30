@@ -404,6 +404,34 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         XCTAssertEqual(wideEvent.startedFlows.count, 2)
     }
 
+    func testCooldown_rekeyBypassesCooldown() async {
+        let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let config = LeakCheckConfiguration(
+            host: "leakcheck.netp.duckduckgo.com",
+            httpPort: 80, httpsPort: 443, stunPort: 3478,
+            httpTimeout: 10, stunTimeout: 5,
+            periodicInterval: 60 * 60,
+            cooldown: 60,
+            tunnelStartDelay: 0
+        )
+        let service = VPNLeakCheckService(
+            configuration: config,
+            egressInfo: makeEgressInfoProvider(),
+            tunnelInterface: { Self.systemInterface },
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent
+        )
+
+        await service.runCheck(trigger: .tunnelStart)
+        await service.runCheck(trigger: .rekey)
+
+        XCTAssertEqual(wideEvent.startedFlows.count, 2)
+        XCTAssertEqual(wideEvent.lastCompletedData?.trigger, .rekey)
+    }
+
     func testEgressIPChange_duringInflightCheck_usesSnapshot() async {
         let http = SlowMockHTTPClient(delaySeconds: 0.3, returnIP: "1.2.3.4")
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))

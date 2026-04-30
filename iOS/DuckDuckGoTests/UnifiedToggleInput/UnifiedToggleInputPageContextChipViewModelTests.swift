@@ -79,4 +79,16 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         sut.tapped()
         XCTAssertTrue(attachCalls.isEmpty)
     }
+
+    // MARK: - View ↔ View-Model wiring
+
+    func test_chipView_tap_routesToViewModel() {
+        originatingURL.send(URL(string: "https://example.com")!)
+        let chip = UnifiedToggleInputPageContextChipView()
+        chip.bind(to: sut)
+
+        chip.sendActions(for: .touchUpInside)
+
+        XCTAssertEqual(attachCalls, [URL(string: "https://example.com")!])
+    }
 }

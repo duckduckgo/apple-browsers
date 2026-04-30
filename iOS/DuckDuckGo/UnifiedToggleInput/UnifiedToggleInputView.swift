@@ -242,6 +242,12 @@ final class UnifiedToggleInputView: UIView {
         attachmentsStrip.removeAllAttachments()
     }
 
+    // MARK: - Page-Context Chip
+
+    func bindPageContextChip(to viewModel: UnifiedToggleInputPageContextChipViewModel) {
+        pageContextChip.bind(to: viewModel)
+    }
+
     // MARK: - Components
 
     private let handler: UnifiedToggleInputHandler
@@ -255,7 +261,7 @@ final class UnifiedToggleInputView: UIView {
     private lazy var inlineDismissButton: UIButton = Self.makeInlineDismissButton()
     private let attachmentsStrip = UnifiedToggleInputAttachmentsStripView()
     private let toolsToolbar = UnifiedToggleInputToolbarView()
-    let pageContextChip = UnifiedToggleInputPageContextChipView()
+    private let pageContextChip = UnifiedToggleInputPageContextChipView()
 
     // MARK: - Shadow
 
@@ -757,7 +763,7 @@ private extension UnifiedToggleInputView {
         pageContextChip.translatesAutoresizingMaskIntoConstraints = false
         pageContextChip.onVisibilityChange = { [weak self] visible in
             guard let self else { return }
-            self.pageContextChipHeightConstraint.constant = visible ? 28 : 0
+            self.pageContextChipHeightConstraint.constant = visible ? UnifiedToggleInputPageContextChipView.Constants.expandedHeight : 0
             self.layoutIfNeeded()
             self.onNeedsHierarchyLayout?()
         }

@@ -24,6 +24,16 @@ import UIKit
 
 final class UnifiedToggleInputPageContextChipView: UIControl {
 
+    enum Constants {
+        /// Pill height. Equals `cornerRadius * 2` so the chip stays a perfect capsule.
+        static let expandedHeight: CGFloat = 28
+        static let cornerRadius: CGFloat = 14
+        static let borderWidth: CGFloat = 1
+        static let horizontalInset: CGFloat = 10
+        static let iconSize: CGFloat = 16
+        static let iconLabelSpacing: CGFloat = 6
+    }
+
     private let iconView = UIImageView()
     private let titleLabel = UILabel()
     private var cancellables = Set<AnyCancellable>()
@@ -55,10 +65,11 @@ final class UnifiedToggleInputPageContextChipView: UIControl {
 
     private func setupUI() {
         translatesAutoresizingMaskIntoConstraints = false
+        clipsToBounds = true
         backgroundColor = UIColor(designSystemColor: .surface)
-        layer.cornerRadius = 14
+        layer.cornerRadius = Constants.cornerRadius
         layer.borderColor = UIColor(designSystemColor: .lines).cgColor
-        layer.borderWidth = 1
+        layer.borderWidth = Constants.borderWidth
 
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.image = DesignSystemImages.Glyphs.Size16.pageContentAttach
@@ -73,13 +84,13 @@ final class UnifiedToggleInputPageContextChipView: UIControl {
         addSubview(titleLabel)
 
         NSLayoutConstraint.activate([
-            iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+            iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalInset),
             iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: 16),
-            iconView.heightAnchor.constraint(equalToConstant: 16),
+            iconView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            iconView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
-            titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 6),
-            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
+            titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: Constants.iconLabelSpacing),
+            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalInset),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
     }

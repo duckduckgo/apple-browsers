@@ -64,6 +64,15 @@ enum OnboardingBubbleAnimationMetrics {
         return size.width < referenceScreenSize.width || size.height < referenceScreenSize.height
     }
 
+    /// `true` when bubble tails should be suppressed: either the screen is compact (smaller
+    /// than `referenceScreenSize`) or the user has selected an accessibility text size in iOS
+    /// Settings → Accessibility → Display & Text Size → Larger Text. At those text sizes the
+    /// inflated bubble loses anchoring relative to where Dax used to sit, so the tail loses
+    /// its referent and becomes a stray decoration.
+    static func shouldHideBubbleTail(for dynamicTypeSize: DynamicTypeSize) -> Bool {
+        isCompactDevice || dynamicTypeSize.isAccessibilitySize
+    }
+
     /// Large-screen threshold (iPad Pro 13″ portrait: 1032 × 1376 pt).
     /// On large screens, Dax animation positions may be adjusted to avoid looking off-center.
     static let largeScreenThreshold = CGSize(width: 1000, height: 1300)
@@ -169,6 +178,9 @@ extension OnboardingRebranding {
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.horizontalSizeClass) private var horizontalSizeClass
         @Environment(\.verticalSizeClass) private var verticalSizeClass
+        /// Drives Dax-animation sizing for the intro dialog so accessibility text sizes don't
+        /// cause the inflated bubble to overlap Dax's head.
+        @Environment(\.dynamicTypeSize) private var dynamicTypeSize
         @Namespace var animationNamespace
         @ObservedObject private var model: OnboardingIntroViewModel
         @State private var dialogContentHeight: CGFloat = 0
@@ -219,7 +231,13 @@ extension OnboardingRebranding {
 
                     ScrollableOnboardingBackground(viewState: viewState)
 
-                    if let dax = currentDaxAnimation {
+                    // Render-path guard against stale `@State`. `currentDaxAnimation` is captured
+                    // at step transitions (see `animateContentTransition`); when the user changes
+                    // the system text size while backgrounded the `.onChange(of: dynamicTypeSize)`
+                    // below resyncs it, but reading the environment directly here makes the
+                    // accessibility-size suppression authoritative on the render itself — even
+                    // if the closure runs after this body re-evaluates.
+                    if let dax = currentDaxAnimation, !dynamicTypeSize.isAccessibilitySize {
                         DaxAnimationOverlay(animation: dax, playForward: daxPlayForward, isExiting: daxExiting)
                             // Combine animationID + name so the view is recreated on both:
                             // - direction changes (same step, forward → reverse)
@@ -255,6 +273,22 @@ extension OnboardingRebranding {
             }
 #endif
             .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)
+            // When the user changes the system text size (Settings → Accessibility → Display &
+            // Text Size → Larger Text) while the app is backgrounded, returning to the app only
+            // re-evaluates the body — but `currentDaxAnimation` is `@State` and stays whatever
+            // value was captured at the last step transition. Without this, switching to/from an
+            // accessibility size won't add/remove Dax (or update its scale at xxLarge/xxxLarge).
+            // Recompute against the new environment and bump the overlay ID so the Lottie view
+            // is recreated rather than reusing the previous frame's geometry.
+            .onChange(of: dynamicTypeSize) { newDynamicTypeSize in
+                // Use the new value passed by SwiftUI rather than `self.dynamicTypeSize`: when
+                // the closure runs, the captured `self` can still expose the previous env value,
+                // which would otherwise make `activeDaxAnimation` return the wrong answer (and
+                // either leave Dax stranded or fail to bring it back when leaving an AX size).
+                currentDaxAnimation = activeDaxAnimation(for: newDynamicTypeSize)
+                daxAnimationID += 1
+                daxExiting = false
+            }
         }
 
         private func onboardingDialogView(state: ViewState.Intro) -> some View {
@@ -399,10 +433,11 @@ extension OnboardingRebranding {
             stepInfo: ViewState.Intro.StepInfo,
             @ViewBuilder content: @escaping () -> Content
         ) -> some View {
-            // Tail is hidden entirely on compact devices (screens smaller than iPhone 16).
-            // On standard devices it sits on the bottom edge; the offset is mirrored for leading
-            // tails (theme 0.8 → 0.2 from left) and used directly for trailing ones.
-            let tail: OnboardingBubbleView<Content>.TailPosition? = OnboardingBubbleAnimationMetrics.isCompactDevice ? nil : {
+            // Tail is hidden on compact devices (screens smaller than iPhone 16) and on
+            // accessibility text sizes (where the inflated bubble has no fixed anchor for the
+            // tail to point at). On standard devices it sits on the bottom edge; the offset is
+            // mirrored for leading tails (theme 0.8 → 0.2 from left) and used directly for trailing.
+            let tail: OnboardingBubbleView<Content>.TailPosition? = OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) ? nil : {
                 switch configuration.tailDirection {
                 case .leading: return .bottom(offset: 1 - configuration.tailOffset, direction: .leading)
                 case .trailing: return .bottom(offset: configuration.tailOffset, direction: .trailing)
@@ -557,16 +592,35 @@ extension OnboardingRebranding {
         /// Returns the `DaxAnimation` for the current model state, or `nil`.
         /// Called after a state change to advance `currentDaxAnimation` to the next step.
         private var activeDaxAnimation: DaxAnimation? {
-            guard case let .onboarding(viewState) = model.state else { return nil }
-            return daxAnimation(for: viewState.type)
+            activeDaxAnimation(for: dynamicTypeSize)
         }
 
-        /// Returns the `DaxAnimation` for the given step, or `nil` if no animation is configured
-        /// or the device screen is smaller than the reference size (iPhone 16).
-        private func daxAnimation(for type: OnboardingView.ViewState.Intro.IntroType) -> DaxAnimation? {
+        /// Variant that accepts an explicit `DynamicTypeSize`. Used by the dynamic-type-change
+        /// handler, which must not rely on `self.dynamicTypeSize` — when SwiftUI invokes the
+        /// `.onChange(of: dynamicTypeSize)` closure, the captured `self` can still hold the
+        /// previous environment value, which produces a wrong `daxAnimation(for:)` answer.
+        private func activeDaxAnimation(for dynamicTypeSize: DynamicTypeSize) -> DaxAnimation? {
+            guard case let .onboarding(viewState) = model.state else { return nil }
+            return daxAnimation(for: viewState.type, dynamicTypeSize: dynamicTypeSize)
+        }
+
+        /// Returns the `DaxAnimation` for the given step, or `nil` if no animation is configured,
+        /// the device screen is smaller than the reference size (iPhone 16), or the user has
+        /// chosen an accessibility text size — at those text sizes the inflated dialog bubble
+        /// would otherwise overlap the animation.
+        ///
+        /// `dynamicTypeSize` defaults to the view's current environment value but can be
+        /// overridden so callers reacting to an environment change can pass the *new* value
+        /// (avoiding stale-`self` reads from inside `.onChange` closures).
+        private func daxAnimation(
+            for type: OnboardingView.ViewState.Intro.IntroType,
+            dynamicTypeSize: DynamicTypeSize? = nil
+        ) -> DaxAnimation? {
+            let dynamicTypeSize = dynamicTypeSize ?? self.dynamicTypeSize
             guard !OnboardingBubbleAnimationMetrics.isCompactDevice else { return nil }
+            guard !dynamicTypeSize.isAccessibilitySize else { return nil }
             switch type {
-            case .startOnboardingDialog: return IntroDialogContent.daxAnimation
+            case .startOnboardingDialog: return IntroDialogContent.daxAnimation(for: dynamicTypeSize)
             case .browsersComparisonDialog: return BrowsersComparisonContent.daxAnimation
             case .addToDockPromoDialog: return AddToDockPromoContent.daxAnimation
             case .chooseAppIconDialog: return AppIconPickerContent.daxAnimation

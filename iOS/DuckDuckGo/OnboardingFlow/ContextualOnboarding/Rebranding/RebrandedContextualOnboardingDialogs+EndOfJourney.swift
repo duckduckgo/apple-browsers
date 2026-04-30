@@ -32,6 +32,7 @@ extension OnboardingRebranding {
         @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.horizontalSizeClass) private var hSizeClass
         @Environment(\.onboardingTheme) private var theme
+        @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
         let title: String
         let message: String
@@ -49,13 +50,13 @@ extension OnboardingRebranding {
 
         static let daxAnimation = DaxAnimation(
             animationName: "Dax-EndOfJourney-TryWebsite",
-            size: CGSize(width: 153*2, height: 169.67*2),
+            size: CGSize(width: 153, height: 169.67),
             position: .left(bottomPadding: -70.0, xOffset: -80.0),
             largeScreenPosition: .left(bottomPadding: 0.0, xOffset: 0.0)
         )
 
         var body: some View {
-            OnboardingBubbleView(tailPosition: OnboardingBubbleAnimationMetrics.isCompactDevice ? nil : .bottom(offset: 0.2, direction: .leading)) {
+            OnboardingBubbleView(tailPosition: OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) ? nil : .bottom(offset: 0.2, direction: .leading)) {
                 OnboardingRebranding.ContextualDaxDialogContent(
                     orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
                     title: AttributedString(title),

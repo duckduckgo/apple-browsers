@@ -26,15 +26,38 @@ extension OnboardingRebranding.OnboardingView {
     /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-31959
     struct IntroDialogContent: View {
 
-        /// Dax "Thumbs Up" animation
-        static var daxAnimation: DaxAnimation {
-            DaxAnimation(
+        /// Dax "Thumbs Up" animation. Size and bottom anchor scale down at the larger non-
+        /// accessibility text sizes (xxLarge / xxxLarge) so the inflated bubble doesn't clip
+        /// Dax's head. Accessibility sizes are not handled here — the parent suppresses Dax
+        /// entirely in `RebrandedOnboardingView.daxAnimation(for:)` once the user enters an
+        /// accessibility text size, mirroring the existing compact-device behaviour.
+        static func daxAnimation(for dynamicTypeSize: DynamicTypeSize = .large) -> DaxAnimation {
+            let baseSize = CGSize(width: 258.0, height: 352.0)
+            let baseBottomPadding: CGFloat = 110.0
+            let baseEntranceXOffset: CGFloat = -20.0
+            let baseLargeScreenXOffset: CGFloat = 200.0
+            let baseLeftXOffset: CGFloat = -40.0
+
+            let scale: CGFloat
+            let bottomPadding: CGFloat
+            switch dynamicTypeSize {
+            case .xxLarge, .xxxLarge:
+                scale = 0.85
+                bottomPadding = 90.0
+            default:
+                scale = 1.0
+                bottomPadding = baseBottomPadding
+            }
+
+            let size = CGSize(width: baseSize.width * scale, height: baseSize.height * scale)
+            return DaxAnimation(
                 animationName: "Dax-ThumbUp",
-                size: CGSize(width: 258, height: 352),
-                position: .left(bottomPadding: 110.0, xOffset: -40.0),
-                largeScreenPosition: .left(bottomPadding: 110.0, xOffset: 200.0),
-                entranceOffset: CGPoint(x: -20, y: 0),
-                exitOffset: CGPoint(x: -258, y: 0),
+                size: size,
+                position: .left(bottomPadding: bottomPadding, xOffset: baseLeftXOffset),
+                largeScreenPosition: .left(bottomPadding: bottomPadding, xOffset: baseLargeScreenXOffset),
+                entranceOffset: CGPoint(x: baseEntranceXOffset, y: 0),
+                // Slide off-screen by exactly the (scaled) animation width so exit fully clears.
+                exitOffset: CGPoint(x: -size.width, y: 0),
                 exitDuration: 0.5,
                 fadeOut: true,
                 startDelay: 0.75

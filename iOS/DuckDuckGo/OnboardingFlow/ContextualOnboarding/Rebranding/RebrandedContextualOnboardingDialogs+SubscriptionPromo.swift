@@ -28,6 +28,7 @@ extension OnboardingRebranding {
     /// https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12206-52621&m=dev
     struct OnboardingSubscriptionPromoDialog: View {
         @Environment(\.onboardingTheme) private var theme
+        @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
         let title: String
         let message: AttributedString
@@ -51,7 +52,7 @@ extension OnboardingRebranding {
 
             ScrollView(.vertical, showsIndicators: false) {
                 OnboardingBubbleView.withDismissButton(
-                    tailPosition: OnboardingBubbleAnimationMetrics.isCompactDevice ? nil : .bottom(offset: 0.2, direction: .leading),
+                    tailPosition: OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) ? nil : .bottom(offset: 0.2, direction: .leading),
                     onDismiss: onManualDismiss
                 ) {
                     VStack {

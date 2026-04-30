@@ -208,8 +208,6 @@ private extension OnboardingRebranding {
         #if os(iOS)
         let title: AttributedString?
         let message: AttributedString
-
-        @State private var startTypingMessage = false
         #else
         let title: NSAttributedString?
         let message: NSAttributedString
@@ -225,15 +223,15 @@ private extension OnboardingRebranding {
                 #if os(iOS)
                 if let title {
                     let titleAlignment = titleTextAlignment ?? theme.contextualOnboardingMetrics.contextualTitleTextAlignment
-                    TypingText(title, onTypingFinished: {
-                        startTypingMessage = true
-                    })
+                    TypingText(title)
                         .font(theme.typography.contextual.title)
                         .multilineTextAlignment(titleAlignment)
                         .frame(maxWidth: .infinity, alignment: Alignment(titleAlignment))
                 }
                 let messageAlignment = messageTextAlignment ?? theme.contextualOnboardingMetrics.contextualBodyTextAlignment
-                TypingText(message, startAnimating: title != nil ? $startTypingMessage : .constant(true))
+                // Per design: in the contextual rebranded flow only titles type; the message is
+                // always rendered statically. (`TypingText` would otherwise also animate the body.)
+                Text(message)
                     .font(theme.typography.contextual.body)
                     .multilineTextAlignment(messageAlignment)
                     .frame(maxWidth: .infinity, alignment: Alignment(messageAlignment))

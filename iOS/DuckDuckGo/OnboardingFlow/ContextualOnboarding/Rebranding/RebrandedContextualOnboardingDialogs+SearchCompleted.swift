@@ -29,6 +29,7 @@ extension OnboardingRebranding {
         @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.horizontalSizeClass) private var hSizeClass
         @Environment(\.onboardingTheme) private var theme
+        @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
         @State private var showNextScreen: Bool = false
 
@@ -50,7 +51,7 @@ extension OnboardingRebranding {
                 }
 
                 OnboardingBubbleView.withDismissButton(
-                    tailPosition: (showNextScreen && !OnboardingBubbleAnimationMetrics.isCompactDevice) ? .bottom(offset: 0.2, direction: .leading) : nil,
+                    tailPosition: (showNextScreen && !OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize)) ? .bottom(offset: 0.2, direction: .leading) : nil,
                     onDismiss: { onManualDismiss(showNextScreen) }
                 ) {
                     if showNextScreen {

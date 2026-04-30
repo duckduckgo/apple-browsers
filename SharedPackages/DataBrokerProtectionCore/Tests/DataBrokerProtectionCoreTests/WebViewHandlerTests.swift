@@ -81,7 +81,7 @@ final class WebViewHandlerTests: XCTestCase {
         }
 
         // When
-        let sut = try makeWebViewHandler(applicationNameForUserAgent: provider)
+        let sut = try makeWebViewHandler(applicationNameForUserAgentProvider: provider)
 
         // Then
         XCTAssertEqual(invocationCount, 1)
@@ -94,7 +94,7 @@ final class WebViewHandlerTests: XCTestCase {
         let provider: () -> String? = { nil }
 
         // When
-        let sut = try makeWebViewHandler(applicationNameForUserAgent: provider)
+        let sut = try makeWebViewHandler(applicationNameForUserAgentProvider: provider)
 
         // Then
         XCTAssertNil(sut.webViewConfiguration?.applicationNameForUserAgent)
@@ -102,7 +102,7 @@ final class WebViewHandlerTests: XCTestCase {
 
     @MainActor
     private func makeWebViewHandler(
-        applicationNameForUserAgent: @escaping () -> String? = { nil }
+        applicationNameForUserAgentProvider: @escaping () -> String? = { nil }
     ) throws -> DataBrokerProtectionWebViewHandler {
         try DataBrokerProtectionWebViewHandler(
             privacyConfig: PrivacyConfigurationManagingMock(),
@@ -110,7 +110,7 @@ final class WebViewHandlerTests: XCTestCase {
             delegate: MockWebViewCommunicationDelegate(),
             executionConfig: BrokerJobExecutionConfig(),
             shouldContinueActionHandler: { true },
-            applicationNameForUserAgent: applicationNameForUserAgent
+            applicationNameForUserAgentProvider: applicationNameForUserAgentProvider
         )
     }
 }

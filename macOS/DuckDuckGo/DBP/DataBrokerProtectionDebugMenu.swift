@@ -404,7 +404,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: Application.appDelegate.subscriptionManager)
         let viewController = DataBrokerRunCustomJSONViewController(authenticationManager: authenticationManager,
                                                                    featureFlagger: DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger),
-                                                                   applicationNameForUserAgent: { WebViewUserAgentProvider.applicationNameForUserAgent })
+                                                                   applicationNameForUserAgentProvider: { WebViewUserAgentProvider.applicationNameForUserAgent })
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered,

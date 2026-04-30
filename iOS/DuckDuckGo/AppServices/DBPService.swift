@@ -90,7 +90,7 @@ final class DBPService: NSObject {
                     return view
                 },
                 eventsHandler: eventsHandler,
-                applicationNameForUserAgent: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
+                applicationNameForUserAgentProvider: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
                 freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                 isWebViewInspectable: isWebViewInspectable,
                 freeTrialConversionService: appDependencies.freeTrialConversionService)

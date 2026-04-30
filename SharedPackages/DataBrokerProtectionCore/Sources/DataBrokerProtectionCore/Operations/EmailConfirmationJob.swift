@@ -217,8 +217,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             throw DataBrokerProtectionError.dataNotInDatabase
         }
 
-        let applicationNameForUserAgent: () -> String? = jobDependencies.featureFlagger.isWebViewUserAgentOn
-            ? jobDependencies.applicationNameForUserAgent
+        let applicationNameForUserAgentProvider: () -> String? = jobDependencies.featureFlagger.isWebViewUserAgentOn
+            ? jobDependencies.applicationNameForUserAgentProvider
             : { nil }
 
         let webRunner: BrokerProfileOptOutSubJobWebProtocol
@@ -232,7 +232,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 emailConfirmationDataService: jobDependencies.emailConfirmationDataService,
                 captchaService: jobDependencies.captchaService,
                 featureFlagger: jobDependencies.featureFlagger,
-                applicationNameForUserAgent: applicationNameForUserAgent,
+                applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
                 stageCalculator: stageDurationCalculator,
                 pixelHandler: jobDependencies.pixelHandler,
                 executionConfig: jobDependencies.executionConfig,
@@ -258,7 +258,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                     guard let self = self else { return false }
                     return !self.isCancelled && !Task.isCancelled
                 },
-                applicationNameForUserAgent: applicationNameForUserAgent
+                applicationNameForUserAgentProvider: applicationNameForUserAgentProvider
             )
         } else {
             assertionFailure("webRunner must conform to CCFCommunicationDelegate")

@@ -52,7 +52,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
                                   feedbackViewCreator: @escaping () -> (any View),
                                   eventsHandler: EventMapping<JobEvent>,
-                                  applicationNameForUserAgent: @escaping () -> String?,
+                                  applicationNameForUserAgentProvider: @escaping () -> String?,
                                   freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
                                   isWebViewInspectable: Bool = false,
                                   freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil) -> DataBrokerProtectionIOSManager? {
@@ -141,7 +141,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,
-            applicationNameForUserAgent: applicationNameForUserAgent,
+            applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
             vpnBypassService: nil,
             jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask,
             wideEvent: wideEvent,

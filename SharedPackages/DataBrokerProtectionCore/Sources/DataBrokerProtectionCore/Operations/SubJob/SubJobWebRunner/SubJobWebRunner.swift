@@ -43,7 +43,7 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var executionConfig: BrokerJobExecutionConfig { get }
     var featureFlagger: DBPFeatureFlagging { get }
-    var applicationNameForUserAgent: () -> String? { get }
+    var applicationNameForUserAgentProvider: () -> String? { get }
 
     var webViewHandler: WebViewHandler? { get set }
     var actionsHandler: ActionsHandler? { get }
@@ -251,8 +251,8 @@ public extension SubJobWebRunning {
         if let handler = handler { // This help us swapping up the WebViewHandler on tests
             self.webViewHandler = handler
         } else {
-            let applicationNameProvider: () -> String? = featureFlagger.isWebViewUserAgentOn ? applicationNameForUserAgent : { nil }
-            self.webViewHandler = try await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig, prefs: prefs, delegate: self, isFakeBroker: isFakeBroker, executionConfig: executionConfig, shouldContinueActionHandler: shouldRunNextStep, applicationNameForUserAgent: applicationNameProvider)
+            let applicationNameProvider: () -> String? = featureFlagger.isWebViewUserAgentOn ? applicationNameForUserAgentProvider : { nil }
+            self.webViewHandler = try await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig, prefs: prefs, delegate: self, isFakeBroker: isFakeBroker, executionConfig: executionConfig, shouldContinueActionHandler: shouldRunNextStep, applicationNameForUserAgentProvider: applicationNameProvider)
         }
 
         await webViewHandler?.initializeWebView(showWebView: showWebView)

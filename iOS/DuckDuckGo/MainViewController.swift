@@ -2465,7 +2465,14 @@ class MainViewController: UIViewController {
         case .legacy(let importScreen):
             rootViewController = makeDataImportViewController(source: importScreen, onFinished: onFinished, onCancelled: onCancelled)
         case .hub:
-            rootViewController = DataImportHubViewController(syncService: syncService, onCancelled: onCancelled)
+            rootViewController = DataImportHubViewController(syncService: syncService,
+                                                             keyValueStore: keyValueStore,
+                                                             bookmarksDatabase: bookmarksDatabase,
+                                                             favoritesDisplayMode: appSettings.favoritesDisplayMode,
+                                                             entryPoint: source,
+                                                             onFinished: onFinished,
+                                                             onCancelled: onCancelled)
+            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: source.importHubEntryPointParameters)
         }
 
         let navigationController = UINavigationController(rootViewController: rootViewController)
@@ -5748,7 +5755,12 @@ extension MainViewController: MessageNavigationDelegate {
             case .legacy(let importScreen):
                 destinationViewController = makeDataImportViewController(source: importScreen)
             case .hub:
-                destinationViewController = DataImportHubViewController(syncService: syncService)
+                destinationViewController = DataImportHubViewController(syncService: syncService,
+                                                                         keyValueStore: keyValueStore,
+                                                                         bookmarksDatabase: bookmarksDatabase,
+                                                                         favoritesDisplayMode: appSettings.favoritesDisplayMode,
+                                                                         entryPoint: .whatsNew)
+                Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: DataImportViewModel.ImportScreen.whatsNew.importHubEntryPointParameters)
             }
             guard let viewController = topMostPresentedViewController() else {
                 assertionFailure("No ViewController presented.")

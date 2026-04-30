@@ -28,10 +28,10 @@ enum ImportPasswordSource: CaseIterable, Identifiable {
 
     var id: String {
         switch self {
-        case .passwordsApp: return "passwordsApp"
+        case .passwordsApp: return "passwords_app"
         case .safari: return "safari"
         case .chrome: return "chrome"
-        case .syncFromDuckDuckGo: return "syncFromDuckDuckGo"
+        case .syncFromDuckDuckGo: return "sync_duckduckgo"
         }
     }
 
@@ -89,7 +89,7 @@ enum ImportPasswordSource: CaseIterable, Identifiable {
     var detailIcon: Image {
         switch self {
         case .passwordsApp:
-            return Image(uiImage: DesignSystemImages.Color.Size96.extensionPasswords)
+            return Image(uiImage: DesignSystemImages.Color.Size96.passwordsAppFeature)
         case .safari:
             return Image(uiImage: DesignSystemImages.Color.Size96.extensionSafari)
         case .chrome:

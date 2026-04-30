@@ -19,18 +19,44 @@
 
 import UIKit
 import SwiftUI
+import Core
 import DDGSync
+import Persistence
+import Bookmarks
 
 final class DataImportHubViewController: UIViewController {
 
     private let viewModel = DataImportHubViewModel()
-    private let syncService: DDGSyncing
+    private let onFinished: (() -> Void)?
     private let onCancelled: (() -> Void)?
+    private let entryPoint: DataImportViewModel.ImportScreen
     private var didCallOnCancelled = false
 
+    private let syncService: DDGSyncing
+    private let keyValueStore: ThrowingKeyValueStoring
+    private let simulatedCompletionPersistor: DataImportHubSimulatedCompletionPersistor
+    private let fileUploadCoordinator: DataImportFileUploadCoordinating
+
     init(syncService: DDGSyncing,
+         keyValueStore: ThrowingKeyValueStoring,
+         bookmarksDatabase: CoreDataDatabase,
+         favoritesDisplayMode: FavoritesDisplayMode,
+         entryPoint: DataImportViewModel.ImportScreen,
+         fileUploadCoordinator: DataImportFileUploadCoordinating? = nil,
+         onFinished: (() -> Void)? = nil,
          onCancelled: (() -> Void)? = nil) {
         self.syncService = syncService
+        self.keyValueStore = keyValueStore
+        self.entryPoint = entryPoint
+        self.simulatedCompletionPersistor = DataImportHubSimulatedCompletionPersistor(keyValueStore: keyValueStore)
+        self.fileUploadCoordinator = fileUploadCoordinator ?? DataImportFileUploadCoordinator(
+            bookmarksDatabase: bookmarksDatabase,
+            favoritesDisplayMode: favoritesDisplayMode,
+            syncService: syncService,
+            keyValueStore: keyValueStore,
+            importScreen: entryPoint
+        )
+        self.onFinished = onFinished
         self.onCancelled = onCancelled
         super.init(nibName: nil, bundle: nil)
     }
@@ -43,6 +69,7 @@ final class DataImportHubViewController: UIViewController {
         super.viewDidLoad()
         setupView()
         setupActions()
+        Pixel.fire(pixel: .importHubDisplayed, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -58,13 +85,23 @@ final class DataImportHubViewController: UIViewController {
 
     private func setupActions() {
         viewModel.onSourceSelected = { [weak self] source in
-            self?.navigateToSource(source)
+            guard let self else { return }
+            Pixel.fire(pixel: .importHubSourceSelected,
+                       withAdditionalParameters: DataImportHubPixelContext(entryPoint: self.entryPoint, source: source.id).parameters)
+            self.navigateToSource(source)
         }
     }
 
     private func navigateToSource(_ source: ImportPasswordSource) {
         if source.hasDetailScreen {
-            let detailVC = ImportSourceDetailViewController(source: source)
+            let detailVC = ImportSourceDetailViewController(
+                source: source,
+                entryPoint: entryPoint,
+                keyValueStore: keyValueStore,
+                fileUploadCoordinator: fileUploadCoordinator
+            ) { [weak self] in
+                self?.completeImportFlow()
+            }
             navigationController?.pushViewController(detailVC, animated: true)
         } else {
             navigateToImportViaSync()
@@ -77,10 +114,24 @@ final class DataImportHubViewController: UIViewController {
         navigationController?.pushViewController(importController, animated: true)
     }
 
+    private func completeImportFlow() {
+        didCallOnCancelled = true
+
+        if let navigationController,
+           let hubIndex = navigationController.viewControllers.firstIndex(where: { $0 === self }),
+           hubIndex > 0 {
+            let previousViewController = navigationController.viewControllers[hubIndex - 1]
+            navigationController.popToViewController(previousViewController, animated: false)
+        }
+
+        onFinished?()
+    }
+
     private func callOnCancelledIfNeeded() {
         guard !didCallOnCancelled else { return }
         guard isBeingDismissed || navigationController?.isBeingDismissed == true || isMovingFromParent else { return }
         didCallOnCancelled = true
+        Pixel.fire(pixel: .importHubCancelled, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
         onCancelled?()
     }
 }
@@ -90,6 +141,8 @@ final class DataImportHubViewController: UIViewController {
 extension DataImportHubViewController: ImportPasswordsViaSyncViewControllerDelegate {
 
     func importPasswordsViaSyncViewControllerDidRequestOpenSync(_ viewController: ImportPasswordsViaSyncViewController) {
+        Pixel.fire(pixel: .importHubSyncOpenSettingsTapped)
+
         if let settingsVC = navigationController?.children.first as? SettingsHostingController {
             navigationController?.popToRootViewController(animated: true)
             settingsVC.viewModel.presentLegacyView(.sync(nil))

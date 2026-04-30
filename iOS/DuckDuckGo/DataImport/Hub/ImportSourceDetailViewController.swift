@@ -19,13 +19,35 @@
 
 import UIKit
 import SwiftUI
+import SafariServices
+import Core
+import Common
+import BrowserKit
+import Persistence
+import os.log
 
 final class ImportSourceDetailViewController: UIViewController {
 
     private let source: ImportPasswordSource
+    private let entryPoint: DataImportViewModel.ImportScreen
+    private let keyValueStore: ThrowingKeyValueStoring
+    private let fileUploadCoordinator: DataImportFileUploadCoordinating
+    private let simulatedCompletionPersistor: DataImportHubSimulatedCompletionPersistor
+    private let onFinished: (() -> Void)?
+    private var didProgressFromDetails = false
+    private var didCompleteFlow = false
 
-    init(source: ImportPasswordSource) {
+    init(source: ImportPasswordSource,
+         entryPoint: DataImportViewModel.ImportScreen,
+         keyValueStore: ThrowingKeyValueStoring,
+         fileUploadCoordinator: DataImportFileUploadCoordinating,
+         onFinished: (() -> Void)? = nil) {
         self.source = source
+        self.entryPoint = entryPoint
+        self.keyValueStore = keyValueStore
+        self.fileUploadCoordinator = fileUploadCoordinator
+        self.simulatedCompletionPersistor = DataImportHubSimulatedCompletionPersistor(keyValueStore: keyValueStore)
+        self.onFinished = onFinished
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -37,6 +59,25 @@ final class ImportSourceDetailViewController: UIViewController {
         super.viewDidLoad()
         title = source.detailTitle
         setupView()
+        Pixel.fire(pixel: .importHubSourceInstructionsDisplayed, withAdditionalParameters: pixelContext.parameters)
+
+        if source == .chrome || source == .passwordsApp {
+            simulatedCompletionPersistor.setCredentialExchangeInstructionsShownDate()
+        }
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+
+        guard isMovingFromParent else {
+            return
+        }
+
+        guard !didProgressFromDetails, !didCompleteFlow else {
+            return
+        }
+
+        Pixel.fire(pixel: .importHubSourceInstructionsCancelled, withAdditionalParameters: pixelContext.parameters)
     }
 
     private func setupView() {
@@ -53,11 +94,104 @@ final class ImportSourceDetailViewController: UIViewController {
         installChildViewController(hostingController)
     }
 
+    // MARK: - Primary Action
+
     private func handlePrimaryAction() {
-        // Wired up in future PR
+        guard source == .safari else { return }
+        didProgressFromDetails = true
+        Pixel.fire(pixel: .importHubSourcePrimaryTapped, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
+        simulatedCompletionPersistor.setSafariFileFlowStart(entryPoint: entryPoint)
+        presentSafariExportInterstitial()
     }
 
-    private func handleUploadFile() {
-        // Wired up in future PR
+    private func presentSafariExportInterstitial() {
+        let interstitialVC = SafariExportInterstitialViewController(entryPoint: entryPoint)
+        interstitialVC.onRequestExport = { [weak self] in
+            self?.triggerBrowserKitImport()
+        }
+        present(interstitialVC, animated: true)
     }
+
+    private func triggerBrowserKitImport() {
+        if #available(iOS 26.4, *) {
+            let pixelParameters = entryPoint.importHubEntryPointParameters
+            Pixel.fire(pixel: .importHubBrowserkitRequested, withAdditionalParameters: pixelParameters)
+
+            let scene = view.window?.windowScene
+            let manager = BEBrowserDataImportManager(scene: scene)
+            let metadata = BEImportMetadata(supportForImportFromFiles: false)
+            manager.requestImport(for: metadata) { _, error in
+                if let error {
+                    Logger.autofill.error("BrowserKit requestImport failed: \(error)")
+                    let nsError = error as NSError
+                    let isBrowserKitCancellation = nsError.domain == "com.apple.BrowserKit.BrowserDataExchangeError" && nsError.code == 2
+
+                    if isBrowserKitCancellation {
+                        Pixel.fire(pixel: .importHubBrowserkitReturnedCancelled, withAdditionalParameters: pixelParameters)
+                    } else {
+                        Pixel.fire(pixel: .importHubBrowserkitReturnedFailure, error: error,
+                                   withAdditionalParameters: pixelParameters)
+                    }
+                } else {
+                    Pixel.fire(pixel: .importHubBrowserkitReturnedSuccess, withAdditionalParameters: pixelParameters)
+                }
+            }
+            return
+        } else {
+            Logger.autofill.error("BrowserKit requestImport not available on this OS version")
+        }
+    }
+
+    // MARK: - File Upload
+
+    private func handleUploadFile() {
+        didProgressFromDetails = true
+        Pixel.fire(pixel: .importHubSourceUploadFileTapped, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
+
+        if let completionParameters = simulatedCompletionPersistor.consumeSafariFileCompletionParametersIfEligible() {
+            Pixel.fire(pixel: .importHubSafariFileSimulatedCompletion, withAdditionalParameters: completionParameters)
+        }
+
+        fileUploadCoordinator.startUploadFlow(from: self, source: source)
+    }
+
+    private var pixelContext: DataImportHubPixelContext {
+        DataImportHubPixelContext(entryPoint: entryPoint, source: source.id)
+    }
+}
+
+// MARK: - DataImportFileUploadFlowOwner
+
+extension ImportSourceDetailViewController: DataImportFileUploadFlowOwner {
+
+    func dataImportUploadDidCompleteSummary() {
+        didCompleteFlow = true
+        onFinished?()
+    }
+
+    func dataImportUploadDidRequestSync(source: String?) {
+        let mainViewController = navigationController?.presentingViewController as? MainViewController
+        ?? presentingViewController as? MainViewController
+
+        mainViewController?.dismiss(animated: true) {
+            mainViewController?.segueToSettingsSync(with: source)
+        }
+    }
+
+    func dataImportUploadDidRequestContinueToSafariImport() {
+        // When the summary is presented from Safari import, dismissing it already returns
+        // to this Safari detail screen, so pushing another Safari detail controller is redundant.
+        guard source != .safari else { return }
+
+        let safariDetailViewController = ImportSourceDetailViewController(
+            source: .safari,
+            entryPoint: entryPoint,
+            keyValueStore: keyValueStore,
+            fileUploadCoordinator: fileUploadCoordinator,
+            onFinished: onFinished
+        )
+        navigationController?.pushViewController(safariDetailViewController, animated: true)
+    }
+
+    func dataImportUploadDidCancel() {}
 }

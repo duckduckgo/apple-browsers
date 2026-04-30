@@ -85,9 +85,6 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         guard !isAIChatSearchInputDisabledByUser else { return false }
         Logger.addressBarPicker.info("✓ AIChat address bar was NOT explicitly disabled by the user")
 
-        guard !isAddressBarPositionBottom else { return false }
-        Logger.addressBarPicker.info("✓ Address bar position is not bottom")
-
         guard !hasForceChoiceBeenShown else { return false }
         Logger.addressBarPicker.info("✓ Force choice has not been shown yet")
 

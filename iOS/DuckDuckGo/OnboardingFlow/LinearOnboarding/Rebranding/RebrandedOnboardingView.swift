@@ -184,6 +184,10 @@ extension OnboardingRebranding {
         @Namespace var animationNamespace
         @ObservedObject private var model: OnboardingIntroViewModel
         @State private var dialogContentHeight: CGFloat = 0
+        /// Measured height of the *intro* dialog bubble. Drives Dax's adaptive sizing so that as
+        /// the bubble grows (longer copy, larger Dynamic Type) Dax shrinks 1:1 — and disappears
+        /// entirely once it would fall below `IntroDialogContent.daxAnimation`'s minimum.
+        @State private var introBubbleHeight: CGFloat = 0
         @State private var showBubbleContent: Bool = false
         @State private var skipTypingAnimation: Bool = false
         /// `true` → Dax plays forward (entrance); `false` → plays in reverse (exit).
@@ -286,6 +290,20 @@ extension OnboardingRebranding {
                 // which would otherwise make `activeDaxAnimation` return the wrong answer (and
                 // either leave Dax stranded or fail to bring it back when leaving an AX size).
                 currentDaxAnimation = activeDaxAnimation(for: newDynamicTypeSize)
+                daxAnimationID += 1
+                daxExiting = false
+            }
+            .onPreferenceChange(IntroBubbleHeightPreferenceKey.self) { introBubbleHeight = $0 }
+            .onChange(of: introBubbleHeight) { _ in
+                // Bubble height drives the intro Dax sizing — refresh `currentDaxAnimation`
+                // when it changes so Dax shrinks/grows/disappears in step with the bubble.
+                // Gate to the intro step: when the user advances past intro, the bubble
+                // unmounts and the preference value drops to 0; without this guard that
+                // change would bump `daxAnimationID` for the *next* step's overlay and
+                // restart its animation from frame 0 (causing it to play twice).
+                guard case let .onboarding(viewState) = model.state,
+                      case .startOnboardingDialog = viewState.type else { return }
+                currentDaxAnimation = activeDaxAnimation
                 daxAnimationID += 1
                 daxExiting = false
             }
@@ -411,6 +429,7 @@ extension OnboardingRebranding {
             } else {
                 .hidden
             }
+            let isIntroStep: Bool = if case .startOnboardingDialog = state.type { true } else { false }
             return makeBubbleView(configuration: configuration, stepInfo: stepInfo) {
                 VStack {
                     bubbleBackedDialogContent(for: state.type)
@@ -419,6 +438,17 @@ extension OnboardingRebranding {
             }
             // Propagates the tap-to-skip flag to all TypingText views in the subtree.
             .environment(\.typingAnimationSkip, skipTypingAnimation)
+            // Capture the intro bubble's rendered height so Dax can scale itself inversely to it.
+            .background {
+                if isIntroStep {
+                    GeometryReader { proxy in
+                        Color.clear.preference(
+                            key: IntroBubbleHeightPreferenceKey.self,
+                            value: proxy.size.height
+                        )
+                    }
+                }
+            }
             .onAppear {
                 animateContentTransition()
             }
@@ -620,7 +650,7 @@ extension OnboardingRebranding {
             guard !OnboardingBubbleAnimationMetrics.isCompactDevice else { return nil }
             guard !dynamicTypeSize.isAccessibilitySize else { return nil }
             switch type {
-            case .startOnboardingDialog: return IntroDialogContent.daxAnimation(for: dynamicTypeSize)
+            case .startOnboardingDialog: return IntroDialogContent.daxAnimation(forBubbleHeight: introBubbleHeight)
             case .browsersComparisonDialog: return BrowsersComparisonContent.daxAnimation
             case .addToDockPromoDialog: return AddToDockPromoContent.daxAnimation
             case .chooseAppIconDialog: return AppIconPickerContent.daxAnimation
@@ -788,6 +818,16 @@ private struct RebrandingBadge: View {
 }
 
 private struct OnboardingDialogHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+/// Carries the rendered height of the *intro* bubble up to `OnboardingView` so it can size Dax
+/// inversely to the bubble (the bigger the bubble, the smaller Dax — until Dax hides).
+private struct IntroBubbleHeightPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {

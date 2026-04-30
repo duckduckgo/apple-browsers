@@ -32,6 +32,12 @@ protocol ContextualOnboardingEventDelegate: AnyObject {
     func didAcknowledgeContextualOnboardingTrackersDialog()
     /// Inform the delegate that the user dismissed the contextual dialog.
     func didTapDismissContextualOnboardingAction()
+    /// Inform the delegate that the user advanced past the visit-site dialog by picking a
+    /// suggestion. Unlike `didTapDismissContextualOnboardingAction`, this only collapses the
+    /// dialog UI — it does **not** reset `lastShownDaxDialogType` / `lastVisitedOnboardingWebsiteURL`
+    /// — so the natural next contextual spec (e.g. trackers) can still surface once the chosen
+    /// page finishes loading.
+    func didNavigateAwayFromContextualOnboardingDialog()
 }
 
 // Composed delegate for Contextual Onboarding to decorate events also needed in New Tab Page.

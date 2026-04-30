@@ -103,14 +103,23 @@ final class RebrandedContextualDaxDialogFactory: ContextualDaxDialogsFactory {
 
 private extension RebrandedContextualDaxDialogFactory {
 
-    func afterSearchDialog(
-        shouldFollowUpToWebsiteSearch: Bool,
-        delegate: ContextualOnboardingDelegate,
-        afterSearchPixelEvent: Pixel.Event,
-        onSizeUpdate: @escaping () -> Void
-    ) -> some View {
-
-        let viewModel = OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider, delegate: delegate)
+    func afterSearchDialog(shouldFollowUpToWebsiteSearch: Bool,
+                           delegate: ContextualOnboardingDelegate,
+                           afterSearchPixelEvent: Pixel.Event,
+                           onSizeUpdate: @escaping () -> Void) -> some View {
+        let viewModel = OnboardingSiteSuggestionsViewModel(
+            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
+            suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider,
+            delegate: delegate,
+            // Mirror the standalone `tryVisitingSiteDialog` behaviour: when the user taps a
+            // suggestion in the post-search "try a site" follow-up, dismiss the dialog right
+            // away rather than waiting for the destination page to finish loading. Uses the
+            // `didNavigateAway…` hook so onboarding state isn't reset and the next contextual
+            // spec can still surface once the page is ready.
+            onSuggestionPressed: { [weak delegate] in
+                delegate?.didNavigateAwayFromContextualOnboardingDialog()
+            }
+        )
 
         // If should not show websites search after searching inform the delegate that the user dismissed the dialog, otherwise let the dialog handle it.
         let gotItAction: () -> Void = if shouldFollowUpToWebsiteSearch {
@@ -155,12 +164,19 @@ private extension RebrandedContextualDaxDialogFactory {
 
 private extension RebrandedContextualDaxDialogFactory {
 
-    // This could be removed. Originally this was in place to represent the dialog if the user refreshed or quit and relaunched the app.
     func tryVisitingSiteDialog(delegate: ContextualOnboardingDelegate) -> some View {
         let viewModel = OnboardingSiteSuggestionsViewModel(
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
             suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider,
-            delegate: delegate
+            delegate: delegate,
+            // Collapse the visit-site dialog as soon as the user taps a suggestion. We use the
+            // `didNavigateAway…` hook (not `didTapDismissContextualOnboardingAction`) on
+            // purpose: it dismisses the bubble without calling `setDaxDialogDismiss()`, so the
+            // natural next contextual spec (`withTrackers` / `noTrackers` / etc.) still surfaces
+            // once the chosen page finishes loading.
+            onSuggestionPressed: { [weak delegate] in
+                delegate?.didNavigateAwayFromContextualOnboardingDialog()
+            }
         )
 
         let onManualDismiss: () -> Void = { [weak delegate, weak self] in
@@ -283,7 +299,7 @@ private extension RebrandedContextualDaxDialogFactory {
         }
 
         return OnboardingConditionalCenteredScrollableContainerView {
-            OnboardingRebranding.OnboardingEndOfJourneyDialog(
+            OnboardingRebranding.OnboardingEndOfJourneyDialog( // Standard search end of journey
                 message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
                 cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
                 dismissAction: dismissAction,

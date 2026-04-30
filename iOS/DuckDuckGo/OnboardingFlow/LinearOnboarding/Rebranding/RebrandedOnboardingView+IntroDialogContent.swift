@@ -26,30 +26,40 @@ extension OnboardingRebranding.OnboardingView {
     /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-31959
     struct IntroDialogContent: View {
 
-        /// Dax "Thumbs Up" animation. Size and bottom anchor scale down at the larger non-
-        /// accessibility text sizes (xxLarge / xxxLarge) so the inflated bubble doesn't clip
-        /// Dax's head. Accessibility sizes are not handled here — the parent suppresses Dax
-        /// entirely in `RebrandedOnboardingView.daxAnimation(for:)` once the user enters an
-        /// accessibility text size, mirroring the existing compact-device behaviour.
-        static func daxAnimation(for dynamicTypeSize: DynamicTypeSize = .large) -> DaxAnimation {
+        /// Dax "Thumbs Up" animation, sized as a function of the dialog bubble's measured height
+        /// (captured by the parent and passed in). The bigger the bubble — typically because the
+        /// user picked a larger Dynamic Type size or longer copy is being shown — the smaller
+        /// Dax becomes, so the two never overlap. Once Dax would shrink below the minimum
+        /// `minDaxHeight`, this returns `nil` and the parent suppresses the overlay entirely.
+        ///
+        /// `bubbleHeight` of `0` means "no measurement yet"; we render Dax at full size in that
+        /// case so the very first frame (before the parent has captured the bubble's geometry)
+        /// doesn't briefly hide Dax.
+        static func daxAnimation(forBubbleHeight bubbleHeight: CGFloat = 0) -> DaxAnimation? {
             let baseSize = CGSize(width: 258.0, height: 352.0)
             let baseBottomPadding: CGFloat = 110.0
             let baseEntranceXOffset: CGFloat = -20.0
             let baseLargeScreenXOffset: CGFloat = 200.0
             let baseLeftXOffset: CGFloat = -40.0
+            /// Bubble height at default text size / minimum copy. While the bubble stays at or
+            /// below this threshold Dax keeps its full size; growth beyond this shrinks Dax 1:1.
+            let referenceBubbleHeight: CGFloat = 280.0
+            /// Below this height Dax disappears altogether (per design — at very large Dynamic
+            /// Type sizes there's simply not enough vertical space to render anything readable).
+            let minDaxHeight: CGFloat = 170.0
 
-            let scale: CGFloat
-            let bottomPadding: CGFloat
-            switch dynamicTypeSize {
-            case .xxLarge, .xxxLarge:
-                scale = 0.85
-                bottomPadding = 90.0
-            default:
-                scale = 1.0
-                bottomPadding = baseBottomPadding
-            }
+            // Each point of bubble growth past the reference height takes one point off Dax,
+            // until the minimum is reached.
+            let extraBubbleHeight = max(0, bubbleHeight - referenceBubbleHeight)
+            let targetHeight = baseSize.height - extraBubbleHeight
+            guard targetHeight >= minDaxHeight else { return nil }
 
-            let size = CGSize(width: baseSize.width * scale, height: baseSize.height * scale)
+            let scale = targetHeight / baseSize.height
+            let size = CGSize(width: baseSize.width * scale, height: targetHeight)
+            // Lower the bottom inset proportionally so Dax keeps the same visual relationship
+            // to the screen bottom as it shrinks.
+            let bottomPadding = baseBottomPadding * scale
+
             return DaxAnimation(
                 animationName: "Dax-ThumbUp",
                 size: size,

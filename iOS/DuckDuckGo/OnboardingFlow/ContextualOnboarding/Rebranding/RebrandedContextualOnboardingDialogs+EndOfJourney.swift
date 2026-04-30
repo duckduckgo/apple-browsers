@@ -39,11 +39,20 @@ extension OnboardingRebranding {
         let cta: String
         let dismissAction: () -> Void
         let onManualDismiss: (() -> Void)?
+        /// When `false`, the screen-bottom Dax overlay is suppressed entirely. Used by the
+        /// Duck.ai experiment completion dialog (which reuses this view but is presented above
+        /// the active address bar / keyboard, where Dax doesn't fit the layout).
+        let showsDaxAnimation: Bool
 
-        init(title: String = UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle, message: String, cta: String, dismissAction: @escaping () -> Void, onManualDismiss: (() -> Void)? = nil) {
+        init(title: String = UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle,
+             message: String,
+             cta: String,
+             showsDaxAnimation: Bool = true,
+             dismissAction: @escaping () -> Void, onManualDismiss: (() -> Void)? = nil) {
             self.title = title
             self.message = message
             self.cta = cta
+            self.showsDaxAnimation = showsDaxAnimation
             self.dismissAction = dismissAction
             self.onManualDismiss = onManualDismiss
         }
@@ -51,7 +60,7 @@ extension OnboardingRebranding {
         static let daxAnimation = DaxAnimation(
             animationName: "Dax-EndOfJourney-TryWebsite",
             size: CGSize(width: 153, height: 169.67),
-            position: .left(bottomPadding: -70.0, xOffset: -80.0),
+            position: .left(bottomPadding: -70.0, xOffset: 0.0),
             largeScreenPosition: .left(bottomPadding: 0.0, xOffset: 0.0)
         )
 
@@ -83,7 +92,9 @@ extension OnboardingRebranding {
             .overlay {
                 // On iPhone, position Dax at the screen bottom using global coordinates.
                 // On iPad, DaxAnimationOverlay is added by RebrandedNewTabDaxDialogFactory instead.
-                if !OnboardingBubbleAnimationMetrics.isCompactDevice && !OnboardingBubbleAnimationMetrics.isLargeScreen {
+                if showsDaxAnimation
+                    && !OnboardingBubbleAnimationMetrics.isCompactDevice
+                    && !OnboardingBubbleAnimationMetrics.isLargeScreen {
                     ScreenBottomDaxOverlay(animation: Self.daxAnimation)
                 }
             }
@@ -97,10 +108,20 @@ extension OnboardingRebranding {
 /// Positions the Dax animation at the bottom of the screen using global coordinate calculation.
 /// The animation renders beyond the hosting controller's bounds (clipsToBounds = false on UIHostingController).
 /// Used only on iPhone where the bubble is close enough to the screen bottom that clipping is not an issue.
+///
+/// When the on-screen keyboard is visible, Dax re-anchors to the keyboard's top edge instead of
+/// the screen bottom so it doesn't get covered (e.g. when the address bar is focused on the
+/// browser tab beneath the End-Of-Journey dialog).
 private struct ScreenBottomDaxOverlay: View {
     let animation: DaxAnimation
 
+    @StateObject private var keyboard = KeyboardResponder()
+
     private static let screenBottomPadding: CGFloat = 60
+    /// Gap between the keyboard's top edge and Dax's bottom edge when the keyboard is visible.
+    private static let keyboardTopPadding: CGFloat = 12
+    /// Match the standard iOS keyboard show/hide curve so Dax slides in sync with the keyboard.
+    private static let keyboardFollowAnimation: Animation = .easeInOut(duration: 0.25)
 
     private var xOffset: CGFloat {
         switch animation.position {
@@ -118,10 +139,22 @@ private struct ScreenBottomDaxOverlay: View {
                     .first?
                     .keyWindow?.bounds.height ?? globalFrame.maxY
             }()
-            let distanceToScreenBottom = windowHeight - globalFrame.maxY
 
             let xCenter = animation.size.width / 2 + xOffset
-            let yCenter = proxy.size.height + distanceToScreenBottom - Self.screenBottomPadding - animation.size.height / 2
+
+            // Default anchor: Dax sits a fixed inset above the screen bottom.
+            let distanceToScreenBottom = windowHeight - globalFrame.maxY
+            let screenBottomYCenter = proxy.size.height + distanceToScreenBottom - Self.screenBottomPadding - animation.size.height / 2
+
+            // When the keyboard is visible re-anchor to the keyboard's top edge — `keyboardFrame`
+            // is in global window coordinates, so subtract `globalFrame.minY` to get the Y in this
+            // GeometryReader's local coordinate space.
+            let yCenter: CGFloat = {
+                let keyboardFrame = keyboard.keyboardFrame
+                guard keyboardFrame.height > 0 else { return screenBottomYCenter }
+                let localKeyboardTop = keyboardFrame.minY - globalFrame.minY
+                return localKeyboardTop - Self.keyboardTopPadding - animation.size.height / 2
+            }()
 
             Lottie.LottieView {
                 try await DotLottieFile.asset(named: animation.animationName)
@@ -130,6 +163,7 @@ private struct ScreenBottomDaxOverlay: View {
             .resizable()
             .frame(width: animation.size.width, height: animation.size.height)
             .position(x: xCenter, y: yCenter)
+            .animation(Self.keyboardFollowAnimation, value: keyboard.keyboardFrame)
         }
         .allowsHitTesting(false)
     }

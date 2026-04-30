@@ -5760,6 +5760,7 @@ extension MainViewController: MessageNavigationDelegate {
                                                                          bookmarksDatabase: bookmarksDatabase,
                                                                          favoritesDisplayMode: appSettings.favoritesDisplayMode,
                                                                          entryPoint: .whatsNew)
+                Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: DataImportViewModel.ImportScreen.whatsNew.importHubEntryPointParameters)
             }
             guard let viewController = topMostPresentedViewController() else {
                 assertionFailure("No ViewController presented.")

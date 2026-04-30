@@ -80,7 +80,7 @@ final class DataImportViewModel: ObservableObject {
         case completeSetup = "complete_setup"
         case promo
         case inBrowserPromo = "in_browser_promo"
-        case whatsNew
+        case whatsNew = "whats_new"
 
         var documentTypes: [UTType] {
             switch self {

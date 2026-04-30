@@ -108,6 +108,20 @@ struct AutofillSettingsView: View {
                             Text(UserText.autofillNeverSavedSettings)
                                 .foregroundColor(Color(designSystemColor: .accent))
                         }
+                        .confirmationDialog(
+                            "",
+                            isPresented: $viewModel.showingResetConfirmation,
+                            titleVisibility: .hidden
+                        ) {
+                            Button(UserText.autofillResetNeverSavedActionConfirmButton, role: .destructive) {
+                                viewModel.confirmResetExcludedSites()
+                            }
+                            Button(UserText.autofillResetNeverSavedActionCancelButton, role: .cancel) {
+                                viewModel.cancelResetExcludedSites()
+                            }
+                        } message: {
+                            Text(UserText.autofillResetNeverSavedActionTitle)
+                        }
                     }
                 }
                 .listRowBackground(Color(designSystemColor: .surface))
@@ -115,20 +129,6 @@ struct AutofillSettingsView: View {
 
         }
         .applyInsetGroupedListStyle()
-        .confirmationDialog(
-            "",
-            isPresented: $viewModel.showingResetConfirmation,
-            titleVisibility: .hidden
-        ) {
-            Button(UserText.autofillResetNeverSavedActionConfirmButton, role: .destructive) {
-                viewModel.confirmResetExcludedSites()
-            }
-            Button(UserText.autofillResetNeverSavedActionCancelButton, role: .cancel) {
-                viewModel.cancelResetExcludedSites()
-            }
-        } message: {
-            Text(UserText.autofillResetNeverSavedActionTitle)
-        }
         .onAppear {
             viewModel.refreshData()
         }

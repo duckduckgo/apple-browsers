@@ -29,6 +29,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     private var mockKeyValueStore: MockKeyValueStore!
     private var mockHistoryManager: MockHistoryManager!
     private var mockAppSettings: AppSettingsMock!
+    private var mockDataClearingCapability: MockDataClearingCapability!
 
     override func setUp() {
         super.setUp()
@@ -36,6 +37,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         mockKeyValueStore = MockKeyValueStore()
         mockHistoryManager = MockHistoryManager()
         mockAppSettings = AppSettingsMock()
+        mockDataClearingCapability = MockDataClearingCapability()
     }
     
     override func tearDown() {
@@ -43,12 +45,13 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         mockKeyValueStore = nil
         mockHistoryManager = nil
         mockAppSettings = nil
+        mockDataClearingCapability = nil
         super.tearDown()
     }
     
-    // MARK: - burnAllTabs Tests
+    // MARK: - Button Action Tests
     
-    func testWhenBurnAllTabsCalledThenOnConfirmIsCalledWithCorrectRequest() {
+    func testWhenNoTabThenDeleteAllButtonFiresAllScope() {
         // Given
         var capturedRequest: FireRequest?
         let sut = makeSUT(tabViewModel: nil, onConfirm: { request in
@@ -56,10 +59,9 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         })
         
         // When
-        sut.burnAllTabs()
+        sut.buttons[0].action()
         
         // Then
-        XCTAssertNotNil(capturedRequest)
         XCTAssertEqual(capturedRequest?.options, .all)
         XCTAssertEqual(capturedRequest?.trigger, .manualFire)
         if case .all = capturedRequest?.scope {
@@ -69,7 +71,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         }
     }
     
-    func testWhenBurnFireModesCalledThenOnConfirmIsCalledWithCorrectRequest() {
+    func testWhenFireModeThenDeleteAllButtonFiresFireModeScope() {
         // Given
         var capturedRequest: FireRequest?
         let sut = makeSUT(tabViewModel: nil, browsingMode: .fire, onConfirm: { request in
@@ -77,12 +79,9 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         })
         
         // When
-        sut.burnAllTabs()
+        sut.buttons[0].action()
         
         // Then
-        XCTAssertNotNil(capturedRequest)
-        XCTAssertEqual(capturedRequest?.options, .all)
-        XCTAssertEqual(capturedRequest?.trigger, .manualFire)
         if case .fireMode = capturedRequest?.scope {
             // Expected scope
         } else {
@@ -90,9 +89,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         }
     }
     
-    // MARK: - burnThisTab Tests
-    
-    func testWhenBurnThisTabCalledWithTabViewModelThenOnConfirmIsCalledWithCorrectRequest() {
+    func testWhenNormalTabThenSecondButtonFiresTabScope() {
         // Given
         var capturedRequest: FireRequest?
         let tabViewModel = createTabViewModel()
@@ -101,16 +98,14 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         })
         
         // When
-        sut.burnThisTab()
+        XCTAssertEqual(sut.buttons.count, 2)
+        sut.buttons[1].action()
         
         // Then
-        XCTAssertNotNil(capturedRequest)
-        XCTAssertEqual(capturedRequest?.options, .all)
-        XCTAssertEqual(capturedRequest?.trigger, .manualFire)
         if case .tab(let vm) = capturedRequest?.scope {
             XCTAssertTrue(vm.tab == tabViewModel.tab)
         } else {
-            XCTFail("Expected scope to be .tab with the correct view model")
+            XCTFail("Expected scope to be .tab")
         }
     }
     
@@ -130,32 +125,107 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertTrue(cancelCalled)
     }
     
-    // MARK: - canBurnSingleTab Tests
+    // MARK: - Button Layout Tests
     
-    func testWhenTabViewModelIsNilThenCanBurnSingleTabReturnsFalse() {
+    func testWhenNoTabThenSingleDeleteAllButton() {
         // Given
         let sut = makeSUT(tabViewModel: nil)
         
         // Then
-        XCTAssertFalse(sut.canBurnSingleTab)
+        XCTAssertEqual(sut.buttons.count, 1)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteAllButton)
+        XCTAssertEqual(sut.buttons[0].style, .primary)
     }
     
-    func testWhenTabSupportsTabHistoryThenCanBurnSingleTabReturnsTrue() {
+    func testWhenNormalTabThenTwoButtonsDeleteAllFirst() {
         // Given
         let sut = makeSUT(tabViewModel: createTabViewModel())
         
         // Then
-        XCTAssertTrue(sut.canBurnSingleTab)
+        XCTAssertEqual(sut.buttons.count, 2)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteAllButton)
+        XCTAssertEqual(sut.buttons[0].style, .primary)
+        XCTAssertEqual(sut.buttons[1].title, UserText.scopedFireConfirmationDeleteThisTabButton)
+        XCTAssertEqual(sut.buttons[1].style, .secondary)
     }
     
-    func testWhenTabDoesNotSupportTabHistoryThenCanBurnSingleTabReturnsFalse() {
+    func testWhenLegacyTabThenSingleDeleteAllButton() {
         // Given
         let legacyTab = Tab(supportsTabHistory: false)
         let tabViewModel = TabViewModel(tab: legacyTab, historyManager: mockHistoryManager)
         let sut = makeSUT(tabViewModel: tabViewModel)
         
         // Then
-        XCTAssertFalse(sut.canBurnSingleTab)
+        XCTAssertEqual(sut.buttons.count, 1)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteAllButton)
+    }
+
+    // MARK: - DuckAI Onboarding Context Tests
+
+    func testWhenDuckAIOnboardingContextAndAITabThenSingleDeleteChatButtonShown() {
+        // Given
+        let aiTabViewModel = TabViewModel(tab: createAITab(), historyManager: mockHistoryManager)
+        let sut = makeSUT(tabViewModel: aiTabViewModel, fireContext: .duckAIOnboarding)
+
+        // Then
+        XCTAssertEqual(sut.buttons.count, 1)
+        XCTAssertEqual(sut.buttons[0].title, UserText.contextualChatDeleteConfirmationButton)
+        XCTAssertEqual(sut.buttons[0].style, .primary)
+    }
+
+    func testWhenDuckAIOnboardingContextAndWebTabThenNoButtonsShown() {
+        // Given
+        let webTabViewModel = createTabViewModel()
+        let sut = makeSUT(tabViewModel: webTabViewModel, fireContext: .duckAIOnboarding)
+
+        // Then
+        XCTAssertTrue(sut.buttons.isEmpty)
+    }
+
+    func testWhenDuckAIOnboardingContextThenHeaderTitleUsesContextualChatDeleteCopy() {
+        // Given
+        let sut = makeSUT(tabViewModel: createAITabViewModel(), fireContext: .duckAIOnboarding)
+
+        // Then
+        XCTAssertEqual(sut.headerTitle, UserText.contextualChatDeleteConfirmationTitle)
+    }
+
+    func testWhenDuckAIOnboardingContextThenNoDeleteAllButton() {
+        // Given
+        let sut = makeSUT(tabViewModel: createAITabViewModel(), fireContext: .duckAIOnboarding)
+
+        // Then
+        XCTAssertFalse(sut.buttons.contains { $0.title == UserText.scopedFireConfirmationDeleteAllButton })
+    }
+
+    func testWhenDuckAIOnboardingContextThenSubtitleIsNil() {
+        // Given
+        let sut = makeSUT(tabViewModel: createAITabViewModel(), fireContext: .duckAIOnboarding)
+
+        // Then
+        XCTAssertNil(sut.subtitle)
+    }
+
+    func testWhenDuckAIOnboardingContextAndDeleteChatTappedThenRequestUsesAIChatsOption() {
+        // Given
+        var capturedRequest: FireRequest?
+        let aiTabViewModel = createAITabViewModel()
+        let sut = makeSUT(tabViewModel: aiTabViewModel, fireContext: .duckAIOnboarding, onConfirm: { request in
+            capturedRequest = request
+        })
+
+        // When
+        sut.buttons[0].action()
+
+        // Then
+        XCTAssertNotNil(capturedRequest)
+        XCTAssertEqual(capturedRequest?.options, [.aiChats])
+        XCTAssertEqual(capturedRequest?.trigger, .manualFire)
+        if case .tab(let vm) = capturedRequest?.scope {
+            XCTAssertTrue(vm.tab == aiTabViewModel.tab)
+        } else {
+            XCTFail("Expected scope to be .tab with the correct view model")
+        }
     }
     
     // MARK: - subtitle Tests - Ongoing Downloads
@@ -265,7 +335,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         let tabViewModel = createTabViewModel()
         
         // When
-        let sut = makeSUT(tabViewModel: tabViewModel, daxDialogsManager: mockDaxDialogsManager)
+        let sut = makeSUT(tabViewModel: tabViewModel, fireContext: .default(daxDialogsManager: mockDaxDialogsManager))
         
         // Then - subtitle is nil even though it would normally show sign out warning
         XCTAssertNil(sut.subtitle)
@@ -301,20 +371,113 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationDownloadsWarning)
     }
     
+    // MARK: - Fire Button Refinements Tests
+
+    func testWhenRefinementsEnabledOnAITabThenSingleDeleteChatButton() {
+        // Given
+        mockDataClearingCapability.isFireButtonRefinementsEnabled = true
+        let tabViewModel = TabViewModel(tab: createAITab(), historyManager: mockHistoryManager)
+
+        // When
+        let sut = makeSUT(tabViewModel: tabViewModel)
+
+        // Then
+        XCTAssertEqual(sut.buttons.count, 1)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteThisChatButton)
+        XCTAssertEqual(sut.buttons[0].style, .primary)
+        XCTAssertEqual(sut.headerTitle, UserText.contextualChatDeleteConfirmationTitle)
+    }
+
+    func testWhenRefinementsDisabledOnAITabThenTwoButtonsDeleteAllFirst() {
+        // Given
+        mockDataClearingCapability.isFireButtonRefinementsEnabled = false
+        let tabViewModel = TabViewModel(tab: createAITab(), historyManager: mockHistoryManager)
+
+        // When
+        let sut = makeSUT(tabViewModel: tabViewModel)
+
+        // Then
+        XCTAssertEqual(sut.buttons.count, 2)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteAllButton)
+        XCTAssertEqual(sut.buttons[0].style, .primary)
+    }
+
+    func testWhenRefinementsEnabledOnAITabThenSubtitleIsNil() {
+        // Given
+        mockDataClearingCapability.isFireButtonRefinementsEnabled = true
+        mockAppSettings.autoClearAIChatHistory = false
+        let tabViewModel = TabViewModel(tab: createAITab(), historyManager: mockHistoryManager)
+
+        // When
+        let sut = makeSUT(tabViewModel: tabViewModel)
+
+        // Then
+        XCTAssertNil(sut.subtitle)
+    }
+
+    func testWhenRefinementsEnabledOnAITabThenButtonBurnsSingleChat() {
+        // Given
+        mockDataClearingCapability.isFireButtonRefinementsEnabled = true
+        var capturedRequest: FireRequest?
+        let tabViewModel = TabViewModel(tab: createAITab(), historyManager: mockHistoryManager)
+        let sut = makeSUT(tabViewModel: tabViewModel, onConfirm: { capturedRequest = $0 })
+
+        // When
+        sut.buttons[0].action()
+
+        // Then
+        if case .tab = capturedRequest?.scope {
+            // Expected single tab scope
+        } else {
+            XCTFail("Expected scope to be .tab for AI-only mode")
+        }
+    }
+
+    func testWhenRefinementsEnabledOnNormalTabThenDeleteThisTabIsPrimary() {
+        // Given
+        mockDataClearingCapability.isFireButtonRefinementsEnabled = true
+
+        // When
+        let sut = makeSUT(tabViewModel: createTabViewModel())
+
+        // Then
+        XCTAssertEqual(sut.buttons.count, 2)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteThisTabButton)
+        XCTAssertEqual(sut.buttons[0].style, .primary)
+        XCTAssertEqual(sut.buttons[1].title, UserText.scopedFireConfirmationDeleteAllButton)
+        XCTAssertEqual(sut.buttons[1].style, .secondary)
+    }
+
+    func testWhenRefinementsDisabledOnNormalTabThenDeleteAllIsPrimary() {
+        // Given
+        mockDataClearingCapability.isFireButtonRefinementsEnabled = false
+
+        // When
+        let sut = makeSUT(tabViewModel: createTabViewModel())
+
+        // Then
+        XCTAssertEqual(sut.buttons.count, 2)
+        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteAllButton)
+        XCTAssertEqual(sut.buttons[0].style, .primary)
+        XCTAssertEqual(sut.buttons[1].title, UserText.scopedFireConfirmationDeleteThisTabButton)
+        XCTAssertEqual(sut.buttons[1].style, .secondary)
+    }
+
     // MARK: - Helpers
     
     private func makeSUT(tabViewModel: TabViewModel?,
                          source: FireRequest.Source = .browsing,
-                         daxDialogsManager: DaxDialogsManaging = DummyDaxDialogsManager(),
+                         fireContext: ScopedFireConfirmationViewModel.FireContext = .default(daxDialogsManager: DummyDaxDialogsManager()),
                          browsingMode: BrowsingMode = .normal,
                          onConfirm: @escaping (FireRequest) -> Void = { _ in },
                          onCancel: @escaping () -> Void = { }) -> ScopedFireConfirmationViewModel {
         return ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
                                                source: source,
-                                               fireContext: .default(daxDialogsManager: daxDialogsManager),
+                                               fireContext: fireContext,
                                                downloadManager: mockDownloadManager,
                                                keyValueStore: mockKeyValueStore,
                                                appSettings: mockAppSettings,
+                                               dataClearingCapability: mockDataClearingCapability,
                                                browsingMode: browsingMode,
                                                onConfirm: onConfirm,
                                                onCancel: onCancel)
@@ -329,6 +492,11 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         let aiChatURL = URL(string: "https://duckduckgo.com/?ia=chat")!
         let link = Link(title: "AI Chat", url: aiChatURL)
         return Tab(link: link)
+    }
+
+    private func createAITabViewModel() -> TabViewModel {
+        let aiTab = createAITab()
+        return TabViewModel(tab: aiTab, historyManager: mockHistoryManager)
     }
     
     private func createRunningDownload(temporary: Bool = false) -> Download {

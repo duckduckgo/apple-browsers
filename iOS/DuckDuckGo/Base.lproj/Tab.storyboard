@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24765" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="ipad9_7" orientation="portrait" layout="fullscreen" appearance="dark"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24504"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24743"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -150,11 +150,9 @@
                         <outlet property="errorInfoImage" destination="TUO-E3-s7Q" id="ngN-8S-PwR"/>
                         <outlet property="errorMessage" destination="Cjw-mk-QL3" id="b1N-1W-IGs"/>
                         <outlet property="outerContainer" destination="oCt-R5-2Bm" id="pQ2-wS-6eT"/>
+                        <outlet property="privacyDashboardAnchor" destination="ypz-s2-KJB" id="has-GS-Nfs"/>
                         <outlet property="showBarsTapGestureRecogniser" destination="Y72-bH-DMy" id="SAY-KX-OEJ"/>
                         <outlet property="webViewContainer" destination="3yc-Gh-Vqe" id="kNL-fm-49U"/>
-                        <segue destination="5Os-y0-IaV" kind="popoverPresentation" identifier="PrivacyDashboard" destinationCreationSelector="makePrivacyDashboardViewControllerWithCoder:" popoverAnchorView="ypz-s2-KJB" id="nKl-8K-k03">
-                            <popoverArrowDirection key="popoverArrowDirection" up="YES"/>
-                        </segue>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Xy9-lL-XjG" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -166,14 +164,6 @@
                 </tapGestureRecognizer>
             </objects>
             <point key="canvasLocation" x="1181.25" y="445.31249999999994"/>
-        </scene>
-        <!--PrivacyDashboard-->
-        <scene sceneID="L6K-iW-ae0">
-            <objects>
-                <viewControllerPlaceholder storyboardName="PrivacyDashboard" id="5Os-y0-IaV" sceneMemberID="viewController"/>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="UuK-nd-xhd" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="1771" y="445"/>
         </scene>
         <!--JSAlertController-->
         <scene sceneID="ysm-ED-Fzh">

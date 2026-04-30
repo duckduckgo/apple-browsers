@@ -20,6 +20,7 @@ public extension DesignSystemImages {
     enum Glyphs {
         public enum Size12 {
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat12) }
+            public static var aiChatHistory: DesignSystemImage { .init(resource: .aiChatHistory12) }
             public static var aiChatSolid: DesignSystemImage { .init(resource: .aiChatSolid12) }
             public static var app: DesignSystemImage { .init(resource: .app12) }
             public static var arrowCircleLeft: DesignSystemImage { .init(resource: .arrowCircleLeft12) }
@@ -41,6 +42,7 @@ public extension DesignSystemImages {
             public static var chat: DesignSystemImage { .init(resource: .chat12) }
             public static var check: DesignSystemImage { .init(resource: .check12) }
             public static var chip: DesignSystemImage { .init(resource: .chip12) }
+            public static var closeSmall: DesignSystemImage { .init(resource: .closeSmall12) }
             public static var compose: DesignSystemImage { .init(resource: .compose12) }
             public static var cookie: DesignSystemImage { .init(resource: .cookie12) }
             public static var currency: DesignSystemImage { .init(resource: .currency12) }
@@ -93,6 +95,7 @@ public extension DesignSystemImages {
             public static var addToHome: DesignSystemImage { .init(resource: .addToHome16) }
             public static var addToTaskbar: DesignSystemImage { .init(resource: .addToTaskbar16) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat16) }
+            public static var aiChatOnboarding: DesignSystemImage { .init(resource: .aiChatOnboarding16) }
             public static var aiChatAdd: DesignSystemImage { .init(resource: .aiChatAdd16) }
             public static var aiChatGradientColor: DesignSystemImage { .init(resource: .aiChatGradientColor16) }
             public static var aiChatHistory: DesignSystemImage { .init(resource: .aiChatHistory16) }
@@ -206,6 +209,7 @@ public extension DesignSystemImages {
             public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid16) }
             public static var jump: DesignSystemImage { .init(resource: .jump16) }
             public static var jumpRecolorable: DesignSystemImage { .init(resource: .jumpRecolorable16) }
+            public static var keyboard: DesignSystemImage { .init(resource: .keyboard16) }
             public static var keyLogin: DesignSystemImage { .init(resource: .keyLogin16) }
             public static var linkRecolorable: DesignSystemImage { .init(resource: .linkRecolorable16) }
             public static var lock: DesignSystemImage { .init(resource: .lock16) }
@@ -268,7 +272,10 @@ public extension DesignSystemImages {
             public static var tabMobile: DesignSystemImage { .init(resource: .tabMobile16) }
             public static var tabReopen: DesignSystemImage { .init(resource: .tabReopen16) }
             public static var tabTop: DesignSystemImage { .init(resource: .tabTop16) }
+            public static var thinking: DesignSystemImage { .init(resource: .thinking16) }
+            public static var timer: DesignSystemImage { .init(resource: .timer16) }
             public static var thumbsUp: DesignSystemImage { .init(resource: .thumbsUp16) }
+            public static var thunderbolt: DesignSystemImage { .init(resource: .thunderbolt16) }
             public static var trash: DesignSystemImage { .init(resource: .trash16) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize16) }
             public static var permissionCamera: DesignSystemImage { .init(resource: .video16) }
@@ -460,6 +467,7 @@ public extension DesignSystemImages {
             public static var info: DesignSystemImage { .init(resource: .info24) }
             public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid24) }
             public static var key: DesignSystemImage { .init(resource: .key24) }
+            public static var lightning: DesignSystemImage { .init(resource: .lightning24) }
             public static var linkSolid: DesignSystemImage { .init(resource: .linkSolid24) }
             public static var list: DesignSystemImage { .init(resource: .list24) }
             public static var location: DesignSystemImage { .init(resource: .location24) }
@@ -515,6 +523,8 @@ public extension DesignSystemImages {
             public static var tabMobileAlertDot: DesignSystemImage { .init(resource: .tabMobileAlertDot24) }
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew24) }
             public static var tag: DesignSystemImage { .init(resource: .tag24) }
+            public static var thinking: DesignSystemImage { .init(resource: .thinking24) }
+            public static var timer: DesignSystemImage { .init(resource: .timer24) }
             public static var trash: DesignSystemImage { .init(resource: .trash24) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize24) }
             public static var vpn: DesignSystemImage { .init(resource: .VPN_24) }

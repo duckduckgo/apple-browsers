@@ -16,135 +16,91 @@
 //  limitations under the License.
 //
 
-import Foundation
 import DuckAiDataStore
+import Foundation
+import os.log
 import Persistence
 
+/// Public entry point for Duck.ai native storage. Pick a backing in `Mode`:
+///
+/// - `.disk(path:)` for persistent on-disk storage (encrypted SQLCipher DB + filesystem)
+/// - `.memory` for transient in-memory storage (fire-mode contexts)
+///
+/// Both backings conform to `DuckAiNativeStorageHandling` and are interchangeable from
+/// the caller's point of view; this class forwards every protocol call to the chosen
+/// implementation.
 public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
 
-    private let settingsStore: any ThrowingKeyedStoring<DuckAiNativeStorageSettings>
-    private let dataStore: DuckAiNativeDataStoring
-    private let settingsLock = NSLock()
+    /// Default subdirectory name for the on-disk store. Callers compose this with the
+    /// platform-appropriate base location (group container on iOS, application support on macOS).
+    public static let defaultDirectoryName = "DuckAiNativeStorage"
 
-    public init(
-        settingsStore: any ThrowingKeyedStoring<DuckAiNativeStorageSettings>,
-        dataStore: DuckAiNativeDataStoring
-    ) {
-        self.settingsStore = settingsStore
-        self.dataStore = dataStore
+    public enum Mode {
+        /// On-disk storage at `path`. The directory is created if it doesn't exist.
+        case disk(path: URL,
+                  keyStoreProvider: DuckAiKeyStoreProvider,
+                  pixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring())
+        /// In-memory storage. `seedSource`, when provided, is used by the memory handler
+        /// for consent-key read-through across modes — see `DuckAiNativeStorageConsent.entryKeys`.
+        case memory(seedSource: DuckAiNativeStorageHandling? = nil)
     }
 
-    // MARK: - Settings
+    private let backing: DuckAiNativeStorageHandling
 
-    public func putSetting(key: String, value: Any) throws {
-        settingsLock.lock()
-        defer { settingsLock.unlock() }
-        var settings = try loadSettingsBlob()
-        settings[key] = value
-        try saveSettingsBlob(settings)
-    }
+    public init(_ mode: Mode) throws {
+        switch mode {
+        case .disk(let path, let keyStoreProvider, let pixelFiring):
+            do {
+                let fileManager = FileManager.default
+                try fileManager.createDirectory(at: path, withIntermediateDirectories: true)
 
-    public func getSetting(key: String) throws -> Any? {
-        settingsLock.lock()
-        defer { settingsLock.unlock() }
-        let settings = try loadSettingsBlob()
-        return settings[key]
-    }
+                let encryptionKey = try keyStoreProvider.getOrCreateKey()
+                let settingsStore = try KeyValueFileStore(location: path, name: "settings.plist")
+                let dataStore = try DuckAiNativeDataStore(
+                    databaseURL: path.appendingPathComponent("chats.db"),
+                    filesDirectoryURL: path.appendingPathComponent("files"),
+                    key: encryptionKey
+                )
+                self.backing = DuckAiNativeDiskStorageHandler(
+                    settingsStore: settingsStore.throwingKeyedStoring(),
+                    dataStore: dataStore
+                )
+                Logger.aiChat.debug("DuckAiNativeStorageHandler: disk store initialized at \(path.path)")
+                pixelFiring.fire(.initSuccess)
+            } catch {
+                pixelFiring.fire(.initError(error))
+                throw error
+            }
 
-    public func getAllSettings() throws -> [String: Any] {
-        settingsLock.lock()
-        defer { settingsLock.unlock() }
-        return try loadSettingsBlob()
-    }
-
-    public func deleteSetting(key: String) throws {
-        settingsLock.lock()
-        defer { settingsLock.unlock() }
-        var settings = try loadSettingsBlob()
-        settings.removeValue(forKey: key)
-        try saveSettingsBlob(settings)
-    }
-
-    public func deleteAllSettings() throws {
-        settingsLock.lock()
-        defer { settingsLock.unlock() }
-        try settingsStore.set(nil, for: \.settings)
-    }
-
-    public func replaceAllSettings(_ settings: [String: Any]) throws {
-        settingsLock.lock()
-        defer { settingsLock.unlock() }
-        try saveSettingsBlob(settings)
-    }
-
-    // MARK: - Chats (delegation)
-
-    public func putChat(chatId: String, data: Data) throws {
-        try dataStore.putChat(chatId: chatId, data: data)
-    }
-
-    public func putChats(_ chats: [DuckAiChatRecord]) throws {
-        try dataStore.putChats(chats)
-    }
-
-    public func getAllChats() throws -> [DuckAiChatRecord] {
-        try dataStore.getAllChats()
-    }
-
-    public func deleteChat(chatId: String) throws {
-        try dataStore.deleteChat(chatId: chatId)
-    }
-
-    public func deleteAllChats() throws {
-        try dataStore.deleteAllChats()
-    }
-
-    // MARK: - Files (delegation)
-
-    public func putFile(uuid: String, chatId: String, data: Data) throws {
-        try dataStore.putFile(uuid: uuid, chatId: chatId, data: data)
-    }
-
-    public func getFile(uuid: String) throws -> DuckAiFileContent? {
-        try dataStore.getFile(uuid: uuid)
-    }
-
-    public func listFiles() throws -> [DuckAiFileMetadata] {
-        try dataStore.listFiles()
-    }
-
-    public func deleteFile(uuid: String) throws {
-        try dataStore.deleteFile(uuid: uuid)
-    }
-
-    public func deleteAllFiles() throws {
-        try dataStore.deleteAllFiles()
-    }
-
-    // MARK: - Migration
-
-    public func isMigrationDone() throws -> Bool {
-        return try settingsStore.value(for: \.migrationDone) ?? false
-    }
-
-    public func markMigrationDone() throws {
-        try settingsStore.set(true, for: \.migrationDone)
-    }
-
-    // MARK: - Private helpers
-
-    private func loadSettingsBlob() throws -> [String: Any] {
-        guard let data = try settingsStore.value(for: \.settings) else {
-            return [:]
+        case .memory(let seedSource):
+            self.backing = DuckAiNativeMemoryStorageHandler(seedSource: seedSource)
         }
-        guard let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return [:]
-        }
-        return dict
     }
 
-    private func saveSettingsBlob(_ settings: [String: Any]) throws {
-        let data = try JSONSerialization.data(withJSONObject: settings, options: [])
-        try settingsStore.set(data, for: \.settings)
-    }
+    // MARK: - DuckAiNativeStorageHandling forwarding
+
+    public func putEntry(key: String, value: Any) throws { try backing.putEntry(key: key, value: value) }
+    public func getEntry(key: String) throws -> Any? { try backing.getEntry(key: key) }
+    public func getAllEntries() throws -> [String: Any] { try backing.getAllEntries() }
+    public func deleteEntry(key: String) throws { try backing.deleteEntry(key: key) }
+    public func deleteAllEntries() throws { try backing.deleteAllEntries() }
+    public func replaceAllEntries(_ entries: [String: Any]) throws { try backing.replaceAllEntries(entries) }
+
+    public func putChat(chatId: String, data: Data) throws { try backing.putChat(chatId: chatId, data: data) }
+    public func putChats(_ chats: [DuckAiChatRecord]) throws { try backing.putChats(chats) }
+    public func getChat(chatId: String) throws -> DuckAiChatRecord? { try backing.getChat(chatId: chatId) }
+    public func getAllChats() throws -> [DuckAiChatRecord] { try backing.getAllChats() }
+    public func deleteChat(chatId: String) throws { try backing.deleteChat(chatId: chatId) }
+    public func deleteAllChats() throws { try backing.deleteAllChats() }
+
+    public func putFile(uuid: String, chatId: String, data: Data) throws { try backing.putFile(uuid: uuid, chatId: chatId, data: data) }
+    public func getFile(uuid: String) throws -> DuckAiFileContent? { try backing.getFile(uuid: uuid) }
+    public func listFiles() throws -> [DuckAiFileMetadata] { try backing.listFiles() }
+    public func deleteFile(uuid: String) throws { try backing.deleteFile(uuid: uuid) }
+    public func deleteFiles(chatId: String) throws { try backing.deleteFiles(chatId: chatId) }
+    public func deleteAllFiles() throws { try backing.deleteAllFiles() }
+
+    public func isMigrationDone() throws -> Bool { try backing.isMigrationDone() }
+    public func isMigrationDone(key: String) throws -> Bool { try backing.isMigrationDone(key: key) }
+    public func markMigrationDone(key: String) throws { try backing.markMigrationDone(key: key) }
 }

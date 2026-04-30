@@ -32,6 +32,13 @@ public enum TextEntryMode: String, CaseIterable {
     case aiChat
 }
 
+extension TextEntryMode {
+    /// Returns the mode the omnibar should actually display, falling back to `.search` when the AI search-input feature is unavailable.
+    func displayed(isAIChatSearchInputEnabled: Bool) -> TextEntryMode {
+        isAIChatSearchInputEnabled ? self : .search
+    }
+}
+
 // MARK: - SwitchBarHandling Protocol
 protocol SwitchBarHandling: AnyObject {
 
@@ -49,6 +56,7 @@ protocol SwitchBarHandling: AnyObject {
 
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
+    var shouldDisableAutocorrectOnEmpty: Bool { get }
 
     var hasSubmittedPrompt: Bool { get set }
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { get }
@@ -127,6 +135,10 @@ final class SwitchBarHandler: SwitchBarHandling {
             return devicePlatform.isIphone
         }
         return false
+    }
+
+    var shouldDisableAutocorrectOnEmpty: Bool {
+        featureFlagger.isFeatureOn(.unifiedToggleInput) || devicePlatform.isIphone
     }
 
     var isVoiceSearchEnabled: Bool {

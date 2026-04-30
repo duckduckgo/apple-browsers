@@ -77,10 +77,10 @@ final class OverlayWindowManager: OverlayWindowManaging {
                                                                       featureFlagger: featureFlagger,
                                                                       appSettings: appSettings,
                                                                       mobileCustomization: mobileCustomization)
-        let isPhoneLandscape = !AppWidthObserver.shared.isPad
+        let isMinimalChrome = !AppWidthObserver.shared.isPad
             && featureFlagger.isFeatureOn(.minimalChromeInLandscape)
             && window.bounds.width > window.bounds.height
-        blankSnapshotViewController.useMinimalChromeLayout = AppWidthObserver.shared.isLargeWidth || isPhoneLandscape
+        blankSnapshotViewController.useMinimalChromeLayout = AppWidthObserver.shared.isLargeWidth || isMinimalChrome
         blankSnapshotViewController.delegate = self
         displayOverlay(with: blankSnapshotViewController)
     }

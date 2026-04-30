@@ -47,6 +47,7 @@ import SERPSettings
 import AIChat
 import PixelKit
 import PrivacyConfig
+import WebExtensions
 
 class TabViewController: UIViewController {
 
@@ -63,6 +64,8 @@ class TabViewController: UIViewController {
 
     lazy var borderView = StyledTopBottomBorderView()
 
+    @IBOutlet private(set) weak var privacyDashboardAnchor: UIView!
+
     @IBOutlet private(set) weak var error: UIView!
     @IBOutlet private(set) weak var errorInfoImage: UIImageView!
     @IBOutlet private(set) weak var errorHeader: UILabel!
@@ -72,6 +75,7 @@ class TabViewController: UIViewController {
     @IBOutlet weak var webViewContainer: UIView!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     var daxContextualOnboardingController: UIViewController?
+    var lastPresentedContextualOnboardingSpec: DaxDialogs.BrowsingSpec?
     
     /// Stores the visual state of the web view
     /// Used by DuckPlayer to save and restore view appearance when switching between normal browsing and fullscreen (portrail/landscape) video modes.
@@ -170,11 +174,12 @@ class TabViewController: UIViewController {
 
     private var httpsForced: Bool = false
     private(set) lazy var safariRedirectHandler: SafariRedirectHandler = {
-        let handler = SafariRedirectHandler(tld: AppDependencyProvider.shared.storageCache.tld, featureFlagger: featureFlagger)
+        let handler = SafariRedirectHandler(tld: AppDependencyProvider.shared.storageCache.tld)
         handler.delegate = self
         return handler
     }()
     private var lastUpgradedURL: URL?
+    private var httpsUpgradeTask: Task<Void, Never>?
     private var lastError: Error?
     private var lastHttpStatusCode: Int?
     private var shouldReloadOnError = false
@@ -196,6 +201,8 @@ class TabViewController: UIViewController {
     
     private var tabURLInterceptor: TabURLInterceptor
     private var currentlyLoadedURL: URL?
+
+    private var addressBarURLFilter: AddressBarURLFiltering
 
     private let netPConnectionObserver: ConnectionStatusObserver = AppDependencyProvider.shared.connectionObserver
     private var netPConnectionObserverCancellable: AnyCancellable?
@@ -432,7 +439,9 @@ class TabViewController: UIViewController {
                                    privacyStats: PrivacyStatsProviding,
                                    voiceSearchHelper: VoiceSearchHelperProtocol,
                                    darkReaderFeatureSettings: DarkReaderFeatureSettings,
-                                   autoplaySettings: AutoplaySettings) -> TabViewController {
+                                   autoplaySettings: AutoplaySettings,
+                                   duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                                   duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil) -> TabViewController {
 
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
@@ -467,7 +476,9 @@ class TabViewController: UIViewController {
                               privacyStats: privacyStats,
                               voiceSearchHelper: voiceSearchHelper,
                               darkReaderFeatureSettings: darkReaderFeatureSettings,
-                              autoplaySettings: autoplaySettings
+                              autoplaySettings: autoplaySettings,
+                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler
             )
         })
         return controller
@@ -479,6 +490,23 @@ class TabViewController: UIViewController {
 
 
     let historyManager: HistoryManaging
+    private(set) lazy var adBlockingNavigationHandler: AdBlockingNavigationHandling = {
+        let youTubeAdBlockingStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        let availability = AdBlockingAvailability(
+            featureFlagger: featureFlagger,
+            isEnabledByUserProvider: {
+                (try? youTubeAdBlockingStorage.value(for: \.youTubeAdBlockingEnabled)) ?? false
+            }
+        )
+        return AdBlockingNavigationHandler(
+            availability: availability,
+            onShouldShowAdBlockingAnimation: { [weak self] in
+                guard let self else { return }
+                self.delegate?.tabDidRequestPresentingYouTubeAdBlockAnimation(tab: self)
+            }
+        )
+    }()
+
     private lazy var duckPlayerNavigationHandler: DuckPlayerNavigationHandling = {
         let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
                                     featureFlagger: AppDependencyProvider.shared.featureFlagger,
@@ -523,6 +551,8 @@ class TabViewController: UIViewController {
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
     let darkReaderFeatureSettings: DarkReaderFeatureSettings
     let autoplaySettings: AutoplaySettings
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
         let pageContextHandler = AIChatPageContextHandler(
             webViewProvider: { [weak self] in self?.webView },
@@ -537,7 +567,8 @@ class TabViewController: UIViewController {
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
             pageContextHandler: pageContextHandler,
-            isFireTab: tabModel.fireTab
+            isFireTab: tabModel.fireTab,
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler
         )
         coordinator.delegate = self
         return coordinator
@@ -579,7 +610,10 @@ class TabViewController: UIViewController {
                    privacyStats: PrivacyStatsProviding,
                    voiceSearchHelper: VoiceSearchHelperProtocol,
                    darkReaderFeatureSettings: DarkReaderFeatureSettings,
-                   autoplaySettings: AutoplaySettings) {
+                   autoplaySettings: AutoplaySettings,
+                   duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                   duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                   addressBarURLFilter: AddressBarURLFiltering = AddressBarURLFilter()) {
 
         self.tabModel = tabModel
         self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
@@ -623,6 +657,9 @@ class TabViewController: UIViewController {
         self.voiceSearchHelper = voiceSearchHelper
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.autoplaySettings = autoplaySettings
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.addressBarURLFilter = addressBarURLFilter
 
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
@@ -793,7 +830,9 @@ class TabViewController: UIViewController {
     
     func updateTabModel() {
         if let url = url {
-            let link = Link(title: title, url: url)
+            let hasTitle = title != nil && !title!.isEmpty
+            let previousTitle = (tabModel.link?.url == url) ? tabModel.link?.title : nil
+            let link = Link(title: hasTitle ? title : previousTitle, url: url)
             tabModel.link = link
         } else {
             tabModel.link = nil
@@ -974,6 +1013,7 @@ class TabViewController: UIViewController {
 
     public func load(url: URL) {
         wasLoadingStoppedExternally = false
+        addressBarURLFilter.beginUserNavigation()
         webView.stopLoading()
         dismissJSAlertIfNeeded()
         safariRedirectHandler.reset()
@@ -982,6 +1022,7 @@ class TabViewController: UIViewController {
     }
     
     public func load(backForwardListItem: WKBackForwardListItem) {
+        addressBarURLFilter.beginUserNavigation()
         webView.stopLoading()
         dismissJSAlertIfNeeded()
 
@@ -1016,6 +1057,9 @@ class TabViewController: UIViewController {
     }
 
     func prepareForDataClearing() {
+        httpsUpgradeTask?.cancel()
+        httpsUpgradeTask = nil
+
         webView.navigationDelegate = nil
         webView.uiDelegate = nil
         delegate = nil
@@ -1026,7 +1070,7 @@ class TabViewController: UIViewController {
     
     private func load(urlRequest: URLRequest) {
         loadViewIfNeeded()
-        
+
         if let url = urlRequest.url, !shouldReissueSearch(for: url) {
             requeryLogic.onNewNavigation(url: url)
         }
@@ -1099,15 +1143,30 @@ class TabViewController: UIViewController {
     
     func webViewUrlHasChanged(previousURL: URL? = nil, newURL: URL? = nil) {
         // Handle DuckPlayer Navigation URL changes
-        if let currentURL = newURL ?? webView.url {
+        if let currentURL = newURL ?? webView.url,
+           shouldHandleUpdate(previousURL, newURL) {
+            adBlockingNavigationHandler.handleURLChange(previousURL: previousURL, newURL: currentURL)
             _ = duckPlayerNavigationHandler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL, isNavigationError: lastError != nil)
         }
 
+        guard let newURL = newURL else { return }
+
         if url == nil {
             url = newURL
-        } else if let currentHost = url?.host, let newHost = newURL?.host, currentHost == newHost {
+        } else if shouldUpdateAddressBar(for: newURL, legacySameHostFallback: true) {
             url = newURL
         }
+    }
+
+    private func shouldUpdateAddressBar(for newURL: URL, legacySameHostFallback: Bool = false) -> Bool {
+        guard featureFlagger.isFeatureOn(.filterAddressBarUpdates) else {
+            if legacySameHostFallback {
+                guard let currentHost = url?.host, let newHost = newURL.host else { return false }
+                return currentHost == newHost
+            }
+            return true
+        }
+        return addressBarURLFilter.shouldUpdate(for: newURL)
     }
 
     @available(iOS 18.4, *)
@@ -1130,6 +1189,23 @@ class TabViewController: UIViewController {
     func dismissContextualDaxFireDialog() {
         guard contextualOnboardingLogic.isShowingFireDialog else { return }
         contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
+    }
+
+    func presentExperimentContextualDaxFireDialog() {
+        contextualOnboardingLogic.setLastShownDialog(type: .fire(.duckAIOnboarding))
+        let fireSpec = DaxDialogs.BrowsingSpec.fireDuckAIOnboarding
+        contextualOnboardingPresenter.presentContextualOnboarding(for: fireSpec, in: self)
+    }
+
+    private func shouldHandleUpdate(_ previousURL: URL?, _ newURL: URL?) -> Bool {
+        guard let previousURL, let newURL,
+              previousURL.isYoutube,
+              newURL.isYoutube,
+              previousURL.youtubeVideoID == newURL.youtubeVideoID,
+              newURL.getParameter(named: "ra") != nil
+        else { return true }
+
+        return previousURL != newURL.removingParameters(named: ["ra"])
     }
 
     private func checkForReloadOnError() {
@@ -1185,8 +1261,10 @@ class TabViewController: UIViewController {
 
     public func reload() {
         wasLoadingStoppedExternally = false
+        addressBarURLFilter.beginUserReload()
         updateContentMode()
         cachedRuntimeConfigurationForDomain = [:]
+        adBlockingNavigationHandler.handleReload()
         duckPlayerNavigationHandler.handleReload(webView: webView)
         delegate?.tabLoadingStateDidChange(tab: self)
         resetCreditCardPrompt()
@@ -1197,8 +1275,9 @@ class TabViewController: UIViewController {
     }
 
     func goBack() {
+        addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
-        
+
         // Clear navigation error when going back
         lastError = nil
         
@@ -1238,8 +1317,9 @@ class TabViewController: UIViewController {
     }
     
     func goForward() {
+        addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
-        
+
         // Clear navigation error when going forward
         lastError = nil
 
@@ -1266,22 +1346,6 @@ class TabViewController: UIViewController {
         return url.isDuckDuckGo
     }
 
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-
-        guard let chromeDelegate = chromeDelegate else { return }
-
-        if let controller = segue.destination as? PrivacyDashboardViewController {
-            controller.popoverPresentationController?.delegate = controller
-
-            if let iconView = chromeDelegate.omniBar.barView.privacyIconView {
-                controller.popoverPresentationController?.sourceView = iconView
-                controller.popoverPresentationController?.sourceRect = iconView.bounds
-            }
-            privacyDashboard = controller
-        }
-        
-    }
-
     private var jsAlertController: JSAlertController!
     @IBSegueAction
     func createJSAlertController(coder: NSCoder, sender: Any?, segueIdentifier: String?) -> JSAlertController? {
@@ -1289,16 +1353,6 @@ class TabViewController: UIViewController {
         return self.jsAlertController
     }
 
-    @IBSegueAction
-    private func makePrivacyDashboardViewController(coder: NSCoder) -> PrivacyDashboardViewController? {
-        return PrivacyDashboardViewController(coder: coder,
-                                       privacyInfo: privacyInfo,
-                                       entryPoint: .dashboard,
-                                       privacyConfigurationManager: privacyConfigurationManager,
-                                       contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                              breakageAdditionalInfo: makeBreakageAdditionalInfo())
-    }
-    
     private func addTextZoomObserver() {
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(onTextZoomChange),
@@ -1344,7 +1398,25 @@ class TabViewController: UIViewController {
 
     func showPrivacyDashboard() {
         Pixel.fire(pixel: .privacyDashboardOpened, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .privacyDashboard))
-        performSegue(withIdentifier: "PrivacyDashboard", sender: self)
+        let webExtManager = (delegate as? MainViewController)?.webExtensionManager
+        let controller = PrivacyDashboardViewController(
+            privacyInfo: privacyInfo,
+            entryPoint: .dashboard,
+            privacyConfigurationManager: privacyConfigurationManager,
+            contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
+            breakageAdditionalInfo: makeBreakageAdditionalInfo(webExtensionManager: webExtManager))
+
+        guard let chromeDelegate = chromeDelegate else { return }
+
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            controller.preferredContentSize = .init(width: 375, height: 650)
+            controller.modalPresentationStyle = .popover
+        } else {
+            controller.modalPresentationStyle = .formSheet
+        }
+        present(controller: controller, fromView: chromeDelegate.omniBar.barView.privacyIconView  ?? privacyDashboardAnchor)
+        self.privacyDashboard = controller
+
         featureDiscovery.setWasUsedBefore(.privacyDashboard)
     }
 
@@ -1482,10 +1554,17 @@ class TabViewController: UIViewController {
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.isLoading))
     }
 
-    public func makeBreakageAdditionalInfo() -> PrivacyDashboardViewController.BreakageAdditionalInfo? {
-        
+    public func makeBreakageAdditionalInfo(webExtensionManager: WebExtensionManaging? = nil) -> PrivacyDashboardViewController.BreakageAdditionalInfo? {
+
         guard let currentURL = url else {
             return nil
+        }
+
+        var loadedWebExtensions: String?
+        var adBlockingScriptletsVersion: String?
+        if #available(iOS 18.4, *), let webExtensionManager {
+            loadedWebExtensions = webExtensionManager.loadedWebExtensionsString()
+            adBlockingScriptletsVersion = webExtensionManager.adBlockingScriptletsVersion()
         }
 
         return PrivacyDashboardViewController.BreakageAdditionalInfo(currentURL: currentURL,
@@ -1501,7 +1580,9 @@ class TabViewController: UIViewController {
                                                                      breakageReportingSubfeature: breakageReportingSubfeature,
                                                                      isForceDarkModeEnabled: darkReaderFeatureSettings.isForceDarkModeEnabled,
                                                                      autoplayBlockingMode: featureFlagger.isFeatureOn(.autoplayBlocking) ? autoplaySettings.currentAutoplayBlockingMode.rawValue : nil,
-                                                                     isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL))
+                                                                     isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL),
+                                                                     loadedWebExtensions: loadedWebExtensions,
+                                                                     adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion)
     }
 
     public func print() {
@@ -1625,6 +1706,8 @@ extension TabViewController: WKNavigationDelegate {
             viewModel.captureWebviewDidCommit(finalURL)
             instrumentation.willLoad(url: url)
         }
+
+        addressBarURLFilter.commitNavigation(for: webView.url)
 
         url = webView.url
         let tld = storageCache.tld
@@ -1785,6 +1868,7 @@ extension TabViewController: WKNavigationDelegate {
         adClickAttributionLogic.onDidFinishNavigation(host: webView.url?.host)
         hideProgressIndicator()
         onWebpageDidFinishLoading()
+        adBlockingNavigationHandler.handleURLChange(previousURL: nil, newURL: webView.url)
         extractDaxEasterEggLogoIfDuckDuckGoSearch(webView)
         instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
@@ -1801,8 +1885,7 @@ extension TabViewController: WKNavigationDelegate {
 
         if webView.url?.isDuckDuckGoSearch == true, case .connected = netPConnectionStatus {
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnabledOnSearch,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                         includedParameters: [.appVersion, .atb])
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
         }
 
         // Notify Special Error Page Navigation handler that webview successfully finished loading
@@ -1874,7 +1957,7 @@ extension TabViewController: WKNavigationDelegate {
         daxDialogsDebouncer.debounce(for: 0.8) { [weak self] in
             self?.showDaxDialogOrStartTrackerNetworksAnimationIfNeeded()
         }
-        
+
         // DuckPlayer finish loading actions
         duckPlayerNavigationHandler.handleDidFinishLoading(webView: webView)
 
@@ -2158,11 +2241,14 @@ extension TabViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didReceiveServerRedirectForProvisionalNavigation navigation: WKNavigation!) {
         guard let url = webView.url else { return }
-        self.url = url
-        
+
         self.privacyInfo = makePrivacyInfo(url: url)
         onPrivacyInfoChanged()
-        
+
+        if shouldUpdateAddressBar(for: url) {
+            self.url = url
+        }
+
         checkLoginDetectionAfterNavigation()
     }
     
@@ -2347,6 +2433,10 @@ extension TabViewController: WKNavigationDelegate {
     private func decidePolicyFor(navigationAction: WKNavigationAction, completion: @escaping (WKNavigationActionPolicy) -> Void) {
         let allowPolicy = determineAllowPolicy()
 
+        if navigationAction.navigationType == .linkActivated {
+            delegate?.tabDidEngageWithPage(self)
+        }
+
         let tld = storageCache.tld
         
         // If WKNavigationAction requests to shouldPerformDownload prepare for handling it in decidePolicyFor:navigationResponse:
@@ -2490,8 +2580,12 @@ extension TabViewController: WKNavigationDelegate {
     private func upgradeToHttps(url: URL,
                                 allowPolicy: WKNavigationActionPolicy,
                                 completion: @escaping (WKNavigationActionPolicy) -> Void) {
-        Task {
+        httpsUpgradeTask = Task {
             let result = await PrivacyFeatures.httpsUpgrade.upgrade(url: url)
+            guard !Task.isCancelled else {
+                completion(.cancel)
+                return
+            }
             switch result {
             case let .success(upgradedUrl):
                 if lastUpgradedURL != upgradedUrl {
@@ -3145,6 +3239,11 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.webView = webView
         
         userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.tabModel.fireTab ?? false }
+        userScripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = { [weak self] in
+            guard let self else { return .notFireMode }
+            return .resolve(isFireMode: self.tabModel.fireTab,
+                            handler: self.duckAiFireModeStorageHandler)
+        }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()
 

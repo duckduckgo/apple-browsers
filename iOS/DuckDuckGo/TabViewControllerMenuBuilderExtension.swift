@@ -190,14 +190,27 @@ extension TabViewController {
     }
     
     private func buildNewTabEntry() -> BrowsingMenuEntry {
-        .regular(name: UserText.actionNewTab,
-                 accessibilityLabel: UserText.keyCommandNewTab,
-                 image: DesignSystemImages.Glyphs.Size24.add,
-                 action: { [weak self] in
+        return tabModel.fireTab ? buildNewFireTabEntry() : buildNewNormalTabEntry()
+    }
+    
+    private func buildNewNormalTabEntry() -> BrowsingMenuEntry {
+        return .regular(name: UserText.actionNewTab,
+                        accessibilityLabel: UserText.keyCommandNewTab,
+                        image: DesignSystemImages.Glyphs.Size24.add,
+                        action: { [weak self] in
             self?.onNewTabAction()
         })
     }
     
+    private func buildNewFireTabEntry() -> BrowsingMenuEntry {
+        return .regular(name: UserText.actionNewFireTab,
+                        accessibilityLabel: UserText.actionNewFireTab,
+                        image: DesignSystemImages.Glyphs.Size24.add,
+                        action: { [weak self] in
+            self?.onNewFireTabAction()
+        })
+    }
+
     private func buildDownloadsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionDownloads,
                  image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
@@ -326,6 +339,7 @@ extension TabViewController {
 
     private func buildKeepSignInEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
         guard let domain = link.url.host, !link.url.isDuckDuckGo else { return nil }
+        guard !tabModel.fireTab else { return nil }
         let isFireproofed = fireproofing.isAllowed(cookieDomain: domain)
         
         if isFireproofed {
@@ -372,11 +386,16 @@ extension TabViewController {
     }
 
     private func onNewTabAction() {
-        Pixel.fire(pixel: .browsingMenuNewTab)
+        Pixel.fire(pixel: .browsingMenuNewTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: BrowsingMode.normal.pixelParamValue
+        ])
         delegate?.tabDidRequestNewTab(self)
     }
-    
+
     private func onNewFireTabAction() {
+        Pixel.fire(pixel: .browsingMenuNewTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: BrowsingMode.fire.pixelParamValue
+        ])
         delegate?.tabDidRequestNewTab(self)
     }
 
@@ -968,7 +987,6 @@ extension TabViewController: BrowsingMenuEntryBuilding {
                         detailBadge: UserText.fireModeMenuPromotionBadge) { [weak self] in
             self?.fireModePromotionCoordinator?.markMenuPromotionEngaged()
             guard let self else { return }
-            // TODO: fire menu promotion engaged pixel
             self.delegate?.tabDidRequestFireMode(tab: self)
         }
     }

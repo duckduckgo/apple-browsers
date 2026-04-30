@@ -172,7 +172,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
         mockIconFetcher = MockNotificationIconFetcher()
         mockPermissionModel = MockWebNotificationPermissionModel()
         mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enableFeatures([.webNotifications, .newPermissionView])
+        mockFeatureFlagger.enableFeatures([.webNotifications])
         handler = WebNotificationsHandler(
             tabUUID: testTabUUID,
             notificationService: mockNotificationService,

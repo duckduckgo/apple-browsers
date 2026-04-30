@@ -55,6 +55,9 @@ struct FireRequest {
     enum Scope {
         case tab(viewModel: TabViewModel)
         case fireMode
+        // Burns only normal-mode tabs/data, leaving fire-mode tabs/data untouched.
+        // This differs from `.all`, which burns both fire-mode and normal-mode tabs/data together.
+        // Note: this case is not currently invoked in production code paths.
         case normalMode
         case all
     }
@@ -89,7 +92,7 @@ protocol FireExecuting {
 
 class FireExecutor: FireExecuting {
     
-    typealias HistoryCleanerProvider = (WKWebsiteDataStore?) -> HistoryCleaning
+    typealias HistoryCleanerProvider = (WKWebsiteDataStore?, _ isFireMode: Bool) -> HistoryCleaning
     
     // MARK: - Variables
     private let fireWorkers: [FireExecutorWorker]
@@ -99,12 +102,14 @@ class FireExecutor: FireExecuting {
     private let historyManager: HistoryManaging
     private let featureFlagger: FeatureFlagger
     private let fireModeCapability: FireModeCapable
+    private let dataClearingCapability: DataClearingCapable
     private let appSettings: AppSettings
     private let aiChatSyncCleaner: AIChatSyncCleaning
     let pixelsReporter: DataClearingPixelsReporter
     private let dataClearingWideEventService: DataClearingWideEventService?
     private let aiChatDeleter: AIChatDeleting
     private let idManager: DataStoreIDManaging
+    private let fireModeStorageController: FireModeNativeStorageController?
 
     weak var delegate: FireExecutorDelegate?
     private var burnInProgress = false
@@ -132,6 +137,8 @@ class FireExecutor: FireExecuting {
          appSettings: AppSettings,
          privacyStats: PrivacyStatsProviding? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         fireModeStorageController: FireModeNativeStorageController? = nil,
          pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter(),
          wideEvent: WideEventManaging? = nil,
          idManager: DataStoreIDManaging = DataStoreIDManager.shared) {
@@ -142,12 +149,21 @@ class FireExecutor: FireExecuting {
         self.featureFlagger = featureFlagger
         self.idManager = idManager
         self.fireModeCapability = FireModeCapability.create()
+        self.dataClearingCapability = DataClearingCapability.create(using: featureFlagger)
         self.historyCleanerProvider = historyCleanerProvider ??
-        { dataStore in return HistoryCleaner(featureFlagger: featureFlagger,
-                                             privacyConfig: privacyConfigurationManager,
-                                             websiteDataStore: dataStore)}
+        { dataStore, isFireMode in
+            let nativeHandler: DuckAiNativeStorageHandling? = isFireMode
+                ? fireModeStorageController
+                : duckAiNativeStorageHandler
+            return HistoryCleaner(featureFlagger: featureFlagger,
+                                  privacyConfig: privacyConfigurationManager,
+                                  websiteDataStore: dataStore,
+                                  nativeStorageHandler: nativeHandler,
+                                  featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+        }
         self.appSettings = appSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
+        self.fireModeStorageController = fireModeStorageController
         self.pixelsReporter = pixelsReporter
         self.dataClearingWideEventService = wideEvent.map { DataClearingWideEventService(wideEvent: $0) }
         let aiChatDeleter = AIChatDeleter(historyCleanerProvider: self.historyCleanerProvider,
@@ -238,6 +254,12 @@ class FireExecutor: FireExecuting {
         
         // Await async tasks
         _ = await (dataTask, aiTask)
+
+        // Realign the fire-mode native store after WebsiteDataFireWorker has rotated
+        // currentFireModeID. No-op for non-data burns (ID hasn't changed).
+        if shouldBurnData {
+            fireModeStorageController?.syncWithCurrentFireModeID()
+        }
 
         // Notify delegate that we finished
         await didFinishBurning(fireRequest: request)
@@ -349,8 +371,11 @@ class FireExecutor: FireExecuting {
             // Pass false to clearTabHistory to preserve tab history while burning
             // As tab history is needed by other processes running in parallel
             // didFinishBurning(fireRequest:) manually clears data after burn is complete
-            // Close the tab and append a new empty tab, reusing existing one if exists
-            tabManager.closeTabAndNavigateToHomepage(viewModel.tab, clearTabHistory: false)
+            if dataClearingCapability.isFireButtonRefinementsEnabled && viewModel.tab.isAITab {
+                tabManager.closeTabAndOpenNewChat(viewModel.tab, clearTabHistory: false)
+            } else {
+                tabManager.closeTabAndNavigateToHomepage(viewModel.tab, clearTabHistory: false)
+            }
 
             dataClearingWideEventService?.start(.clearFaviconCache)
             let faviconResult = favicons.removeTabFavicons(forDomains: domains)
@@ -392,9 +417,10 @@ class FireExecutor: FireExecuting {
         switch scope {
         case .tab:
             return TimedPixel(.singleTabDataCleared)
-        case .fireMode, .normalMode:
-            // TODO: - return new pixel
-            return nil
+        case .fireMode:
+            return TimedPixel(.fireModeDataCleared)
+        case .normalMode:
+            return TimedPixel(.normalModeDataCleared)
         case .all:
             return TimedPixel(.forgetAllDataCleared)
         }
@@ -408,7 +434,8 @@ class FireExecutor: FireExecuting {
             let tabType = viewModel.tab.isAITab ? "ai" : "web"
             return [
                 PixelParameters.tabType: tabType,
-                PixelParameters.domainsCount: "\(domains?.count ?? 0)"
+                PixelParameters.domainsCount: "\(domains?.count ?? 0)",
+                PixelParameters.browsingMode: viewModel.tab.pixelParamValue
             ]
         case .fireMode:
             tabsModel = self.tabManager.tabsModel(for: .fire)
@@ -474,7 +501,7 @@ class FireExecutor: FireExecuting {
 
     @MainActor
     private func burnNormalModeAIHistory(trigger: FireRequest.Trigger) async -> Result<Void, Error> {
-        let cleaner = historyCleanerProvider(nil)
+        let cleaner = historyCleanerProvider(nil, false)
         let result = await cleaner.cleanAIChatHistory()
         switch result {
         case .success:
@@ -501,7 +528,7 @@ class FireExecutor: FireExecuting {
         }
 
         let fireDataStore = WKWebsiteDataStore(forIdentifier: idManager.currentFireModeID)
-        let cleaner = historyCleanerProvider(fireDataStore)
+        let cleaner = historyCleanerProvider(fireDataStore, true)
         let result = await cleaner.cleanAIChatHistory()
         switch result {
         case .success:

@@ -99,7 +99,7 @@ class SettingsHostingController: UIHostingController<AnyView> {
             sourceRect: sourceRect,
             tabViewModel: nil,
             pixelSource: .settings,
-            daxDialogsManager: viewProvider.daxDialogsManager,
+            fireContext: .default(daxDialogsManager: viewProvider.daxDialogsManager),
             browsingMode: .normal, // Fire button in settings should always burn everything, so we pass .normal regardless of the current mode.
             onConfirm: onConfirm,
             onCancel: onCancel

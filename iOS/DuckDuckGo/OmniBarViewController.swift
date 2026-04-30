@@ -60,7 +60,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     // MARK: - State
     private(set) lazy var state: OmniBarState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
 
-    var isPhoneLandscape: Bool = false
+    var isExpandedPhone: Bool = false
 
     internal var textFieldTapped = true
     internal var textEntryMode: TextEntryMode?
@@ -224,11 +224,17 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onMenuButtonPressed = { [weak self] in
             self?.onMenuButtonPressed()
         }
+        barView.onMenuButtonLongPressed = { [weak self] in
+            self?.omniDelegate?.onMenuLongPressed()
+        }
         barView.onTrackersViewPressed = { [weak self] in
             self?.onTrackersViewPressed()
         }
         barView.onSettingsButtonPressed = { [weak self] in
             self?.onSettingsButtonPressed()
+        }
+        barView.onSettingsButtonLongPressed = { [weak self] in
+            self?.omniDelegate?.onMenuLongPressed()
         }
         barView.onCancelPressed = { [weak self] in
             self?.onCancelPressed()
@@ -318,11 +324,8 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     func startLoading() {
-        // Cancel any pending animations when page starts loading
         cancelAllAnimations()
 
-        // Cancel any pending notification processing work item to prevent timer leak
-        // This is critical when navigating rapidly between pages
         pendingNotificationWorkItem?.cancel()
         pendingNotificationWorkItem = nil
 
@@ -391,6 +394,14 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.refreshFireMode(fireMode: fireMode)
     }
 
+    func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int) {
+        self.isExpandedPhone = isExpandedPhone
+        barView.configureForSwipeTemplate(
+            mode: isExpandedPhone ? .expandedPhone : .compact,
+            tabCount: tabCount
+        )
+    }
+
     func enterPhoneState() {
         refreshState(state.onEnterPhoneState)
     }
@@ -414,6 +425,15 @@ class OmniBarViewController: UIViewController, OmniBar {
         enqueueAnimationIfNeeded(priority: .low) { [weak self] in
             guard let self else { return }
             self.notificationAnimator.showNotification(type, in: barView, viewController: self) { [weak self] in
+                self?.completeCurrentAnimation()
+            }
+        }
+    }
+
+    func showYouTubeAdBlockNotification() {
+        enqueueAnimationIfNeeded(priority: .low) { [weak self] in
+            guard let self else { return }
+            self.notificationAnimator.showNotification(.youTubeAdBlockOn, in: barView, viewController: self) { [weak self] in
                 self?.completeCurrentAnimation()
             }
         }
@@ -693,24 +713,24 @@ class OmniBarViewController: UIViewController, OmniBar {
 
         barView.isPrivacyInfoContainerHidden = !state.showPrivacyIcon
         barView.isClearButtonHidden = !state.showClear
-        barView.isMenuButtonHidden = !state.showMenu
+        barView.isMenuButtonHidden = isExpandedPhone ? false : !state.showMenu
         barView.isSettingsButtonHidden = !state.showSettings
         barView.isCancelButtonHidden = !state.showCancel
-        barView.isRefreshButtonHidden = !state.showRefresh || state.showRefreshOutsideAddressBar
+        barView.isRefreshButtonHidden = !state.showRefresh || (state.showRefreshOutsideAddressBar && !isExpandedPhone)
         barView.isCustomizableButtonHidden = !state.showCustomizableButton
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
-        barView.isBackButtonHidden = isPhoneLandscape ? !state.isBrowsing : !state.showBackButton
-        barView.isForwardButtonHidden = isPhoneLandscape ? !state.isBrowsing : !state.showForwardButton
-        let bookmarksHidden = isPhoneLandscape ? state.isBrowsing : !state.showBookmarksButton
-        barView.setBookmarksPosition(leading: isPhoneLandscape, hidden: bookmarksHidden)
-        barView.isPasswordsButtonHidden = isPhoneLandscape ? state.isBrowsing : true
+        barView.isBackButtonHidden = isExpandedPhone ? !state.isBrowsing : !state.showBackButton
+        barView.isForwardButtonHidden = isExpandedPhone ? !state.isBrowsing : !state.showForwardButton
+        let bookmarksHidden = isExpandedPhone ? state.isBrowsing : !state.showBookmarksButton
+        barView.setBookmarksPosition(leading: isExpandedPhone, hidden: bookmarksHidden)
+        barView.isPasswordsButtonHidden = isExpandedPhone ? state.isBrowsing : true
         barView.isAIChatButtonHidden = !state.showAIChatButton
-        barView.isFireButtonHidden = !isPhoneLandscape
-        barView.isTabSwitcherButtonHidden = !isPhoneLandscape
+        barView.isFireButtonHidden = !isExpandedPhone
+        barView.isTabSwitcherButtonHidden = !isExpandedPhone
 
         if let expandable = expandableBarView {
-            expandable.isExternalRefreshButtonHidden = isPhoneLandscape || !state.showRefreshOutsideAddressBar
+            expandable.isExternalRefreshButtonHidden = isExpandedPhone || !state.showRefreshOutsideAddressBar
             expandable.externalRefreshButtonView.isEnabled = state.isBrowsing
             expandable.selectedModeToggleState = selectedTextEntryMode
 
@@ -793,7 +813,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     @objc private func textDidChange() {
-        let newQuery = textField.text ?? ""
+        let newQuery = (textField.text ?? "").strippingDictationPlaceholder
         omniDelegate?.onOmniQueryUpdated(newQuery)
         if newQuery.isEmpty {
             refreshState(state.onTextClearedState)

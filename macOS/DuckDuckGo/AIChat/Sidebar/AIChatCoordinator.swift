@@ -431,18 +431,18 @@ final class AIChatCoordinator: AIChatCoordinating {
     private func windowController(for tabID: TabIdentifier) -> MainWindowController? {
         windowControllersManager.mainWindowControllers.first { controller in
             let tabCollectionViewModel = controller.mainViewController.tabCollectionViewModel
-            let hasRegularTab = tabCollectionViewModel.tabViewModels.keys.contains { $0.uuid == tabID }
-            let hasPinnedTab = tabCollectionViewModel.pinnedTabsManager?.tabViewModels.keys.contains { $0.uuid == tabID } ?? false
+            let hasRegularTab = tabCollectionViewModel.tabViewModels.keys.contains(tabID)
+            let hasPinnedTab = tabCollectionViewModel.pinnedTabsManager?.tabViewModels.keys.contains(tabID) ?? false
             return hasRegularTab || hasPinnedTab
         }
     }
 
     private func tabViewModel(for tabID: TabIdentifier) -> TabViewModel? {
         for tabCollectionViewModel in windowControllersManager.allTabCollectionViewModels {
-            if let regularTabViewModel = tabCollectionViewModel.tabViewModels.first(where: { $0.key.uuid == tabID })?.value {
+            if let regularTabViewModel = tabCollectionViewModel.tabViewModels[tabID] as? TabViewModel {
                 return regularTabViewModel
             }
-            if let pinnedTabViewModel = tabCollectionViewModel.pinnedTabsManager?.tabViewModels.first(where: { $0.key.uuid == tabID })?.value {
+            if let pinnedTabViewModel = tabCollectionViewModel.pinnedTabsManager?.tabViewModels[tabID] as? TabViewModel {
                 return pinnedTabViewModel
             }
         }
@@ -748,8 +748,8 @@ extension AIChatCoordinator: AIChatSidebarResizeDelegate {
         )
         let currentTabIDsFromViewModels = Set(
             windowControllersManager.allTabCollectionViewModels.flatMap { tabCollectionViewModel in
-                let unpinnedTabIDs = tabCollectionViewModel.tabViewModels.keys.map(\.uuid)
-                let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabViewModels.keys.map(\.uuid) ?? []
+                let unpinnedTabIDs = Array(tabCollectionViewModel.tabViewModels.keys)
+                let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager.map { Array($0.tabViewModels.keys) } ?? []
                 return unpinnedTabIDs + pinnedTabIDs
             }
         )

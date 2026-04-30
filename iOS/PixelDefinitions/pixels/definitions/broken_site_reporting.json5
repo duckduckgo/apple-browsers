@@ -28,6 +28,7 @@
                     "login",
                     "other",
                     "paywall",
+                    "popups-not-opening",
                     "shopping",
                     "videos"
                 ]
@@ -225,7 +226,6 @@
                 "description": "Whether the site was loaded in desktop or mobile mode",
                 "enum": ["desktop", "mobile"]
             },
-            "atb",
             {
                 "key": "model",
                 "type": "string",
@@ -340,6 +340,16 @@
                 "key": "extendedPerformance.totalResourcesSizeBucket",
                 "type": "string",
                 "description": "Total resources size bucket"
+            },
+            {
+                "key": "loadedWebExtensions",
+                "type": "string",
+                "description": "Comma-separated short labels of currently installed web extensions (e.g. embedded,darkMode,adBlocking)"
+            },
+            {
+                "key": "adBlockingExtensionScriptletsVersion",
+                "type": "string",
+                "description": "Cached scriptlets version for the ad-blocking web extension"
             }
         ]
     },
@@ -539,7 +549,6 @@
                 "description": "Whether the site was loaded in desktop or mobile mode",
                 "enum": ["desktop", "mobile"]
             },
-            "atb",
             {
                 "key": "model",
                 "type": "string",
@@ -654,6 +663,16 @@
                 "key": "extendedPerformance.totalResourcesSizeBucket",
                 "type": "string",
                 "description": "Total resources size bucket"
+            },
+            {
+                "key": "loadedWebExtensions",
+                "type": "string",
+                "description": "Comma-separated short labels of currently installed web extensions (e.g. embedded,darkMode,adBlocking)"
+            },
+            {
+                "key": "adBlockingExtensionScriptletsVersion",
+                "type": "string",
+                "description": "Cached scriptlets version for the ad-blocking web extension"
             }
         ]
     }

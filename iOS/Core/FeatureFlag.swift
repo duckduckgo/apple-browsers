@@ -109,11 +109,11 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430659
     case dbpForegroundRunningWhenDashboardOpen
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397941080401
-    case dbpClickActionDelayReductionOptimization
-
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213433655862033?focus=true
     case dbpContinuedProcessing
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214085808544002
+    case dbpFreemiumPIR
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
@@ -215,6 +215,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866713701189
     case vpnMenuItem
 
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1213962493484138?focus=true
+    case vpnConnectionFailureLoopDetection
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
     case forgetAllInSettings
 
@@ -233,6 +236,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
     case onboardingSearchExperience
+
+    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1213320237636425?focus=true
+    case onboardingDuckAIQueryExperiment
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472842661
     case storeSerpSettings
@@ -298,10 +304,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
     case unifiedToggleInput
 
-    /// Whether the wide event POST endpoint is enabled
-    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
-    case wideEventPostEndpoint
-
     /// Failsafe flag for whether the free trial conversion wide event is enabled
     case freeTrialConversionWideEvent
 
@@ -338,12 +340,11 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213278892205657?focus=true
     case forceDarkModeOnWebsites
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214001986307605?focus=true
+    case autofillOnboardingDismissExperiment
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725495563625
     case adBlockingExtension
-
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208707884599795?focus=true
-    case autofillOnboardingExperiment
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692854?focus=true
     case supportsSyncChatsDeletion
@@ -351,11 +352,11 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/task/1213314048601761
     case fireMode
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
+    case fireButtonRefinements
+
     /// https://app.asana.com/1/137249556945/project/1202500774821704/task/1212559012504218
     case autoplayBlocking
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213554455515126?focus=true
-    case customXSafariRedirectHandling
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213617478454569?focus=true
     case simplifiedSyncSetupExperiment
@@ -379,21 +380,35 @@ public enum FeatureFlag: String {
     case minimalChromeInLandscape
 
     case aiChatNativeStorage
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
+    case aiChatNativeDataAccess
+
+    /// Failsafe feature flag. Filters intermediate redirect URLs from the address bar.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213972422695959
+    case filterAddressBarUpdates
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
-
     /// Test-only cohort for verifying UI test experiment override mechanism.
     public enum UITestExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
 
-    public enum AutofillOnboardingExperimentCohort: String, FeatureFlagCohortDescribing {
+    public enum AutofillOnboardingDismissExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
-        case variant1
-        case variant2
-        case variant3
+        case variant1  // "Not Now"
+        case variant2  // "Never for this site"
+    }
+
+    public enum DuckAIQueryExperimentCohort: String, FeatureFlagCohortDescribing {
+        /// Control cohort skips the experiment and keeps the existing onboarding flow.
+        case control
+        /// Treatment A shows experiment screen with "Duck.ai" selected by default.
+        case treatmentA
+        /// Treatment B shows experiment screen with "Search" selected by default.
+        case treatmentB
     }
 
     public enum SimplifiedSyncSetupExperimentCohort: String, FeatureFlagCohortDescribing {
@@ -480,10 +495,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningOnAppActive)))
         case .dbpForegroundRunningWhenDashboardOpen:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningWhenDashboardOpen)))
-        case .dbpClickActionDelayReductionOptimization:
-            Config(source: .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization)))
         case .dbpContinuedProcessing:
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.continuedProcessing)))
+        case .dbpFreemiumPIR:
+            Config(source: .remoteReleasable(.subfeature(DBPSubfeature.freemiumPIR)))
         case .crashReportOptInStatusResetting:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.crashReportOptInStatusResetting)), supportsLocalOverriding: false)
         case .syncSeamlessAccountSwitching:
@@ -548,6 +563,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.unifiedURLPredictor)))
         case .vpnMenuItem:
             Config(source: .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem)))
+        case .vpnConnectionFailureLoopDetection:
+            Config(source: .remoteReleasable(.subfeature(NetworkProtectionSubfeature.connectionFailureLoopDetection)))
         case .forgetAllInSettings:
             Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings)))
         case .fullDuckAIMode:
@@ -560,6 +577,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AttributedMetricsSubfeature.featureEnabled)))
         case .onboardingSearchExperience:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.onboardingSearchExperience)))
+        case .onboardingDuckAIQueryExperiment:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.onboardingDuckAIQueryExperiment)),
+                   cohortType: DuckAIQueryExperimentCohort.self)
         case .storeSerpSettings:
             Config(source: .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings)))
         case .showHideAIGeneratedImagesSection:
@@ -599,13 +619,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSuggestions:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DuckAiChatHistorySubfeature.featureEnabled)))
         case .aiChatContextualSheetImprovements:
-            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualSheetImprovements)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualSheetImprovements)))
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand)))
         case .unifiedToggleInput:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.unifiedToggleInput)))
-        case .wideEventPostEndpoint:
-            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.wideEventPostEndpoint)))
         case .freeTrialConversionWideEvent:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent)))
         case .tabSwitcherTrackerCount:
@@ -630,16 +648,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout)))
         case .adBlockingExtension:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.featureEnabled)))
-        case .autofillOnboardingExperiment:
-            Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.onboardingExperiment)), cohortType: AutofillOnboardingExperimentCohort.self)
+        case .autofillOnboardingDismissExperiment:
+            Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.onboardingDismissExperiment)), cohortType: AutofillOnboardingDismissExperimentCohort.self)
         case .supportsSyncChatsDeletion:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion)))
         case .fireMode:
-            Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireMode)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireMode)))
+        case .fireButtonRefinements:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.fireButtonRefinements)))
         case .autoplayBlocking:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.autoplayBlocking)))
-        case .customXSafariRedirectHandling:
-            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.customXSafariRedirectHandling)))
         case .simplifiedSyncSetupExperiment:
             Config(source: .remoteReleasable(.subfeature(SyncSubfeature.simplifiedSyncSetupExperiment)), cohortType: SimplifiedSyncSetupExperimentCohort.self)
         case .aiChatOmnibarDefaultPosition:
@@ -653,9 +671,13 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatContextualFireButton:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualFireButton)))
         case .minimalChromeInLandscape:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.minimalChromeInLandscape)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.minimalChromeInLandscape)))
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeStorage)))
+        case .aiChatNativeDataAccess:
+            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.nativeDataAccess)))
+        case .filterAddressBarUpdates:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.filterAddressBarUpdates)))
         }
     }
 

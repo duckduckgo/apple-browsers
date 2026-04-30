@@ -60,6 +60,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let serpSettingsUserScript: SERPSettingsUserScript?
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let faviconScript = FaviconUserScript()
+    let webTelemetryScript = WebTelemetryUserScript()
+    let tabSuspensionScript = TabSuspensionUserScript()
 
     private let contentScopePreferences: ContentScopePreferences
 
@@ -73,8 +75,14 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         clickToLoadScript = ClickToLoadUserScript()
         contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
+        let isNativeStorageBridgeAvailable = sourceProvider.featureFlagger.isFeatureOn(.aiChatNativeStorage) && duckAiNativeStorageHandler != nil
+        let aiChatMessageHandler = AIChatMessageHandler(
+            featureFlagger: sourceProvider.featureFlagger,
+            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable
+        )
         let aiChatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
+            messageHandling: aiChatMessageHandler,
             windowControllersManager: sourceProvider.windowControllersManager,
             pixelFiring: PixelKit.shared,
             statisticsLoader: StatisticsLoader.shared,
@@ -94,7 +102,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         )
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
 
-        if sourceProvider.featureFlagger.isFeatureOn(.aiChatNativeStorage),
+        if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
             var originRules: [HostnameMatchingRule] = [
                 .exactOrSubdomain(hostname: "duck.ai"),
@@ -104,7 +112,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             }
             duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
                 handler: duckAiNativeStorageHandler,
-                originRules: originRules
+                originRules: originRules,
+                pixelFiring: DuckAiNativeStoragePixelAdapter()
             )
         } else {
             duckAiNativeStorageUserScript = nil
@@ -187,7 +196,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             userScripts.append(autoconsentUserScript)
         }
 
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: tabSuspensionScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)

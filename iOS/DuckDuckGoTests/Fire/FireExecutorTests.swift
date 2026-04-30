@@ -92,6 +92,7 @@ final class FireExecutorTests: XCTestCase {
         private(set) var deleteAIChatCalls: [String] = []
 
         var lastWebsiteDataStore: WKWebsiteDataStore?
+        var lastIsFireMode: Bool?
 
         func cleanAIChatHistory() async -> Result<Void, Error> {
             cleanAIChatHistoryCallCount += 1
@@ -199,8 +200,9 @@ final class FireExecutorTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             dataStore: MockWebsiteDataStore(),
-            historyCleanerProvider: { dataStore in
+            historyCleanerProvider: { dataStore, isFireMode in
                 self.mockHistoryCleaner.lastWebsiteDataStore = dataStore
+                self.mockHistoryCleaner.lastIsFireMode = isFireMode
                 return self.mockHistoryCleaner
             },
             appSettings: mockAppSettings,
@@ -366,7 +368,37 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageCalledWith, tabViewModel.tab)
         XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageClearTabHistory, false)
     }
-    
+
+    func testWhenRefinementsEnabledAndAITabBurnedThenOpensNewChat() async {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireButtonRefinements)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+        let tabViewModel = makeAITabViewModel(chatID: "chat-to-burn")
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        // Then - AI tab is closed and a new chat is opened instead of homepage
+        XCTAssertTrue(mockTabManager.closeTabAndOpenNewChatCalled)
+        XCTAssertEqual(mockTabManager.closeTabAndOpenNewChatCalledWith, tabViewModel.tab)
+        XCTAssertFalse(mockTabManager.closeTabAndNavigateToHomepageCalled)
+    }
+
+    func testWhenRefinementsDisabledAndAITabBurnedThenNavigatesToHomepage() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeAITabViewModel(chatID: "chat-to-burn")
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        // Then - Without refinements, AI tab still navigates to homepage
+        XCTAssertTrue(mockTabManager.closeTabAndNavigateToHomepageCalled)
+        XCTAssertFalse(mockTabManager.closeTabAndOpenNewChatCalled)
+    }
+
     func testBurnTabsWithTabScopeCleansUpTabHistoryAfterBurnCompletes() async {
         // Given
         let executor = makeFireExecutor()
@@ -768,6 +800,7 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(mockDelegate.didFinishBurningAIHistoryCalled)
         XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 1)
         XCTAssertNotNil(mockHistoryCleaner.lastWebsiteDataStore, "Fire mode should use a non-default data store")
+        XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, true, "Fire mode burn should request the fire-mode native storage handler")
         XCTAssertTrue(mockAIChatSyncCleaner.recordLocalClearDates.isEmpty, "Fire mode burns should not record sync")
     }
 
@@ -823,5 +856,31 @@ final class FireExecutorTests: XCTestCase {
 
         XCTAssertEqual(mockHistoryCleaner.deleteAIChatCalls, [chatID])
         XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty, "Fire tab single chat deletion should not record sync")
+    }
+
+    func testWhenBurningSingleFireTabAIHistory_ThenCleanerRequestsFireModeHandler() async {
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel(chatID: "fire-chat-456", fireTab: true)
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, true, "Single fire-tab burn must route through fire-mode native storage, not normal storage")
+    }
+
+    func testWhenBurningSingleNormalTabAIHistory_ThenCleanerRequestsNormalHandler() async {
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel(chatID: "normal-chat-789", fireTab: false)
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, false, "Single normal-tab burn must route through normal native storage")
+    }
+
+    func testWhenBurningAIHistoryWithNormalModeScope_ThenCleanerRequestsNormalHandler() async {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .normalMode), applicationState: .unknown)
+
+        XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, false, "Normal-mode burn must route through normal native storage")
     }
 }

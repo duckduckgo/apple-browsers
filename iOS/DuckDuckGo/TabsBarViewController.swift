@@ -34,6 +34,8 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireRequest: FireRequest)
     func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController)
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController)
+    func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController)
+    func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController)
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void)
 
 }
@@ -47,6 +49,12 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         static let minItemWidth: CGFloat = 68
         static let buttonSize: CGFloat = 40
         static let stackSpacing: CGFloat = 12
+    }
+    
+    enum NewTabType {
+        case normal
+        case fire
+        case currentMode
     }
     
     @IBOutlet weak var collectionView: UICollectionView!
@@ -68,10 +76,15 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     var aiChatSettings: AIChatSettingsProvider?
     var keyValueStore: ThrowingKeyValueStoring?
     var daxDialogsManager: DaxDialogsManaging?
-    var fireModeCapability: FireModeCapable?
+    var fireModeCapability: FireModeCapable? {
+        didSet {
+            configureTabSwitcherLongPressMenu()
+            configureAddTabButtonLongPressMenu()
+        }
+    }
     private weak var tabsModel: TabsModelManaging?
 
-    private lazy var tabSwitcherButton: TabSwitcherButton = TabSwitcherStaticButton()
+    private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
 
     private let longPressTabGesture = UILongPressGestureRecognizer()
     
@@ -155,7 +168,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
                 attachPopoverTo: fireButton,
                 tabViewModel: tabManager.viewModelForCurrentTab(),
                 pixelSource: .browsing,
-                daxDialogsManager: daxDialogsManager,
+                fireContext: .default(daxDialogsManager: daxDialogsManager),
                 browsingMode: tabManager.currentBrowsingMode,
                 onConfirm: { [weak self] fireRequest in
                     guard let self = self else { return }
@@ -172,7 +185,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     @IBAction func onNewTabPressed() {
-        requestNewTab()
+        requestNewTab(type: .currentMode)
     }
 
     func refresh(tabsModel: TabsModelManaging?, scrollToSelected: Bool = false) {
@@ -279,13 +292,58 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         tabSwitcherButton.pointer?.frame.size.width = 34
     }
     
-    private func requestNewTab() {
-        delegate?.tabsBarDidRequestNewTab(self)
+    private func requestNewTab(type: NewTabType) {
+        switch type {
+        case .normal:
+            delegate?.tabsBarDidRequestNewNormalTab(self)
+        case .fire:
+            delegate?.tabsBarDidRequestNewFireTab(self)
+        case .currentMode:
+            delegate?.tabsBarDidRequestNewTab(self)
+        }
         DispatchQueue.main.async {
             if let currentIndex = self.currentIndex {
                 self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: .right, animated: true)
             }
         }
+    }
+
+    private func configureTabSwitcherLongPressMenu() {
+        tabSwitcherButton.showMenuOnLongPress = fireModeCapability?.isFireModeEnabled ?? false
+    }
+
+    private func configureAddTabButtonLongPressMenu() {
+        guard fireModeCapability?.isFireModeEnabled ?? false else {
+            addTabButton.menu = nil
+            return
+        }
+
+        let menu = UIMenu(children: [
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                Pixel.fire(pixel: .tabLongPressMenuDisplayed, withAdditionalParameters: [
+                    PixelParameters.source: "tabs_bar"
+                ])
+                completion([
+                    UIAction(title: UserText.actionNewFireTab,
+                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
+                                 Pixel.fire(pixel: .tabLongPressMenuNewFireTab, withAdditionalParameters: [
+                                     PixelParameters.source: "tabs_bar"
+                                 ])
+                                 self?.requestNewTab(type: .fire)
+                             },
+                    UIAction(title: UserText.actionNewTab,
+                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
+                                 Pixel.fire(pixel: .tabLongPressMenuNewNormalTab, withAdditionalParameters: [
+                                     PixelParameters.source: "tabs_bar"
+                                 ])
+                                 self?.requestNewTab(type: .normal)
+                             }
+                ])
+            }
+        ])
+
+        addTabButton.menu = menu
+        addTabButton.showsMenuAsPrimaryAction = false
     }
 
     private func createButton(image: UIImage) -> UIButton {
@@ -306,10 +364,17 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
         delegate?.tabsBarDidRequestTabSwitcher(self)
     }
     
-    func launchNewTab(_ button: TabSwitcherButton) {
-        requestNewTab()
+    func launchNewTabWithCurrentMode(_ button: any TabSwitcherButton) {
+        requestNewTab(type: .currentMode)
     }
-        
+    
+    func launchNewNormalTab(_ button: TabSwitcherButton) {
+        requestNewTab(type: .normal)
+    }
+
+    func launchNewFireTab(_ button: TabSwitcherButton) {
+        requestNewTab(type: .fire)
+    }
 }
 
 extension TabsBarViewController: UICollectionViewDelegate {
@@ -430,6 +495,16 @@ extension MainViewController: TabsBarDelegate {
         dismissContextualSheetIfNeeded {
             self.showTabSwitcher()
         }
+    }
+
+    func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController) {
+        tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
+        newTab()
+    }
+
+    func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController) {
+        tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
+        newTab()
     }
 
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void) {

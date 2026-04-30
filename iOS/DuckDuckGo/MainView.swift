@@ -64,7 +64,8 @@ class MainViewFactory {
                                     appSettings: AppSettings,
                                     daxEasterEggLogoStore: DaxEasterEggLogoStoring = DaxEasterEggLogoStore(),
                                     daxEasterEggPresenter: DaxEasterEggPresenting? = nil,
-                                    mobileCustomization: MobileCustomization) -> MainViewCoordinator {
+                                    mobileCustomization: MobileCustomization,
+                                    duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) -> MainViewCoordinator {
 
         let presenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
@@ -75,7 +76,8 @@ class MainViewFactory {
                                                       suggestionTrayDependencies: suggestionTrayDependencies,
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: presenter,
-                                                      mobileCustomization: mobileCustomization)
+                                                      mobileCustomization: mobileCustomization,
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let factory = MainViewFactory(parentController: parentController,
                                       omnibarDependencies: omnibarDependencies,
@@ -444,10 +446,11 @@ extension MainViewFactory {
 
         let toolbar = coordinator.toolbar!
         coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
+        coordinator.constraints.toolbarHeightConstraint = toolbar.constrainAttribute(.height, to: 49)
         NSLayoutConstraint.activate([
             toolbar.constrainView(superview, by: .width, constant: toolbarWidthMod),
             toolbar.constrainView(superview, by: .centerX),
-            toolbar.constrainAttribute(.height, to: 49),
+            coordinator.constraints.toolbarHeightConstraint,
             coordinator.constraints.toolbarBottom,
         ])
     }

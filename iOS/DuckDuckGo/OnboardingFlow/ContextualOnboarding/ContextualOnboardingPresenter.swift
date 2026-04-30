@@ -52,6 +52,7 @@ final class ContextualOnboardingPresenter: ContextualOnboardingPresenting {
 
     func dismissContextualOnboardingIfNeeded(from vc: TabViewOnboardingDelegate) {
         guard let daxContextualOnboarding = vc.daxContextualOnboardingController else { return }
+        vc.lastPresentedContextualOnboardingSpec = nil
         remove(daxController: daxContextualOnboarding, fromParent: vc)
     }
 
@@ -62,6 +63,18 @@ final class ContextualOnboardingPresenter: ContextualOnboardingPresenting {
 private extension ContextualOnboardingPresenter {
 
     func presentExperimentContextualOnboarding(for spec: DaxDialogs.BrowsingSpec, in vc: TabViewOnboardingDelegate) {
+        // Adjust message hand emoji based on address bar position
+        let platformSpecificMessage = spec.message.replacingOccurrences(
+            of: "☝️",
+            with: appSettings.currentAddressBarPosition == .bottom ? "👇" : "☝️"
+        )
+        let platformSpecificSpec = spec.withUpdatedMessage(platformSpecificMessage)
+
+        if let lastPresentedSpec = vc.lastPresentedContextualOnboardingSpec,
+           lastPresentedSpec == platformSpecificSpec,
+           vc.daxContextualOnboardingController != nil {
+            return
+        }
 
         // Before presenting a new dialog, remove any existing ones.
         vc.daxDialogsStackView.arrangedSubviews.filter({ $0 != vc.webViewContainerView }).forEach {
@@ -69,12 +82,6 @@ private extension ContextualOnboardingPresenter {
             $0.removeFromSuperview()
         }
 
-        // Adjust message hand emoji based on address bar position
-        let platformSpecificMessage = spec.message.replacingOccurrences(
-            of: "☝️",
-            with: appSettings.currentAddressBarPosition == .bottom ? "👇" : "☝️"
-        )
-        let platformSpecificSpec = spec.withUpdatedMessage(platformSpecificMessage)
         // Ask the Dax Dialogs Factory for a view for the given spec
         let controller = daxDialogsFactory.makeView(for: platformSpecificSpec, delegate: vc, onSizeUpdate: { [weak vc] in
             if #unavailable(iOS 16.0) {
@@ -87,6 +94,7 @@ private extension ContextualOnboardingPresenter {
 
         vc.insertChild(controller, in: vc.daxDialogsStackView, at: 0)
         vc.daxContextualOnboardingController = controller
+        vc.lastPresentedContextualOnboardingSpec = platformSpecificSpec
 
         animate(daxController: controller, visible: true)
     }
@@ -137,6 +145,7 @@ protocol TabViewControllerType: UIViewController {
     var daxDialogsStackView: UIStackView { get }
     var webViewContainerView: UIView { get }
     var daxContextualOnboardingController: UIViewController? { get set }
+    var lastPresentedContextualOnboardingSpec: DaxDialogs.BrowsingSpec? { get set }
 }
 
 extension TabViewController: TabViewControllerType {

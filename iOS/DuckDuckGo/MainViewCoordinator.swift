@@ -48,6 +48,9 @@ class MainViewCoordinator {
     var aiChatTabChatHeaderContainer: UIView!
     var unifiedToggleInputContainer: UIView!
     var unifiedInputContentContainer: UIView!
+
+    /// Owned so a subsequent show can cancel an in-flight dismiss and skip the stale completion.
+    private var omnibarDismissAnimator: UIViewPropertyAnimator?
     var toolbar: UIToolbar!
     var toolbarSpacer: UIView!
     var toolbarBackButton: UIBarButtonItem { toolbarHandler.backButton }
@@ -95,6 +98,7 @@ class MainViewCoordinator {
         var navigationBarContainerMinHeight: NSLayoutConstraint!
         var navigationBarCollectionViewSafeAreaBottom: NSLayoutConstraint!
         var toolbarBottom: NSLayoutConstraint!
+        var toolbarHeightConstraint: NSLayoutConstraint!
         var contentContainerTop: NSLayoutConstraint!
         var tabBarContainerTop: NSLayoutConstraint!
         var progressBarTop: NSLayoutConstraint?
@@ -204,6 +208,8 @@ class MainViewCoordinator {
 
     @MainActor
     func showUnifiedToggleInputOmnibar(expandedHeight: CGFloat) {
+        omnibarDismissAnimator?.stopAnimation(true)
+        omnibarDismissAnimator = nil
         navigationBarCollectionView.layer.removeAllAnimations()
         unifiedToggleInputContainer.layer.removeAllAnimations()
         navigationBarCollectionView.isUserInteractionEnabled = false
@@ -263,34 +269,48 @@ class MainViewCoordinator {
     // MARK: - Omnibar Editing Layout
 
     @MainActor
-    func hideUnifiedToggleInputOmnibar() {
+    func hideUnifiedToggleInputOmnibar(completion: (() -> Void)? = nil) {
         if addressBarPosition.isBottom {
             setNavBarContainerBottomToToolbar()
         }
 
-        UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut) {
-            self.navigationBarCollectionView.alpha = 1
-            self.unifiedToggleInputContainer.alpha = 0
-            self.constraints.navigationBarContainerHeight.constant = self.standardNavigationBarContainerHeight
-            self.superview.layoutIfNeeded()
-        } completion: { finished in
-            self.endOmnibarStatusBackgroundPresentation()
-            self.navigationBarContainer.backgroundColor = nil
-            self.suggestionTrayContainer.backgroundColor = .clear
-            self.navigationBarCollectionView.isUserInteractionEnabled = true
+        omnibarDismissAnimator?.stopAnimation(true)
 
-            if self.isNavigationChromeHidden {
-                if finished {
-                    self.navigationBarCollectionView.alpha = 0
-                    self.unifiedToggleInputContainer.isHidden = false
-                    self.unifiedToggleInputContainer.alpha = 1
-                }
-            } else {
-                if finished {
-                    self.unifiedToggleInputContainer.isHidden = true
-                    self.unifiedToggleInputContainer.alpha = 1
-                }
-            }
+        let animator = UIViewPropertyAnimator(duration: 0.2, curve: .easeInOut) { [weak self] in
+            self?.animateUnifiedToggleInputOmnibarDismissLayout()
+        }
+        animator.addCompletion { [weak self] position in
+            guard let self else { return }
+            self.omnibarDismissAnimator = nil
+            // Skip cleanup if the animation was superseded — otherwise it stomps fresh state from a concurrent show.
+            guard position == .end else { return }
+            self.finishUnifiedToggleInputOmnibarDismiss()
+            completion?()
+        }
+        omnibarDismissAnimator = animator
+        animator.startAnimation()
+    }
+
+    func animateUnifiedToggleInputOmnibarDismissLayout() {
+        navigationBarCollectionView.alpha = 1
+        unifiedToggleInputContainer.alpha = 0
+        constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
+        superview.layoutIfNeeded()
+    }
+
+    func finishUnifiedToggleInputOmnibarDismiss() {
+        endOmnibarStatusBackgroundPresentation()
+        navigationBarContainer.backgroundColor = nil
+        suggestionTrayContainer.backgroundColor = .clear
+        navigationBarCollectionView.isUserInteractionEnabled = true
+
+        if isNavigationChromeHidden {
+            navigationBarCollectionView.alpha = 0
+            unifiedToggleInputContainer.isHidden = false
+            unifiedToggleInputContainer.alpha = 1
+        } else {
+            unifiedToggleInputContainer.isHidden = true
+            unifiedToggleInputContainer.alpha = 1
         }
     }
 
@@ -477,6 +497,47 @@ class MainViewCoordinator {
             .constraint(equalTo: toolbar.topAnchor)
         constraints.navigationBarContainerBottom.constant = 0
         constraints.navigationBarContainerBottom.isActive = true
+        isNavBarContainerBottomKeyboardBased = false
+    }
+
+    /// Sets up nav bar for minimal chrome with bottom address bar:
+    /// keyboard-based bottom, expandable height, screen-edge bottom limit.
+    func applyMinimalChromeBottomLayout() {
+        // Bottom: keyboard-based
+        constraints.navigationBarContainerBottom.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
+        constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
+            .constraint(equalTo: superview.keyboardLayoutGuide.topAnchor)
+        constraints.navigationBarContainerBottom.priority = .defaultHigh
+        constraints.navigationBarContainerBottom.isActive = true
+        isNavBarContainerBottomKeyboardBased = true
+
+        // Bottom limit: screen edge (extends past safe area for home indicator)
+        let limit = navigationBarContainer.bottomAnchor
+            .constraint(lessThanOrEqualTo: superview.bottomAnchor)
+        limit.isActive = true
+        constraints.navigationBarContainerBottomSafeAreaFloor = limit
+
+        // Height: expandable
+        constraints.navigationBarContainerHeight.isActive = false
+        constraints.navigationBarContainerMinHeight.isActive = true
+        constraints.navigationBarCollectionViewSafeAreaBottom.isActive = true
+    }
+
+    /// Resets nav bar from minimal chrome to default layout.
+    func resetMinimalChromeLayout() {
+        // Height: fixed
+        constraints.navigationBarContainerHeight.isActive = true
+        constraints.navigationBarContainerMinHeight.isActive = false
+        constraints.navigationBarCollectionViewSafeAreaBottom.isActive = false
+
+        // Bottom: toolbar-based, active only for bottom address bar
+        constraints.navigationBarContainerBottom.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor = nil
+        constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
+            .constraint(equalTo: toolbar.topAnchor)
+        constraints.navigationBarContainerBottom.isActive = addressBarPosition.isBottom
         isNavBarContainerBottomKeyboardBased = false
     }
 

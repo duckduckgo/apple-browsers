@@ -311,6 +311,14 @@ extension Tab: WKUIDelegate {
         self.runPrintOperation(for: nil, in: self.webView)
     }
 
+    @objc(_webView:hasVideoInPictureInPictureDidChange:)
+    func webView(_ webView: WKWebView, hasVideoInPictureInPictureDidChange hasVideoInPictureInPicture: Bool) {
+        self.tabSuspension?.hasVideoInPictureInPicture = hasVideoInPictureInPicture
+        if hasVideoInPictureInPicture {
+            // Fire pixel when Picture-in-Picture is activated
+            PixelKit.fire(GeneralPixel.pictureInPictureVideoPlayback, frequency: .dailyAndCount)
+        }
+    }
 }
 
 extension Tab: WKInspectorDelegate {
@@ -328,13 +336,4 @@ extension Tab: WKInspectorDelegate {
         // Fire pixel when developer tools are opened
         PixelKit.fire(GeneralPixel.developerToolsOpened, frequency: .dailyAndCount)
     }
-
-    @objc(_webView:hasVideoInPictureInPictureDidChange:)
-    func webView(_ webView: WKWebView, hasVideoInPictureInPictureDidChange hasVideoInPictureInPicture: Bool) {
-        if hasVideoInPictureInPicture {
-            // Fire pixel when Picture-in-Picture is activated
-            PixelKit.fire(GeneralPixel.pictureInPictureVideoPlayback, frequency: .dailyAndCount)
-        }
-    }
-
 }

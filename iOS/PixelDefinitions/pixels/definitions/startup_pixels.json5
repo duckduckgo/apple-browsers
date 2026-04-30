@@ -140,5 +140,19 @@
         "triggers": ["startup"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_debug_scene-will-connect-to-window-called-in-connected-state": {
+        "description": "Fires when willConnectToWindow is called while already in the Connected state, indicating an unexpected consecutive scene connection. The windowChanged parameter indicates whether the window instance changed between calls.",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "windowChanged",
+                "description": "Whether the window instance changed between consecutive willConnectToWindow calls",
+                "type": "boolean"
+            }
+        ]
     }
 }

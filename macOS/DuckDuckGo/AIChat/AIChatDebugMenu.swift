@@ -17,6 +17,8 @@
 //
 
 import AIChat
+import AIChatDebugServer
+import DebugServer
 import AppKit
 import Persistence
 
@@ -24,6 +26,13 @@ final class AIChatDebugMenu: NSMenu {
     private var storage = DefaultAIChatPreferencesStorage()
     private let customURLLabelMenuItem = NSMenuItem(title: "")
     private let debugStorage: any KeyedStoring<AIChatDebugURLSettings>
+
+    private var storageDebugServer: DuckAiStorageDebugServer?
+    private lazy var storageServerMenuItem = NSMenuItem(
+        title: "Start Storage Server",
+        action: #selector(toggleStorageServer),
+        target: self
+    )
 
     init(debugStorage: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
         self.debugStorage = if let debugStorage { debugStorage } else { UserDefaults.standard.keyedStoring() }
@@ -42,6 +51,10 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem(title: "Reset Toggle Animation", action: #selector(resetToggleAnimation))
                 .targetting(self)
+
+            NSMenuItem.separator()
+
+            storageServerMenuItem
         }
     }
 
@@ -72,6 +85,62 @@ final class AIChatDebugMenu: NSMenu {
 
     @objc func resetToggleAnimation() {
         UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = false
+    }
+
+    @objc func toggleStorageServer() {
+        if let server = storageDebugServer {
+            server.stop()
+            storageDebugServer = nil
+            storageServerMenuItem.title = "Start Storage Server"
+        } else {
+            guard let handler = NSApp.delegateTyped.duckAiNativeStorageHandler else {
+                let alert = NSAlert()
+                alert.messageText = "Native storage is not available"
+                alert.informativeText = "The duckAiNativeStorage feature flag may be disabled."
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+                return
+            }
+
+            do {
+                let server = DuckAiStorageDebugServer(storageHandler: handler)
+                server.stateDidChange = { [weak self] state in
+                    Task { @MainActor in
+                        self?.handleStorageServerStateChange(state)
+                    }
+                }
+                try server.start()
+                storageDebugServer = server
+                storageServerMenuItem.title = "Starting Storage Server…"
+            } catch {
+                let alert = NSAlert()
+                alert.messageText = "Failed to start storage server"
+                alert.informativeText = error.localizedDescription
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+            }
+        }
+    }
+
+    @MainActor
+    private func handleStorageServerStateChange(_ state: ServerState) {
+        switch state {
+        case .running(let port):
+            storageServerMenuItem.title = "Stop Storage Server (localhost:\(port))"
+            if let url = URL(string: "http://localhost:\(port)") {
+                Application.appDelegate.windowControllersManager.showTab(with: .url(url, source: .ui))
+            }
+        case .failed(let message):
+            storageDebugServer = nil
+            storageServerMenuItem.title = "Start Storage Server"
+            let alert = NSAlert()
+            alert.messageText = "Storage server failed"
+            alert.informativeText = message
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        default:
+            break
+        }
     }
 
     private func updateWebUIMenuItemsState() {

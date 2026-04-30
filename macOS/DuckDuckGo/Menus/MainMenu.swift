@@ -927,6 +927,8 @@ final class MainMenu: NSMenu {
                     NSMenuItem(title: "50 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 50)
                     NSMenuItem(title: "100 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 100)
                     NSMenuItem(title: "150 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 150)
+                    NSMenuItem(title: "500 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 500)
+                    NSMenuItem(title: "1000 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 1000)
                 }
                 NSMenuItem(title: "Show Save Credentials Popover", action: #selector(MainViewController.showSaveCredentialsPopover))
                 NSMenuItem(title: "Show Credentials Saved Popover", action: #selector(MainViewController.showCredentialsSavedPopover))
@@ -954,6 +956,8 @@ final class MainMenu: NSMenu {
                 .submenu(DataBrokerProtectionDebugMenu())
 
             FreemiumDebugMenu()
+            SubscriptionPromoDebugMenu()
+            AdBlockingDebugMenu()
 
             if case .normal = AppVersion.runType {
                 NSMenuItem(title: "VPN")
@@ -984,6 +988,9 @@ final class MainMenu: NSMenu {
                     NSMenuItem(title: "Crash All Tabs", action: #selector(MainViewController.crashAllTabs))
                 }
             }
+
+            NSMenuItem(title: "Tab Suspension")
+                .submenu(TabSuspensionDebugMenu(title: "Tab Suspension"))
 
             NSMenuItem(title: "Memory Usage Reporting") {
                 NSMenuItem(title: "Simulate Memory Report...", action: #selector(AppDelegate.simulateMemoryUsageReport))

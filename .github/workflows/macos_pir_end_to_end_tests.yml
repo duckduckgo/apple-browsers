@@ -38,10 +38,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-26-xlarge]
+        runner: [macos-26]
         include:
           - xcode-version: "26.4"
-            runner: macos-26-xlarge
+            runner: macos-26
 
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}
@@ -163,8 +163,8 @@ jobs:
           ENABLE_TESTABILITY=true \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           "-only-testing:DBPE2ETests" \
+          -test-iterations 3 \
           -retry-tests-on-failure \
-          -test-iterations 2 \
           | tee xcodebuild.log \
           | tee pir-e2e-tests.log
       env:
@@ -216,7 +216,7 @@ jobs:
       with:
         check_name: "Test Report ${{ matrix.runner }}"
         report_paths: macOS/pir-e2e-tests.xml
-        check_retries: true
+        check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
 
     - name: Collect PIR process logs
       if: failure() || cancelled()

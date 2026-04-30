@@ -158,7 +158,7 @@ extension Preferences {
 
                         if (dataClearingModel.isAutoClearEnabled || dataClearingModel.shouldOpenFireWindowByDefault) && startupModel.restorePreviousSession {
                             VStack(alignment: .leading, spacing: 1) {
-                                TextMenuItemCaption(UserText.disableAutoClearToEnableSessionRestore)
+                                TextMenuItemCaption(UserText.disableAutoDeleteToEnableSessionRestore)
                                 TextButton(UserText.showDataClearingSettings) {
                                     NSApp.delegateTyped.windowControllersManager.show(url: .settingsPane(.dataClearing), source: .appOpenUrl)
                                 }
@@ -335,6 +335,7 @@ extension Preferences {
                                     }
                                 }
                             }
+                            TextMenuItemCaption(UserText.autoplayCaption)
                         }
                     }
                 }

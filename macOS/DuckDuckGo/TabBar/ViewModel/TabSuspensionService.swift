@@ -17,8 +17,10 @@
 //
 
 import Combine
+import Common
 import Foundation
 import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
 
@@ -54,28 +56,67 @@ enum TabSuspensionPixel: PixelKitEvent {
 @MainActor
 final class TabSuspensionService {
 
-    private static let minimumInactiveInterval: TimeInterval = 10 * 60
+    private static let defaultMinimumInactiveInterval: TimeInterval = 10 * 60
+    private static let debugMinimumInactiveInterval: TimeInterval = 5
 
+    enum Key: String {
+        case useShortInactiveInterval = "debug.tab-suspension.use-short-inactive-interval"
+    }
+
+    private let keyValueStore: ThrowingKeyValueStoring
     private let windowControllersManager: WindowControllersManagerProtocol
     private let featureFlagger: FeatureFlagger
-    private let memoryUsageMonitor: MemoryUsageMonitoring
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let memoryProvider: (pid_t) -> UInt64?
     private let pixelFiring: PixelFiring?
     private let notificationCenter: NotificationCenter
     private let dateProvider: () -> Date
     private var cancellables: Set<AnyCancellable> = []
 
+    var useShortInactiveInterval: Bool {
+        get {
+            // always use short interval in UI tests
+            if AppVersion.runType == .uiTests {
+                return true
+            }
+            let storedValue = (try? keyValueStore.object(forKey: Key.useShortInactiveInterval.rawValue) as? Bool) ?? false
+            // only allow to override interval for internal users
+            return featureFlagger.internalUserDecider.isInternalUser ? storedValue : false
+        }
+
+        set {
+            try? keyValueStore.set(newValue, forKey: Key.useShortInactiveInterval.rawValue)
+        }
+    }
+
+    private var minimumInactiveInterval: TimeInterval {
+        if useShortInactiveInterval {
+            return Self.debugMinimumInactiveInterval
+        }
+        if let settingsJSON = privacyConfigurationManager.privacyConfig.settings(for: TabSuspensionSubfeature.memoryPressureTrigger),
+           let jsonData = settingsJSON.data(using: .utf8),
+           let settings = try? JSONDecoder().decode(MemoryPressureTriggerSettings.self, from: jsonData) {
+            return settings.tabInactivityPeriod
+        }
+        return Self.defaultMinimumInactiveInterval
+    }
+
     init(
         windowControllersManager: WindowControllersManagerProtocol,
         featureFlagger: FeatureFlagger,
-        memoryUsageMonitor: MemoryUsageMonitoring,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
         pixelFiring: PixelFiring?,
+        keyValueStore: ThrowingKeyValueStoring,
+        memoryProvider: @escaping (pid_t) -> UInt64?,
         notificationCenter: NotificationCenter = .default,
         dateProvider: @escaping () -> Date = { Date() }
     ) {
         self.windowControllersManager = windowControllersManager
         self.featureFlagger = featureFlagger
-        self.memoryUsageMonitor = memoryUsageMonitor
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.pixelFiring = pixelFiring
+        self.keyValueStore = keyValueStore
+        self.memoryProvider = memoryProvider
         self.notificationCenter = notificationCenter
         self.dateProvider = dateProvider
 
@@ -89,24 +130,27 @@ final class TabSuspensionService {
     private func handleMemoryPressure(_ notification: Notification) {
         guard featureFlagger.isFeatureOn(.tabSuspension) else { return }
 
-        let initialMemoryBytes: UInt64
-        if let context = notification.userInfo?[MemoryPressureNotification.contextKey] as? MemoryReportingContext {
-            initialMemoryBytes = context.totalMemoryBytes
-        } else {
-            let report = memoryUsageMonitor.getCurrentMemoryUsage()
-            initialMemoryBytes = report.physFootprintBytes + (report.webContentBytes ?? 0)
-        }
-
         Logger.tabSuspension.info("Critical memory pressure event received, starting tab suspension")
 
-        let cutoffDate = dateProvider().addingTimeInterval(-Self.minimumInactiveInterval)
+        let cutoffDate = dateProvider().addingTimeInterval(-minimumInactiveInterval)
         var suspendedCount = 0
+        var reclaimedBytes: UInt64 = 0
 
         for viewModel in windowControllersManager.allTabCollectionViewModels where !viewModel.isBurner {
             for (index, tab) in viewModel.tabCollection.tabs.enumerated() where !tab.isSuspended {
                 if tab.lastSelectedAt == nil || tab.lastSelectedAt! < cutoffDate {
+                    let webProcessMemory: UInt64 = {
+                        guard case let .loaded(loadedTab) = tab,
+                              let pid = loadedTab.webView.webProcessIdentifier,
+                              let memory = memoryProvider(pid)
+                        else {
+                            return 0
+                        }
+                        return memory
+                    }()
                     if viewModel.suspendTab(at: .unpinned(index)) {
                         suspendedCount += 1
+                        reclaimedBytes += webProcessMemory
                     }
                 }
             }
@@ -114,30 +158,34 @@ final class TabSuspensionService {
 
         guard suspendedCount > 0 else {
             Logger.tabSuspension.info("No tabs were eligible for suspension")
-            return
-        }
-
-        let memoryUsageMonitor = self.memoryUsageMonitor
-        let pixelFiring = self.pixelFiring
-
-        Task.detached {
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-
-            let postReport = memoryUsageMonitor.getCurrentMemoryUsage()
-            let postMemoryBytes = postReport.physFootprintBytes + (postReport.webContentBytes ?? 0)
-            let reclaimedBytes = initialMemoryBytes > postMemoryBytes ? initialMemoryBytes - postMemoryBytes : 0
-            let reclaimedMB = Double(reclaimedBytes) / 1_048_576.0
-
-            Logger.tabSuspension.info("Suspended \(suspendedCount) tab(s), memory reclaimed: \(String(format: "%.1f", reclaimedMB)) MB (before: \(initialMemoryBytes / 1_048_576) MB, after: \(postMemoryBytes / 1_048_576) MB)")
-
             pixelFiring?.fire(
                 TabSuspensionPixel.tabSuspension(
                     trigger: .criticalMemoryPressure,
-                    tabsSuspended: suspendedCount,
-                    memoryReclaimedMB: reclaimedMB
+                    tabsSuspended: 0,
+                    memoryReclaimedMB: 0
                 ),
                 frequency: .dailyAndCount
             )
+            return
         }
+
+        let pixelFiring = self.pixelFiring
+
+        let reclaimedMB = Double(reclaimedBytes) / 1_048_576.0
+
+        Logger.tabSuspension.info("Suspended \(suspendedCount) tab(s), memory reclaimed: \(String(format: "%.1f", reclaimedMB)) MB")
+
+        pixelFiring?.fire(
+            TabSuspensionPixel.tabSuspension(
+                trigger: .criticalMemoryPressure,
+                tabsSuspended: suspendedCount,
+                memoryReclaimedMB: reclaimedMB
+            ),
+            frequency: .dailyAndCount
+        )
     }
+}
+
+private struct MemoryPressureTriggerSettings: Decodable {
+    let tabInactivityPeriod: TimeInterval
 }

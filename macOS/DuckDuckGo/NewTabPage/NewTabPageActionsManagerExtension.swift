@@ -117,7 +117,8 @@ extension NewTabPageActionsManager {
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor
         )
         let aiChatsProvider = NewTabPageOmnibarAiChatsProvider(
             featureFlagger: featureFlagger,
@@ -125,11 +126,14 @@ extension NewTabPageActionsManager {
             suggestionsReader: AIChatSuggestionsReader(
                 suggestionsReader: SuggestionsReader(
                     featureFlagger: featureFlagger,
-                    privacyConfig: contentBlocking.privacyConfigurationManager
+                    privacyConfig: contentBlocking.privacyConfigurationManager,
+                    nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
+                    featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
                 ),
                 historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
             )
         )
+        omnibarConfigProvider.configure(aiChatsProvider: aiChatsProvider)
         let stateProvider = NewTabPageStateProvider(
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger

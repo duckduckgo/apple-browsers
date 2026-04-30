@@ -31,8 +31,14 @@ protocol AIChatContextualModePixelFiring {
     func fireExpandButtonTapped()
     func fireNewChatButtonTapped()
     func fireQuickActionSummarizeSelected()
+    func fireQuickActionAskAboutPageSelected()
     func fireFireButtonTapped()
     func fireFireButtonConfirmed()
+
+    // MARK: - Recent Chats Popup
+    func fireRecentChatsPopupDisplayed()
+    func fireRecentChatSelected()
+    func fireViewAllChatsTapped()
 
     // MARK: - Page Context Attachment
     func firePageContextPlaceholderShown()
@@ -121,6 +127,10 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualQuickActionSummarizeSelected)
     }
 
+    func fireQuickActionAskAboutPageSelected() {
+        firePixel(.aiChatContextualQuickActionAskAboutPageSelected)
+    }
+
     func fireFireButtonTapped() {
         firePixel(.aiChatContextualFireButtonTapped)
     }
@@ -183,6 +193,20 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func firePromptSubmittedWithoutContext() {
         firePixel(.aiChatContextualPromptSubmittedWithoutContextNative)
+    }
+
+    // MARK: - Recent Chats Popup
+
+    func fireRecentChatsPopupDisplayed() {
+        firePixel(.aiChatContextualRecentChatsPopupDisplayed)
+    }
+
+    func fireRecentChatSelected() {
+        firePixel(.aiChatContextualRecentChatSelected)
+    }
+
+    func fireViewAllChatsTapped() {
+        firePixel(.aiChatContextualViewAllChatsTapped)
     }
 
     // MARK: - Manual Attach State

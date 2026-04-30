@@ -88,6 +88,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var aiChatMenuConfigCancellable: AnyCancellable?
     private var aiChatButtonHoverCancellable: AnyCancellable?
     private var duckAIChromeButtonsVisibilityCancellable: AnyCancellable?
+    private var didPerformInitialChromeSidebarApply = false
     private var duckAIChromeDividerInsetConstraint: NSLayoutConstraint?
     private var duckAIChromeDividerFullConstraint: NSLayoutConstraint?
     private var currentAIChatPresentationMode: AIChatPresentationMode = .hidden
@@ -140,6 +141,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         return isMouseOverTab
     }
+
+    private var selectionNeedsLayoutInvalidation = false
 
     /// Returns mouse location in window if window is key
     private func mouseLocationInKeyWindow() -> NSPoint? {
@@ -341,6 +344,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         enableScrollButtons()
         subscribeToChildWindows()
         setupAccessibility()
+
+        performInitialChromeSidebarApplyIfNeeded()
+    }
+
+    private func performInitialChromeSidebarApplyIfNeeded() {
+        guard !didPerformInitialChromeSidebarApply else { return }
+        didPerformInitialChromeSidebarApply = true
+        applyChromeSidebarFeatureFlagState(isEnabled: isChromeSidebarFeatureEnabled)
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -680,13 +691,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         )
         let showFullHeight = isInteracting || currentAIChatPresentationMode != .hidden
 
+        // Always deactivate the outgoing constraint before activating the incoming one so that
+        // both height constraints on the divider are never simultaneously active.
         if showFullHeight {
-            duckAIChromeDividerInsetConstraint?.isActive = false
-            duckAIChromeDividerFullConstraint?.isActive = true
+            duckAIChromeDividerInsetConstraint?.setActive(false)
+            duckAIChromeDividerFullConstraint?.setActive(true)
         } else {
-            duckAIChromeDividerFullConstraint?.isActive = false
-            duckAIChromeDividerInsetConstraint?.isActive = true
+            duckAIChromeDividerFullConstraint?.setActive(false)
+            duckAIChromeDividerInsetConstraint?.setActive(true)
         }
+
         let colorsProvider = theme.colorsProvider
         duckAIChromeDivider?.backgroundColor = showFullHeight ?
             colorsProvider.separatorActiveColor : colorsProvider.separatorColor
@@ -775,7 +789,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             .map { [weak self] in
                 self?.isChromeSidebarFeatureEnabled ?? false
             }
-            .prepend(isChromeSidebarFeatureEnabled)
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isEnabled in
@@ -1149,11 +1162,21 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         let newSelectionIndexPath = IndexPath(item: selectionIndex.item)
         if tabMode == .divided {
+            invalidateLayoutIfNeeded(for: collectionView)
             collectionView.animator().selectItems(at: [newSelectionIndexPath], scrollPosition: .centeredHorizontally)
         } else {
             collectionView.selectItems(at: [newSelectionIndexPath], scrollPosition: .centeredHorizontally)
             collectionView.scrollToSelected()
         }
+    }
+
+    private func invalidateLayoutIfNeeded(for collectionView: TabBarCollectionView) {
+        guard selectionNeedsLayoutInvalidation else {
+            return
+        }
+
+        collectionView.invalidateLayout()
+        selectionNeedsLayoutInvalidation = false
     }
 
     private func refreshPinnedTabsLastSeparator() {
@@ -1188,6 +1211,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let locationInWindow = event.locationInWindow
 
         if let indexPath = collectionView.indexPathForItemAtMouseLocation(locationInWindow) {
+            // When clicking a tab in an inactive window, the selection change bypasses
+            // the normal layout update path, so we flag for an explicit layout invalidation.
+            selectionNeedsLayoutInvalidation = true
             tabCollectionViewModel.select(at: .unpinned(indexPath.item))
             return
         }
@@ -1548,33 +1574,39 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
 
-        guard let tabViewModel = tabCollectionViewModel.tabViewModel(at: tabIndex) else {
-            Logger.general.error("TabBarViewController: Showing tab preview window failed - tabViewModel not found for index \(String(reflecting: tabIndex))")
+        guard let previewable = tabCollectionViewModel.tabBarViewModel(at: tabIndex) as? Previewable else {
+            Logger.general.error("TabBarViewController: Showing tab preview window failed - previewable not found for index \(String(reflecting: tabIndex))")
             return
+        }
+
+        let isSelected: Bool
+        if let loadedVM = previewable as? TabViewModel {
+            isSelected = tabCollectionViewModel.selectedTabViewModel === loadedVM
+        } else {
+            isSelected = false
         }
 
         if isPinned {
             let position = pinnedTabsContainerView.frame.minX + tabBarViewItem.view.frame.minX
-            showTabPreview(for: tabViewModel, from: position)
+            showTabPreview(for: previewable, isSelected: isSelected, from: position)
         } else {
             guard let clipView = collectionView.clipView else {
                 Logger.general.error("TabBarViewController: Showing tab preview window failed - clip view not found")
                 return
             }
             let position = scrollView.frame.minX + tabBarViewItem.view.frame.minX - clipView.bounds.origin.x
-            showTabPreview(for: tabViewModel, from: position)
+            showTabPreview(for: previewable, isSelected: isSelected, from: position)
         }
     }
 
-    private func showTabPreview(for tabViewModel: TabViewModel, from xPosition: CGFloat) {
+    private func showTabPreview(for previewable: Previewable, isSelected: Bool, from xPosition: CGFloat) {
         guard shouldDisplayTabPreviews else {
             Logger.tabPreview.error("Not showing tab preview: shouldDisplayTabPreviews == false")
             hideTabPreview(allowQuickRedisplay: true)
             return
         }
 
-        let isSelected = tabCollectionViewModel.selectedTabViewModel === tabViewModel
-        tabPreviewWindowController.tabPreviewViewController.display(tabViewModel: tabViewModel,
+        tabPreviewWindowController.tabPreviewViewController.display(tabViewModel: previewable,
                                                                     isSelected: isSelected)
 
         guard let window = view.window else {
@@ -1849,18 +1881,18 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         bookmarkManager.remove(bookmark: bookmark, undoManager: nil)
     }
 
-    private func fireproof(_ tab: Tab) {
-        guard let url = tab.url, let host = url.host else {
-            Logger.general.error("TabBarViewController: Failed to get url of tab bar view item")
+    private func fireproof(url: URL) {
+        guard let host = url.host else {
+            Logger.general.error("TabBarViewController: Failed to get host from url")
             return
         }
 
         fireproofDomains.add(domain: host)
     }
 
-    private func removeFireproofing(from tab: Tab) {
-        guard let host = tab.url?.host else {
-            Logger.general.error("TabBarViewController: Failed to get url of tab bar view item")
+    private func removeFireproofing(url: URL) {
+        guard let host = url.host else {
+            Logger.general.error("TabBarViewController: Failed to get host from url")
             return
         }
 
@@ -1922,7 +1954,7 @@ extension TabBarViewController: NSCollectionViewDataSource {
 
         let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(indexPath.item) : .unpinned(indexPath.item)
 
-        guard let tabViewModel = tabCollectionViewModel.tabViewModel(at: tabIndex) else {
+        guard let viewModel = tabCollectionViewModel.tabBarViewModel(at: tabIndex) else {
             tabBarViewItem.clear()
             return tabBarViewItem
         }
@@ -1930,7 +1962,7 @@ extension TabBarViewController: NSCollectionViewDataSource {
         tabBarViewItem.fireproofDomains = fireproofDomains
         tabBarViewItem.delegate = self
         tabBarViewItem.isBurner = tabCollectionViewModel.isBurner
-        tabBarViewItem.subscribe(to: tabViewModel)
+        tabBarViewItem.subscribe(to: viewModel)
 
         if let pinnedTabsCollectionView, pinnedTabsCollectionView == collectionView {
             tabBarViewItem.isLeftToSelected = pinnedTabsCollectionView.isLastItemInSection(indexPath: indexPath) && shouldHideLastPinnedSeparator
@@ -2191,8 +2223,10 @@ extension TabBarViewController: TabBarViewItemDelegate {
             if sourceCollectionView?.visibleRect.intersects(tabBarViewItem.view.frame) == true {
                 showTabPreview(for: tabBarViewItem)
             }
-        } else if !shouldDisplayTabPreviews {
-            hideTabPreview(withDelay: true, allowQuickRedisplay: true)
+        } else {
+            if !shouldDisplayTabPreviews {
+                hideTabPreview(withDelay: true, allowQuickRedisplay: true)
+            }
         }
     }
 
@@ -2229,7 +2263,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
 
         let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
-        return tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.content.canBeDuplicated ?? false
+        return tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.tabContent.canBeDuplicated ?? false
     }
 
     func tabBarViewItemNewToTheRightAction(_ tabBarViewItem: TabBarViewItem) {
@@ -2263,7 +2297,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
             return false
         }
 
-        return tabCollectionViewModel.tabViewModel(at: indexPath.item)?.tab.content.canBePinned ?? false
+        return tabCollectionViewModel.tabBarViewModel(at: .unpinned(indexPath.item))?.tabContent.canBePinned ?? false
     }
 
     func tabBarViewItemPinAction(_ tabBarViewItem: TabBarViewItem) {
@@ -2339,7 +2373,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
 
         let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
-        return tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.content.canBeBookmarked ?? false
+        return tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.tabContent.canBeBookmarked ?? false
     }
 
     func tabBarViewItemIsAlreadyBookmarked(_ tabBarViewItem: TabBarViewItem) -> Bool {
@@ -2366,7 +2400,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemBookmarkAllOpenTabsAction(_ tabBarViewItem: TabBarViewItem) {
-        let websitesInfo = tabCollectionViewModel.tabs.compactMap(WebsiteInfo.init)
+        let websitesInfo = tabCollectionViewModel.tabCollection.tabs.compactMap(WebsiteInfo.init)
         BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(
             websitesInfo: websitesInfo,
             bookmarkManager: bookmarkManager
@@ -2523,13 +2557,13 @@ extension TabBarViewController: TabBarViewItemDelegate {
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item]
+              let url = tabCollection?.tabs[safe: indexPath.item]?.url
         else {
             assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
             return
         }
 
-        fireproof(tab)
+        fireproof(url: url)
     }
 
     func tabBarViewItemMuteUnmuteSite(_ tabBarViewItem: TabBarViewItem) {
@@ -2553,13 +2587,13 @@ extension TabBarViewController: TabBarViewItemDelegate {
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item]
+              let url = tabCollection?.tabs[safe: indexPath.item]?.url
         else {
             assertionFailure("TabBarViewController: Failed to get tab from tab bar view item")
             return
         }
 
-        removeFireproofing(from: tab)
+        removeFireproofing(url: url)
     }
 
     func tabBarViewItemSuspendAction(_ tabBarViewItem: TabBarViewItem) {
@@ -2574,7 +2608,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
 
         let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
-        if tabBarViewItem.tabViewModel?.isSuspended == true {
+        if tabBarViewItem.tabViewModel is UnloadedTabViewModel {
             tabCollectionViewModel.resumeTab(at: tabIndex)
         } else {
             tabCollectionViewModel.suspendTab(at: tabIndex)
@@ -2584,10 +2618,9 @@ extension TabBarViewController: TabBarViewItemDelegate {
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, replaceContentWithDroppedStringValue stringValue: String) {
         let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
-        let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
-
-        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem),
-              let tab = tabCollection?.tabs[safe: indexPath.item] else { return }
+        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else { return }
+        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+        guard let tab = tabCollectionViewModel.materialize(at: tabIndex) else { return }
 
         if let url = URL.makeURL(from: stringValue) {
             tab.setContent(.url(url, credential: nil, source: .userEntered(stringValue, downloadRequested: false)))

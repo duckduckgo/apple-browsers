@@ -21,9 +21,16 @@ import Foundation
 
 /// Model for the NTP "Return to..." escape hatch card that navigates to the most recently used tab.
 struct EscapeHatchModel: Equatable {
+
+    enum TabType: Equatable {
+        case regular
+        case aiChat
+        case fire
+    }
+
     let title: String
     let subtitle: String
-    let isAITab: Bool
+    let tabType: TabType
     let domain: String?
     let targetTab: Tab
 }

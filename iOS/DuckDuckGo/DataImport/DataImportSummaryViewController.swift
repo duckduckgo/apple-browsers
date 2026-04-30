@@ -28,15 +28,34 @@ final class DataImportSummaryViewController: UIViewController {
 
     private var viewModel: DataImportSummaryViewModel
     private let importScreen: DataImportViewModel.ImportScreen
+    private let importHubPixelContext: DataImportHubPixelContext?
     private let onCompletion: () -> Void
     private let onSegueToSync: (String?) -> Void
+    private let onContinueToSafariImport: (() -> Void)?
 
-    init(summary: DataImportSummary, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing, onSegueToSync: @escaping (String?) -> Void, onCompletion: @escaping () -> Void) {
-        self.viewModel = DataImportSummaryViewModel(summary: summary, importScreen: importScreen, syncService: syncService)
+    init(summary: DataImportSummary,
+         importScreen: DataImportViewModel.ImportScreen,
+         syncService: DDGSyncing,
+         sessionImportedDataTypes: Set<DataImport.DataType> = [],
+         isSafariImportFlow: Bool = false,
+         importHubPixelContext: DataImportHubPixelContext? = nil,
+         onSegueToSync: @escaping (String?) -> Void,
+         onCompletion: @escaping () -> Void,
+         onContinueToSafariImport: (() -> Void)? = nil) {
+        self.viewModel = DataImportSummaryViewModel(
+            summary: summary,
+            importScreen: importScreen,
+            syncService: syncService,
+            sessionImportedDataTypes: sessionImportedDataTypes,
+            isSafariImportFlow: isSafariImportFlow,
+            importHubPixelContext: importHubPixelContext
+        )
         self.importScreen = importScreen
+        self.importHubPixelContext = importHubPixelContext
 
         self.onCompletion = onCompletion
         self.onSegueToSync = onSegueToSync
+        self.onContinueToSafariImport = onContinueToSafariImport
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -49,7 +68,13 @@ final class DataImportSummaryViewController: UIViewController {
         super.viewDidLoad()
 
         setupView()
-        Pixel.fire(pixel: .importResultDisplayed, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+        if let importHubPixelContext {
+            var parameters = importHubPixelContext.parameters
+            parameters[PixelParameters.count] = "\(viewModel.importedDataTypesCount)"
+            Pixel.fire(pixel: .importHubResultDisplayed, withAdditionalParameters: parameters)
+        } else {
+            Pixel.fire(pixel: .importResultDisplayed, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+        }
     }
 
     private func setupView() {
@@ -91,6 +116,12 @@ extension DataImportSummaryViewController: DataImportSummaryViewModelDelegate {
             }
         } else {
             onSegueToSync(source)
+        }
+    }
+
+    func dataImportSummaryViewModelDidRequestContinueImportFromSafari(_ viewModel: DataImportSummaryViewModel) {
+        dismiss(animated: true) { [weak self] in
+            self?.onContinueToSafariImport?()
         }
     }
 }

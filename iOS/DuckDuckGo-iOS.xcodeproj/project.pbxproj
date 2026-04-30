@@ -1655,6 +1655,8 @@
 		A1F4C5112F8B000000D1A111 /* ImportSourceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C50C2F8B000000D1A111 /* ImportSourceDetailView.swift */; };
 		A1F4C5122F8B000000D1A111 /* ImportSourceDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C50D2F8B100000D1A111 /* ImportSourceDetailViewController.swift */; };
 		A1F4C5232F8D000000D1A111 /* DataImportFileUploadCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5212F8D000000D1A111 /* DataImportFileUploadCoordinator.swift */; };
+		A1F4C5322F8D100000D1A111 /* DataImportHubPixelContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5302F8D100000D1A111 /* DataImportHubPixelContext.swift */; };
+		A1F4C5332F8D100000D1A111 /* DataImportHubSimulatedCompletionPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F4C5312F8D100000D1A111 /* DataImportHubSimulatedCompletionPersistor.swift */; };
 		A5B373DCAC231125EC470ADF /* RebrandedOnboardingView+AddressBarPositionContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E935251F047CE4825824A5 /* RebrandedOnboardingView+AddressBarPositionContent.swift */; };
 		AA2000010000000000000001 /* Components/InfoPanel/InfoPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000010000000000000001 /* Components/InfoPanel/InfoPanelView.swift */; };
 		AA2000010000000000000002 /* TabSwitcherTrackerInfoHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000010000000000000002 /* TabSwitcherTrackerInfoHeaderView.swift */; };
@@ -1941,6 +1943,8 @@
 		C1C1FF522D085AD70017ACCE /* ActionMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C1FF4C2D085AD70017ACCE /* ActionMessageView.swift */; };
 		C1C1FF532D085AD70017ACCE /* NibLoading.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C1FF4F2D085AD70017ACCE /* NibLoading.swift */; };
 		C1C23C102D490CA500B6BDF6 /* ImportArchiveReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C0F2D490CA500B6BDF6 /* ImportArchiveReader.swift */; };
+		E44F90F056A0488A976B6AFE /* FileCorruptErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E44F90E856A0488A976B6AFE /* FileCorruptErrorView.swift */; };
+		B772933486CDFE9E9DDBD2BF /* FileCorruptErrorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B772933186CDFE9E9DDBD2BF /* FileCorruptErrorViewController.swift */; };
 		C1C23C2E2D4C0F1A00B6BDF6 /* DataImportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C292D4C0F1A00B6BDF6 /* DataImportViewController.swift */; };
 		C1C23C2F2D4C0F1A00B6BDF6 /* DataImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C282D4C0F1A00B6BDF6 /* DataImportView.swift */; };
 		C1C23C302D4C0F1A00B6BDF6 /* ZipContentSelectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C2D2D4C0F1A00B6BDF6 /* ZipContentSelectionViewModel.swift */; };
@@ -4212,6 +4216,8 @@
 		A1F4C50C2F8B000000D1A111 /* ImportSourceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourceDetailView.swift; sourceTree = "<group>"; };
 		A1F4C50D2F8B100000D1A111 /* ImportSourceDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourceDetailViewController.swift; sourceTree = "<group>"; };
 		A1F4C5212F8D000000D1A111 /* DataImportFileUploadCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportFileUploadCoordinator.swift; sourceTree = "<group>"; };
+		A1F4C5302F8D100000D1A111 /* DataImportHubPixelContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportHubPixelContext.swift; sourceTree = "<group>"; };
+		A1F4C5312F8D100000D1A111 /* DataImportHubSimulatedCompletionPersistor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportHubSimulatedCompletionPersistor.swift; sourceTree = "<group>"; };
 		A6C36CDBF1DD7FBC036F9067 /* DarkReaderFeatureSettingsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DarkReaderFeatureSettingsTests.swift; sourceTree = "<group>"; };
 		AA1000010000000000000001 /* Components/InfoPanel/InfoPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components/InfoPanel/InfoPanelView.swift; sourceTree = "<group>"; };
 		AA1000010000000000000002 /* TabSwitcherTrackerInfoHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherTrackerInfoHeaderView.swift; sourceTree = "<group>"; };
@@ -4508,6 +4514,8 @@
 		C1C1FF4E2D085AD70017ACCE /* FaviconHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconHelper.swift; sourceTree = "<group>"; };
 		C1C1FF4F2D085AD70017ACCE /* NibLoading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NibLoading.swift; sourceTree = "<group>"; };
 		C1C23C0F2D490CA500B6BDF6 /* ImportArchiveReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportArchiveReader.swift; sourceTree = "<group>"; };
+		E44F90E856A0488A976B6AFE /* FileCorruptErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCorruptErrorView.swift; sourceTree = "<group>"; };
+		B772933186CDFE9E9DDBD2BF /* FileCorruptErrorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCorruptErrorViewController.swift; sourceTree = "<group>"; };
 		C1C23C252D4C0F1A00B6BDF6 /* DataImportSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryView.swift; sourceTree = "<group>"; };
 		C1C23C262D4C0F1A00B6BDF6 /* DataImportSummaryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryViewController.swift; sourceTree = "<group>"; };
 		C1C23C272D4C0F1A00B6BDF6 /* DataImportSummaryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryViewModel.swift; sourceTree = "<group>"; };
@@ -8675,6 +8683,8 @@
 				A1F4C5082F8B000000D1A111 /* ImportPasswordSource.swift */,
 				A1F4C50C2F8B000000D1A111 /* ImportSourceDetailView.swift */,
 				A1F4C50D2F8B100000D1A111 /* ImportSourceDetailViewController.swift */,
+                E44F90E856A0488A976B6AFE /* FileCorruptErrorView.swift */,
+                B772933186CDFE9E9DDBD2BF /* FileCorruptErrorViewController.swift */,
 				C17812FE2F913C37004BFE1A /* SafariExportInterstitialView.swift */,
 				C17812FF2F913C37004BFE1A /* SafariExportInterstitialViewController.swift */,
 			);
@@ -9297,6 +9307,8 @@
 				C10454E12F8D0F2C002BB02C /* CredentialExchangeImportHandler.swift */,
 				A1F4C4E12F8A1B9300D1A111 /* DataImportEntryPointHandler.swift */,
 				A1F4C5212F8D000000D1A111 /* DataImportFileUploadCoordinator.swift */,
+				A1F4C5302F8D100000D1A111 /* DataImportHubPixelContext.swift */,
+				A1F4C5312F8D100000D1A111 /* DataImportHubSimulatedCompletionPersistor.swift */,
 				C1C23C252D4C0F1A00B6BDF6 /* DataImportSummaryView.swift */,
 				C1C23C262D4C0F1A00B6BDF6 /* DataImportSummaryViewController.swift */,
 				C1C23C272D4C0F1A00B6BDF6 /* DataImportSummaryViewModel.swift */,
@@ -12522,12 +12534,16 @@
 				F1617C151E57336D00DEDCAF /* TabManager.swift in Sources */,
 				A1F4C4E22F8A1B9300D1A111 /* DataImportEntryPointHandler.swift in Sources */,
 				A1F4C5232F8D000000D1A111 /* DataImportFileUploadCoordinator.swift in Sources */,
+				A1F4C5322F8D100000D1A111 /* DataImportHubPixelContext.swift in Sources */,
+				A1F4C5332F8D100000D1A111 /* DataImportHubSimulatedCompletionPersistor.swift in Sources */,
 				A1F4C5042F8A300000D1A111 /* DataImportHubView.swift in Sources */,
 				A1F4C5052F8A300000D1A111 /* DataImportHubViewController.swift in Sources */,
 				A1F4C5062F8A300000D1A111 /* DataImportHubViewModel.swift in Sources */,
 				A1F4C50D2F8B000000D1A111 /* ImportPasswordSource.swift in Sources */,
 				A1F4C5112F8B000000D1A111 /* ImportSourceDetailView.swift in Sources */,
 				A1F4C5122F8B000000D1A111 /* ImportSourceDetailViewController.swift in Sources */,
+				E44F90F056A0488A976B6AFE /* FileCorruptErrorView.swift in Sources */,
+				B772933486CDFE9E9DDBD2BF /* FileCorruptErrorViewController.swift in Sources */,
 				C1C23C2E2D4C0F1A00B6BDF6 /* DataImportViewController.swift in Sources */,
 				C1C23C2F2D4C0F1A00B6BDF6 /* DataImportView.swift in Sources */,
 				80C948022F551DCD002EDB79 /* BrowsingMode.swift in Sources */,

@@ -2469,8 +2469,10 @@ class MainViewController: UIViewController {
                                                              keyValueStore: keyValueStore,
                                                              bookmarksDatabase: bookmarksDatabase,
                                                              favoritesDisplayMode: appSettings.favoritesDisplayMode,
+                                                             entryPoint: source,
                                                              onFinished: onFinished,
                                                              onCancelled: onCancelled)
+            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: source.importHubEntryPointParameters)
         }
 
         let navigationController = UINavigationController(rootViewController: rootViewController)
@@ -5756,7 +5758,9 @@ extension MainViewController: MessageNavigationDelegate {
                 destinationViewController = DataImportHubViewController(syncService: syncService,
                                                                          keyValueStore: keyValueStore,
                                                                          bookmarksDatabase: bookmarksDatabase,
-                                                                         favoritesDisplayMode: appSettings.favoritesDisplayMode)
+                                                                         favoritesDisplayMode: appSettings.favoritesDisplayMode,
+                                                                         entryPoint: .whatsNew)
+                Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: DataImportViewModel.ImportScreen.whatsNew.importHubEntryPointParameters)
             }
             guard let viewController = topMostPresentedViewController() else {
                 assertionFailure("No ViewController presented.")

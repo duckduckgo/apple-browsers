@@ -35,6 +35,7 @@ struct DataImportHubView: View {
                 } header: {
                     sectionHeader(for: section)
                 }
+                .listRowBackground(Color(designSystemColor: .surface))
             }
         }
         .applyInsetGroupedListStyle()

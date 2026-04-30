@@ -1275,6 +1275,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Bladwijzers importeren in DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Open Chrome, ga daarna naar Wachtwoordbeheer en volg de onderstaande stappen:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Instellingen** > **Exporteren**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Klik **Doorgaan**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Selecteer **DuckDuckGo** als bestemming.";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Importeren vanuit Chrome";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Exporteren voltooid?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Ga naar de wachtwoorden-app en volg de stappen om te importeren.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Tik op **···** > **Gegevens exporteren naar een andere app**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Tik op **Alles selecteren** > **Doorgaan**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Selecteer **DuckDuckGo** als bestemming.";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Importeren van wachtwoorden";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Exporteer eerst je wachtwoorden en bladwijzers uit Safari, en kom dan terug om het bestand te uploaden.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Exporteren vanuit Safari";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Importeren vanuit Safari";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Geëxporteerd bestand uploaden...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Geen ondersteunde gegevens gevonden in het zipbestand. Controleer de exporteerinstructies van Safari en probeer het opnieuw.";
 
@@ -1284,6 +1329,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Het %@-bestand kon niet worden gelezen. Mogelijk is er een probleem met de gegevens in het bestand.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Ik snap het";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Het %@-bestand kon niet worden gelezen. Probeer een ander bestand te uploaden of een andere importmethode.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Het bestand is mogelijk beschadigd.";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Geen ondersteunde gegevens gevonden in het zipbestand. Lees de exportinstructies nog eens door en probeer het opnieuw.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Geen gegevens gevonden";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Het geselecteerde bestand wordt niet ondersteund. Selecteer een ander bestand en probeer het opnieuw.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Niet-ondersteund bestand";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1358,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Naar DuckDuckGo brengen";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Selecteer **Exporteren** en kies in het volgende scherm **Bladwijzers** en **Opslaan naar Downloads**.";
@@ -1303,7 +1372,7 @@
 "data.import.passwords.instructions.chrome.step1" = "Ga in Chrome naar **Google wachtwoordbeheer** en dan naar **Instellingen**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Selecteer **Wachtwoorden exporteren**, vervolgens **Opslaan naar bestanden** en sla het bestand op in een map die je kunt onthouden.";
+"data.import.passwords.instructions.chrome.step2" = "Selecteer **Gegevens exporteren**, vervolgens **···** en dan **Downloaden naar CSV** en sla het bestand op in een map die je kunt onthouden.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Wachtwoorden exporteren";
@@ -1331,6 +1400,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Wachtwoorden importeren naar DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Open Instellingen om te exporteren";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Vergeet niet te tikken op \"Exporteren naar bestanden\"";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Wachtwoorden-app";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Importeren vanuit";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Synchroniseren van";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo op een ander apparaat";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Bladwijzers";
@@ -1367,6 +1460,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Wachtwoorden";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Wil je ook je bladwijzers van Safari meenemen?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Doorgaan";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Niet nu";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Wil je je wachtwoorden ook meenemen?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Afgelopen maand";

@@ -31,11 +31,12 @@ import os.log
 protocol DataImportFileUploadFlowOwner: AnyObject {
     func dataImportUploadDidCompleteSummary()
     func dataImportUploadDidRequestSync(source: String?)
+    func dataImportUploadDidRequestContinueToSafariImport()
     func dataImportUploadDidCancel()
 }
 
 protocol DataImportFileUploadCoordinating: AnyObject {
-    func startUploadFlow(from owner: UIViewController & DataImportFileUploadFlowOwner)
+    func startUploadFlow(from owner: UIViewController & DataImportFileUploadFlowOwner, source: ImportPasswordSource)
 }
 
 final class DataImportFileUploadCoordinator: NSObject {
@@ -47,6 +48,8 @@ final class DataImportFileUploadCoordinator: NSObject {
     private let syncService: DDGSyncing
     private let keyValueStore: ThrowingKeyValueStoring
     private let featureFlagger: FeatureFlagger
+    private var sessionImportedDataTypes: Set<DataImport.DataType> = []
+    private var currentImportSource: ImportPasswordSource?
 
     init(viewModel: DataImportViewModel,
          importScreen: DataImportViewModel.ImportScreen,
@@ -60,6 +63,9 @@ final class DataImportFileUploadCoordinator: NSObject {
         self.featureFlagger = featureFlagger
         super.init()
         self.viewModel.delegate = self
+        self.viewModel.onFileError = { [weak self] error in
+            self?.presentFileErrorSheet(error)
+        }
     }
 
     convenience init(bookmarksDatabase: CoreDataDatabase,
@@ -74,7 +80,7 @@ final class DataImportFileUploadCoordinator: NSObject {
             bookmarksDatabase: bookmarksDatabase,
             favoritesDisplayMode: favoritesDisplayMode,
             tld: tld)
-        let viewModel = DataImportViewModel(importScreen: importScreen, importManager: importManager)
+        let viewModel = DataImportViewModel(importScreen: importScreen, importManager: importManager, shouldFireLegacyPixels: false)
         self.init(
             viewModel: viewModel,
             importScreen: importScreen,
@@ -89,9 +95,10 @@ final class DataImportFileUploadCoordinator: NSObject {
 
 extension DataImportFileUploadCoordinator: DataImportFileUploadCoordinating {
 
-    func startUploadFlow(from owner: UIViewController & DataImportFileUploadFlowOwner) {
+    func startUploadFlow(from owner: UIViewController & DataImportFileUploadFlowOwner, source: ImportPasswordSource) {
         presentingViewController = owner
         flowOwner = owner
+        currentImportSource = source
         viewModel.selectFile()
     }
 }
@@ -140,22 +147,25 @@ extension DataImportFileUploadCoordinator: UIDocumentPickerDelegate {
 
             guard let typeIdentifier = resourceValues.typeIdentifier,
                   let fileType = DataImportFileType(typeIdentifier: typeIdentifier) else {
-                ActionMessageView.present(message: UserText.dataImportFailedUnsupportedFileErrorMessage)
+                Pixel.fire(pixel: .importHubFilePickerUnsupported, withAdditionalParameters: importHubFilePickerPixelParameters)
+                presentFileErrorSheet(.unsupportedFile)
                 return
             }
 
             validDocumentSelected = true
             viewModel.handleFileSelection(selectedFileURL, type: fileType)
-            fireFileSelectedPixel(for: fileType, importScreen: viewModel.state.importScreen)
+            fireHubFilePickedPixelIfNeeded(for: fileType)
         } catch {
             Logger.autofill.debug("Failed to determine the file type: \(error)")
-            ActionMessageView.present(message: UserText.dataImportFailedUnsupportedFileErrorMessage)
+            Pixel.fire(pixel: .importHubFilePickerUnsupported, withAdditionalParameters: importHubFilePickerPixelParameters)
+            presentFileErrorSheet(.unsupportedFile)
         }
     }
 
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         viewModel.isLoading = false
         viewModel.documentPickerCancelled()
+        Pixel.fire(pixel: .importHubFilePickerCancelled, withAdditionalParameters: importHubFilePickerPixelParameters)
         flowOwner?.dataImportUploadDidCancel()
     }
 }
@@ -175,25 +185,30 @@ private extension DataImportFileUploadCoordinator {
             presentingViewController.present(documentPicker, animated: true)
         }
 
-        Pixel.fire(
-            pixel: .importInstructionsFileButtonTapped,
-            withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue]
-        )
+        Pixel.fire(pixel: .importHubFilePickerDisplayed, withAdditionalParameters: importHubFilePickerPixelParameters)
     }
 
     func presentDataTypePicker(for viewModel: DataImportViewModel, contents: ImportArchiveContents) {
-        let dataTypes = viewModel.importDataTypes(for: contents)
+        let importPreview = viewModel.importDataTypes(for: contents)
 
-        guard !dataTypes.isEmpty else {
-            DispatchQueue.main.async {
-                ActionMessageView.present(message: String(format: UserText.dataImportFailedReadErrorMessage, UserText.dataImportFileTypeZip))
+        guard !importPreview.isEmpty else {
+            DispatchQueue.main.async { [weak self] in
                 viewModel.isLoading = false
+                self?.presentFileErrorSheet(.noDataInZip)
             }
             return
         }
 
+        // Safari export already scopes the zip to selected data types, so
+        // the new Import from Safari flow should skip the in-app type picker.
+        if currentImportSource == .safari {
+            let selectedDataTypes = importPreview.map(\.type)
+            viewModel.importZipArchive(from: contents, for: selectedDataTypes)
+            return
+        }
+
         let zipContentSelectionViewController = ZipContentSelectionViewController(
-            dataTypes,
+            importPreview,
             importScreen: viewModel.state.importScreen
         ) { selectedDataTypes in
             viewModel.importZipArchive(from: contents, for: selectedDataTypes)
@@ -217,10 +232,25 @@ private extension DataImportFileUploadCoordinator {
         }
     }
 
+    func presentFileErrorSheet(_ error: DataImportFileError) {
+        fireHubFileErrorPixelsIfNeeded(for: error)
+
+        DispatchQueue.main.async { [weak self] in
+            guard let presentingViewController = self?.presentingViewController else { return }
+            let errorVC = FileCorruptErrorViewController(error: error)
+            if let sheet = errorVC.sheetPresentationController {
+                sheet.detents = [.medium()]
+            }
+            presentingViewController.present(errorVC, animated: true)
+        }
+    }
+
     func presentSummary(for summary: DataImportSummary) {
         guard let presentingViewController else {
             return
         }
+
+        recordImportedDataTypes(from: summary)
 
         AutofillLoginImportState(keyValueStore: keyValueStore).hasImportedLogins = true
         AutofillOnboardingExperimentPixelReporter().fireImportCompleted()
@@ -228,11 +258,17 @@ private extension DataImportFileUploadCoordinator {
         let summaryViewController = DataImportSummaryViewController(
             summary: summary,
             importScreen: importScreen,
-            syncService: syncService
+            syncService: syncService,
+            sessionImportedDataTypes: sessionImportedDataTypes,
+            isSafariImportFlow: currentImportSource == .safari,
+            importHubPixelContext: importHubPixelContext
         ) { [weak self] source in
             self?.launchSync(source: source)
         } onCompletion: { [weak self] in
+            self?.clearSessionImportedDataTypes()
             self?.flowOwner?.dataImportUploadDidCompleteSummary()
+        } onContinueToSafariImport: { [weak self] in
+            self?.flowOwner?.dataImportUploadDidRequestContinueToSafariImport()
         }
 
         presentingViewController.present(summaryViewController, animated: true)
@@ -248,7 +284,27 @@ private extension DataImportFileUploadCoordinator {
 
 private extension DataImportFileUploadCoordinator {
 
+    var importHubPixelContext: DataImportHubPixelContext {
+        DataImportHubPixelContext(entryPoint: importScreen, source: currentImportSource?.id)
+    }
+
+    var importHubFilePickerPixelParameters: [String: String] {
+        DataImportHubPixelContext(entryPoint: importScreen, source: nil).parameters
+    }
+
+    func recordImportedDataTypes(from summary: DataImportSummary) {
+        for (dataType, result) in summary where (try? result.get()) != nil {
+            sessionImportedDataTypes.insert(dataType)
+        }
+    }
+
+    func clearSessionImportedDataTypes() {
+        sessionImportedDataTypes.removeAll()
+    }
+
     func launchSync(source: String?) {
+        clearSessionImportedDataTypes()
+
         if let flowOwner {
             flowOwner.dataImportUploadDidRequestSync(source: source)
             return
@@ -265,15 +321,58 @@ private extension DataImportFileUploadCoordinator {
         }
     }
 
-    func fireFileSelectedPixel(for fileType: DataImportFileType, importScreen: DataImportViewModel.ImportScreen) {
-        let parameters = [PixelParameters.source: importScreen.rawValue]
+    func fireHubFilePickedPixelIfNeeded(for fileType: DataImportFileType) {
         switch fileType {
         case .zip, .json:
-            Pixel.fire(pixel: .importInstructionsFileSelectedZip, withAdditionalParameters: parameters)
+            Pixel.fire(pixel: .importHubFilePickedZip, withAdditionalParameters: importHubFilePickerPixelParameters)
         case .csv:
-            Pixel.fire(pixel: .importInstructionsFileSelectedCsv, withAdditionalParameters: parameters)
+            Pixel.fire(pixel: .importHubFilePickedCsv, withAdditionalParameters: importHubFilePickerPixelParameters)
         case .html:
-            Pixel.fire(pixel: .importInstructionsFileSelectedHtml, withAdditionalParameters: parameters)
+            Pixel.fire(pixel: .importHubFilePickedHtml, withAdditionalParameters: importHubFilePickerPixelParameters)
+        }
+    }
+
+    func fireHubFileErrorPixelsIfNeeded(for error: DataImportFileError) {
+        var fileErrorParameters = importHubPixelContext.parameters
+        fileErrorParameters[PixelParameters.reason] = error.importHubReason
+        Pixel.fire(pixel: .importHubFileErrorDisplayed, withAdditionalParameters: fileErrorParameters)
+
+        guard let failurePixel = error.importHubFailurePixel else {
+            return
+        }
+
+        Pixel.fire(pixel: failurePixel, withAdditionalParameters: importHubPixelContext.parameters)
+    }
+}
+
+extension DataImportFileError {
+    var importHubReason: String {
+        switch self {
+        case .unsupportedFile:
+            return "unsupported_file"
+        case .noDataInZip:
+            return "no_supported_data_in_zip"
+        case .fileUnreadable:
+            return "file_unreadable"
+        }
+    }
+
+    var importHubFailurePixel: Pixel.Event? {
+        switch self {
+        case .unsupportedFile:
+            return nil
+        case .noDataInZip:
+            return .importHubResultUnzipping
+        case .fileUnreadable(let fileType):
+            if fileType == UserText.dataImportFileTypeCsv {
+                return .importHubResultPasswordsParsing
+            }
+
+            if fileType == UserText.dataImportFileTypeHtml {
+                return .importHubResultBookmarksParsing
+            }
+
+            return .importHubResultUnzipping
         }
     }
 }

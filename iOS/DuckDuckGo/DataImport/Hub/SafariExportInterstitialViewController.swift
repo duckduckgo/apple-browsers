@@ -19,28 +19,96 @@
 
 import UIKit
 import SwiftUI
+import DesignResourcesKit
+import Core
 
 final class SafariExportInterstitialViewController: UIViewController {
 
     var onRequestExport: (() -> Void)?
+    private var contentHeight: CGFloat = 420
+    private let entryPoint: DataImportViewModel.ImportScreen
+    private var didRequestExport = false
+    private var didFireCancelledPixel = false
+
+    init(entryPoint: DataImportViewModel.ImportScreen) {
+        self.entryPoint = entryPoint
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = UIColor(designSystemColor: .background)
+        presentationController?.delegate = self
         setupView()
+        Pixel.fire(pixel: .importHubSafariInterstitialDisplayed, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        updateSheetHeight(contentHeight)
     }
 
     private func setupView() {
         let interstitialView = SafariExportInterstitialView(
             onOpenSettingsToExport: { [weak self] in
-                self?.dismiss(animated: true) {
-                    self?.onRequestExport?()
+                guard let self else { return }
+                self.didRequestExport = true
+                Pixel.fire(pixel: .importHubSafariInterstitialExportTapped, withAdditionalParameters: self.entryPoint.importHubEntryPointParameters)
+                self.dismiss(animated: true) {
+                    self.onRequestExport?()
                 }
             },
             onCancel: { [weak self] in
+                self?.fireInterstitialCancelledPixel()
                 self?.dismiss(animated: true)
-            })
+            },
+            onContentHeightChange: { [weak self] contentHeight in
+                self?.updateSheetHeight(contentHeight)
+            }
+        )
         let hostingController = UIHostingController(rootView: interstitialView)
-        hostingController.view.backgroundColor = .clear
+        hostingController.view.backgroundColor = UIColor(designSystemColor: .background)
+        hostingController.view.isOpaque = true
         installChildViewController(hostingController)
+    }
+
+    private func updateSheetHeight(_ nextHeight: CGFloat) {
+        guard #available(iOS 16.0, *) else { return }
+
+        let boundedHeight = max(360, nextHeight)
+        guard abs(boundedHeight - contentHeight) > 0.5 || (presentationController as? UISheetPresentationController)?.detents.isEmpty == true else {
+            return
+        }
+
+        contentHeight = boundedHeight
+
+        if let sheetPresentationController = presentationController as? UISheetPresentationController {
+            sheetPresentationController.animateChanges {
+                sheetPresentationController.detents = [.custom(resolver: { _ in boundedHeight })]
+            }
+        }
+    }
+
+    private func fireInterstitialCancelledPixel() {
+        guard !didFireCancelledPixel else {
+            return
+        }
+
+        didFireCancelledPixel = true
+        Pixel.fire(pixel: .importHubSafariInterstitialCancelled, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
+    }
+}
+
+extension SafariExportInterstitialViewController: UIAdaptivePresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        guard !didRequestExport else {
+            return
+        }
+
+        fireInterstitialCancelledPixel()
     }
 }

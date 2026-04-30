@@ -18,42 +18,42 @@
 //
 
 import SwiftUI
+import UIKit
 import DesignResourcesKit
 import DuckUI
+import Lottie
 
 struct SafariExportInterstitialView: View {
 
     var onOpenSettingsToExport: (() -> Void)?
     var onCancel: (() -> Void)?
-
-    @State private var isAnimating = false
+    var onContentHeightChange: ((CGFloat) -> Void)?
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Button(UserText.actionCancel) {
-                    onCancel?()
-                }
-                .daxBodyRegular()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-
-                Spacer()
+            Button(UserText.actionCancel) {
+                onCancel?()
             }
+            .daxBodyRegular()
+            .foregroundColor(Color(designSystemColor: .textPrimary))
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
             .padding(.top, 16)
 
-            Spacer()
-
-            ExportAnimationView(isAnimating: $isAnimating)
+            ExportAnimationView()
 
             Text(UserText.safariExportInterstitialTip)
-                .daxTitle2()
+                .daxTitle1()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
+                .padding(.horizontal, 16)
                 .padding(.top, 16)
-
-            Spacer().frame(height: 24)
+                .padding(.bottom, 16)
 
             Button {
                 onOpenSettingsToExport?()
@@ -61,33 +61,120 @@ struct SafariExportInterstitialView: View {
                 Text(UserText.safariExportInterstitialButton)
             }
             .buttonStyle(PrimaryButtonStyle())
-            .padding(.horizontal, 16)
+            .frame(maxWidth: shouldUseExpandedButtonLayout ? 360 : .infinity)
+            .padding(.horizontal, shouldUseExpandedButtonLayout ? 32 : 16)
+            .padding(.bottom, shouldUseExpandedButtonLayout ? 32 : 12)
 
-            Spacer()
         }
-        .background(Color(designSystemColor: .background))
-        .onFirstAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                isAnimating = true
+        .fixedSize(horizontal: false, vertical: true)
+        .background(GeometryReader { proxy -> Color in
+            DispatchQueue.main.async {
+                onContentHeightChange?(proxy.size.height)
             }
+            return Color.clear
+        })
+        .background(Color(designSystemColor: .background))
+    }
+
+    private var shouldUseExpandedButtonLayout: Bool {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return true
         }
+
+        return !(horizontalSizeClass == .compact && verticalSizeClass == .regular)
     }
 
     private struct ExportAnimationView: View {
-        @Binding var isAnimating: Bool
         @Environment(\.colorScheme) private var colorScheme
+        @StateObject private var loopCoordinator = AnimationLoopCoordinator()
 
         private var lottieFileName: String {
             colorScheme == .dark ? "export-passwords-dark-optimised" : "export-passwords-light-optimised"
         }
 
         var body: some View {
-            LottieView(
-                lottieFile: lottieFileName,
-                loopMode: .mode(.repeat(1.0)),
-                isAnimating: $isAnimating
-            )
-            .frame(width: 200, height: 200)
+            Lottie.LottieView(animation: .named(lottieFileName))
+                .configure { animationView in
+                    loopCoordinator.attach(animationView: animationView)
+                }
+                .frame(width: 300, height: 200)
+                .scaledToFit()
+                .onAppear {
+                    loopCoordinator.start(initialDelay: Constants.initialDelay,
+                                          pauseBetweenLoops: Constants.pauseBetweenLoops)
+                }
+                .onDisappear {
+                    loopCoordinator.stop()
+                }
+                .onChange(of: lottieFileName) { _ in
+                    loopCoordinator.restart(initialDelay: Constants.initialDelay)
+                }
+        }
+
+        private enum Constants {
+            static let initialDelay: TimeInterval = 1.0
+            static let pauseBetweenLoops: TimeInterval = 1.0
+        }
+
+        private final class AnimationLoopCoordinator: ObservableObject {
+            private weak var animationView: LottieAnimationView?
+            private var pendingWorkItem: DispatchWorkItem?
+            private var pauseBetweenLoops: TimeInterval = 1.0
+            private var isRunning = false
+
+            func attach(animationView: LottieAnimationView) {
+                self.animationView = animationView
+                animationView.stop()
+                animationView.currentProgress = 0
+
+                if isRunning {
+                    scheduleNextPlay(after: 0)
+                }
+            }
+
+            func start(initialDelay: TimeInterval, pauseBetweenLoops: TimeInterval) {
+                self.pauseBetweenLoops = pauseBetweenLoops
+                isRunning = true
+                scheduleNextPlay(after: initialDelay)
+            }
+
+            func restart(initialDelay: TimeInterval) {
+                guard isRunning else { return }
+                scheduleNextPlay(after: initialDelay)
+            }
+
+            func stop() {
+                isRunning = false
+                pendingWorkItem?.cancel()
+                pendingWorkItem = nil
+                animationView?.stop()
+                animationView?.currentProgress = 0
+            }
+
+            private func scheduleNextPlay(after delay: TimeInterval) {
+                pendingWorkItem?.cancel()
+
+                let workItem = DispatchWorkItem { [weak self] in
+                    guard let self,
+                          self.isRunning,
+                          let animationView = self.animationView else {
+                        return
+                    }
+
+                    animationView.play(fromProgress: 0, toProgress: 1, loopMode: .playOnce) { [weak self] completed in
+                        guard let self,
+                              completed,
+                              self.isRunning else {
+                            return
+                        }
+
+                        self.scheduleNextPlay(after: self.pauseBetweenLoops)
+                    }
+                }
+
+                pendingWorkItem = workItem
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+            }
         }
     }
 }

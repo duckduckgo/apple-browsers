@@ -222,15 +222,19 @@ class SettingsLegacyViewProvider: ObservableObject {
         return viewController
     }
 
-    func importPasswords(delegate: DataImportViewControllerDelegate, onFinished: (() -> Void)? = nil) -> UIViewController {
-        switch DataImportEntryPointHandler().destination(for: .settings) {
+    func importPasswords(importScreen: DataImportViewModel.ImportScreen = .settings,
+                         delegate: DataImportViewControllerDelegate,
+                         onFinished: (() -> Void)? = nil) -> UIViewController {
+        switch DataImportEntryPointHandler().destination(for: importScreen) {
         case .legacy(let importScreen):
             return makeDataImportViewController(importScreen: importScreen, delegate: delegate)
         case .hub:
+            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: importScreen.importHubEntryPointParameters)
             return DataImportHubViewController(syncService: syncService,
                                                 keyValueStore: keyValueStore,
                                                 bookmarksDatabase: bookmarksDatabase,
                                                 favoritesDisplayMode: appSettings.favoritesDisplayMode,
+                                                entryPoint: importScreen,
                                                 onFinished: onFinished)
         }
     }

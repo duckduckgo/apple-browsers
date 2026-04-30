@@ -255,6 +255,8 @@ final class UnifiedToggleInputView: UIView {
     private lazy var inlineDismissButton: UIButton = Self.makeInlineDismissButton()
     private let attachmentsStrip = UnifiedToggleInputAttachmentsStripView()
     private let toolsToolbar = UnifiedToggleInputToolbarView()
+    let pageContextChip = UnifiedToggleInputPageContextChipView()
+
     // MARK: - Shadow
 
     // Pinned to cardView via Auto Layout; CompositeShadowView forwards cornerRadius/backgroundColor to its shadow sub-layers.
@@ -307,6 +309,7 @@ final class UnifiedToggleInputView: UIView {
     private var inputTopConstraint: NSLayoutConstraint!
     private var toolbarBottomConstraint: NSLayoutConstraint!
     private var attachmentsStripHeightConstraint: NSLayoutConstraint!
+    private var pageContextChipHeightConstraint: NSLayoutConstraint!
     private var toolbarHeightConstraint: NSLayoutConstraint!
 
     // MARK: - Initialization
@@ -751,6 +754,15 @@ private extension UnifiedToggleInputView {
         textEntryView.placeholderTextColor = UIColor(designSystemColor: .textTertiary)
         addSubview(textEntryView)
 
+        pageContextChip.translatesAutoresizingMaskIntoConstraints = false
+        pageContextChip.onVisibilityChange = { [weak self] visible in
+            guard let self else { return }
+            self.pageContextChipHeightConstraint.constant = visible ? 28 : 0
+            self.layoutIfNeeded()
+            self.onNeedsHierarchyLayout?()
+        }
+        addSubview(pageContextChip)
+
         attachmentsStrip.translatesAutoresizingMaskIntoConstraints = false
         attachmentsStrip.clipsToBounds = false
         attachmentsStrip.alpha = 0
@@ -813,6 +825,7 @@ private extension UnifiedToggleInputView {
         inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
         toolbarBottomConstraint = toolsToolbar.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
         attachmentsStripHeightConstraint = attachmentsStrip.heightAnchor.constraint(equalToConstant: 0)
+        pageContextChipHeightConstraint = pageContextChip.heightAnchor.constraint(equalToConstant: 0)
         toolbarHeightConstraint = toolsToolbar.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
@@ -835,7 +848,12 @@ private extension UnifiedToggleInputView {
             textEntryView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             textEntryView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
 
-            attachmentsStrip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
+            pageContextChip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
+            pageContextChip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+            pageContextChip.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+            pageContextChipHeightConstraint,
+
+            attachmentsStrip.topAnchor.constraint(equalTo: pageContextChip.bottomAnchor),
             attachmentsStrip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             attachmentsStrip.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             attachmentsStripHeightConstraint,

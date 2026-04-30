@@ -30,7 +30,7 @@ final class AIChatContextualUTIHost {
     private let coordinator: UnifiedToggleInputCoordinator
     private let pageContextHandler: AIChatPageContextHandling
     private let chipViewModel: UnifiedToggleInputPageContextChipViewModel
-    private weak var webVC: AIChatContextualWebViewController?
+    private let chipPushState = ChipPushState()
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -45,36 +45,64 @@ final class AIChatContextualUTIHost {
             isToggleEnabled: false,
             isFireTab: isFireTab
         )
+        let chipPushState = self.chipPushState
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
             attachedURLPublisher: attachedURLPublisher,
             onAttach: { [weak pageContextHandler] _ in
+                guard let pageContextHandler else { return }
                 Logger.contextualUTI.info("UTIHost: chip onAttach — triggering context collection")
-                _ = pageContextHandler?.triggerContextCollection()
+                let didTrigger = pageContextHandler.triggerContextCollection()
+                guard didTrigger else {
+                    Logger.contextualUTI.error("UTIHost: triggerContextCollection returned false")
+                    return
+                }
+                chipPushState.cancellable = pageContextHandler.contextPublisher
+                    .dropFirst()
+                    .prefix(1)
+                    .sink { context in
+                        guard let context else {
+                            Logger.contextualUTI.error("UTIHost: collection completed with nil context")
+                            return
+                        }
+                        Logger.contextualUTI.info("UTIHost: pushing collected context to contextual chat for FE delivery")
+                        chipPushState.contextualChatViewController?.pushPageContext(context.contextData)
+                    }
             }
         )
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
-        coordinator.didSubmitPrompt
-            .sink { [weak self] prompt in
-                Logger.contextualUTI.info("UTIHost: didSubmitPrompt — forwarding to web VC")
-                self?.webVC?.submitPrompt(prompt, pageContext: nil)
-            }
-            .store(in: &cancellables)
     }
 
-    func install(in webVC: AIChatContextualWebViewController) {
-        self.webVC = webVC
-        webVC.addChild(coordinator.viewController)
-        webVC.view.addSubview(coordinator.viewController.view)
+    /// Binds the UTI coordinator to the contextual chat's `AIChatUserScript` so submitted prompts
+    /// flow through the same JS message channel the FE uses today, preserving model/tools/images.
+    func bindToUserScript(_ userScript: AIChatUserScript) {
+        Logger.contextualUTI.info("UTIHost: binding coordinator to AIChatUserScript")
+        coordinator.bindToTab(userScript)
+    }
+
+    func install(in contextualChatViewController: AIChatContextualWebViewController) {
+        chipPushState.contextualChatViewController = contextualChatViewController
+        coordinator.attachmentPresentingViewController = contextualChatViewController
+        contextualChatViewController.addChild(coordinator.viewController)
+        contextualChatViewController.view.addSubview(coordinator.viewController.view)
         coordinator.viewController.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            coordinator.viewController.view.leadingAnchor.constraint(equalTo: webVC.view.leadingAnchor),
-            coordinator.viewController.view.trailingAnchor.constraint(equalTo: webVC.view.trailingAnchor),
-            coordinator.viewController.view.bottomAnchor.constraint(equalTo: webVC.view.keyboardLayoutGuide.topAnchor),
+            coordinator.viewController.view.leadingAnchor.constraint(equalTo: contextualChatViewController.view.leadingAnchor),
+            coordinator.viewController.view.trailingAnchor.constraint(equalTo: contextualChatViewController.view.trailingAnchor),
+            coordinator.viewController.view.bottomAnchor.constraint(equalTo: contextualChatViewController.view.keyboardLayoutGuide.topAnchor),
         ])
-        webVC.anchorWebViewBottom(to: coordinator.viewController.view.topAnchor)
-        coordinator.viewController.didMove(toParent: webVC)
+        contextualChatViewController.anchorWebViewBottom(to: coordinator.viewController.view.topAnchor)
+        coordinator.viewController.didMove(toParent: contextualChatViewController)
         coordinator.showExpanded()
-        Logger.contextualUTI.info("UTIHost: installed at bottom of contextual web VC")
+        Logger.contextualUTI.info("UTIHost: installed at bottom of contextual chat")
     }
+}
+
+/// Holds shared state captured by the chip-onAttach closure: a weak ref to the contextual chat
+/// view controller (so we can push freshly-collected context to it) and the cancellable for the
+/// one-shot context subscription.
+@MainActor
+private final class ChipPushState {
+    weak var contextualChatViewController: AIChatContextualWebViewController?
+    var cancellable: AnyCancellable?
 }

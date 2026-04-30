@@ -289,7 +289,7 @@ private extension AIChatContextualSheetCoordinator {
                 return nil
             },
             pixelHandler: pixelHandler,
-            utiHostInstaller: { [weak self] webVC in
+            utiHostInstaller: { [weak self] contextualChatViewController in
                 guard let self else { return nil }
                 let attachedURLPublisher = self.pageContextHandler.contextPublisher
                     .map { $0.flatMap { URL(string: $0.contextData.url) } }
@@ -300,7 +300,7 @@ private extension AIChatContextualSheetCoordinator {
                     pageContextHandler: self.pageContextHandler,
                     isFireTab: self.isFireTab
                 )
-                host.install(in: webVC)
+                host.install(in: contextualChatViewController)
                 return host
             }
         )

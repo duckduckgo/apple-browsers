@@ -401,8 +401,8 @@ final class UnifiedToggleInputView: UIView {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
         if isExpanded {
-            setExpanded(false, animated: false)
-            setExpanded(true, animated: false)
+            applyCardLayout(.collapsed, animated: false)
+            applyCardLayout(.expanded(showsToggle: enabled, showsToolbar: enabled && toggleView.selectedMode == .aiChat), animated: false)
         }
     }
 
@@ -431,20 +431,21 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
-    func setExpanded(_ expanded: Bool, showToggle: Bool = true, animated: Bool) {
+    func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool) {
+        let expanded = layout.isExpanded
         guard expanded != isExpanded else { return }
         isExpanded = expanded
         handler.isExpanded = expanded
 
-        let effectiveToggleEnabled = isToggleEnabled && showToggle
-        let toggleHeight: CGFloat = (expanded && effectiveToggleEnabled) ? Constants.toggleHeight : 0
-        let showToolbar = expanded && effectiveToggleEnabled && toggleView.selectedMode == .aiChat
+        let showsToggle = layout.showsToggle
+        let showToolbar = layout.showsToolbar
+        let toggleHeight: CGFloat = showsToggle ? Constants.toggleHeight : 0
         // The card reserves space for the inline X whenever it's expanded at `.top`, so the
         // toggle's width is stable across the toggle-hidden transient. Visibility of the X
         // itself is gated on the toggle actually being shown, so the X can fade in together
         // with the toggle via `animateToggleReveal` rather than snapping in on activation.
         let reservesInlineDismissSpace = expanded && cardPosition == .top
-        let showInlineDismiss = reservesInlineDismissSpace && effectiveToggleEnabled
+        let showInlineDismiss = reservesInlineDismissSpace && showsToggle
 
         let hLeadingMargin: CGFloat
         let hTrailingMargin: CGFloat
@@ -476,22 +477,23 @@ final class UnifiedToggleInputView: UIView {
         cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
 
-        let expandedCornerRadius = effectiveToggleEnabled ? Constants.cardCornerRadiusExpanded : Constants.cardCornerRadiusCollapsed
+        let expandedCornerRadius = showsToggle ? Constants.cardCornerRadiusExpanded : Constants.cardCornerRadiusCollapsed
         let changes = {
             self.cardView.layer.cornerRadius = expanded ? expandedCornerRadius : Constants.cardCornerRadiusCollapsed
             self.cardTopConstraint.constant = vMargin
             self.cardLeadingConstraint.constant = hLeadingMargin
             self.cardTrailingConstraint.constant = -hTrailingMargin
             self.cardBottomConstraint.constant = -vMargin
-            self.toggleTopConstraint.constant = (expanded && effectiveToggleEnabled) ? Constants.toggleTopPadding : 0
+            self.toggleTopConstraint.constant = showsToggle ? Constants.toggleTopPadding : 0
             self.toggleHeightConstraint.constant = toggleHeight
             self.toggleTrailingConstraint.constant = reservesInlineDismissSpace
                 ? Constants.toggleTrailingWithInlineDismiss
                 : -Constants.toggleHorizontalPadding
-            let toggleDisabledSearchPadding = expanded && !self.isToggleEnabled && showToggle && self.handler.currentToggleState == .search && self.cardPosition == .bottom
-            self.inputTopConstraint.constant = expanded && effectiveToggleEnabled ? Constants.toggleBottomPadding : (toggleDisabledSearchPadding ? Constants.toggleDisabledSearchTopPadding : 0)
+            // Padding for the omnibar's "user has toggle setting off, search-only" expanded state at the bottom card position.
+            let toggleDisabledSearchPadding = expanded && !self.isToggleEnabled && !showsToggle && self.handler.currentToggleState == .search && self.cardPosition == .bottom
+            self.inputTopConstraint.constant = showsToggle ? Constants.toggleBottomPadding : (toggleDisabledSearchPadding ? Constants.toggleDisabledSearchTopPadding : 0)
             self.toolbarBottomConstraint.constant = toggleDisabledSearchPadding ? -Constants.toggleDisabledSearchTopPadding : 0
-            self.toggleView.alpha = (expanded && effectiveToggleEnabled) ? 1 : 0
+            self.toggleView.alpha = showsToggle ? 1 : 0
             self.applyInlineDismissVisibility(showInlineDismiss)
             self.toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
             self.toolsToolbar.alpha = showToolbar ? 1 : 0
@@ -514,10 +516,6 @@ final class UnifiedToggleInputView: UIView {
             changes()
             layoutIfNeeded()
         }
-    }
-
-    func setExpandedWithToggleHidden(_ expanded: Bool) {
-        setExpanded(expanded, showToggle: false, animated: false)
     }
 
     func animateToggleReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {

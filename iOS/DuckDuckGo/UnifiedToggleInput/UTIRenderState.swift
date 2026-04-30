@@ -22,7 +22,7 @@ import Foundation
 struct UTIRenderState: Equatable {
     var isInputVisible: Bool
     var isContentVisible: Bool
-    var isExpanded: Bool
+    var cardLayout: UnifiedToggleInputCardLayout
     var cardPosition: UnifiedToggleInputCardPosition
     var usesOmnibarMargins: Bool
     var isToolbarSubmitHidden: Bool
@@ -31,7 +31,6 @@ struct UTIRenderState: Equatable {
     var isToggleEnabled: Bool
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
-    var isToggleVisible: Bool
     /// Read in Chunk E to gate the suggestions overlay install in the omnibar host extension.
     var isSuggestionsAllowed: Bool
     /// Read in Chunk E to gate the floating submit install in the omnibar host extension.
@@ -39,16 +38,17 @@ struct UTIRenderState: Equatable {
     /// Read in Chunk E by the page-context chip view-model wired in by the contextual UTI host installer.
     var isPageContextChipVisible: Bool
 
+    var isExpanded: Bool { cardLayout.isExpanded }
+
     var viewConfig: UTIViewConfig {
         UTIViewConfig(
-            isExpanded: isExpanded,
+            cardLayout: cardLayout,
             cardPosition: cardPosition,
             usesOmnibarMargins: usesOmnibarMargins,
             isToolbarSubmitHidden: isToolbarSubmitHidden,
             inactiveAppearance: inactiveAppearance,
             inputMode: inputMode,
-            isTopBarPosition: usesOmnibarMargins,
-            isToggleVisible: isToggleVisible
+            isTopBarPosition: usesOmnibarMargins
         )
     }
 

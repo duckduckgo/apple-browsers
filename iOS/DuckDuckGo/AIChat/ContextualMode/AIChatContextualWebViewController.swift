@@ -299,8 +299,16 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func applyNativeInputIfNeeded(to url: URL) -> URL {
         guard featureFlagger.isFeatureOn(.unifiedToggleInput) else { return url }
-        Logger.contextualUTI.debug("[ContextualWebVC] applying nativeInput=1 (flag on)")
-        return AIChatURLParameters.nativeInputURL(from: url)
+        Logger.contextualUTI.debug("[ContextualWebVC] applying nativeInput=1 + stripping placement=sidebar (flag on)")
+        let withNativeInput = AIChatURLParameters.nativeInputURL(from: url)
+        return removingPlacementSidebar(from: withNativeInput)
+    }
+
+    private func removingPlacementSidebar(from url: URL) -> URL {
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return url }
+        let filtered = (components.queryItems ?? []).filter { !($0.name == "placement" && $0.value == "sidebar") }
+        components.queryItems = filtered.isEmpty ? nil : filtered
+        return components.url ?? url
     }
 
     private func setupDownloadHandler() {
@@ -382,6 +390,7 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
         userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.isFireTab ?? false }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
         userScripts.aiChatUserScript.setContextualModePixelHandler(pixelHandler)
+        utiHost?.bindToUserScript(userScripts.aiChatUserScript)
 
         isContentHandlerReady = true
         submitPendingIfReady()

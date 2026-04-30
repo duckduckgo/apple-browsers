@@ -218,11 +218,7 @@ final class UnifiedToggleInputViewController: UIViewController {
         isTopBarPosition = config.isTopBarPosition
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
-        if config.isToggleVisible {
-            setExpanded(config.isExpanded, animated: animated)
-        } else {
-            setExpandedWithToggleHidden(config.isExpanded)
-        }
+        applyCardLayout(config.cardLayout, animated: animated)
     }
 
     func applyToolsPresentation(
@@ -235,12 +231,8 @@ final class UnifiedToggleInputViewController: UIViewController {
         self.toolsMenu = toolsMenu
     }
 
-    func setExpanded(_ expanded: Bool, animated: Bool) {
-        inputBarView.setExpanded(expanded, animated: animated)
-    }
-
-    func setExpandedWithToggleHidden(_ expanded: Bool) {
-        inputBarView.setExpandedWithToggleHidden(expanded)
+    func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool) {
+        inputBarView.applyCardLayout(layout, animated: animated)
     }
 
     func animateToggleReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {

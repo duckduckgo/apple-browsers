@@ -200,4 +200,3 @@ final class VoiceSessionTrackerTests: XCTestCase {
         XCTAssertTrue(tracker.findActiveVoiceTab(in: tcvmA) === unpinnedVoiceInA)
     }
 }
-

@@ -219,19 +219,14 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     // MARK: - Voice Chat
 
-    func testOpenNewVoiceChat_OpensNewSelectedTabWithVoiceModeTrigger() {
+    func testOpenNewVoiceChat_DelegatesToOpenVoiceSessionWithNewSelectedTab() {
         // When
         controller.openNewVoiceChat()
 
-        // Then — tab opener invoked with the `.mode(voice)` trigger and a new selected tab.
-        // The mode is handed off via the prompt payload (Duck.ai routes on mode), not via a
-        // `?mode=voice` URL parameter — same handoff mechanism image-generation uses.
-        XCTAssertTrue(mockTabOpener.openAIChatTabCalled)
-        XCTAssertEqual(mockTabOpener.lastBehavior, .newTab(selected: true))
-        guard case .mode(let mode) = mockTabOpener.lastTrigger else {
-            return XCTFail("Expected .mode trigger, got \(String(describing: mockTabOpener.lastTrigger))")
-        }
-        XCTAssertEqual(mode, AIChatNativePrompt.voiceMode)
+        // Then — controller hands off to `openVoiceSession`, which encapsulates the
+        // "focus existing voice tab in the same window if active, otherwise open new" decision.
+        XCTAssertTrue(mockTabOpener.openVoiceSessionCalled)
+        XCTAssertEqual(mockTabOpener.lastVoiceSessionBehavior, .newTab(selected: true))
     }
 
     // MARK: - Text Update Tests

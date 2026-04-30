@@ -179,12 +179,14 @@ final class AIChatOmnibarController {
         subscribeToTextChangesForSuggestions()
     }
 
-    /// Opens a new voice-chat tab from the AI chat omnibar. Mirrors the `Duck.ai → New Voice Chat`
-    /// menu action: opens a new selected Duck.ai tab and hands off `mode: voice-mode` via the prompt
-    /// handler (no `?mode=voice` URL param — Duck.ai routes purely on the prompt mode, same as
-    /// image generation).
+    /// Opens a new voice-chat tab from the AI chat omnibar. Focuses an existing voice session
+    /// in the same window if one is active; otherwise opens a new selected Duck.ai tab and hands
+    /// off `mode: voice-mode` via the prompt handler.
     func openNewVoiceChat() {
-        aiChatTabOpener.openAIChatTab(with: .mode(AIChatNativePrompt.voiceMode), behavior: .newTab(selected: true))
+        aiChatTabOpener.openVoiceSession(
+            inWindowOf: tabCollectionViewModel.selectedTab,
+            behavior: .newTab(selected: true)
+        )
         PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNative, frequency: .dailyAndStandard, includeAppVersionParameter: true)
     }
 

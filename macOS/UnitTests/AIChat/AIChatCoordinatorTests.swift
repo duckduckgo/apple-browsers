@@ -1145,6 +1145,20 @@ class MockAIChatTabOpener: AIChatTabOpening {
         openMethodCalledExpectation = nil
     }
 
+    var openVoiceSessionCalled = false
+    var lastVoiceSessionSourceTab: Tab?
+    var lastVoiceSessionBehavior: LinkOpenBehavior?
+
+    @MainActor
+    func openVoiceSession(inWindowOf sourceTab: Tab?, behavior: LinkOpenBehavior) {
+        openVoiceSessionCalled = true
+        lastVoiceSessionSourceTab = sourceTab
+        lastVoiceSessionBehavior = behavior
+
+        openMethodCalledExpectation?.fulfill()
+        openMethodCalledExpectation = nil
+    }
+
     func reset() {
         openAIChatTabCalled = false
         lastTrigger = nil

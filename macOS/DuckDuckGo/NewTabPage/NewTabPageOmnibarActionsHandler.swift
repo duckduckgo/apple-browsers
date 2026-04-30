@@ -149,6 +149,18 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             behavior = .newTab(selected: isShiftPressed())
         }
 
+        // Voice handoff: focus an existing voice tab in the same window if one is active,
+        // otherwise open a fresh tab via `.mode(voiceMode)`. We must NOT fall through to
+        // `.query(chat)` + `setData(nativePrompt)` below — the existing voice tab keeps its
+        // in-progress state, and pushing a stale prompt would override the user's next real
+        // submission (matches the Windows-browser `WillActivateExistingVoiceTab` guard).
+        if mode == AIChatNativePrompt.voiceMode {
+            let sourceTab = windowControllersManager.lastKeyMainWindowController?
+                .mainViewController.tabCollectionViewModel.selectedTab
+            tabOpener.openVoiceSession(inWindowOf: sourceTab, behavior: behavior)
+            return
+        }
+
         tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)
 
         // Re-set prompt after tab opener to include images, mode, tool choice, model selection,

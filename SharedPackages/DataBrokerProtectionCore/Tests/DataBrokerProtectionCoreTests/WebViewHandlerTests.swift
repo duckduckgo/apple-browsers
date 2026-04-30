@@ -71,14 +71,41 @@ final class WebViewHandlerTests: XCTestCase {
     }
 
     @MainActor
-    private func makeWebViewHandler() throws -> DataBrokerProtectionWebViewHandler {
+    func testWhenInitialized_thenApplicationNameForUserAgentClosureIsEvaluated() throws {
+        // Given
+        var invocationCount = 0
+        let provider: () -> String? = {
+            invocationCount += 1
+            return "TestApp/1.0"
+        }
+
+        // When
+        _ = try makeWebViewHandler(applicationNameForUserAgent: provider)
+
+        // Then
+        XCTAssertEqual(invocationCount, 1)
+    }
+
+    @MainActor
+    func testWhenApplicationNameForUserAgentReturnsNil_thenInitSucceeds() throws {
+        // Given
+        let provider: () -> String? = { nil }
+
+        // When / Then (does not throw)
+        _ = try makeWebViewHandler(applicationNameForUserAgent: provider)
+    }
+
+    @MainActor
+    private func makeWebViewHandler(
+        applicationNameForUserAgent: @escaping () -> String? = { nil }
+    ) throws -> DataBrokerProtectionWebViewHandler {
         try DataBrokerProtectionWebViewHandler(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: .mock,
             delegate: MockWebViewCommunicationDelegate(),
             executionConfig: BrokerJobExecutionConfig(),
             shouldContinueActionHandler: { true },
-            applicationNameForUserAgent: { nil }
+            applicationNameForUserAgent: applicationNameForUserAgent
         )
     }
 }

@@ -57,8 +57,6 @@ final class OnboardingPixelReporter {
          fireAction: @escaping (PixelKitEvent, PixelKit.Frequency) -> Void = { event, frequency in PixelKit.fire(event, frequency: frequency) },
          onboardingSharedPixelHandler: OnboardingSharedPixelHandling = OnboardingSharedPixelHandler(
             platform: .macOS,
-            source: .defaultSource,
-            flow: .defaultFlow,
             installType: DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore).isReinstallingUser ? .reinstall : .newInstall,
             installDateProvider: { AppDelegate.firstLaunchDate }
          )) {

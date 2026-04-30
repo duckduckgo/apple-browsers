@@ -45,7 +45,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
     func testWhenFiringPixelEventThenUsesExpectedNameAndNonOptionalParameters() throws {
         let pixelFiring = PixelKitMock()
-        let pixelHandler = makeHandler(source: .defaultSource, flow: .defaultFlow, pixelFiring: pixelFiring)
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
 
         pixelHandler.fire(.welcome(.shown))
 
@@ -55,6 +55,19 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.pixel.standardParameters, [.pixelSource])
         XCTAssertEqual(event.additionalParameters?["source"], "default")
         XCTAssertEqual(event.additionalParameters?["flow"], "default")
+    }
+
+    func testWhenMetadataIsSetThenMetadataParametersAreIncludedWithExpectedValues() throws {
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        pixelHandler.setMetadata(source: .duckAICustomProductPage, flow: .duckAIExperiment, variant: .duckAIChat)
+        pixelHandler.fire(.welcome(.shown))
+
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.additionalParameters?["source"], "duckai_cpp")
+        XCTAssertEqual(event.additionalParameters?["flow"], "duckai_experiment")
+        XCTAssertEqual(event.additionalParameters?["variant"], "search_plus_duckai-chat")
     }
 
     func testWhenVariantIsSetThenVariantParameterIsIncluded() throws {
@@ -229,15 +242,11 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
 private extension OnboardingSharedPixelTests {
     func makeHandler(platform: OnboardingSharedPixelHandler.Platform = .macOS,
-                     source: OnboardingSharedPixelHandler.OnboardingSource = .defaultSource,
-                     flow: OnboardingSharedPixelHandler.OnboardingFlowType = .defaultFlow,
                      installType: OnboardingSharedPixelHandler.InstallType? = nil,
                      installDateProvider: @escaping () -> Date? = { nil },
                      currentDateProvider: @escaping () -> Date = { Date() },
                      pixelFiring: PixelFiring? = nil) -> OnboardingSharedPixelHandler {
         OnboardingSharedPixelHandler(platform: platform,
-                                     source: source,
-                                     flow: flow,
                                      installType: installType,
                                      installDateProvider: installDateProvider,
                                      currentDateProvider: currentDateProvider,

@@ -345,7 +345,9 @@ private class MockOnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
         eventsReceived.append(event)
     }
 
-    func setVariant(_ variant: OnboardingFlowVariant) {}
+    func setMetadata(source: OnboardingSourcePixelParameter, flow: OnboardingFlowTypePixelParameter, variant: OnboardingVariantPixelParameter?) {}
+
+    func setVariant(_ variant: OnboardingVariantPixelParameter) {}
 
     func reset() {
         eventsReceived = []

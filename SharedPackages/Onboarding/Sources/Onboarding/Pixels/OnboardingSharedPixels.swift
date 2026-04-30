@@ -23,12 +23,29 @@ import PixelKit
 public protocol OnboardingSharedPixelHandling {
     func fire(_ event: OnboardingSharedPixelEvent)
 
-    /// Sets the variant of the onboarding flow the user has entered.
-    /// The variant is added to the parameters on every subsequent pixel fired by the handler.
-    func setVariant(_ variant: OnboardingFlowVariant)
+    /// Sets the pixel parameters with the provided onboarding metadata, to be added to all subsequent pixels fired by the handler.
+    /// Should be called at the start of the onboarding flow.
+    func setMetadata(source: OnboardingSourcePixelParameter, flow: OnboardingFlowTypePixelParameter, variant: OnboardingVariantPixelParameter?)
+
+    /// Sets the variant of the onboarding flow the user has entered, to be added to all subsequent pixels fired by the handler.
+    /// Should be called at the point where the onboarding flow branches into separate variants.
+    func setVariant(_ variant: OnboardingVariantPixelParameter)
 }
 
-public enum OnboardingFlowVariant: String {
+/// Pixel parameter for the entry point into the onboarding flow.
+public enum OnboardingSourcePixelParameter: String {
+    case `default` = "default"
+    case duckAICustomProductPage = "duckai_cpp"
+}
+
+/// Pixel parameter for the type of onboarding flow the user started.
+public enum OnboardingFlowTypePixelParameter: String {
+    case `default` = "default"
+    case duckAIExperiment = "duckai_experiment"
+}
+
+/// Pixel parameter for the variant of the onboarding flow the user enters after a branching step during onboarding.
+public enum OnboardingVariantPixelParameter: String {
     case search = "search"
     case duckAISearch = "search_plus_duckai-search"
     case duckAIChat = "search_plus_duckai-chat"
@@ -48,16 +65,6 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
         case reinstall
     }
 
-    public enum OnboardingSource: String {
-        case defaultSource = "default"
-        case duckAICustomProductPage = "duckai_cpp"
-    }
-
-    public enum OnboardingFlowType: String {
-        case defaultFlow = "default"
-        case duckAIExperiment = "duckai_experiment"
-    }
-
     public enum Platform: String {
         case iOS
         case macOS
@@ -74,13 +81,13 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
 
     private let platform: Platform
     private let installType: InstallType?
-    private let source: OnboardingSource
-    private let flow: OnboardingFlowType
     private let installDateProvider: () -> Date?
     private let currentDateProvider: () -> Date
     private let pixelFiring: PixelFiring?
 
-    private var variant: OnboardingFlowVariant?
+    private var source: OnboardingSourcePixelParameter = .default
+    private var flow: OnboardingFlowTypePixelParameter = .default
+    private var variant: OnboardingVariantPixelParameter?
 
     private var daysSinceInstall: Int? {
         guard let installDate = installDateProvider() else { return nil }
@@ -92,6 +99,10 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
             ParameterKeys.source: source.rawValue,
             ParameterKeys.flow: flow.rawValue
         ]
+
+        if let variant {
+            additionalParameters[ParameterKeys.variant] = variant.rawValue
+        }
 
         if let installType {
             additionalParameters[ParameterKeys.installType] = installType.rawValue
@@ -105,15 +116,11 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     }
 
     public init(platform: Platform,
-                source: OnboardingSource,
-                flow: OnboardingFlowType,
                 installType: InstallType?,
                 installDateProvider: @escaping () -> Date?,
                 currentDateProvider: @escaping () -> Date = { Date() },
                 pixelFiring: PixelFiring? = PixelKit.shared) {
         self.platform = platform
-        self.source = source
-        self.flow = flow
         self.installType = installType
         self.installDateProvider = installDateProvider
         self.currentDateProvider = currentDateProvider
@@ -121,18 +128,21 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     }
 
     public func fire(_ event: OnboardingSharedPixelEvent) {
-        var additionalParameters = self.additionalParameters
-        if let variant {
-            additionalParameters[ParameterKeys.variant] = variant.rawValue
-        }
-
         pixelFiring?.fire(event,
                           frequency: .uniqueByNameAndParameters,
                           withAdditionalParameters: additionalParameters,
                           withNamePrefix: platform.pixelPrefix)
     }
 
-    public func setVariant(_ variant: OnboardingFlowVariant) {
+    public func setMetadata(source: OnboardingSourcePixelParameter,
+                            flow: OnboardingFlowTypePixelParameter,
+                            variant: OnboardingVariantPixelParameter?) {
+        self.source = source
+        self.flow = flow
+        self.variant = variant
+    }
+
+    public func setVariant(_ variant: OnboardingVariantPixelParameter) {
         self.variant = variant
     }
 

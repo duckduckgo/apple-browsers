@@ -111,10 +111,6 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     private var isAIChatSearchInputEnabled: Bool {
         aiChatSettings.isAIChatSearchInputUserSettingsEnabled
     }
-    
-    private var isAddressBarPositionBottom: Bool {
-        appSettings.currentAddressBarPosition.isBottom
-    }
 
     private var hasForceChoiceBeenShown: Bool {
         pickerStorage.hasBeenShown

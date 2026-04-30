@@ -30,6 +30,7 @@ final class HistoryCleanerTests: XCTestCase {
     private var mockFlagProvider: MockAIChatFeatureFlagProvider!
     private var mockHandler: CallCountingStorageHandler!
     private var mockPrivacyConfig: MockPrivacyConfigurationManager!
+    private var mockJSCleaner: MockAIChatJSDataCleaner!
 
     override func setUp() {
         super.setUp()
@@ -37,6 +38,7 @@ final class HistoryCleanerTests: XCTestCase {
         mockFlagProvider = MockAIChatFeatureFlagProvider()
         mockHandler = CallCountingStorageHandler()
         mockPrivacyConfig = MockPrivacyConfigurationManager()
+        mockJSCleaner = MockAIChatJSDataCleaner()
     }
 
     override func tearDown() {
@@ -44,6 +46,7 @@ final class HistoryCleanerTests: XCTestCase {
         mockFlagProvider = nil
         mockHandler = nil
         mockPrivacyConfig = nil
+        mockJSCleaner = nil
         super.tearDown()
     }
 
@@ -56,7 +59,8 @@ final class HistoryCleanerTests: XCTestCase {
             privacyConfig: mockPrivacyConfig,
             websiteDataStore: .nonPersistent(),
             nativeStorageHandler: nativeStorageHandler,
-            featureFlagProvider: featureFlagProvider
+            featureFlagProvider: featureFlagProvider,
+            jsDataCleaner: mockJSCleaner
         )
     }
 
@@ -90,7 +94,7 @@ final class HistoryCleanerTests: XCTestCase {
         XCTAssertNotNil(try? result.get())
     }
 
-    func testWhenStorageFlagDisabledButAccessFlagEnabledThenCleanAIChatHistoryDoesNotUseLocalStorage() {
+    func testWhenStorageFlagDisabledButAccessFlagEnabledThenCleanAIChatHistoryDoesNotUseLocalStorage() async {
         // Regression guard for the pre-fix behavior: when only the access flag is on,
         // local storage must NOT be cleared.
         mockFlagProvider.isNativeDataStorageEnabledResult = false
@@ -98,34 +102,20 @@ final class HistoryCleanerTests: XCTestCase {
         mockHandler.stubbedIsMigrationDone = true
         let sut = makeSUT(nativeStorageHandler: mockHandler, featureFlagProvider: mockFlagProvider)
 
-        let deleteAllChatsNotCalled = expectation(description: "deleteAllChats should not be called")
-        deleteAllChatsNotCalled.isInverted = true
-        mockHandler.onDeleteAllChats = { deleteAllChatsNotCalled.fulfill() }
+        _ = await sut.cleanAIChatHistory()
 
-        let task = Task { _ = await sut.cleanAIChatHistory() }
-
-        wait(for: [deleteAllChatsNotCalled], timeout: 0.5)
         XCTAssertEqual(mockHandler.deleteAllChatsCallCount, 0)
         XCTAssertEqual(mockHandler.deleteAllFilesCallCount, 0)
-
-        task.cancel()
     }
 
-    func testWhenMigrationNotDoneThenCleanAIChatHistoryDoesNotUseLocalStorage() {
+    func testWhenMigrationNotDoneThenCleanAIChatHistoryDoesNotUseLocalStorage() async {
         mockFlagProvider.isNativeDataStorageEnabledResult = true
         mockHandler.stubbedIsMigrationDone = false
         let sut = makeSUT(nativeStorageHandler: mockHandler, featureFlagProvider: mockFlagProvider)
 
-        let deleteAllChatsNotCalled = expectation(description: "deleteAllChats should not be called")
-        deleteAllChatsNotCalled.isInverted = true
-        mockHandler.onDeleteAllChats = { deleteAllChatsNotCalled.fulfill() }
+        _ = await sut.cleanAIChatHistory()
 
-        let task = Task { _ = await sut.cleanAIChatHistory() }
-
-        wait(for: [deleteAllChatsNotCalled], timeout: 0.5)
         XCTAssertEqual(mockHandler.deleteAllChatsCallCount, 0)
-
-        task.cancel()
     }
 
     func testWhenHandlerThrowsOnDeleteAllChatsThenCleanAIChatHistoryReturnsFailure() async {
@@ -142,6 +132,59 @@ final class HistoryCleanerTests: XCTestCase {
         }
         XCTAssertEqual(error as NSError, expectedError)
         XCTAssertEqual(mockHandler.deleteAllFilesCallCount, 1, "Files should be cleared before chats")
+    }
+
+    // MARK: - JS data cleaner is also invoked when native storage is enabled
+
+    func testWhenStorageFlagEnabledAndMigrationDoneThenCleanAIChatHistoryAlsoClearsJSData() async {
+        // Without this, IndexedDB/localStorage on the JS side would leak data after the fire button is used.
+        mockFlagProvider.isNativeDataStorageEnabledResult = true
+        mockHandler.stubbedIsMigrationDone = true
+        let sut = makeSUT(nativeStorageHandler: mockHandler, featureFlagProvider: mockFlagProvider)
+
+        _ = await sut.cleanAIChatHistory()
+
+        XCTAssertEqual(mockJSCleaner.clearJSDataCalls, [nil])
+    }
+
+    func testWhenNoNativeHandlerProvidedThenCleanAIChatHistoryStillRunsJSCleaner() async {
+        let sut = makeSUT(nativeStorageHandler: nil, featureFlagProvider: nil)
+
+        _ = await sut.cleanAIChatHistory()
+
+        XCTAssertEqual(mockJSCleaner.clearJSDataCalls, [nil])
+    }
+
+    func testWhenNativeClearFailsThenJSCleanerStillRunsAndNativeErrorIsReturned() async {
+        mockFlagProvider.isNativeDataStorageEnabledResult = true
+        mockHandler.stubbedIsMigrationDone = true
+        let nativeError = NSError(domain: "native", code: 1)
+        mockHandler.stubbedDeleteAllChatsError = nativeError
+        let sut = makeSUT(nativeStorageHandler: mockHandler, featureFlagProvider: mockFlagProvider)
+
+        let result = await sut.cleanAIChatHistory()
+
+        XCTAssertEqual(mockJSCleaner.clearJSDataCalls, [nil], "JS cleanup must still run for best-effort cleanup")
+        guard case .failure(let error) = result else {
+            return XCTFail("Expected native failure to propagate, got \(result)")
+        }
+        XCTAssertEqual(error as NSError, nativeError)
+    }
+
+    func testWhenJSCleanerFailsAndNativeSucceedsThenJSFailureIsReturned() async {
+        mockFlagProvider.isNativeDataStorageEnabledResult = true
+        mockHandler.stubbedIsMigrationDone = true
+        let jsError = NSError(domain: "js", code: 7)
+        mockJSCleaner.stubbedResult = .failure(jsError)
+        let sut = makeSUT(nativeStorageHandler: mockHandler, featureFlagProvider: mockFlagProvider)
+
+        let result = await sut.cleanAIChatHistory()
+
+        XCTAssertEqual(mockHandler.deleteAllChatsCallCount, 1)
+        guard case .failure(let error) = result else {
+            return XCTFail("Expected JS failure to surface when native succeeded, got \(result)")
+        }
+        XCTAssertEqual(error as NSError, jsError)
     }
 
     // MARK: - deleteAIChat (single chat)
@@ -163,6 +206,7 @@ final class HistoryCleanerTests: XCTestCase {
         XCTAssertEqual(mockHandler.deletedChatIDs, ["target-chat"], "Only target chat should be deleted")
         XCTAssertEqual(mockHandler.deleteAllChatsCallCount, 0, "Bulk delete should not be called for single-chat delete")
         XCTAssertEqual(mockHandler.deleteAllFilesCallCount, 0, "Bulk file delete should not be called for single-chat delete")
+        XCTAssertEqual(mockJSCleaner.clearJSDataCalls, ["target-chat"])
     }
 
     func testWhenDeleteAIChatWithNoMatchingFilesThenOnlyChatIsDeleted() async {
@@ -194,28 +238,23 @@ final class HistoryCleanerTests: XCTestCase {
         }
         XCTAssertEqual(error as NSError, expectedError)
         XCTAssertTrue(mockHandler.deletedChatIDs.isEmpty, "Chat should not be deleted when file listing fails")
+        XCTAssertEqual(mockJSCleaner.clearJSDataCalls, ["target-chat"], "JS cleanup must still run when native fails")
     }
 
-    func testWhenStorageFlagDisabledButAccessFlagEnabledThenDeleteAIChatDoesNotUseLocalStorage() {
+    func testWhenStorageFlagDisabledButAccessFlagEnabledThenDeleteAIChatDoesNotUseLocalStorage() async {
         mockFlagProvider.isNativeDataStorageEnabledResult = false
         mockFlagProvider.isNativeDataAccessEnabledResult = true
         mockHandler.stubbedIsMigrationDone = true
         let sut = makeSUT(nativeStorageHandler: mockHandler, featureFlagProvider: mockFlagProvider)
 
-        let localPathNotUsed = expectation(description: "single-chat local delete should not run")
-        localPathNotUsed.isInverted = true
-        mockHandler.onDeleteChat = { _ in localPathNotUsed.fulfill() }
+        _ = await sut.deleteAIChat(chatID: "some-chat")
 
-        let task = Task { _ = await sut.deleteAIChat(chatID: "some-chat") }
-
-        wait(for: [localPathNotUsed], timeout: 0.5)
         XCTAssertTrue(mockHandler.deletedChatIDs.isEmpty)
-
-        task.cancel()
+        XCTAssertEqual(mockJSCleaner.clearJSDataCalls, ["some-chat"], "JS cleanup is the only path when native isn't applicable")
     }
 }
 
-// MARK: - Mock
+// MARK: - Mocks
 
 private final class CallCountingStorageHandler: DuckAiNativeStorageHandling {
 
@@ -223,9 +262,6 @@ private final class CallCountingStorageHandler: DuckAiNativeStorageHandling {
     var stubbedFiles: [DuckAiFileMetadata] = []
     var stubbedListFilesError: Error?
     var stubbedDeleteAllChatsError: Error?
-
-    var onDeleteAllChats: (() -> Void)?
-    var onDeleteChat: ((String) -> Void)?
 
     private(set) var deleteAllChatsCallCount = 0
     private(set) var deleteAllFilesCallCount = 0
@@ -249,12 +285,10 @@ private final class CallCountingStorageHandler: DuckAiNativeStorageHandling {
     func deleteChat(chatId: String) throws {
         deleteChatCallCount += 1
         deletedChatIDs.append(chatId)
-        onDeleteChat?(chatId)
     }
 
     func deleteAllChats() throws {
         deleteAllChatsCallCount += 1
-        onDeleteAllChats?()
         if let error = stubbedDeleteAllChatsError { throw error }
     }
 
@@ -280,4 +314,15 @@ private final class CallCountingStorageHandler: DuckAiNativeStorageHandling {
     func isMigrationDone() throws -> Bool { stubbedIsMigrationDone }
     func isMigrationDone(key: String) throws -> Bool { stubbedIsMigrationDone }
     func markMigrationDone(key: String) throws {}
+}
+
+private final class MockAIChatJSDataCleaner: AIChatJSDataCleaning {
+    var stubbedResult: Result<Void, Error> = .success(())
+    private(set) var clearJSDataCalls: [String?] = []
+
+    @MainActor
+    func clearJSData(chatID: String?) async -> Result<Void, Error> {
+        clearJSDataCalls.append(chatID)
+        return stubbedResult
+    }
 }

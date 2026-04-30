@@ -4272,6 +4272,27 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Smazat zařízení?";
 
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kód je zkopírovaný";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup zapnuto";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Kód pro obnovení je zkopírovaný";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Nepodařilo se zapnout Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Vypnout";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Na tvoje záložky a hesla v tomto zařízení to nebude mít vliv.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Vypnout Sync & Backup?";
+
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Odstranit";
 

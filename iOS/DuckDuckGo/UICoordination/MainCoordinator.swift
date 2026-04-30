@@ -393,15 +393,20 @@ final class MainCoordinator {
         controller.setWebExtensionManager(webExtensionManager)
         subscribeToDarkReaderChanges()
 
-        // Defer extension loading until the app reaches the foreground
-        // (applicationDidBecomeActive) to ensure the WebKit process and
-        // protected data are fully available. Loading too early during launch
-        // can cause WKWebExtensionErrorInvalidArchive errors on iOS.
+        // Defer extension loading until onAppReadyForInteractions to ensure
+        // the WebKit process, protected data, and UI are fully available.
+        // Loading too early blocks the main thread with WKWebExtension file I/O,
+        // risking a watchdog kill (0x8badf00d) during launch.
+        isWebExtensionLoadPending = true
         if UIApplication.shared.applicationState == .active {
-            scheduleExtensionLoad()
-        } else {
-            isWebExtensionLoadPending = true
+            loadWebExtensionsIfPending()
         }
+    }
+
+    @available(iOS 18.4, *)
+    func loadWebExtensionsIfPending() {
+        guard isWebExtensionLoadPending else { return }
+        scheduleExtensionLoad()
     }
 
     @available(iOS 18.4, *)
@@ -564,9 +569,6 @@ final class MainCoordinator {
         fireDailyAdBlockingPixel()
 
         if #available(iOS 18.4, *) {
-            if isWebExtensionLoadPending {
-                scheduleExtensionLoad()
-            }
             webExtensionEventsCoordinator?.didFocusWindow()
         }
     }

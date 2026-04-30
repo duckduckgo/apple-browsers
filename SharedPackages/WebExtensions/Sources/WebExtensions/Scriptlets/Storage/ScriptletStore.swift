@@ -117,7 +117,7 @@ public final class ScriptletStore: ScriptletStoring {
 
             let relativeCachedPath = "\(extensionTypeRawValue)/\(safeVersion)/\(item.descriptor.name)"
             let scriptlet = Scriptlet(path: item.descriptor.name, relativeCachedPath: relativeCachedPath)
-            let file = tempDirectory.appendingPathComponent(item.descriptor.name)
+            let file = resolvedTempDirectory.appendingPathComponent(item.descriptor.name)
             try ScriptletPathSafety.ensureContained(file, within: resolvedTempDirectory, name: item.descriptor.name)
 
             let fileDirectory = file.deletingLastPathComponent()

@@ -4272,6 +4272,27 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Fjern enhed?";
 
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kode kopieret";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup aktiveret";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Gendannelseskode kopieret";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Kunne ikke aktivere Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Slå fra";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Dine bogmærker og adgangskoder på denne enhed vil ikke blive påvirket.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Slå Sync & Backup fra?";
+
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Fjern";
 

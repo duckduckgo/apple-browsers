@@ -357,6 +357,28 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.viewController.isInputExpanded)
     }
 
+    func test_activateFromOmnibar_bottomPosition_leavesBarInCollapsedStartPose() {
+        sut.activateFromOmnibar(cardPosition: .bottom)
+        // Bottom pre-stages to collapsed; the show animation expands it.
+        XCTAssertFalse(sut.viewController.isInputExpanded)
+    }
+
+    func test_activateFromOmnibar_emitsIntentWithBothHeights() {
+        let exp = expectation(description: "showOmnibarEditing emitted with pending height")
+        sut.intentPublisher
+            .sink { intent in
+                if case .showOmnibarEditing(let height, let pending) = intent {
+                    XCTAssertGreaterThan(height, 0)
+                    XCTAssertNotNil(pending)
+                    exp.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        sut.activateFromOmnibar(cardPosition: .bottom)
+        waitForExpectations(timeout: 1)
+    }
+
     func test_deactivateToOmnibar_resetsVCProperties() {
         sut.activateFromOmnibar(cardPosition: .top)
         sut.deactivateToOmnibar()
@@ -554,7 +576,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(sut.displayState, .omnibar(.active))
         XCTAssertEqual(sut.viewController.inputMode, .aiChat)
-        XCTAssertTrue(sut.viewController.isInputExpanded)
+        // Bottom bar sits in show-animation start pose here; expansion runs in the intent handler.
 
         let renderState = sut.computeRenderState()
         XCTAssertEqual(renderState.cardPosition, .bottom)

@@ -235,16 +235,19 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setExpanded(expanded, animated: animated)
     }
 
-    func setExpandedWithToggleHidden(_ expanded: Bool) {
-        inputBarView.setExpandedWithToggleHidden(expanded)
+    /// See `UnifiedToggleInputView.prepareForOmnibarEditingShow`.
+    func prepareForOmnibarEditingShow() {
+        inputBarView.prepareForOmnibarEditingShow()
     }
 
-    func animateToggleReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
-        inputBarView.animateToggleReveal(additionalAnimations: additionalAnimations, completion: completion)
+    /// See `UnifiedToggleInputView.applyOmnibarEditingShowPose`.
+    func applyOmnibarEditingShowPose() {
+        inputBarView.applyOmnibarEditingShowPose()
     }
 
-    func animateToggleHide(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
-        inputBarView.animateToggleHide(additionalAnimations: additionalAnimations, completion: completion)
+    /// See `UnifiedToggleInputView.applyOmnibarEditingDismissPose`.
+    func applyOmnibarEditingDismissPose() {
+        inputBarView.applyOmnibarEditingDismissPose()
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {

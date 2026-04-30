@@ -433,7 +433,7 @@ final class UnifiedToggleInputView: UIView {
         // The card reserves space for the inline X whenever it's expanded at `.top`, so the
         // toggle's width is stable across the toggle-hidden transient. Visibility of the X
         // itself is gated on the toggle actually being shown, so the X can fade in together
-        // with the toggle via `animateToggleReveal` rather than snapping in on activation.
+        // with the toggle via `applyToggleRevealChanges` rather than snapping in on activation.
         let reservesInlineDismissSpace = expanded && cardPosition == .top
         let showInlineDismiss = reservesInlineDismissSpace && effectiveToggleEnabled
 
@@ -511,65 +511,73 @@ final class UnifiedToggleInputView: UIView {
         setExpanded(expanded, showToggle: false, animated: false)
     }
 
-    func animateToggleReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
-        guard isExpanded, isToggleEnabled else {
-            completion?()
-            return
+    /// Pre-stages the bar to its starting pose for an omnibar-editing show animation.
+    /// Top: slim card with toggle hidden. Bottom: collapsed bar.
+    /// Call BEFORE the UIView.animate that runs the show animation.
+    func prepareForOmnibarEditingShow() {
+        switch cardPosition {
+        case .top:
+            setExpanded(false, animated: false)
+            setExpandedWithToggleHidden(true)
+        case .bottom:
+            setExpanded(false, animated: false)
         }
-
-        let showToolbar = toggleView.selectedMode == .aiChat
-
-        UIView.animate(
-            withDuration: Constants.animationDuration,
-            delay: 0,
-            options: .curveEaseInOut,
-            animations: {
-                self.cardView.layer.cornerRadius = Constants.cardCornerRadiusExpanded
-                self.toggleTopConstraint.constant = Constants.toggleTopPadding
-                self.toggleHeightConstraint.constant = Constants.toggleHeight
-                self.toggleView.alpha = 1
-                self.applyInlineDismissVisibility(self.cardPosition == .top)
-                self.inputTopConstraint.constant = Constants.toggleBottomPadding
-                self.cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
-                self.cardView.layer.borderColor = showToolbar ? self.expandedBorderColor : UIColor.clear.cgColor
-                self.toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
-                self.toolsToolbar.alpha = showToolbar ? 1 : 0
-                self.updateAttachmentsStripLayout()
-                additionalAnimations?()
-                self.layoutIfNeeded()
-            },
-            completion: { _ in
-                completion?()
-            }
-        )
     }
 
-    func animateToggleHide(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
-        guard isExpanded, isToggleEnabled else {
-            completion?()
-            return
+    /// Applies the bar's active editing END pose. Designed to be called inside a UIView.animate
+    /// block so the property mutations animate.
+    func applyOmnibarEditingShowPose() {
+        switch cardPosition {
+        case .top:
+            guard isToggleEnabled else { return }
+            applyToggleRevealChanges()
+            layoutIfNeeded()
+        case .bottom:
+            setExpanded(true, animated: false)
         }
+    }
 
-        UIView.animate(
-            withDuration: Constants.animationDuration,
-            delay: 0,
-            options: .curveEaseInOut,
-            animations: {
-                self.cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
-                self.toggleTopConstraint.constant = 0
-                self.toggleHeightConstraint.constant = 0
-                self.toggleView.alpha = 0
-                self.applyInlineDismissVisibility(false)
-                self.inputTopConstraint.constant = 0
-                self.toolbarHeightConstraint.constant = 0
-                self.toolsToolbar.alpha = 0
-                additionalAnimations?()
-                self.layoutIfNeeded()
-            },
-            completion: { _ in
-                completion?()
-            }
-        )
+    /// Applies the bar's inactive END pose (post-dismiss). Designed to be called inside a
+    /// UIView.animate block so the property mutations animate.
+    func applyOmnibarEditingDismissPose() {
+        switch cardPosition {
+        case .top:
+            guard isToggleEnabled else { return }
+            applyToggleHideChanges()
+            layoutIfNeeded()
+        case .bottom:
+            setExpanded(false, animated: false)
+        }
+    }
+
+    /// The property mutations that reveal the toggle within the omnibar-editing card.
+    /// Designed to be invoked inside an animation context (UIView.animate or UIViewPropertyAnimator).
+    func applyToggleRevealChanges() {
+        let showToolbar = toggleView.selectedMode == .aiChat
+        cardView.layer.cornerRadius = Constants.cardCornerRadiusExpanded
+        toggleTopConstraint.constant = Constants.toggleTopPadding
+        toggleHeightConstraint.constant = Constants.toggleHeight
+        toggleView.alpha = 1
+        applyInlineDismissVisibility(cardPosition == .top)
+        inputTopConstraint.constant = Constants.toggleBottomPadding
+        cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
+        cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
+        toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
+        toolsToolbar.alpha = showToolbar ? 1 : 0
+        updateAttachmentsStripLayout()
+    }
+
+    /// The property mutations that hide the toggle, returning the card to its slim
+    /// omnibar-editing pose. Designed to be invoked inside an animation context.
+    func applyToggleHideChanges() {
+        cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
+        toggleTopConstraint.constant = 0
+        toggleHeightConstraint.constant = 0
+        toggleView.alpha = 0
+        applyInlineDismissVisibility(false)
+        inputTopConstraint.constant = 0
+        toolbarHeightConstraint.constant = 0
+        toolsToolbar.alpha = 0
     }
 
     func setInactiveCardAppearance(_ inactive: Bool) {

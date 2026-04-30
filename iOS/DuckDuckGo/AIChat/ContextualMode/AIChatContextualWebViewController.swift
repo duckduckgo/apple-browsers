@@ -52,6 +52,8 @@ final class AIChatContextualWebViewController: UIViewController {
     private let pixelHandler: AIChatContextualModePixelFiring
     private let debugSettings: AIChatDebugSettingsHandling
     private let userAgentManager: UserAgentManaging
+    private let utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)?
+    private var utiHost: AIChatContextualUTIHost?
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -129,7 +131,8 @@ final class AIChatContextualWebViewController: UIViewController {
          getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?,
          pixelHandler: AIChatContextualModePixelFiring,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared) {
+         userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
+         utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -140,6 +143,7 @@ final class AIChatContextualWebViewController: UIViewController {
         self.pixelHandler = pixelHandler
         self.debugSettings = debugSettings
         self.userAgentManager = userAgentManager
+        self.utiHostInstaller = utiHostInstaller
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         self.aiChatContentHandler = AIChatContentHandler(
@@ -162,6 +166,12 @@ final class AIChatContextualWebViewController: UIViewController {
         super.viewDidLoad()
         Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(String(describing: self.initialURL?.absoluteString))")
         setupUI()
+        if featureFlagger.isFeatureOn(.unifiedToggleInput) {
+            Logger.contextualUTI.info("[ContextualWebVC] flag on — installing native UTI")
+            utiHost = utiHostInstaller?(self)
+        } else {
+            Logger.contextualUTI.info("[ContextualWebVC] flag off — using FE composer")
+        }
         aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()
         setupDownloadHandler()

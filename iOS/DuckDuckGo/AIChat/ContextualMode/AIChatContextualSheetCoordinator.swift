@@ -287,7 +287,18 @@ private extension AIChatContextualSheetCoordinator {
                 }
                 return nil
             },
-            pixelHandler: pixelHandler
+            pixelHandler: pixelHandler,
+            utiHostInstaller: { [weak self] webVC in
+                guard let self else { return nil }
+                let host = AIChatContextualUTIHost(
+                    originatingURLPublisher: self.originatingURLPublisher,
+                    attachedURLPublisher: self.originatingURLPublisher,
+                    pageContextHandler: self.pageContextHandler,
+                    isFireTab: self.isFireTab
+                )
+                host.install(in: webVC)
+                return host
+            }
         )
 
         return webVC

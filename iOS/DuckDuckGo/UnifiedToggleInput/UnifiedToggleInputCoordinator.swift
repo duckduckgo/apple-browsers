@@ -252,6 +252,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if let cachedLabel = modelStore.preferences.selectedModelShortName {
             viewController.modelName = cachedLabel
         }
+
+        if host == .contextualChat {
+            displayState = .aiTab(.expanded)
+        }
     }
 
     // MARK: - Tab Binding
@@ -287,6 +291,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - AI Tab State
 
     func showCollapsed() {
+        if host == .contextualChat { return }
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .aiTab(.collapsed)
@@ -295,7 +300,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         let renderState = computeRenderState()
 
-        viewController.apply(renderState.viewConfig, animated: false)
+        applyViewConfig(from: renderState, animated: false)
         applyToolbarPresentation()
         viewController.deactivateInput()
         intentSubject.send(.showCollapsed)
@@ -310,7 +315,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         let renderState = computeRenderState()
 
-        viewController.apply(renderState.viewConfig, animated: false)
+        applyViewConfig(from: renderState, animated: false)
         applyToolbarPresentation()
         fetchModels()
 
@@ -343,7 +348,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         resetToolsSelection()
 
         let renderState = computeRenderState()
-        viewController.apply(renderState.viewConfig, animated: false)
+        applyViewConfig(from: renderState, animated: false)
         applyToolbarPresentation()
         viewController.deactivateInput()
         contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
@@ -368,7 +373,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         viewController.setExpanded(false, animated: false)
         let renderState = computeRenderState()
-        viewController.apply(renderState.viewConfig, animated: false)
+        applyViewConfig(from: renderState, animated: false)
         applyToolbarPresentation()
         fetchModels()
 
@@ -421,7 +426,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         if resetView {
             let renderState = computeRenderState()
-            viewController.apply(renderState.viewConfig, animated: false)
+            applyViewConfig(from: renderState, animated: false)
             applyToolbarPresentation()
             viewController.deactivateInput()
             contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
@@ -440,7 +445,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.updateToggleEnabled(enabled)
         if !enabled, isOmnibarSession {
             inputMode = .search
-            viewController.apply(computeRenderState().viewConfig, animated: false)
+            applyViewConfig(from: computeRenderState(), animated: false)
             refreshToolsPresentation()
             modeChangeSubject.send(.search)
         }
@@ -542,7 +547,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isAwaitingTopOmnibarKeyboardPresentation = false
             displayState = .omnibar(.active)
             let renderState = computeRenderState()
-            viewController.apply(renderState.viewConfig, animated: false)
+            applyViewConfig(from: renderState, animated: false)
             contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
             intentSubject.send(.showOmnibarActive)
         case (.omnibar(.active), true):
@@ -550,7 +555,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isAwaitingTopOmnibarKeyboardPresentation = false
         case (.aiTab(.expanded), _) where isAITabSearch:
             let renderState = computeRenderState()
-            viewController.apply(renderState.viewConfig, animated: false)
+            applyViewConfig(from: renderState, animated: false)
             contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         default:
             break
@@ -617,7 +622,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState = .omnibar(.inactive)
         let renderState = computeRenderState()
         // Animated so a concurrent mode change doesn't get snapped to final layout non-animatedly.
-        viewController.apply(renderState.viewConfig, animated: true)
+        applyViewConfig(from: renderState, animated: true)
         contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         intentSubject.send(.showOmnibarInactive)
     }
@@ -703,6 +708,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func applyDismissButtonVisibility() {
         let renderState = computeRenderState()
         contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
+    }
+
+    private func applyViewConfig(from renderState: UTIRenderState, animated: Bool) {
+        viewController.apply(renderState.viewConfig, animated: animated)
+        viewController.isFireVisible = renderState.isFireVisible
     }
 
     // MARK: - Render State

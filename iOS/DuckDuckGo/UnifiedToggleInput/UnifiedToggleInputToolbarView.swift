@@ -143,6 +143,9 @@ final class UnifiedToggleInputToolbarView: UIView {
         set { imageButton.isEnabled = newValue }
     }
 
+    // Placeholder for the fire action button; no UI element exists yet.
+    var isFireVisible: Bool = true
+
     private var modelChipExplicitlyHidden = false
 
     // MARK: - UI Components

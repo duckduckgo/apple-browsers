@@ -186,6 +186,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isImageButtonEnabled = newValue }
     }
 
+    var isFireVisible: Bool {
+        get { inputBarView.isFireVisible }
+        set { inputBarView.isFireVisible = newValue }
+    }
+
     var modelSupportsImageAttachments: Bool {
         get { inputBarView.modelSupportsImageAttachments }
         set { inputBarView.modelSupportsImageAttachments = newValue }
@@ -218,7 +223,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         isTopBarPosition = config.isTopBarPosition
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
-        setExpanded(config.isExpanded, animated: animated)
+        if config.isToggleVisible {
+            setExpanded(config.isExpanded, animated: animated)
+        } else {
+            setExpandedWithToggleHidden(config.isExpanded)
+        }
     }
 
     func applyToolsPresentation(

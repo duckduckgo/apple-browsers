@@ -2207,6 +2207,10 @@ public struct UserText {
     public static let newAddressBarPickerNotNow = NSLocalizedString("new.address.bar.picker.not.now", value: "Not Now", comment: "Not now button for the new address bar picker")
     public static let newAddressBarPickerFooter = NSLocalizedString("new.address.bar.picker.footer", value: "Adjust in Settings > AI Features", comment: "Footer text for the new address bar picker")
 
+    // MARK: - New Address Bar Picker Refresh
+    public static let newAddressBarPickerRefreshHeadline = NSLocalizedString("new.address.bar.picker.headline.refresh", value: "Want easy access to private\nAI chat in the address bar?", comment: "Headline for the refreshed Duck.ai Toggle Prompt")
+    public static let newAddressBarPickerRefreshFooter = NSLocalizedString("new.address.bar.picker.footer.refresh", value: "AI features are private and optional.\nYou can make changes in Settings > AI Features.", comment: "Footer for the refreshed Duck.ai Toggle Prompt")
+
     // MARK: - Default Omnibar Mode Setting
     public static let settingsDefaultOmnibarModeHeader = NSLocalizedString("settings.default.omnibar.mode.header", value: "Toggle Position", comment: "Label for the default omnibar toggle position picker in AI Features settings")
     public static let settingsDefaultOmnibarModeFooter = NSLocalizedString("settings.default.omnibar.mode.footer", value: "Default toggle position on new tabs.", comment: "Footer text explaining the toggle position setting in AI Features settings")

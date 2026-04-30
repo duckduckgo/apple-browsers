@@ -456,7 +456,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillOnByDefault:
             Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.onByDefault)), supportsLocalOverriding: false)
         case .autofillFailureReporting:
-            Config(source: .remoteReleasable(.feature(.autofillBreakageReporter)), supportsLocalOverriding: false)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AutofillBreakageReporterSubfeature.featureEnabled)), supportsLocalOverriding: false)
         case .autofillOnForExistingUsers:
             Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.onForExistingUsers)), supportsLocalOverriding: false)
         case .autofillUnknownUsernameCategorization:
@@ -472,7 +472,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .inputFocusApi:
             Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.inputFocusApi)), supportsLocalOverriding: false)
         case .incontextSignup:
-            Config(source: .remoteReleasable(.feature(.incontextSignup)), supportsLocalOverriding: false)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(IncontextSignupSubfeature.featureEnabled)), supportsLocalOverriding: false)
         case .autoconsentOnByDefault:
             Config(source: .remoteReleasable(.subfeature(AutoconsentSubfeature.onByDefault)), supportsLocalOverriding: false)
         case .duckPlayer:
@@ -486,9 +486,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncPromotionPasswords:
             Config(source: .remoteReleasable(.subfeature(SyncPromotionSubfeature.passwords)), supportsLocalOverriding: false)
         case .autofillSurveys:
-            Config(source: .remoteReleasable(.feature(.autofillSurveys)), supportsLocalOverriding: false)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AutofillSurveysSubfeature.featureEnabled)), supportsLocalOverriding: false)
         case .adAttributionReporting:
-            Config(source: .remoteReleasable(.feature(.adAttributionReporting)), supportsLocalOverriding: false)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AdAttributionReportingSubfeature.featureEnabled)), supportsLocalOverriding: false)
         case .dbpRemoteBrokerDelivery:
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery)))
         case .dbpEmailConfirmationDecoupling:
@@ -546,9 +546,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .inactivityNotification:
             Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification)))
         case .daxEasterEggLogos:
-            Config(defaultValue: .enabled, source: .remoteReleasable(.feature(.daxEasterEggLogos)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DaxEasterEggLogosSubfeature.featureEnabled)))
         case .daxEasterEggPermanentLogo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(.feature(.daxEasterEggPermanentLogo)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DaxEasterEggPermanentLogoSubfeature.featureEnabled)))
         case .showAIChatAddressBarChoiceScreen:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen)))
         case .showAIChatAddressBarChoiceScreenRedesign:
@@ -578,7 +578,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .iPadAIToggle:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.iPadAIChatToggle)))
         case .attributedMetrics:
-            Config(source: .remoteReleasable(.feature(.attributedMetrics)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AttributedMetricsSubfeature.featureEnabled)))
         case .onboardingSearchExperience:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.onboardingSearchExperience)))
         case .onboardingDuckAIQueryExperiment:
@@ -611,7 +611,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .contextualDuckAIMode:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualDuckAIMode)))
         case .pageContextFeature:
-            Config(source: .remoteReleasable(.feature(.pageContext)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(PageContextSubfeature.featureEnabled)))
         case .aiChatAutoAttachContextByDefault:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.autoAttachContextByDefault)))
         case .multiplePageContexts:
@@ -621,7 +621,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSync:
             Config(source: .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync)))
         case .aiChatSuggestions:
-            Config(source: .remoteReleasable(.feature(.duckAiChatHistory)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DuckAiChatHistorySubfeature.featureEnabled)))
         case .aiChatContextualSheetImprovements:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.contextualSheetImprovements)))
         case .showWhatsNewPromptOnDemand:
@@ -631,7 +631,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .freeTrialConversionWideEvent:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent)))
         case .tabSwitcherTrackerCount:
-            Config(defaultValue: .enabled, source: .remoteReleasable(.feature(.tabSwitcherTrackerCount)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(TabSwitcherTrackerCountSubfeature.featureEnabled)))
         case .showNTPAfterIdleReturn:
             Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn)))
         case .uiTestFeatureFlag:
@@ -645,13 +645,13 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .onboardingRebranding:
             Config(source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.onboardingRebranding)))
         case .webExtensions:
-            Config(source: .remoteReleasable(.feature(.webExtensions)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.featureEnabled)))
         case .embeddedExtension:
             Config(source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension)))
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout)))
         case .adBlockingExtension:
-            Config(source: .remoteReleasable(.feature(.adBlockingExtension)))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.featureEnabled)))
         case .autofillOnboardingDismissExperiment:
             Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.onboardingDismissExperiment)), cohortType: AutofillOnboardingDismissExperimentCohort.self)
         case .supportsSyncChatsDeletion:

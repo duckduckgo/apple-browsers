@@ -138,13 +138,13 @@ final class OnboardingUITests: UITestCase {
         let bundleID = try XCTUnwrap(XCUIApplication().bundleID)
         let commands = [
             "/usr/bin/defaults delete \(bundleID)",
-            "/bin/rm -rf ~/Library/Containers/\(bundleID)/Data/*",
+            "/bin/rm -rf ~/Library/Containers/\(bundleID)/Data/* || true",
             "/usr/bin/defaults write \(bundleID) moveToApplicationsFolderAlertSuppress 1"
         ]
 
         for command in commands {
             let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/bin/bash")
+            process.executableURL = URL(fileURLWithPath: "/bin/zsh")
             process.arguments = ["-c", command]
 
             try process.run()

@@ -178,16 +178,16 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI Features";
 
-/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the maximum number of files. E.g. You can only attach 3 files per conversation. */
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
 "aichat.attachment.file.count.limit" = "You can only attach %d files per conversation.";
 
-/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the combined size limit in megabytes. E.g. The attached files exceed the total size limit of 5 MB. */
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
 "aichat.attachment.file.exceeds.conversation.limit" = "The attached files exceed the total size limit of %d MB.";
 
-/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the size limit in megabytes. E.g. This file is too large. The maximum file size is 5 MB. */
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
 "aichat.attachment.file.too.large" = "This file is too large. The maximum file size is %d MB.";
 
-/* Error message displayed when one attached file has more pages than supported. Parameter is the maximum supported page count. E.g. One of the files attached has more pages than we support. Please upload files with 15 pages or fewer. */
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
 "aichat.attachment.file.too.many.pages" = "One of the files attached has more pages than we support. Please upload files with %d pages or fewer.";
 
 /* Error message displayed when one or more attached files are encrypted and cannot be read */

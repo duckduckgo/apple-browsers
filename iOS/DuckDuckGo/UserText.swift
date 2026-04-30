@@ -2067,17 +2067,17 @@ public struct UserText {
     public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take a Photo", comment: "Action sheet option to take a photo using the device camera for attaching to an AI chat message")
     public static let aiChatAttachmentOptionChoosePhoto = NSLocalizedString("aichat.attachment.option.choose.photo", value: "Choose Photo", comment: "Action sheet option to choose a photo from the photo library for attaching to an AI chat message")
     public static func aiChatAttachmentFileTooLarge(maxFileSizeMB: Int) -> String {
-        let message = NSLocalizedString("aichat.attachment.file.too.large", value: "This file is too large. The maximum file size is %d MB.", comment: "Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the size limit in megabytes. E.g. This file is too large. The maximum file size is 5 MB.")
+        let message = NSLocalizedString("aichat.attachment.file.too.large", value: "This file is too large. The maximum file size is %d MB.", comment: "Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes.")
         return message.format(arguments: maxFileSizeMB)
     }
 
     public static func aiChatAttachmentFilesExceedTotalSizeLimit(maxTotalFileSizeMB: Int) -> String {
-        let message = NSLocalizedString("aichat.attachment.file.exceeds.conversation.limit", value: "The attached files exceed the total size limit of %d MB.", comment: "Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the combined size limit in megabytes. E.g. The attached files exceed the total size limit of 5 MB.")
+        let message = NSLocalizedString("aichat.attachment.file.exceeds.conversation.limit", value: "The attached files exceed the total size limit of %d MB.", comment: "Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes.")
         return message.format(arguments: maxTotalFileSizeMB)
     }
 
     public static func aiChatAttachmentFileTooManyPages(maxPagesPerFile: Int) -> String {
-        let message = NSLocalizedString("aichat.attachment.file.too.many.pages", value: "One of the files attached has more pages than we support. Please upload files with %d pages or fewer.", comment: "Error message displayed when one attached file has more pages than supported. Parameter is the maximum supported page count. E.g. One of the files attached has more pages than we support. Please upload files with 15 pages or fewer.")
+        let message = NSLocalizedString("aichat.attachment.file.too.many.pages", value: "One of the files attached has more pages than we support. Please upload files with %d pages or fewer.", comment: "Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count.")
         return message.format(arguments: maxPagesPerFile)
     }
 
@@ -2103,7 +2103,7 @@ public struct UserText {
 
     public static let aiChatAttachmentUnsupportedFileType = NSLocalizedString("aichat.attachment.unsupported.file.type", value: "This file type is not supported.", comment: "Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types")
     public static func aiChatAttachmentFileCountLimit(maxFilesPerConversation: Int) -> String {
-        let message = NSLocalizedString("aichat.attachment.file.count.limit", value: "You can only attach %d files per conversation.", comment: "Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the maximum number of files. E.g. You can only attach 3 files per conversation.")
+        let message = NSLocalizedString("aichat.attachment.file.count.limit", value: "You can only attach %d files per conversation.", comment: "Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files.")
         return message.format(arguments: maxFilesPerConversation)
     }
 

@@ -25,7 +25,6 @@ import Onboarding
 final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, OnboardingCustomInteractionPixelReporting, OnboardingDaxDialogsReporting, OnboardingAddToDockReporting {
 
     private(set) var didCallMeasureOnboardingIntroImpression = false
-    private(set) var didCallSetPixelReportedMetadata = false
     private(set) var didCallMeasureSkipOnboardingCTAAction = false
     private(set) var didCallMeasureConfirmSkipOnboardingCTAAction = false
     private(set) var didCallMeasureResumeOnboardingCTAAction = false
@@ -97,10 +96,6 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
 
     func measureOnboardingIntroImpression() {
         didCallMeasureOnboardingIntroImpression = true
-    }
-
-    func setPixelReportingMetadata() {
-        didCallSetPixelReportedMetadata = true
     }
 
     func measureContinueOnboardingCTAAction() {

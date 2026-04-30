@@ -85,39 +85,6 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.welcome(.shown)])
     }
 
-    func testWhenSetPixelReportingMetadataWithNoPersistedMetadataThenExpectedDefaultMetadataReceived() {
-        // GIVEN
-        XCTAssertNil(sharedPixelHandlerMock.receivedSource)
-        XCTAssertNil(sharedPixelHandlerMock.receivedFlow)
-        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
-
-        // WHEN
-        sut.setPixelReportingMetadata()
-
-        // THEN
-        XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .default)
-        XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .default)
-        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
-    }
-
-    func testWhenSetPixelReportingMetadataWithPersistedMetadataThenPersistedMetadataReceived() {
-        // GIVEN
-        sharedPixelsStorageMock.onboardingSource = .duckAICustomProductPage
-        sharedPixelsStorageMock.onboardingFlow = .duckAIExperiment
-        sharedPixelsStorageMock.onboardingVariant = .search
-        XCTAssertNil(sharedPixelHandlerMock.receivedSource)
-        XCTAssertNil(sharedPixelHandlerMock.receivedFlow)
-        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
-
-        // WHEN
-        sut.setPixelReportingMetadata()
-
-        // THEN
-        XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
-        XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAIExperiment)
-        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .search)
-    }
-
     func testWhenMeasureSkipOnboardingCTAIsCalledThenLegacySkipPressedAndWelcomeDismissSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroSkipOnboardingCTAPressed
@@ -590,7 +557,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.search(.clicked(.suggested))])
     }
 
-    func testWhenMeasureDuckAIExperimentFireButtonCTAActionThenLegacyCTAPressedAndExperimentPixelsAndFireButtonEngageSharedPixelsFire() {
+    func testWhenMeasureDuckAIExperimentFireButtonCTAActionThenLegacyCTAPressedAndExperimentPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingDuckAIExperimentFireButtonCTAPressed
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
@@ -607,7 +574,6 @@ final class OnboardingPixelReporterTests: XCTestCase {
                 && $0.metric == "cta-pressed"
                 && $0.value == "fire-button-pressed"
         })
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.fireButton(.clicked(.engage))])
     }
 
     func testWhenMeasureDuckAIExperimentFinalDialogImpressionThenLegacyFinalDialogShownUniqueAndExperimentPixelsAndEndShownSharedPixelsFire() {
@@ -648,13 +614,12 @@ final class OnboardingPixelReporterTests: XCTestCase {
                 && $0.metric == "screen-impression"
                 && $0.value == "toggle-screen"
         })
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.search(.shown)])
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchChatToggle(.shown)])
     }
 
-    func testWhenMeasureDuckAIQueryExperimentQuerySubmissionWithCustomPromptThenSearchCustomSharedPixelFiresAndVariantIsSetAndPersisted() {
+    func testWhenMeasureDuckAIQueryExperimentQuerySubmissionWithCustomPromptThenSearchCustomSharedPixelFiresAndVariantIsPersisted() {
         // GIVEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
-        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
         XCTAssertNil(sharedPixelsStorageMock.onboardingVariant)
 
         // WHEN
@@ -662,14 +627,12 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchChatToggle(.clicked(.customSearch))])
-        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .duckAISearch)
         XCTAssertEqual(sharedPixelsStorageMock.onboardingVariant, .duckAISearch)
     }
 
-    func testWhenMeasureDuckAIQueryExperimentQuerySubmissionWithSuggestedPromptThenSearchSuggestedSharedPixelFiresAndVariantIsSetAndPersisted() {
+    func testWhenMeasureDuckAIQueryExperimentQuerySubmissionWithSuggestedPromptThenSearchSuggestedSharedPixelFiresAndVariantIsPersisted() {
         // GIVEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
-        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
         XCTAssertNil(sharedPixelsStorageMock.onboardingVariant)
 
         // WHEN
@@ -677,7 +640,6 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchChatToggle(.clicked(.suggestedChat))])
-        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .duckAIChat)
         XCTAssertEqual(sharedPixelsStorageMock.onboardingVariant, .duckAIChat)
     }
 
@@ -1078,14 +1040,13 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchExperience(.clicked(.searchPlusDuckAI))])
     }
 
-    func testWhenMeasureChooseSearchOnlyIsCalledThenLegacySearchOnlySelectedAndSearchExperienceSearchOnlySharedPixelsFireAndVariantIsSetAndPersisted() {
+    func testWhenMeasureChooseSearchOnlyIsCalledThenLegacySearchOnlySelectedAndSearchExperienceSearchOnlySharedPixelsFireAndVariantIsPersisted() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroSearchOnlySelected
         XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
         XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
-        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
         XCTAssertNil(sharedPixelsStorageMock.onboardingVariant)
 
         // WHEN
@@ -1097,12 +1058,14 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchExperience(.clicked(.searchOnly))])
-        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .search)
         XCTAssertEqual(sharedPixelsStorageMock.onboardingVariant, .search)
     }
 
     func testWhenMeasureTryVisitSiteDialogSuggestedSiteTappedThenVisitSiteSuggestedSharedPixelFires() {
         // GIVEN
+        sharedPixelsStorageMock.onboardingSource = .duckAICustomProductPage
+        sharedPixelsStorageMock.onboardingFlow = .duckAIExperiment
+        sharedPixelsStorageMock.onboardingVariant = .search
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
@@ -1110,6 +1073,9 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.visitSite(.clicked(.suggested))])
+        XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
+        XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAIExperiment)
+        XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .search)
     }
 
 }
@@ -1120,17 +1086,13 @@ private final class MockOnboardingSharedPixelHandling: OnboardingSharedPixelHand
     private(set) var receivedFlow: OnboardingFlowTypePixelParameter?
     private(set) var receivedVariant: OnboardingVariantPixelParameter?
 
-    func fire(_ event: OnboardingSharedPixelEvent) {
+    func fire(_ event: OnboardingSharedPixelEvent,
+              source: OnboardingSourcePixelParameter?,
+              flow: OnboardingFlowTypePixelParameter?,
+              variant: OnboardingVariantPixelParameter?) {
         eventsFired.append(event)
-    }
-
-    func setMetadata(source: OnboardingSourcePixelParameter, flow: OnboardingFlowTypePixelParameter, variant: OnboardingVariantPixelParameter?) {
         receivedSource = source
         receivedFlow = flow
-        receivedVariant = variant
-    }
-
-    func setVariant(_ variant: OnboardingVariantPixelParameter) {
         receivedVariant = variant
     }
 }

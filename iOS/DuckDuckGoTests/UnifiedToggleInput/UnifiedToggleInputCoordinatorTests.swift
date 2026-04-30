@@ -1439,6 +1439,17 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         }
     }
 
+    func test_modelChipButton_usesFixedMenuElementOrder() {
+        let sut = UnifiedToggleInputToolbarView()
+
+        let modelChipButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.ModelChip", in: sut)
+
+        XCTAssertNotNil(modelChipButton)
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(modelChipButton?.preferredMenuElementOrder, .fixed)
+        }
+    }
+
     private func findButton(accessibilityLabel: String, in view: UIView) -> UIButton? {
         for subview in view.subviews {
             if let button = subview as? UIButton, button.accessibilityLabel == accessibilityLabel {

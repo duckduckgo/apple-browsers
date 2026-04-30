@@ -106,9 +106,10 @@ private extension MainViewController {
                 if let pendingHeight {
                     self.viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
                 }
+                // Lay out before pushContentInsets — it reads bar.frame.height.
+                self.viewCoordinator.superview.layoutIfNeeded()
                 coordinator.pushContentInsets()
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
-                self.viewCoordinator.superview.layoutIfNeeded()
             }
         )
     }

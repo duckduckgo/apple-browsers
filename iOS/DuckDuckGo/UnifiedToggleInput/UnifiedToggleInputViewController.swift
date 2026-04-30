@@ -146,6 +146,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.toolsMenu = newValue }
     }
 
+    var reasoningPickerMenu: UIMenu? {
+        get { inputBarView.reasoningPickerMenu }
+        set { inputBarView.reasoningPickerMenu = newValue }
+    }
+
     var isModelChipHidden: Bool {
         get { inputBarView.isModelChipHidden }
         set { inputBarView.isModelChipHidden = newValue }
@@ -156,9 +161,19 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.selectedTool = newValue }
     }
 
+    var selectedReasoningMode: AIChatReasoningMode? {
+        get { inputBarView.selectedReasoningMode }
+        set { inputBarView.selectedReasoningMode = newValue }
+    }
+
     var isToolsButtonHidden: Bool {
         get { inputBarView.isToolsButtonHidden }
         set { inputBarView.isToolsButtonHidden = newValue }
+    }
+
+    var isReasoningButtonHidden: Bool {
+        get { inputBarView.isReasoningButtonHidden }
+        set { inputBarView.isReasoningButtonHidden = newValue }
     }
 
     var isImageButtonHidden: Bool {
@@ -220,16 +235,19 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setExpanded(expanded, animated: animated)
     }
 
-    func setExpandedWithToggleHidden(_ expanded: Bool) {
-        inputBarView.setExpandedWithToggleHidden(expanded)
+    /// See `UnifiedToggleInputView.prepareForOmnibarEditingShow`.
+    func prepareForOmnibarEditingShow() {
+        inputBarView.prepareForOmnibarEditingShow()
     }
 
-    func animateToggleReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
-        inputBarView.animateToggleReveal(additionalAnimations: additionalAnimations, completion: completion)
+    /// See `UnifiedToggleInputView.applyOmnibarEditingShowPose`.
+    func applyOmnibarEditingShowPose() {
+        inputBarView.applyOmnibarEditingShowPose()
     }
 
-    func animateToggleHide(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
-        inputBarView.animateToggleHide(additionalAnimations: additionalAnimations, completion: completion)
+    /// See `UnifiedToggleInputView.applyOmnibarEditingDismissPose`.
+    func applyOmnibarEditingDismissPose() {
+        inputBarView.applyOmnibarEditingDismissPose()
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {

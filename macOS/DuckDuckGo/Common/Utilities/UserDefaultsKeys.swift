@@ -90,6 +90,11 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
 
     case youTubeAdBlockingEnabled = "preferences_youtube-ad-blocking_enabled"
 
+    // MARK: - Quick Feedback Tip
+
+    case feedbackTipLastShown = "feedbackTipLastShown"
+    case feedbackTipButtonClicked = "feedbackTipButtonClicked"
+
 }
 
 // MARK: - StorageKey Extensions

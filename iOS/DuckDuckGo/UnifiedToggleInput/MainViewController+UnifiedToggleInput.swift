@@ -29,6 +29,12 @@ import UIKit
 
 extension MainViewController {
 
+    enum Constants {
+        /// Single duration for both the show and dismiss omnibar-editing transitions.
+        /// Drives bar interior, content alpha, and container layout in lockstep.
+        static let omnibarTransitionDuration: TimeInterval = 0.25
+    }
+
     enum UnifiedInputChromeBackgroundState: String {
         case standardChrome
         case aiTabSearchChromeHidden
@@ -137,12 +143,12 @@ extension MainViewController {
         }
     }
 
-    func recomputeOmnibarEditingHeightIfNeeded() {
+    func recomputeNavigationBarContainerHeightIfNeeded() {
         guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.isOmnibarSession else {
+              coordinator.isInputEditing else {
             return
         }
-        let height = coordinator.omnibarEditingHeight()
+        let height = coordinator.editingHeight()
         guard viewCoordinator.constraints.navigationBarContainerHeight.constant != height else { return }
         viewCoordinator.constraints.navigationBarContainerHeight.constant = height
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
@@ -195,7 +201,7 @@ private extension MainViewController {
         coordinator.attachmentsChangePublisher
             .sink { [weak self] in
                 guard let self, let coordinator = unifiedToggleInputCoordinator else { return }
-                if coordinator.isAITabExpanded || coordinator.isOmnibarSession {
+                if coordinator.isInputEditing {
                     adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
                 }
             }
@@ -296,7 +302,6 @@ private extension MainViewController {
     }
 
     func refreshInactiveNonAITab(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator) {
-        coordinator.unbind()
         viewCoordinator.hideAITabChrome()
         applyUnifiedInputChromeBackground(.standardChrome)
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
@@ -375,9 +380,6 @@ private extension MainViewController {
     }
 
     func refreshNonAITab(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator) {
-        coordinator.deactivateToOmnibar()
-        coordinator.hide()
-        coordinator.unbind()
         viewCoordinator.hideAITabChrome()
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
@@ -523,32 +525,25 @@ private extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator) {
         applyUnifiedInputChromeBackground(.standardChrome)
-        let isTopPosition = coordinator.cardPosition == .top
-        if isTopPosition && coordinator.isToggleEnabled {
-            coordinator.viewController.animateToggleHide(additionalAnimations: { [weak self] in
+        // Resign up-front so keyboard descent runs concurrent with bar collapse, not after.
+        coordinator.viewController.deactivateInput()
+        UIView.animate(
+            withDuration: Constants.omnibarTransitionDuration,
+            delay: 0,
+            options: .curveEaseInOut,
+            animations: { [weak self] in
                 guard let self else { return }
+                coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 0
-            }, completion: { [weak self] in
+            },
+            completion: { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
-            })
-        } else if isTopPosition {
-            UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut, animations: { [weak self] in
-                guard let self else { return }
-                self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
-                self.viewCoordinator.unifiedInputContentContainer.alpha = 0
-            }, completion: { [weak self] _ in
-                guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
-                self.viewCoordinator.unifiedInputContentContainer.isHidden = true
-                self.viewCoordinator.unifiedInputContentContainer.alpha = 1
-                coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
-            })
-        } else {
-            coordinator.deactivateToOmnibar()
-        }
+            }
+        )
     }
 
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
@@ -590,8 +585,8 @@ extension MainViewController: UnifiedToggleInputDelegate {
         tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
     }
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, images: [AIChatNativePrompt.NativePromptImage]?) {
-        openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, images: images)
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?) {
+        openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
@@ -608,11 +603,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidChangeHeight() {
-        if unifiedToggleInputCoordinator?.isOmnibarSession == true {
-            recomputeOmnibarEditingHeightIfNeeded()
-        } else {
-            unifiedToggleInputCoordinator?.pushContentInsets()
-        }
+        recomputeNavigationBarContainerHeightIfNeeded()
     }
 }
 
@@ -627,9 +618,16 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
     }
 
     func unifiedInputEditingStateDidSubmitPrompt(_ query: String, tools: [AIChatRAGTool]?) {
+        let submissionConfiguration = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalSubmission(.prompt)
-        openAIChat(query, autoSend: true, tools: tools)
+        openAIChat(
+            query,
+            autoSend: true,
+            tools: tools,
+            modelId: submissionConfiguration?.modelId,
+            reasoningEffort: submissionConfiguration?.reasoningEffort
+        )
     }
 
     func unifiedInputEditingStateDidSelectFavorite(_ favorite: BookmarkEntity) {

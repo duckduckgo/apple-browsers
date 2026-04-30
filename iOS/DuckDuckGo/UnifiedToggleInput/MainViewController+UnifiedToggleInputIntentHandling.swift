@@ -85,48 +85,44 @@ private extension MainViewController {
     }
 
     func handleShowOmnibarEditingIntent(height: CGFloat, pendingHeight: CGFloat?) {
-        viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
-        viewCoordinator.suggestionTrayContainer.isHidden = true
-        let isTopPosition = unifiedToggleInputCoordinator?.cardPosition == .top
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
-        if !isTopPosition {
-            applyBottomOmnibarVisibility(.active)
-        }
+        // Set initial pose synchronously so the animate block grows from start to final height.
+        viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
+        viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
-
-        if isTopPosition && coordinator.isToggleEnabled {
-            animateTopOmnibarExpansion(pendingHeight: pendingHeight, coordinator: coordinator)
-        } else if isTopPosition {
-            fadeInUnifiedInputContent()
-        }
-    }
-
-    func animateTopOmnibarExpansion(pendingHeight: CGFloat?, coordinator: UnifiedToggleInputCoordinator) {
         viewCoordinator.unifiedInputContentContainer.alpha = 0
-        coordinator.animateOmnibarExpansion { [weak self] in
-            guard let self else { return }
-            if let pendingHeight {
-                self.viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
+
+        UIView.animate(
+            withDuration: Constants.omnibarTransitionDuration,
+            delay: 0,
+            options: .curveEaseInOut,
+            animations: { [weak self] in
+                guard let self else { return }
+                coordinator.viewController.applyOmnibarEditingShowPose()
+                if coordinator.cardPosition == .bottom {
+                    self.applyBottomOmnibarVisibility(.active)
+                }
+                if let pendingHeight {
+                    self.viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
+                }
+                // Lay out before pushContentInsets — it reads bar.frame.height.
                 self.viewCoordinator.superview.layoutIfNeeded()
+                coordinator.pushContentInsets()
+                self.viewCoordinator.unifiedInputContentContainer.alpha = 1
             }
-            self.unifiedToggleInputCoordinator?.pushContentInsets()
-            self.viewCoordinator.unifiedInputContentContainer.alpha = 1
-        }
-    }
-
-    func fadeInUnifiedInputContent() {
-        viewCoordinator.unifiedInputContentContainer.alpha = 0
-        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) { [weak self] in
-            self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
-        }
+        )
     }
 
     func handleHideOmnibarEditingIntent(animated: Bool) {
+        let onDismissed: () -> Void = { [weak self] in
+            self?.unifiedToggleInputCoordinator?.clearText()
+        }
         if animated {
-            viewCoordinator.hideUnifiedToggleInputOmnibar()
+            viewCoordinator.hideUnifiedToggleInputOmnibar(completion: onDismissed)
         } else {
             viewCoordinator.finishUnifiedToggleInputOmnibarDismiss()
+            onDismissed()
         }
         resetUnifiedInputContentAfterHide()
         viewCoordinator.suggestionTrayContainer.backgroundColor = .clear
@@ -136,6 +132,8 @@ private extension MainViewController {
         unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
         viewCoordinator.hideUnifiedToggleInput()
         resetUnifiedInputContentAfterHide()
+        // Avoid leaking text into the next input session.
+        unifiedToggleInputCoordinator?.clearText()
     }
 
     func resetUnifiedInputContentAfterHide() {
@@ -143,19 +141,18 @@ private extension MainViewController {
         viewCoordinator.hideUnifiedInputContent()
         unifiedToggleInputCoordinator?.contentViewController.setContentInset(top: 0, bottom: 0)
         hideSuggestionTray()
-        viewCoordinator.suggestionTrayContainer.isHidden = false
     }
 
     func applyBottomOmnibarVisibility(_ state: UnifiedToggleInputDisplayState.OmnibarState) {
         guard let coordinator = unifiedToggleInputCoordinator,
               coordinator.cardPosition == .bottom,
               viewCoordinator.addressBarPosition.isBottom else {
-            recomputeOmnibarEditingHeightIfNeeded()
+            recomputeNavigationBarContainerHeightIfNeeded()
             return
         }
         applyBottomOmnibarAnchor(state)
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-        recomputeOmnibarEditingHeightIfNeeded()
+        recomputeNavigationBarContainerHeightIfNeeded()
     }
 
     func applyBottomOmnibarAnchor(_ state: UnifiedToggleInputDisplayState.OmnibarState) {

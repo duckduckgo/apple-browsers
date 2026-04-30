@@ -357,6 +357,28 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.viewController.isInputExpanded)
     }
 
+    func test_activateFromOmnibar_bottomPosition_leavesBarInCollapsedStartPose() {
+        sut.activateFromOmnibar(cardPosition: .bottom)
+        // Bottom pre-stages to collapsed; the show animation expands it.
+        XCTAssertFalse(sut.viewController.isInputExpanded)
+    }
+
+    func test_activateFromOmnibar_emitsIntentWithBothHeights() {
+        let exp = expectation(description: "showOmnibarEditing emitted with pending height")
+        sut.intentPublisher
+            .sink { intent in
+                if case .showOmnibarEditing(let height, let pending) = intent {
+                    XCTAssertGreaterThan(height, 0)
+                    XCTAssertNotNil(pending)
+                    exp.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        sut.activateFromOmnibar(cardPosition: .bottom)
+        waitForExpectations(timeout: 1)
+    }
+
     func test_deactivateToOmnibar_resetsVCProperties() {
         sut.activateFromOmnibar(cardPosition: .top)
         sut.deactivateToOmnibar()
@@ -372,7 +394,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.deactivateToOmnibar()
 
         XCTAssertEqual(sut.displayState, .hidden)
-        XCTAssertEqual(sut.textState, .empty)
+        // Text is preserved through deactivate; the dismiss completion handler clears it after the animation.
+        XCTAssertEqual(sut.textState, .prefilledSelected)
         XCTAssertFalse(sut.isOmnibarSession)
     }
 
@@ -553,7 +576,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(sut.displayState, .omnibar(.active))
         XCTAssertEqual(sut.viewController.inputMode, .aiChat)
-        XCTAssertTrue(sut.viewController.isInputExpanded)
+        // Bottom bar sits in show-animation start pose here; expansion runs in the intent handler.
 
         let renderState = sut.computeRenderState()
         XCTAssertEqual(renderState.cardPosition, .bottom)
@@ -818,12 +841,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
-    func test_toolsMenu_containsCustomizeResponsesAction_onAITab() {
+    func test_toolsMenu_doesNotContainCustomizeResponsesAction_onAITab() {
         sut.showExpanded()
 
         let actionTitles = toolsMenuActions().map(\.title)
 
-        XCTAssertTrue(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+        XCTAssertFalse(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
     }
 
     func test_toolsMenu_doesNotContainCustomizeResponsesAction_inOmnibar() {
@@ -1029,6 +1052,23 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.submittedModelId, "free")
     }
 
+    func test_prepareExternalPromptSubmission_passesModelIdForFirstPrompt() {
+        mockPreferences.selectedModelId = "gpt-5"
+
+        let submission = sut.prepareExternalPromptSubmission()
+
+        XCTAssertEqual(submission.modelId, "gpt-5")
+    }
+
+    func test_prepareExternalPromptSubmission_omitsModelIdAfterFirstPrompt() {
+        mockPreferences.selectedModelId = "gpt-5"
+        _ = sut.prepareExternalPromptSubmission()
+
+        let submission = sut.prepareExternalPromptSubmission()
+
+        XCTAssertNil(submission.modelId)
+    }
+
     // MARK: - Model Chip Visibility
 
     func test_modelChip_visibleByDefault() {
@@ -1038,6 +1078,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_modelChip_hiddenAfterPromptSubmit() {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+    }
+
+    func test_modelChip_hiddenAfterPreparingExternalPromptSubmission() {
+        sut.prepareExternalPromptSubmission()
         XCTAssertTrue(sut.hasSubmittedPrompt)
         XCTAssertTrue(sut.viewController.isModelChipHidden)
     }
@@ -1336,6 +1382,32 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.committedMode, .aiChat)
     }
 
+    // MARK: - Toolbar Voice Chat State Sync
+
+    func test_showCollapsed_whenAIVoiceChatEnabled_setsToolbarVoiceChatActive() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showCollapsed()
+        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
+    func test_showExpanded_inSearchMode_clearsToolbarVoiceChatActive() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showExpanded(inputMode: .search)
+        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
+    func test_deactivateToOmnibar_refreshesToolbarVoiceChatFlag() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+
+        sut.updateInputMode(.search, animated: false)
+        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+
+        sut.deactivateToOmnibar()
+        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
     // MARK: - Helpers
 
     private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false, supportedTools: [AIChatRAGTool] = []) -> AIChatModel {
@@ -1378,12 +1450,35 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertLessThanOrEqual(submitFrame.maxX, sut.bounds.maxX)
     }
 
+    func test_reasoningButton_hasAccessibilityIdentifier() {
+        let sut = UnifiedToggleInputToolbarView()
+
+        let reasoningButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.Reasoning", in: sut)
+
+        XCTAssertEqual(reasoningButton?.accessibilityLabel, UserText.aiChatToolbarReasoningButtonAccessibilityLabel)
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(reasoningButton?.preferredMenuElementOrder, .fixed)
+        }
+    }
+
     private func findButton(accessibilityLabel: String, in view: UIView) -> UIButton? {
         for subview in view.subviews {
             if let button = subview as? UIButton, button.accessibilityLabel == accessibilityLabel {
                 return button
             }
             if let button = findButton(accessibilityLabel: accessibilityLabel, in: subview) {
+                return button
+            }
+        }
+        return nil
+    }
+
+    private func findButton(accessibilityIdentifier: String, in view: UIView) -> UIButton? {
+        for subview in view.subviews {
+            if let button = subview as? UIButton, button.accessibilityIdentifier == accessibilityIdentifier {
+                return button
+            }
+            if let button = findButton(accessibilityIdentifier: accessibilityIdentifier, in: subview) {
                 return button
             }
         }
@@ -1398,14 +1493,16 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedPrompt: String?
     var submittedModelId: String?
     var submittedTools: [AIChatRAGTool]?
+    var submittedReasoningEffort: AIChatReasoningEffort?
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
     var submittedQuery: String?
     var committedMode: TextEntryMode?
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, images: [AIChatNativePrompt.NativePromptImage]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?) {
         submittedPrompt = prompt
         submittedModelId = modelId
         submittedTools = tools
+        submittedReasoningEffort = reasoningEffort
         submittedImages = images
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
@@ -1420,7 +1517,9 @@ private final class MockAIChatPreferences: AIChatPreferencesPersisting {
     var selectedReasoningEffort: String?
     var selectedModelId: String?
     var selectedModelShortName: String?
+    var selectedReasoningMode: AIChatReasoningMode?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
 private final class MockToggleModeStorage: ToggleModeStoring {

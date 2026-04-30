@@ -89,14 +89,7 @@ extension SyncSettingsViewController {
             guard case .copyToPasteboard = activity, didComplete else {
                 return
             }
-            guard let code = try? SyncCode.decodeBase64String(code) else {
-                return
-            }
-            if code.connect != nil {
-                Pixel.fire(pixel: .syncSetupBarcodeCodeCopied, withAdditionalParameters: [PixelParameters.source: SyncSetupSource.connect.rawValue])
-            } else if code.exchangeKey != nil {
-                Pixel.fire(pixel: .syncSetupBarcodeCodeCopied, withAdditionalParameters: [PixelParameters.source: SyncSetupSource.exchange.rawValue])
-            }
+            self.fireBarcodeCodeCopiedPixel(for: code)
         }
     }
 

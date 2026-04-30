@@ -214,6 +214,9 @@ class MainViewCoordinator {
         unifiedToggleInputContainer.layer.removeAllAnimations()
         navigationBarCollectionView.isUserInteractionEnabled = false
 
+        // Snap (not fade) on show — intentional asymmetry with dismiss. Both surfaces are
+        // full-density (placeholder + icons + toggle), so crossfading shows double-vision.
+        // Dismiss can fade because the UTI is shrinking + collapsing while it fades.
         navigationBarCollectionView.alpha = 0
         unifiedToggleInputContainer.alpha = 1
         unifiedToggleInputContainer.isHidden = false
@@ -269,14 +272,10 @@ class MainViewCoordinator {
     // MARK: - Omnibar Editing Layout
 
     @MainActor
-    func hideUnifiedToggleInputOmnibar() {
-        if addressBarPosition.isBottom {
-            setNavBarContainerBottomToToolbar()
-        }
-
+    func hideUnifiedToggleInputOmnibar(completion: (() -> Void)? = nil) {
         omnibarDismissAnimator?.stopAnimation(true)
 
-        let animator = UIViewPropertyAnimator(duration: 0.2, curve: .easeInOut) { [weak self] in
+        let animator = UIViewPropertyAnimator(duration: MainViewController.Constants.omnibarTransitionDuration, curve: .easeInOut) { [weak self] in
             self?.animateUnifiedToggleInputOmnibarDismissLayout()
         }
         animator.addCompletion { [weak self] position in
@@ -285,12 +284,19 @@ class MainViewCoordinator {
             // Skip cleanup if the animation was superseded — otherwise it stomps fresh state from a concurrent show.
             guard position == .end else { return }
             self.finishUnifiedToggleInputOmnibarDismiss()
+            completion?()
         }
         omnibarDismissAnimator = animator
         animator.startAnimation()
     }
 
+    /// Applies the dismiss-direction layout changes. Call inside an animation context
+    /// (UIView.animate or UIViewPropertyAnimator) — it includes a `layoutIfNeeded()` so the
+    /// constraint mutations interpolate.
     func animateUnifiedToggleInputOmnibarDismissLayout() {
+        if addressBarPosition.isBottom {
+            setNavBarContainerBottomToToolbar()
+        }
         navigationBarCollectionView.alpha = 1
         unifiedToggleInputContainer.alpha = 0
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight

@@ -213,6 +213,24 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Τραβήξτε μια φωτογραφία";
 
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Για εργασίες ανάλυσης";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Εκτεταμένη συλλογιστική";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Άμεσες απαντήσεις";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Γρήγορα";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Για σύνθετες εργασίες";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Συλλογιστική";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Προσαρμογή απαντήσεων";
 
@@ -4253,6 +4271,27 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Αφαίρεση συσκευής;";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Ο κώδικας αντιγράφηκε";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Το Sync & Backup ενεργοποιήθηκε";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Αντιγραφή κωδικού ανάκτησης";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Δεν ήταν δυνατή η ενεργοποίηση του Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Απενεργοποίηση";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Οι σελιδοδείκτες και οι κωδικοί πρόσβασής σας σε αυτήν τη συσκευή δεν θα επηρεαστούν.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Απενεργοποίηση Sync & Backup;";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Αφαίρεση";

@@ -213,6 +213,24 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Posnemite fotografijo";
 
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Za analitične naloge";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Razširjeno razmišljanje";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Hitro odgovarjanje";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Hitro";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Za zapletena opravila";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Razmišljanje";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Prilagodi odzive";
 
@@ -4253,6 +4271,27 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Želite odstraniti napravo?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Koda je kopirana";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Funkcija Sync & Backup je omogočena";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Obnovitvena koda je kopirana";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Funkcije Sync & Backup ni bilo mogoče omogočiti";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Izklopi";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Vaši zaznamki in gesla v tej napravi ne bodo prizadeti.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Želite izklopiti funkcijo Sync & Backup?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Odstrani";

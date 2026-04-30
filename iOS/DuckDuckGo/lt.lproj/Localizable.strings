@@ -213,6 +213,24 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fotografuoti";
 
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Analitinėms užduotims";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Išplėstinis samprotavimas";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Greitai atsako";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Greitas";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Sudėtingoms užduotims";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Samprotavimas";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Tinkinti atsakymus";
 
@@ -4253,6 +4271,27 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Pašalinti įrenginį?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kodas nukopijuotas";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sinchronizavimas ir atsarginis kopijavimas įjungtas";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Atkūrimo kodas nukopijuotas";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Nepavyko įjungti sinchronizavimo ir atsarginio kopijavimo";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Išjungti";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Tai neturės įtakos tavo parankinėms ir slaptažodžiams šiame įrenginyje.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Išjungti sinchronizavimą ir atsarginį kopijavimą?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Pašalinti";

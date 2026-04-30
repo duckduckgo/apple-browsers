@@ -213,6 +213,24 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fotoğraf Çek";
 
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Analitik görevler için";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Genişletilmiş Akıl Yürütme";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Hızlı yanıtlar";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Hızlı";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Karmaşık görevler için";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Akıl yürütme";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Yanıtları Özelleştir";
 
@@ -4253,6 +4271,27 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Cihaz Kaldırılsın mı?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kod kopyalandı";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup etkin";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Kurtarma Kodu Kopyalandı";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Sync & Backup etkinleştirilemedi";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Kapat";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Bu cihazdaki yer işaretleriniz ve şifreleriniz etkilenmeyecektir.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Sync & Backup kapatılsın mı?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Kaldır";

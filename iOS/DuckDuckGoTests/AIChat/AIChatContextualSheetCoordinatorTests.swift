@@ -40,6 +40,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             contextSubject.eraseToAnyPublisher()
         }
 
+        func sendContext(_ context: AIChatPageContext?) {
+            contextSubject.send(context)
+        }
+
         func triggerContextCollection() -> Bool {
             triggerContextCollectionCallCount += 1
             return triggerContextCollectionReturnValue
@@ -450,6 +454,39 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertEqual(secondPresenter.presentCallCount, 0)
+    }
+
+    // MARK: - originatingURLPublisher Tests
+
+    @MainActor
+    func test_originatingURLPublisher_mapsContextURL() throws {
+        let contextData = AIChatPageContextData(title: "Test", favicon: [], url: "https://example.com", content: "", truncated: false, fullContentLength: 0)
+        let context = AIChatPageContext(contextData: contextData, favicon: nil)
+
+        var received: [URL?] = []
+        sut.originatingURLPublisher
+            .sink { received.append($0) }
+            .store(in: &cancellables)
+
+        mockPageContextHandler.sendContext(context)
+
+        XCTAssertEqual(received.last??.absoluteString, "https://example.com")
+    }
+
+    @MainActor
+    func test_originatingURLPublisher_emitsNilWhenContextCleared() throws {
+        let contextData = AIChatPageContextData(title: "Test", favicon: [], url: "https://example.com", content: "", truncated: false, fullContentLength: 0)
+        let context = AIChatPageContext(contextData: contextData, favicon: nil)
+        mockPageContextHandler.sendContext(context)
+
+        var received: [URL?] = []
+        sut.originatingURLPublisher
+            .sink { received.append($0) }
+            .store(in: &cancellables)
+
+        mockPageContextHandler.sendContext(nil)
+
+        XCTAssertNil(received.last as? URL)
     }
 
     // MARK: - Helpers

@@ -95,6 +95,13 @@ final class AIChatContextualSheetCoordinator {
         contextUpdateCancellable != nil
     }
 
+    /// Publishes the URL of the page that originated the contextual chat session, with replay of the last value.
+    var originatingURLPublisher: AnyPublisher<URL?, Never> {
+        pageContextHandler.contextPublisher
+            .map { $0.flatMap { URL(string: $0.contextData.url) } }
+            .eraseToAnyPublisher()
+    }
+
     // MARK: - Initialization
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,

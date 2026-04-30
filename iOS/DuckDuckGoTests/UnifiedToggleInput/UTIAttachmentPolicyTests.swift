@@ -105,31 +105,41 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         let policy = makePolicy()
         let file = makeFile(mimeType: "text/plain", pageCount: nil)
 
-        XCTAssertNotNil(policy.fileValidationMessage(for: file))
+        XCTAssertEqual(policy.fileValidationMessage(for: file), UserText.aiChatAttachmentUnsupportedFileType(acceptedFileType: "PDF"))
     }
 
     func test_fileValidation_rejectsFileAboveMaxFileSize() {
         let policy = makePolicy(attachmentLimits: makeLimits(maxFileSizeMB: 5))
         let file = makeFile(size: 5_242_881)
 
-        XCTAssertEqual(policy.fileValidationMessage(for: file), UserText.aiChatAttachmentFileTooLarge)
+        XCTAssertEqual(policy.fileValidationMessage(for: file), UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: 5))
     }
 
     func test_fileValidation_rejectsFileAboveRemainingTotalSize() {
         let policy = makePolicy(
-            attachmentLimits: makeLimits(maxTotalFileSizeBytes: 10_000),
-            attachmentUsage: AIChatAttachmentUsage(imagesUsed: 0, filesUsed: 0, fileSizeBytesUsed: 9_500)
+            attachmentLimits: makeLimits(maxTotalFileSizeBytes: 5_242_880),
+            attachmentUsage: AIChatAttachmentUsage(imagesUsed: 0, filesUsed: 0, fileSizeBytesUsed: 5_242_400)
         )
         let file = makeFile(size: 600)
 
-        XCTAssertEqual(policy.fileValidationMessage(for: file), UserText.aiChatAttachmentFileExceedsConversationLimit)
+        XCTAssertEqual(policy.fileValidationMessage(for: file), UserText.aiChatAttachmentFilesExceedTotalSizeLimit(maxTotalFileSizeMB: 5))
+    }
+
+    func test_fileValidation_rejectsFileWhenConversationCountLimitReached() {
+        let policy = makePolicy(
+            attachmentLimits: makeLimits(maxFilesPerConversation: 3),
+            attachmentUsage: AIChatAttachmentUsage(imagesUsed: 0, filesUsed: 3, fileSizeBytesUsed: 0)
+        )
+        let file = makeFile()
+
+        XCTAssertEqual(policy.fileValidationMessage(for: file), UserText.aiChatAttachmentFileCountLimit(maxFilesPerConversation: 3))
     }
 
     func test_fileValidation_rejectsPdfAboveMaxPages() {
         let policy = makePolicy(attachmentLimits: makeLimits(maxPagesPerFile: 15))
         let file = makeFile(pageCount: 16)
 
-        XCTAssertEqual(policy.fileValidationMessage(for: file), UserText.aiChatAttachmentFileTooManyPages)
+        XCTAssertEqual(policy.fileValidationMessage(for: file), UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: 15))
     }
 
     func test_fileValidation_rejectsUnreadablePdfWhenPageLimitApplies() {

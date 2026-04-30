@@ -178,17 +178,20 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI Features";
 
-/* Alert message shown when an attached file exceeds the remaining total file size budget */
-"aichat.attachment.file.exceeds.conversation.limit" = "That file exceeds the remaining file size available in this conversation.";
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the maximum number of files. E.g. You can only attach 3 files per conversation. */
+"aichat.attachment.file.count.limit" = "You can only attach %d files per conversation.";
 
-/* Alert message shown when an attached file exceeds the allowed size */
-"aichat.attachment.file.too.large" = "That file is too large to attach.";
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the combined size limit in megabytes. E.g. The attached files exceed the total size limit of 5 MB. */
+"aichat.attachment.file.exceeds.conversation.limit" = "The attached files exceed the total size limit of %d MB.";
 
-/* Alert message shown when an attached PDF exceeds the allowed page count */
-"aichat.attachment.file.too.many.pages" = "That PDF has too many pages to attach.";
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the size limit in megabytes. E.g. This file is too large. The maximum file size is 5 MB. */
+"aichat.attachment.file.too.large" = "This file is too large. The maximum file size is %d MB.";
 
-/* Alert message shown when an attached PDF cannot be read for validation */
-"aichat.attachment.file.unreadable" = "That PDF can't be attached.";
+/* Error message displayed when one attached file has more pages than supported. Parameter is the maximum supported page count. E.g. One of the files attached has more pages than we support. Please upload files with 15 pages or fewer. */
+"aichat.attachment.file.too.many.pages" = "One of the files attached has more pages than we support. Please upload files with %d pages or fewer.";
+
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.unreadable" = "We can't read the files attached because at least one of them is encrypted.";
 
 /* Top-level attachment menu option to attach a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Attach File";
@@ -204,6 +207,15 @@
 
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "That message is too long to send with attachments.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "This file type is not supported.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "This file type is not supported, please attach a %1$@ or %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "This file type is not supported, please attach a %@.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "For analytical tasks";

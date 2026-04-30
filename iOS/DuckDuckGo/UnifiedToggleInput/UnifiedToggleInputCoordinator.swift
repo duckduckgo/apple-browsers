@@ -1240,8 +1240,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     private func presentAttachmentValidationError(_ message: String) {
-        guard let presenter = attachmentPresenterViewController else { return }
-        attachmentPresenter.presentFileValidationError(from: presenter, message: message)
+        ActionMessageView.present(message: message)
     }
 }
 

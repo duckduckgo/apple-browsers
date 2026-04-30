@@ -2066,10 +2066,47 @@ public struct UserText {
     public static let aiChatAttachmentOptionAttachFile = NSLocalizedString("aichat.attachment.option.attach.file", value: "Attach File", comment: "Top-level attachment menu option to attach a file to an AI chat message")
     public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take a Photo", comment: "Action sheet option to take a photo using the device camera for attaching to an AI chat message")
     public static let aiChatAttachmentOptionChoosePhoto = NSLocalizedString("aichat.attachment.option.choose.photo", value: "Choose Photo", comment: "Action sheet option to choose a photo from the photo library for attaching to an AI chat message")
-    public static let aiChatAttachmentFileTooLarge = NSLocalizedString("aichat.attachment.file.too.large", value: "That file is too large to attach.", comment: "Alert message shown when an attached file exceeds the allowed size")
-    public static let aiChatAttachmentFileExceedsConversationLimit = NSLocalizedString("aichat.attachment.file.exceeds.conversation.limit", value: "That file exceeds the remaining file size available in this conversation.", comment: "Alert message shown when an attached file exceeds the remaining total file size budget")
-    public static let aiChatAttachmentFileTooManyPages = NSLocalizedString("aichat.attachment.file.too.many.pages", value: "That PDF has too many pages to attach.", comment: "Alert message shown when an attached PDF exceeds the allowed page count")
-    public static let aiChatAttachmentFileUnreadable = NSLocalizedString("aichat.attachment.file.unreadable", value: "That PDF can't be attached.", comment: "Alert message shown when an attached PDF cannot be read for validation")
+    public static func aiChatAttachmentFileTooLarge(maxFileSizeMB: Int) -> String {
+        let message = NSLocalizedString("aichat.attachment.file.too.large", value: "This file is too large. The maximum file size is %d MB.", comment: "Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the size limit in megabytes. E.g. This file is too large. The maximum file size is 5 MB.")
+        return message.format(arguments: maxFileSizeMB)
+    }
+
+    public static func aiChatAttachmentFilesExceedTotalSizeLimit(maxTotalFileSizeMB: Int) -> String {
+        let message = NSLocalizedString("aichat.attachment.file.exceeds.conversation.limit", value: "The attached files exceed the total size limit of %d MB.", comment: "Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the combined size limit in megabytes. E.g. The attached files exceed the total size limit of 5 MB.")
+        return message.format(arguments: maxTotalFileSizeMB)
+    }
+
+    public static func aiChatAttachmentFileTooManyPages(maxPagesPerFile: Int) -> String {
+        let message = NSLocalizedString("aichat.attachment.file.too.many.pages", value: "One of the files attached has more pages than we support. Please upload files with %d pages or fewer.", comment: "Error message displayed when one attached file has more pages than supported. Parameter is the maximum supported page count. E.g. One of the files attached has more pages than we support. Please upload files with 15 pages or fewer.")
+        return message.format(arguments: maxPagesPerFile)
+    }
+
+    public static let aiChatAttachmentFileUnreadable = NSLocalizedString("aichat.attachment.file.unreadable", value: "We can't read the files attached because at least one of them is encrypted.", comment: "Error message displayed when one or more attached files are encrypted and cannot be read")
+    public static func aiChatAttachmentUnsupportedFileType(acceptedFileType: String) -> String {
+        let message = NSLocalizedString("aichat.attachment.unsupported.file.type.single", value: "This file type is not supported, please attach a %@.", comment: "Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF.")
+        return message.format(arguments: acceptedFileType)
+    }
+
+    public static func aiChatAttachmentUnsupportedFileType(acceptedFileTypes: [String]) -> String {
+        guard let lastAcceptedFileType = acceptedFileTypes.last else {
+            return aiChatAttachmentUnsupportedFileType
+        }
+
+        guard acceptedFileTypes.count > 1 else {
+            return aiChatAttachmentUnsupportedFileType(acceptedFileType: lastAcceptedFileType)
+        }
+
+        let leadingAcceptedFileTypes = acceptedFileTypes.dropLast().joined(separator: ", ")
+        let message = NSLocalizedString("aichat.attachment.unsupported.file.type.multiple", value: "This file type is not supported, please attach a %@ or %@.", comment: "Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF.")
+        return message.format(arguments: leadingAcceptedFileTypes, lastAcceptedFileType)
+    }
+
+    public static let aiChatAttachmentUnsupportedFileType = NSLocalizedString("aichat.attachment.unsupported.file.type", value: "This file type is not supported.", comment: "Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types")
+    public static func aiChatAttachmentFileCountLimit(maxFilesPerConversation: Int) -> String {
+        let message = NSLocalizedString("aichat.attachment.file.count.limit", value: "You can only attach %d files per conversation.", comment: "Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the maximum number of files. E.g. You can only attach 3 files per conversation.")
+        return message.format(arguments: maxFilesPerConversation)
+    }
+
     public static let aiChatAttachmentPromptTooLong = NSLocalizedString("aichat.attachment.prompt.too.long", value: "That message is too long to send with attachments.", comment: "Alert message shown when an AI chat message exceeds the allowed length while attachments are included")
 
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")

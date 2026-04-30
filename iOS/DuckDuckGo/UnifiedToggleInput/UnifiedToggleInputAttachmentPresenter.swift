@@ -205,12 +205,6 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         presenter.present(menuViewController, animated: true)
     }
 
-    func presentFileValidationError(from presenter: UIViewController, message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: UserText.actionOK, style: .default))
-        presenter.present(alert, animated: true)
-    }
-
     private func presentPhotoOptions(from sourceView: UIView, presenter: UIViewController, photoSelectionLimit: Int) {
         let sheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 

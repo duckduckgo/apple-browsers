@@ -59,7 +59,20 @@ class ViewHighlighter {
         addedViews = []
         highlightedViews = []
     }
-    
+
+    /// Removes only the highlight(s) anchored to the given view. Use this instead of
+    /// `hideAll()` when other highlights (e.g. the fire-button pulse) should remain on screen.
+    static func hide(focussedOnView view: UIView) {
+        let indicesToRemove = highlightedViews.enumerated().compactMap { index, held -> Int? in
+            held.view == view ? index : nil
+        }
+        for index in indicesToRemove.reversed() {
+            addedViews[index].view?.removeFromSuperview()
+            addedViews.remove(at: index)
+            highlightedViews.remove(at: index)
+        }
+    }
+
     static func updatePositions() {
         for (index, highlight) in addedViews.enumerated() {
             if let highlightedView = highlightedViews[index].view,

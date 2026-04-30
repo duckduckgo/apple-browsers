@@ -916,6 +916,11 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func onPrivacyIconPressed() {
         let isPrivacyIconHighlighted = privacyIconContextualOnboardingAnimator.isPrivacyIconHighlighted(barView.privacyInfoContainer.privacyIcon)
+        // Remove the contextual-onboarding pulse synchronously on tap so it disappears the
+        // instant the user engages with the icon, regardless of how `isPrivacyIconHighlighted`
+        // resolves (its gate looks for an outer-`PrivacyIconView` anchor only, while the show
+        // path actually anchors to the inner `shieldAnimationView` when available).
+        privacyIconContextualOnboardingAnimator.forceDismissPrivacyIconAnimation(barView.privacyInfoContainer.privacyIcon)
         omniDelegate?.onPrivacyIconPressed(isHighlighted: isPrivacyIconHighlighted)
     }
 

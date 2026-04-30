@@ -33,8 +33,8 @@ extension OnboardingRebranding {
         static let panelTopPadding: CGFloat = 24
         static let panelBottomPadding: CGFloat = 32
         /// Bubble tail (arrow) dimensions used by every dialog that shows a tail.
-        static let bubbleArrowLength: CGFloat = 14
-        static let bubbleArrowWidth: CGFloat = 22
+        static let bubbleArrowLength: CGFloat = 28
+        static let bubbleArrowWidth: CGFloat = 44
         /// Duration for in-place content transitions (searchDone→tryASite, trackers→fire).
         static let inlineTransitionDuration: Double = 0.3
         /// Duration of a single fade phase (out or in) when swapping layered bubble/background.

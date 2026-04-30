@@ -27,8 +27,13 @@ extension OnboardingRebranding {
         /// Layout values unique to the highFive dialog. Shared metrics live on
         /// `OnboardingRebranding.Layout`.
         private enum Layout {
-            /// Bubble tail anchor — matches tryASearch so the tail points toward the Dax overlay.
-            static let tailOffset: CGFloat = 0.99
+            /// Bubble tail anchor — pushed further down the leading edge so the tip lands
+            /// next to Dax's mouth area rather than near the top of the bubble.
+            static let tailOffset: CGFloat = 0.85
+            /// Locally smaller tail than the shared `OnboardingRebranding.Layout.bubbleArrow*`
+            /// metrics so the high-five bubble's arrow doesn't dominate the tighter layout.
+            static let arrowLength: CGFloat = 18
+            static let arrowWidth: CGFloat = 28
         }
 
         let highFiveAction: () -> Void
@@ -39,8 +44,8 @@ extension OnboardingRebranding {
                 Spacer(minLength: 0)
                 OnboardingBubbleView(
                     tailPosition: .leading(offset: Layout.tailOffset, direction: .top),
-                    arrowLength: OnboardingRebranding.Layout.bubbleArrowLength,
-                    arrowWidth: OnboardingRebranding.Layout.bubbleArrowWidth,
+                    arrowLength: Layout.arrowLength,
+                    arrowWidth: Layout.arrowWidth,
                     content: {
                         OnboardingEndOfJourneyDialogContent(highFiveAction: highFiveAction)
                     }

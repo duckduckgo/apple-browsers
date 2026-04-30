@@ -30,12 +30,15 @@ extension OnboardingRebranding {
         private enum Layout {
             /// Bubble tail near the bottom-leading edge, pointing down-right toward the wing.
             static let tailOffset: CGFloat = 0.1
-            static let wingWidth: CGFloat = 55
-            static let wingHeight: CGFloat = 62
-            /// Negative spacing so the wing's top overlaps the bubble's tail area.
-            static let wingOverlapSpacing: CGFloat = -20
-            /// The wing animation is the bottom of the panel; no extra padding below it.
-            static let panelBottomPadding: CGFloat = 0
+            static let wingWidth: CGFloat = 89.4
+            static let wingHeight: CGFloat = 100.75
+            /// Negative spacing so the wing's top overlaps the bubble's tail area. The Lottie
+            /// canvas has transparent padding above the artwork, so we need a fairly large
+            /// negative value for the visible wing to actually touch the bubble.
+            static let wingOverlapSpacing: CGFloat = -55
+            /// Negative bottom padding pulls the wing closer to the panel's bottom edge so it
+            /// reads as anchored to the bottom rather than floating above it.
+            static let panelBottomPadding: CGFloat = -16
         }
 
         @Environment(\.onboardingTheme) private var theme
@@ -43,6 +46,7 @@ extension OnboardingRebranding {
         let cta = UserText.ContextualOnboarding.onboardingGotItButton
 
         @State private var showNextScreen: Bool = false
+        @State private var playWingToEnd: Bool = false
 
         let shouldFollowUp: Bool
         let message: NSAttributedString
@@ -78,6 +82,7 @@ extension OnboardingRebranding {
                                     message: message
                                 ) {
                                     Button(cta) {
+                                        playWingToEnd = true
                                         blockedTrackersCTAAction()
                                         if shouldFollowUp {
                                             onContentTransition?()
@@ -92,7 +97,7 @@ extension OnboardingRebranding {
                         )
                         .onboardingDismissable(onManualDismiss)
 
-                        WingPointingAnimation()
+                        WingPointingAnimation(playToEnd: $playWingToEnd)
                             .frame(width: Layout.wingWidth, height: Layout.wingHeight)
                             .clipped()
                             .allowsHitTesting(false)
@@ -112,22 +117,39 @@ extension OnboardingRebranding {
 
 // MARK: - Wing Pointing Lottie
 
-/// Pointer-wing Lottie shown directly below the trackers bubble. Plays once on appear
-/// and holds on the final frame.
+/// Pointer-wing Lottie shown directly below the trackers bubble. Plays the first half on
+/// appear and holds on the fully-extended pointing pose. When `playToEnd` flips true
+/// (e.g. the user taps Next), the second half plays so the wing returns to rest.
 struct WingPointingAnimation: NSViewRepresentable {
     @Environment(\.colorScheme) private var colorScheme
+    @Binding var playToEnd: Bool
+
+    final class Coordinator {
+        weak var animationView: LottieAnimationView?
+        var didPlayToEnd = false
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeNSView(context: Context) -> NSView {
         let container = NSView()
         container.wantsLayer = true
         container.layer?.masksToBounds = true
-        attachAnimation(to: container)
+        attachAnimation(to: container, context: context)
         return container
     }
 
-    func updateNSView(_ nsView: NSView, context: Context) {}
+    func updateNSView(_ nsView: NSView, context: Context) {
+        guard playToEnd, !context.coordinator.didPlayToEnd, let view = context.coordinator.animationView else {
+            return
+        }
+        context.coordinator.didPlayToEnd = true
+        // Continue from the held mid-point through the rest of the animation so the wing
+        // tucks back into its resting pose instead of snapping.
+        view.play(fromProgress: 0.5, toProgress: 1.0, loopMode: .playOnce)
+    }
 
-    private func attachAnimation(to container: NSView) {
+    private func attachAnimation(to container: NSView, context: Context) {
         guard let animation = LottieAnimation.asset("wing-pointing", bundle: .main) else {
             return
         }
@@ -140,6 +162,9 @@ struct WingPointingAnimation: NSViewRepresentable {
         view.autoresizingMask = [.width, .height]
         view.frame = container.bounds
         container.addSubview(view)
-        view.play()
+        context.coordinator.animationView = view
+        // Lottie file plays forward then reverses back to the start; stop at the mid-point
+        // so it freezes on the fully-extended pointing pose.
+        view.play(fromProgress: 0, toProgress: 0.5, loopMode: .playOnce)
     }
 }

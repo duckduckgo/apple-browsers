@@ -125,24 +125,26 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
 
     // MARK: - Exclusion Criteria Tests
 
-    func testShouldDisplayPicker_WhenAddressBarPositionIsBottom_ReturnsFalse() {
-        // Given
-        setupShowCriteriaMet()
-        mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = false
-        mockAppSettings.currentAddressBarPosition = .bottom
-
-        // When
-        let result = validator.shouldDisplayNewAddressBarPicker()
-
-        // Then
-        XCTAssertFalse(result)
-    }
-
     func testShouldDisplayPicker_WhenAddressBarPositionIsTop_ReturnsTrue() {
         // Given
         setupShowCriteriaMet()
         mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = false
         mockAppSettings.currentAddressBarPosition = .top
+
+        // When
+        let result = validator.shouldDisplayNewAddressBarPicker()
+
+        // Then
+        XCTAssertTrue(result)
+    }
+
+    func testShouldDisplayPicker_WhenAddressBarPositionIsBottomAndOtherCriteriaMet_ReturnsTrue() {
+        // Given
+        setupShowCriteriaMet()
+        setupNoExclusionCriteria()
+        mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = false
+        mockAIChatSettings.isAIChatSearchInputUserSettingsDisabledByUser = false
+        mockAppSettings.currentAddressBarPosition = .bottom
 
         // When
         let result = validator.shouldDisplayNewAddressBarPicker()
@@ -173,6 +175,34 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
 
         // Then
         XCTAssertFalse(result)
+    }
+
+    func testShouldDisplayPicker_WhenAddressBarSearchInputExplicitlyDisabledByUser_ReturnsFalse() {
+        // Given
+        setupShowCriteriaMet()
+        setupNoExclusionCriteria()
+        mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = false
+        mockAIChatSettings.isAIChatSearchInputUserSettingsDisabledByUser = true
+
+        // When
+        let result = validator.shouldDisplayNewAddressBarPicker()
+
+        // Then
+        XCTAssertFalse(result)
+    }
+
+    func testShouldDisplayPicker_WhenAddressBarSearchInputNeverSetByUser_ReturnsTrue() {
+        // Given
+        setupShowCriteriaMet()
+        setupNoExclusionCriteria()
+        mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = false
+        mockAIChatSettings.isAIChatSearchInputUserSettingsDisabledByUser = false
+
+        // When
+        let result = validator.shouldDisplayNewAddressBarPicker()
+
+        // Then
+        XCTAssertTrue(result)
     }
 
     func testShouldDisplayPicker_WhenAlreadyShown_ReturnsFalse() {

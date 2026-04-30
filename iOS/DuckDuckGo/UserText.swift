@@ -2459,6 +2459,45 @@ public struct UserText {
     public static let dataImportBookmarksSubtitle = NSLocalizedString("data.import.bookmarks.subtitle", value: "Select the file containing bookmarks. This is usually a ZIP or HTML file.", comment: "Subtitle for screen to import bookmarks")
     public static let dataImportBookmarksFileButton = NSLocalizedString("data.import.bookmarks.file-button", value: "Import Bookmarks File...", comment: "Button label to select zip or html file for importing")
 
+    public static let dataImportHubTitle = NSLocalizedString("data.import.hub.title", value: "Bring to DuckDuckGo", comment: "Title for the data import hub screen")
+    public static let importSourceSectionImportFrom = NSLocalizedString("data.import.source.section.import-from", value: "Import From", comment: "Section header for password import sources on the hub screen")
+    public static let importSourceSectionSyncFrom = NSLocalizedString("data.import.source.section.sync-from", value: "Sync From", comment: "Section header for sync-based import sources on the hub screen")
+    public static let importSourcePasswordsApp = NSLocalizedString("data.import.source.passwords-app", value: "Passwords App", comment: "Row title for importing from the Apple Passwords app")
+    public static let importSourceSafari = NSLocalizedString("data.import.source.safari", value: "Safari", comment: "Row title for importing passwords from Safari")
+    public static let importSourceChrome = NSLocalizedString("data.import.source.chrome", value: "Chrome", comment: "Row title for importing passwords from Chrome")
+    public static let importSourceSyncFromDuckDuckGo = NSLocalizedString("data.import.source.sync-duckduckgo", value: "DuckDuckGo on Another Device", comment: "Row title for syncing passwords from DuckDuckGo on another device")
+
+    public static let importDetailPasswordsTitle = NSLocalizedString("data.import.detail.passwords.title", value: "Import from Passwords", comment: "Navigation title for the Passwords App import detail screen")
+    public static let importDetailPasswordsDescription = NSLocalizedString("data.import.detail.passwords.description", value: "You need to go to the Passwords app, then follow the steps to import.", comment: "Description on the Passwords App import detail screen")
+    public static let importDetailPasswordsStep1 = NSLocalizedString("data.import.detail.passwords.step1", value: "Tap **···** > **Export Data to Another App**", comment: "Step 1 instruction for importing from the Passwords app")
+    public static let importDetailPasswordsStep2 = NSLocalizedString("data.import.detail.passwords.step2", value: "Tap **Select All** > **Continue**", comment: "Step 2 instruction for importing from the Passwords app")
+    public static let importDetailPasswordsStep3 = NSLocalizedString("data.import.detail.passwords.step3", value: "Select **DuckDuckGo** as Destination", comment: "Step 3 instruction for importing from the Passwords app")
+
+    public static let importDetailSafariTitle = NSLocalizedString("data.import.detail.safari.title", value: "Import from Safari", comment: "Navigation title for the Safari import detail screen")
+    public static let importDetailSafariDescription = NSLocalizedString("data.import.detail.safari.description", value: "First, export your passwords and bookmarks from Safari, then come back here to upload the file.", comment: "Description on the Safari import detail screen")
+    public static let importDetailSafariExportButton = NSLocalizedString("data.import.detail.safari.export-button", value: "Export from Safari", comment: "Primary button on the Safari import detail screen to start the export flow")
+
+    public static let importDetailChromeTitle = NSLocalizedString("data.import.detail.chrome.title", value: "Import from Chrome", comment: "Navigation title for the Chrome import detail screen")
+    public static let importDetailChromeDescription = NSLocalizedString("data.import.detail.chrome.description", value: "Open Chrome, then go to Password Manager and follow the steps below:", comment: "Description on the Chrome import detail screen")
+    public static let importDetailChromeStep1 = NSLocalizedString("data.import.detail.chrome.step1", value: "**Settings** > **Export Data**", comment: "Step 1 instruction for importing from Chrome")
+    public static let importDetailChromeStep2 = NSLocalizedString("data.import.detail.chrome.step2", value: "Press **Continue**", comment: "Step 2 instruction for importing from Chrome")
+    public static let importDetailChromeStep3 = NSLocalizedString("data.import.detail.chrome.step3", value: "Select **DuckDuckGo** as Destination", comment: "Step 3 instruction for importing from Chrome")
+
+    public static let importDetailDoneExportingHeader = NSLocalizedString("data.import.detail.done-exporting-header", value: "Done Exporting?", comment: "Section header above the upload file row on the Safari import detail screen")
+    public static let importDetailUploadFileRow = NSLocalizedString("data.import.detail.upload-file-row", value: "Upload Exported File...", comment: "Row label on import detail screens that opens a file picker to upload an exported password file")
+
+    // MARK: Safari Export Interstitial
+
+    public static let safariExportInterstitialTip = NSLocalizedString("data.import.safari.interstitial.tip", value: "Remember to tap\n\"Export to Files\"", comment: "Tip text on the Safari export interstitial reminding users to click Export to Files")
+    public static let safariExportInterstitialButton = NSLocalizedString("data.import.safari.interstitial.button", value: "Open Settings to Export", comment: "Button on the Safari export interstitial that triggers the system import sheet")
+
+    public static let fileImportErrorCorruptTitle = NSLocalizedString("data.import.file-error.corrupt.title", value: "File may be corrupt", comment: "Title on the error sheet shown when an imported file cannot be read")
+    public static let fileImportErrorCorruptMessage = NSLocalizedString("data.import.file-error.corrupt.message", value: "The %@ file could not be read. Try uploading another file or try another import method.", comment: "Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.)")
+    public static let fileImportErrorUnsupportedTitle = NSLocalizedString("data.import.file-error.unsupported.title", value: "Unsupported File", comment: "Title on the error sheet shown when the selected file type is not supported")
+    public static let fileImportErrorUnsupportedMessage = NSLocalizedString("data.import.file-error.unsupported.message", value: "The file selected is not supported. Please select a different file and try again.", comment: "Message on the error sheet when an unsupported file type is selected")
+    public static let fileImportErrorNoDataTitle = NSLocalizedString("data.import.file-error.no-data.title", value: "No Data Found", comment: "Title on the error sheet shown when no supported data is found in the file")
+    public static let fileImportErrorNoDataMessage = NSLocalizedString("data.import.file-error.no-data.message", value: "No supported data found in the zip file. Please review the export instructions and try again.", comment: "Message on the error sheet when no supported data is found in the zip file")
+    public static let fileImportErrorButton = NSLocalizedString("data.import.file-error.button", value: "Got It", comment: "Dismiss button on the file import error sheet")
 
     public static let dataImportFailedNoDataInZipErrorMessage = NSLocalizedString("data.import.failed.no-data-in-zip-error-message", value: "No supported data found in the zip file. Please review the Safari export instructions and try again.", comment: "Error message displayed when no supported data is found in the zip file")
     public static let dataImportFailedReadErrorMessage = NSLocalizedString("data.import.failed.zip-read-error-message", value: "The %@ file could not be read. There may be an issue with the data in the file.", comment: "Error message displayed when the (csv|html|zip) file can't be read.")
@@ -2468,7 +2507,7 @@ public struct UserText {
     public static let dataImportFailedUnsupportedFileErrorMessage = NSLocalizedString("data.import.failed.unsupported-file-error-message", value: "The file selected is not supported. Please select a different file and try again.", comment: "Error message displayed when the user has selected an unsupported file")
 
     public static let dataImportPasswordsInstructionsChromeStep1 = NSLocalizedString("data.import.passwords.instructions.chrome.step1", value: "In Chrome, go to **Google Password Manager** and then **Settings**.", comment: "Step 1 for instructions to import passwords from Chrome")
-    public static let dataImportPasswordsInstructionsChromeStep2 = NSLocalizedString("data.import.passwords.instructions.chrome.step2", value: "Select **Export passwords**, then **Save to Files** and save the file in a folder that you can remember.", comment: "Step 2 for instructions to import passwords.")
+    public static let dataImportPasswordsInstructionsChromeStep2 = NSLocalizedString("data.import.passwords.instructions.chrome.step2", value: "Select **Export data**, then **···** and then **Donwload to CSV** and save the file in a folder that you can remember.", comment: "Step 2 for instructions to import passwords.")
 
     public static let zipContentSelectionTitle = NSLocalizedString("zip.content.import.types.title", value: "What do you want to import?", comment: "Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords)")
     public static let zipContentSelectionPasswords = NSLocalizedString("zip.content.import.type.passwords", value: "Passwords", comment: "Option to select to import passwords")
@@ -2488,6 +2527,10 @@ public struct UserText {
     public static let dataImportSummarySyncPasswords = NSLocalizedString("data.import.summary.button.title.sync.passwords", value: "Passwords", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncBookmarks = NSLocalizedString("data.import.summary.button.title.sync.bookmarks", value: "Bookmarks", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncData = NSLocalizedString("data.import.summary.button.title.sync.data", value: "Data", comment: "Parameter for data.import.summary.button.title.sync")
+    public static let dataImportSummaryPasswordsPromoTitle = NSLocalizedString("data.import.summary.promo.passwords.title", value: "Want to bring your passwords too?", comment: "Title for the summary footer promo that suggests importing passwords")
+    public static let dataImportSummaryBookmarksPromoTitle = NSLocalizedString("data.import.summary.promo.bookmarks.title", value: "Want to bring your bookmarks from Safari too?", comment: "Title for the summary footer promo that suggests importing Safari bookmarks")
+    public static let dataImportSummaryPromoDismissAction = NSLocalizedString("data.import.summary.promo.dismiss.action", value: "Not Now", comment: "Dismiss button title for summary footer promos")
+    public static let dataImportSummaryPromoContinueAction = NSLocalizedString("data.import.summary.promo.continue.action", value: "Continue", comment: "Continue button title for summary footer promos")
     public static let dataImportSummaryVisitSyncSettings = NotLocalizedString("data.import.summary.message.sync.settings", value: "Visit Settings to securely sync bookmarks and passwords between your devices.", comment: "Message informing the user to visit settings to sync bookmarks and passwords. Used from What's New and for en_US locale only.")
     
     public enum SubscriptionPromotionOnboarding {

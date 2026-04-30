@@ -889,23 +889,46 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("When aiChatNativeStorage is enabled and not a fire window, supportsNativeStorage is true", .timeLimit(.minutes(1)))
-    func testWhenAIChatNativeStorageEnabledAndNotFireWindowThenSupportsNativeStorageIsTrue() {
+    @Test("When aiChatNativeStorage is enabled and bridge is available, supportsNativeStorage is true", .timeLimit(.minutes(1)))
+    func testWhenAIChatNativeStorageEnabledAndBridgeAvailableThenSupportsNativeStorageIsTrue() {
         let featureFlagger = makeFeatureFlagger(aiChatNativeStorageEnabled: true)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
-                                           promptHandler: AIChatPromptHandler.shared)
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           isNativeStorageBridgeAvailable: true)
 
         #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeStorage == true)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("When aiChatNativeStorage is enabled and is a fire window, supportsNativeStorage is true", .timeLimit(.minutes(1)))
-    func testWhenAIChatNativeStorageEnabledAndFireWindowThenSupportsNativeStorageIsTrue() {
+    @Test("When aiChatNativeStorage is enabled and bridge is available in a fire window, supportsNativeStorage is true", .timeLimit(.minutes(1)))
+    func testWhenAIChatNativeStorageEnabledAndBridgeAvailableInFireWindowThenSupportsNativeStorageIsTrue() {
+        let featureFlagger = makeFeatureFlagger(aiChatNativeStorageEnabled: true)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           isNativeStorageBridgeAvailable: true)
+
+        #expect(handler.getNativeConfigValues(isFireWindow: true).supportsNativeStorage == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("When aiChatNativeStorage is enabled but bridge is unavailable, supportsNativeStorage is false", .timeLimit(.minutes(1)))
+    func testWhenAIChatNativeStorageEnabledAndBridgeUnavailableThenSupportsNativeStorageIsFalse() {
         let featureFlagger = makeFeatureFlagger(aiChatNativeStorageEnabled: true)
         let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
                                            promptHandler: AIChatPromptHandler.shared)
 
-        #expect(handler.getNativeConfigValues(isFireWindow: true).supportsNativeStorage == true)
+        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeStorage == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("When aiChatNativeStorage is disabled but bridge is available, supportsNativeStorage is false", .timeLimit(.minutes(1)))
+    func testWhenAIChatNativeStorageDisabledAndBridgeAvailableThenSupportsNativeStorageIsFalse() {
+        let featureFlagger = makeFeatureFlagger(aiChatNativeStorageEnabled: false)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           isNativeStorageBridgeAvailable: true)
+
+        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeStorage == false)
     }
 }
 // swiftlint:enable inclusive_language

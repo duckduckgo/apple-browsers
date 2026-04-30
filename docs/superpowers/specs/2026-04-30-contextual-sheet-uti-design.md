@@ -52,7 +52,7 @@ A new horizontal row inside the UTI card, slotted **between the text-entry surfa
 
 ### 5.1 Visibility rule
 
-The chip is **hidden** iff *the originating tab's currently-displayed URL equals the URL of the page already attached to the conversation*. Otherwise the chip shows the "Attach page" placeholder.
+**V1 (this spec): native-derived.** The chip is **hidden** iff *the originating tab's currently-displayed URL equals the URL of the page already attached to the conversation*. Otherwise the chip shows the "Attach page" placeholder.
 
 Equivalent state machine:
 
@@ -65,6 +65,8 @@ chip state:
   if originatingURL == attachedURL  → hidden
   else                              → placeholder ("Attach page")
 ```
+
+**Future option (not V1): FE-driven.** The duck.ai FE already has the logic that drives its own composer's "Attach page content" button visibility today. A cleaner long-term answer is to make the FE the source of truth and let it tell the native side via a new user-script message (e.g. `setPageContextChipVisible(visible: Bool)`). We don't do this in V1 because (a) it requires new FE work beyond just honoring `nativeInput=1`, and (b) the native rule above is simple, deterministic, and testable. If FE behavior diverges from the native rule in practice, we revisit (see Section 12).
 
 ### 5.2 Triggers
 
@@ -212,6 +214,7 @@ No unit tests for trivial pure logic (e.g. one-line equality predicates). Covera
 ## 12. Risk + open implementation questions
 
 - **FE coordination:** the `nativeInput=1` query param is a contract. Confirm with the FE team that they'll honor it before merging the iOS side. Worst-case fallback: ship native UTI behind the flag *and* keep the FE composer until FE catches up — UI would have two composers, so this is only acceptable if the flag is off in production while we wait.
+- **Chip visibility source of truth (V1 vs future):** Section 5.1 picks a native-derived rule. If, during impl or QA, we find the FE composer's existing button uses logic the native rule doesn't replicate (e.g. it suppresses on certain page types, or factors in conversation state we don't see natively), we switch to an FE-driven `setPageContextChipVisible(visible:)` user-script message and let the FE drive. Either way the same chip view + tap handler can be reused; only the "should I be visible" input changes.
 - **Page-change observation in `TabViewController`:** confirm `webViewUrlHasChanged()` fires *after* `WKWebView.url` updates and that the published URL matches what the user sees (not a transient `about:blank` during navigation). Tests here would help.
 - **Sheet ↔ keyboard:** UTI in omnibar uses `keyboardLayoutGuide` for its floating-submit anchor; in the sheet host we suppress floating submit, but the UTI itself still needs to track keyboard avoidance inside the sheet. Verify that placing UTI as a child of `AIChatContextualWebViewController` with bottom-anchor + safe-area-relative-to-keyboard works without manual keyboard observers.
 - **First-paint flicker:** at flag-on, the duck.ai page loads with `nativeInput=1` and FE never renders its composer. Until the native UTI's view is installed and laid out, there could be a sub-frame gap with no visible composer. Easy mitigation: install UTI synchronously in `viewDidLoad` of `AIChatContextualWebViewController` so it's already there when the page paints.

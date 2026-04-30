@@ -690,17 +690,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     open func handleConnectionStatusChange(old: ConnectionStatus, new: ConnectionStatus) {
         Logger.networkProtectionPixel.debug("⚫️ Connection Status Change: \(old.description, privacy: .public) -> \(new.description, privacy: .public)")
-
-        switch (old, new) {
-        case (_, .connecting), (_, .reasserting):
-            providerEvents.fire(.reportConnectionAttempt(attempt: .connecting))
-        case (_, .connected):
-            providerEvents.fire(.reportConnectionAttempt(attempt: .success))
-        case (.connecting, _), (.reasserting, _):
-            providerEvents.fire(.reportConnectionAttempt(attempt: .failure))
-        default:
-            break
-        }
     }
 
     // MARK: - Overrideable Connection Events
@@ -768,7 +757,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // If the VPN was started manually without the basic prerequisites we always
                 // want to know as this should not be possible.
                 providerEvents.fire(.tunnelStartAttempt(.begin))
+                providerEvents.fire(.reportConnectionAttempt(attempt: .connecting))
                 providerEvents.fire(.tunnelStartAttempt(.failure(error)))
+                providerEvents.fire(.reportConnectionAttempt(attempt: .failure))
             }
 
             Logger.networkProtection.error("🔴 Stopping VPN due to no auth token")
@@ -778,6 +769,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         do {
             providerEvents.fire(.tunnelStartAttempt(.begin))
+            providerEvents.fire(.reportConnectionAttempt(attempt: .connecting))
             connectionStatus = .connecting
             resetIssueStateOnTunnelStart(startupOptions)
 
@@ -785,6 +777,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             try await startTunnel(onDemand: startupOptions.startupMethod == .automaticOnDemand)
 
             providerEvents.fire(.tunnelStartAttempt(.success))
+            providerEvents.fire(.reportConnectionAttempt(attempt: .success))
             loopDetector.connectionSucceeded()
             completeAndCleanupConnectionWideEvent()
         } catch {
@@ -810,6 +803,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             self.knownFailureStore.lastKnownFailure = KnownFailure(error)
 
             providerEvents.fire(.tunnelStartAttempt(.failure(error)))
+            providerEvents.fire(.reportConnectionAttempt(attempt: .failure))
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             throw error
         }
@@ -1006,6 +1000,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         providerEvents.fire(.tunnelUpdateAttempt(.begin))
 
         if reassert {
+            providerEvents.fire(.reportConnectionAttempt(attempt: .connecting))
             await stopMonitors()
         }
 
@@ -1030,8 +1025,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
 
             providerEvents.fire(.tunnelUpdateAttempt(.success))
+            if reassert {
+                providerEvents.fire(.reportConnectionAttempt(attempt: .success))
+            }
         } catch {
             providerEvents.fire(.tunnelUpdateAttempt(.failure(error)))
+            if reassert {
+                providerEvents.fire(.reportConnectionAttempt(attempt: .failure))
+            }
 
             switch error {
             case WireGuardAdapterError.setWireguardConfig:

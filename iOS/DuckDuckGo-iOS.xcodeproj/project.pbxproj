@@ -144,6 +144,8 @@
 		3124186D2F48C9FE0023B9DE /* IPadModeToggleTextModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3124186C2F48C9FE0023B9DE /* IPadModeToggleTextModelTests.swift */; };
 		312BF6EF2E6B2CAF00411CF9 /* NewAddressBarPickerDisplayValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312BF6EE2E6B2C9B00411CF9 /* NewAddressBarPickerDisplayValidator.swift */; };
 		312BF6F12E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312BF6F02E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift */; };
+		3E08C0DF4731439D2545023E /* NewAddressBarPickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50076755B4DB6646E1DCD0D /* NewAddressBarPickerViewModel.swift */; };
+		91B67D60DCF5B9213184F1B9 /* NewAddressBarPickerRefreshContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0466F5E63C5ECC76F75718F8 /* NewAddressBarPickerRefreshContentView.swift */; };
 		312E5746283BB04A00C18FA0 /* AutofillEmptySearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312E5745283BB04A00C18FA0 /* AutofillEmptySearchView.swift */; };
 		312F786A2F28C32D006903C7 /* AIChatHistoryManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312F78692F28C32D006903C7 /* AIChatHistoryManagerTests.swift */; };
 		3132927F2F9FE38000C3A276 /* FireModeNativeStorageController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3132927E2F9FE38000C3A276 /* FireModeNativeStorageController.swift */; };
@@ -2652,6 +2654,8 @@
 		3124186C2F48C9FE0023B9DE /* IPadModeToggleTextModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadModeToggleTextModelTests.swift; sourceTree = "<group>"; };
 		312BF6EE2E6B2C9B00411CF9 /* NewAddressBarPickerDisplayValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerDisplayValidator.swift; sourceTree = "<group>"; };
 		312BF6F02E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerDisplayValidatorTests.swift; sourceTree = "<group>"; };
+		E50076755B4DB6646E1DCD0D /* NewAddressBarPickerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerViewModel.swift; sourceTree = "<group>"; };
+		0466F5E63C5ECC76F75718F8 /* NewAddressBarPickerRefreshContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerRefreshContentView.swift; sourceTree = "<group>"; };
 		312E5745283BB04A00C18FA0 /* AutofillEmptySearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillEmptySearchView.swift; sourceTree = "<group>"; };
 		312F78692F28C32D006903C7 /* AIChatHistoryManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryManagerTests.swift; sourceTree = "<group>"; };
 		3132927E2F9FE38000C3A276 /* FireModeNativeStorageController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireModeNativeStorageController.swift; sourceTree = "<group>"; };
@@ -5809,6 +5813,8 @@
 				312BF6F22E6B651500411CF9 /* Resources */,
 				312BF6EE2E6B2C9B00411CF9 /* NewAddressBarPickerDisplayValidator.swift */,
 				319B49C52E68B63E00DD265F /* NewAddressBarPickerContentView.swift */,
+				0466F5E63C5ECC76F75718F8 /* NewAddressBarPickerRefreshContentView.swift */,
+				E50076755B4DB6646E1DCD0D /* NewAddressBarPickerViewModel.swift */,
 				319B49C32E68AF5500DD265F /* NewAddressBarPickerViewController.swift */,
 			);
 			path = NewAddressBarPicker;
@@ -12292,6 +12298,8 @@
 				85DFEDED24C7CCA500973FE7 /* AppWidthObserver.swift in Sources */,
 				565AC7462EDE090600639D35 /* SubscriptionTierEventReporter.swift in Sources */,
 				319B49C62E68B64400DD265F /* NewAddressBarPickerContentView.swift in Sources */,
+				91B67D60DCF5B9213184F1B9 /* NewAddressBarPickerRefreshContentView.swift in Sources */,
+				3E08C0DF4731439D2545023E /* NewAddressBarPickerViewModel.swift in Sources */,
 				4B6484F327FD1E350050A7A1 /* MenuControllerView.swift in Sources */,
 				7B059F0F2D0387E900371ED0 /* NumberedParagraphView.swift in Sources */,
 				5644419F2D4D205C003C53B8 /* FeatureFlagsSettingViewModel.swift in Sources */,

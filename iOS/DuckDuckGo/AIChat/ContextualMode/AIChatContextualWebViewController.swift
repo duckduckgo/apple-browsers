@@ -266,7 +266,11 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func loadAIChat() {
         loadingView.startAnimating()
-        let contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
+        var contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
+        if featureFlagger.isFeatureOn(.unifiedToggleInput) {
+            contextualURL = AIChatURLParameters.nativeInputURL(from: contextualURL)
+            Logger.contextualUTI.info("loadAIChat - nativeInput=1 applied (flag on)")
+        }
         Logger.aiChat.debug("[ContextualWebVC] loadAIChat - loading URL: \(contextualURL.absoluteString)")
         let request = URLRequest(url: contextualURL)
         webView.load(request)

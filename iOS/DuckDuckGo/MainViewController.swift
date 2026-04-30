@@ -1943,7 +1943,17 @@ class MainViewController: UIViewController {
 
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
         dismissOmniBar()
+        resetUnifiedToggleInputForTabTransition(to: tab)
         attachTab(tab: tab)
+    }
+
+    private func resetUnifiedToggleInputForTabTransition(to tab: TabViewController) {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        coordinator.deactivateToOmnibar()
+        if !tab.isAITab {
+            coordinator.hide()
+            coordinator.unbind()
+        }
     }
 
     private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
@@ -1952,6 +1962,8 @@ class MainViewController: UIViewController {
         previousTab?.tabModel.openedAfterIdle = false
         previousTab?.dismiss()
         hideNotificationBarIfBrokenSitePromptShown()
+
+        resetUnifiedToggleInputForTabTransition(to: tab)
 
         let shouldSaveTabs = tab.tabModel.viewed == false
         tab.tabModel.viewed = true
@@ -2151,6 +2163,7 @@ class MainViewController: UIViewController {
     func dismissOmniBar() {
         hideSuggestionTray()
         viewCoordinator.omniBar.endEditing()
+        unifiedToggleInputCoordinator?.deactivateToOmnibar()
         refreshOmniBar()
     }
 
@@ -4778,9 +4791,6 @@ extension MainViewController: TabDelegate {
         let previousTab = tabManager.current()
         if let tab = tabManager.select(tab, dismissCurrent: false)  {
             transitionTo(tab: tab, from: previousTab)
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            self.performCancel()
         }
     }
 

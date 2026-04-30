@@ -1,19 +1,19 @@
 ---
 name: ddg-sentry-report
-description: Invoke ONLY when the user explicitly runs `/ddg-sentry-report` or names this skill by name (e.g. "use ddg-sentry-report for macOS 1.186"). Do NOT auto-invoke from symptom/intent matching — producing a Sentry report writes to a shared Asana task and must be user-initiated. If the user asks about Sentry issues or crash triage without naming this skill, answer directly instead. Accepts three parameters when explicitly invoked: Asana task URL, project (iOS or macOS), and version (e.g. 1.186 or 7.217).
+description: Invoke ONLY when the user explicitly runs `/ddg-sentry-report` or names this skill by name (e.g. "use ddg-sentry-report for macOS 1.186"). Do NOT auto-invoke from symptom/intent matching — producing a Sentry report writes to a shared Asana task and must be user-initiated. If the user asks about Sentry issues or crash triage without naming this skill, answer directly instead. Accepts three parameters when explicitly invoked: Asana parent task URL (the report is filed as a new subtask under it), project (iOS or macOS), and version (e.g. 1.186 or 7.217).
 ---
 
 # ddg-sentry-report
 
 ## Overview
 
-Produces a structured Sentry crash triage report for a DuckDuckGo Apple release and writes it into a target Asana task. Distinguishes pre-existing issues from new-in-version regressions, sorts by severity, attributes likely authors via git blame (initials + PR links only — never full names).
+Produces a structured Sentry crash triage report for a DuckDuckGo Apple release and files it as a new subtask under a user-supplied parent Asana task. Distinguishes pre-existing issues from new-in-version regressions, sorts by severity, attributes likely authors via git blame (initials + PR links only — never full names).
 
 ## Parameters
 
 | Param | Example | Notes |
 |---|---|---|
-| Asana task URL | `https://app.asana.com/1/137249556945/task/1214175611004136` | Extract the task GID from the URL path. |
+| Asana parent task URL | `https://app.asana.com/1/137249556945/task/1214175611004136` | Extract the task GID from the URL path — this is the **parent** task. The summary report is created as a **new subtask** under it (never written to the parent itself). Subtask name: `Sentry summary - <platform> <version> - <YYYY-MM-DD>`. |
 | Project | `iOS` or `macOS` | Maps to Sentry project slug `apple-ios` / `apple-macos`. A single version ships under multiple release strings (main app + extensions) — see Non-obvious constants. |
 | Version | `1.186.0`, `1.186.*`, or `1.186` (macOS) / `7.216.x` (iOS) | Pass-through: an exact version (`1.186.0`) goes to `app_version:1.186.0`; a series (`1.186` or `1.186.*`) becomes the wildcard `app_version:1.186.*`. Always use the wildcard form when the user supplies a series. |
 
@@ -49,7 +49,7 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
 
    **Match the user-supplied version literally.** The version parameter is authoritative. Never substitute a different version (e.g. falling back to a previously-shipped release because the requested one looks "wrong" or returns no data). If you suspect a typo, ask the user; do not silently retarget.
 
-   **Crash-free release short-circuit (runs before step 3).** If `find_releases(query="<version>")` returns no releases **and** a confirmation query `list_issues(query="is:unresolved app_version:<version_filter>", sort="freq", limit=1)` returns zero issues, the version is a **crash-free release** — typically an internal-testing or code-frozen build that has no events in Sentry yet. This is a valid outcome of the check, not an error: pre-release runs exist specifically to verify there are no new crashes in internal testing. Write the "Crash-free release" report (template below) to the user's Asana task via `asana_update_task` with `html_notes`, and **STOP** — do not run steps 3–11. Do not query a previous version's data, do not file tracking tasks, do not dispatch subagents.
+   **Crash-free release short-circuit (runs before step 3).** If `find_releases(query="<version>")` returns no releases **and** a confirmation query `list_issues(query="is:unresolved app_version:<version_filter>", sort="freq", limit=1)` returns zero issues, the version is a **crash-free release** — typically an internal-testing or code-frozen build that has no events in Sentry yet. This is a valid outcome of the check, not an error: pre-release runs exist specifically to verify there are no new crashes in internal testing. File the "Crash-free release" report (template below) as a **new subtask** of the user-supplied parent task via `asana_create_task(parent="<PARENT_GID>", name="Sentry summary - <platform> <version> - <YYYY-MM-DD>", html_notes="<body>...</body>")`, and **STOP** — do not run steps 3–11. Do not query a previous version's data, do not file tracking tasks, do not dispatch subagents.
 3. **Two Sentry queries, sorted by `freq`:**
    - All unresolved in the series: `is:unresolved app_version:1.186.*` (wildcard) or `is:unresolved app_version:1.186.0` (exact) — limit 30+. Pass the value unquoted; quoting (e.g. `app_version:"1.186.*"`) breaks wildcard matching.
    - New-in-series only: `is:unresolved firstRelease:[<all releases from step 2>]` — limit 50+ (iOS routinely hits 60–70 new issues). Include extension releases in the list or you'll miss extension regressions.
@@ -116,7 +116,7 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
      opt_fields="name,permalink_url,custom_fields,memberships.section.gid,tags,tags.name,completed")
    ```
    The `value` filter is substring-match. The custom field is comma-separated, so a returned task may contain multiple short-IDs (e.g. `APPLE-IOS-D6MW,APPLE-IOS-D6N6,APPLE-IOS-D7YC`). **Split the returned value on commas and verify the queried short-ID matches one of the elements exactly** (substring matches like `APPLE-IOS-D6N` matching `APPLE-IOS-D6N6` are false positives). If not an exact element match, consider it not found.
-10. **Write the main report to the user's task** via `asana_update_task` with `html_notes` — structure below. Each HIGH/MEDIUM line **leads with the tracking-task link** captured in step 9, then lists the Sentry short-ID(s), then stats (users + events), then a 1–2 sentence description with inline PR links. Lead-with-tracking is the readability win — readers scanning the list jump to the per-issue triage doc in one click instead of hunting at the end of a paragraph. LOW and Pre-existing entries skip the tracking link (no task created) and lead with the Sentry short-ID. Issues that step 5 routed to the "Fix already shipped in vX.Y.Z" bucket get their own MEDIUM sub-section in the main report and a one-line note explaining no further action is needed for this release.
+10. **File the main report as a new subtask of the user-supplied parent task** via `asana_create_task(parent="<PARENT_GID>", name="Sentry summary - <platform> <version> - <YYYY-MM-DD>", html_notes="<body>...</body>")` — structure below. `<platform>` is `iOS` or `macOS` exactly as supplied; `<version>` is the user's input (e.g. `1.186` or `1.186.0`); `<YYYY-MM-DD>` is today's date. **Never write to the parent task itself** (no `asana_update_task` on the parent — its body is owned by humans). Each HIGH/MEDIUM line in the body **leads with the tracking-task link** captured in step 9, then lists the Sentry short-ID(s), then stats (users + events), then a 1–2 sentence description with inline PR links. Lead-with-tracking is the readability win — readers scanning the list jump to the per-issue triage doc in one click instead of hunting at the end of a paragraph. LOW and Pre-existing entries skip the tracking link (no task created) and lead with the Sentry short-ID. Issues that step 5 routed to the "Fix already shipped in vX.Y.Z" bucket get their own MEDIUM sub-section in the main report and a one-line note explaining no further action is needed for this release.
 11. **PII: initials + PR links only, never full names.** The DDG asana-exfiltration hook scans task writes and blocks full employee names — even when the user approves in chat (the hook can't see chat). Use first-letter-of-first-name + first-letter-of-last-name initials, and link the PR so the author is one click away on GitHub. If even initials get blocked, fall back to PR-number-only attribution. This applies to both the main report **and** the per-issue tracking task bodies created in step 9.
 
 ## Asana task structure (html_notes)
@@ -167,7 +167,7 @@ New-in-{version}.x only: <a href="...">firstRelease filter</a>
 
 ## Crash-free release report (html_notes)
 
-Used by step 2's short-circuit when `find_releases` returns no releases and `list_issues` returns zero issues for the requested version. Write this to the user's Asana task and stop — no tracking tasks, no subagents, no fallback to a prior version.
+Used by step 2's short-circuit when `find_releases` returns no releases and `list_issues` returns zero issues for the requested version. File this as a new subtask of the user-supplied parent task (same `asana_create_task(parent=..., name="Sentry summary - <platform> <version> - <YYYY-MM-DD>", html_notes=...)` call as step 10) and stop — no tracking tasks, no subagents, no fallback to a prior version.
 
 ```html
 <body>
@@ -206,7 +206,9 @@ Likely caused by <a href="https://github.com/duckduckgo/apple-browsers/pull/<NNN
 
 ## Quick reference
 
-**Resolve task GID from Asana URL:** the numeric segment after `/task/` (e.g. `.../task/1214175611004136` → `1214175611004136`).
+**Resolve parent task GID from Asana URL:** the numeric segment after `/task/` (e.g. `.../task/1214175611004136` → `1214175611004136`). This is the **parent** under which the summary subtask is created — never the write target.
+
+**Subtask name format:** `Sentry summary - <platform> <version> - <YYYY-MM-DD>` (e.g. `Sentry summary - macOS 1.186 - 2026-04-30`). Platform matches the user-supplied param (`iOS` / `macOS`); version is the user-supplied value verbatim; date is today.
 
 **`asana_get_task` requires `opt_fields="tags,tags.name"`** — the data-protection hook rejects queries without it with a `RETRY REQUIRED` error. Include it on every get call.
 
@@ -243,9 +245,9 @@ Likely caused by <a href="https://github.com/duckduckgo/apple-browsers/pull/<NNN
 
 ## Example invocation
 
-> "Fill {asana_url} with Sentry info for macOS 1.186 — severity, new issues, blame."
+> "Post a Sentry summary subtask under {asana_url} for macOS 1.186 — severity, new issues, blame."
 
-1. Extract task GID `1214175611004136`, project `apple-macos`, version series `1.186`.
+1. Extract parent task GID `1214175611004136`, project `apple-macos`, version series `1.186`. The summary will be filed as a new subtask under this parent.
 2. `find_releases(query="1.186")` → `DuckDuckGo@1.186.0`, `DuckDuckGo@1.186.1`, `com.duckduckgo.macos.vpn.network-extension@1.186.0`, `com.duckduckgo.macos.vpn.network-extension@1.186.1`, ... (keep all — needed for `firstRelease:`).
 3. `list_issues(query="is:unresolved app_version:1.186.*", sort="freq", limit=30)` — wildcard catches main app + extensions in one query. (For an exact version: `app_version:1.186.0`.)
 4. `list_issues(query="is:unresolved firstRelease:[DuckDuckGo@1.186.0,DuckDuckGo@1.186.1,com.duckduckgo.macos.vpn.network-extension@1.186.0,com.duckduckgo.macos.vpn.network-extension@1.186.1,...]", sort="freq", limit=50)`.
@@ -254,4 +256,4 @@ Likely caused by <a href="https://github.com/duckduckgo/apple-browsers/pull/<NNN
 7. Rewrite all `ddg.sentry.io` URLs to `errors.duckduckgo.com/organizations/ddg/issues/<SHORT_ID>/?project=6`.
 8. For each new issue that survived step 5 with ≥3 first-party frames in the stacktrace (regardless of whether the crash leaf is in app code, libobjc, UIKit, Swift runtime, etc.), dispatch a parallel general-purpose subagent (single message, multiple Agent tool calls) to produce a root-cause summary + numbered call chain + likely category. Skip *only* under the four legitimate skip rules in the step 8 description (generic culprit, no first-party frames at all, Jetsam OOM, fix-already-shipped bucket).
 9. For clusters that step 5 found no task for: `asana_create_task` with `name`, `project_id="1214294661819890"`, `section_id="1214291024165659"` (macOS), `custom_fields={"1214294661819893":"<SHORT_ID_1>,<SHORT_ID_2>,..."}` (all sibling short-IDs comma-separated), and `html_notes` from the per-issue template. For reopened-regression clusters: append a "Regression seen in 1.186.x" section to the existing `html_notes`. Capture `permalink_url`.
-10. `asana_update_task(task_id="1214175611004136", html_notes="<body>...</body>")` with the main report. **Lead each HIGH/MEDIUM line with the tracking-task link**, then the Sentry short-ID(s), then stats, then the description — e.g. `• <a href="...task/14310448135804">Tracking</a> · <a href="...issues/APPLE-IOS-D6FM/...">D6FM</a> · 153 users, 263 events · SIGABRT in <code>TabViewController.ViewSettings?</code> — NSInternalInconsistencyException ...`. Issues from step 5's "fix already shipped" bucket get their own MEDIUM sub-section. LOW and Pre-existing lines lead with the Sentry short-ID (no tracking task).
+10. `asana_create_task(parent="1214175611004136", name="Sentry summary - macOS 1.186 - 2026-04-30", html_notes="<body>...</body>")` — files the main report as a new subtask of the user-supplied parent task. Never write to the parent itself. **Lead each HIGH/MEDIUM line with the tracking-task link**, then the Sentry short-ID(s), then stats, then the description — e.g. `• <a href="...task/14310448135804">Tracking</a> · <a href="...issues/APPLE-IOS-D6FM/...">D6FM</a> · 153 users, 263 events · SIGABRT in <code>TabViewController.ViewSettings?</code> — NSInternalInconsistencyException ...`. Issues from step 5's "fix already shipped" bucket get their own MEDIUM sub-section. LOW and Pre-existing lines lead with the Sentry short-ID (no tracking task).

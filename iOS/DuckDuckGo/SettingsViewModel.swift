@@ -1367,7 +1367,8 @@ extension SettingsViewModel {
         case .autoconsent:
             pushViewController(legacyViewProvider.autoConsent)
         case .passwordsImport:
-            pushViewController(legacyViewProvider.importPasswords(delegate: self,
+            pushViewController(legacyViewProvider.importPasswords(importScreen: .completeSetup,
+                                                                  delegate: self,
                                                                   onFinished: { [weak self] in
                                                                       Task { @MainActor [weak self] in
                                                                           self?.handleDataImportCompletion()

@@ -249,7 +249,7 @@ struct DataImportSummaryView: View {
                 syncButton(title: title)
             case .syncPromo(let title):
                 SyncAndBackupCard(title: title, onSyncTapped: {
-                    viewModel.launchSync(source: SyncSettingsViewController.SourceConstants.dataImportSummarySyncPromotion)
+                    viewModel.launchSync(source: SyncSettingsViewController.SourceConstants.dataImportSummarySyncPromotion, fromSyncPromo: true)
                 }, viewModel: viewModel)
                 .onFirstAppear {
                     viewModel.fireSyncPromoDisplayedPixel()
@@ -260,18 +260,24 @@ struct DataImportSummaryView: View {
                     icon: Image(uiImage: DesignSystemImages.Color.Size96.passwordsKeychainFeature),
                     dismissButtonTitle: UserText.dataImportSummaryPromoDismissAction,
                     continueButtonTitle: UserText.dataImportSummaryPromoContinueAction,
-                    onDismissTapped: { viewModel.dismiss() },
-                    onContinueTapped: { viewModel.continueImportFromSafari() }
+                    onDismissTapped: { viewModel.handleContinueImportAction(.dismissTapped, for: .passwords) },
+                    onContinueTapped: { viewModel.handleContinueImportAction(.continueTapped, for: .passwords) }
                 )
+                .onFirstAppear {
+                    viewModel.handleContinueImportAction(.shown, for: .passwords)
+                }
             case .bookmarksPromo:
                 ContinueImportCard(
                     title: UserText.dataImportSummaryBookmarksPromoTitle,
                     icon: Image(uiImage: DesignSystemImages.Color.Size96.extensionSafari),
                     dismissButtonTitle: UserText.dataImportSummaryPromoDismissAction,
                     continueButtonTitle: UserText.dataImportSummaryPromoContinueAction,
-                    onDismissTapped: { viewModel.dismiss() },
-                    onContinueTapped: { viewModel.continueImportFromSafari() }
+                    onDismissTapped: { viewModel.handleContinueImportAction(.dismissTapped, for: .bookmarks) },
+                    onContinueTapped: { viewModel.handleContinueImportAction(.continueTapped, for: .bookmarks) }
                 )
+                .onFirstAppear {
+                    viewModel.handleContinueImportAction(.shown, for: .bookmarks)
+                }
             case .message(let body):
                 dismissButton
                 
@@ -298,7 +304,7 @@ struct DataImportSummaryView: View {
 
     private var dismissButton: some View {
         Button {
-            viewModel.dismiss()
+            viewModel.doneTapped()
         } label: {
             Text(UserText.dataImportSummaryDone)
         }
@@ -402,6 +408,7 @@ struct DataImportSummaryView: View {
                             .lineLimit(nil)
                             .multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
+                            .padding(.vertical, Metrics.textVerticalPadding)
                             .frame(maxWidth: .infinity, minHeight: Metrics.buttonHeight)
                     }
                     .buttonStyle(SecondaryButtonStyle())
@@ -415,6 +422,7 @@ struct DataImportSummaryView: View {
                             .lineLimit(nil)
                             .multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
+                            .padding(.vertical, Metrics.textVerticalPadding)
                             .frame(maxWidth: .infinity, minHeight: Metrics.buttonHeight)
                     }
                     .buttonStyle(PrimaryButtonStyle())
@@ -434,6 +442,7 @@ struct DataImportSummaryView: View {
             static let buttonCornerRadius: CGFloat = 12
             static let buttonHeight: CGFloat = 40
             static let imageSize: CGFloat = 64
+            static let textVerticalPadding: CGFloat = 6
         }
 
         private struct SecondaryButtonStyle: ButtonStyle {
@@ -478,8 +487,8 @@ struct DataImportSummaryView: View {
                         Text(UserText.syncPromoDismissAction)
                             .font(Font(UIFont.boldSystemFont(ofSize: Metrics.buttonFontSize)))
                             .foregroundStyle(Color(designSystemColor: .textPrimary))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: Metrics.buttonHeight)
+                            .padding(.vertical, Metrics.textVerticalPadding)
+                            .frame(maxWidth: .infinity, minHeight: Metrics.buttonHeight)
                     }
                     .buttonStyle(SecondarySyncButtonStyle())
                     
@@ -489,8 +498,9 @@ struct DataImportSummaryView: View {
                         Text(UserText.syncPromoConfirmAction)
                             .font(Font(UIFont.boldSystemFont(ofSize: Metrics.buttonFontSize)))
                             .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: Metrics.buttonHeight)
+                            .padding(.vertical, Metrics.textVerticalPadding)
+                            .frame(maxWidth: .infinity, minHeight: Metrics.buttonHeight)
+
                     }
                     .buttonStyle(PrimarySyncButtonStyle())
                     .onFirstAppear {
@@ -513,6 +523,7 @@ struct DataImportSummaryView: View {
             static let buttonHeight: CGFloat = 40
             static let buttonFontSize: CGFloat = 15
             static let imageSize: CGFloat = 64
+            static let textVerticalPadding: CGFloat = 6
         }
         
         private struct SecondarySyncButtonStyle: ButtonStyle {

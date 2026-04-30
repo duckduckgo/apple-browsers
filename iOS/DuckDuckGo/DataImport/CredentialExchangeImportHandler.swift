@@ -39,7 +39,7 @@ final class CredentialExchangeImportHandler {
         self.tld = tld
     }
 
-    func handleImport(token: UUID) async -> DataImportSummary? {
+    func handleImport(token: UUID) async -> CredentialExchangeImportResult? {
         if #available(iOS 26, *) {
             return await performImport(token: token)
         }
@@ -48,17 +48,19 @@ final class CredentialExchangeImportHandler {
     }
 
     @available(iOS 26, *)
-    private func performImport(token: UUID) async -> DataImportSummary? {
+    private func performImport(token: UUID) async -> CredentialExchangeImportResult? {
         do {
             let importManager = ASCredentialImportManager()
             let credentialData = try await importManager.importCredentials(token: token)
+            let source = sourceIdentifier(from: credentialData)
             let importedLogins = importedLoginCredentials(from: credentialData)
 
             let summary = try loginImporter.importLogins(importedLogins, reporter: reporter) { _ in }
             Logger.autofill.debug(
                 "Credential exchange: imported \(summary.successful) passwords, \(summary.duplicate) duplicates, \(summary.failed) failed"
             )
-            return [.passwords: .success(summary)]
+            let dataImportSummary: DataImportSummary = [.passwords: .success(summary)]
+            return CredentialExchangeImportResult(summary: dataImportSummary, source: source)
         } catch {
             Logger.autofill.error("Credential exchange import failed: \(error)")
             return nil
@@ -253,5 +255,10 @@ final class CredentialExchangeImportHandler {
         }
 
         return trimmedValue
+    }
+
+    @available(iOS 26, *)
+    private func sourceIdentifier(from credentialData: ASExportedCredentialData) -> String {
+        nonEmptyString(credentialData.exporterRelyingPartyIdentifier) ?? DataImportHubPixelConstants.unknownSource
     }
 }

@@ -19,25 +19,30 @@
 
 import XCTest
 import BrowserServicesKit
+import Persistence
+import PersistenceTestingUtils
 @testable import DuckDuckGo
 
 final class DataImportUserActivityHandlerTests: XCTestCase {
 
     private let callbackTimeout: TimeInterval = 5.0
     private var importHandler: MockCredentialExchangeImportHandler!
+    private var keyValueStore: ThrowingKeyValueStoring!
 
-    override func setUp() {
-        super.setUp()
+    override func setUpWithError() throws {
+        try super.setUpWithError()
         importHandler = MockCredentialExchangeImportHandler()
+        keyValueStore = try MockKeyValueFileStore()
     }
 
     override func tearDown() {
         importHandler = nil
+        keyValueStore = nil
         super.tearDown()
     }
 
     func testWhenActivityTypeIsUnknownThenHandleReturnsFalse() {
-        let sut = DataImportUserActivityHandler(credentialExchangeImportHandler: importHandler)
+        let sut = DataImportUserActivityHandler(credentialExchangeImportHandler: importHandler, keyValueStore: keyValueStore)
         let userActivity = NSUserActivity(activityType: "com.duckduckgo.test.unknown")
 
         XCTAssertFalse(sut.handle(userActivity))
@@ -45,7 +50,7 @@ final class DataImportUserActivityHandlerTests: XCTestCase {
     }
 
     func testWhenCredentialExchangeActivityHasNoTokenThenHandleReturnsFalse() {
-        let sut = DataImportUserActivityHandler(credentialExchangeImportHandler: importHandler)
+        let sut = DataImportUserActivityHandler(credentialExchangeImportHandler: importHandler, keyValueStore: keyValueStore)
         let userActivity = NSUserActivity(activityType: DataImportUserActivityHandler.credentialExchangeActivityType)
 
         XCTAssertFalse(sut.handle(userActivity))
@@ -54,11 +59,11 @@ final class DataImportUserActivityHandlerTests: XCTestCase {
 
     func testWhenCredentialExchangeActivityHasTokenThenImportResultIsSuccess() async {
         let expectedSummary = makeSummary(successful: 3)
-        importHandler.summaryToReturn = expectedSummary
+        importHandler.summaryToReturn = CredentialExchangeImportResult(summary: expectedSummary, source: "apple.com")
 
         var receivedResult: Result<DataImportSummary, Error>?
         let completionExpectation = expectation(description: "Import result callback")
-        let sut = DataImportUserActivityHandler(credentialExchangeImportHandler: importHandler) { result in
+        let sut = DataImportUserActivityHandler(credentialExchangeImportHandler: importHandler, keyValueStore: keyValueStore) { result in
             receivedResult = result
             completionExpectation.fulfill()
         }
@@ -88,7 +93,7 @@ final class DataImportUserActivityHandlerTests: XCTestCase {
 
         var receivedResult: Result<DataImportSummary, Error>?
         let completionExpectation = expectation(description: "Import result callback")
-        let sut = DataImportUserActivityHandler(credentialExchangeImportHandler: importHandler) { result in
+        let sut = DataImportUserActivityHandler(credentialExchangeImportHandler: importHandler, keyValueStore: keyValueStore) { result in
             receivedResult = result
             completionExpectation.fulfill()
         }
@@ -108,13 +113,13 @@ final class DataImportUserActivityHandlerTests: XCTestCase {
     }
 
     func testWhenCredentialExchangeActivityIsHandledTwiceThenSecondAttemptIsIgnored() async {
-        importHandler.summaryToReturn = makeSummary(successful: 1)
+        importHandler.summaryToReturn = CredentialExchangeImportResult(summary: makeSummary(successful: 1), source: "apple.com")
 
         var callbackCount = 0
         let completionExpectation = expectation(description: "Import result callback")
         completionExpectation.expectedFulfillmentCount = 1
 
-        let sut = DataImportUserActivityHandler(credentialExchangeImportHandler: importHandler) { _ in
+        let sut = DataImportUserActivityHandler(credentialExchangeImportHandler: importHandler, keyValueStore: keyValueStore) { _ in
             callbackCount += 1
             completionExpectation.fulfill()
         }
@@ -138,10 +143,10 @@ final class DataImportUserActivityHandlerTests: XCTestCase {
 
 private final class MockCredentialExchangeImportHandler: CredentialExchangeImportHandling {
 
-    var summaryToReturn: DataImportSummary?
+    var summaryToReturn: CredentialExchangeImportResult?
     private(set) var handledTokens: [UUID] = []
 
-    func handleImport(token: UUID) async -> DataImportSummary? {
+    func handleImport(token: UUID) async -> CredentialExchangeImportResult? {
         handledTokens.append(token)
         return summaryToReturn
     }

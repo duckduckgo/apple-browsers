@@ -278,6 +278,7 @@ private extension MainViewController {
                 let enabled = self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled
                 coordinator.updateToggleEnabled(enabled)
                 coordinator.contentViewController.isSwipeEnabled = enabled
+                coordinator.updateAIChatShortcutAvailability(self.aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
             }
             .store(in: &unifiedToggleInputCancellables)
     }

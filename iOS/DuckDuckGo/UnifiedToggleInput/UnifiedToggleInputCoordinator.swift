@@ -1075,17 +1075,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func addImageAttachment(image: UIImage, fileName: String) {
-        syncMaximumAttachmentCount()
-        guard !viewController.isAttachmentsFull, attachmentPolicy.canAttachImages else { return }
+        guard attachmentPolicy.canAttachImages else { return }
         let attachment = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: image, fileName: fileName))
         viewController.addAttachment(attachment)
         persistDraftToStore()
     }
 
     func addFileAttachment(_ fileAttachment: AIChatFileAttachment) {
-        syncMaximumAttachmentCount()
-        guard !viewController.isAttachmentsFull else { return }
-
         if let validationMessage = attachmentPolicy.fileValidationMessage(for: fileAttachment) {
             presentAttachmentValidationError(validationMessage)
             return
@@ -1110,14 +1106,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func updateAttachButtonVisibility() {
-        syncMaximumAttachmentCount()
         let supportsAttachments = selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty
         viewController.isImageButtonHidden = !supportsAttachments
         updateImageButtonEnabledState()
-    }
-
-    private func syncMaximumAttachmentCount() {
-        viewController.maximumAttachmentCount = attachmentPolicy.maximumPendingAttachments
     }
 
 }

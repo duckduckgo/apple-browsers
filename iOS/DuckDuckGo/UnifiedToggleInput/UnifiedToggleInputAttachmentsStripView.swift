@@ -30,14 +30,8 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     }
 
     private(set) var attachments: [UnifiedToggleInputAttachment] = []
-    var maximumAttachmentCount: Int?
     var onAttachmentRemoved: ((UUID) -> Void)?
     var onAttachmentsChanged: (() -> Void)?
-
-    var isFull: Bool {
-        guard let maximumAttachmentCount else { return true }
-        return attachments.count >= maximumAttachmentCount
-    }
 
     private let stackView: UIStackView = {
         let stack = UIStackView()
@@ -59,7 +53,6 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     }
 
     func addAttachment(_ attachment: UnifiedToggleInputAttachment) {
-        guard let maximumAttachmentCount, attachments.count < maximumAttachmentCount else { return }
         attachments.append(attachment)
         let thumbnail = UnifiedToggleInputAttachmentThumbnailView(attachment: attachment)
         thumbnail.onRemove = { [weak self] id in

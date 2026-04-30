@@ -75,16 +75,6 @@ struct UTIAttachmentPolicy {
         maxTotalFileSizeBytes.map { Int(ceil(Double($0) / 1_048_576)) }
     }
 
-    var maximumPendingAttachments: Int? {
-        guard let attachmentLimits else { return nil }
-        return max(attachmentLimits.images.maxPerTurn, attachmentLimits.files.maxPerConversation)
-    }
-
-    private var remainingPendingAttachmentSlots: Int {
-        guard let maximumPendingAttachments else { return 0 }
-        return max(0, maximumPendingAttachments - pendingAttachments.count)
-    }
-
     var remainingImagesInConversation: Int {
         guard let maxImagesPerConversation else { return 0 }
         let conversationUsed = attachmentUsage?.imagesUsed ?? 0
@@ -95,7 +85,7 @@ struct UTIAttachmentPolicy {
         guard let maxImagesPerTurn else { return 0 }
         let perTurnRemaining = max(0, maxImagesPerTurn - pendingImageCount)
         let conversationRemaining = max(0, remainingImagesInConversation - pendingImageCount)
-        return max(0, min(perTurnRemaining, conversationRemaining, remainingPendingAttachmentSlots))
+        return max(0, min(perTurnRemaining, conversationRemaining))
     }
 
     var isConversationImageLimitReached: Bool {
@@ -118,7 +108,7 @@ struct UTIAttachmentPolicy {
         let remainingConversationSlots = maxFilesPerConversation - filesUsed - pendingFileCount
         let remainingBytes = maxTotalFileSizeBytes - fileBytesUsed - pendingFileSizeBytes
 
-        return remainingPendingAttachmentSlots > 0 && remainingConversationSlots > 0 && remainingBytes > 0
+        return remainingConversationSlots > 0 && remainingBytes > 0
     }
 
     var remainingFileSizeBytes: Int {
@@ -146,7 +136,7 @@ struct UTIAttachmentPolicy {
         let remainingConversationSlots = maxFilesPerConversation - filesUsed - pendingFileCount
         let remainingBytes = maxTotalFileSizeBytes - fileBytesUsed - pendingFileSizeBytes
 
-        if remainingPendingAttachmentSlots == 0 || remainingConversationSlots == 0 {
+        if remainingConversationSlots == 0 {
             return UserText.aiChatAttachmentFileCountLimit(maxFilesPerConversation: maxFilesPerConversation)
         }
 

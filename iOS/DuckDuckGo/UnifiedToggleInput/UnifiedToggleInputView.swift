@@ -225,15 +225,6 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.isImageButtonEnabled = newValue }
     }
 
-    var maximumAttachmentCount: Int? {
-        get { attachmentsStrip.maximumAttachmentCount }
-        set { attachmentsStrip.maximumAttachmentCount = newValue }
-    }
-
-    var isAttachmentsFull: Bool {
-        attachmentsStrip.isFull
-    }
-
     var currentAttachments: [UnifiedToggleInputAttachment] {
         attachmentsStrip.attachments
     }

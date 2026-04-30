@@ -187,15 +187,6 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isImageButtonEnabled = newValue }
     }
 
-    var isAttachmentsFull: Bool {
-        inputBarView.isAttachmentsFull
-    }
-
-    var maximumAttachmentCount: Int? {
-        get { inputBarView.maximumAttachmentCount }
-        set { inputBarView.maximumAttachmentCount = newValue }
-    }
-
     var currentAttachments: [UnifiedToggleInputAttachment] {
         inputBarView.currentAttachments
     }

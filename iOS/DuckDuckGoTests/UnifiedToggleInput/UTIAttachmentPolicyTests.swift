@@ -33,7 +33,7 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         XCTAssertEqual(policy.remainingImagesInConversation, 4)
     }
 
-    func test_remainingImagesForPicker_respectsPerTurnConversationAndPendingLimits() {
+    func test_remainingImagesForPicker_respectsPerTurnConversationAndPendingImages() {
         let policy = makePolicy(
             attachmentLimits: makeLimits(maxImagesPerTurn: 3, maxImagesPerConversation: 10),
             attachmentUsage: AIChatAttachmentUsage(imagesUsed: 8, filesUsed: 0, fileSizeBytesUsed: 0),
@@ -53,10 +53,13 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         XCTAssertFalse(policy.canAttachImages)
     }
 
-    func test_maximumPendingAttachments_isNilWhenBackendLimitsAreMissing() {
-        let policy = makePolicy(includeAttachmentLimits: false)
+    func test_remainingImagesForPicker_ignoresPendingFiles() {
+        let policy = makePolicy(
+            attachmentLimits: makeLimits(maxImagesPerTurn: 3, maxImagesPerConversation: 10),
+            pendingAttachments: (0..<3).map { _ in makeFileAttachment() }
+        )
 
-        XCTAssertNil(policy.maximumPendingAttachments)
+        XCTAssertEqual(policy.remainingImagesForPicker, 3)
     }
 
     func test_canAttachFiles_falseWhenFileLimitReachedForTier() {
@@ -77,12 +80,6 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         XCTAssertTrue(policy.canAttachFiles)
     }
 
-    func test_maximumPendingAttachments_usesPaidFileTierLimit() {
-        let policy = makePolicy(attachmentLimits: makeLimits(maxFilesPerConversation: 5))
-
-        XCTAssertEqual(policy.maximumPendingAttachments, 5)
-    }
-
     func test_canAttachFiles_trueWhenPaidTierHasOnePendingSlotRemaining() {
         let policy = makePolicy(
             attachmentLimits: makeLimits(maxFilesPerConversation: 5),
@@ -99,6 +96,15 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         )
 
         XCTAssertFalse(policy.canAttachFiles)
+    }
+
+    func test_canAttachFiles_ignoresPendingImagesAtImageLimit() {
+        let policy = makePolicy(
+            attachmentLimits: makeLimits(maxFilesPerConversation: 3, maxImagesPerTurn: 3),
+            pendingAttachments: (0..<3).map { _ in makeImage() }
+        )
+
+        XCTAssertTrue(policy.canAttachFiles)
     }
 
     func test_fileValidation_rejectsUnsupportedMimeType() {

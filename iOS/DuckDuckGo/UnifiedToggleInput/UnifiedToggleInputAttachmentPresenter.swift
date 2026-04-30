@@ -36,7 +36,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         static let itemLeadingInset: CGFloat = 6
         static let itemTrailingInset: CGFloat = 8
         static let iconSize: CGFloat = 24
-        static let itemGap: CGFloat = 6
+        static let iconLabelGap: CGFloat = 8
         static let cornerRadius: CGFloat = 32
         static let shadowRadius: CGFloat = 40
         static let shadowOpacity: Float = 0.12
@@ -51,20 +51,51 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
 
     private final class MenuItemButton: UIButton {
 
-        override init(frame: CGRect) {
-            super.init(frame: frame)
+        private let iconView = UIImageView()
+        private let menuTitleLabel = UILabel()
+
+        init(action: MenuAction) {
+            super.init(frame: .zero)
             translatesAutoresizingMaskIntoConstraints = false
-            contentHorizontalAlignment = .leading
-            configuration = .plain()
-            titleLabel?.font = .daxBodyRegular()
-            titleLabel?.adjustsFontForContentSizeCategory = true
-            tintColor = UIColor(designSystemColor: .iconsSecondary)
-            setTitleColor(UIColor(designSystemColor: .textPrimary), for: .normal)
+            accessibilityLabel = action.title
+            accessibilityTraits = .button
+            setupUI()
+            configure(action: action)
         }
 
         @available(*, unavailable)
         required init?(coder: NSCoder) {
             fatalError("init(coder:) has not been implemented")
+        }
+
+        private func setupUI() {
+            iconView.contentMode = .scaleAspectFit
+            iconView.tintColor = UIColor(designSystemColor: .iconsSecondary)
+            iconView.translatesAutoresizingMaskIntoConstraints = false
+
+            menuTitleLabel.font = .daxBodyRegular()
+            menuTitleLabel.adjustsFontForContentSizeCategory = true
+            menuTitleLabel.textColor = UIColor(designSystemColor: .textPrimary)
+            menuTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+            addSubview(iconView)
+            addSubview(menuTitleLabel)
+
+            NSLayoutConstraint.activate([
+                iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: MenuConstants.itemLeadingInset),
+                iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
+                iconView.widthAnchor.constraint(equalToConstant: MenuConstants.iconSize),
+                iconView.heightAnchor.constraint(equalToConstant: MenuConstants.iconSize),
+
+                menuTitleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: MenuConstants.iconLabelGap),
+                menuTitleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+                menuTitleLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -MenuConstants.itemTrailingInset),
+            ])
+        }
+
+        private func configure(action: MenuAction) {
+            iconView.image = action.icon.withRenderingMode(.alwaysTemplate)
+            menuTitleLabel.text = action.title
         }
     }
 
@@ -128,17 +159,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
             ])
 
             actions.enumerated().forEach { index, action in
-                let button = MenuItemButton(frame: .zero)
-                let config = UIImage.SymbolConfiguration(pointSize: MenuConstants.iconSize, weight: .regular)
-                button.setImage(action.icon.withConfiguration(config).withRenderingMode(.alwaysTemplate), for: .normal)
-                button.setTitle(action.title, for: .normal)
-                button.configuration?.contentInsets = NSDirectionalEdgeInsets(
-                    top: 10,
-                    leading: MenuConstants.itemLeadingInset,
-                    bottom: 10,
-                    trailing: MenuConstants.itemTrailingInset
-                )
-                button.configuration?.imagePadding = MenuConstants.itemGap
+                let button = MenuItemButton(action: action)
                 button.heightAnchor.constraint(equalToConstant: MenuConstants.itemHeight).isActive = true
                 button.tag = index
                 button.addTarget(self, action: #selector(menuButtonPressed(_:)), for: .touchUpInside)
@@ -172,12 +193,23 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         var actions = [MenuAction]()
 
         if canAttachPhoto {
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                actions.append(
+                    MenuAction(
+                        title: UserText.aiChatAttachmentOptionTakePhoto,
+                        icon: DesignSystemImages.Glyphs.Size24.camera
+                    ) { [weak self] in
+                        self?.presentCamera(from: presenter)
+                    }
+                )
+            }
+
             actions.append(
                 MenuAction(
                     title: UserText.aiChatAttachmentOptionAttachPhoto,
-                    icon: UIImage(systemName: "photo.on.rectangle.angled") ?? DesignSystemImages.Glyphs.Size24.attach
+                    icon: DesignSystemImages.Glyphs.Size24.image
                 ) { [weak self] in
-                    self?.presentPhotoOptions(from: sourceView, presenter: presenter, photoSelectionLimit: photoSelectionLimit)
+                    self?.presentPhotoPicker(from: presenter, selectionLimit: photoSelectionLimit)
                 }
             )
         }
@@ -203,29 +235,6 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         }
 
         presenter.present(menuViewController, animated: true)
-    }
-
-    private func presentPhotoOptions(from sourceView: UIView, presenter: UIViewController, photoSelectionLimit: Int) {
-        let sheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-
-        if UIImagePickerController.isSourceTypeAvailable(.camera) {
-            sheet.addAction(UIAlertAction(title: UserText.aiChatAttachmentOptionTakePhoto, style: .default) { [weak self] _ in
-                self?.presentCamera(from: presenter)
-            })
-        }
-
-        sheet.addAction(UIAlertAction(title: UserText.aiChatAttachmentOptionChoosePhoto, style: .default) { [weak self] _ in
-            self?.presentPhotoPicker(from: presenter, selectionLimit: photoSelectionLimit)
-        })
-
-        sheet.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
-
-        if let popover = sheet.popoverPresentationController {
-            popover.sourceView = sourceView
-            popover.sourceRect = sourceView.bounds
-        }
-
-        presenter.present(sheet, animated: true)
     }
 
     private func presentCamera(from presenter: UIViewController) {

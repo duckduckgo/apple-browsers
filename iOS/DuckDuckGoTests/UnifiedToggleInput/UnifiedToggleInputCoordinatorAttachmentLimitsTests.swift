@@ -115,7 +115,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
     // MARK: - Image Button Enabled State
 
-    func testWhenStripIsFullThenImageButtonIsDisabled() {
+    func testWhenImageLimitReachedThenImageButtonIsDisabled() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "image-model"
         let sut = makeCoordinator(preferences: prefs)
@@ -128,7 +128,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isImageButtonEnabled)
     }
 
-    func testWhenAttachmentRemovedFromFullStripThenImageButtonIsEnabled() {
+    func testWhenImageRemovedFromImageLimitThenImageButtonIsEnabled() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "image-model"
         let sut = makeCoordinator(preferences: prefs)
@@ -153,6 +153,54 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.updateImageButtonVisibility()
 
         XCTAssertFalse(sut.viewController.isImageButtonEnabled)
+    }
+
+    func testWhenImageLimitReachedButFilesRemainThenAttachmentButtonIsEnabled() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        let image = UIImage(systemName: "photo")!
+        sut.addImageAttachment(image: image, fileName: "a.jpg")
+        sut.addImageAttachment(image: image, fileName: "b.jpg")
+        sut.addImageAttachment(image: image, fileName: "c.jpg")
+
+        XCTAssertTrue(sut.viewController.isImageButtonEnabled)
+    }
+
+    func testWhenFileLimitReachedButImagesRemainThenAttachmentButtonIsEnabled() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
+        sut.addFileAttachment(makeFileAttachment(fileName: "b.pdf"))
+        sut.addFileAttachment(makeFileAttachment(fileName: "c.pdf"))
+
+        XCTAssertTrue(sut.viewController.isImageButtonEnabled)
+    }
+
+    func testWhenSubmittingMixedAttachmentsThenImagesAndFilesAreSubmitted() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        let image = UIImage(systemName: "photo")!
+        sut.addImageAttachment(image: image, fileName: "a.jpg")
+        sut.addImageAttachment(image: image, fileName: "b.jpg")
+        sut.addImageAttachment(image: image, fileName: "c.jpg")
+        sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
+        sut.addFileAttachment(makeFileAttachment(fileName: "b.pdf"))
+        sut.addFileAttachment(makeFileAttachment(fileName: "c.pdf"))
+
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 6)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertEqual(delegate.submittedImages?.count, 3)
+        XCTAssertEqual(delegate.submittedFiles?.count, 3)
     }
 
     func testWhenGeneratingThenImageButtonIsDisabled() {
@@ -207,6 +255,17 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         AIChatAttachmentTierLimits(
             files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),
             images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 5, maxInputCharsWithAttachments: 4500)
+        )
+    }
+
+    private func makeFileAttachment(fileName: String = "test.pdf") -> AIChatFileAttachment {
+        let data = Data(repeating: 0, count: 1_000)
+        return AIChatFileAttachment(
+            data: data,
+            fileName: fileName,
+            mimeType: "application/pdf",
+            fileSizeBytes: data.count,
+            pageCount: 1
         )
     }
 }

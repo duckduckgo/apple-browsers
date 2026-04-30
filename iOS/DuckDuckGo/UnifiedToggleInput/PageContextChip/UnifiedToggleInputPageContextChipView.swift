@@ -27,6 +27,7 @@ final class UnifiedToggleInputPageContextChipView: UIControl {
     private let iconView = UIImageView()
     private let titleLabel = UILabel()
     private var cancellables = Set<AnyCancellable>()
+    private var viewModel: UnifiedToggleInputPageContextChipViewModel?
 
     /// Called by the parent layout when the chip's visibility changes, so the
     /// surrounding stack can collapse/expand its height in sync.
@@ -43,18 +44,14 @@ final class UnifiedToggleInputPageContextChipView: UIControl {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// Binds the chip's tap target to the view-model. Visibility is driven externally
-    /// by the parent layout via `onVisibilityChange` so the surrounding stack can
-    /// collapse/expand its height in sync.
+    /// Binds the chip's tap target and visibility forwarding to the view-model.
+    /// The chip retains the view-model so the parent doesn't need to.
     func bind(to viewModel: UnifiedToggleInputPageContextChipViewModel) {
-        tapHandler = { [weak viewModel] in viewModel?.tapped() }
+        self.viewModel = viewModel
         viewModel.$isVisible
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.onVisibilityChange?($0) }
             .store(in: &cancellables)
     }
-
-    private var tapHandler: (() -> Void)?
 
     private func setupUI() {
         translatesAutoresizingMaskIntoConstraints = false
@@ -88,6 +85,6 @@ final class UnifiedToggleInputPageContextChipView: UIControl {
     }
 
     @objc private func handleTap() {
-        tapHandler?()
+        viewModel?.tapped()
     }
 }

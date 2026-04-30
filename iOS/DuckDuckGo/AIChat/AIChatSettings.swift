@@ -208,6 +208,13 @@ final class AIChatSettings: AIChatSettingsProvider {
         }
     }
 
+    /// Removes the user's selection for the AI Chat experimental search input toggle,
+    /// returning it to its un-set state (subsequent reads fall back to the default).
+    func resetAIChatSearchInputUserSettings() {
+        keyValueStore.removeObject(forKey: .showAIChatExperimentalSearchInputKey)
+        triggerSettingsChangedNotification()
+    }
+
     func enableAIChatVoiceSearchUserSettings(enable: Bool) {
         keyValueStore.set(enable, forKey: .showAIChatVoiceSearchKey)
         triggerSettingsChangedNotification()

@@ -144,6 +144,7 @@
 		3124186D2F48C9FE0023B9DE /* IPadModeToggleTextModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3124186C2F48C9FE0023B9DE /* IPadModeToggleTextModelTests.swift */; };
 		312BF6EF2E6B2CAF00411CF9 /* NewAddressBarPickerDisplayValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312BF6EE2E6B2C9B00411CF9 /* NewAddressBarPickerDisplayValidator.swift */; };
 		312BF6F12E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312BF6F02E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift */; };
+		067CACE8BC2AA354D969019F /* NewAddressBarPickerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EFAB87418082C5BDE38CE4D /* NewAddressBarPickerViewModelTests.swift */; };
 		3E08C0DF4731439D2545023E /* NewAddressBarPickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50076755B4DB6646E1DCD0D /* NewAddressBarPickerViewModel.swift */; };
 		91B67D60DCF5B9213184F1B9 /* NewAddressBarPickerRefreshContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0466F5E63C5ECC76F75718F8 /* NewAddressBarPickerRefreshContentView.swift */; };
 		312E5746283BB04A00C18FA0 /* AutofillEmptySearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312E5745283BB04A00C18FA0 /* AutofillEmptySearchView.swift */; };
@@ -2654,6 +2655,7 @@
 		3124186C2F48C9FE0023B9DE /* IPadModeToggleTextModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadModeToggleTextModelTests.swift; sourceTree = "<group>"; };
 		312BF6EE2E6B2C9B00411CF9 /* NewAddressBarPickerDisplayValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerDisplayValidator.swift; sourceTree = "<group>"; };
 		312BF6F02E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerDisplayValidatorTests.swift; sourceTree = "<group>"; };
+		6EFAB87418082C5BDE38CE4D /* NewAddressBarPickerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerViewModelTests.swift; sourceTree = "<group>"; };
 		E50076755B4DB6646E1DCD0D /* NewAddressBarPickerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerViewModel.swift; sourceTree = "<group>"; };
 		0466F5E63C5ECC76F75718F8 /* NewAddressBarPickerRefreshContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerRefreshContentView.swift; sourceTree = "<group>"; };
 		312E5745283BB04A00C18FA0 /* AutofillEmptySearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillEmptySearchView.swift; sourceTree = "<group>"; };
@@ -5585,6 +5587,7 @@
 				319BE1082D47EBE300E510A4 /* AIChatUserScriptHandlerTests.swift */,
 				9770D4AA2F6AFD600029361F /* NavigationActionBarViewModelTests.swift */,
 				312BF6F02E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift */,
+				6EFAB87418082C5BDE38CE4D /* NewAddressBarPickerViewModelTests.swift */,
 				97C00D052F97ACD100593A53 /* DaxLogoManagerTests.swift */,
 				310EEA2E2CFFCDBF0043CA1A /* AIChatSettingsTests.swift */,
 				C124F0552E6879E7008D0F49 /* SwitchBarFunnelTests.swift */,
@@ -13102,6 +13105,7 @@
 				CBAD0F332D02EE50006267B8 /* AfterInactivityEffectiveOptionResolverTests.swift in Sources */,
 				8590CB632684F10F0089F6BF /* ContentBlockerProtectionStoreTests.swift in Sources */,
 				312BF6F12E6B4A2500411CF9 /* NewAddressBarPickerDisplayValidatorTests.swift in Sources */,
+				067CACE8BC2AA354D969019F /* NewAddressBarPickerViewModelTests.swift in Sources */,
 				83EDCC411F86B89C005CDFCD /* StatisticsLoaderTests.swift in Sources */,
 				C14882E327F20D9A00D59F0C /* BookmarksExporterTests.swift in Sources */,
 				C124027E2F2935F600F87332 /* AIChatContextualModePixelHandlerTests.swift in Sources */,

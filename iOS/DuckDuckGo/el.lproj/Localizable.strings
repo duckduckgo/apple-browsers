@@ -1275,6 +1275,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Εισαγωγή σελιδοδεικτών στο DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Ανοίξτε το Chrome και, στη συνέχεια, μεταβείτε στο Password Manager και ακολουθήστε τα παρακάτω βήματα:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Ρυθμίσεις** > **Εξαγωγή δεδομένων**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Πατήστε **Συνέχεια**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Επιλέξτε **DuckDuckGo** ως προορισμό";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Εισαγωγή από το Chrome";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Ολοκληρώθηκε η εξαγωγή;";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Πρέπει να μεταβείτε στην εφαρμογή Passwords και, στη συνέχεια, ακολουθήστε τα βήματα για εισαγωγή.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Πατήστε **···** > **Εξαγωγή δεδομένων σε άλλη εφαρμογή**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Πατήστε **Επιλογή όλων** > **Συνέχεια**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Επιλέξτε **DuckDuckGo** ως προορισμό";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Εισαγωγή από το Passwords";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Αρχικά, εξαγάγετε τους κωδικούς πρόσβασης και τους σελιδοδείκτες σας από το Safari και στη συνέχεια μεταβείτε εδώ για να μεταφορτώσετε το αρχείο.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Εξαγωγή από το Safari";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Εισαγωγή από το Safari";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Μεταφόρτωση εξαγμένου αρχείου...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Δεν βρέθηκαν υποστηριζόμενα δεδομένα στο συμπιεσμένο αρχείο. Ελέγξτε τις οδηγίες εξαγωγής του Safari και προσπαθήστε ξανά.";
 
@@ -1284,6 +1329,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Δεν ήταν δυνατή η ανάγνωση του αρχείου %@. Ενδέχεται να υπάρχει πρόβλημα με τα δεδομένα στο αρχείο.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Το κατάλαβα";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Δεν ήταν δυνατή η ανάγνωση του αρχείου %@. Προσπαθήστε να μεταφορτώσετε ένα άλλο αρχείο ή δοκιμάστε άλλη μέθοδο εισαγωγής.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Το αρχείο ενδέχεται να είναι κατεστραμμένο";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Δεν βρέθηκαν υποστηριζόμενα δεδομένα στο συμπιεσμένο αρχείο. Ελέγξτε τις οδηγίες εξαγωγής και προσπαθήστε ξανά.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Δεν βρέθηκαν δεδομένα";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Το αρχείο που επιλέχθηκε δεν υποστηρίζεται. Επίλεξε διαφορετικό αρχείο και προσπαθήστε ξανά.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Μη υποστηριζόμενο αρχείο";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1358,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Φέρτε στο DuckDuckGo";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Επίλεξε **Εξαγωγή** και στην επόμενη οθόνη επίλεξε **Σελιδοδείκτες** και **Αποθήκευση στις λήψεις**.";
@@ -1303,7 +1372,7 @@
 "data.import.passwords.instructions.chrome.step1" = "Στον Chrome, μεταβείτε στο **Διαχειριστής κωδικών πρόσβασης Google** και μετά στις **Ρυθμίσεις**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Επίλεξε **Εξαγωγή κωδικών πρόσβασης**, μετά **Αποθήκευση σε αρχεία** και αποθήκευσε το αρχείο σε έναν φάκελο που μπορείτε να θυμάστε.";
+"data.import.passwords.instructions.chrome.step2" = "Επιλέξτε **Εξαγωγή δεδομένων**, έπειτα **···** και στη συνέχεια **Λήψη σε CSV** και αποθηκεύστε το αρχείο σε έναν φάκελο που μπορείτε να θυμάστε.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Τρόπος εξαγωγής κωδικών πρόσβασης";
@@ -1331,6 +1400,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Εισαγωγή κωδικών πρόσβασης στο DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Άνοιξε τις Ρυθμίσεις για εξαγωγή";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Θυμηθείτε να πατήσετε\n«Εξαγωγή σε αρχεία»";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Εφαρμογή Passwords";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Εισαγωγή από";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Συγχρονισμός από";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo σε άλλη συσκευή";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Σελιδοδείκτες";
@@ -1367,6 +1460,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Κωδικός πρόσβασης";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Θέλετε να φέρετε και τους σελιδοδείκτες σας από το Safari;";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Συνέχεια";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Όχι τώρα";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Θέλετε να φέρετε και τους κωδικούς πρόσβασής σας;";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Προηγούμενος μήνας";

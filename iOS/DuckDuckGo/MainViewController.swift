@@ -2472,15 +2472,27 @@ class MainViewController: UIViewController {
           )
       }
 
-
     func launchDataImport(source: DataImportViewModel.ImportScreen, onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
-        let dataImportViewController = makeDataImportViewController(source: source, onFinished: onFinished, onCancelled: onCancelled)
+        let rootViewController: UIViewController
+        switch DataImportEntryPointHandler().destination(for: source) {
+        case .legacy(let importScreen):
+            rootViewController = makeDataImportViewController(source: importScreen, onFinished: onFinished, onCancelled: onCancelled)
+        case .hub:
+            rootViewController = DataImportHubViewController(syncService: syncService,
+                                                             keyValueStore: keyValueStore,
+                                                             bookmarksDatabase: bookmarksDatabase,
+                                                             favoritesDisplayMode: appSettings.favoritesDisplayMode,
+                                                             entryPoint: source,
+                                                             onFinished: onFinished,
+                                                             onCancelled: onCancelled)
+            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: source.importHubEntryPointParameters)
+        }
 
-        let navigationController = UINavigationController(rootViewController: dataImportViewController)
-        dataImportViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(title: UserText.autofillNavigationButtonItemTitleClose,
-                                                                                          style: .plain,
-                                                                                          target: self,
-                                                                                          action: #selector(closeAutofillModal))
+        let navigationController = UINavigationController(rootViewController: rootViewController)
+        rootViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(title: UserText.autofillNavigationButtonItemTitleClose,
+                                                                               style: .plain,
+                                                                               target: self,
+                                                                               action: #selector(closeAutofillModal))
         self.present(navigationController, animated: true, completion: nil)
     }
 
@@ -5748,12 +5760,23 @@ extension MainViewController: MessageNavigationDelegate {
         case .dismissModalsAndPresentFromRoot:
             assertionFailure("Not implemented yet.")
         case .withinCurrentContext:
-            let dataImportVC = makeDataImportViewController(source: .whatsNew)
+            let destinationViewController: UIViewController
+            switch DataImportEntryPointHandler().destination(for: .whatsNew) {
+            case .legacy(let importScreen):
+                destinationViewController = makeDataImportViewController(source: importScreen)
+            case .hub:
+                destinationViewController = DataImportHubViewController(syncService: syncService,
+                                                                         keyValueStore: keyValueStore,
+                                                                         bookmarksDatabase: bookmarksDatabase,
+                                                                         favoritesDisplayMode: appSettings.favoritesDisplayMode,
+                                                                         entryPoint: .whatsNew)
+                Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: DataImportViewModel.ImportScreen.whatsNew.importHubEntryPointParameters)
+            }
             guard let viewController = topMostPresentedViewController() else {
                 assertionFailure("No ViewController presented.")
                 return
             }
-            viewController.show(dataImportVC, sender: nil)
+            viewController.show(destinationViewController, sender: nil)
         }
     }
 

@@ -144,7 +144,7 @@ final class OnboardingUITests: UITestCase {
 
         for command in commands {
             let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+            process.executableURL = URL(fileURLWithPath: "/bin/bash")
             process.arguments = ["-c", command]
 
             try process.run()

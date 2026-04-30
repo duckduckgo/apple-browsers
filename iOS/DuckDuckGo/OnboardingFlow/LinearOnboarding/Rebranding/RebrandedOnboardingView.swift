@@ -726,17 +726,23 @@ extension OnboardingRebranding {
 // MARK: - Bubble Visibility Typing Modifier
 
 /// Applies the standard visibility → typing pipeline used by all linear onboarding content views.
-/// When `isVisible` becomes `true`, delays by `contentFadeInAnimationDuration` then sets `shouldStartTyping = true`.
+/// When `isVisible` becomes `true`, delays by `typingStartDelay` (default
+/// `contentFadeInAnimationDuration`) then sets `shouldStartTyping = true`.
 /// When `isVisible` becomes `false`, resets both flags so the next appearance starts fresh.
 struct OnboardingBubbleVisibilityModifier: ViewModifier {
     @Binding var isVisible: Bool
     @Binding var shouldStartTyping: Bool
     @Binding var showContent: Bool
+    /// How long to wait after `isVisible` becomes `true` before unlocking the typing animation.
+    /// Defaults to the content fade-in duration; callers whose bubble takes longer to reach its
+    /// final position (e.g. the Intro dialog, which scale-fades in on first appearance) can pass
+    /// a larger value so typing doesn't start while the bubble is still moving.
+    var typingStartDelay: TimeInterval = OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration
 
     func body(content: Content) -> some View {
         content.onChange(of: isVisible) { showing in
             if showing {
-                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + typingStartDelay) {
                     shouldStartTyping = true
                 }
             } else {
@@ -751,9 +757,17 @@ extension View {
     func onBubbleVisibilityChanged(
         isVisible: Binding<Bool>,
         shouldStartTyping: Binding<Bool>,
-        showContent: Binding<Bool>
+        showContent: Binding<Bool>,
+        typingStartDelay: TimeInterval = OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration
     ) -> some View {
-        modifier(OnboardingBubbleVisibilityModifier(isVisible: isVisible, shouldStartTyping: shouldStartTyping, showContent: showContent))
+        modifier(
+            OnboardingBubbleVisibilityModifier(
+                isVisible: isVisible,
+                shouldStartTyping: shouldStartTyping,
+                showContent: showContent,
+                typingStartDelay: typingStartDelay
+            )
+        )
     }
 }
 

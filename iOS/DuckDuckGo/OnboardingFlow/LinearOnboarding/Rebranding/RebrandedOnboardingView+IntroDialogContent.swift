@@ -143,7 +143,19 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
             )
-            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
+            /* The intro dialog's first appearance scale-fades the bubble in (see the parent's
+             `.transition(.scale.combined(with: .opacity))`); the standard typing delay
+             (just `contentFadeInAnimationDuration`) lands the typing while the bubble is still
+             moving. Add the bubble resize/entrance duration on top so typing only kicks off
+             once the bubble is fully settled in its final position.
+             */
+            .onBubbleVisibilityChanged(
+                isVisible: $isVisible,
+                shouldStartTyping: $shouldStartTyping,
+                showContent: $showContent,
+                typingStartDelay: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration
+                                + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration
+            )
         }
 
         /// Runs a three-phase child transition (hide -> resize -> show) to switch to the skip dialog.

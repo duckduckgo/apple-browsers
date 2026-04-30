@@ -208,6 +208,7 @@ private extension OnboardingRebranding {
         #if os(iOS)
         let title: AttributedString?
         let message: AttributedString
+        @State private var shouldStartTyping = false
         #else
         let title: NSAttributedString?
         let message: NSAttributedString
@@ -223,7 +224,7 @@ private extension OnboardingRebranding {
                 #if os(iOS)
                 if let title {
                     let titleAlignment = titleTextAlignment ?? theme.contextualOnboardingMetrics.contextualTitleTextAlignment
-                    TypingText(title)
+                    TypingText(title, startAnimating: $shouldStartTyping)
                         .font(theme.typography.contextual.title)
                         .multilineTextAlignment(titleAlignment)
                         .frame(maxWidth: .infinity, alignment: Alignment(titleAlignment))
@@ -251,7 +252,17 @@ private extension OnboardingRebranding {
                 #endif
             }
             .padding(theme.contextualOnboardingMetrics.titleBodyInset)
-
+            #if os(iOS)
+            .onAppear {
+                // Mirror the parent's fade-in schedule: wait until the bubble's content opacity
+                // has fully ramped up (delay + duration), then unlock the typing animation.
+                Task { @MainActor in
+                    let metrics = theme.contextualOnboardingMetrics
+                    try? await Task.sleep(interval: metrics.contentFadeInDelay + metrics.contentFadeInDuration)
+                    shouldStartTyping = true
+                }
+            }
+            #endif
         }
     }
 

@@ -1648,19 +1648,10 @@ extension MainViewController {
     }
 
     @objc func toggleWatchdog(_ sender: Any?) {
-        Task {
-            if NSApp.delegateTyped.watchdog.isRunning {
-                await NSApp.delegateTyped.watchdog.stop()
-            } else {
-                await NSApp.delegateTyped.watchdog.start()
-            }
-        }
-    }
-
-    @objc func toggleWatchdogCrash(_ sender: Any?) {
-        Task {
-            let crashOnTimeout = await NSApp.delegateTyped.watchdog.crashOnTimeout
-            await NSApp.delegateTyped.watchdog.setCrashOnTimeout(!crashOnTimeout)
+        if NSApp.delegateTyped.watchdog.isRunning {
+            NSApp.delegateTyped.watchdog.stop()
+        } else {
+            NSApp.delegateTyped.watchdog.start()
         }
     }
 

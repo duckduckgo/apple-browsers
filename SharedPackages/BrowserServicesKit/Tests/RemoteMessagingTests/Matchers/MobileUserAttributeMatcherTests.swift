@@ -121,6 +121,46 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                        .match)
     }
 
+    // MARK: - FreemiumPIRDidActivate
+
+    func testWhenFreemiumPIRDidActivateMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isFreemiumPIRActivated: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIRDidActivateMatchingAttribute(value: true, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenFreemiumPIRDidNotActivateMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isFreemiumPIRActivated: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIRDidActivateMatchingAttribute(value: false, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenFreemiumPIRDidActivateDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isFreemiumPIRActivated: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIRDidActivateMatchingAttribute(value: true, fallback: nil)),
+                       .fail)
+    }
+
+    // MARK: - FreemiumPIRFirstScanResult
+
+    func testWhenFreemiumPIRFirstScanResultMatchesMatchesFoundThenReturnMatch() throws {
+        setUpUserAttributeMatcher(freemiumPIRFirstScanResult: "matchesFound")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIRFirstScanResultMatchingAttribute(value: "matchesFound", fallback: nil)),
+                       .match)
+    }
+
+    func testWhenFreemiumPIRFirstScanResultDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(freemiumPIRFirstScanResult: "noMatches")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIRFirstScanResultMatchingAttribute(value: "matchesFound", fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenFreemiumPIRFirstScanResultMissingThenReturnFail() throws {
+        setUpUserAttributeMatcher(freemiumPIRFirstScanResult: nil)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIRFirstScanResultMatchingAttribute(value: "matchesFound", fallback: nil)),
+                       .fail)
+    }
+
     // MARK: - PIRCurrentUser
 
     func testWhenIsCurrentPIRUserMatchesThenReturnMatch() throws {
@@ -150,6 +190,8 @@ class MobileUserAttributeMatcherTests: XCTestCase {
     private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [],
                                            isSyncEnabled: Bool = false,
                                            isFreemiumPIREligible: Bool = false,
+                                           isFreemiumPIRActivated: Bool = false,
+                                           freemiumPIRFirstScanResult: String? = nil,
                                            isCurrentPIRUser: Bool = false) {
         matcher = MobileUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
@@ -178,6 +220,8 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             isSyncEnabled: isSyncEnabled,
             shouldShowWinBackOfferUrgencyMessage: false,
             isFreemiumPIREligible: isFreemiumPIREligible,
+            isFreemiumPIRActivated: isFreemiumPIRActivated,
+            freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
             isCurrentPIRUser: isCurrentPIRUser
         )
     }

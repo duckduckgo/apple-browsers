@@ -68,6 +68,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         syncService: DDGSyncing,
         winBackOfferService: WinBackOfferService,
         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+        freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
@@ -78,7 +79,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             syncService: syncService,
             winBackOfferService: winBackOfferService,
             dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate,
-            freemiumPIREligibilityChecker: freemiumPIREligibilityChecker
+            freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager
         )
         let configFetcher = RemoteMessagingConfigFetcher(
             configurationFetcher: ConfigurationFetcher(store: configurationStore, urlSession: .session(), configurationURLProvider: configurationURLProvider, eventMapping: nil),

@@ -27,6 +27,7 @@ import Networking
 
 final class DBPService: NSObject {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
+    public let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     public var dbpIOSPublicInterface: DBPIOSInterface.PublicInterface? {
         return dbpIOSManager
     }
@@ -34,6 +35,7 @@ final class DBPService: NSObject {
     init(appDependencies: DependencyProvider, contentBlocking: ContentBlocking) {
         guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
             self.dbpIOSManager = nil
+            self.freemiumDBPUserStateManager = DisabledFreemiumDBPUserStateManager()
             super.init()
             return
         }
@@ -55,6 +57,7 @@ final class DBPService: NSObject {
                 isUserAuthenticated: { [authManager] in await authManager.isUserAuthenticated },
                 isFreemiumEnabled: { [featureFlagger] in featureFlagger.isFreemiumPIREnabled }
             )
+            self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
             let eventsHandler = BrokerProfileJobEventsHandler(
                 userNotificationService: notificationService,
                 freemiumUserStateManager: freemiumDBPUserStateManager
@@ -96,6 +99,7 @@ final class DBPService: NSObject {
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil
+            self.freemiumDBPUserStateManager = DisabledFreemiumDBPUserStateManager()
         }
         super.init()
     }

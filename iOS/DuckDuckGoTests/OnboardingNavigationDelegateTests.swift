@@ -24,7 +24,8 @@ import DDGSync
 import History
 import BrowserServicesKit
 import RemoteMessaging
-import Configuration
+import DataBrokerProtection_iOS
+@testable import Configuration
 import Combine
 import SubscriptionTestingUtilities
 import Common
@@ -60,12 +61,17 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             database: db,
             errorEvents: nil,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
+            remoteMessagingSurfacesProvider: DefaultRemoteMessagingSurfacesProvider(),
             duckPlayerStorage: MockDuckPlayerStorage(),
+            configurationURLProvider: MockConfigurationURLProvider(),
+            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            winBackOfferService: .mocked,
             freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
                 featureFlagger: MockFeatureFlagger(),
                 runPrerequisitesDelegate: nil,
                 subscriptionAuthenticationStateProvider: SubscriptionManagerMock()
-            )
+            ),
+            freemiumDBPUserStateManager: DisabledFreemiumDBPUserStateManager()
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter())
         let tabsModel = TabsModel(desktop: true)

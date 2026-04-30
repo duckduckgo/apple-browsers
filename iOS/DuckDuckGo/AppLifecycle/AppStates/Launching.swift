@@ -177,6 +177,7 @@ struct Launching: LaunchingHandling {
                                                             syncService: syncService.sync,
                                                             winBackOfferService: winBackOfferService,
                                                             freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+                                                            freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
                                                             subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                             remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)

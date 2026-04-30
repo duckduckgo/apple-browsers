@@ -44,7 +44,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         syncService: DDGSyncing,
         winBackOfferService: WinBackOfferService,
         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil,
-        freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
+        freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+        freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
@@ -56,6 +57,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.winBackOfferService = winBackOfferService
         self.dbpRunPrerequisitesDelegate = dbpRunPrerequisitesDelegate
         self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -68,6 +70,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let winBackOfferService: WinBackOfferService
     let dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
+    let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
         var bookmarksCount = 0
@@ -117,6 +120,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         }
 
         let isFreemiumPIREligible = freemiumPIREligibilityChecker.canShowEntryPoint()
+        let didActivateFreemiumPIR = freemiumDBPUserStateManager.didActivate
+        let freemiumPIRFirstScanResult = freemiumDBPUserStateManager.firstScanResult?.rawValue
 
         let surveyActionMapper: DefaultRemoteMessagingSurveyURLBuilder
 
@@ -184,6 +189,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isSyncEnabled: isSyncEnabled,
                                                        shouldShowWinBackOfferUrgencyMessage: shouldShowWinBackOfferUrgencyMessage,
                                                        isFreemiumPIREligible: isFreemiumPIREligible,
+                                                       isFreemiumPIRActivated: didActivateFreemiumPIR,
+                                                       freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
                                                        isCurrentPIRUser: isCurrentPIRUser),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,

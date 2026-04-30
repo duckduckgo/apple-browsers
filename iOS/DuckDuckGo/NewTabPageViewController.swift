@@ -49,6 +49,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     private var hostingController: UIHostingController<AnyView>?
     private var isShowingDuckAICompletionDialog = false
+    private var isBorderSuppressedForChromeLayout = false
 
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
@@ -124,6 +125,11 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         updateBorderView()
     }
 
+    func setChromeLayoutContext(isBorderSuppressed: Bool) {
+        isBorderSuppressedForChromeLayout = isBorderSuppressed
+        updateBorderView()
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -172,9 +178,14 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func updateBorderView() {
+        if !favoritesModel.isEmpty, isViewLoaded {
+            borderView.insertSelf(into: view)
+        }
+
+        let shouldShowBorder = !favoritesModel.isEmpty && !isBorderSuppressedForChromeLayout
         let hasEscapeHatch = newTabPageViewModel.escapeHatch != nil
-        borderView.isTopVisible = !hasEscapeHatch && appSettings.currentAddressBarPosition == .top
-        borderView.isBottomVisible = !appWidthObserver.isLargeWidth
+        borderView.isTopVisible = shouldShowBorder && !hasEscapeHatch && appSettings.currentAddressBarPosition == .top
+        borderView.isBottomVisible = shouldShowBorder && !appWidthObserver.isLargeWidth
     }
 
     func registerForNotifications() {

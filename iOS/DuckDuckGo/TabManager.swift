@@ -247,11 +247,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         registerForNotifications()
     }
 
-    /// Resolves the preferred text entry mode for a newly created tab based on the user's default omnibar mode setting.
     private func resolvedTextEntryMode() -> TextEntryMode {
-        aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode {
-            toggleModeStorage.restore()
-        }
+        aiChatSettings.defaultOmnibarMode
+            .resolvedTextEntryMode { toggleModeStorage.restore() }
+            .displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
     }
 
     func setWebExtensionManager(_ manager: WebExtensionManaging?) {

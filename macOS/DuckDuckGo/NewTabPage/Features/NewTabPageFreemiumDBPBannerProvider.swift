@@ -118,7 +118,7 @@ final class FreemiumDBPPromoDelegate: PromoDelegate {
         // Fast-path: if the promo was shown within the last 7 days, consider
         // it eligible even before async product availability settles. This
         // avoids missing the NTP trigger on app restart during a display window.
-        guard coordinator.isFeatureFlagEnabled else { return false }
+        guard coordinator.isFeatureAvailableIgnoringPurchaseCapability else { return false }
         guard let lastShown = historyRecord?.lastShown else { return false }
         return dateProvider().timeIntervalSince(lastShown) < .days(7)
     }

@@ -66,8 +66,9 @@ final class DuckAISuggestionsViewController: UIViewController {
     private let urlLoader: DuckAIURLSuggestionsLoader
     private let queryProvider: () -> String
 
-    /// Sized to absorb the gap between chat-fetcher and URL-fetcher settle times so a single reload renders both.
-    private static let reloadCoalesceMilliseconds = 120
+    /// Absorbs the gap between chat-fetcher (150ms debounce) and URL-fetcher (100ms debounce) so a single reload renders both.
+    /// Kept tight (≈ chat-URL debounce gap + small slack) so deleting characters fast doesn't visibly lag.
+    private static let reloadCoalesceMilliseconds = 80
 
     private var cancellables = Set<AnyCancellable>()
 

@@ -186,11 +186,6 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isImageButtonEnabled = newValue }
     }
 
-    var isFireVisible: Bool {
-        get { inputBarView.isFireVisible }
-        set { inputBarView.isFireVisible = newValue }
-    }
-
     var modelSupportsImageAttachments: Bool {
         get { inputBarView.modelSupportsImageAttachments }
         set { inputBarView.modelSupportsImageAttachments = newValue }

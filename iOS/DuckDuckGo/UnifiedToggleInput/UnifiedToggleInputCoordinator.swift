@@ -207,7 +207,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Initialization
 
     init(
-        host: UnifiedToggleInputHost = .omnibar,
+        host: UnifiedToggleInputHost,
         isToggleEnabled: Bool,
         isFireTab: Bool = false,
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
@@ -253,6 +253,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.modelName = cachedLabel
         }
 
+        // Contextual chat boots in expanded form; no collapsed/inactive states are reachable.
         if host == .contextualChat {
             displayState = .aiTab(.expanded)
         }
@@ -291,6 +292,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - AI Tab State
 
     func showCollapsed() {
+        // Contextual chat has no AI tab collapsed mode; the host always renders expanded.
         if host == .contextualChat { return }
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
@@ -712,7 +714,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func applyViewConfig(from renderState: UTIRenderState, animated: Bool) {
         viewController.apply(renderState.viewConfig, animated: animated)
-        viewController.isFireVisible = renderState.isFireVisible
     }
 
     // MARK: - Render State
@@ -775,7 +776,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             contentInputMode: inputMode,
             inputMode: inputMode,
             isToggleVisible: host == .omnibar,
-            isFireVisible: host == .omnibar,
             isSuggestionsAllowed: host == .omnibar,
             isFloatingSubmitAllowed: host == .omnibar,
             isPageContextChipVisible: host == .contextualChat

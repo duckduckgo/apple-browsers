@@ -222,11 +222,6 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.isImageButtonEnabled = newValue }
     }
 
-    var isFireVisible: Bool {
-        get { toolsToolbar.isFireVisible }
-        set { toolsToolbar.isFireVisible = newValue }
-    }
-
     var isAttachmentsFull: Bool {
         attachmentsStrip.isFull
     }

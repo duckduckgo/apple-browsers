@@ -476,7 +476,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func test_originatingURLPublisher_emitsNilOnClear() throws {
-        originatingTabURLSubject.send(URL(string: "https://example.com")!)
+        let url = URL(string: "https://example.com")!
+        originatingTabURLSubject.send(url)
 
         var received: [URL?] = []
         sut.originatingURLPublisher
@@ -485,7 +486,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         originatingTabURLSubject.send(nil)
 
-        XCTAssertNil(received.last as? URL)
+        XCTAssertEqual(received, [url, nil])
     }
 
     // MARK: - Helpers

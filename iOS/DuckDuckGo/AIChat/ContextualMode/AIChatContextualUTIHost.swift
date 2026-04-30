@@ -23,9 +23,7 @@ import UIKit
 import os.log
 
 /// Owns a `UnifiedToggleInputCoordinator` configured for the contextual chat surface and
-/// embeds its view controller as a child of `AIChatContextualWebViewController`. Wires the
-/// page-context chip's tap to `pageContextHandler.triggerContextCollection()` and routes
-/// prompt submission to the web VC's existing prompt path.
+/// embeds its view controller as a child of `AIChatContextualWebViewController`.
 @MainActor
 final class AIChatContextualUTIHost {
 

@@ -34,40 +34,52 @@ extension OnboardingRebranding {
         let dismissText: String
         let proceedAction: () -> Void
         let dismissAction: () -> Void
-        let onManualDismiss: () -> Void
+        /// When `nil` the X dismiss button is hidden (e.g. chat-path onboarding).
+        let onManualDismiss: (() -> Void)?
 
         var body: some View {
             ScrollView(.vertical, showsIndicators: false) {
-                OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
-                    VStack {
-                        OnboardingRebrandingImages.Contextual.promoShield
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 96, height: 96)
-                        OnboardingRebranding.ContextualDaxDialogContent(
-                            title: AttributedString(title),
-                            titleTextAlignment: .center,
-                            message: message,
-                            messageTextAlignment: .center
-                        ) {
-                            VStack(spacing: 8) {
-                                Button(action: proceedAction) {
-                                    Text(proceedText)
-                                }
-                                .buttonStyle(theme.primaryButtonStyle.style)
-
-                                Button(action: dismissAction) {
-                                    Text(dismissText)
-                                }
-                                .buttonStyle(theme.secondaryButtonStyle.style)
-                            }
-                        }
+                if let onManualDismiss {
+                    OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
+                        promoContent
                     }
+                    .padding(theme.contextualOnboardingMetrics.containerPadding)
+                } else {
+                    OnboardingBubbleView(tailPosition: nil) {
+                        promoContent
+                    }
+                    .padding(theme.contextualOnboardingMetrics.containerPadding)
                 }
-                .padding(theme.contextualOnboardingMetrics.containerPadding)
             }
             .scrollIfNeeded()
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
+        }
+
+        private var promoContent: some View {
+            VStack {
+                OnboardingRebrandingImages.Contextual.promoShield
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 96, height: 96)
+                OnboardingRebranding.ContextualDaxDialogContent(
+                    title: AttributedString(title),
+                    titleTextAlignment: .center,
+                    message: message,
+                    messageTextAlignment: .center
+                ) {
+                    VStack(spacing: 8) {
+                        Button(action: proceedAction) {
+                            Text(proceedText)
+                        }
+                        .buttonStyle(theme.primaryButtonStyle.style)
+
+                        Button(action: dismissAction) {
+                            Text(dismissText)
+                        }
+                        .buttonStyle(theme.secondaryButtonStyle.style)
+                    }
+                }
+            }
         }
     }
 

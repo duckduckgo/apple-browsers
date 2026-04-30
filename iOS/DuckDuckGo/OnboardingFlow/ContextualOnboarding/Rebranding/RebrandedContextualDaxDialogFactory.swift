@@ -193,7 +193,9 @@ private extension RebrandedContextualDaxDialogFactory {
     ) -> some View {
         let attributedMessage = attributedStringFromLegacyMarkdown(spec.message)
 
-        let onManualDismiss: (_ isShowingFireDialog: Bool) -> Void = { [weak delegate, weak self] isShowingFireDialog in
+        let isChatPath = contextualOnboardingSettings.chatPathPhase == .trackerToEOJ
+
+        let onManualDismiss: ((_ isShowingFireDialog: Bool) -> Void)? = isChatPath ? nil : { [weak delegate, weak self] isShowingFireDialog in
             // Hide Pulsing animation for Privacy Shield or Fire Dialog
             ViewHighlighter.hideAll()
 

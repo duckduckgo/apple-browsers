@@ -118,12 +118,12 @@ private extension RebrandedNewTabDaxDialogFactory {
         let isChatPath = daxDialogsFlowCoordinator.chatPathPhase == .visitSite
 
         let viewModel = OnboardingSiteSuggestionsViewModel(
-            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle,
+            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
             suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
             delegate: delegate
         )
 
-        let manualDismissAction = { [weak self] in
+        let manualDismissAction: (() -> Void)? = isChatPath ? nil : { [weak self] in
             self?.onboardingPixelReporter.measureTryVisitSiteDialogNewTabDismissButtonTapped()
             onManualDismiss()
         }
@@ -228,9 +228,15 @@ private extension RebrandedNewTabDaxDialogFactory {
             return AttributedString(fullText)
         }
 
+        let isChatPath = daxDialogsFlowCoordinator.isChatFirstPath
         let title = UserText.SubscriptionPromotionOnboarding.Promo.title
         let message = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ? createSubscriptionPromoMessage() : createSubscriptionPromoMessageDeprecated()
         let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.skip
+        let manualDismissAction: (() -> Void)? = isChatPath ? nil : { [weak self] in
+            self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
+            self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
+            onDismiss(true)
+        }
         return FadeInView {
             OnboardingRebranding.OnboardingSubscriptionPromoDialog(
                 title: title,
@@ -252,11 +258,7 @@ private extension RebrandedNewTabDaxDialogFactory {
                 dismissAction: {
                     onDismiss(true)
                 },
-                onManualDismiss: { [weak self] in
-                    self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
-                    self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
-                    onDismiss(true)
-                }
+                onManualDismiss: manualDismissAction
             )
         }
         .applyNewTabOnboardingBackground(backgroundType: .privacyProTrial)

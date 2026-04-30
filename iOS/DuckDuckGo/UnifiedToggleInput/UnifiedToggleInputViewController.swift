@@ -54,12 +54,15 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     let isToggleEnabled: Bool
-    lazy var handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isToggleEnabled: isToggleEnabled)
+    let handler: UnifiedToggleInputHandler
 
     // MARK: - Public API
 
-    init(isToggleEnabled: Bool) {
+    init(isToggleEnabled: Bool, isFireTab: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
+        self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
+                                                 isToggleEnabled: isToggleEnabled,
+                                                 isFireTab: isFireTab)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -143,6 +146,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.toolsMenu = newValue }
     }
 
+    var reasoningPickerMenu: UIMenu? {
+        get { inputBarView.reasoningPickerMenu }
+        set { inputBarView.reasoningPickerMenu = newValue }
+    }
+
     var isModelChipHidden: Bool {
         get { inputBarView.isModelChipHidden }
         set { inputBarView.isModelChipHidden = newValue }
@@ -153,9 +161,19 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.selectedTool = newValue }
     }
 
+    var selectedReasoningMode: AIChatReasoningMode? {
+        get { inputBarView.selectedReasoningMode }
+        set { inputBarView.selectedReasoningMode = newValue }
+    }
+
     var isToolsButtonHidden: Bool {
         get { inputBarView.isToolsButtonHidden }
         set { inputBarView.isToolsButtonHidden = newValue }
+    }
+
+    var isReasoningButtonHidden: Bool {
+        get { inputBarView.isReasoningButtonHidden }
+        set { inputBarView.isReasoningButtonHidden = newValue }
     }
 
     var isImageButtonHidden: Bool {
@@ -217,16 +235,20 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setExpanded(expanded, animated: animated)
     }
 
-    func setExpandedWithToggleHidden(_ expanded: Bool) {
-        inputBarView.setExpandedWithToggleHidden(expanded)
+    func prepareForOmnibarEditingShow() {
+        inputBarView.prepareForOmnibarEditingShow()
     }
 
-    func animateToggleReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
-        inputBarView.animateToggleReveal(additionalAnimations: additionalAnimations, completion: completion)
+    func applyOmnibarEditingShowPose() {
+        inputBarView.applyOmnibarEditingShowPose()
     }
 
-    func animateToggleHide(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
-        inputBarView.animateToggleHide(additionalAnimations: additionalAnimations, completion: completion)
+    func applyOmnibarEditingDismissPose() {
+        inputBarView.applyOmnibarEditingDismissPose()
+    }
+
+    func finalizeOmnibarEditingDismiss() {
+        inputBarView.finalizeOmnibarEditingDismiss()
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {
@@ -235,6 +257,28 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func selectAllText() {
         inputBarView.selectAllText()
+    }
+
+    var placeholderWindowX: CGFloat? { inputBarView.placeholderWindowX }
+
+    var defaultPlaceholderColor: UIColor { inputBarView.defaultPlaceholderColor }
+
+    var placeholderTextColor: UIColor {
+        get { inputBarView.placeholderTextColor }
+        set { inputBarView.placeholderTextColor = newValue }
+    }
+
+    func animatePlaceholderColorTransition(from: UIColor, to color: UIColor, duration: TimeInterval) {
+        inputBarView.animatePlaceholderColorTransition(from: from, to: color, duration: duration)
+    }
+
+    func setTextHorizontalShift(_ shift: CGFloat) {
+        inputBarView.setTextHorizontalShift(shift)
+    }
+
+    @discardableResult
+    func alignPlaceholderHorizontally(toWindowX windowX: CGFloat) -> CGFloat {
+        inputBarView.alignPlaceholderHorizontally(toWindowX: windowX)
     }
 
     func updateToggleEnabled(_ enabled: Bool) {
@@ -252,6 +296,10 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func deactivateInput() {
         inputBarView.resignFirstResponder()
+    }
+
+    func refreshFireMode(fireMode: Bool) {
+        inputBarView.refreshFireMode(fireMode: fireMode)
     }
 
     // MARK: - Lifecycle

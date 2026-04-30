@@ -48,6 +48,9 @@ class MainViewCoordinator {
     var aiChatTabChatHeaderContainer: UIView!
     var unifiedToggleInputContainer: UIView!
     var unifiedInputContentContainer: UIView!
+
+    /// Owned so a subsequent show can cancel an in-flight dismiss and skip the stale completion.
+    private var omnibarDismissAnimator: UIViewPropertyAnimator?
     var toolbar: UIToolbar!
     var toolbarSpacer: UIView!
     var toolbarBackButton: UIBarButtonItem { toolbarHandler.backButton }
@@ -205,10 +208,13 @@ class MainViewCoordinator {
 
     @MainActor
     func showUnifiedToggleInputOmnibar(expandedHeight: CGFloat) {
+        omnibarDismissAnimator?.stopAnimation(true)
+        omnibarDismissAnimator = nil
         navigationBarCollectionView.layer.removeAllAnimations()
         unifiedToggleInputContainer.layer.removeAllAnimations()
         navigationBarCollectionView.isUserInteractionEnabled = false
 
+        // Snap omnibar out, no fade — mirror of `finishUnifiedToggleInputOmnibarDismiss`.
         navigationBarCollectionView.alpha = 0
         unifiedToggleInputContainer.alpha = 1
         unifiedToggleInputContainer.isHidden = false
@@ -264,22 +270,30 @@ class MainViewCoordinator {
     // MARK: - Omnibar Editing Layout
 
     @MainActor
-    func hideUnifiedToggleInputOmnibar() {
+    func hideUnifiedToggleInputOmnibar(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+        omnibarDismissAnimator?.stopAnimation(true)
+
+        let animator = UIViewPropertyAnimator(duration: MainViewController.Constants.omnibarTransitionDuration(isBottom: addressBarPosition.isBottom), curve: .easeOut) { [weak self] in
+            self?.animateUnifiedToggleInputOmnibarDismissLayout()
+            additionalAnimations?()
+        }
+        animator.addCompletion { [weak self] position in
+            guard let self else { return }
+            self.omnibarDismissAnimator = nil
+            // Skip cleanup if the animation was superseded — otherwise it stomps fresh state from a concurrent show.
+            guard position == .end else { return }
+            self.finishUnifiedToggleInputOmnibarDismiss()
+            completion?()
+        }
+        omnibarDismissAnimator = animator
+        animator.startAnimation()
+    }
+
+    /// Call inside an animation context — alpha swap is deferred to completion to avoid a crossfade gap.
+    func animateUnifiedToggleInputOmnibarDismissLayout() {
         if addressBarPosition.isBottom {
             setNavBarContainerBottomToToolbar()
         }
-
-        UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut) {
-            self.animateUnifiedToggleInputOmnibarDismissLayout()
-        } completion: { finished in
-            guard finished else { return }
-            self.finishUnifiedToggleInputOmnibarDismiss()
-        }
-    }
-
-    func animateUnifiedToggleInputOmnibarDismissLayout() {
-        navigationBarCollectionView.alpha = 1
-        unifiedToggleInputContainer.alpha = 0
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
         superview.layoutIfNeeded()
     }
@@ -295,6 +309,8 @@ class MainViewCoordinator {
             unifiedToggleInputContainer.isHidden = false
             unifiedToggleInputContainer.alpha = 1
         } else {
+            // Snap omnibar in, no fade — crossfading would produce visible double-text mid-dismiss.
+            navigationBarCollectionView.alpha = 1
             unifiedToggleInputContainer.isHidden = true
             unifiedToggleInputContainer.alpha = 1
         }

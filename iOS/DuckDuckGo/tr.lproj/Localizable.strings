@@ -213,6 +213,24 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fotoğraf Çek";
 
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Analitik görevler için";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Genişletilmiş Akıl Yürütme";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Hızlı yanıtlar";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Hızlı";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Karmaşık görevler için";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Akıl yürütme";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Yanıtları Özelleştir";
 
@@ -2181,7 +2199,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Web sitelerindeki sorunları giderin";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Fire Sekmeleri diğer tarayıcı verilerinden izole edilmiştir ve tümünü kapattığınızda verileri silinir. Diğer sekmelerle aynı izleme korumasına sahiptirler.";
+"fire.mode.empty.state.description" = "Fire Sekmeleri diğer tarayıcı verilerinden izole edilmiştir. Tüm pencereleri kapattığınızda verileri imha edilir. Diğer sekmelerle aynı izleme korumasını sunarlar.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Yeni Fire Sekmesi";
@@ -2193,7 +2211,7 @@
 "fire.mode.menu.promotion.badge" = "Yeni";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Yerel geçmişi kaydetmeden göz atın veya sitelerde farklı bir hesapla oturum açın.";
+"fire.mode.ntp.promotion.description" = "Yeni! Yerel geçmişi kaydetmeden göz atın veya sitelerde farklı bir hesapla oturum açın.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Şimdi Değil";
@@ -2203,6 +2221,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Fire Sekmelerini Deneyin";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Yerel geçmişi kaydetmeden göz atmak için Fire Sekmelerini deneyin.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Yeni: Fire Sekmeleri";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire Sekmesi";
@@ -2328,6 +2352,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Adres Ara veya Gir";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Yeni Fire Sekmesi";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Yeni Sekme";
@@ -4177,7 +4204,7 @@
 "sync.delete.all.confirm.action" = "Sunucu Verilerini Sil";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Tüm cihazların bağlantısı kesilecek ve senkronize edilen verileriniz sunucudan silinecektir.";
+"sync.delete.all.confirm.message" = "Yedekleriniz sunucudan silinecektir. Tüm cihazların senkronizasyon bağlantısı kesilecek, ancak hiçbir cihazdan hiçbir şey silinmeyecektir.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Sunucu Verileri Silinsin mi?";
@@ -4244,6 +4271,27 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Cihaz Kaldırılsın mı?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kod kopyalandı";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup etkin";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Kurtarma Kodu Kopyalandı";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Sync & Backup etkinleştirilemedi";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Kapat";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Bu cihazdaki yer işaretleriniz ve şifreleriniz etkilenmeyecektir.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Sync & Backup kapatılsın mı?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Kaldır";

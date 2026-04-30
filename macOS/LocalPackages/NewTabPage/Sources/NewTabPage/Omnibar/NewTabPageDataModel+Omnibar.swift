@@ -33,14 +33,19 @@ public extension NewTabPageDataModel {
         public let isEnabled: Bool
         public let supportsImageUpload: Bool
         public let supportedTools: [String]
+        /// Reasoning effort levels the model supports (e.g. `["none", "low", "medium", "high"]`).
+        /// Empty when the model does not support reasoning, or when the reasoning-effort
+        /// feature is disabled natively — in which case the picker is hidden web-side.
+        public let supportedReasoningEffort: [String]
 
-        public init(id: String, name: String, shortName: String, isEnabled: Bool, supportsImageUpload: Bool, supportedTools: [String]) {
+        public init(id: String, name: String, shortName: String, isEnabled: Bool, supportsImageUpload: Bool, supportedTools: [String] = [], supportedReasoningEffort: [String] = []) {
             self.id = id
             self.name = name
             self.shortName = shortName
             self.isEnabled = isEnabled
             self.supportsImageUpload = supportsImageUpload
             self.supportedTools = supportedTools
+            self.supportedReasoningEffort = supportedReasoningEffort
         }
     }
 
@@ -66,6 +71,9 @@ public extension NewTabPageDataModel {
         let enableWebSearch: Bool?
         let selectedModelId: String?
         let aiModelSections: [AIModelSection]?
+        /// The user's persisted reasoning effort (e.g. `"none"`, `"low"`, `"medium"`). `nil` when
+        /// nothing is selected or when the reasoning-effort feature is disabled natively.
+        let selectedReasoningEffort: String?
     }
 
     // MARK: - omnibar_getSuggestions
@@ -232,6 +240,9 @@ public extension NewTabPageDataModel {
         let images: [SubmitChatImage]?
         let mode: String?
         let toolChoice: [String]?
+        /// Reasoning effort to attach to this submission. Ignored natively when the reasoning-effort
+        /// feature is disabled or when the value isn't supported by the submission's model.
+        let reasoningEffort: String?
     }
 
     // MARK: - omnibar_openAiChat

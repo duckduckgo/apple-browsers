@@ -213,6 +213,24 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Zrób zdjęcie";
 
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Do zadań analitycznych";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Rozszerzone rozumowanie";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Szybkie odpowiedzi";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Szybko";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Dla złożonych zadań";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Rozumowanie";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Dostosuj odpowiedzi";
 
@@ -2181,7 +2199,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Rozwiązuj problemy z witrynami";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Karty Fire są odizolowane od innych danych przeglądarki, a zawarte w nich dane są usuwane w chwili ich zamknięcia. Są objęte taką samą ochroną przed śledzeniem jak inne karty.";
+"fire.mode.empty.state.description" = "Karty Fire są izolowane od innych danych przeglądarki. Ich dane zostaną zniszczone, gdy zamkniesz je wszystkie. Zapewniają one taką samą ochronę przed śledzeniem jak inne karty.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Nowa karta Fire";
@@ -2193,7 +2211,7 @@
 "fire.mode.menu.promotion.badge" = "Nowa";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Przeglądaj bez zapisywania historii lub loguj się do witryn z innym kontem.";
+"fire.mode.ntp.promotion.description" = "Nowość! Przeglądaj bez lokalnego zapisywania historii lub loguj w witrynach z użyciem innego konta.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Nie teraz";
@@ -2203,6 +2221,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Wypróbuj karty Fire";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Wypróbuj karty Fire, aby przeglądać bez lokalnego zapisywania historii.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Nowe: Karty Fire";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Karta Fire";
@@ -2328,6 +2352,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Wyszukaj lub wprowadź adres";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Nowa karta Fire";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Nowa karta";
@@ -4177,7 +4204,7 @@
 "sync.delete.all.confirm.action" = "Usuń dane serwera";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Wszystkie urządzenia zostaną odłączone, a zsynchronizowane dane usunięte z serwera.";
+"sync.delete.all.confirm.message" = "Twoja kopia zapasowa zostanie usunięta z serwera. Wszystkie urządzenia zostaną odłączone od synchronizacji, ale nic nie zostanie usunięte z żadnego urządzenia.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Usunąć dane serwera?";
@@ -4244,6 +4271,27 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Usunąć urządzenie?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kod skopiowany";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Synchronizacja i kopia zapasowa włączone";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Skopiowano kod odzyskiwania";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Nie udało się włączyć Synchronizacji i kopii zapasowej";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Wyłącz";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Wyłączenie synchronizacji nie wpłynie na zakładki i hasła na tym urządzeniu.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Wyłączyć Synchronizację i kopię zapasową?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Usuń";

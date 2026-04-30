@@ -230,7 +230,7 @@ extension AppDelegate {
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
             if self.internalUserDecider.isInternalUser {
-                Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
+                self.quickFeedbackService.openFeedbackPopup(from: NSApp.mainWindow)
             } else {
                 Application.appDelegate.openRequestANewFeature(nil)
             }
@@ -268,7 +268,7 @@ extension AppDelegate {
     @MainActor
     @objc func openReportABrowserProblem(_ sender: Any?) {
         guard !self.internalUserDecider.isInternalUser else {
-            Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
+            quickFeedbackService.openFeedbackPopup(from: NSApp.mainWindow)
             return
         }
 
@@ -333,7 +333,7 @@ extension AppDelegate {
     @MainActor
     @objc func openRequestANewFeature(_ sender: Any?) {
         guard !self.internalUserDecider.isInternalUser else {
-            Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
+            quickFeedbackService.openFeedbackPopup(from: NSApp.mainWindow)
             return
         }
 
@@ -1648,19 +1648,10 @@ extension MainViewController {
     }
 
     @objc func toggleWatchdog(_ sender: Any?) {
-        Task {
-            if NSApp.delegateTyped.watchdog.isRunning {
-                await NSApp.delegateTyped.watchdog.stop()
-            } else {
-                await NSApp.delegateTyped.watchdog.start()
-            }
-        }
-    }
-
-    @objc func toggleWatchdogCrash(_ sender: Any?) {
-        Task {
-            let crashOnTimeout = await NSApp.delegateTyped.watchdog.crashOnTimeout
-            await NSApp.delegateTyped.watchdog.setCrashOnTimeout(!crashOnTimeout)
+        if NSApp.delegateTyped.watchdog.isRunning {
+            NSApp.delegateTyped.watchdog.stop()
+        } else {
+            NSApp.delegateTyped.watchdog.start()
         }
     }
 

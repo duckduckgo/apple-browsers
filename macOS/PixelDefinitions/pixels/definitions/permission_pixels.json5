@@ -1,5 +1,4 @@
 // Permission management pixels
-// These pixels are fired when the newPermissionView feature flag is enabled
 {
     "m_mac_permission_authorization": {
         "description": "Fired when user selects an option (Allow/Deny) in the permission authorization dialog",

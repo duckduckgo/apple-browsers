@@ -86,7 +86,6 @@ public enum PrivacyFeature: String {
     case duckAiChatHistory
     case serp
     case popupBlocking
-    case combinedPermissionView
     case pageContext
     case webExtensions
     case forceDarkModeOnWebsites
@@ -544,6 +543,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncIdentities
     case aiChatSync
     case simplifiedSyncSetupExperiment
+    case allowSingleDeviceOnConnectScreen
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -571,6 +571,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
+    case subscriptionPromoFireWindow
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

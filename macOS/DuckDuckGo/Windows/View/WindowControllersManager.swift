@@ -482,7 +482,7 @@ extension WindowControllersManager {
     /// Shows the non-subscription feedback modal
     func showFeedbackModal(preselectedFormOption: FeedbackViewController.FormOption? = nil) {
         if internalUserDecider.isInternalUser {
-            showTab(with: .url(.internalFeedbackForm, source: .ui))
+            Application.appDelegate.quickFeedbackService.openFeedbackPopup(from: NSApp.mainWindow)
         } else {
             FeedbackPresenter.presentFeedbackForm(preselectedFormOption: preselectedFormOption)
         }
@@ -676,5 +676,17 @@ extension WindowControllersManager: OnboardingNavigating {
         guard let mainVC = lastKeyMainWindowController?.mainViewController else { return }
         mainVC.navigationBarViewController.addressBarViewController?.addressBarTextField.stringValue = ""
         mainVC.navigationBarViewController.addressBarViewController?.addressBarTextField.makeMeFirstResponder()
+    }
+}
+
+extension WindowControllersManager: TabAndWindowCountProviding {
+    var tabCount: Int {
+        mainWindowControllers.reduce(0) { total, controller in
+            total + controller.mainViewController.tabCollectionViewModel.allTabsCount
+        }
+    }
+
+    var windowCount: Int {
+        mainWindowControllers.count
     }
 }

@@ -218,6 +218,33 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(error, SyncConnectionError.failedToTransmitExchangeRecoveryKey)
     }
 
+    @MainActor
+    func test_startExchangeMode_recoveryKeyTransmitFails_doesNotNotifyFinish() async throws {
+        let remoteExchanger = MockRemoteKeyExchanging()
+        givenExchangerPollForPublicKeySucceeds(remoteExchanger)
+
+        let exchangeRecoveryKeyTransmitter = MockExchangeRecoveryKeyTransmitting()
+        exchangeRecoveryKeyTransmitter.sendError = SyncError.unableToDecodeResponse("")
+        dependencies.createExchangeRecoveryKeyTransmitterStub = exchangeRecoveryKeyTransmitter
+
+        let didErrorExpectation = expectation(description: "Delegate receives transmit error")
+        delegate.didErrorCalled = {
+            didErrorExpectation.fulfill()
+        }
+
+        let didFinishExpectation = expectation(description: "Delegate should not report transmit success")
+        didFinishExpectation.isInverted = true
+        delegate.didFinishTransmittingRecoveryKeyCalled = {
+            didFinishExpectation.fulfill()
+        }
+
+        _ = try await controller.startExchangeMode()
+
+        await fulfillment(of: [didErrorExpectation, didFinishExpectation], timeout: 1.0)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .failedToTransmitExchangeRecoveryKey)
+        XCTAssertEqual(remoteExchanger.stopPollingCalled, 1)
+    }
+
     private func givenExchangerPollForPublicKeySucceeds(_ exchanger: MockRemoteKeyExchanging = MockRemoteKeyExchanging()) {
         let expectedMessage = ExchangeMessage(keyId: "keyID", publicKey: .init(), deviceName: "")
         exchanger.pollForPublicKeyResult = expectedMessage

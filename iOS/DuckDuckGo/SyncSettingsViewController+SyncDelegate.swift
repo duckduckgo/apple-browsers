@@ -179,6 +179,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                     let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                     try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
+                    self.syncSetupExperimentPixels.fireSignupDirect()
+                    self.syncSetupExperimentPixels.fireSetupEndedSuccessful()
                     AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                     self.viewModel.syncEnabled(recoveryCode: self.recoveryCode)
                     self.refreshDevices()
@@ -200,13 +202,19 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                 let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                 try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
+                self.syncSetupExperimentPixels.fireSignupDirect()
+                self.syncSetupExperimentPixels.fireSetupEndedSuccessful()
                 AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
                 self.enableAutoRestoreByDefaultIfNeeded()
-                self.refreshDevices(clearDevices: false)
-                ActionMessageView.present(message: UserText.simplifiedSyncEnabledToast, onDidDismiss: {
-                    optionsViewModel.checkAndShowSyncWithAnotherDevicePrompt()
-                })
+                await self.refreshDevicesAfterSimplifiedSyncEnable()
+
+                let didShowPrompt = optionsViewModel.checkAndShowSyncWithAnotherDevicePrompt()
+                if didShowPrompt {
+                    optionsViewModel.scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal()
+                } else {
+                    self.showSimplifiedSyncEnabledToast()
+                }
             } catch {
                 self.firePixelIfNeededFor(event: .syncSignupError, error: error)
                 ActionMessageView.present(message: UserText.simplifiedSyncSetupFailedToast)
@@ -625,18 +633,12 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         model.delegate = self
         
         var controller: UIHostingController<AnyView>
-        if showQRCode {
-            if useSimplifiedLayout {
-                controller = UIHostingController(rootView: AnyView(SimplifiedScanOrShowCodeView(model: model)))
-            } else {
-                controller = UIHostingController(rootView: AnyView(ScanOrSeeCode(model: model)))
-            }
+        if useSimplifiedLayout {
+            controller = UIHostingController(rootView: AnyView(SimplifiedScanOrShowCodeView(model: model)))
+        } else if showQRCode {
+            controller = UIHostingController(rootView: AnyView(ScanOrSeeCode(model: model)))
         } else {
-            if useSimplifiedLayout {
-                controller = UIHostingController(rootView: AnyView(SimplifiedScanOrShowCodeView(model: model)))
-            } else {
-                controller = UIHostingController(rootView: AnyView(ScanOrEnterCodeToRecoverSyncedDataView(model: model)))
-            }
+            controller = UIHostingController(rootView: AnyView(ScanOrEnterCodeToRecoverSyncedDataView(model: model)))
         }
         
         let navController = UIDevice.current.userInterfaceIdiom == .phone
@@ -646,14 +648,23 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         navController.overrideUserInterfaceStyle = .dark
         if useSimplifiedLayout {
             navController.view.backgroundColor = UIColor(baseColor: .gray90)
+            let transparentAppearance = UINavigationBarAppearance()
+            transparentAppearance.configureWithTransparentBackground()
+            navController.navigationBar.standardAppearance = transparentAppearance
+            navController.navigationBar.scrollEdgeAppearance = transparentAppearance
         }
         navController.setNeedsStatusBarAppearanceUpdate()
-        navController.modalPresentationStyle = .fullScreen
+        if useSimplifiedLayout, UIDevice.current.userInterfaceIdiom == .pad {
+            navController.modalPresentationStyle = .formSheet
+        } else {
+            navController.modalPresentationStyle = .fullScreen
+        }
         navigationController?.present(navController, animated: true) {
             self.checkCameraPermission(model: model)
             if let onPresentPixelInfo {
                 let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
                 Pixel.fire(onPresentPixelInfo.pixel, withAdditionalParameters: [PixelParameters.source: pixelSource])
+                self.syncSetupExperimentPixels.fireBarcodeScreenShown()
             }
         }
     }
@@ -686,6 +697,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     do {
                         try await self.syncService.disconnect()
                         Pixel.fire(pixel: .syncDisabled)
+                        self.syncSetupExperimentPixels.fireSyncDisabled()
                         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self.viewModel.isSyncEnabled = false
                         self.syncPausedStateManager.syncDidTurnOff()
@@ -721,9 +733,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     do {
                         try await self.syncService.disconnect()
                         Pixel.fire(pixel: .syncDisabled)
+                        self.syncSetupExperimentPixels.fireSyncDisabled()
                         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self.syncPausedStateManager.syncDidTurnOff()
-                        self.resetSimplifiedSyncAnotherDevicePromptState()
                         continuation.resume(returning: true)
                     } catch {
                         await self.handleError(SyncErrorMessage.unableToTurnSyncOff, error: error, event: .syncLogoutError)
@@ -751,10 +763,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     do {
                         try await self?.syncService.deleteAccount()
                         Pixel.fire(pixel: .syncDisabledAndDeleted, withAdditionalParameters: [PixelParameters.connectedDevices: "\(deviceCount)"])
+                        self?.syncSetupExperimentPixels.fireSyncDisabledAndDeleted()
                         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self?.viewModel.isSyncEnabled = false
                         self?.syncPausedStateManager.syncDidTurnOff()
-                        self?.resetSimplifiedSyncAnotherDevicePromptState()
                         continuation.resume(returning: true)
                     } catch {
                         await self?.handleError(SyncErrorMessage.unableToDeleteData, error: error, event: .syncDeleteAccountError)
@@ -797,9 +809,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     func codeEntryScreenShown() {
         Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown, includedParameters: [.appVersion])
+        syncSetupExperimentPixels.fireManualCodeEntryScreenShown()
     }
 
-    func codeCopied() {
+    func codeCopied(_ code: String) {
+        fireBarcodeCodeCopiedPixel(for: code)
         ActionMessageView.present(message: UserText.simplifiedCodeCopiedToast)
     }
 
@@ -840,9 +854,19 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 // MARK: - Simplified Sync
 
 extension SyncSettingsViewController {
-    var simplifiedSyncAnotherDevicePromptState: SyncAnotherDevicePromptState {
-        let rawValue = syncSettingsStore.object(forKey: SyncAnotherDevicePromptState.storageKey) as? Int ?? 0
-        return SyncAnotherDevicePromptState(rawValue: rawValue) ?? .dismissed
+    private func refreshDevicesAfterSimplifiedSyncEnable() async {
+        do {
+            let devices = try await syncService.fetchDevices()
+            mapDevices(devices)
+        } catch {
+            Logger.sync.error("Failed to fetch devices after simplified sync enable: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    func showSimplifiedSyncEnabledToast() {
+        DispatchQueue.main.async {
+            ActionMessageView.present(message: UserText.simplifiedSyncEnabledToast)
+        }
     }
 
     func simplifiedCopyRecoveryCode() {
@@ -851,13 +875,13 @@ extension SyncSettingsViewController {
         ActionMessageView.present(message: UserText.simplifiedRecoveryCodeCopiedToast)
     }
 
-    func simplifiedSyncAnotherDevicePromptWasDismissed() {
-        let next = simplifiedSyncAnotherDevicePromptState.next
-        syncSettingsStore.set(next.rawValue, forKey: SyncAnotherDevicePromptState.storageKey)
+    private enum SimplifiedSyncSettingsKey: String {
+        case hasShownSimplifiedSyncAnotherDevicePrompt = "sync.simplified.sync-another-device-prompt.shown"
     }
 
-    private func resetSimplifiedSyncAnotherDevicePromptState() {
-        syncSettingsStore.set(SyncAnotherDevicePromptState.notYetShown.rawValue, forKey: SyncAnotherDevicePromptState.storageKey)
+    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool {
+        get { syncSettingsStore.object(forKey: SimplifiedSyncSettingsKey.hasShownSimplifiedSyncAnotherDevicePrompt.rawValue) as? Bool ?? false }
+        set { syncSettingsStore.set(newValue, forKey: SimplifiedSyncSettingsKey.hasShownSimplifiedSyncAnotherDevicePrompt.rawValue) }
     }
 }
 

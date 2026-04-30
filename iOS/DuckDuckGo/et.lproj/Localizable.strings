@@ -213,6 +213,24 @@
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Tee foto";
 
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Analüütiliste ülesannete jaoks";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Laiendatud arutlus";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Vastab kiiresti";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Kiire";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Keeruliste ülesannete jaoks";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Arutlus";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Kohanda vastuseid";
 
@@ -2181,7 +2199,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Tõrkeotsing veebilehtedel";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Fire vahekaardid on teistest brauseriandmetest isoleeritud ja nende andmed põletatakse pärast seda, kui sa need kõik sulged. Neil on sama jälgimiskaitse kui teistel vahekaardil.";
+"fire.mode.empty.state.description" = "Fire vahekaardid on teistest brauseriandmetest isoleeritud. Nende andmed põletatakse, kui sa need kõik sulged. Need pakuvad sulle sama jälgimiskaitset kui teisedki vahekaardid.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Uus Fire vahekaart";
@@ -2193,7 +2211,7 @@
 "fire.mode.menu.promotion.badge" = "Uus";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Sirvi kohalikku ajalugu salvestamata või logi saitidele sisse teise kontoga.";
+"fire.mode.ntp.promotion.description" = "Uus! Sirvi kohalikku ajalugu salvestamata või logi saitidele sisse teise kontoga.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Mitte praegu";
@@ -2203,6 +2221,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Proovi Fire vahekaarte";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Proovi Fire vahekaarte, et sirvida ilma kohalikku ajalugu salvestamata.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Uus: Fire vahekaardid";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire vahekaart";
@@ -2328,6 +2352,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Otsi või sisesta aadress";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Uus Fire vahekaart";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Uus vaheleht";
@@ -4177,7 +4204,7 @@
 "sync.delete.all.confirm.action" = "Kustuta serveri andmed";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Kõigi seadmete ühendus katkestatakse ja sinu sünkroonitud andmed kustutatakse serverist.";
+"sync.delete.all.confirm.message" = "Sinu varukoopia kustutatakse serverist. Kõigi seadmete sünkroonimine katkestatakse, kuid ühestki seadmest ei kustutata midagi.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Kas kustutada serveri andmed?";
@@ -4244,6 +4271,27 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Kas seade eemaldada?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kood kopeeritud";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup lubatud";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Taastamiskood kopeeritud";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Sync & Backupi ei õnnestunud lubada";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Lülita välja";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "See ei mõjuta sinu seadmes olevaid järjehoidjaid ja paroole.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Kas lülitada Sync & Backup välja?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Eemaldage";

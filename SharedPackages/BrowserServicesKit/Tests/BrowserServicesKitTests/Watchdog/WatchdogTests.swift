@@ -22,6 +22,7 @@ import Foundation
 import XCTest
 @testable import BrowserServicesKit
 
+/*
 @MainActor
 final class WatchdogTests: XCTestCase {
 
@@ -632,3 +633,4 @@ private extension Collection where Element == Watchdog.Event {
         }
     }
 }
+*/

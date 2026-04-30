@@ -218,7 +218,7 @@ final class TabSuspensionServiceTests: XCTestCase {
         XCTAssertEqual(call?.pixel.parameters?["memory_reclaimed_mb"], "0")
     }
 
-    func testWhenNoTabsSuspended_ThenPixelIsNotFired() {
+    func testWhenNoTabsSuspended_ThenPixelIsFiredWithZeroCounts() {
         featureFlagger.enabledFeatureFlags = [.tabSuspension]
         // Tab selected 5 minutes ago — won't be suspended
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now.addingTimeInterval(-5 * 60))
@@ -228,7 +228,13 @@ final class TabSuspensionServiceTests: XCTestCase {
 
         postMemoryPressure()
 
-        XCTAssertTrue(mockPixelFiring.fireCalls.isEmpty)
+        XCTAssertEqual(mockPixelFiring.fireCalls.count, 1)
+        let call = mockPixelFiring.fireCalls.first
+        XCTAssertEqual(call?.pixel.name, "m_mac_tab_suspension")
+        XCTAssertEqual(call?.pixel.parameters?["trigger"], "critical_memory_pressure")
+        XCTAssertEqual(call?.pixel.parameters?["tabs_suspended"], "0")
+        XCTAssertEqual(call?.pixel.parameters?["memory_reclaimed_mb"], "0")
+        XCTAssertEqual(call?.frequency, .dailyAndCount)
     }
 
     func testWhenFeatureFlagDisabled_ThenPixelIsNotFired() {

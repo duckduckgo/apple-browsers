@@ -53,6 +53,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   feedbackViewCreator: @escaping () -> (any View),
                                   eventsHandler: EventMapping<JobEvent>,
                                   applicationNameForUserAgent: @escaping () -> String?,
+                                  freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
                                   isWebViewInspectable: Bool = false,
                                   freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
@@ -165,7 +166,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             wideEvent: wideEvent,
             eventsHandler: eventsHandler,
             isWebViewInspectable: isWebViewInspectable,
-            freeTrialConversionService: freeTrialConversionService
+            freeTrialConversionService: freeTrialConversionService,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager
         )
     }
 }

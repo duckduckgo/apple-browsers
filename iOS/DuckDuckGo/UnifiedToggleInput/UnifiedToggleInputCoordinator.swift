@@ -133,6 +133,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var floatingSubmitViewController: UnifiedToggleInputFloatingSubmitViewController
     weak var delegate: UnifiedToggleInputDelegate?
 
+    private(set) var host: UnifiedToggleInputHost
     private(set) var isToggleEnabled: Bool
     private(set) var displayState: UnifiedToggleInputDisplayState = .hidden
     private(set) var textState: InputTextState = .empty
@@ -206,6 +207,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Initialization
 
     init(
+        host: UnifiedToggleInputHost = .omnibar,
         isToggleEnabled: Bool,
         isFireTab: Bool = false,
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
@@ -214,6 +216,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
     ) {
+        self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.toggleModeStorage = toggleModeStorage
         self.modelStore = UTIModelStore(

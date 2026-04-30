@@ -27,7 +27,7 @@ final class UTIRenderStateTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: true)
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true)
     }
 
     override func tearDown() {
@@ -222,7 +222,7 @@ final class UTIRenderStateTests: XCTestCase {
     }
 
     func test_inlineDismiss_hiddenWhenToggleDisabled() {
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: false)
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: false)
         sut.activateFromOmnibar(cardPosition: .top)
         XCTAssertFalse(sut.computeRenderState().isInlineDismissActive)
     }
@@ -230,7 +230,7 @@ final class UTIRenderStateTests: XCTestCase {
     func test_floatingDismiss_visibleAtTopWhenToggleDisabled() {
         // Regression: with the toggle setting off, the card has no top row for the inline X;
         // the floating X must still appear so users can dismiss the omnibar session.
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: false)
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: false)
         sut.activateFromOmnibar(cardPosition: .top)
         XCTAssertTrue(sut.computeRenderState().isFloatingDismissVisible)
     }

@@ -253,4 +253,27 @@ final class UTIRenderStateTests: XCTestCase {
     func test_floatingDismiss_hiddenWhenContentHidden() {
         XCTAssertFalse(sut.computeRenderState().isFloatingDismissVisible)
     }
+
+    // MARK: - Host-Driven Render Flags
+
+    func test_omnibarHost_renderState_hasToggleAndFireVisible_chipHidden() {
+        sut.activateFromOmnibar()
+        let state = sut.computeRenderState()
+        XCTAssertTrue(state.isToggleVisible)
+        XCTAssertTrue(state.isFireVisible)
+        XCTAssertTrue(state.isSuggestionsAllowed)
+        XCTAssertTrue(state.isFloatingSubmitAllowed)
+        XCTAssertFalse(state.isPageContextChipVisible)
+    }
+
+    func test_contextualChatHost_renderState_hidesToggleFireSuggestionsFloatingSubmit_showsChip() {
+        sut = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false)
+        sut.showExpanded()
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.isToggleVisible)
+        XCTAssertFalse(state.isFireVisible)
+        XCTAssertFalse(state.isSuggestionsAllowed)
+        XCTAssertFalse(state.isFloatingSubmitAllowed)
+        XCTAssertTrue(state.isPageContextChipVisible)
+    }
 }

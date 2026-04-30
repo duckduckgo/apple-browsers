@@ -31,6 +31,11 @@ struct UTIRenderState: Equatable {
     var isToggleEnabled: Bool
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
+    var isToggleVisible: Bool
+    var isFireVisible: Bool
+    var isSuggestionsAllowed: Bool
+    var isFloatingSubmitAllowed: Bool
+    var isPageContextChipVisible: Bool
 
     var viewConfig: UTIViewConfig {
         UTIViewConfig(
@@ -40,7 +45,8 @@ struct UTIRenderState: Equatable {
             isToolbarSubmitHidden: isToolbarSubmitHidden,
             inactiveAppearance: inactiveAppearance,
             inputMode: inputMode,
-            isTopBarPosition: usesOmnibarMargins
+            isTopBarPosition: usesOmnibarMargins,
+            isToggleVisible: isToggleVisible
         )
     }
 

@@ -72,6 +72,7 @@ final class AIChatContextualUTIHost {
             coordinator.viewController.view.trailingAnchor.constraint(equalTo: webVC.view.trailingAnchor),
             coordinator.viewController.view.bottomAnchor.constraint(equalTo: webVC.view.keyboardLayoutGuide.topAnchor),
         ])
+        webVC.anchorWebViewBottom(to: coordinator.viewController.view.topAnchor)
         coordinator.viewController.didMove(toParent: webVC)
         coordinator.showExpanded()
         Logger.contextualUTI.info("UTIHost: installed at bottom of contextual web VC")

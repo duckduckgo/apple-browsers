@@ -54,6 +54,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let userAgentManager: UserAgentManaging
     private let utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)?
     private var utiHost: AIChatContextualUTIHost?
+    private var webViewBottomConstraint: NSLayoutConstraint?
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -236,6 +237,14 @@ final class AIChatContextualWebViewController: UIViewController {
         webView.reload()
     }
 
+    /// Re-anchors the web view's bottom edge so it doesn't render under any subview installed below it (e.g. native UTI).
+    func anchorWebViewBottom(to anchor: NSLayoutYAxisAnchor) {
+        webViewBottomConstraint?.isActive = false
+        let newConstraint = webView.bottomAnchor.constraint(equalTo: anchor)
+        newConstraint.isActive = true
+        webViewBottomConstraint = newConstraint
+    }
+
     func loadChatURL(_ url: URL) {
         Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(url.absoluteString)")
         isPageReady = false
@@ -245,7 +254,7 @@ final class AIChatContextualWebViewController: UIViewController {
         hasPendingChipContext = false
         pendingChipContext = nil
         loadingView.startAnimating()
-        webView.load(URLRequest(url: url))
+        webView.load(URLRequest(url: applyNativeInputIfNeeded(to: url)))
     }
 
     // MARK: - Private Methods
@@ -256,11 +265,14 @@ final class AIChatContextualWebViewController: UIViewController {
         view.addSubview(webView)
         view.addSubview(loadingView)
 
+        let webViewBottom = webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        webViewBottomConstraint = webViewBottom
+
         NSLayoutConstraint.activate([
             webView.topAnchor.constraint(equalTo: view.topAnchor),
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            webViewBottom,
 
             loadingView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
@@ -280,14 +292,15 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func loadAIChat() {
         loadingView.startAnimating()
-        var contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
-        if featureFlagger.isFeatureOn(.unifiedToggleInput) {
-            contextualURL = AIChatURLParameters.nativeInputURL(from: contextualURL)
-            Logger.contextualUTI.info("loadAIChat - nativeInput=1 applied (flag on)")
-        }
+        let contextualURL = applyNativeInputIfNeeded(to: aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar"))
         Logger.aiChat.debug("[ContextualWebVC] loadAIChat - loading URL: \(contextualURL.absoluteString)")
-        let request = URLRequest(url: contextualURL)
-        webView.load(request)
+        webView.load(URLRequest(url: contextualURL))
+    }
+
+    private func applyNativeInputIfNeeded(to url: URL) -> URL {
+        guard featureFlagger.isFeatureOn(.unifiedToggleInput) else { return url }
+        Logger.contextualUTI.debug("[ContextualWebVC] applying nativeInput=1 (flag on)")
+        return AIChatURLParameters.nativeInputURL(from: url)
     }
 
     private func setupDownloadHandler() {

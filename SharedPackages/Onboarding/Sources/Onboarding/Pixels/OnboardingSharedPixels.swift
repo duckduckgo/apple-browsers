@@ -92,10 +92,6 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     private let currentDateProvider: () -> Date
     private let pixelFiring: PixelFiring?
 
-    private var source: OnboardingSourcePixelParameter = .default
-    private var flow: OnboardingFlowTypePixelParameter = .default
-    private var variant: OnboardingVariantPixelParameter?
-
     private var daysSinceInstall: Int? {
         guard let installDate = installDateProvider() else { return nil }
         return Calendar.current.numberOfDaysBetween(installDate, and: currentDateProvider())

@@ -232,7 +232,7 @@ class SuggestionTrayViewController: UIViewController {
         case .autocomplete(let query):
             canShow = canDisplayAutocompleteSuggestions(forQuery: query, animated: animated)
         case .favorites:
-            canShow = canDisplayFavorites || hasRemoteMessages || pendingEscapeHatchModel != nil
+            canShow = true
         }
         return canShow
     }

@@ -71,6 +71,7 @@ final class AIChatContextualSheetCoordinator {
 
     /// Handler for page context - single source of truth.
     let pageContextHandler: AIChatPageContextHandling
+    private let originatingTabURLPublisher: AnyPublisher<URL?, Never>
     private var contextUpdateCancellable: AnyCancellable?
 
     /// Handles all pixel firing for contextual mode.
@@ -97,9 +98,7 @@ final class AIChatContextualSheetCoordinator {
 
     /// Publishes the URL of the page that originated the contextual chat session, with replay of the last value.
     var originatingURLPublisher: AnyPublisher<URL?, Never> {
-        pageContextHandler.contextPublisher
-            .map { $0.flatMap { URL(string: $0.contextData.url) } }
-            .eraseToAnyPublisher()
+        originatingTabURLPublisher
     }
 
     // MARK: - Initialization
@@ -111,6 +110,7 @@ final class AIChatContextualSheetCoordinator {
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
          pageContextHandler: AIChatPageContextHandling,
+         originatingTabURLPublisher: AnyPublisher<URL?, Never>,
          isFireTab: Bool = false,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
@@ -122,6 +122,7 @@ final class AIChatContextualSheetCoordinator {
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
         self.pageContextHandler = pageContextHandler
+        self.originatingTabURLPublisher = originatingTabURLPublisher
         self.isFireTab = isFireTab
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.debugSettings = debugSettings
@@ -290,9 +291,12 @@ private extension AIChatContextualSheetCoordinator {
             pixelHandler: pixelHandler,
             utiHostInstaller: { [weak self] webVC in
                 guard let self else { return nil }
+                let attachedURLPublisher = self.pageContextHandler.contextPublisher
+                    .map { $0.flatMap { URL(string: $0.contextData.url) } }
+                    .eraseToAnyPublisher()
                 let host = AIChatContextualUTIHost(
                     originatingURLPublisher: self.originatingURLPublisher,
-                    attachedURLPublisher: self.originatingURLPublisher,
+                    attachedURLPublisher: attachedURLPublisher,
                     pageContextHandler: self.pageContextHandler,
                     isFireTab: self.isFireTab
                 )

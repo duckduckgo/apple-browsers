@@ -292,6 +292,11 @@ class TabViewController: UIViewController {
         return manager
     }()
 
+    private let urlSubject = CurrentValueSubject<URL?, Never>(nil)
+    var urlPublisher: AnyPublisher<URL?, Never> {
+        urlSubject.eraseToAnyPublisher()
+    }
+
     public var url: URL? {
         willSet {
             if newValue != url {
@@ -303,6 +308,7 @@ class TabViewController: UIViewController {
             delegate?.tabLoadingStateDidChange(tab: self)
             checkLoginDetectionAfterNavigation()
             updateTrackerAnimationDomainState(for: url)
+            urlSubject.send(url)
         }
     }
     
@@ -567,6 +573,7 @@ class TabViewController: UIViewController {
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
             pageContextHandler: pageContextHandler,
+            originatingTabURLPublisher: urlPublisher,
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler
         )

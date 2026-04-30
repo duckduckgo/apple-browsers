@@ -119,6 +119,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockPageContextHandler: MockPageContextHandler!
     private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
+    private var originatingTabURLSubject: CurrentValueSubject<URL?, Never>!
     private var cancellables: Set<AnyCancellable>!
 
     // MARK: - Setup
@@ -130,6 +131,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         mockPageContextHandler = MockPageContextHandler()
         contentBlockingSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
+        originatingTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
         sut = AIChatContextualSheetCoordinator(
             voiceSearchHelper: MockVoiceSearchHelper(),
             aiChatSettings: mockSettings,
@@ -137,7 +139,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: mockFeatureFlagger,
-            pageContextHandler: mockPageContextHandler
+            pageContextHandler: mockPageContextHandler,
+            originatingTabURLPublisher: originatingTabURLSubject.eraseToAnyPublisher()
         )
         mockDelegate = MockDelegate()
         mockPresentingVC = MockPresentingViewController()
@@ -154,6 +157,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockFeatureFlagger = nil
         mockPageContextHandler = nil
         contentBlockingSubject = nil
+        originatingTabURLSubject = nil
         cancellables = nil
         super.tearDown()
     }
@@ -459,32 +463,27 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     // MARK: - originatingURLPublisher Tests
 
     @MainActor
-    func test_originatingURLPublisher_mapsContextURL() throws {
-        let contextData = AIChatPageContextData(title: "Test", favicon: [], url: "https://example.com", content: "", truncated: false, fullContentLength: 0)
-        let context = AIChatPageContext(contextData: contextData, favicon: nil)
-
+    func test_originatingURLPublisher_emitsTabURL() throws {
         var received: [URL?] = []
         sut.originatingURLPublisher
             .sink { received.append($0) }
             .store(in: &cancellables)
 
-        mockPageContextHandler.sendContext(context)
+        originatingTabURLSubject.send(URL(string: "https://example.com")!)
 
         XCTAssertEqual(received.last??.absoluteString, "https://example.com")
     }
 
     @MainActor
-    func test_originatingURLPublisher_emitsNilWhenContextCleared() throws {
-        let contextData = AIChatPageContextData(title: "Test", favicon: [], url: "https://example.com", content: "", truncated: false, fullContentLength: 0)
-        let context = AIChatPageContext(contextData: contextData, favicon: nil)
-        mockPageContextHandler.sendContext(context)
+    func test_originatingURLPublisher_emitsNilOnClear() throws {
+        originatingTabURLSubject.send(URL(string: "https://example.com")!)
 
         var received: [URL?] = []
         sut.originatingURLPublisher
             .sink { received.append($0) }
             .store(in: &cancellables)
 
-        mockPageContextHandler.sendContext(nil)
+        originatingTabURLSubject.send(nil)
 
         XCTAssertNil(received.last as? URL)
     }

@@ -278,6 +278,45 @@ final class AIChatModelsServiceTests: XCTestCase {
         XCTAssertEqual(response.attachmentLimits?.limits(for: .internal).files.maxPagesPerFile, 50)
     }
 
+    func testWhenAttachmentLimitsAreMalformed_ThenModelsStillDecode() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "gpt-4o",
+                    "name": "GPT-4o",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": true,
+                    "supportedTools": [],
+                    "accessTier": ["free"]
+                }
+            ],
+            "attachmentLimits": {
+                "free": {
+                    "files": {
+                        "maxPerConversation": 3,
+                        "maxFileSizeMB": 5,
+                        "maxTotalFileSizeBytes": 5242880,
+                        "maxPagesPerFile": 8
+                    },
+                    "images": {
+                        "maxPerTurn": 3,
+                        "maxPerConversation": 5,
+                        "maxInputCharsWithAttachments": 4500
+                    }
+                }
+            }
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models.first?.id, "gpt-4o")
+        XCTAssertNil(response.attachmentLimits)
+    }
+
     // MARK: - AIChatModel Mapping Tests
 
     func testWhenRemoteModelIsMapped_ThenFieldsAreCorrect() {

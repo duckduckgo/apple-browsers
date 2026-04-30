@@ -56,6 +56,22 @@ public struct AIChatModelsResponse: Decodable {
         self.models = models
         self.attachmentLimits = attachmentLimits
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case models
+        case attachmentLimits
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        models = try container.decode([AIChatRemoteModel].self, forKey: .models)
+
+        do {
+            attachmentLimits = try container.decodeIfPresent(AIChatAttachmentLimits.self, forKey: .attachmentLimits)
+        } catch {
+            attachmentLimits = nil
+        }
+    }
 }
 
 public struct AIChatRemoteModel: Decodable, Equatable {

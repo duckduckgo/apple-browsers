@@ -63,9 +63,9 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(sut.remainingImagesInConversation, 5)
     }
 
-    // MARK: - Model Switch: Preserve Attachments
+    // MARK: - Model Switch: Unsupported Attachments
 
-    func testWhenModelDoesNotSupportImagesThenAttachmentsArePreserved() {
+    func testWhenModelDoesNotSupportImagesThenImageAttachmentsAreCleared() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "image-model"
         let sut = makeCoordinator(preferences: prefs)
@@ -78,7 +78,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
 
         sut.updateSelectedModel("non-image-model")
-        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 0)
     }
 
     func testWhenModelDoesNotSupportImagesThenStripLayoutSuppressed() {
@@ -96,7 +96,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertTrue(sut.viewController.isImageButtonHidden)
     }
 
-    func testWhenSwitchingBackToImageModelThenStripLayoutRestored() {
+    func testWhenSwitchingBackToImageModelThenClearedImageAttachmentsAreNotRestored() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "image-model"
         let sut = makeCoordinator(preferences: prefs)
@@ -110,7 +110,23 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.updateSelectedModel("non-image-model")
         sut.updateSelectedModel("image-model")
         XCTAssertFalse(sut.viewController.isImageButtonHidden)
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 0)
+    }
+
+    func testWhenModelDoesNotSupportFilesThenFileAttachmentsAreCleared() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [
+            makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"]),
+            makeModel(id: "image-model", supportsImageUpload: true)
+        ]
+        sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+
+        sut.updateSelectedModel("image-model")
+
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 0)
     }
 
     // MARK: - Image Button Enabled State
@@ -233,7 +249,41 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.updateSelectedModel("non-image-model")
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
 
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 0)
         XCTAssertNil(delegate.submittedImages)
+    }
+
+    func testWhenFileUsageBecomesOverLimitBeforeSubmitThenPromptDoesNotSubmitAndAttachmentsRemain() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
+        sut.attachmentUsage = AIChatAttachmentUsage(imagesUsed: 0, filesUsed: 3, fileSizeBytesUsed: 0)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertNil(delegate.submittedFiles)
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+    }
+
+    func testWhenImageUsageBecomesOverLimitBeforeSubmitThenPromptDoesNotSubmitAndAttachmentsRemain() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true)]
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        let image = UIImage(systemName: "photo")!
+        sut.addImageAttachment(image: image, fileName: "a.jpg")
+        sut.attachmentUsage = AIChatAttachmentUsage(imagesUsed: 5, filesUsed: 0, fileSizeBytesUsed: 0)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertNil(delegate.submittedImages)
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
     }
 
     // MARK: - Helpers

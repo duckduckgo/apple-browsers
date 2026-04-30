@@ -20,7 +20,6 @@
 import AIChat
 import DesignResourcesKit
 import DesignResourcesKitIcons
-import PDFKit
 import PhotosUI
 import UIKit
 import UniformTypeIdentifiers
@@ -47,6 +46,30 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         let title: String
         let icon: UIImage
         let handler: () -> Void
+    }
+
+    struct FileMetadata: Sendable {
+        let fileName: String
+        let mimeType: String
+        let fileSizeBytes: Int?
+        fileprivate let url: URL
+    }
+
+    private enum PDFInspectionResult: Sendable {
+        case notPDF
+        case readable(pageCount: Int)
+        case encrypted
+        case unreadable
+
+        var pageCount: Int? {
+            guard case .readable(let pageCount) = self else { return nil }
+            return pageCount
+        }
+
+        var isEncrypted: Bool {
+            guard case .encrypted = self else { return false }
+            return true
+        }
     }
 
     private final class MenuItemButton: UIButton {
@@ -179,6 +202,8 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     var onExpandIfNeeded: (() -> Void)?
     var onImagePicked: ((UIImage, String) -> Void)?
     var onFilePicked: ((AIChatFileAttachment) -> Void)?
+    var onFileValidationFailed: ((String) -> Void)?
+    var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
 
     func presentAttachmentOptions(
         from sourceView: UIView,
@@ -260,7 +285,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         presenter.present(picker, animated: true)
     }
 
-    nonisolated private static func fileAttachment(from url: URL) -> AIChatFileAttachment? {
+    nonisolated private static func fileMetadata(from url: URL) -> FileMetadata? {
         let hasScopedAccess = url.startAccessingSecurityScopedResource()
         defer {
             if hasScopedAccess {
@@ -272,25 +297,50 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
             let values = try url.resourceValues(forKeys: [.contentTypeKey, .fileSizeKey, .nameKey])
             let fileName = values.name ?? url.lastPathComponent
             let mimeType = values.contentType?.preferredMIMEType ?? "application/octet-stream"
-            let data = try Data(contentsOf: url)
-            let pageCount = Self.pdfPageCount(data: data, mimeType: mimeType)
+            return FileMetadata(fileName: fileName, mimeType: mimeType, fileSizeBytes: values.fileSize, url: url)
+        } catch {
+            return nil
+        }
+    }
+
+    nonisolated private static func fileAttachment(from metadata: FileMetadata) -> AIChatFileAttachment? {
+        let hasScopedAccess = metadata.url.startAccessingSecurityScopedResource()
+        defer {
+            if hasScopedAccess {
+                metadata.url.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        do {
+            let data = try Data(contentsOf: metadata.url)
+            let pdfInspection = Self.inspectPDF(data: data, mimeType: metadata.mimeType)
 
             return AIChatFileAttachment(
                 data: data,
-                fileName: fileName,
-                mimeType: mimeType,
-                fileSizeBytes: values.fileSize ?? data.count,
-                pageCount: pageCount,
-                fileURL: url
+                fileName: metadata.fileName,
+                mimeType: metadata.mimeType,
+                fileSizeBytes: metadata.fileSizeBytes ?? data.count,
+                pageCount: pdfInspection.pageCount,
+                isEncrypted: pdfInspection.isEncrypted
             )
         } catch {
             return nil
         }
     }
 
-    nonisolated private static func pdfPageCount(data: Data, mimeType: String) -> Int? {
-        guard mimeType == "application/pdf" else { return nil }
-        return PDFDocument(data: data)?.pageCount
+    nonisolated private static func inspectPDF(data: Data, mimeType: String) -> PDFInspectionResult {
+        guard mimeType == "application/pdf" else { return .notPDF }
+        guard let provider = CGDataProvider(data: data as CFData),
+              let document = CGPDFDocument(provider) else {
+            return .unreadable
+        }
+        guard document.isEncrypted == false || document.isUnlocked else {
+            return .encrypted
+        }
+
+        let pageCount = document.numberOfPages
+        guard pageCount > 0 else { return .unreadable }
+        return .readable(pageCount: pageCount)
     }
 }
 
@@ -338,11 +388,28 @@ extension UnifiedToggleInputAttachmentPresenter: UIDocumentPickerDelegate {
         onExpandIfNeeded?()
         guard let url = urls.first else { return }
 
-        Task { [url] in
-            let fileAttachment = await Task.detached(priority: .userInitiated) {
-                Self.fileAttachment(from: url)
+        Task { [weak self, url] in
+            guard let self else { return }
+            let metadata = await Task.detached(priority: .userInitiated) {
+                Self.fileMetadata(from: url)
             }.value
-            guard let fileAttachment else { return }
+            guard let metadata else {
+                onFileValidationFailed?(UserText.aiChatAttachmentFileUnreadable)
+                return
+            }
+
+            if let validationMessage = fileMetadataValidationMessage?(metadata) {
+                onFileValidationFailed?(validationMessage)
+                return
+            }
+
+            let fileAttachment = await Task.detached(priority: .userInitiated) {
+                Self.fileAttachment(from: metadata)
+            }.value
+            guard let fileAttachment else {
+                onFileValidationFailed?(UserText.aiChatAttachmentFileUnreadable)
+                return
+            }
 
             onFilePicked?(fileAttachment)
         }

@@ -18,14 +18,14 @@
 
 import Foundation
 
-public struct AIChatFileAttachment: Identifiable {
+public struct AIChatFileAttachment: Identifiable, Sendable {
     public let id: UUID
     public let data: Data
     public let fileName: String
     public let mimeType: String
     public let fileSizeBytes: Int
     public let pageCount: Int?
-    public let fileURL: URL?
+    public let isEncrypted: Bool
 
     public init(
         id: UUID = UUID(),
@@ -34,7 +34,7 @@ public struct AIChatFileAttachment: Identifiable {
         mimeType: String,
         fileSizeBytes: Int? = nil,
         pageCount: Int? = nil,
-        fileURL: URL? = nil
+        isEncrypted: Bool = false
     ) {
         self.id = id
         self.data = data
@@ -42,6 +42,6 @@ public struct AIChatFileAttachment: Identifiable {
         self.mimeType = mimeType
         self.fileSizeBytes = fileSizeBytes ?? data.count
         self.pageCount = pageCount
-        self.fileURL = fileURL
+        self.isEncrypted = isEncrypted
     }
 }

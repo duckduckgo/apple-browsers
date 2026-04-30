@@ -121,6 +121,15 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         XCTAssertEqual(policy.fileValidationMessage(for: file), UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: 5))
     }
 
+    func test_fileMetadataValidation_rejectsFileAboveMaxFileSizeBeforeDataIsLoaded() {
+        let policy = makePolicy(attachmentLimits: makeLimits(maxFileSizeMB: 5))
+
+        XCTAssertEqual(
+            policy.fileMetadataValidationMessage(mimeType: "application/pdf", fileSizeBytes: 5_242_881),
+            UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: 5)
+        )
+    }
+
     func test_fileValidation_rejectsFileAboveRemainingTotalSize() {
         let policy = makePolicy(
             attachmentLimits: makeLimits(maxTotalFileSizeBytes: 5_242_880),
@@ -141,6 +150,16 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         XCTAssertEqual(policy.fileValidationMessage(for: file), UserText.aiChatAttachmentFileCountLimit(maxFilesPerConversation: 3))
     }
 
+    func test_fileValidation_rejectsFileWhenConversationCountLimitIsExceeded() {
+        let policy = makePolicy(
+            attachmentLimits: makeLimits(maxFilesPerConversation: 3),
+            attachmentUsage: AIChatAttachmentUsage(imagesUsed: 0, filesUsed: 4, fileSizeBytesUsed: 0)
+        )
+        let file = makeFile()
+
+        XCTAssertEqual(policy.fileValidationMessage(for: file), UserText.aiChatAttachmentFileCountLimit(maxFilesPerConversation: 3))
+    }
+
     func test_fileValidation_rejectsPdfAboveMaxPages() {
         let policy = makePolicy(attachmentLimits: makeLimits(maxPagesPerFile: 15))
         let file = makeFile(pageCount: 16)
@@ -153,6 +172,13 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         let file = makeFile(pageCount: nil)
 
         XCTAssertEqual(policy.fileValidationMessage(for: file), UserText.aiChatAttachmentFileUnreadable)
+    }
+
+    func test_fileValidation_rejectsEncryptedPdfWithEncryptedMessageWhenPageLimitApplies() {
+        let policy = makePolicy(attachmentLimits: makeLimits(maxPagesPerFile: 15))
+        let file = makeFile(pageCount: nil, isEncrypted: true)
+
+        XCTAssertEqual(policy.fileValidationMessage(for: file), UserText.aiChatAttachmentFileEncrypted)
     }
 
     func test_fileValidation_allowsPdfAtMaxPages() {
@@ -184,6 +210,35 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         )
 
         XCTAssertEqual(policy.promptValidationMessage(for: "123456"), UserText.aiChatAttachmentPromptTooLong)
+    }
+
+    func test_fileSubmissionValidation_allowsFilesAtConversationLimit() {
+        let policy = makePolicy(
+            attachmentLimits: makeLimits(maxFilesPerConversation: 3),
+            pendingAttachments: (0..<3).map { _ in makeFileAttachment() }
+        )
+
+        XCTAssertNil(policy.fileSubmissionValidationMessage())
+    }
+
+    func test_fileSubmissionValidation_rejectsFilesWhenUsageChangesBeforeSubmit() {
+        let policy = makePolicy(
+            attachmentLimits: makeLimits(maxFilesPerConversation: 3),
+            attachmentUsage: AIChatAttachmentUsage(imagesUsed: 0, filesUsed: 3, fileSizeBytesUsed: 0),
+            pendingAttachments: [makeFileAttachment()]
+        )
+
+        XCTAssertEqual(policy.fileSubmissionValidationMessage(), UserText.aiChatAttachmentFileCountLimit(maxFilesPerConversation: 3))
+    }
+
+    func test_imageSubmissionValidation_rejectsImagesWhenUsageChangesBeforeSubmit() {
+        let policy = makePolicy(
+            attachmentLimits: makeLimits(maxImagesPerConversation: 5),
+            attachmentUsage: AIChatAttachmentUsage(imagesUsed: 5, filesUsed: 0, fileSizeBytesUsed: 0),
+            pendingAttachments: [makeImage()]
+        )
+
+        XCTAssertEqual(policy.imageSubmissionValidationMessage(), UserText.aiChatAttachmentImageCountLimit(maxImagesPerConversation: 5))
     }
 
     private func makePolicy(
@@ -258,14 +313,16 @@ final class UTIAttachmentPolicyTests: XCTestCase {
     private func makeFile(
         size: Int = 1_000,
         mimeType: String = "application/pdf",
-        pageCount: Int? = 1
+        pageCount: Int? = 1,
+        isEncrypted: Bool = false
     ) -> AIChatFileAttachment {
         AIChatFileAttachment(
             data: Data(repeating: 0, count: size),
             fileName: "test.pdf",
             mimeType: mimeType,
             fileSizeBytes: size,
-            pageCount: pageCount
+            pageCount: pageCount,
+            isEncrypted: isEncrypted
         )
     }
 

@@ -181,6 +181,9 @@
 /* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
 "aichat.attachment.file.count.limit" = "You can only attach %d files per conversation.";
 
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "We can't read the files attached because at least one of them is encrypted.";
+
 /* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
 "aichat.attachment.file.exceeds.conversation.limit" = "The attached files exceed the total size limit of %d MB.";
 
@@ -190,8 +193,11 @@
 /* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
 "aichat.attachment.file.too.many.pages" = "One of the files attached has more pages than we support. Please upload files with %d pages or fewer.";
 
-/* Error message displayed when one or more attached files are encrypted and cannot be read */
-"aichat.attachment.file.unreadable" = "We can't read the files attached because at least one of them is encrypted.";
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "We can't read one of the files attached. Please check that it isn't corrupted and try again.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "You can only attach %d images per conversation.";
 
 /* Top-level attachment menu option to attach a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Attach File";

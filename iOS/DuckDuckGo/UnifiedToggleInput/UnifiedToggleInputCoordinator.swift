@@ -258,6 +258,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentPresenter.onFilePicked = { [weak self] attachment in
             self?.addFileAttachment(attachment)
         }
+        attachmentPresenter.onFileValidationFailed = { [weak self] message in
+            self?.presentAttachmentValidationError(message)
+        }
+        attachmentPresenter.fileMetadataValidationMessage = { [weak self] metadata in
+            self?.attachmentPolicy.fileMetadataValidationMessage(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes)
+        }
         modelStore.onModelsUpdated = { [weak self] in
             self?.handleModelsUpdated()
         }
@@ -1101,6 +1107,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         persistDraftToStore()
     }
 
+    private func removeUnsupportedAttachmentsForSelectedModel() {
+        guard selectedModel != nil else { return }
+        let unsupportedAttachments = viewController.currentAttachments.filter { attachment in
+            attachmentPolicy.isAttachmentSupported(attachment) == false
+        }
+        unsupportedAttachments.forEach { attachment in
+            viewController.removeAttachment(id: attachment.id)
+        }
+    }
+
     func updateImageButtonVisibility() {
         updateAttachButtonVisibility()
     }
@@ -1149,6 +1165,16 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
+            if let validationMessage = attachmentPolicy.imageSubmissionValidationMessage() {
+                presentAttachmentValidationError(validationMessage)
+                return
+            }
+
+            if let validationMessage = attachmentPolicy.fileSubmissionValidationMessage() {
+                presentAttachmentValidationError(validationMessage)
+                return
+            }
+
             if let validationMessage = attachmentPolicy.promptValidationMessage(for: text) {
                 presentAttachmentValidationError(validationMessage)
                 return
@@ -1287,6 +1313,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func handleModelsUpdated() {
         toolsController.clearSelectionIfUnsupported(for: modelStore)
+        removeUnsupportedAttachmentsForSelectedModel()
         updateModelChipLabel()
         updateReasoningPicker()
         updateImageButtonVisibility()

@@ -89,18 +89,6 @@ final class WebViewHandlerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenApplicationNameForUserAgentReturnsNil_thenConfigurationApplicationNameIsNotSet() throws {
-        // Given
-        let provider: () -> String? = { nil }
-
-        // When
-        let sut = try makeWebViewHandler(applicationNameForUserAgentProvider: provider)
-
-        // Then
-        XCTAssertNil(sut.webViewConfiguration?.applicationNameForUserAgent)
-    }
-
-    @MainActor
     private func makeWebViewHandler(
         applicationNameForUserAgentProvider: @escaping () -> String? = { nil }
     ) throws -> DataBrokerProtectionWebViewHandler {

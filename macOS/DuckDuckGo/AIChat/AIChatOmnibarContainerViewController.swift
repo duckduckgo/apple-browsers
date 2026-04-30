@@ -73,7 +73,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let shadowView = ShadowView()
     private let innerBorderView = ColorView(frame: .zero)
     private let containerView = HitTestableContainerView()
-    private let submitButton = MouseOverButton()
+    private let submitButton = AIChatSubmitButton()
     private let imageUploadButton = AIChatOmnibarToolButton()
     private let toolsButton = AIChatOmnibarToolButton()
     private let imageGenActiveButton = AIChatOmnibarToolButton()
@@ -167,11 +167,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         view.window?.makeFirstResponder(modelPickerButton)
     }
 
-    /// Advances focus to the next tool button after the given one, or to model picker, or back to text view.
+    /// Advances focus to the next tool button after the given one, or to model picker, then to the
+    /// voice-mode submit button (when active), and finally back to the text view.
     private func advanceFocusAfter(_ button: AIChatOmnibarToolButton) {
         let buttons = focusableToolButtons
         guard let index = buttons.firstIndex(of: button) else {
-            onToolButtonTabPressed?()
+            advanceFocusToVoiceSubmitOrText()
             return
         }
         // Find next visible button after current
@@ -179,9 +180,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             view.window?.makeFirstResponder(nextButton)
             return
         }
-        // No more tool buttons — try model picker, then text view
+        // No more tool buttons — try model picker, then voice-mode submit button, then text view
         if isModelPickerButtonAvailableForFocus {
             makeModelPickerButtonFirstResponder()
+        } else {
+            advanceFocusToVoiceSubmitOrText()
+        }
+    }
+
+    /// Used as the final hop in the tab cycle. The voice-mode submit button is the only state in
+    /// which the submit button participates in keyboard navigation — submit mode skips it because
+    /// Enter on the textarea already handles submission.
+    private func advanceFocusToVoiceSubmitOrText() {
+        if submitButtonMode == .voice && submitButton.isEnabled {
+            view.window?.makeFirstResponder(submitButton)
         } else {
             onToolButtonTabPressed?()
         }
@@ -322,12 +334,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             submitButton.image = DesignSystemImages.Glyphs.Size16.voice
             submitButton.toolTip = UserText.aiChatVoiceChatButtonTooltip
             submitButton.setAccessibilityLabel(UserText.aiChatVoiceChatButtonTooltip)
+            // Voice has no Enter-on-empty shortcut, so the button must be tab-reachable.
+            submitButton.refusesFirstResponder = false
             applySubmitButtonAppearance(enabled: true)
         } else {
             submitButtonMode = .submit
             submitButton.image = DesignSystemImages.Glyphs.Size12.arrowRight
             submitButton.toolTip = UserText.aiChatSendButtonTooltip
             submitButton.setAccessibilityLabel(UserText.aiChatSendButtonTooltip)
+            // Enter on the textarea handles submit; skip the button in tab order.
+            submitButton.refusesFirstResponder = true
             applySubmitButtonAppearance(enabled: hasText && !hasBlockingExcess)
         }
     }
@@ -510,6 +526,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         submitButton.cornerRadius = Constants.submitButtonCornerRadius
         submitButton.target = self
         submitButton.action = #selector(submitButtonClicked)
+        // Tab from the (voice-mode) submit button hands focus back to the textarea — same callback
+        // the model picker uses, so the loop closes consistently regardless of which button is last.
+        submitButton.onTabPressed = { [weak self] in self?.onToolButtonTabPressed?() }
 
         // Conservative initial state — arrow icon. `updateSubmitButtonState(for:)` fires
         // immediately on subscribe and swaps to voice mode if the flag is on and input is empty.
@@ -579,7 +598,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.modelName = persistedModelShortName
         modelPickerButton.toolTip = UserText.aiChatModelPickerButtonTooltip
         modelPickerButton.setAccessibilityLabel(UserText.aiChatModelPickerButtonTooltip)
-        modelPickerButton.onTabPressed = { [weak self] in self?.onToolButtonTabPressed?() }
+        // Tab from the model picker advances to the voice-mode submit button (when active), or
+        // falls back to the textarea if voice mode is off.
+        modelPickerButton.onTabPressed = { [weak self] in self?.advanceFocusToVoiceSubmitOrText() }
         containerView.addSubview(modelPickerButton)
 
         attachmentsContainerView.translatesAutoresizingMaskIntoConstraints = false
@@ -1264,5 +1285,53 @@ extension AIChatOmnibarContainerViewController: ThemeUpdateListening {
 
     func applyThemeStyle(theme: ThemeStyleProviding) {
         applyTheme(theme: theme)
+    }
+}
+
+// MARK: - AIChatSubmitButton
+
+/// Specialised submit button that participates in the omnibar's tab cycle when in voice
+/// mode. In submit mode the textarea's Enter handles submission, so the button is skipped
+/// in keyboard navigation; in voice mode there is no Enter shortcut on empty input, so users
+/// need to be able to Tab onto this button and press Enter/Space to start the voice session.
+///
+/// Mirrors the keyboard handling in `AIChatOmnibarToolButton`: Tab calls a callback (so the
+/// container VC can route focus back to the textarea), Enter/Space triggers the button's
+/// action via `NSButton`'s built-in behavior.
+final class AIChatSubmitButton: MouseOverButton {
+
+    /// Set by the container VC. When non-nil, `Tab` advances focus via this callback instead
+    /// of the default first-responder chain.
+    var onTabPressed: (() -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 48: // Tab
+            if let onTabPressed {
+                onTabPressed()
+            } else {
+                super.keyDown(with: event)
+            }
+        case 49, 36: // Space, Return — trigger the button's action manually.
+            // NSButton's default keyDown doesn't reliably fire the action when the button
+            // uses a custom layer-drawn appearance (`bezelStyle = .shadowlessSquare`, no border).
+            if isEnabled, let action, let target {
+                NSApp.sendAction(action, to: target, from: self)
+            }
+        default:
+            super.keyDown(with: event)
+        }
+    }
+
+    // The visible button is a rounded layer drawn by `MouseOverButton`'s hover tracking area.
+    // AppKit's default focus ring fits the image content, which makes it hug the icon instead
+    // of the rounded button frame. Overriding the mask + bounds makes the focus ring match the
+    // button's actual shape.
+    override var focusRingMaskBounds: NSRect {
+        bounds
+    }
+
+    override func drawFocusRingMask() {
+        NSBezierPath(roundedRect: bounds, xRadius: cornerRadius, yRadius: cornerRadius).fill()
     }
 }

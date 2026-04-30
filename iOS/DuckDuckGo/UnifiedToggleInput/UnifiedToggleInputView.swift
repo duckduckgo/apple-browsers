@@ -43,6 +43,8 @@ enum UnifiedToggleInputCardPosition {
     case top
     /// Top corners rounded, shadow upward (input at bottom of screen, default).
     case bottom
+
+    var isBottom: Bool { self == .bottom }
 }
 
 // MARK: - View
@@ -62,6 +64,9 @@ final class UnifiedToggleInputView: UIView {
         static let cardVerticalMargin: CGFloat = 8
         static let cardHorizontalMarginBottom: CGFloat = 12
         static let cardVerticalMarginBottom: CGFloat = 8
+        // Match the omnibar's small-top spacing so the dismiss snap lands on identical pill frames.
+        static let collapsedCardTopMarginBottom: CGFloat = 10
+        static let collapsedCardBottomMarginBottom: CGFloat = 6
         static let cardCornerRadiusExpanded: CGFloat = 24
         static let cardCornerRadiusCollapsed: CGFloat = 16
         static let toggleTopPadding: CGFloat = 8
@@ -388,6 +393,28 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.selectAllText()
     }
 
+    var placeholderWindowX: CGFloat? { textEntryView.placeholderWindowX }
+
+    var defaultPlaceholderColor: UIColor { textEntryView.defaultPlaceholderColor }
+
+    var placeholderTextColor: UIColor {
+        get { textEntryView.placeholderTextColor }
+        set { textEntryView.placeholderTextColor = newValue }
+    }
+
+    func animatePlaceholderColorTransition(from: UIColor, to color: UIColor, duration: TimeInterval) {
+        textEntryView.animatePlaceholderColorTransition(from: from, to: color, duration: duration)
+    }
+
+    func setTextHorizontalShift(_ shift: CGFloat) {
+        textEntryView.setTextHorizontalShift(shift)
+    }
+
+    @discardableResult
+    func alignPlaceholderHorizontally(toWindowX windowX: CGFloat) -> CGFloat {
+        textEntryView.alignPlaceholderHorizontally(toWindowX: windowX)
+    }
+
     func updateToggleEnabled(_ enabled: Bool) {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
@@ -422,7 +449,7 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
-    func setExpanded(_ expanded: Bool, showToggle: Bool = true, animated: Bool) {
+    func setExpanded(_ expanded: Bool, showToggle: Bool = true, animated: Bool, updateShadow: Bool = true) {
         guard expanded != isExpanded else { return }
         isExpanded = expanded
         handler.isExpanded = expanded
@@ -447,17 +474,26 @@ final class UnifiedToggleInputView: UIView {
             hTrailingMargin = cardTrailingMargin
         }
 
-        let vMargin: CGFloat
+        let topMargin: CGFloat
+        let bottomMargin: CGFloat
         if expanded && !usesOmnibarMargins {
-            vMargin = (cardPosition == .bottom) ? Constants.cardVerticalMarginBottom : Constants.cardVerticalMargin
+            let expandedMargin = (cardPosition == .bottom) ? Constants.cardVerticalMarginBottom : Constants.cardVerticalMargin
+            topMargin = expandedMargin
+            bottomMargin = expandedMargin
+        } else if !expanded && cardPosition == .bottom {
+            topMargin = Constants.collapsedCardTopMarginBottom
+            bottomMargin = Constants.collapsedCardBottomMarginBottom
         } else {
-            vMargin = Constants.cardVerticalMargin
+            topMargin = Constants.cardVerticalMargin
+            bottomMargin = Constants.cardVerticalMargin
         }
 
         textEntryView.isExpandable = expanded
 
-        expandedShadowView.isHidden = !expanded
-        cardView.layer.shadowOpacity = expanded ? 0 : 1.0
+        if updateShadow {
+            expandedShadowView.isHidden = !expanded
+            cardView.layer.shadowOpacity = expanded ? 0 : 1.0
+        }
         cardCollapsedHeightConstraint.constant = Constants.collapsedCardHeight
         cardCollapsedHeightConstraint.isActive = !expanded
 
@@ -470,10 +506,10 @@ final class UnifiedToggleInputView: UIView {
         let expandedCornerRadius = effectiveToggleEnabled ? Constants.cardCornerRadiusExpanded : Constants.cardCornerRadiusCollapsed
         let changes = {
             self.cardView.layer.cornerRadius = expanded ? expandedCornerRadius : Constants.cardCornerRadiusCollapsed
-            self.cardTopConstraint.constant = vMargin
+            self.cardTopConstraint.constant = topMargin
             self.cardLeadingConstraint.constant = hLeadingMargin
             self.cardTrailingConstraint.constant = -hTrailingMargin
-            self.cardBottomConstraint.constant = -vMargin
+            self.cardBottomConstraint.constant = -bottomMargin
             self.toggleTopConstraint.constant = (expanded && effectiveToggleEnabled) ? Constants.toggleTopPadding : 0
             self.toggleHeightConstraint.constant = toggleHeight
             self.toggleTrailingConstraint.constant = reservesInlineDismissSpace
@@ -511,9 +547,7 @@ final class UnifiedToggleInputView: UIView {
         setExpanded(expanded, showToggle: false, animated: false)
     }
 
-    /// Pre-stages the bar to its starting pose for an omnibar-editing show animation.
     /// Top: slim card with toggle hidden. Bottom: collapsed bar.
-    /// Call BEFORE the UIView.animate that runs the show animation.
     func prepareForOmnibarEditingShow() {
         switch cardPosition {
         case .top:
@@ -524,8 +558,7 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
-    /// Applies the bar's active editing END pose. Designed to be called inside a UIView.animate
-    /// block so the property mutations animate.
+    /// Active editing pose. Call inside a UIView.animate block.
     func applyOmnibarEditingShowPose() {
         switch cardPosition {
         case .top:
@@ -537,8 +570,9 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
-    /// Applies the bar's inactive END pose (post-dismiss). Designed to be called inside a
-    /// UIView.animate block so the property mutations animate.
+    /// Inactive editing pose. Call inside a UIView.animate block.
+    /// Shadow swap is deferred to `finalizeOmnibarEditingDismiss` so the dominant expanded shadow
+    /// stays visible during collapse instead of snapping off mid-animation.
     func applyOmnibarEditingDismissPose() {
         switch cardPosition {
         case .top:
@@ -546,8 +580,16 @@ final class UnifiedToggleInputView: UIView {
             applyToggleHideChanges()
             layoutIfNeeded()
         case .bottom:
-            setExpanded(false, animated: false)
+            setExpanded(false, animated: false, updateShadow: false)
         }
+    }
+
+    /// Snap the shadow to its collapsed-pose state. Only bottom needs this — top dismiss never
+    /// alters the shadow during animation. Call after the UTI is hidden.
+    func finalizeOmnibarEditingDismiss() {
+        guard cardPosition.isBottom else { return }
+        expandedShadowView.isHidden = true
+        cardView.layer.shadowOpacity = 1.0
     }
 
     /// The property mutations that reveal the toggle within the omnibar-editing card.

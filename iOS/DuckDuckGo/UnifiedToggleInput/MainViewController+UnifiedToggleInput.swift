@@ -30,9 +30,10 @@ import UIKit
 extension MainViewController {
 
     enum Constants {
-        /// Single duration for both the show and dismiss omnibar-editing transitions.
-        /// Drives bar interior, content alpha, and container layout in lockstep.
-        static let omnibarTransitionDuration: TimeInterval = 0.25
+        // Bottom is longer to accommodate concurrent keyboard descent.
+        static func omnibarTransitionDuration(isBottom: Bool) -> TimeInterval {
+            isBottom ? 0.35 : 0.25
+        }
     }
 
     enum UnifiedInputChromeBackgroundState: String {
@@ -525,25 +526,42 @@ private extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator) {
         applyUnifiedInputChromeBackground(.standardChrome)
-        // Resign up-front so keyboard descent runs concurrent with bar collapse, not after.
+        // Resign up-front so the keyboard descent runs concurrent with the bar collapse.
         coordinator.viewController.deactivateInput()
+        let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
+        let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
+        let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
+        let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
         UIView.animate(
-            withDuration: Constants.omnibarTransitionDuration,
+            withDuration: duration,
             delay: 0,
-            options: .curveEaseInOut,
+            options: .curveEaseOut,
             animations: { [weak self] in
                 guard let self else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 0
+                if let omnibarPlaceholderWindowX {
+                    coordinator.viewController.alignPlaceholderHorizontally(toWindowX: omnibarPlaceholderWindowX)
+                }
             },
             completion: { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
+                coordinator.viewController.setTextHorizontalShift(0)
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
+                coordinator.viewController.finalizeOmnibarEditingDismiss()
             }
         )
+
+        if let omnibarPlaceholderColor {
+            coordinator.viewController.animatePlaceholderColorTransition(
+                from: utiPlaceholderColor,
+                to: omnibarPlaceholderColor,
+                duration: duration
+            )
+        }
     }
 
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {

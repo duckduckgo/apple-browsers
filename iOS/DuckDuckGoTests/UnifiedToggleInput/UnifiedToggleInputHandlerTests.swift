@@ -362,7 +362,7 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertEqual(sut.buttonState, .noButtons)
     }
 
-    func test_toggleOff_searchMode_hasText_aiShortcutOn_showsClearOnly() {
+    func test_toggleOff_searchMode_hasText_aiShortcutOn_showsClearAndAIChatShortcut() {
         sut = UnifiedToggleInputHandler(
             isVoiceSearchEnabled: true,
             isToggleEnabled: false,
@@ -371,7 +371,7 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         sut.setToggleState(.search)
         sut.updateCurrentText("hello")
 
-        XCTAssertEqual(sut.buttonState, .clearOnly)
+        XCTAssertEqual(sut.buttonState, .clearAndAIChatShortcut)
     }
 
     func test_toggleOn_searchMode_empty_aiShortcutAvailable_doesNotShowAIChatShortcut() {

@@ -261,6 +261,8 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     var placeholderWindowX: CGFloat? { inputBarView.placeholderWindowX }
 
+    var defaultPlaceholderColor: UIColor { inputBarView.defaultPlaceholderColor }
+
     var placeholderTextColor: UIColor {
         get { inputBarView.placeholderTextColor }
         set { inputBarView.placeholderTextColor = newValue }

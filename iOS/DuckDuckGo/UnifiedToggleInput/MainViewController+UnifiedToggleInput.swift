@@ -530,7 +530,7 @@ private extension MainViewController {
         coordinator.viewController.deactivateInput()
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
-        let utiPlaceholderColor = coordinator.viewController.placeholderTextColor
+        let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
         UIView.animate(
             withDuration: duration,
@@ -550,7 +550,6 @@ private extension MainViewController {
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 coordinator.viewController.setTextHorizontalShift(0)
-                coordinator.viewController.placeholderTextColor = utiPlaceholderColor
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
                 coordinator.viewController.finalizeOmnibarEditingDismiss()
             }

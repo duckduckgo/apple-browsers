@@ -165,7 +165,7 @@ class SwitchBarTextEntryView: UIView {
 
         placeholderLabel.font = textFont
         placeholderLabel.adjustsFontForContentSizeCategory = true
-        placeholderLabel.textColor = UIColor(designSystemColor: .textSecondary)
+        placeholderLabel.textColor = defaultPlaceholderColor
 
         // Truncate text in case it exceeds single line
         placeholderLabel.numberOfLines = 1
@@ -578,6 +578,9 @@ class SwitchBarTextEntryView: UIView {
         guard placeholderLabel.window != nil else { return nil }
         return placeholderLabel.convert(CGPoint.zero, to: nil).x
     }
+
+    /// Stable design-token color, immune to transient `textColor` changes from color crossfades.
+    var defaultPlaceholderColor: UIColor { UIColor(designSystemColor: .textSecondary) }
 
     // Two transient overlays composite directly over the parent background (the original label is
     // cleared) so a low-alpha source/target color isn't stacked atop the destination color, which

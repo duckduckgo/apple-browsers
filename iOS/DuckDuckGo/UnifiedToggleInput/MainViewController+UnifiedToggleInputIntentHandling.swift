@@ -103,7 +103,7 @@ private extension MainViewController {
 
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
-        let utiPlaceholderColor = coordinator.viewController.placeholderTextColor
+        let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
 
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
         viewCoordinator.suggestionTrayContainer.isHidden = true
@@ -147,18 +147,15 @@ private extension MainViewController {
 
     func handleHideOmnibarEditingIntent(animated: Bool) {
         let coordinator = unifiedToggleInputCoordinator
-        let utiPlaceholderColor = coordinator?.viewController.placeholderTextColor
         let onDismissed: () -> Void = { [weak coordinator] in
             coordinator?.viewController.setTextHorizontalShift(0)
-            if let utiPlaceholderColor {
-                coordinator?.viewController.placeholderTextColor = utiPlaceholderColor
-            }
             coordinator?.viewController.finalizeOmnibarEditingDismiss()
             coordinator?.clearText()
         }
         if animated {
             let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
             let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
+            let utiPlaceholderColor = coordinator?.viewController.defaultPlaceholderColor
             let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom)
             let slideUTIText: () -> Void = { [weak coordinator] in
                 guard let coordinator, let omnibarPlaceholderWindowX else { return }

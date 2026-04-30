@@ -21,15 +21,22 @@ import Foundation
 import PixelKit
 
 public protocol OnboardingSharedPixelHandling {
-    func fire(_ event: OnboardingSharedPixelEvent)
+    func fire(_ event: OnboardingSharedPixelEvent,
+              source: OnboardingSourcePixelParameter?,
+              flow: OnboardingFlowTypePixelParameter?,
+              variant: OnboardingVariantPixelParameter?)
+}
 
-    /// Sets the pixel parameters with the provided onboarding metadata, to be added to all subsequent pixels fired by the handler.
-    /// Should be called at the start of the onboarding flow.
-    func setMetadata(source: OnboardingSourcePixelParameter, flow: OnboardingFlowTypePixelParameter, variant: OnboardingVariantPixelParameter?)
+public extension OnboardingSharedPixelHandling {
+    func fire(_ event: OnboardingSharedPixelEvent) {
+        fire(event, source: nil, flow: nil, variant: nil)
+    }
 
-    /// Sets the variant of the onboarding flow the user has entered, to be added to all subsequent pixels fired by the handler.
-    /// Should be called at the point where the onboarding flow branches into separate variants.
-    func setVariant(_ variant: OnboardingVariantPixelParameter)
+    func fire(_ event: OnboardingSharedPixelEvent,
+              source: OnboardingSourcePixelParameter?,
+              flow: OnboardingFlowTypePixelParameter?) {
+        fire(event, source: source, flow: flow, variant: nil)
+    }
 }
 
 /// Pixel parameter for the entry point into the onboarding flow.
@@ -94,15 +101,8 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
         return Calendar.current.numberOfDaysBetween(installDate, and: currentDateProvider())
     }
 
-    private var additionalParameters: [String: String] {
-        var additionalParameters: [String: String] = [
-            ParameterKeys.source: source.rawValue,
-            ParameterKeys.flow: flow.rawValue
-        ]
-
-        if let variant {
-            additionalParameters[ParameterKeys.variant] = variant.rawValue
-        }
+    private var installParameters: [String: String] {
+        var additionalParameters: [String: String] = [:]
 
         if let installType {
             additionalParameters[ParameterKeys.installType] = installType.rawValue
@@ -127,23 +127,21 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
         self.pixelFiring = pixelFiring
     }
 
-    public func fire(_ event: OnboardingSharedPixelEvent) {
+    public func fire(_ event: OnboardingSharedPixelEvent,
+                     source: OnboardingSourcePixelParameter?,
+                     flow: OnboardingFlowTypePixelParameter?,
+                     variant: OnboardingVariantPixelParameter?) {
+        var additionalParameters = installParameters
+        additionalParameters[ParameterKeys.source] = (source ?? .default).rawValue
+        additionalParameters[ParameterKeys.flow] = (flow ?? .default).rawValue
+        if let variant {
+            additionalParameters[ParameterKeys.variant] = variant.rawValue
+        }
+
         pixelFiring?.fire(event,
                           frequency: .uniqueByNameAndParameters,
                           withAdditionalParameters: additionalParameters,
                           withNamePrefix: platform.pixelPrefix)
-    }
-
-    public func setMetadata(source: OnboardingSourcePixelParameter,
-                            flow: OnboardingFlowTypePixelParameter,
-                            variant: OnboardingVariantPixelParameter?) {
-        self.source = source
-        self.flow = flow
-        self.variant = variant
-    }
-
-    public func setVariant(_ variant: OnboardingVariantPixelParameter) {
-        self.variant = variant
     }
 
 }

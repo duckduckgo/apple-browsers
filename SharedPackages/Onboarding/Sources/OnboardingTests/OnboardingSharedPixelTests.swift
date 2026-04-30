@@ -43,7 +43,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.namePrefix, "m_mac_")
     }
 
-    func testWhenFiringPixelEventThenUsesExpectedNameAndNonOptionalParameters() throws {
+    func testWhenFiringPixelEventThenUsesExpectedNameAndDefaultParameters() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)
 
@@ -55,35 +55,22 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.pixel.standardParameters, [.pixelSource])
         XCTAssertEqual(event.additionalParameters?["source"], "default")
         XCTAssertEqual(event.additionalParameters?["flow"], "default")
+        XCTAssertNil(event.additionalParameters?["variant"])
     }
 
-    func testWhenMetadataIsSetThenMetadataParametersAreIncludedWithExpectedValues() throws {
+    func testWhenFiringPixelEventWithAdditionalParametersThenUsesProvidedParameters() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)
 
-        pixelHandler.setMetadata(source: .duckAICustomProductPage, flow: .duckAIExperiment, variant: .duckAIChat)
-        pixelHandler.fire(.welcome(.shown))
+        pixelHandler.fire(.searchResults(.shown),
+                          source: .duckAICustomProductPage,
+                          flow: .duckAIExperiment,
+                          variant: .duckAISearch)
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(event.additionalParameters?["source"], "duckai_cpp")
         XCTAssertEqual(event.additionalParameters?["flow"], "duckai_experiment")
-        XCTAssertEqual(event.additionalParameters?["variant"], "search_plus_duckai-chat")
-    }
-
-    func testWhenVariantIsSetThenVariantParameterIsIncluded() throws {
-        let pixelFiring = PixelKitMock()
-        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
-
-        pixelHandler.fire(.searchResults(.shown))
-
-        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-        XCTAssertNil(event.additionalParameters?["variant"])
-
-        pixelHandler.setVariant(.duckAISearch)
-        pixelHandler.fire(.searchResults(.shown))
-
-        let eventWithVariant = try XCTUnwrap(pixelFiring.actualFireCalls.last)
-        XCTAssertEqual(eventWithVariant.additionalParameters?["variant"], "search_plus_duckai-search")
+        XCTAssertEqual(event.additionalParameters?["variant"], "search_plus_duckai-search")
     }
 
     func testWhenFiringPixelEventThenFrequencyIsUniqueByNameAndParameters() throws {

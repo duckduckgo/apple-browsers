@@ -71,28 +71,33 @@ final class WebViewHandlerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenInitialized_thenApplicationNameForUserAgentClosureIsEvaluated() throws {
+    func testWhenInitialized_thenApplicationNameForUserAgentClosureIsEvaluatedAndAppliedToConfiguration() throws {
         // Given
+        let expectedApplicationName = "TestApp/1.0"
         var invocationCount = 0
         let provider: () -> String? = {
             invocationCount += 1
-            return "TestApp/1.0"
+            return expectedApplicationName
         }
 
         // When
-        _ = try makeWebViewHandler(applicationNameForUserAgent: provider)
+        let sut = try makeWebViewHandler(applicationNameForUserAgent: provider)
 
         // Then
         XCTAssertEqual(invocationCount, 1)
+        XCTAssertEqual(sut.webViewConfiguration?.applicationNameForUserAgent, expectedApplicationName)
     }
 
     @MainActor
-    func testWhenApplicationNameForUserAgentReturnsNil_thenInitSucceeds() throws {
+    func testWhenApplicationNameForUserAgentReturnsNil_thenConfigurationApplicationNameIsNotSet() throws {
         // Given
         let provider: () -> String? = { nil }
 
-        // When / Then (does not throw)
-        _ = try makeWebViewHandler(applicationNameForUserAgent: provider)
+        // When
+        let sut = try makeWebViewHandler(applicationNameForUserAgent: provider)
+
+        // Then
+        XCTAssertNil(sut.webViewConfiguration?.applicationNameForUserAgent)
     }
 
     @MainActor

@@ -42,7 +42,7 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 
     private let isFakeBroker: Bool
     private let executionConfig: BrokerJobExecutionConfig
-    private var webViewConfiguration: WKWebViewConfiguration?
+    private(set) var webViewConfiguration: WKWebViewConfiguration?
     private var userContentController: DataBrokerUserContentController?
 
     private var webView: WebView?

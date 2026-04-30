@@ -3813,13 +3813,8 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onEditingEnd() -> OmniBarEditingEndResult {
-        if isShowingAutocompleteSuggestions {
-            return .suspended
-        } else {
-            newTabPageViewController?.dismissDuckAICompletionDialogIfNeededOnEditingEnd()
-            dismissOmniBar()
-            return .dismissed
-        }
+        newTabPageViewController?.dismissDuckAICompletionDialogIfNeededOnEditingEnd()
+        return .suspended
     }
 
     func onSettingsPressed() {

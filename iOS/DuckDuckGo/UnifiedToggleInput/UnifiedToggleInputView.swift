@@ -74,7 +74,7 @@ final class UnifiedToggleInputView: UIView {
         static let toggleHeight: CGFloat = 40
         static let toggleHorizontalPadding: CGFloat = 8
         static let animationDuration: TimeInterval = 0.25
-        static let toggleDisabledSearchTopPadding: CGFloat = 10
+        static let toggleDisabledSearchTopPadding: CGFloat = 6
         static let toolbarHeight: CGFloat = 56
         static let expandedBorderWidth: CGFloat = 0.5
         static let inlineDismissSize: CGFloat = 40
@@ -452,7 +452,7 @@ final class UnifiedToggleInputView: UIView {
             inputTopConstraint.constant = Constants.toggleBottomPadding
             toolbarBottomConstraint.constant = 0
         } else {
-            let usePadding = mode == .search && cardPosition == .bottom
+            let usePadding = mode == .search
             let padding = usePadding ? Constants.toggleDisabledSearchTopPadding : 0
             inputTopConstraint.constant = padding
             toolbarBottomConstraint.constant = -padding
@@ -518,7 +518,7 @@ final class UnifiedToggleInputView: UIView {
         cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
 
-        let expandedCornerRadius = effectiveToggleEnabled ? Constants.cardCornerRadiusExpanded : Constants.cardCornerRadiusCollapsed
+        let expandedCornerRadius = Constants.cardCornerRadiusExpanded
         let changes = {
             self.cardView.layer.cornerRadius = expanded ? expandedCornerRadius : Constants.cardCornerRadiusCollapsed
             self.cardTopConstraint.constant = topMargin
@@ -530,7 +530,7 @@ final class UnifiedToggleInputView: UIView {
             self.toggleTrailingConstraint.constant = reservesInlineDismissSpace
                 ? Constants.toggleTrailingWithInlineDismiss
                 : -Constants.toggleHorizontalPadding
-            let toggleDisabledSearchPadding = expanded && !self.isToggleEnabled && showToggle && self.handler.currentToggleState == .search && self.cardPosition == .bottom
+            let toggleDisabledSearchPadding = expanded && !self.isToggleEnabled && self.handler.currentToggleState == .search
             self.inputTopConstraint.constant = expanded && effectiveToggleEnabled ? Constants.toggleBottomPadding : (toggleDisabledSearchPadding ? Constants.toggleDisabledSearchTopPadding : 0)
             self.toolbarBottomConstraint.constant = toggleDisabledSearchPadding ? -Constants.toggleDisabledSearchTopPadding : 0
             self.toggleView.alpha = (expanded && effectiveToggleEnabled) ? 1 : 0

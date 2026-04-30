@@ -280,6 +280,12 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.refreshFireMode(fireMode: fireMode)
     }
 
+    // MARK: - Page-Context Chip
+
+    func bindPageContextChip(to viewModel: UnifiedToggleInputPageContextChipViewModel) {
+        inputBarView.bindPageContextChip(to: viewModel)
+    }
+
     // MARK: - Lifecycle
 
     override func loadView() {

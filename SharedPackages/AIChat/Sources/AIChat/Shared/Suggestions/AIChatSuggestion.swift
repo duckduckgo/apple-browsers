@@ -86,16 +86,16 @@ extension AIChatSuggestion {
     }
 
     /// Pure helper kept separate from the property so the mapping is easy to test and tune as
-    /// new model identifiers ship from Duck.ai.
+    /// new model identifiers ship from Duck.ai. Uses exact equality so a future model name that
+    /// embeds the token (e.g. `"voice-mode-experimental-2"`) does not accidentally classify as
+    /// `.voice` — Duck.ai persists the canonical mode tokens unmodified.
     public static func kind(forModel model: String?) -> Kind {
         guard let model, !model.isEmpty else { return .text }
-        if model.contains(AIChatNativePrompt.voiceMode) {
-            return .voice
+        switch model {
+        case AIChatNativePrompt.voiceMode: return .voice
+        case AIChatNativePrompt.imageGenerationMode: return .image
+        default: return .text
         }
-        if model.contains(AIChatNativePrompt.imageGenerationMode) {
-            return .image
-        }
-        return .text
     }
 
     /// Collapses any runs of whitespace (including newlines) into a single space and trims.

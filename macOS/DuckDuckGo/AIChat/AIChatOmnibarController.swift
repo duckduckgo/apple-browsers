@@ -184,7 +184,7 @@ final class AIChatOmnibarController {
     /// off `mode: voice-mode` via the prompt handler.
     func openNewVoiceChat() {
         aiChatTabOpener.openVoiceSession(
-            inWindowOf: tabCollectionViewModel.selectedTab,
+            inSourceCollection: tabCollectionViewModel,
             behavior: .newTab(selected: true)
         )
         PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNative, frequency: .dailyAndStandard, includeAppVersionParameter: true)

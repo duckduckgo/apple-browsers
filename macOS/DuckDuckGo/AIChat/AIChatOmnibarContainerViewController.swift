@@ -113,6 +113,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var windowFrameObserver: AnyCancellable?
     private var viewBoundsObserver: AnyCancellable?
     private var imageGenModeCancellable: AnyCancellable?
+    /// KVO on the submit button's hover/press state — drives the layer fill through the
+    /// accent / accent-alt three-state palette. Direct-layer fill (rather than the
+    /// `MouseOverButton.backgroundColor` sub-layer) keeps the icon visible.
+    private var submitButtonMouseOverObservation: NSKeyValueObservation?
+    private var submitButtonMouseDownObservation: NSKeyValueObservation?
     private var toolsLeadingToUploadButton: NSLayoutConstraint?
     private var toolsLeadingToContainer: NSLayoutConstraint?
     private lazy var historyCleaner: HistoryCleaning = HistoryCleaner(
@@ -260,7 +265,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         subscribeToImageGenModeChanges()
         setupAttachmentsProvider()
         subscribeToModelUpdates()
+        observeSubmitButtonHoverState()
         applyThemeStyle()
+    }
+
+    /// Observe `MouseOverButton.isMouseOver` / `isMouseDown` so the submit button's fill
+    /// animates through `accent{,Alt}{Primary,Secondary,Tertiary}` on hover/press without
+    /// using the sub-layer-based `backgroundColor` property (which would obscure the icon).
+    private func observeSubmitButtonHoverState() {
+        submitButtonMouseOverObservation = submitButton.observe(\.isMouseOver, options: [.new]) { [weak self] _, _ in
+            self?.applySubmitButtonFill()
+        }
+        submitButtonMouseDownObservation = submitButton.observe(\.isMouseDown, options: [.new]) { [weak self] _, _ in
+            self?.applySubmitButtonFill()
+        }
     }
 
     override func viewDidLayout() {
@@ -350,39 +368,56 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func applySubmitButtonAppearance(enabled: Bool) {
         submitButton.isEnabled = enabled
-
+        // Tints. Both modes keep the icon constant across hover/press; only the fill animates,
+        // so `mouseOverTintColor` / `mouseDownTintColor` stay nil.
         NSAppearance.withAppAppearance {
             if enabled {
                 if submitButtonMode == .voice {
-                    // Voice spec: icon stays at content-primary across all three states; only the
-                    // fill progresses through the accent-alt palette on hover and press.
-                    // `MouseOverButton` swaps the layer fill automatically based on these properties.
-                    submitButton.backgroundColor = NSColor(designSystemColor: .accentAltPrimary)
-                    submitButton.mouseOverColor = NSColor(designSystemColor: .accentAltSecondary)
-                    submitButton.mouseDownColor = NSColor(designSystemColor: .accentAltTertiary)
                     submitButton.normalTintColor = NSColor(designSystemColor: .accentAltContentPrimary)
-                    submitButton.mouseOverTintColor = nil
-                    submitButton.mouseDownTintColor = nil
                 } else {
-                    // Submit spec: icon stays at accent/content-primary across all three states;
-                    // only the fill progresses through accent/primary → secondary → tertiary on
-                    // hover/press. `MouseOverButton` swaps the layer fill automatically based on
-                    // these properties.
-                    submitButton.backgroundColor = NSColor(designSystemColor: .accentPrimary)
-                    submitButton.mouseOverColor = NSColor(designSystemColor: .accentSecondary)
-                    submitButton.mouseDownColor = NSColor(designSystemColor: .accentTertiary)
                     submitButton.normalTintColor = NSColor(designSystemColor: .accentContentPrimary)
-                    submitButton.mouseOverTintColor = nil
-                    submitButton.mouseDownTintColor = nil
                 }
             } else {
-                submitButton.backgroundColor = nil
-                submitButton.mouseOverColor = nil
-                submitButton.mouseDownColor = nil
                 submitButton.normalTintColor = NSColor.secondaryLabelColor
-                submitButton.mouseOverTintColor = NSColor.secondaryLabelColor
-                submitButton.mouseDownTintColor = nil
             }
+            submitButton.mouseOverTintColor = nil
+            submitButton.mouseDownTintColor = nil
+        }
+        // Fill. Driven via the view's main `layer.backgroundColor` directly so it renders BEHIND
+        // the NSButton image content. We deliberately do NOT use `MouseOverButton`'s
+        // `backgroundColor` property — that property drives a sub-layer added on top of the view's
+        // main layer, and CALayer sub-layers always render above the parent layer's contents,
+        // which would obscure the icon. The hover/press transitions are handled by KVO on
+        // `isMouseOver` / `isMouseDown` (see `observeSubmitButtonHoverState`).
+        applySubmitButtonFill()
+    }
+
+    /// Sets `submitButton.layer.backgroundColor` to the appropriate state-aware color. Called
+    /// from `applySubmitButtonAppearance(enabled:)` and from the KVO observers on the hover/press
+    /// dynamic properties. Disabled state and "submit mode while empty" both render no fill.
+    private func applySubmitButtonFill() {
+        let designSystemColor: DesignSystemColor?
+        if !submitButton.isEnabled {
+            designSystemColor = nil
+        } else if submitButtonMode == .voice {
+            if submitButton.isMouseDown {
+                designSystemColor = .accentAltTertiary
+            } else if submitButton.isMouseOver {
+                designSystemColor = .accentAltSecondary
+            } else {
+                designSystemColor = .accentAltPrimary
+            }
+        } else {
+            if submitButton.isMouseDown {
+                designSystemColor = .accentTertiary
+            } else if submitButton.isMouseOver {
+                designSystemColor = .accentSecondary
+            } else {
+                designSystemColor = .accentPrimary
+            }
+        }
+        NSAppearance.withAppAppearance {
+            submitButton.layer?.backgroundColor = designSystemColor.map { NSColor(designSystemColor: $0).cgColor } ?? NSColor.clear.cgColor
         }
     }
 

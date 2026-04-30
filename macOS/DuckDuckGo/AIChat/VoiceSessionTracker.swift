@@ -19,7 +19,6 @@
 import AIChat
 import AppKit
 import Foundation
-import OSLog
 import WebKit
 
 /// Tracks which `Tab`s currently host an active Duck.ai voice session.
@@ -30,9 +29,11 @@ import WebKit
 /// `WKWebView`; the tracker resolves that webView back to its owning `Tab` via
 /// `WindowControllersManagerProtocol.allTabCollectionViewModels`.
 ///
-/// Lookups are window-scoped (`findActiveVoiceTab(inWindowOf:)`), so opening a new voice chat
-/// in one window doesn't pull the user across to a voice tab in a different window — matching
-/// the Windows-browser behavior. Closed tabs auto-evict because the storage uses weak references.
+/// Lookups are window-scoped: callers pass the source `TabCollectionViewModel` (each window
+/// has its own), so opening a new voice chat in one window doesn't pull the user across to a
+/// voice tab in a different window — matching the Windows-browser behavior. Pinned tabs are
+/// shared across windows; a pinned voice tab is treated as visible from any source window.
+/// Closed tabs auto-evict because the storage uses weak references.
 @MainActor
 final class VoiceSessionTracker: NSObject {
 
@@ -57,108 +58,69 @@ final class VoiceSessionTracker: NSObject {
         notificationCenter.removeObserver(self)
     }
 
-    /// Returns any tracked active voice tab that lives in the same window as `sourceTab`.
-    /// Returns `nil` when no source is supplied (no window context available — better to
-    /// open a new tab than to focus an arbitrary one).
-    func findActiveVoiceTab(inWindowOf sourceTab: Tab?) -> Tab? {
-        let activeCount = activeTabs.count
-        Logger.aiChat.log("[VoiceSessionTracker] findActiveVoiceTab — sourceTab=\(sourceTab.map { ObjectIdentifier($0).hashValue } ?? 0, privacy: .public) activeCount=\(activeCount, privacy: .public)")
-        guard let sourceTab else {
-            Logger.aiChat.log("[VoiceSessionTracker] findActiveVoiceTab — no sourceTab, returning nil")
+    /// Returns any tracked active voice tab visible from `sourceCollection`'s window.
+    /// A candidate matches when it's an unpinned tab in `sourceCollection` (same window) or
+    /// when it's a pinned tab (pinned tabs are shared across all windows, so any source window
+    /// is allowed to focus a pinned voice tab). Returns `nil` when no source is supplied.
+    func findActiveVoiceTab(in sourceCollection: TabCollectionViewModel?) -> Tab? {
+        guard let sourceCollection else { return nil }
+        let unpinned = sourceCollection.unpinnedLoadedTabs
+        let pinned = sourceCollection.pinnedTabsCollection?.tabs.compactMap { anyTab -> Tab? in
+            if case .loaded(let tab) = anyTab { return tab }
             return nil
-        }
-        guard let manager = windowControllersManager else {
-            Logger.aiChat.log("[VoiceSessionTracker] findActiveVoiceTab — windowControllersManager nil")
-            return nil
-        }
-        guard let sourceCollection = tabCollectionViewModel(containing: sourceTab, in: manager) else {
-            Logger.aiChat.log("[VoiceSessionTracker] findActiveVoiceTab — sourceTab not found in any window's collection")
-            return nil
-        }
+        } ?? []
+
         for case let candidate as Tab in activeTabs.allObjects {
-            let candidateCollection = tabCollectionViewModel(containing: candidate, in: manager)
-            let candidateInSameWindow = candidateCollection === sourceCollection
-            Logger.aiChat.log("[VoiceSessionTracker]   candidate id=\(ObjectIdentifier(candidate).hashValue, privacy: .public) sameWindow=\(candidateInSameWindow, privacy: .public)")
-            if candidateInSameWindow {
-                Logger.aiChat.log("[VoiceSessionTracker] findActiveVoiceTab — match found")
+            if unpinned.contains(where: { $0 === candidate }) || pinned.contains(where: { $0 === candidate }) {
                 return candidate
             }
         }
-        Logger.aiChat.log("[VoiceSessionTracker] findActiveVoiceTab — no match in source window")
         return nil
     }
 
     @objc private func voiceSessionStarted(_ note: Notification) {
-        guard let webView = note.object as? WKWebView else {
-            Logger.aiChat.log("[VoiceSessionTracker] received `started` notification with non-WKWebView object=\(String(describing: note.object), privacy: .public)")
-            return
-        }
-        let webViewID = ObjectIdentifier(webView).hashValue
-        guard let tab = tab(for: webView) else {
-            Logger.aiChat.log("[VoiceSessionTracker] no Tab found for webView id=\(webViewID, privacy: .public) on `started` — known webViews=\(self.knownWebViewIDs(), privacy: .public)")
-            return
-        }
-        Logger.aiChat.log("[VoiceSessionTracker] tracking tab id=\(ObjectIdentifier(tab).hashValue, privacy: .public) webView=\(webViewID, privacy: .public) (active count → \(self.activeTabs.count + 1, privacy: .public))")
+        guard let webView = note.object as? WKWebView,
+              let tab = tab(for: webView) else { return }
         activeTabs.add(tab)
     }
 
     @objc private func voiceSessionEnded(_ note: Notification) {
-        guard let webView = note.object as? WKWebView else {
-            Logger.aiChat.log("[VoiceSessionTracker] received `ended` notification with non-WKWebView object=\(String(describing: note.object), privacy: .public)")
-            return
-        }
-        let webViewID = ObjectIdentifier(webView).hashValue
-        guard let tab = tab(for: webView) else {
-            Logger.aiChat.log("[VoiceSessionTracker] no Tab found for webView id=\(webViewID, privacy: .public) on `ended`")
-            return
-        }
-        Logger.aiChat.log("[VoiceSessionTracker] clearing tab id=\(ObjectIdentifier(tab).hashValue, privacy: .public) webView=\(webViewID, privacy: .public)")
+        guard let webView = note.object as? WKWebView,
+              let tab = tab(for: webView) else { return }
         activeTabs.remove(tab)
     }
 
+    /// Resolves a webView to its owning main-browser `Tab`, if any.
     private func tab(for webView: WKWebView) -> Tab? {
-        guard let manager = windowControllersManager else {
-            Logger.aiChat.log("[VoiceSessionTracker] tab(for:) — windowControllersManager is nil")
-            return nil
-        }
+        guard let manager = windowControllersManager else { return nil }
         for tabCollectionViewModel in manager.allTabCollectionViewModels {
-            if let tab = allTabs(in: tabCollectionViewModel).first(where: { $0.webView === webView }) {
+            for tab in allLoadedTabs(in: tabCollectionViewModel) where tab.webView === webView {
                 return tab
             }
         }
         return nil
     }
 
-    /// Diagnostic — comma-separated list of all currently-known tab webView identity hashes.
-    /// Used in logs when a `started` notification's webView can't be matched to a tab.
-    private func knownWebViewIDs() -> String {
-        guard let manager = windowControllersManager else { return "<nil mgr>" }
-        var ids: [Int] = []
-        for tcvm in manager.allTabCollectionViewModels {
-            for tab in allTabs(in: tcvm) {
-                ids.append(ObjectIdentifier(tab.webView).hashValue)
-            }
-        }
-        return ids.map(String.init).joined(separator: ",")
-    }
-
-    private func tabCollectionViewModel(containing tab: Tab, in manager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
-        manager.allTabCollectionViewModels.first(where: { tcvm in
-            allTabs(in: tcvm).contains(where: { $0 === tab })
-        })
-    }
-
     /// Concrete `Tab`s in both pinned and unpinned collections. `AnyTab` is an enum
     /// (`.loaded(Tab)` / `.unloaded(UnloadedTab)`) — only `.loaded` has a `WKWebView`, and
     /// voice sessions require a webview, so unloaded entries are skipped.
-    private func allTabs(in tabCollectionViewModel: TabCollectionViewModel) -> [Tab] {
-        var result: [Tab] = []
-        for anyTab in tabCollectionViewModel.tabs {
-            if case .loaded(let tab) = anyTab { result.append(tab) }
-        }
+    private func allLoadedTabs(in tabCollectionViewModel: TabCollectionViewModel) -> [Tab] {
+        var result = tabCollectionViewModel.unpinnedLoadedTabs
         for anyTab in tabCollectionViewModel.pinnedTabsCollection?.tabs ?? [] {
             if case .loaded(let tab) = anyTab { result.append(tab) }
         }
         return result
+    }
+}
+
+// MARK: - TabCollectionViewModel helpers
+
+private extension TabCollectionViewModel {
+    /// Unpinned tabs that have a materialized webview (excludes `.unloaded`).
+    var unpinnedLoadedTabs: [Tab] {
+        tabs.compactMap { anyTab in
+            if case .loaded(let tab) = anyTab { return tab }
+            return nil
+        }
     }
 }

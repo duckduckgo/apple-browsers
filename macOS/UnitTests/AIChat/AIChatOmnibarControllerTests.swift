@@ -227,6 +227,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         // "focus existing voice tab in the same window if active, otherwise open new" decision.
         XCTAssertTrue(mockTabOpener.openVoiceSessionCalled)
         XCTAssertEqual(mockTabOpener.lastVoiceSessionBehavior, .newTab(selected: true))
+        XCTAssertTrue(mockTabOpener.lastVoiceSessionSourceCollection === tabCollectionViewModel)
     }
 
     // MARK: - Text Update Tests

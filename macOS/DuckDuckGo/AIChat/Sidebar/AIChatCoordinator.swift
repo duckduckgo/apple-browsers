@@ -813,3 +813,4 @@ private extension AIChatCoordinator {
         pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
     }
 }
+

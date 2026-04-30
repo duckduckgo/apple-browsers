@@ -1146,13 +1146,13 @@ class MockAIChatTabOpener: AIChatTabOpening {
     }
 
     var openVoiceSessionCalled = false
-    var lastVoiceSessionSourceTab: Tab?
+    var lastVoiceSessionSourceCollection: TabCollectionViewModel?
     var lastVoiceSessionBehavior: LinkOpenBehavior?
 
     @MainActor
-    func openVoiceSession(inWindowOf sourceTab: Tab?, behavior: LinkOpenBehavior) {
+    func openVoiceSession(inSourceCollection sourceCollection: TabCollectionViewModel?, behavior: LinkOpenBehavior) {
         openVoiceSessionCalled = true
-        lastVoiceSessionSourceTab = sourceTab
+        lastVoiceSessionSourceCollection = sourceCollection
         lastVoiceSessionBehavior = behavior
 
         openMethodCalledExpectation?.fulfill()

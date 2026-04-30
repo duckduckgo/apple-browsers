@@ -18,7 +18,6 @@
 
 import Foundation
 import AIChat
-import OSLog
 
 /// Represents different triggers for opening an AI chat tab.
 ///
@@ -94,11 +93,14 @@ protocol AIChatTabOpening {
     /// guard, which prevents a stale cached prompt from overriding the next real submission.
     ///
     /// - Parameters:
-    ///   - sourceTab: The tab the request originated from. Used to scope the lookup to the same
-    ///     window — voice in window A doesn't focus a voice tab in window B.
+    ///   - sourceCollection: The `TabCollectionViewModel` of the window the request originated
+    ///     from. Used to scope the lookup to that window — voice in window A doesn't focus a
+    ///     voice tab in window B. Pass the user-facing window's TCVM rather than a tab so the
+    ///     scope is unambiguous when the source is a pinned tab (pinned tabs are shared across
+    ///     windows; a tab-only argument leaves the source-window ambiguous).
     ///   - behavior: The `LinkOpenBehavior` used when opening a fresh voice tab.
     @MainActor
-    func openVoiceSession(inWindowOf sourceTab: Tab?, behavior: LinkOpenBehavior)
+    func openVoiceSession(inSourceCollection sourceCollection: TabCollectionViewModel?, behavior: LinkOpenBehavior)
 }
 
 struct AIChatTabOpener: AIChatTabOpening {
@@ -152,10 +154,10 @@ struct AIChatTabOpener: AIChatTabOpening {
     }
 
     @MainActor
-    func openVoiceSession(inWindowOf sourceTab: Tab?, behavior: LinkOpenBehavior) {
-        let didFocus = aiChatTabManaging.focusActiveVoiceSessionTab(inWindowOf: sourceTab)
-        Logger.aiChat.log("[VoiceSession.openVoiceSession] didFocus=\(didFocus, privacy: .public) — \(didFocus ? "skipping new-tab open" : "opening fresh voice tab", privacy: .public)")
-        if didFocus { return }
+    func openVoiceSession(inSourceCollection sourceCollection: TabCollectionViewModel?, behavior: LinkOpenBehavior) {
+        if aiChatTabManaging.focusActiveVoiceSessionTab(inSourceCollection: sourceCollection) {
+            return
+        }
         openAIChatTab(with: .mode(AIChatNativePrompt.voiceMode), behavior: behavior)
     }
 
@@ -195,12 +197,12 @@ protocol AIChatTabManaging {
     @MainActor
     func insertAIChatTab(with url: URL, restorationData: AIChatRestorationData)
 
-    /// If a tab in the same window as `sourceTab` currently hosts an active Duck.ai voice
-    /// session, focuses that window and selects the tab. Returns `true` on success so callers
-    /// can short-circuit before opening a new tab. Returns `false` when there's no active
-    /// voice tab in scope or no source-tab context.
+    /// If a tab in `sourceCollection`'s window currently hosts an active Duck.ai voice session,
+    /// focuses that window and selects the tab. When the original session was hosted in a Duck.ai
+    /// sidebar, also surfaces the sidebar so the user lands on the in-progress voice UI.
+    /// Returns `true` on success so callers can short-circuit before opening a new tab.
     @MainActor
-    func focusActiveVoiceSessionTab(inWindowOf sourceTab: Tab?) -> Bool
+    func focusActiveVoiceSessionTab(inSourceCollection sourceCollection: TabCollectionViewModel?) -> Bool
 }
 
 extension WindowControllersManager: AIChatTabManaging {
@@ -249,9 +251,8 @@ extension WindowControllersManager: AIChatTabManaging {
     }
 
     @MainActor
-    func focusActiveVoiceSessionTab(inWindowOf sourceTab: Tab?) -> Bool {
-        guard let target = voiceSessionTracker.findActiveVoiceTab(inWindowOf: sourceTab) else {
-            Logger.aiChat.log("[VoiceSession.focus] no active voice tab in source window")
+    func focusActiveVoiceSessionTab(inSourceCollection sourceCollection: TabCollectionViewModel?) -> Bool {
+        guard let target = voiceSessionTracker.findActiveVoiceTab(in: sourceCollection) else {
             return false
         }
         // Find the window controller hosting the target tab and select that tab. `AnyTab` is an
@@ -262,12 +263,10 @@ extension WindowControllersManager: AIChatTabManaging {
                 if case .loaded(let tab) = anyTab { return tab === target }
                 return false
             }) else { continue }
-            Logger.aiChat.log("[VoiceSession.focus] focusing tab id=\(ObjectIdentifier(target).hashValue, privacy: .public) at index=\(String(describing: index), privacy: .public)")
             windowController.window?.makeKeyAndOrderFront(self)
             tabCollectionViewModel.select(at: index)
             return true
         }
-        Logger.aiChat.log("[VoiceSession.focus] target tab id=\(ObjectIdentifier(target).hashValue, privacy: .public) NOT found in any window — stale entry?")
         return false
     }
 }

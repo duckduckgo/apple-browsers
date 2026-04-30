@@ -262,4 +262,14 @@ final class AIChatSuggestionTests: XCTestCase {
         // A regular chat model doesn't match the voice/image tokens and falls through to .text.
         XCTAssertEqual(AIChatSuggestion.kind(forModel: "gpt-4o-mini"), .text)
     }
+
+    func testKind_WithModelEmbeddingVoiceTokenButNotEqual_ReturnsText() {
+        // Defensive — exact-equality matching prevents a future model whose name embeds the
+        // voice-mode token (e.g. an experimental variant) from being misclassified as `.voice`.
+        XCTAssertEqual(AIChatSuggestion.kind(forModel: "voice-mode-experimental-2"), .text)
+    }
+
+    func testKind_WithModelEmbeddingImageTokenButNotEqual_ReturnsText() {
+        XCTAssertEqual(AIChatSuggestion.kind(forModel: "image-generation-pro"), .text)
+    }
 }

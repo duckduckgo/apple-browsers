@@ -630,16 +630,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
-        let webViewID = message.messageWebView.map { ObjectIdentifier($0).hashValue } ?? 0
-        Logger.aiChat.log("[VoiceSession] started — webView id=\(webViewID, privacy: .public)")
         notificationCenter.post(name: .aiChatVoiceSessionStarted, object: message.messageWebView)
         return nil
     }
 
     @MainActor
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? {
-        let webViewID = message.messageWebView.map { ObjectIdentifier($0).hashValue } ?? 0
-        Logger.aiChat.log("[VoiceSession] ended — webView id=\(webViewID, privacy: .public)")
         notificationCenter.post(name: .aiChatVoiceSessionEnded, object: message.messageWebView)
         return nil
     }

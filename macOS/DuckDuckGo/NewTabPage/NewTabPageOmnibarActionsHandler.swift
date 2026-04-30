@@ -155,9 +155,9 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         // in-progress state, and pushing a stale prompt would override the user's next real
         // submission (matches the Windows-browser `WillActivateExistingVoiceTab` guard).
         if mode == AIChatNativePrompt.voiceMode {
-            let sourceTab = windowControllersManager.lastKeyMainWindowController?
-                .mainViewController.tabCollectionViewModel.selectedTab
-            tabOpener.openVoiceSession(inWindowOf: sourceTab, behavior: behavior)
+            let sourceCollection = windowControllersManager.lastKeyMainWindowController?
+                .mainViewController.tabCollectionViewModel
+            tabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: behavior)
             return
         }
 

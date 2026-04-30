@@ -267,9 +267,9 @@ extension AIChatMenu.Actions {
                 tabOpener.openAIChatTab(with: .newChat, behavior: .newTab(selected: true))
             },
             openNewVoiceChat: {
-                let sourceTab = windowControllersManager.lastKeyMainWindowController?
-                    .mainViewController.tabCollectionViewModel.selectedTab
-                tabOpener.openVoiceSession(inWindowOf: sourceTab, behavior: .newTab(selected: true))
+                let sourceCollection = windowControllersManager.lastKeyMainWindowController?
+                    .mainViewController.tabCollectionViewModel
+                tabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: .newTab(selected: true))
             },
             openNewImageChat: {
                 let url = AIChatURLParameters.imageModeURL(from: remoteSettings.aiChatURL)

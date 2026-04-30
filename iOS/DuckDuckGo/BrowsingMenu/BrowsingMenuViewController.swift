@@ -430,7 +430,7 @@ extension BrowsingMenuViewController: UITableViewDelegate {
         case .separator:
             return 20
         case .regular:
-            return -1
+            return UITableView.automaticDimension
         }
     }
 

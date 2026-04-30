@@ -1,5 +1,5 @@
 //
-//  DuckAiNativeStorageHandlerTests.swift
+//  DuckAiNativeDiskStorageHandlerTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -22,17 +22,17 @@ import PersistenceTestingUtils
 import DuckAiDataStore
 @testable import AIChat
 
-final class DuckAiNativeStorageHandlerTests: XCTestCase {
+final class DuckAiNativeDiskStorageHandlerTests: XCTestCase {
 
     private var settingsStore: InMemoryThrowingKeyValueStore!
     private var mockDataStore: MockDuckAiNativeDataStore!
-    private var handler: DuckAiNativeStorageHandler!
+    private var handler: DuckAiNativeDiskStorageHandler!
 
     override func setUp() {
         super.setUp()
         settingsStore = InMemoryThrowingKeyValueStore()
         mockDataStore = MockDuckAiNativeDataStore()
-        handler = DuckAiNativeStorageHandler(
+        handler = DuckAiNativeDiskStorageHandler(
             settingsStore: settingsStore.throwingKeyedStoring(),
             dataStore: mockDataStore
         )

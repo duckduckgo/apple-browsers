@@ -357,7 +357,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         setInitialInputMode(effectiveInputMode)
         self.cardPosition = cardPosition
         viewController.handler.hidesVoiceButton = false
-        updateToolbarAIVoiceChat()
         isInputVisibleForKeyboard = true
         hasSubmittedPrompt = false
         resetToolsSelection()
@@ -462,14 +461,27 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard didModeChange || needsViewSync else { return }
 
         inputMode = effectiveMode
-        if needsViewSync {
-            viewController.setInputMode(effectiveMode, animated: animated)
+
+        // Wraps toolbar-height update + content-swap broadcast in one CATransaction so they animate
+        // together; otherwise the content snaps while the toolbar is still growing.
+        let applyModeChange = { [self] in
+            if needsViewSync {
+                viewController.setInputMode(effectiveMode, animated: animated)
+            }
+            if didModeChange {
+                modeChangeSubject.send(effectiveMode)
+            }
         }
-        if didModeChange {
-            modeChangeSubject.send(effectiveMode)
+
+        if animated {
+            UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+                applyModeChange()
+            }
+        } else {
+            applyModeChange()
         }
-        updateToolbarAIVoiceChat()
-        refreshToolsPresentation()
+
+        applyToolbarPresentation()
         if didModeChange, effectiveMode == .search {
             clearAttachments()
         }
@@ -1027,6 +1039,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func applyToolbarPresentation() {
         refreshToolsPresentation()
+        updateToolbarAIVoiceChat()
     }
 
     // MARK: Tools
@@ -1063,8 +1076,6 @@ private extension UnifiedToggleInputCoordinator {
 
     func handleToolsMenuSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
         switch identifier {
-        case .customizeResponses:
-            viewController.handler.customizeResponsesButtonTapped()
         case .webSearch:
             toolsController.toggleSelection(for: .webSearch, modelStore: modelStore)
             refreshToolsPresentation()

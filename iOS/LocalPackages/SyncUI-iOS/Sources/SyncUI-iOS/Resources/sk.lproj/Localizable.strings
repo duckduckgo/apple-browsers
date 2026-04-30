@@ -325,6 +325,96 @@
 /* Sync Settings - Recovery section header */
 "sync.settings.recovery.section.header" = "Obnoviť";
 
+/* Sync settings 'Already set up' section header containing useful options */
+"sync.simplified.already.set.up.section.header" = "Už to máš nastavené na inom zariadení?";
+
+/* Prompt body text after enabling sync */
+"sync.simplified.another.device.body" = "Tvoje záložky, údaje automatického dopĺňania a chaty Duck.ai sú bezpečne zálohované. Teraz ich budeš mať synchronizované s počítačom alebo tabletom.";
+
+/* Primary button to sync another device when sync is enabled */
+"sync.simplified.another.device.button" = "Synchronizácia ďalšieho zariadenia";
+
+/* Prompt title after enabling sync */
+"sync.simplified.another.device.title" = "Chceš synchronizovať dáta s iným zariadením?";
+
+/* Bookmarks section header in sync settings */
+"sync.simplified.bookmarks.section.header" = "Záložky";
+
+/* Text shown next to toggle while sync is being set up */
+"sync.simplified.connecting" = "Pripája sa...";
+
+/* Sync settings 'Copy Recovery Code' button */
+"sync.simplified.copy.recovery.code.button" = "Kopírovať kód obnovy";
+
+/* Sync settings action button title to turn off sync and delete server data */
+"sync.simplified.delete.sync.data.button" = "Vypnúť synchronizáciu a zmazať údaje servera";
+
+/* Sync settings 'Download Recovery Code' button */
+"sync.simplified.download.recovery.code.button" = "Stiahnuť kód obnovy";
+
+/* Button subtitle to get the DuckDuckGo desktop browser */
+"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo pre Mac a Windows";
+
+/* Button title to get the DuckDuckGo desktop browser. */
+"sync.simplified.get.desktop.browser.title" = "Získajte prehliadač pre desktop PC";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message" = "Ulož si záložky, údaje automatického dopĺňania a chaty Duck.ai a synchronizuj ich medzi svojimi zariadeniami pomocou šifrovania typu end-to-end.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic" = "Ulož si záložky a údaje automatického dopĺňania a synchronizuj ich medzi zariadeniami pomocou šifrovania typu end-to-end.";
+
+/* Part of instruction prompt referring to the DuckDuckGo app. */
+"sync.simplified.scan-or-view-code.app.name" = "Aplikácia DuckDuckGo";
+
+/* Floating prompt over QR code scanner preview */
+"sync.simplified.scan-or-view-code.camera.prompt" = "Nasmeruj fotoaparát na QR kód a naskenuj ho";
+
+/* Status text when connecting devices to sync */
+"sync.simplified.scan-or-view-code.connecting.status" = "Pripája sa...";
+
+/* Instruction shown during sync setup flow */
+"sync.simplified.scan-or-view-code.connecting.title" = "Udržuj DuckDuckGo otvorený na oboch zariadeniach";
+
+/* Button to navigate to manual sync code entry */
+"sync.simplified.scan-or-view-code.manually.enter.code" = "Manuálne zadajte kód";
+
+/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
+"sync.simplified.scan-or-view-code.paste.code.instructions" = "Prejdi do časti **Nastavenia > Sync & Backup > Synchronizácia s iným zariadením** a v aplikácii DuckDuckGo na inom synchronizovanom zariadení vyber možnosť **Zobraziť textový kód** a vlož sem kód, aby sa synchronizovalo toto zariadenie.";
+
+/* Status text while verifying a pasted sync code */
+"sync.simplified.scan-or-view-code.paste.code.verifying" = "Overovanie kódu";
+
+/* First line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Otvor aplikáciu DuckDuckGo na tvojom druhom zariadení.";
+
+/* Second line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line2" = "QR kód nájdeš v časti Nastavenia > Sync & Backup > Synchronizácia s iným zariadením.";
+
+/* Title of button to share a sync code */
+"sync.simplified.scan-or-view-code.share" = "Zdieľať kód";
+
+/* Button title to show QR code scanner */
+"sync.simplified.scan-or-view-code.tab.scan" = "Skenovanie kódu QR";
+
+/* Button title to view your sync code */
+"sync.simplified.scan-or-view-code.tab.view.code" = "Zobraziť kód";
+
+/* Navigation title for simplified QR scanning screen */
+"sync.simplified.scan-or-view-code.title" = "Synchronizuj svoje zariadenia";
+
+/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
+"sync.simplified.scan-or-view-code.view.instructions" = "Naskenuj alebo vlož tento kód v svojom druhom zariadení";
+
+/* Sync & Backup enabled / disabled toggle title */
+"sync.simplified.toggle.title" = "Synchronizácia a zálohovanie";
+
+/* Use Recovery Code sync setup button label */
+"sync.simplified.use.recovery.code.button" = "Použiť kód obnovy";
+
+/* Sync With Another Device sync setup button label */
+"sync.simplified.with.another.device.button" = "Synchronizácia s iným zariadením";
+
 /* Sync & Backup Title */
 "sync.title" = "Synchronizácia a zálohovanie";
 

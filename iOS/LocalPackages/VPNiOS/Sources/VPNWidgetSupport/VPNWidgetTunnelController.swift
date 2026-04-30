@@ -51,7 +51,9 @@ public struct VPNWidgetTunnelController: Sendable {
         }
 
         manager.isOnDemandEnabled = true
+        manager.isEnabled = true
         try await manager.saveToPreferences()
+        try await manager.loadFromPreferences()
         try manager.connection.startVPNTunnel()
 
         try await awaitUntilStatusIsNoLongerTransitioning(manager: manager)
@@ -65,6 +67,7 @@ public struct VPNWidgetTunnelController: Sendable {
 
         manager.isOnDemandEnabled = false
         try await manager.saveToPreferences()
+        try await manager.loadFromPreferences()
         manager.connection.stopVPNTunnel()
 
         try await awaitUntilStatusIsNoLongerTransitioning(manager: manager)

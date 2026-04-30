@@ -17,15 +17,58 @@
 //  limitations under the License.
 //
 
-/// Minimal interface for freemium user state needed by the iOS PIR manager.
-/// The full implementation is provided by `FreemiumDBPUserStateManager`.
+import Foundation
+
+/// The outcome of a freemium user's first scan. Stored as a raw string in UserDefaults.
+public enum FreemiumFirstScanResult: String, Codable {
+    case noMatches
+    case matchesFound
+}
+
+/// Persists freemium user state across sessions. Callers use the `record…IfNeeded`
+/// methods for writes; auth gating, first-write guards, and write serialization are
+/// the implementation's responsibility.
 public protocol FreemiumDBPUserStateManaging {
     /// Whether the user has activated the freemium DBP feature (saved a profile and started scanning).
     var didActivate: Bool { get }
+
+    /// Timestamp of the first time the user saved their profile via the freemium flow.
+    var firstProfileSavedTimestamp: Date? { get }
+
+    /// Result of the first freemium scan (not the most recent).
+    var firstScanResult: FreemiumFirstScanResult? { get }
+
+    /// Timestamp of the moment the user upgraded from freemium to a paid subscription.
+    var upgradeToSubscriptionTimestamp: Date? { get }
+
+    /// Records a successful profile save for unauthenticated users. First-write on timestamp.
+    func recordProfileSavedIfNeeded() async
+
+    /// Records the first freemium scan's result. First-scan-wins: later scans are ignored.
+    func recordFirstScanResultIfNeeded(hasMatches: Bool) async
+
+    /// Records the moment the user upgrades to a paid subscription. Must only be called
+    /// on a real purchase/upgrade signal — not from a generic "current state is subscribed"
+    /// listener. See spec §3.
+    func recordSubscriptionUpgradeIfEligible() async
+
+    /// Clears every stored value. For debug tools.
+    func resetAllState()
 }
 
 /// No-op default used until the real FreemiumDBPUserStateManager is wired in.
-/// Always returns `didActivate = false`, preserving pre-freemium behavior.
-struct DisabledFreemiumDBPUserStateManager: FreemiumDBPUserStateManaging {
-    var didActivate: Bool { false }
+/// Reads return pre-freemium defaults; writes are dropped.
+public struct DisabledFreemiumDBPUserStateManager: FreemiumDBPUserStateManaging {
+    public init() {}
+
+    public var didActivate: Bool { false }
+    public var firstProfileSavedTimestamp: Date? { nil }
+    public var firstScanResult: FreemiumFirstScanResult? { nil }
+    public var upgradeToSubscriptionTimestamp: Date? { nil }
+
+    public func recordProfileSavedIfNeeded() async {}
+    public func recordFirstScanResultIfNeeded(hasMatches: Bool) async {}
+    public func recordSubscriptionUpgradeIfEligible() async {}
+
+    public func resetAllState() {}
 }

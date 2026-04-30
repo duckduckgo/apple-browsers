@@ -230,7 +230,7 @@ extension AppDelegate {
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
             if self.internalUserDecider.isInternalUser {
-                Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
+                self.quickFeedbackService.openFeedbackPopup(from: NSApp.mainWindow)
             } else {
                 Application.appDelegate.openRequestANewFeature(nil)
             }
@@ -268,7 +268,7 @@ extension AppDelegate {
     @MainActor
     @objc func openReportABrowserProblem(_ sender: Any?) {
         guard !self.internalUserDecider.isInternalUser else {
-            Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
+            quickFeedbackService.openFeedbackPopup(from: NSApp.mainWindow)
             return
         }
 
@@ -333,7 +333,7 @@ extension AppDelegate {
     @MainActor
     @objc func openRequestANewFeature(_ sender: Any?) {
         guard !self.internalUserDecider.isInternalUser else {
-            Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
+            quickFeedbackService.openFeedbackPopup(from: NSApp.mainWindow)
             return
         }
 

@@ -427,6 +427,12 @@ extension NewTabPageViewController {
         // the editing state first, then embed the dialog inside it on the next run loop (once
         // `presentedViewController` is set) — mirroring how the completion dialog is embedded.
         if spec == .subsequent, (daxDialogsManager as? ContextualOnboardingLogic)?.chatPathPhase == .visitSite {
+            // If the tab is already loading the user typed a URL manually. The NTP may have been
+            // re-created by attachHomeScreen while tab.link was nil, meaning onFirstAppear on the
+            // previous dialog might not have fired — chatPathPhase may still read .visitSite even
+            // though navigation is in progress. Skip; the dialog re-appears on the next
+            // viewDidAppear once navigation resolves.
+            guard (parent as? MainViewController)?.currentTab?.isLoading != true else { return }
             chromeDelegate?.omniBar.beginEditing(animated: true)
             DispatchQueue.main.async { [weak self, weak hostingController] in
                 guard let self, let hostingController else { return }
@@ -489,11 +495,21 @@ extension NewTabPageViewController {
 
         // When the keyboard is dismissed (editing state dismissed by user), rescue the dialog
         // back to the NTP so it remains visible rather than disappearing with the editing state.
+        // Exception: if the editing state is dismissing because navigation started (tab is already
+        // loading), detach the dialog entirely — rescuing it onto the NTP would leave it frozen on
+        // screen while transitionTo keeps the NTP visible until tab.link becomes non-nil.
         editingController.onViewWillDisappear = { [weak self, weak editingController, weak hostingController] in
             guard let self, let hostingController, hostingController.parent === editingController else { return }
             hostingController.willMove(toParent: nil)
             hostingController.view.removeFromSuperview()
             hostingController.removeFromParent()
+
+            // Navigation started: complete the parent-change bookkeeping and discard the dialog
+            // rather than rescuing it to the NTP where it would stay frozen while the page loads.
+            if let mainVC = self.parent as? MainViewController, mainVC.currentTab?.isLoading == true {
+                hostingController.didMove(toParent: nil)
+                return
+            }
 
             self.addChild(hostingController)
             self.view.addSubview(hostingController.view)

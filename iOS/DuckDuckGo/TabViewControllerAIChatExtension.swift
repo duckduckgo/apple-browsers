@@ -24,7 +24,7 @@ import UIKit
 /// Protocol for tab controllers that support full mode AIChat content loading.
 protocol AITabController {
     /// Loads AIChat with optional query, auto-submit, payload, and RAG tools.
-    func load(_ query: String?, autoSend: Bool, payload: Any?, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?, modelId: String?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?)
+    func load(_ query: String?, autoSend: Bool, payload: Any?, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?, modelId: String?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?)
 
     /// Loads AIChat in voice mode.
     func loadVoiceMode()
@@ -53,7 +53,8 @@ extension TabViewController: AITabController {
               tools: [AIChatRAGTool]? = nil,
               modelId: String? = nil,
               reasoningEffort: AIChatReasoningEffort? = nil,
-              images: [AIChatNativePrompt.NativePromptImage]? = nil) {
+              images: [AIChatNativePrompt.NativePromptImage]? = nil,
+              files: [AIChatNativePrompt.NativePromptFile]? = nil) {
         isVoiceModeRequested = false
 
         aiChatContentHandler.setPayload(payload: payload)
@@ -63,6 +64,7 @@ extension TabViewController: AITabController {
                 autoSubmit: autoSend,
                 toolChoice: tools?.map(\.rawValue),
                 images: images,
+                files: files,
                 modelId: modelId,
                 reasoningEffort: reasoningEffort
             )

@@ -50,9 +50,11 @@ public struct WKHTTPCookieStoreProvider: AIChatCookieProviding {
 
 public struct AIChatModelsResponse: Decodable {
     public let models: [AIChatRemoteModel]
+    public let attachmentLimits: AIChatAttachmentLimits?
 
-    public init(models: [AIChatRemoteModel]) {
+    public init(models: [AIChatRemoteModel], attachmentLimits: AIChatAttachmentLimits? = nil) {
         self.models = models
+        self.attachmentLimits = attachmentLimits
     }
 }
 
@@ -63,24 +65,37 @@ public struct AIChatRemoteModel: Decodable, Equatable {
     public let provider: String
     public let entityHasAccess: Bool
     public let supportsImageUpload: Bool
+    public let supportedFileTypes: [String]?
     public let supportedTools: [String]
     public let accessTier: [String]
     public let supportedReasoningEffort: [AIChatReasoningEffort]
 
-    public init(id: String, name: String, modelShortName: String? = nil, provider: String, entityHasAccess: Bool, supportsImageUpload: Bool, supportedTools: [String], accessTier: [String], supportedReasoningEffort: [AIChatReasoningEffort] = []) {
+    public init(
+        id: String,
+        name: String,
+        modelShortName: String? = nil,
+        provider: String,
+        entityHasAccess: Bool,
+        supportsImageUpload: Bool,
+        supportedFileTypes: [String]? = nil,
+        supportedTools: [String],
+        accessTier: [String],
+        supportedReasoningEffort: [AIChatReasoningEffort] = []
+    ) {
         self.id = id
         self.name = name
         self.modelShortName = modelShortName
         self.provider = provider
         self.entityHasAccess = entityHasAccess
         self.supportsImageUpload = supportsImageUpload
+        self.supportedFileTypes = supportedFileTypes
         self.supportedTools = supportedTools
         self.accessTier = accessTier
         self.supportedReasoningEffort = supportedReasoningEffort
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, modelShortName, provider, entityHasAccess, supportsImageUpload, supportedTools, supportedReasoningEffort, accessTier
+        case id, name, modelShortName, provider, entityHasAccess, supportsImageUpload, supportedFileTypes, supportedTools, supportedReasoningEffort, accessTier
     }
 
     public init(from decoder: Decoder) throws {
@@ -91,6 +106,7 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         self.provider = try container.decode(String.self, forKey: .provider)
         self.entityHasAccess = try container.decode(Bool.self, forKey: .entityHasAccess)
         self.supportsImageUpload = try container.decode(Bool.self, forKey: .supportsImageUpload)
+        self.supportedFileTypes = try container.decodeIfPresent([String].self, forKey: .supportedFileTypes)
         self.supportedTools = try container.decode([String].self, forKey: .supportedTools)
         self.supportedReasoningEffort = try container.decodeIfPresent([String].self, forKey: .supportedReasoningEffort)?
             .compactMap(AIChatReasoningEffort.init(rawValue:)) ?? []
@@ -101,7 +117,7 @@ public struct AIChatRemoteModel: Decodable, Equatable {
 // MARK: - Service Protocol
 
 public protocol AIChatModelsProviding {
-    func fetchModels() async throws -> [AIChatRemoteModel]
+    func fetchModels() async throws -> AIChatModelsResponse
 }
 
 // MARK: - Service Implementation
@@ -134,7 +150,7 @@ public final class AIChatModelsService: AIChatModelsProviding {
         self.cookieProvider = cookieProvider
     }
 
-    public func fetchModels() async throws -> [AIChatRemoteModel] {
+    public func fetchModels() async throws -> AIChatModelsResponse {
         let url = baseURL.appendingPathComponent("duckchat/v1/models")
 
         let cookies = await cookieProvider.cookies(for: baseURL)
@@ -152,7 +168,7 @@ public final class AIChatModelsService: AIChatModelsProviding {
             throw ServiceError.httpError(statusCode: httpResponse.statusCode)
         }
 
-        return try JSONDecoder().decode(AIChatModelsResponse.self, from: data).models
+        return try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
     }
 
 }
@@ -177,6 +193,7 @@ extension AIChatModel {
             shortName: remoteModel.modelShortName,
             provider: .from(id: remoteModel.id, providerString: remoteModel.provider),
             supportsImageUpload: remoteModel.supportsImageUpload,
+            supportedFileTypes: remoteModel.supportedFileTypes ?? [],
             supportedImageFormats: remoteModel.supportsImageUpload ? Self.nativeSupportedImageFormats : [],
             supportedTools: remoteModel.supportedTools.compactMap(AIChatRAGTool.init(rawValue:)),
             entityHasAccess: hasAccess,

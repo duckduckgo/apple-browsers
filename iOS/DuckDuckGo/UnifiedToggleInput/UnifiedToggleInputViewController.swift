@@ -187,20 +187,20 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isImageButtonEnabled = newValue }
     }
 
-    var modelSupportsImageAttachments: Bool {
-        get { inputBarView.modelSupportsImageAttachments }
-        set { inputBarView.modelSupportsImageAttachments = newValue }
-    }
-
     var isAttachmentsFull: Bool {
         inputBarView.isAttachmentsFull
     }
 
-    var currentAttachments: [AIChatImageAttachment] {
+    var maximumAttachmentCount: Int? {
+        get { inputBarView.maximumAttachmentCount }
+        set { inputBarView.maximumAttachmentCount = newValue }
+    }
+
+    var currentAttachments: [UnifiedToggleInputAttachment] {
         inputBarView.currentAttachments
     }
 
-    func addAttachment(_ attachment: AIChatImageAttachment) {
+    func addAttachment(_ attachment: UnifiedToggleInputAttachment) {
         inputBarView.addAttachment(attachment)
     }
 

@@ -178,11 +178,32 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI Features";
 
+/* Alert message shown when an attached file exceeds the remaining total file size budget */
+"aichat.attachment.file.exceeds.conversation.limit" = "That file exceeds the remaining file size available in this conversation.";
+
+/* Alert message shown when an attached file exceeds the allowed size */
+"aichat.attachment.file.too.large" = "That file is too large to attach.";
+
+/* Alert message shown when an attached PDF exceeds the allowed page count */
+"aichat.attachment.file.too.many.pages" = "That PDF has too many pages to attach.";
+
+/* Alert message shown when an attached PDF cannot be read for validation */
+"aichat.attachment.file.unreadable" = "That PDF can't be attached.";
+
+/* Top-level attachment menu option to attach a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Attach File";
+
+/* Top-level attachment menu option to attach a photo to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Attach Photo";
+
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
 "aichat.attachment.option.choose.photo" = "Choose Photo";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Take a Photo";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "That message is too long to send with attachments.";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "For analytical tasks";
@@ -4614,4 +4635,3 @@ https://duckduckgo.com/windows";
 
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "What do you want to import?";
-

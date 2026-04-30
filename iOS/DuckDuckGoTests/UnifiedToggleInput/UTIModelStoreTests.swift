@@ -113,6 +113,19 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertFalse(sut.selectedModelSupportsImageUpload)
     }
 
+    func test_selectedModelSupportsFileUpload_whenSelectedModelSupportsIt_returnsTrue() {
+        preferences.selectedModelId = "gpt-4o"
+        sut.models = [makeModel(id: "gpt-4o", access: true, supportedFileTypes: ["application/pdf"])]
+
+        XCTAssertTrue(sut.selectedModelSupportsFileUpload)
+        XCTAssertEqual(sut.selectedModelSupportedFileTypes, ["application/pdf"])
+    }
+
+    func test_selectedModelSupportsFileUpload_whenNoModelSelected_returnsFalse() {
+        XCTAssertFalse(sut.selectedModelSupportsFileUpload)
+        XCTAssertEqual(sut.selectedModelSupportedFileTypes, [])
+    }
+
     // MARK: - selectedModelSupports(tool:)
 
     func test_selectedModelSupportsTool_whenSelectedModelSupportsWebSearch_returnsTrue() {
@@ -234,6 +247,7 @@ final class UTIModelStoreTests: XCTestCase {
         id: String,
         access: Bool,
         supportsImageUpload: Bool = false,
+        supportedFileTypes: [String] = [],
         supportedTools: [AIChatRAGTool] = [],
         supportedReasoningEffort: [AIChatReasoningEffort] = []
     ) -> AIChatModel {
@@ -242,6 +256,7 @@ final class UTIModelStoreTests: XCTestCase {
             name: id,
             provider: .unknown,
             supportsImageUpload: supportsImageUpload,
+            supportedFileTypes: supportedFileTypes,
             supportedTools: supportedTools,
             entityHasAccess: access,
             supportedReasoningEffort: supportedReasoningEffort
@@ -260,5 +275,5 @@ private final class StubPreferences: AIChatPreferencesPersisting {
 }
 
 private final class StubModelsService: AIChatModelsProviding {
-    func fetchModels() async throws -> [AIChatRemoteModel] { [] }
+    func fetchModels() async throws -> AIChatModelsResponse { AIChatModelsResponse(models: []) }
 }

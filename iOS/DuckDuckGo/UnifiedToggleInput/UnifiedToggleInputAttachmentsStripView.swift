@@ -24,17 +24,20 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
 
     enum Constants {
         static let spacing: CGFloat = 4
-        static let maxAttachments: Int = 3
         static let horizontalPadding: CGFloat = 12
         static let topPadding: CGFloat = 8
         static let stripHeight: CGFloat = topPadding + UnifiedToggleInputAttachmentThumbnailView.Constants.totalSize
     }
 
-    private(set) var attachments: [AIChatImageAttachment] = []
+    private(set) var attachments: [UnifiedToggleInputAttachment] = []
+    var maximumAttachmentCount: Int?
     var onAttachmentRemoved: ((UUID) -> Void)?
     var onAttachmentsChanged: (() -> Void)?
 
-    var isFull: Bool { attachments.count >= Constants.maxAttachments }
+    var isFull: Bool {
+        guard let maximumAttachmentCount else { return true }
+        return attachments.count >= maximumAttachmentCount
+    }
 
     private let stackView: UIStackView = {
         let stack = UIStackView()
@@ -55,8 +58,8 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func addAttachment(_ attachment: AIChatImageAttachment) {
-        guard !isFull else { return }
+    func addAttachment(_ attachment: UnifiedToggleInputAttachment) {
+        guard let maximumAttachmentCount, attachments.count < maximumAttachmentCount else { return }
         attachments.append(attachment)
         let thumbnail = UnifiedToggleInputAttachmentThumbnailView(attachment: attachment)
         thumbnail.onRemove = { [weak self] id in

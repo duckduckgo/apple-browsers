@@ -93,7 +93,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.addImageAttachment(image: image, fileName: "test.jpg")
 
         sut.updateSelectedModel("non-image-model")
-        XCTAssertFalse(sut.viewController.modelSupportsImageAttachments)
+        XCTAssertTrue(sut.viewController.isImageButtonHidden)
     }
 
     func testWhenSwitchingBackToImageModelThenStripLayoutRestored() {
@@ -109,7 +109,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
         sut.updateSelectedModel("non-image-model")
         sut.updateSelectedModel("image-model")
-        XCTAssertTrue(sut.viewController.modelSupportsImageAttachments)
+        XCTAssertFalse(sut.viewController.isImageButtonHidden)
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
     }
 
@@ -191,23 +191,34 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
     // MARK: - Helpers
 
     private func makeCoordinator(preferences: AIChatPreferencesPersisting = StubAIChatPreferences()) -> UnifiedToggleInputCoordinator {
-        UnifiedToggleInputCoordinator(
+        let coordinator = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: preferences)
+        coordinator.modelStore.attachmentLimits = makeLimits()
+        return coordinator
     }
 
-    private func makeModel(id: String, supportsImageUpload: Bool) -> AIChatModel {
-        AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload, entityHasAccess: true)
+    private func makeModel(id: String, supportsImageUpload: Bool, supportedFileTypes: [String] = []) -> AIChatModel {
+        AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload, supportedFileTypes: supportedFileTypes, entityHasAccess: true)
+    }
+
+    private func makeLimits() -> AIChatAttachmentTierLimits {
+        AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 5, maxInputCharsWithAttachments: 4500)
+        )
     }
 }
 
 @MainActor
 private final class SpyUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
+    var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
         submittedImages = images
+        submittedFiles = files
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}
     func unifiedToggleInputDidRequestVoiceSearch() {}

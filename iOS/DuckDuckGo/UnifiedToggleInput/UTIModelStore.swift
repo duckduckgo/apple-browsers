@@ -26,6 +26,7 @@ final class UTIModelStore {
 
     var models: [AIChatModel] = []
     var subscriptionState: SubscriptionState = .free
+    var attachmentLimits: AIChatAttachmentTierLimits?
 
     private let modelsService: AIChatModelsProviding
     private(set) var preferences: AIChatPreferencesPersisting
@@ -72,6 +73,14 @@ final class UTIModelStore {
         selectedModel?.supportsImageUpload ?? false
     }
 
+    var selectedModelSupportsFileUpload: Bool {
+        selectedModel?.supportsFileUpload ?? false
+    }
+
+    var selectedModelSupportedFileTypes: [String] {
+        selectedModel?.supportedFileTypes ?? []
+    }
+
     func selectedModelSupports(tool: AIChatRAGTool) -> Bool {
         guard !models.isEmpty else { return false }
         return models.first(where: { $0.id == persistedModelId })?.supportsTool(tool) ?? false
@@ -89,9 +98,10 @@ final class UTIModelStore {
             guard !Task.isCancelled else { return }
             self.subscriptionState = state
             do {
-                let remoteModels = try await modelsService.fetchModels()
+                let response = try await modelsService.fetchModels()
                 guard !Task.isCancelled else { return }
-                self.models = Self.resolveModels(from: remoteModels, userTier: state.userTier)
+                self.models = Self.resolveModels(from: response.models, userTier: state.userTier)
+                self.attachmentLimits = response.attachmentLimits?.limits(for: state.userTier)
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningModeIfNeeded()
                 self.onModelsUpdated?()
@@ -135,6 +145,7 @@ final class UTIModelStore {
                     shortName: remote.modelShortName,
                     provider: .from(id: remote.id, providerString: remote.provider),
                     supportsImageUpload: remote.supportsImageUpload,
+                    supportedFileTypes: remote.supportedFileTypes ?? [],
                     supportedImageFormats: remote.supportsImageUpload ? ["png", "jpeg", "webp"] : [],
                     supportedTools: remote.supportedTools.compactMap(AIChatRAGTool.init(rawValue:)),
                     entityHasAccess: remote.entityHasAccess,

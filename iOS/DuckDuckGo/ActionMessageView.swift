@@ -36,9 +36,9 @@ protocol ActionMessagePresenting {
 class ActionMessageView: UIView, ActionMessagePresenting {
 
     enum PresentationLocation {
+        case top
         case withBottomBar(andAddressBarBottom: Bool)
         case withoutBottomBar
-        case aboveKeyboard
     }
     
     private static var presentedMessages = [ActionMessageView]()
@@ -67,16 +67,19 @@ class ActionMessageView: UIView, ActionMessagePresenting {
             return 0
         }
 
-        static var keyboardTopPadding: CGFloat {
+        static var windowTopPadding: CGFloat {
             return 12
         }
         
     }
     
-    private static func pinBottom(of messageView: ActionMessageView,
-                                  to window: UIWindow,
-                                  presentationLocation: PresentationLocation) {
+    private static func pin(_ messageView: ActionMessageView,
+                            to window: UIWindow,
+                            presentationLocation: PresentationLocation) {
         switch presentationLocation {
+        case .top:
+            messageView.topAnchor.constraint(equalTo: window.safeAreaLayoutGuide.topAnchor,
+                                             constant: Constants.windowTopPadding).isActive = true
         case .withBottomBar(let isAddressBarBottom):
             let bottomPadding = isAddressBarBottom ? Constants.windowBottomPaddingWithAddressBar : Constants.windowBottomPaddingWithBottomBar
             window.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: messageView.bottomAnchor,
@@ -84,9 +87,6 @@ class ActionMessageView: UIView, ActionMessagePresenting {
         case .withoutBottomBar:
             window.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: messageView.bottomAnchor,
                                                                constant: Constants.windowBottomPaddingWithoutBottomBar).isActive = true
-        case .aboveKeyboard:
-            window.keyboardLayoutGuide.topAnchor.constraint(equalTo: messageView.bottomAnchor,
-                                                            constant: Constants.keyboardTopPadding).isActive = true
         }
     }
     
@@ -186,7 +186,7 @@ class ActionMessageView: UIView, ActionMessagePresenting {
         messageView.onDidDismiss = onDidDismiss
         
         window.addSubview(messageView)
-        pinBottom(of: messageView, to: window, presentationLocation: presentationLocation)
+        pin(messageView, to: window, presentationLocation: presentationLocation)
         
         let messageViewWidth = window.frame.width <= Constants.maxWidth ? window.frame.width - Constants.minimumHorizontalPadding : Constants.maxWidth
         messageView.widthAnchor.constraint(equalToConstant: messageViewWidth).isActive = true

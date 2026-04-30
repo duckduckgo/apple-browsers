@@ -1240,7 +1240,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     private func presentAttachmentValidationError(_ message: String) {
-        ActionMessageView.present(message: message, presentationLocation: .aboveKeyboard)
+        ActionMessageView.present(message: message, presentationLocation: .top)
     }
 }
 

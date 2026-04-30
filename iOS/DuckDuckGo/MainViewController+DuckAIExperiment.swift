@@ -158,6 +158,10 @@ extension MainViewController {
         swipeTabsCoordinator?.isEnabled = !locked
         viewCoordinator.omniBar.barView.isUserInteractionEnabled = !locked
         viewCoordinator.omniBar.barView.menuButton.isUserInteractionEnabled = !locked
+
+        // Lock Duck.ai unified input controls during the fire-education step.
+        aiChatTabChatHeaderView?.setOnboardingLocked(locked)
+        unifiedToggleInputCoordinator?.setOnboardingControlsLocked(locked)
     }
 
     /// Like `setExperimentFireControlsLocked` but also disables the fire button.

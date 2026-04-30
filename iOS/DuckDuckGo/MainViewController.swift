@@ -2293,6 +2293,16 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.endEditing()
         unifiedToggleInputCoordinator?.deactivateToOmnibar()
         refreshOmniBar()
+        removeEmbeddedOnboardingDialogIfNeeded()
+    }
+
+    private func removeEmbeddedOnboardingDialogIfNeeded() {
+        guard let vc = embeddedOnboardingDialogVC else { return }
+        embeddedOnboardingDialogVC = nil
+        guard vc.parent != nil else { return }
+        vc.willMove(toParent: nil)
+        vc.view.removeFromSuperview()
+        vc.removeFromParent()
     }
 
     private var isModeToggleInAIChatMode: Bool {
@@ -2704,6 +2714,8 @@ class MainViewController: UIViewController {
     }
 
     private var brokenSitePromptViewHostingController: UIHostingController<BrokenSitePromptView>?
+    /// Holds the onboarding dialog embedded in the UTI editing area so it can be torn down on `dismissOmniBar`.
+    private weak var embeddedOnboardingDialogVC: UIViewController?
     lazy private var brokenSitePromptLimiter = BrokenSitePromptLimiter(privacyConfigManager: privacyConfigurationManager,
                                                                        store: BrokenSitePromptLimiterStore())
 
@@ -3421,6 +3433,27 @@ extension MainViewController: BrowserChromeDelegate {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         coordinator.setContentOverlaySuppressed(suppressed)
         updateUnifiedInputContentVisibility(for: coordinator)
+    }
+
+    func embedInUnifiedInputEditingAreaIfActive(_ viewController: UIViewController) -> Bool {
+        guard let coordinator = unifiedToggleInputCoordinator,
+              case .omnibar = coordinator.displayState else {
+            return false
+        }
+        // Add the dialog to the main view and pin its top to the bottom of the navigation bar
+        // container so it sits below the UTI input bar regardless of its animated height changes.
+        addChild(viewController)
+        viewController.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(viewController.view)
+        NSLayoutConstraint.activate([
+            viewController.view.topAnchor.constraint(equalTo: viewCoordinator.navigationBarContainer.bottomAnchor),
+            viewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            viewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            viewController.view.bottomAnchor.constraint(equalTo: viewCoordinator.toolbar.topAnchor),
+        ])
+        viewController.didMove(toParent: self)
+        embeddedOnboardingDialogVC = viewController
+        return true
     }
 
     private func hideKeyboard() {

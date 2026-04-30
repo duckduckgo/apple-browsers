@@ -215,6 +215,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private(set) var host: UnifiedToggleInputHost
     private(set) var isToggleEnabled: Bool
+    private(set) var isOnboardingLocked: Bool = false
     private(set) var displayState: UnifiedToggleInputDisplayState = .hidden
     private(set) var textState: InputTextState = .empty
     private(set) var inputMode: TextEntryMode = .aiChat
@@ -530,6 +531,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat) {
+        guard !isOnboardingLocked else { return }
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         let previousDisplayState = displayState
@@ -551,10 +553,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         intentSubject.send(.showExpanded(from: previousDisplayState))
         DispatchQueue.main.async { [weak self] in
             guard let self, case .aiTab(.expanded) = self.displayState else { return }
+            guard !self.isOnboardingLocked else { return }
             self.viewController.activateInput()
             if !self.viewController.isInputFirstResponder {
                 DispatchQueue.main.async { [weak self] in
                     guard let self, case .aiTab(.expanded) = self.displayState else { return }
+                    guard !self.isOnboardingLocked else { return }
                     self.viewController.activateInput()
                 }
             }
@@ -800,7 +804,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func activateInput() {
+        guard !isOnboardingLocked else { return }
         viewController.activateInput()
+    }
+
+    /// Locks or unlocks the input bar during the Duck.ai onboarding experiment path.
+    /// When locked the text field cannot be activated and the collapsed bar ignores taps.
+    func setOnboardingControlsLocked(_ locked: Bool) {
+        isOnboardingLocked = locked
+        viewController.view.isUserInteractionEnabled = !locked
+        viewController.view.alpha = locked ? 0.5 : 1
     }
 
     func dismissOmnibarKeyboard() {
@@ -1282,6 +1295,7 @@ extension UnifiedToggleInputCoordinator {
 extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegate {
 
     func unifiedToggleInputVCDidTapWhileCollapsed(_ vc: UnifiedToggleInputViewController) {
+        guard !isOnboardingLocked else { return }
         showExpanded(inputMode: inputMode)
     }
 

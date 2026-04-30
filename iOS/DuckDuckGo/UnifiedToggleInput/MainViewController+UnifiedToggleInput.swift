@@ -157,6 +157,8 @@ extension MainViewController {
             }
         case .refreshNonAITab:
             refreshNonAITab(tab: tab, coordinator: coordinator)
+        case .preserveOmnibarSession:
+            return
         }
 
         tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
@@ -251,6 +253,8 @@ private extension MainViewController {
         case unbindInactiveNonAITab
         case refreshAITab(AITabRefreshBehavior)
         case refreshNonAITab
+        /// The coordinator is mid-omnibar session on a non-AI tab — leave it alone.
+        case preserveOmnibarSession
     }
 
     enum AITabRefreshBehavior {
@@ -441,6 +445,14 @@ private extension MainViewController {
         if !tab.isAITab {
             if !coordinator.isActive && viewCoordinator.aiChatTabChatHeaderContainer.isHidden {
                 return .unbindInactiveNonAITab
+            }
+            // The coordinator was just activated for an omnibar editing session (e.g. the
+            // visit-site onboarding dialog activates the UTI from NTP.viewDidAppear).
+            // Collapsing it here would undo that activation before the keyboard appears.
+            // Once navigation starts (tab is loading), stop preserving so refreshNonAITab
+            // can collapse the bar normally.
+            if coordinator.isOmnibarSession, !tab.isLoading {
+                return .preserveOmnibarSession
             }
             return .refreshNonAITab
         }
@@ -701,7 +713,7 @@ extension MainViewController {
     }
 }
 
-private extension MainViewController {
+extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator) {
         applyUnifiedInputChromeBackground(.standardChrome)

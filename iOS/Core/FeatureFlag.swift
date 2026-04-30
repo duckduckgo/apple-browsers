@@ -631,7 +631,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand)))
         case .unifiedToggleInput:
-            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.unifiedToggleInput)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.unifiedToggleInput)))
+            // Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.unifiedToggleInput)))
         case .freeTrialConversionWideEvent:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent)))
         case .tabSwitcherTrackerCount:

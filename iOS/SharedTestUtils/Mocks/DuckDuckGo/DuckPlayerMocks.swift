@@ -627,4 +627,6 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
     )
 
     var tabBarContainer: UIView = UIView()
+
+    func embedInUnifiedInputEditingAreaIfActive(_ viewController: UIViewController) -> Bool { false }
 }

@@ -309,6 +309,15 @@ final class AIChatTabChatHeaderView: UIView {
         state.isChatInputHidden = hidden
     }
 
+    /// Locks or unlocks the header controls during the Duck.ai onboarding experiment path.
+    /// When locked, the settings, new-chat, and upgrade buttons are disabled until the fire step passes.
+    func setOnboardingLocked(_ locked: Bool) {
+        settingsButton.isEnabled = !locked
+        newChatButton.isEnabled = !locked
+        titleContainer.isUserInteractionEnabled = !locked
+        titleContainer.alpha = locked ? 0.5 : 1
+    }
+
     private func applyState() {
         titleContainer.isHidden = state.isSubscriptionActive != false
         titleLabel.isHidden = state.isSubscriptionActive != true
@@ -328,6 +337,7 @@ final class AIChatTabChatHeaderView: UIView {
         view.backgroundColor = UIColor(designSystemColor: .lines)
         return view
     }()
+
 
     private func setupUI() {
         backgroundColor = UIColor(designSystemColor: .surfaceTertiary)

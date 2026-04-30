@@ -151,6 +151,17 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         registerForNotifications()
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // In UTI mode the visit-site dialog's hostingController is parented to MainViewController
+        // (not to self) so it lives in unifiedInputContentContainer.  When navigation replaces
+        // this NTP with a web view or a fresh NTP, the container can reappear later and show the
+        // stale dialog.  Clean it up here before this NTP leaves the screen.
+        if let hc = hostingController, hc.parent !== self {
+            dismissHostingController(didFinishNTPOnboarding: false)
+        }
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
@@ -342,6 +353,15 @@ extension NewTabPageViewController {
         // Completion dialog should not hide NTP background state.
         newTabPageViewModel.finishOnboarding()
 
+        // UTI mode: no OmniBarEditingStateViewController is presented; embed the dialog in the
+        // UTI's content area (below the bar) and wire up subscription-promo check on dismiss.
+        if let mainVC = parent as? MainViewController,
+           let coordinator = mainVC.unifiedToggleInputCoordinator,
+           coordinator.isOmnibarSession {
+            showDuckAIOnboardingCompletionDialogInUTI(mainVC: mainVC, coordinator: coordinator, message: message)
+            return
+        }
+
         let presentedHostViewController = parent?.presentedViewController ?? parent
         guard let editingController = presentedHostViewController as? OmniBarEditingStateViewController else {
             isShowingDuckAICompletionDialog = false
@@ -411,6 +431,66 @@ extension NewTabPageViewController {
         ])
         hostingController.didMove(toParent: editingController)
         container.bringSubviewToFront(editingController.switchBarVC.view)
+    }
+
+    // Mirrors showDuckAIOnboardingCompletionDialog for UTI mode where no editing-state VC exists.
+    // The completion dialog is embedded directly in unifiedInputContentContainer below the UTI bar,
+    // and the onDismiss closure mirrors the legacy path's subscription-promo check.
+    private func showDuckAIOnboardingCompletionDialogInUTI(
+        mainVC: MainViewController,
+        coordinator: UnifiedToggleInputCoordinator,
+        message: String
+    ) {
+        isShowingDuckAICompletionDialog = true
+        view.alpha = 1
+
+        let onDismiss = { [weak self, weak mainVC, weak coordinator] in
+            guard let self else { return }
+            // Collapse the UTI bar explicitly rather than going through omniBar.endEditing()
+            // (which only resigns the legacy text field and does not drive the UTI state machine).
+            let collapseUTI = {
+                if let mainVC, let coordinator = coordinator ?? mainVC.unifiedToggleInputCoordinator {
+                    mainVC.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator)
+                }
+            }
+            let finishDismissal = {
+                let nextSpec = self.daxDialogsManager.nextHomeScreenMessageNew()
+                if nextSpec == .subscriptionPromotion {
+                    self.dismissHostingController(didFinishNTPOnboarding: true)
+                    collapseUTI()
+                    self.showNextDaxDialog()
+                } else {
+                    self.daxDialogsManager.dismiss()
+                    self.dismissHostingController(didFinishNTPOnboarding: true)
+                    collapseUTI()
+                    ViewHighlighter.hideAll()
+                }
+            }
+            guard let hostingView = self.hostingController?.view else {
+                finishDismissal()
+                return
+            }
+            hostingView.isUserInteractionEnabled = false
+            UIView.animate(withDuration: 0.2, animations: { hostingView.alpha = 0 },
+                           completion: { _ in finishDismissal() })
+        }
+
+        let root = newTabDialogFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
+        let hostingController = UIHostingController(rootView: root)
+        self.hostingController = hostingController
+        hostingController.view.backgroundColor = UIColor.clear
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        let container = mainVC.viewCoordinator.unifiedInputContentContainer!
+        mainVC.addChild(hostingController)
+        container.addSubview(hostingController.view)
+        NSLayoutConstraint.activate([
+            hostingController.view.topAnchor.constraint(equalTo: coordinator.viewController.view.bottomAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+        hostingController.didMove(toParent: mainVC)
     }
 
     func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
@@ -497,7 +577,33 @@ extension NewTabPageViewController {
 
     private func embedDialogInEditingState(_ hostingController: UIHostingController<AnyView>) {
         guard let editingController = parent?.presentedViewController as? OmniBarEditingStateViewController else {
-            // Fallback: embed directly on the NTP if the editing state didn't materialise.
+            // In UTI mode the editing state is handled by the unified toggle input coordinator.
+            // Add the dialog directly to unifiedInputContentContainer (the sibling container that
+            // holds the UTI content VC, not inside the content VC itself).  The top anchor is
+            // pinned to coordinator.viewController.view.bottomAnchor — the physical bottom edge of
+            // the UTI bar — because the content VC's own safeAreaLayoutGuide does NOT account for
+            // the UTI bar height (that offset is applied via additionalSafeAreaInsets only on the
+            // inner swipe-container child VC).  Being a sibling added after contentVC.view, the
+            // dialog is automatically in front and receives touches without needing bringSubviewToFront.
+            if let mainVC = parent as? MainViewController,
+               let coordinator = mainVC.unifiedToggleInputCoordinator,
+               coordinator.isOmnibarSession {
+                let container = mainVC.viewCoordinator.unifiedInputContentContainer!
+                mainVC.addChild(hostingController)
+                hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+                container.addSubview(hostingController.view)
+                NSLayoutConstraint.activate([
+                    hostingController.view.topAnchor.constraint(equalTo: coordinator.viewController.view.bottomAnchor),
+                    hostingController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                    hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+                    hostingController.view.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+                ])
+                hostingController.didMove(toParent: mainVC)
+                newTabPageViewModel.startOnboarding()
+                return
+            }
+
+            // Fallback: embed directly on the NTP if neither editing state materialised.
             addChild(hostingController)
             view.addSubview(hostingController.view)
             hostingController.view.translatesAutoresizingMaskIntoConstraints = false

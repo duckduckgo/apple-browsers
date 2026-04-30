@@ -34,7 +34,7 @@ class AutofillInterfaceEmailTruncatorTests: XCTestCase {
 
     func testRegularSizeEmailTruncating() {
         let email = "daxtheduck@duck.com"
-        let expectedEmail = "dax...@duck.com"
+        let expectedEmail = "dax…@duck.com"
         
         let result = AutofillInterfaceEmailTruncator.truncateEmail(email, maxLength: 10)
         
@@ -43,7 +43,7 @@ class AutofillInterfaceEmailTruncatorTests: XCTestCase {
     
     func testLongEmailTruncating() {
         let email = "daxtheduckthebestduckyoucouldevermeet@duck.com"
-        let expectedEmail = "dax...@duck.com"
+        let expectedEmail = "dax…@duck.com"
         
         let result = AutofillInterfaceEmailTruncator.truncateEmail(email, maxLength: 10)
         
@@ -52,7 +52,7 @@ class AutofillInterfaceEmailTruncatorTests: XCTestCase {
     
     func testLongEmailDomainTruncating() {
         let email = "daxtheduck@duckduckduckduckduckgo.com"
-        let expectedEmail = "dax...@duckduckduckduckduckgo.com"
+        let expectedEmail = "dax…@duckduckduckduckduckgo.com"
         
         let result = AutofillInterfaceEmailTruncator.truncateEmail(email, maxLength: 15)
         
@@ -88,8 +88,11 @@ class AutofillInterfaceEmailTruncatorTests: XCTestCase {
     
     func testEmailOffsetByOneFromMaxLength() {
         let email = "daxtheduck@duck.com"
-        let expectedEmail = "daxthe...@duck.com"
-        
+        // The Unicode ellipsis (`…`) is 1 character vs. the previous ASCII
+        // `...` (3 characters), so the algorithm has 2 more characters of
+        // budget for the username prefix while still respecting `maxLength`.
+        let expectedEmail = "daxthedu…@duck.com"
+
         let result = AutofillInterfaceEmailTruncator.truncateEmail(email, maxLength: 18)
         
         XCTAssertEqual(expectedEmail, result, "emails should match")

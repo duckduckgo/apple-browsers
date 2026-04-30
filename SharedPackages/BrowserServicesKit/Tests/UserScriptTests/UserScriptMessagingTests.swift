@@ -287,7 +287,7 @@ struct TestDelegate: Subfeature {
 
     /// An example that represents handling a [NotificationMessage](https://duckduckgo.github.io/content-scope-scripts/classes/Messaging_Schema.NotificationMessage.html)
     func notifyExample(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        print("not replying...")
+        print("not replying…")
         return nil
     }
 

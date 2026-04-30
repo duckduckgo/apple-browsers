@@ -146,7 +146,7 @@ struct LogFilterControlsView: View {
 
                 Spacer()
 
-                TextField("Search logs...", text: $filterSettings.searchText)
+                TextField("Search logs…", text: $filterSettings.searchText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .frame(width: 200)
             }

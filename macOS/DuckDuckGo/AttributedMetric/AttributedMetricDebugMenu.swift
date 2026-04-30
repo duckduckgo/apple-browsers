@@ -44,10 +44,10 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
             NSMenuItem(title: "Reset Install Attribution", action: #selector(AttributedMetricDebugMenu.resetInstallAttribution))
                 .targetting(self)
 
-            NSMenuItem(title: "Set Current Time...", action: #selector(AttributedMetricDebugMenu.setCurrentTime))
+            NSMenuItem(title: "Set Current Time…", action: #selector(AttributedMetricDebugMenu.setCurrentTime))
                 .targetting(self)
 
-            NSMenuItem(title: "Set Origin...", action: #selector(AttributedMetricDebugMenu.setOrigin))
+            NSMenuItem(title: "Set Origin…", action: #selector(AttributedMetricDebugMenu.setOrigin))
                 .targetting(self)
 
             NSMenuItem.separator()

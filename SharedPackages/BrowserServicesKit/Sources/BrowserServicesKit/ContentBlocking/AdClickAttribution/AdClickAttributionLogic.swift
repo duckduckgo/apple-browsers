@@ -167,7 +167,7 @@ public class AdClickAttributionLogic {
         case .noAttribution:
             completion()
         case .preparingAttribution(let vendor, let session, let id, var completionBlocks):
-            Logger.contentBlocking.debug("<\(self.debugID)> Suspending provisional navigation...")
+            Logger.contentBlocking.debug("<\(self.debugID)> Suspending provisional navigation…")
             completionBlocks.append(completion)
             state = .preparingAttribution(vendor: vendor,
                                           session: session,

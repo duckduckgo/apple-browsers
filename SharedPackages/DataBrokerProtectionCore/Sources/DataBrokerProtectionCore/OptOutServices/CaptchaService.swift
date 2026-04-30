@@ -222,7 +222,7 @@ public struct CaptchaService: CaptchaServiceProtocol {
             throw CaptchaServiceError.cantGenerateCaptchaServiceURL
         }
 
-        Logger.service.debug("Submitting captcha request ...")
+        Logger.service.debug("Submitting captcha request …")
         var request = URLRequest(url: url)
 
         guard let authHeader = await authenticationManager.getAuthHeader() else {
@@ -278,13 +278,13 @@ public struct CaptchaService: CaptchaServiceProtocol {
         switch captchaResolveResult.message {
         case .ready:
             if let data = captchaResolveResult.data {
-                Logger.service.debug("Captcha ready ...")
+                Logger.service.debug("Captcha ready …")
                 return data
             } else {
                 throw CaptchaServiceError.nilDataWhenFetchingCaptchaResult
             }
         case .notReady:
-            Logger.service.debug("Captcha not ready ...")
+            Logger.service.debug("Captcha not ready …")
             if retries == 0 {
                 throw CaptchaServiceError.timedOutWhenFetchingCaptchaResult
             }
@@ -297,10 +297,10 @@ public struct CaptchaService: CaptchaServiceProtocol {
                                                        attemptId: attemptId,
                                                        shouldRunNextStep: shouldRunNextStep)
         case .failure:
-            Logger.service.debug("Captcha failure ...")
+            Logger.service.debug("Captcha failure …")
             throw CaptchaServiceError.failureWhenFetchingCaptchaResult
         case .invalidRequest:
-            Logger.service.debug("Captcha invalid request ...")
+            Logger.service.debug("Captcha invalid request …")
             throw CaptchaServiceError.invalidRequestWhenFetchingCaptchaResult
         }
     }

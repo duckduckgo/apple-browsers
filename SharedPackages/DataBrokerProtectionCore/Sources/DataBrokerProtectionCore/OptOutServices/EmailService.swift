@@ -155,7 +155,7 @@ public struct EmailService: EmailServiceProtocol {
                 Logger.service.error("✉️ [EmailService] Link extraction timed out after retries for: \(email, privacy: .public)")
                 throw EmailError.linkExtractionTimedOut
             }
-            Logger.service.log("✉️ [EmailService] No email yet. Waiting for a new request... (\(numberOfRetries, privacy: .public) retries remaining)")
+            Logger.service.log("✉️ [EmailService] No email yet. Waiting for a new request… (\(numberOfRetries, privacy: .public) retries remaining)")
             try await Task.sleep(nanoseconds: pollingTimeInNanoSecondsSeconds)
             return try await getConfirmationLink(from: email,
                                                  numberOfRetries: numberOfRetries - 1,

@@ -55,7 +55,7 @@ struct BackForwardMenuHistoryItemURLSanitizer {
 
         let maxSize = 25
         if displayURL.count > maxSize {
-            displayURL = "\(String(displayURL.dropLast(displayURL.count - maxSize)))..."
+            displayURL = "\(String(displayURL.dropLast(displayURL.count - maxSize)))…"
         }
 
         return displayURL

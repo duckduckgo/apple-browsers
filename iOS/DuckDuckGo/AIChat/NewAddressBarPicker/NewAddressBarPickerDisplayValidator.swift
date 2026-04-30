@@ -63,7 +63,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     func shouldDisplayNewAddressBarPicker() -> Bool {
         /// https://app.asana.com/1/137249556945/task/1211152753855410?focus=true
 
-        Logger.addressBarPicker.info("Checking picker display conditions...")
+        Logger.addressBarPicker.info("Checking picker display conditions…")
 
         /// Do not display during automated UI runs or WebDriver automation
         /// https://app.asana.com/1/137249556945/project/414709148257752/task/1211474728965506?focus=true

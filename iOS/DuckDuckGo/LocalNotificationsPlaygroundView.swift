@@ -50,7 +50,7 @@ struct LocalNotificationsPlaygroundView: View {
                                 }
                             },
                             label: {
-                                Text(verbatim: "Open Settings...")
+                                Text(verbatim: "Open Settings…")
                             }
                         )
                     }

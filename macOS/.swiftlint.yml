@@ -27,6 +27,23 @@ opt_in_rules:
   - single_test_class
 
 custom_rules:
+  prefer_unicode_ellipsis:
+    name: "Prefer Unicode ellipsis"
+    included: ".*\\.swift"
+    # Skip `UserText*.swift` files — those are localization sources whose
+    # `value:` strings are owned by the translation pipeline, and changing
+    # `...` → `…` there would invalidate every existing translation.
+    excluded: ".*UserText.*\\.swift"
+    # Match a single-line string literal that contains `...`. Anchoring the
+    # regex on the surrounding quotes (and combining with `match_kinds:
+    # [string]`) ensures we only fire inside actual string literals — so
+    # range operators (`1...3`), partial ranges (`...10`) and variadic
+    # parameters are unaffected, and `...` inside comments is ignored.
+    regex: '"[^"\n]*\.\.\.[^"\n]*"'
+    match_kinds:
+      - string
+    message: "Prefer Unicode ellipsis (…) over three ASCII periods (...) in string literals."
+    severity: warning
   explicit_non_final_class:
     included: ".*\\.swift"
     name: "Implicitly non-final class"

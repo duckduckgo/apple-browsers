@@ -26,7 +26,7 @@ extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
     }
 
     func checkForEmailConfirmation() {
-        updateProgress("Checking email confirmations...")
+        updateProgress("Checking email confirmations…")
         let emailConfirmationDataService = emailConfirmationDataService
         Task {
             do {
@@ -51,7 +51,7 @@ extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
     func continueOptOutAfterEmailConfirmation(scanResult: DebugScanResult) {
         guard let confirmationURL = confirmationURL(for: scanResult) else { return }
         isProgressActive = true
-        progressText = "Continuing opt-out..."
+        progressText = "Continuing opt-out…"
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: scanResult.dataBroker,
             profileQuery: scanResult.profileQuery,

@@ -85,7 +85,7 @@ public final class SafariPerformanceTestViewModel: ObservableObject {
     public func cancelTest() {
         logger.log("Cancelling Safari performance test")
         isCancelled = true
-        statusText = "Cancelling..."
+        statusText = "Cancelling…"
     }
 
     public func reset() {
@@ -125,7 +125,7 @@ public final class SafariPerformanceTestViewModel: ObservableObject {
         progress = 0
         errorMessage = nil
         testResults = nil
-        statusText = "Initializing Safari test..."
+        statusText = "Initializing Safari test…"
     }
 
     private func createAndConfigureRunner(url: URL) -> SafariTestExecuting {

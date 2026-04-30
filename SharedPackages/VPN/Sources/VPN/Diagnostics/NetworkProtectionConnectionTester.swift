@@ -170,7 +170,7 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
             // by this method, as it'll be handled through the result handler callback.
             // The error we're ignoring here is only used when this class is initialized
             // with an immediate test, to know whether the connection is up while the user
-            // still sees "Connecting..."
+            // still sees "Connecting…"
             await self?.testConnection()
         }
     }
@@ -188,7 +188,7 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
             return
         }
 
-        Logger.networkProtectionConnectionTester.debug("Testing connection...")
+        Logger.networkProtectionConnectionTester.debug("Testing connection…")
 
         let vpnParameters = NWParameters.tcp
         vpnParameters.requiredInterface = tunnelInterface

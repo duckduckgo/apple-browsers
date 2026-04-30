@@ -24,7 +24,7 @@ public final class DNSTester: DNSTesting {
     // MARK: - Constants
 
     private enum Constants {
-        static let progressMessage = "Testing DNS resolution..."
+        static let progressMessage = "Testing DNS resolution…"
         static let measurementDelay: UInt64 = 50_000_000  // 50ms between DNS queries
     }
 

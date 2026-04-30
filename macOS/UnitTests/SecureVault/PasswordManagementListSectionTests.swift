@@ -81,7 +81,7 @@ final class PasswordManagementListSectionTests: XCTestCase {
         let accounts = [
             login(named: "123"),
             login(named: "😬"),
-            login(named: "...")
+            login(named: "…")
         ]
 
         let sections = PasswordManagementListSection.sections(with: accounts, by: \.firstCharacter, order: .ascending)

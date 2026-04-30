@@ -26,7 +26,7 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
 
         // Step 1: Enable internal user if needed
         app.debugMenu.click()
-        let searchField = app.searchFields["Search debug menu..."]
+        let searchField = app.searchFields["Search debug menu…"]
         searchField.click()
         searchField.typeText("internal")
         let internalUserMenuItem = app.menuItems["Set Internal User State"]
@@ -34,7 +34,7 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
             internalUserMenuItem.click()
             app.debugMenu.click()
         }
-        let activeSearchField = app.searchFields["Search debug menu..."]
+        let activeSearchField = app.searchFields["Search debug menu…"]
         activeSearchField.click()
         activeSearchField.typeKey("a", modifierFlags: .command)
         activeSearchField.typeKey(.delete, modifierFlags: [])

@@ -277,7 +277,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     // MARK: - Subscription
 
     public func loadInitialData() async {
-        Logger.subscription.log("Loading initial data...")
+        Logger.subscription.log("Loading initial data…")
 
         do {
             _ = try? await getTokenContainer(policy: .localValid)
@@ -503,7 +503,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     func attemptTokenRecovery() async throws -> TokenContainer {
 
-        Logger.subscription.log("Attempting token recovery...")
+        Logger.subscription.log("Attempting token recovery…")
 
         guard let tokenRecoveryHandler else {
             Logger.subscription.log("Recovery not possible, no handler configured.")
@@ -590,7 +590,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription {
-        Logger.subscription.log("Confirming Purchase...")
+        Logger.subscription.log("Confirming Purchase…")
         let accessToken = try await getTokenContainer(policy: .localValid).accessToken
         let confirmation = try await subscriptionEndpointService.confirmPurchase(accessToken: accessToken,
                                                                                  signature: signature,

@@ -214,7 +214,7 @@ public class ContentBlockerRulesManager: CompiledRuleListsSource {
 
     /// Returns true if the compilation should be executed immediately
     private func updateCompilationState(token: CompletionToken) -> Bool {
-        Logger.contentBlocking.log("Requesting compilation...")
+        Logger.contentBlocking.log("Requesting compilation…")
         lock.lock()
         guard case .idle = state else {
             if case .recompiling(let tokens) = state {

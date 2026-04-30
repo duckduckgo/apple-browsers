@@ -205,7 +205,7 @@ class AutofillCredentialsDebugViewController: UITableViewController {
     }
 
     @IBAction func sortButtonAction(_ sender: Any) {
-        let alert = UIAlertController(title: "Sort By...", message: nil, preferredStyle: .actionSheet)
+        let alert = UIAlertController(title: "Sort By…", message: nil, preferredStyle: .actionSheet)
 
         alert.addAction(UIAlertAction(title: "ID (default)", style: .default, handler: { [weak self] _ in
             self?.reloadCredentials()

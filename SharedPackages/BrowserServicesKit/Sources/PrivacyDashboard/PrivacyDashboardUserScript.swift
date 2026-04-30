@@ -227,7 +227,7 @@ final class PrivacyDashboardUserScript: NSObject, StaticUserScript {
               let urlString = dict["url"] as? String,
               let url = URL(string: urlString)
         else {
-            assertionFailure("handleOpenUrlInNewTab: expected { url: '...' } ")
+            assertionFailure("handleOpenUrlInNewTab: expected { url: '…' } ")
             return
         }
 
@@ -238,7 +238,7 @@ final class PrivacyDashboardUserScript: NSObject, StaticUserScript {
         guard let dict = message.body as? [String: Any],
               let target = dict["target"] as? String
         else {
-            assertionFailure("handleOpenSettings: expected { target: '...' } ")
+            assertionFailure("handleOpenSettings: expected { target: '…' } ")
             return
         }
 

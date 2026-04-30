@@ -24,7 +24,7 @@ public final class HttpResponseTester: HttpResponseTesting {
     // MARK: - Constants
 
     private enum Constants {
-        static let progressMessage = "Testing HTTP response times..."
+        static let progressMessage = "Testing HTTP response times…"
         static let httpMethodHead = "HEAD"
         static let measurementDelay: UInt64 = 50_000_000  // 50ms
         static let percentile50 = 0.5

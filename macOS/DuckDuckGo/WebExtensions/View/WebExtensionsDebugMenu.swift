@@ -73,7 +73,7 @@ final class WebExtensionsDebugMenu: NSMenu {
     private func makeInstallSubmenu() -> NSMenu {
         let submenu = NSMenu()
 
-        let browseItem = NSMenuItem(title: "Other...", action: #selector(selectAndLoadWebExtension))
+        let browseItem = NSMenuItem(title: "Other…", action: #selector(selectAndLoadWebExtension))
         browseItem.target = self
         submenu.addItem(browseItem)
 

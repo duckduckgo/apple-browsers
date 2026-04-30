@@ -324,7 +324,7 @@ class ClickToLoadBlockingTests: XCTestCase {
             userScriptDelegateMock.shouldProcessCTLTrackers = false
         }
 
-        os_log("Loading %s ...", siteURL.absoluteString)
+        os_log("Loading %s …", siteURL.absoluteString)
         let request = URLRequest(url: siteURL)
 
         WKWebsiteDataStore.default().removeData(ofTypes: [WKWebsiteDataTypeDiskCache,

@@ -607,7 +607,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
             return
         }
 
-        Logger.general.debug("WarnBeforeQuitManager: Waiting for key release...")
+        Logger.general.debug("WarnBeforeQuitManager: Waiting for key release…")
 
         // Set a sanity timeout to prevent indefinite waiting (e.g., if user keeps holding key for a long time)
         let timeout: TimeInterval = 3.0

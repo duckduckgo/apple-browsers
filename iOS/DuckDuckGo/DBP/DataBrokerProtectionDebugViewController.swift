@@ -499,7 +499,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 case .running:
                     // Disable all job action rows while running
                     cell.textLabel?.textColor = .systemGray
-                    cell.detailTextLabel?.text = "Running..."
+                    cell.detailTextLabel?.text = "Running…"
                     cell.selectionStyle = .none
                 case .failed(let error):
                     cell.textLabel?.textColor = .systemRed
@@ -552,7 +552,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 cell.textLabel?.textColor = .systemBlue
             case .metadataDisplay:
                 cell.textLabel?.font = .monospacedSystemFont(ofSize: 13.0, weight: .regular)
-                cell.textLabel?.text = dbpMetadata ?? "Loading..."
+                cell.textLabel?.text = dbpMetadata ?? "Loading…"
                 cell.textLabel?.numberOfLines = 0
             }
 

@@ -53,7 +53,7 @@ final class SiteBreakageExperimentMetricsTests: XCTestCase {
         }
 
         // THEN
-        XCTAssertEqual(pixelCalls.count, TDSExperimentType.allCases.count * 6, "firePixelExperiment should be called for each experiment and each conversionWindow 0...5.")
+        XCTAssertEqual(pixelCalls.count, TDSExperimentType.allCases.count * 6, "firePixelExperiment should be called for each experiment and each conversionWindow 0…5.")
         XCTAssertEqual(pixelCalls.first?.0, TDSExperimentType.allCases[0].subfeature.rawValue, "expected SubfeatureID should be passed as parameter")
         XCTAssertEqual(pixelCalls.first?.1, "privacyToggleUsed", "expected metric should be passed as parameter")
         XCTAssertEqual(pixelCalls.first?.2, 0...0, "expected Conversion Window should be passed as parameter")
@@ -70,7 +70,7 @@ final class SiteBreakageExperimentMetricsTests: XCTestCase {
         }
 
         // THEN
-        XCTAssertEqual(pixelCalls.count, TDSExperimentType.allCases.count * 6, "firePixelExperiment should be called for each experiment and each conversionWindow 0...5.")
+        XCTAssertEqual(pixelCalls.count, TDSExperimentType.allCases.count * 6, "firePixelExperiment should be called for each experiment and each conversionWindow 0…5.")
         XCTAssertEqual(pixelCalls.first?.0, TDSExperimentType.allCases[0].subfeature.rawValue, "expected SubfeatureID should be passed as parameter")
         XCTAssertEqual(pixelCalls.first?.1, "privacyToggleUsed", "expected metric should be passed as parameter")
         XCTAssertEqual(pixelCalls.first?.2, 0...0, "expected Conversion Window should be passed as parameter")

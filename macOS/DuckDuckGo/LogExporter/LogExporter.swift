@@ -29,7 +29,7 @@ struct LogExporter {
     }
 
     static func export(configuration: LogExporterConfiguration) async throws {
-        Logger.general.log("Exporting logs...")
+        Logger.general.log("Exporting logs…")
 
         var filters = [LogFilter]()
 

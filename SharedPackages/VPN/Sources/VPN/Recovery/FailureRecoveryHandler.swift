@@ -173,7 +173,7 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
                     Logger.networkProtectionTunnelFailureMonitor.log("🟢 Failure recovery success!")
                     return
                 } catch {
-                    Logger.networkProtectionTunnelFailureMonitor.log("🟢 Failure recovery failed. Retrying...")
+                    Logger.networkProtectionTunnelFailureMonitor.log("🟢 Failure recovery failed. Retrying…")
                 }
                 do {
                     try await Task.sleep(interval: currentDelay)

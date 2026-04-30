@@ -155,7 +155,7 @@ final class UserBackgroundImagesManager: UserBackgroundImagesManaging {
     func addImage(with url: URL) async throws -> UserBackgroundImage {
         let fileName = [UUID().uuidString, Const.jpegExtension].joined(separator: ".")
         let destinationURL = storageLocation.appendingPathComponent(fileName)
-        Logger.newTabPageCustomization.debug("Processing user image at \(url.path) -> \(fileName) ...")
+        Logger.newTabPageCustomization.debug("Processing user image at \(url.path) -> \(fileName) …")
 
         // first copy the image, converting it to JPEG
         try copyImage(at: url, toJPEGAt: destinationURL)
@@ -230,7 +230,7 @@ final class UserBackgroundImagesManager: UserBackgroundImagesManaging {
         guard imagesMetadata.count >= maximumNumberOfImages else {
             return
         }
-        Logger.newTabPageCustomization.debug("User images are over limit, deleting oldest image(s) ...")
+        Logger.newTabPageCustomization.debug("User images are over limit, deleting oldest image(s) …")
         let imagesToDelete = imagesMetadata.suffix(from: maximumNumberOfImages - 1).compactMap(UserBackgroundImage.init)
         imagesToDelete.forEach { deleteImageFiles(for: $0) }
     }

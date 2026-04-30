@@ -228,7 +228,7 @@ final class UpdatesDebugMenu: NSMenu {
         alert.addButton(withTitle: "Cancel")
 
         let textField = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 400, height: 24))
-        textField.placeholderString = "Base64 private key..."
+        textField.placeholderString = "Base64 private key…"
         alert.accessoryView = textField
 
         if alert.runModal() == .alertFirstButtonReturn {
@@ -390,7 +390,7 @@ private enum SparkleTestingResources {
         if os.path.exists(CERT_FILE) and os.path.exists(KEY_FILE):
             return (True, False)
 
-        print("Generating self-signed certificate...")
+        print("Generating self-signed certificate…")
 
         cmd = [
             "openssl", "req", "-x509", "-newkey", "rsa:4096",
@@ -444,7 +444,7 @@ private enum SparkleTestingResources {
 
     def delete_old_cert():
         """Remove existing certificate with same name from keychain."""
-        print("Removing old certificate from keychain if present...")
+        print("Removing old certificate from keychain if present…")
         subprocess.run(
             ["sudo", "security", "delete-certificate", "-c", CERT_NAME,
              "/Library/Keychains/System.keychain"],

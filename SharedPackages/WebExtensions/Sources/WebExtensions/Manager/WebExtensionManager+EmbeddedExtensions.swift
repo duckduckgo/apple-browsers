@@ -37,7 +37,7 @@ extension WebExtensionManager {
             return
         }
 
-        Logger.webExtensions.debug("🔄 Syncing embedded extensions...")
+        Logger.webExtensions.debug("🔄 Syncing embedded extensions…")
 
         for descriptor in EmbeddedWebExtensionRegistry.all {
             if enabledTypes.contains(descriptor.type) {

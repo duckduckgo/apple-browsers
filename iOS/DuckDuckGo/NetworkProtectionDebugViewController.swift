@@ -556,7 +556,7 @@ final class NetworkProtectionDebugViewController: UITableViewController {
 
     private func configure(_ cell: UITableViewCell, forNetworkPathRow row: Int) {
         cell.textLabel?.font = .monospacedSystemFont(ofSize: 13.0, weight: .regular)
-        cell.textLabel?.text = currentNetworkPath ?? "Loading path..."
+        cell.textLabel?.text = currentNetworkPath ?? "Loading path…"
     }
 
     private func startPathMonitor() {
@@ -686,9 +686,9 @@ final class NetworkProtectionDebugViewController: UITableViewController {
 
         switch ConfigurationRows(rawValue: row) {
         case .baseConfigurationData:
-            cell.textLabel?.text = baseConfigurationData ?? "Loading base configuration..."
+            cell.textLabel?.text = baseConfigurationData ?? "Loading base configuration…"
         case .fullProtocolConfigurationData:
-            cell.textLabel?.text = fullProtocolConfigurationData ?? "Loading protocol configuration..."
+            cell.textLabel?.text = fullProtocolConfigurationData ?? "Loading protocol configuration…"
         case .none:
             assertionFailure("Couldn't map configuration row")
         }

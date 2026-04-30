@@ -110,8 +110,8 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
     public func checkForEmailConfirmationData() async throws {
         guard featureFlagger.isEmailConfirmationDecouplingFeatureOn else { return }
 
-        Logger.service.log("✉️ [EmailConfirmationDataService] Checking for email confirmation data...")
-        debugEventHandler?("Checking for email confirmation data...")
+        Logger.service.log("✉️ [EmailConfirmationDataService] Checking for email confirmation data…")
+        debugEventHandler?("Checking for email confirmation data…")
 
         let recordsAwaitingLink = try emailConfirmationStore.fetchOptOutEmailConfirmationsAwaitingLink()
         let activeConfirmationIdentifiers = try emailConfirmationStore.fetchIdentifiersForActiveEmailConfirmations()

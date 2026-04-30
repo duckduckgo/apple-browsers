@@ -23,7 +23,7 @@ public struct AutofillInterfaceEmailTruncator {
     public static func truncateEmail(_ email: String, maxLength: Int) -> String {
         let emailComponents = email.components(separatedBy: "@")
         if emailComponents.count > 1 && email.count > maxLength {
-            let ellipsis = "..."
+            let ellipsis = "…"
             let minimumPrefixSize = 3
             
             let difference = email.count - maxLength + ellipsis.count
@@ -31,7 +31,12 @@ public struct AutofillInterfaceEmailTruncator {
                let domain = emailComponents.last {
                 
                 var prefixCount = username.count - difference
-                prefixCount = prefixCount < 0 ? minimumPrefixSize : prefixCount
+                // Always show at least `minimumPrefixSize` characters of the username so the
+                // truncated email stays recognizable. The threshold matters now that the
+                // ellipsis is a single Unicode character (`…`) rather than three ASCII
+                // periods — without this, `prefixCount` can land on `0` and render an
+                // uninformative `…@domain` string.
+                prefixCount = prefixCount < minimumPrefixSize ? minimumPrefixSize : prefixCount
                 let prefix = username.prefix(prefixCount)
                 
                 return "\(prefix)\(ellipsis)@\(domain)"

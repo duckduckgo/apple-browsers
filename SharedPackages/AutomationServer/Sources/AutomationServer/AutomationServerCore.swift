@@ -187,7 +187,7 @@ public final class AutomationServerCore {
 
         // Validate port is in valid range before UInt16 conversion
         guard port.isValidPort else {
-            Logger.automationServer.error("Invalid port number: \(port). Must be in range 1...65535")
+            Logger.automationServer.error("Invalid port number: \(port). Must be in range 1…65535")
             throw AutomationServerError.invalidPort
         }
 
@@ -280,7 +280,7 @@ public final class AutomationServerCore {
                 Logger.automationServer.error("Timeout waiting for content to be ready")
                 return ("timeout", .failure(.timeout))
             }
-            Logger.automationServer.debug("Still loading, waiting...")
+            Logger.automationServer.debug("Still loading, waiting…")
             try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
         }
         return await handleConnection(content)

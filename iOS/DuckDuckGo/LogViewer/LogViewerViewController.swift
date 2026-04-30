@@ -42,7 +42,7 @@ final class LogViewerViewController: UIViewController {
         let searchController = UISearchController(searchResultsController: nil)
         searchController.searchResultsUpdater = self
         searchController.obscuresBackgroundDuringPresentation = false
-        searchController.searchBar.placeholder = "Search logs..."
+        searchController.searchBar.placeholder = "Search logs…"
         return searchController
     }()
     

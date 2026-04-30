@@ -128,7 +128,7 @@ public class SitePerformanceTester: NSObject {
         var detailedMetrics = CollectedMetrics()
         var failedAttempts = 0
 
-        progressHandler?(iteration, minIterations, "Clearing cache...")
+        progressHandler?(iteration, minIterations, "Clearing cache…")
         await clearCacheForURL(url)
         await verifyCacheClearing()
         try? await Task.sleep(nanoseconds: 500_000_000)
@@ -140,7 +140,7 @@ public class SitePerformanceTester: NSObject {
         await runWarmup(iteration: iteration, minIterations: minIterations)
         try? await Task.sleep(nanoseconds: 500_000_000)
 
-        progressHandler?(iteration, minIterations, "Loading page...")
+        progressHandler?(iteration, minIterations, "Loading page…")
 
         if let metrics = await measurePageLoadAndCollectMetrics(url: url, timeout: timeout) {
             loadTimes.append(metrics.loadComplete)
@@ -190,7 +190,7 @@ public class SitePerformanceTester: NSObject {
     }
 
     private func runWarmup(iteration: Int, minIterations: Int) async {
-        progressHandler?(iteration, minIterations, "Warming up JavaScript engine...")
+        progressHandler?(iteration, minIterations, "Warming up JavaScript engine…")
 
         guard let warmupURL = URL(string: "https://duckduckgo.com") else {
             logger.error("Failed to create warmup URL")
@@ -253,7 +253,7 @@ public class SitePerformanceTester: NSObject {
             return false
         }
 
-        logger.info("Consistency not yet achieved. Testing iteration \(iteration + 1)...")
+        logger.info("Consistency not yet achieved. Testing iteration \(iteration + 1)…")
         return true
     }
 

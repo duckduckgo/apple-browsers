@@ -162,7 +162,7 @@ struct RunDBPDebugModeView: View {
                 .font(.headline)
             
             if viewModel.brokers.isEmpty {
-                Text("Loading brokers...")
+                Text("Loading brokers…")
                     .foregroundColor(.secondary)
             } else {
                 ScrollView {
@@ -219,7 +219,7 @@ struct RunDBPDebugModeView: View {
             
             if viewModel.isRunning {
                 VStack(spacing: 10) {
-                    Text("Scanning...")
+                    Text("Scanning…")
                 }
             } else {
                 VStack(spacing: 10) {
@@ -289,7 +289,7 @@ struct RunDBPDebugModeView: View {
                 if viewModel.optOutInProgress.contains(result.id) {
                     HStack(spacing: 4) {
                         SwiftUI.ProgressView()
-                        Text("Opting Out...")
+                        Text("Opting Out…")
                     }
                     .font(.caption)
                     .foregroundColor(.secondary)

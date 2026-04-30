@@ -41,7 +41,7 @@ final class PromptCooldownMigrator {
     /// - Returns: `true` if migration was performed, `false` if already completed or no data to migrate
     @discardableResult
     func migrateIfNeeded() -> Bool {
-        Logger.modalPrompt.info("[Modal Prompt Coordination] - Cooldown Migration - Starting migration...")
+        Logger.modalPrompt.info("[Modal Prompt Coordination] - Cooldown Migration - Starting migration…")
 
         // 1. Read old Default Browser storage
         guard let lastModalShownDate = readDefaultBrowserLastModalShownDate() else {

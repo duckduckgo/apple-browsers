@@ -161,7 +161,7 @@ final class PerformanceTestViewModel: ObservableObject {
 
         currentBrowser = "DuckDuckGo"
         browserProgress = "1/2"
-        statusText = "Testing DuckDuckGo..."
+        statusText = "Testing DuckDuckGo…"
 
         guard let tester = duckDuckGoTester else { return nil }
 
@@ -180,7 +180,7 @@ final class PerformanceTestViewModel: ObservableObject {
 
         currentBrowser = "Safari"
         browserProgress = "2/2"
-        statusText = "Testing Safari..."
+        statusText = "Testing Safari…"
         progress = 0
         currentIteration = 0
 

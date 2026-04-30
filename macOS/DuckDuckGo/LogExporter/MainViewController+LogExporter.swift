@@ -38,7 +38,7 @@ extension MainViewController {
                         try await LogExporter.export(configuration: result)
 
                         let alert = NSAlert()
-                        alert.messageText = "Logs exported on your Desktop..."
+                        alert.messageText = "Logs exported on your Desktop…"
 
                         Task { @MainActor in
                             if let window = NSApp.mainWindow {

@@ -76,11 +76,11 @@ final class SafariPerformanceTestViewModelTests: XCTestCase {
         let viewModel = SafariPerformanceTestViewModel(url: url)
 
         // Simulate progress update from runner
-        viewModel.handleProgress(iteration: 3, total: 10, status: "Loading page...")
+        viewModel.handleProgress(iteration: 3, total: 10, status: "Loading page…")
 
         XCTAssertEqual(viewModel.currentIteration, 3)
         XCTAssertEqual(viewModel.totalIterations, 10)
-        XCTAssertEqual(viewModel.statusText, "Loading page...")
+        XCTAssertEqual(viewModel.statusText, "Loading page…")
         XCTAssertEqual(viewModel.progress, 0.3, accuracy: 0.01)
     }
 

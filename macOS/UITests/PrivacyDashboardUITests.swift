@@ -205,7 +205,7 @@ class PrivacyDashboardUITests: UITestCase {
             return descendants
         }
         let nestedNodes = [groupSnapshot] + collectDescendants(from: groupSnapshot)
-        // "Tracker domains for ..." is the stable section marker for each company block.
+        // "Tracker domains for …" is the stable section marker for each company block.
         let trackerDomainSectionNodes = nestedNodes.filter { node in
             let title = node.title
             let label = node.trimmedLabel
@@ -263,14 +263,14 @@ class PrivacyDashboardUITests: UITestCase {
             XCTAssertTrue(phishingWarning.waitForExistence(timeout: UITests.Timeouts.navigation), "Phishing warning \"\(line)\" should be displayed when navigating to phishing page")
         }
 
-        // Step 1: Click "Advanced..." button to show advanced options
+        // Step 1: Click "Advanced…" button to show advanced options
         let advancedButton = webView.buttons[localization.advancedEllipsisButton.title]
-        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Advanced... button should be available in phishing warning")
+        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Advanced… button should be available in phishing warning")
         advancedButton.click()
 
         // Step 2: Click "Accept Risk and Visit Site" text element (it's static text, not a link or button!)
         let acceptRiskText = webView.staticTexts[localization.visitSiteButton.title]
-        XCTAssertTrue(acceptRiskText.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Accept Risk and Visit Site text should be available after clicking Advanced...")
+        XCTAssertTrue(acceptRiskText.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Accept Risk and Visit Site text should be available after clicking Advanced…")
         acceptRiskText.hover()
         Thread.sleep(forTimeInterval: 0.5)
         acceptRiskText.click()

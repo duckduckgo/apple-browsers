@@ -39,8 +39,8 @@ enum PerformanceTestConstants {
         static let testDetails = "Test Details"
         static let statisticalView = "Statistical View:"
         static let performanceTestInProgress = "Performance Test in Progress"
-        static let pleaseWait = "Please wait..."
-        static let warmingUp = "Warming up..."
+        static let pleaseWait = "Please wait…"
+        static let warmingUp = "Warming up…"
 
         // Metric titles
         static let loadComplete = "Load Complete"

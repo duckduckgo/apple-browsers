@@ -616,7 +616,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 #endif
         })
         entitlementsCheck = {
-            Logger.networkProtection.log("Subscription Entitlements check...")
+            Logger.networkProtection.log("Subscription Entitlements check…")
             do {
                 let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
                 let isNetworkProtectionEnabled = tokenContainer.decodedAccessToken.hasEntitlement(.networkProtection)

@@ -173,13 +173,13 @@ struct BrokerProfileOptOutSubJob {
 
         // 2. Validate that profile hasn't already been opted-out:
         guard extractedProfile.removedDate == nil else {
-            Logger.dataBrokerProtection.log("Profile already removed, skipping...")
+            Logger.dataBrokerProtection.log("Profile already removed, skipping…")
             return nil
         }
 
         // 3. Validate that profile is eligible to be opted-out now:
         guard !brokerProfileQueryData.dataBroker.performsOptOutWithinParent() else {
-            Logger.dataBrokerProtection.log("Broker opts out in parent, skipping...")
+            Logger.dataBrokerProtection.log("Broker opts out in parent, skipping…")
             return nil
         }
 
@@ -188,7 +188,7 @@ struct BrokerProfileOptOutSubJob {
                                                                   profileQueryId: profileQueryId,
                                                                   extractedProfileId: extractedProfileId),
               !events.doesBelongToUserRemovedRecord else {
-            Logger.dataBrokerProtection.log("Manually removed by user, skipping...")
+            Logger.dataBrokerProtection.log("Manually removed by user, skipping…")
             return nil
         }
 

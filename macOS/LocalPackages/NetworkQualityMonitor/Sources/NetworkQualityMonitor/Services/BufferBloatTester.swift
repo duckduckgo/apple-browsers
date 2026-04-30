@@ -24,7 +24,7 @@ public final class BufferBloatTester: BufferBloatTesting {
     // MARK: - Constants
 
     private enum Constants {
-        static let progressMessage = "Testing buffer bloat..."
+        static let progressMessage = "Testing buffer bloat…"
         static let baselineSampleCount = 10
         static let loadedSampleCount = 15
         static let sampleDelay: UInt64 = 100_000_000  // 100ms between samples

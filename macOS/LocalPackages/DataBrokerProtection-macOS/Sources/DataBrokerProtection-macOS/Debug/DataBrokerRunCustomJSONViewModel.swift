@@ -297,7 +297,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         self.debugEvents.removeAll()
         self.debugEmailConfirmationStore.reset()
         self.isProgressActive = true
-        self.progressText = "Starting scan..."
+        self.progressText = "Starting scan…"
         if let data = jsonString.data(using: .utf8) {
             do {
                 let decoder = JSONDecoder()
@@ -397,7 +397,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         }
 
         isProgressActive = true
-        progressText = "Starting opt-out..."
+        progressText = "Starting opt-out…"
         addOptOutStartedEvent(for: scanResult)
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: dataBroker,

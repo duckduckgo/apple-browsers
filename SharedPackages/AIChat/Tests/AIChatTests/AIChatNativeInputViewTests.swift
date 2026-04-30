@@ -115,10 +115,10 @@ final class AIChatNativeInputViewTests: XCTestCase {
 
     func testSettingPlaceholderUpdatesValue() {
         // When
-        sut.placeholder = "Ask privately..."
+        sut.placeholder = "Ask privately…"
 
         // Then
-        XCTAssertEqual(sut.placeholder, "Ask privately...")
+        XCTAssertEqual(sut.placeholder, "Ask privately…")
     }
 
     // MARK: - Voice Button State Tests

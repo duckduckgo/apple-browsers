@@ -100,7 +100,7 @@ extension MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDataset
         }
 
         isDatasetsFetchInProgress = true
-        Logger.MaliciousSiteProtection.datasetsFetcher.debug("Start Updating Datasets...")
+        Logger.MaliciousSiteProtection.datasetsFetcher.debug("Start Updating Datasets…")
 
         return Task {
             defer { isDatasetsFetchInProgress = false }

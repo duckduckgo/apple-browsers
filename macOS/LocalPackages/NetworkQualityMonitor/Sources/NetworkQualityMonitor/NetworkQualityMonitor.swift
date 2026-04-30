@@ -74,7 +74,7 @@ public final class NetworkQualityMonitor: NetworkQualityMonitoring, NetworkTestP
 
     /// Run complete network quality test
     public func runTest() async throws -> NetworkTestResults {
-        progressCallback?(0.0, "Starting network quality test...")
+        progressCallback?(0.0, "Starting network quality test…")
 
         // Run tests in sequence with progress updates
         let httpResponse = try await runHttpResponseTest()
@@ -82,7 +82,7 @@ public final class NetworkQualityMonitor: NetworkQualityMonitoring, NetworkTestP
         let dns = try await runDNSTest()
         let bufferBloat = try await runBufferBloatTest()
 
-        progressCallback?(0.95, "Calculating results...")
+        progressCallback?(0.95, "Calculating results…")
 
         // Calculate scores and quality
         let overallScore = scoreCalculator.calculateOverallScore(
@@ -124,7 +124,7 @@ public final class NetworkQualityMonitor: NetworkQualityMonitoring, NetworkTestP
     // MARK: - Private Test Methods
 
     private func runHttpResponseTest() async throws -> HttpResponseResult {
-        progressCallback?(0.1, "Testing HTTP response times...")
+        progressCallback?(0.1, "Testing HTTP response times…")
 
         let result = try await httpResponseTester.performTest(
             configuration: configuration,
@@ -138,7 +138,7 @@ public final class NetworkQualityMonitor: NetworkQualityMonitoring, NetworkTestP
     }
 
     private func runBandwidthTest() async throws -> BandwidthResult {
-        progressCallback?(0.35, "Testing bandwidth...")
+        progressCallback?(0.35, "Testing bandwidth…")
 
         let downloadSpeed = try await bandwidthTester.performDownloadTest(
             configuration: configuration,
@@ -147,7 +147,7 @@ public final class NetworkQualityMonitor: NetworkQualityMonitoring, NetworkTestP
             }
         )
 
-        progressCallback?(0.55, "Testing upload speed...")
+        progressCallback?(0.55, "Testing upload speed…")
 
         let uploadSpeed = try await bandwidthTester.performUploadTest(
             configuration: configuration,
@@ -165,7 +165,7 @@ public final class NetworkQualityMonitor: NetworkQualityMonitoring, NetworkTestP
     }
 
     private func runDNSTest() async throws -> DNSResult {
-        progressCallback?(0.72, "Testing DNS resolution...")
+        progressCallback?(0.72, "Testing DNS resolution…")
 
         let result = try await dnsTester.performTest(
             configuration: configuration,
@@ -179,7 +179,7 @@ public final class NetworkQualityMonitor: NetworkQualityMonitoring, NetworkTestP
     }
 
     private func runBufferBloatTest() async throws -> BufferBloatResult {
-        progressCallback?(0.87, "Analyzing buffer bloat...")
+        progressCallback?(0.87, "Analyzing buffer bloat…")
 
         let result = try await bufferBloatTester.performTest(
             configuration: configuration,

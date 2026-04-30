@@ -127,7 +127,7 @@ final class HealthOverviewSectionPresenter {
     func rows(for state: HealthOverviewState) -> [HealthOverviewRowViewModel] {
         switch state {
         case .loading:
-            return [HealthOverviewRowViewModel(title: "Loading...")]
+            return [HealthOverviewRowViewModel(title: "Loading…")]
         case .prerequisitesNotMet(let status):
             return [
                 HealthOverviewRowViewModel(title: "Subscription Account", detail: status.hasAccount ? "✅" : "❌"),

@@ -54,6 +54,9 @@ final class SSLErrorTests: UITestCase {
     }
 
     private var advancedButton: XCUIElement {
+        // The literal title is supplied by ContentScopeScripts' JSON
+        // localization, so the query has to match its ASCII ellipsis exactly.
+        // swiftlint:disable:next prefer_unicode_ellipsis
         app.buttons["Advanced..."].firstMatch
     }
 

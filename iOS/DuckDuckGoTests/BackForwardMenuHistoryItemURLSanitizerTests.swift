@@ -54,7 +54,7 @@ class BackForwardMenuHistoryItemURLSanitizerTests: XCTestCase {
     
     func testURLWithExceedingNameSize() {
         let base = URL(string: "https://duckduckgo.com/?q=potato+and+potato&t=h_&ia=web")!
-        let expected = "duckduckgo.com/?q=potato+..."
+        let expected = "duckduckgo.com/?q=potato+…"
         let result = BackForwardMenuHistoryItemURLSanitizer.sanitizedURLForDisplay(base)
         XCTAssertEqual(expected, result, "URL should be the same")
     }

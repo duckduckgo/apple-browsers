@@ -212,15 +212,15 @@ private enum UserNotification {
     var message: String {
         switch self {
         case .firstFreemiumScanComplete:
-            return "Your free personal info scan is now complete. Check out the results..."
+            return "Your free personal info scan is now complete. Check out the results…"
         case .firstScanComplete:
-            return "DuckDuckGo has started the process to remove records matching your personal info online. See what we found..."
+            return "DuckDuckGo has started the process to remove records matching your personal info online. See what we found…"
         case .firstProfileRemoved:
-            return "That's one less creepy site storing and selling your personal info online. Check progress..."
+            return "That's one less creepy site storing and selling your personal info online. Check progress…"
         case .allInfoRemoved:
-            return "See all the records matching your personal info that DuckDuckGo found and removed from the web..."
+            return "See all the records matching your personal info that DuckDuckGo found and removed from the web…"
         case .oneWeekCheckIn:
-            return "See the records matching your personal info that DuckDuckGo found and removed from the web so far..."
+            return "See the records matching your personal info that DuckDuckGo found and removed from the web so far…"
         case .goToMarketFirstScan:
             return "Personal Information Removal is now available on iOS! Start your first scan now."
         }

@@ -46,14 +46,14 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private let currentURLMenuItem = NSMenuItem(title: "Current URL:")
 
     private let productionURLMenuItem = NSMenuItem(title: "Use Production URL", action: #selector(DataBrokerProtectionDebugMenu.useWebUIProductionURL))
-    private let customURLMenuItem = NSMenuItem(title: "Use Custom URL...", action: #selector(DataBrokerProtectionDebugMenu.useWebUICustomURL))
+    private let customURLMenuItem = NSMenuItem(title: "Use Custom URL…", action: #selector(DataBrokerProtectionDebugMenu.useWebUICustomURL))
 
     private var databaseBrowserWindowController: NSWindowController?
     private var dataBrokerForceOptOutWindowController: NSWindowController?
     private var logMonitorWindowController: NSWindowController?
     private let currentEndpointMenuItem = NSMenuItem(title: "Current Endpoint:")
     private let defaultEndpointMenuItem = NSMenuItem(title: "Use Default Endpoint", action: #selector(DataBrokerProtectionDebugMenu.useDBPDefaultEndpoint))
-    private let customEndpointMenuItem = NSMenuItem(title: "Use Custom Endpoint...", action: #selector(DataBrokerProtectionDebugMenu.useDBPCustomEndpoint))
+    private let customEndpointMenuItem = NSMenuItem(title: "Use Custom Endpoint…", action: #selector(DataBrokerProtectionDebugMenu.useDBPCustomEndpoint))
 
     private let subscriptionEnvironmentMenuItem = NSMenuItem(title: "Subscription Environment:")
     private let statusMenuIconMenu = NSMenuItem(title: "Show Status Menu Icon", action: #selector(DataBrokerProtectionDebugMenu.toggleShowStatusMenuItem))
@@ -293,21 +293,21 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     // swiftlint:enable force_try
 
     @objc private func startScheduledOperations(_ sender: NSMenuItem) {
-        Logger.dataBrokerProtection.log("Running queued operations...")
+        Logger.dataBrokerProtection.log("Running queued operations…")
         let showWebView = sender.representedObject as? Bool ?? false
 
         DataBrokerProtectionManager.shared.loginItemInterface.startScheduledOperations(showWebView: showWebView)
     }
 
     @objc private func runScanOperations(_ sender: NSMenuItem) {
-        Logger.dataBrokerProtection.log("Running scan operations...")
+        Logger.dataBrokerProtection.log("Running scan operations…")
         let showWebView = sender.representedObject as? Bool ?? false
 
         DataBrokerProtectionManager.shared.loginItemInterface.startImmediateOperations(showWebView: showWebView)
     }
 
     @objc private func runOptoutOperations(_ sender: NSMenuItem) {
-        Logger.dataBrokerProtection.log("Running Optout operations...")
+        Logger.dataBrokerProtection.log("Running Optout operations…")
         let showWebView = sender.representedObject as? Bool ?? false
 
         DataBrokerProtectionManager.shared.loginItemInterface.runAllOptOuts(showWebView: showWebView)
@@ -315,7 +315,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func runEmailConfirmationOperations(_ sender: NSMenuItem) {
         Task {
-            Logger.dataBrokerProtection.log("Running email confirmation operations...")
+            Logger.dataBrokerProtection.log("Running email confirmation operations…")
             let showWebView = sender.representedObject as? Bool ?? false
 
             await DataBrokerProtectionManager.shared.loginItemInterface.runEmailConfirmationOperations(showWebView: showWebView)

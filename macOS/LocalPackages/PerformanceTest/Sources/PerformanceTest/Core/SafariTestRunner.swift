@@ -320,7 +320,7 @@ public class SafariTestRunner: SafariTestExecuting {
                 logger.log("Using cached Safari test runner at \(runtimeDir.path)")
                 return runtimeDir
             } else {
-                logger.log("Source files changed - rebuilding cache...")
+                logger.log("Source files changed - rebuilding cache…")
             }
         }
 
@@ -329,8 +329,8 @@ public class SafariTestRunner: SafariTestExecuting {
             try? FileManager.default.removeItem(at: runtimeDir)
         }
 
-        logger.log("Setting up Safari test runner in temp directory...")
-        progressHandler?(0, iterations, "Setting up test environment...")
+        logger.log("Setting up Safari test runner in temp directory…")
+        progressHandler?(0, iterations, "Setting up test environment…")
 
         // Create temp directory
         try FileManager.default.createDirectory(at: runtimeDir, withIntermediateDirectories: true)
@@ -370,8 +370,8 @@ public class SafariTestRunner: SafariTestExecuting {
     }
 
     private func installDependencies(at directory: URL) async throws {
-        logger.log("Installing npm dependencies at \(directory.path)...")
-        progressHandler?(0, iterations, "Installing dependencies...")
+        logger.log("Installing npm dependencies at \(directory.path)…")
+        progressHandler?(0, iterations, "Installing dependencies…")
 
         // Find both node and npm paths
         let nodePath = try await findNodePath()

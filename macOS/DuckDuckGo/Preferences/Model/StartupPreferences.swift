@@ -168,7 +168,7 @@ final class StartupPreferences: ObservableObject {
         var friendlyURL = customHomePageURL
         if friendlyURL.count > 30 {
             let index = friendlyURL.index(friendlyURL.startIndex, offsetBy: 27)
-            friendlyURL = String(friendlyURL[..<index]) + "..."
+            friendlyURL = String(friendlyURL[..<index]) + "…"
         }
         return friendlyURL
     }

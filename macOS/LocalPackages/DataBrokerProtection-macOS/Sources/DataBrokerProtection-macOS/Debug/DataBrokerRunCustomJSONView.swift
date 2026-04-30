@@ -163,7 +163,7 @@ struct DataBrokerRunCustomJSONView: View {
                             viewModel.isEditingPresets = false
                         }
                     } else {
-                        Menu("Load Preset...") {
+                        Menu("Load Preset…") {
                             ForEach(viewModel.presets) { preset in
                                 Button(String(describing: preset)) {
                                     viewModel.applyPreset(preset)

@@ -68,7 +68,7 @@ class MaliciousSiteProtectionUITests: UITestCase {
         }
 
         let advancedButton = app.buttons[localization.advancedEllipsisButton.title]
-        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.navigation), "Advanced... button should be visible on phishing warning")
+        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.navigation), "Advanced… button should be visible on phishing warning")
         advancedButton.click()
 
         let acceptRisk = app.staticTexts[localization.visitSiteButton.title]

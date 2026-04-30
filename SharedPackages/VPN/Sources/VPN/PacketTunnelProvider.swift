@@ -759,9 +759,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // expired.  In either case it should be enough to record the manual failures
                 // for these prerequisited to avoid flooding our metrics.
                 providerEvents.fire(.tunnelStartOnDemandWithoutAccessToken)
-                Logger.networkProtection.log("Going to sleep...")
+                Logger.networkProtection.log("Going to sleep…")
                 try? await Task.sleep(interval: .seconds(15))
-                Logger.networkProtection.log("Waking up...")
+                Logger.networkProtection.log("Waking up…")
             } else {
                 loopDetector.connectionFailed(isOnDemand: false)
 
@@ -798,9 +798,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // We add a delay when the VPN is started by
                 // on-demand and there's an error, to avoid frenetic ON/OFF
                 // cycling.
-                Logger.networkProtection.log("Going to sleep...")
+                Logger.networkProtection.log("Going to sleep…")
                 try? await Task.sleep(interval: .seconds(15))
-                Logger.networkProtection.log("Waking up...")
+                Logger.networkProtection.log("Waking up…")
             }
 
             let errorDescription = (error as? LocalizedError)?.localizedDescription ?? String(describing: error)
@@ -886,7 +886,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                         }
 #endif
                     } catch {
-                        Logger.networkProtection.log("Connection Tester failed to start... will run without it: \(error, privacy: .public)")
+                        Logger.networkProtection.log("Connection Tester failed to start… will run without it: \(error, privacy: .public)")
                         return
                     }
                 }
@@ -1603,7 +1603,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
                     if self.snoozeTimingStore.hasExpired {
                         Task.detached {
-                            Logger.networkProtection.log("Snooze mode timer expired, canceling snooze now...")
+                            Logger.networkProtection.log("Snooze mode timer expired, canceling snooze now…")
                             await self.cancelSnooze()
                         }
                     }

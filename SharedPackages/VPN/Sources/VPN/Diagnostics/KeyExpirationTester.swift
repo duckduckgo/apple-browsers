@@ -131,7 +131,7 @@ final actor KeyExpirationTester: KeyExpirationTesting {
             return
         }
 
-        Logger.networkProtectionKeyManagement.log("Checking if rekey is necessary...")
+        Logger.networkProtectionKeyManagement.log("Checking if rekey is necessary…")
 
         guard isKeyExpired else {
             Logger.networkProtectionKeyManagement.log("The key is not expired")

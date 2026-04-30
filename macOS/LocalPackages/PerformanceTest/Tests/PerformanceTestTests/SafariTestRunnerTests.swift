@@ -78,10 +78,10 @@ final class SafariTestRunnerTests: XCTestCase {
         let url = URL(string: "https://example.com")!
         let runner = SafariTestRunner(url: url, iterations: 10)
 
-        let logLine = "[INFO] Clearing cache..."
+        let logLine = "[INFO] Clearing cache…"
         let (_, status) = runner.parseProgressLog(logLine)
 
-        XCTAssertEqual(status, "Clearing cache...")
+        XCTAssertEqual(status, "Clearing cache…")
     }
 
     func testParseProgress_handlesInvalidLogFormat() {

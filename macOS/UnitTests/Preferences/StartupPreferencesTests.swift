@@ -57,13 +57,13 @@ class StartupPreferencesTests: XCTestCase {
         XCTAssertEqual(model.startupWindowType, .window) // Default value
 
         model = StartupPreferences(pinningManager: MockPinningManager(), persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: true, customHomePageURL: "https://mail.google.com/mail/u/1/#spam/FMfcgzGtxKRZFPXfxKMWSKVgwJlswxnH", restorePreviousSession: true), appearancePreferences: .mock)
-        XCTAssertEqual(model.friendlyURL, "https://mail.google.com/mai...")
+        XCTAssertEqual(model.friendlyURL, "https://mail.google.com/mai…")
 
         model = StartupPreferences(pinningManager: MockPinningManager(), persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: true, customHomePageURL: "https://www.rnids.rs/национални-домени/регистрација-националних-домена", restorePreviousSession: true), appearancePreferences: .mock)
-        XCTAssertEqual(model.friendlyURL, "https://www.rnids.rs/национ...")
+        XCTAssertEqual(model.friendlyURL, "https://www.rnids.rs/национ…")
 
         model = StartupPreferences(pinningManager: MockPinningManager(), persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: true, customHomePageURL: "www.rnids.rs/национални-домени/регистрација-националних-домена", restorePreviousSession: true), appearancePreferences: .mock)
-        XCTAssertEqual(model.friendlyURL, "www.rnids.rs/национални-дом...")
+        XCTAssertEqual(model.friendlyURL, "www.rnids.rs/национални-дом…")
 
         model = StartupPreferences(pinningManager: MockPinningManager(), persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: true, customHomePageURL: "https://💩.la", restorePreviousSession: true), appearancePreferences: .mock)
         XCTAssertEqual(model.friendlyURL, "https://💩.la")

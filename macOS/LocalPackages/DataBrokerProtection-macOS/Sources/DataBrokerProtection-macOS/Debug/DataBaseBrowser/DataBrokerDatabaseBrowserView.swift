@@ -153,7 +153,7 @@ struct SearchBarView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSTokenField {
         let tokenField = NSTokenField()
-        tokenField.placeholderString = "Search table (col:value, comma-separated)..."
+        tokenField.placeholderString = "Search table (col:value, comma-separated)…"
         tokenField.tokenizingCharacterSet = CharacterSet(charactersIn: ",\n")
         tokenField.isEditable = true
         tokenField.isSelectable = true

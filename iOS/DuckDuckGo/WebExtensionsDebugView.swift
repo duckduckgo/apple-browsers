@@ -38,7 +38,7 @@ struct WebExtensionsDebugView: View {
                 Button {
                     showDocumentPicker = true
                 } label: {
-                    Label("Install from Files...", systemImage: "folder")
+                    Label("Install from Files…", systemImage: "folder")
                 }
             } header: {
                 Text("Install Extension")

@@ -47,7 +47,7 @@ public struct DebugPurchaseViewV2: View {
 
     private var loadingProductsView: some View {
         VStack {
-            Text(verbatim: "Loading subscriptions...")
+            Text(verbatim: "Loading subscriptions…")
                 .font(.largeTitle)
             ActivityIndicator(isAnimating: .constant(true), style: .spinning)
         }

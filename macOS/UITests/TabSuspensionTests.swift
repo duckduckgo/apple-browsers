@@ -333,7 +333,7 @@ class TabSuspensionTests: UITestCase {
     private func simulateCriticalMemoryPressure() {
         app.debugMenu.click()
 
-        let searchField = app.searchFields["Search debug menu..."]
+        let searchField = app.searchFields["Search debug menu…"]
         XCTAssertTrue(
             searchField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Debug menu search field didn't appear"

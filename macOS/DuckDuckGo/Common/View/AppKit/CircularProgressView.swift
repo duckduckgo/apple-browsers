@@ -661,7 +661,7 @@ struct ProgressPreview: View {
                         }
                     }
                 } label: {
-                    Text(verbatim: "-1 -> 0 ... 1").frame(width: 120)
+                    Text(verbatim: "-1 -> 0 … 1").frame(width: 120)
                 }
 
                 Spacer()

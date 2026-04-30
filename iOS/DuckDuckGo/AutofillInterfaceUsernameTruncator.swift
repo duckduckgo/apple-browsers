@@ -22,12 +22,17 @@ import Foundation
 struct AutofillInterfaceUsernameTruncator {
     static func truncateUsername(_ username: String, maxLength: Int) -> String {
         if username.count > maxLength {
-            let ellipsis = "..."
+            let ellipsis = "…"
             let minimumPrefixSize = 3
 
             let difference = username.count - maxLength + ellipsis.count
             var prefixCount = username.count - difference
-            prefixCount = prefixCount < 0 ? minimumPrefixSize : prefixCount
+            // Always show at least `minimumPrefixSize` characters so the
+            // truncated username stays recognizable. The threshold matters
+            // now that the ellipsis is a single Unicode character (`…`)
+            // rather than three ASCII periods — without it, `prefixCount`
+            // can land on `0` and render an uninformative `…`-only string.
+            prefixCount = prefixCount < minimumPrefixSize ? minimumPrefixSize : prefixCount
             let prefix = username.prefix(prefixCount)
 
             return "\(prefix)\(ellipsis)"

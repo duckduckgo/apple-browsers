@@ -40,7 +40,11 @@ class AutofillInterfaceUsernameTruncatorTests: XCTestCase {
 
     func testWhenUsernameIsLongerThanMaxLengthThenTruncated() {
         let username = "daxTheDuckTheBestDuckYouCouldEverMeet"
-        let expectedUsername = "daxTheDuckTheBest..."
+        // 19-char prefix + 1-char ellipsis (`…`) = 20 chars (matches maxLength).
+        // The previous ASCII `...` ellipsis (3 chars) only allowed a 17-char
+        // prefix; the shorter Unicode ellipsis lets us keep two more chars
+        // of the original username.
+        let expectedUsername = "daxTheDuckTheBestDu…"
 
         let result = AutofillInterfaceUsernameTruncator.truncateUsername(username, maxLength: 20)
         XCTAssertEqual(expectedUsername, result, "usernames should match")
@@ -48,7 +52,8 @@ class AutofillInterfaceUsernameTruncatorTests: XCTestCase {
 
     func testWhenUsernameIsOneCharacterLongerThanMaxLengthThenTruncated() {
         let username = "daxTheDuck1"
-        let expectedUsername = "daxTheD..."
+        // 9-char prefix + 1-char ellipsis (`…`) = 10 chars (matches maxLength).
+        let expectedUsername = "daxTheDuc…"
 
         let result = AutofillInterfaceUsernameTruncator.truncateUsername(username, maxLength: 10)
         XCTAssertEqual(expectedUsername, result, "usernames should match")

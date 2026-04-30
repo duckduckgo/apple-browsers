@@ -993,11 +993,11 @@ final class MainMenu: NSMenu {
                 .submenu(TabSuspensionDebugMenu(title: "Tab Suspension"))
 
             NSMenuItem(title: "Memory Usage Reporting") {
-                NSMenuItem(title: "Simulate Memory Report...", action: #selector(AppDelegate.simulateMemoryUsageReport))
+                NSMenuItem(title: "Simulate Memory Report…", action: #selector(AppDelegate.simulateMemoryUsageReport))
                 NSMenuItem(title: "Clear Simulated Memory", action: #selector(AppDelegate.clearSimulatedMemory))
                 NSMenuItem(title: "Start Reporter Immediately (Skip 5min Delay)", action: #selector(AppDelegate.startMemoryReporterImmediately))
                 NSMenuItem.separator()
-                NSMenuItem(title: "Fire Interval Pixel Now...", action: #selector(AppDelegate.fireIntervalPixelNow))
+                NSMenuItem(title: "Fire Interval Pixel Now…", action: #selector(AppDelegate.fireIntervalPixelNow))
                 NSMenuItem.separator()
                 NSMenuItem(title: "Simulate Memory Pressure (Critical)", action: #selector(AppDelegate.simulateMemoryPressureCritical))
             }
@@ -1117,7 +1117,7 @@ final class MainMenu: NSMenu {
 
         // Add search field at the top
         let searchField = NSSearchField(frame: .zero)
-        searchField.placeholderString = "Search debug menu..."
+        searchField.placeholderString = "Search debug menu…"
         searchField.focusRingType = .none
 
         // Create delegate to handle real-time text changes

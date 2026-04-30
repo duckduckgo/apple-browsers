@@ -76,7 +76,7 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
             Text(verbatim: "Account")
                 .font(.headline)
             if viewModel.isLoadingExternalID {
-                Text(verbatim: "Checking for existing account...")
+                Text(verbatim: "Checking for existing account…")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             } else if let externalID = viewModel.existingExternalID {
@@ -130,7 +130,7 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
             Text(verbatim: "Available Products")
                 .font(.headline)
             if viewModel.isLoadingProducts {
-                Text(verbatim: "Loading available products...")
+                Text(verbatim: "Loading available products…")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             } else if viewModel.availableSubscriptions.isEmpty {
@@ -303,7 +303,7 @@ final class ProductionSubscriptionPurchaseViewModel: ObservableObject {
             // Use the subscription selection handler (calls subscriptionChangeSelected or subscriptionSelected)
             // The handler shows its own UI (progress view, alerts) so we just call it and refresh
             let actionType = isTierChange ? "tier change" : "purchase"
-            statusMessage = "Starting \(actionType) for \(displayName(for: identifier))..."
+            statusMessage = "Starting \(actionType) for \(displayName(for: identifier))…"
             Logger.subscription.info("[ProductionSubscriptionDebug] Using subscriptionSelectionHandler for \(actionType): \(identifier)")
 
             let previousProductIDs = purchasedProductIDs ?? []
@@ -326,7 +326,7 @@ final class ProductionSubscriptionPurchaseViewModel: ObservableObject {
             }
         } else {
             // Fallback: Direct purchase bypassing the handler
-            statusMessage = "Starting purchase for \(displayName(for: identifier))..."
+            statusMessage = "Starting purchase for \(displayName(for: identifier))…"
 
             // Use existing external ID if available, otherwise generate new
             let externalID = existingExternalID ?? UUID().uuidString

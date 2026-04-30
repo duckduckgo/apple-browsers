@@ -237,7 +237,7 @@ private struct AddressView: View {
             EditableIdentityField(textFieldValue: $model.addressPostalCode, title: UserText.pmAddressPostalCode, accessibilityIdentifier: "AddressPostalCode TextField")
 
             if model.isInEditMode {
-                Text("Country", comment: "Title of the section of the Identities manager where the user can add/modify a country (US,UK, Italy etc...)")
+                Text("Country", comment: "Title of the section of the Identities manager where the user can add/modify a country (US,UK, Italy etc…)")
                     .bold()
                     .padding(.bottom, 5)
 
@@ -257,7 +257,7 @@ private struct AddressView: View {
                 .padding(.bottom, 5)
 
             } else if !model.addressCountryCode.isEmpty {
-                Text("Country", comment: "Title of the section of the Identities manager where the user can add/modify a country (US,UK, Italy etc...)")
+                Text("Country", comment: "Title of the section of the Identities manager where the user can add/modify a country (US,UK, Italy etc…)")
                     .bold()
                     .padding(.bottom, 5)
 

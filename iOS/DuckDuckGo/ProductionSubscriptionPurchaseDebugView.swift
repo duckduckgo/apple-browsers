@@ -60,7 +60,7 @@ struct ProductionSubscriptionPurchaseDebugView: View {
         Section(header: Text("Account")) {
             if viewModel.isLoadingExternalID {
                 HStack {
-                    Text("Checking for existing account...")
+                    Text("Checking for existing account…")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -110,7 +110,7 @@ struct ProductionSubscriptionPurchaseDebugView: View {
         Section(header: Text("Available Products")) {
             if viewModel.isLoadingProducts {
                 HStack {
-                    Text("Loading available products...")
+                    Text("Loading available products…")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -249,7 +249,7 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
         if let handler = subscriptionSelectionHandler {
             // Use the subscription selection handler (calls subscriptionChangeSelected or subscriptionSelected)
             let actionType = isTierChange ? "tier change" : "purchase"
-            statusMessage = "Starting \(actionType) for \(displayName(for: identifier))..."
+            statusMessage = "Starting \(actionType) for \(displayName(for: identifier))…"
             Logger.subscription.info("[ProductionSubscriptionDebug] Using subscriptionSelectionHandler for \(actionType): \(identifier)")
 
             let previousProductIDs = purchasedProductIDs ?? []
@@ -275,7 +275,7 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
         }
 
         // Fallback to direct purchase (legacy behavior)
-        statusMessage = "Starting purchase for \(displayName(for: identifier))..."
+        statusMessage = "Starting purchase for \(displayName(for: identifier))…"
         
         // Use existing external ID if available, otherwise generate new
         let externalID = existingExternalID ?? UUID().uuidString

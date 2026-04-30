@@ -553,7 +553,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                isAuthV2WideEventEnabled: { return subscriptionEnvironment.serviceEnvironment == .production })
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {
-            Logger.networkProtection.log("Subscription Entitlements check...")
+            Logger.networkProtection.log("Subscription Entitlements check…")
             do {
                 let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
                 let isNetworkProtectionEnabled = tokenContainer.decodedAccessToken.hasEntitlement(.networkProtection)
@@ -674,7 +674,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
     // MARK: - Override-able Connection Events
 
     override func prepareToConnect(using provider: NETunnelProviderProtocol?) {
-        Logger.networkProtection.log("Preparing to connect...")
+        Logger.networkProtection.log("Preparing to connect…")
         super.prepareToConnect(using: provider)
         guard PixelKit.shared == nil, let options = provider?.providerConfiguration else { return }
         try? loadDefaultPixelHeaders(from: options)

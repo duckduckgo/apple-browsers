@@ -309,7 +309,7 @@ enum Metrics {
 }
 
 #Preview("Intro Dialog - title, text, list") {
-    let contextualText = NSMutableAttributedString(string: "Sabrina is the best!\n\n Alessandro is ok I guess...")
+    let contextualText = NSMutableAttributedString(string: "Sabrina is the best!\n\n Alessandro is ok I guess…")
     let list = [
         ContextualOnboardingListItem.search(title: "Search"),
         ContextualOnboardingListItem.site(title: "Website"),

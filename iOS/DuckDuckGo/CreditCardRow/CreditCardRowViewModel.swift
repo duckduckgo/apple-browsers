@@ -44,7 +44,7 @@ struct CreditCardRowViewModel: Identifiable, Hashable {
     
     var compactDisplayTitle: String {
         if displayTitle.count > 30 {
-            let ellipsis = "..."
+            let ellipsis = "…"
             return String(displayTitle.prefix(30)) + ellipsis
         }
         return displayTitle

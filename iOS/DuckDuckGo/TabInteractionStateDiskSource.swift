@@ -75,7 +75,7 @@ final class TabInteractionStateDiskSource: TabInteractionStateSource, TabInterac
 
         let tabCacheLocation = cacheLocationForTab(tab)
 
-        Logger.tabInteractionStateSource.debug("Saving interaction state for tab \(tab.uid)...")
+        Logger.tabInteractionStateSource.debug("Saving interaction state for tab \(tab.uid)…")
         do {
             try stateData.write(to: tabCacheLocation,
                                 options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])

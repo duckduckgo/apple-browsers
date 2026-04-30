@@ -71,7 +71,7 @@ extension DebugScreensViewModel {
 
                 class Delegate: NSObject, DiagnosticReportDataSourceDelegate {
                     func dataGatheringStarted() {
-                        ActionMessageView.present(message: "Data Gathering Started... please wait")
+                        ActionMessageView.present(message: "Data Gathering Started… please wait")
                     }
 
                     func dataGatheringComplete() {

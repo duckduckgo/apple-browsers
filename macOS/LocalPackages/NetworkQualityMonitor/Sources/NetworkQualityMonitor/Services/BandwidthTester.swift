@@ -23,8 +23,8 @@ public final class BandwidthTester: BandwidthTesting {
     // MARK: - Constants
 
     private enum Constants {
-        static let downloadProgressMessage = "Testing download speed..."
-        static let uploadProgressMessage = "Testing upload speed..."
+        static let downloadProgressMessage = "Testing download speed…"
+        static let uploadProgressMessage = "Testing upload speed…"
         static let httpMethodGet = "GET"
         static let httpMethodPost = "POST"
         static let rangeHeader = "Range"

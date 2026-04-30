@@ -174,7 +174,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
         for jobData in filteredAndSortedJobData {
             if isCancelled {
-                Logger.dataBrokerProtection.log("Cancelled operation, returning...")
+                Logger.dataBrokerProtection.log("Cancelled operation, returning…")
                 return
             }
 
@@ -243,10 +243,10 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                                                                         identifier: identifier)
 
                     let sleepInterval = jobDependencies.executionConfig.intervalBetweenSameBrokerJobs
-                    Logger.dataBrokerProtection.log("Waiting...: \(sleepInterval, privacy: .public)")
+                    Logger.dataBrokerProtection.log("Waiting…: \(sleepInterval, privacy: .public)")
                     try await Task.sleep(nanoseconds: UInt64(sleepInterval) * 1_000_000_000)
                 } else {
-                    Logger.dataBrokerProtection.log("Job skipped, moving on...")
+                    Logger.dataBrokerProtection.log("Job skipped, moving on…")
                 }
             } catch {
                 Logger.dataBrokerProtection.error("Error: \(error.localizedDescription, privacy: .public)")

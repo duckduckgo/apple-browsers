@@ -150,7 +150,7 @@ extension OnboardingRebranding {
         }
 
         private func animateContentIn() {
-            withAnimation(.easeIn(duration: theme.contentFadeInDuration).delay(0.3)) {
+            withAnimation(.easeIn(duration: theme.contentFadeInDuration).delay(0.1)) {
                 shouldShowContent = true
             }
         }

@@ -486,7 +486,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillSurveys:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AutofillSurveysSubfeature.featureEnabled)), supportsLocalOverriding: false)
         case .adAttributionReporting:
-            Config(source: .remoteReleasable(.subfeature(AdAttributionReportingSubfeature.featureEnabled)), supportsLocalOverriding: false)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AdAttributionReportingSubfeature.featureEnabled)), supportsLocalOverriding: false)
         case .dbpRemoteBrokerDelivery:
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery)))
         case .dbpEmailConfirmationDecoupling:

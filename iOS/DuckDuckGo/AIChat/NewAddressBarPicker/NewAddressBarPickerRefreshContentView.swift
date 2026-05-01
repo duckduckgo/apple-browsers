@@ -25,7 +25,7 @@ import DuckUI
 import Onboarding
 
 struct NewAddressBarPickerRefreshContentView: View {
-    @ObservedObject var viewModel: NewAddressBarPickerViewModel
+    @StateObject var viewModel: NewAddressBarPickerViewModel
 
     var body: some View {
         ScrollView {

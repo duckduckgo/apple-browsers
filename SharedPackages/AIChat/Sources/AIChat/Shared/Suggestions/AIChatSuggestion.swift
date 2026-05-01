@@ -40,13 +40,20 @@ public struct AIChatSuggestion: Identifiable, Equatable, Hashable {
     /// Content of the first user message in the chat
     public let firstUserMessageContent: String?
 
+    /// The AI model the chat was conducted with (e.g. `"gpt-4o-mini"`, `"voice-mode"`,
+    /// `"image-generation"`). Nil when the data source doesn't carry a model — the Duck.ai
+    /// webview path (`getDuckAiChats`) doesn't include it today; the local-storage path does.
+    /// Drives the chat's icon classification via `kind`.
+    public let model: String?
+
     public init(
         id: String,
         title: String,
         isPinned: Bool,
         chatId: String,
         timestamp: Date? = nil,
-        firstUserMessageContent: String? = nil
+        firstUserMessageContent: String? = nil,
+        model: String? = nil
     ) {
         self.id = id
         self.title = Self.sanitize(title)
@@ -54,6 +61,41 @@ public struct AIChatSuggestion: Identifiable, Equatable, Hashable {
         self.chatId = chatId
         self.timestamp = timestamp
         self.firstUserMessageContent = firstUserMessageContent
+        self.model = model
+    }
+}
+
+// MARK: - Kind
+
+extension AIChatSuggestion {
+
+    /// Coarse classification of a chat used to pick a list-row icon. Derived from `model`
+    /// because the Duck.ai stored chat record persists the model used for the conversation.
+    public enum Kind: Equatable {
+        case voice
+        case image
+        case text
+    }
+
+    /// Returns the chat's kind based on its `model` string. Voice and image chats are matched
+    /// against the canonical mode tokens Duck.ai persists (`AIChatNativePrompt.voiceMode` and
+    /// `AIChatNativePrompt.imageGenerationMode`); everything else (including chats from data
+    /// sources that don't carry a model yet) is treated as a regular text chat.
+    public var kind: Kind {
+        Self.kind(forModel: model)
+    }
+
+    /// Pure helper kept separate from the property so the mapping is easy to test and tune as
+    /// new model identifiers ship from Duck.ai. Uses exact equality so a future model name that
+    /// embeds the token (e.g. `"voice-mode-experimental-2"`) does not accidentally classify as
+    /// `.voice` — Duck.ai persists the canonical mode tokens unmodified.
+    public static func kind(forModel model: String?) -> Kind {
+        guard let model, !model.isEmpty else { return .text }
+        switch model {
+        case AIChatNativePrompt.voiceMode: return .voice
+        case AIChatNativePrompt.imageGenerationMode: return .image
+        default: return .text
+        }
     }
 
     /// Collapses any runs of whitespace (including newlines) into a single space and trims.

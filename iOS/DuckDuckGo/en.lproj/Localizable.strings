@@ -2690,10 +2690,10 @@ https://duckduckgo.com/mac";
 "new.address.bar.picker.footer" = "Adjust in Settings > AI Features";
 
 /* Footer for the refreshed Duck.ai Toggle Prompt */
-"new.address.bar.picker.footer.refresh" = "AI features are private and optional.\nYou can make changes in Settings > AI Features.";
+"new.address.bar.picker.refresh.footer" = "AI features are private and optional.\nYou can make changes in Settings > AI Features.";
 
 /* Headline for the refreshed Duck.ai Toggle Prompt */
-"new.address.bar.picker.headline.refresh" = "Want easy access to private\nAI chat in the address bar?";
+"new.address.bar.picker.refresh.headline" = "Want easy access to private\nAI chat in the address bar?";
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Not Now";

@@ -1128,6 +1128,8 @@ class MockAIChatTabOpener: AIChatTabOpening {
             lastRestorationData = data
         case .existingChat:
             break
+        case .mode:
+            break
         }
 
         openMethodCalledExpectation?.fulfill()
@@ -1138,6 +1140,20 @@ class MockAIChatTabOpener: AIChatTabOpening {
     func openNewAIChat(in linkOpenBehavior: LinkOpenBehavior) {
         openNewAIChatCalled = true
         lastNewAIChatBehavior = linkOpenBehavior
+
+        openMethodCalledExpectation?.fulfill()
+        openMethodCalledExpectation = nil
+    }
+
+    var openVoiceSessionCalled = false
+    var lastVoiceSessionSourceCollection: TabCollectionViewModel?
+    var lastVoiceSessionBehavior: LinkOpenBehavior?
+
+    @MainActor
+    func openVoiceSession(inSourceCollection sourceCollection: TabCollectionViewModel?, behavior: LinkOpenBehavior) {
+        openVoiceSessionCalled = true
+        lastVoiceSessionSourceCollection = sourceCollection
+        lastVoiceSessionBehavior = behavior
 
         openMethodCalledExpectation?.fulfill()
         openMethodCalledExpectation = nil

@@ -43,18 +43,18 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.namePrefix, "m_mac_")
     }
 
-    func testWhenFiringPixelEventThenUsesExpectedNameAndDefaultParameters() throws {
+    func testWhenFiringPixelEventWithNilParametersThenUsesExpectedNameAndStandardParameters() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)
 
-        pixelHandler.fire(.welcome(.shown))
+        pixelHandler.fire(.welcome(.shown), source: nil, flow: nil, variant: nil)
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(event.pixel.name, "onboarding_welcome")
         XCTAssertEqual(event.pixel.parameters?["e"], "shown")
         XCTAssertEqual(event.pixel.standardParameters, [.pixelSource])
-        XCTAssertEqual(event.additionalParameters?["source"], "default")
-        XCTAssertEqual(event.additionalParameters?["flow"], "default")
+        XCTAssertNil(event.additionalParameters?["source"])
+        XCTAssertNil(event.additionalParameters?["flow"])
         XCTAssertNil(event.additionalParameters?["variant"])
     }
 

@@ -180,6 +180,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                     try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
                     self.syncSetupExperimentPixels.fireSignupDirect()
+                    try await Pixel.fire(pixel: .syncSetupEndedSuccessful,
+                                         withAdditionalParameters: [PixelParameters.source: "signup"],
+                                         includedParameters: [.appVersion])
                     self.syncSetupExperimentPixels.fireSetupEndedSuccessful()
                     AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                     self.viewModel.syncEnabled(recoveryCode: self.recoveryCode)
@@ -203,6 +206,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                 try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
                 self.syncSetupExperimentPixels.fireSignupDirect()
+                try await Pixel.fire(pixel: .syncSetupEndedSuccessful,
+                                     withAdditionalParameters: [PixelParameters.source: "signup"],
+                                     includedParameters: [.appVersion])
                 self.syncSetupExperimentPixels.fireSetupEndedSuccessful()
                 AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
@@ -448,6 +454,24 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             Pixel.fire(pixel: .syncAutoRestoreSettingsRestoreTapped, withAdditionalParameters: autoRestorePromptSourceParameters)
         case .readySkipRestoreTapped:
             Pixel.fire(pixel: .syncAutoRestoreSettingsSkipRestoreTapped, withAdditionalParameters: autoRestorePromptSourceParameters)
+        }
+    }
+
+    func fireSyncSetupPixel(event: SyncSettingsViewModel.SyncSetupPixelEvent) {
+        switch event {
+        case .backUpThisDeviceTapped:
+            Pixel.fire(pixel: .settingsSyncBackUpThisDeviceTapped, includedParameters: [.appVersion])
+        case .signupConfirmedTapped:
+            Pixel.fire(pixel: .settingsSyncSignupConfirmedTapped, includedParameters: [.appVersion])
+        case .signupAbandoned:
+            Pixel.fire(pixel: .syncSetupEndedAbandoned,
+                       withAdditionalParameters: [PixelParameters.source: "signup"],
+                       includedParameters: [.appVersion])
+            syncSetupExperimentPixels.fireSetupEndedAbandoned()
+        case .recoverSyncedDataTapped:
+            Pixel.fire(pixel: .settingsSyncRecoverSyncedDataTapped, includedParameters: [.appVersion])
+        case .recoveryConfirmedTapped:
+            Pixel.fire(pixel: .settingsSyncRecoveryConfirmedTapped, includedParameters: [.appVersion])
         }
     }
 

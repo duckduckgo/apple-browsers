@@ -46,6 +46,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func showOtherPlatformLinks()
     func fireOtherPlatformLinksPixel(event: SyncSettingsViewModel.PlatformLinksPixelEvent, with source: SyncSettingsViewModel.PlatformLinksPixelSource)
     func fireAutoRestorePixel(event: SyncSettingsViewModel.AutoRestorePixelEvent)
+    func fireSyncSetupPixel(event: SyncSettingsViewModel.SyncSetupPixelEvent)
     func shareLink(for url: URL, with message: String, from rect: CGRect)
 
     // Simplified sync setup experiment
@@ -118,6 +119,14 @@ public class SyncSettingsViewModel: ObservableObject {
         case manualRecoveryShown
         case readyRestoreTapped
         case readySkipRestoreTapped
+    }
+
+    public enum SyncSetupPixelEvent {
+        case backUpThisDeviceTapped
+        case signupConfirmedTapped
+        case signupAbandoned
+        case recoverSyncedDataTapped
+        case recoveryConfirmedTapped
     }
 
     public enum SyncSetupEntryPoint: Equatable {
@@ -539,6 +548,7 @@ public class SyncSettingsViewModel: ObservableObject {
 
 public extension SyncManagementViewModelDelegate {
     func fireAutoRestorePixel(event _: SyncSettingsViewModel.AutoRestorePixelEvent) {}
+    func fireSyncSetupPixel(event _: SyncSettingsViewModel.SyncSetupPixelEvent) {}
     func simplifiedCopyRecoveryCode() {}
     func showSimplifiedSyncEnabledToast() {}
 }

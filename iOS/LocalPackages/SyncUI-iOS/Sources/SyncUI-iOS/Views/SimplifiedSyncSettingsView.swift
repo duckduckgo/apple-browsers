@@ -206,6 +206,7 @@ extension SimplifiedSyncSettingsView {
                     get: { model.isSyncEnabled },
                     set: { newValue in
                         if newValue {
+                            model.delegate?.fireSyncSetupPixel(event: .backUpThisDeviceTapped)
                             model.enableSyncToggleTapped()
                         } else {
                             model.disableSyncToggleTapped()
@@ -238,6 +239,7 @@ extension SimplifiedSyncSettingsView {
             .disabled(!model.isAccountCreationAvailable)
 
             Button {
+                model.delegate?.fireSyncSetupPixel(event: .recoverSyncedDataTapped)
                 model.beginRecoverFlow()
             } label: {
                 HStack(spacing: 8) {

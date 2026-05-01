@@ -540,7 +540,9 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         needsPreservedAccountCleanupBeforeServerOperation = false
         autoRestorePromptSource = nil
         dismissPresentedViewController()
-        Pixel.fire(pixel: .syncSetupEndedAbandoned)
+        Pixel.fire(pixel: .syncSetupEndedAbandoned,
+                   withAdditionalParameters: [PixelParameters.source: SyncSetupSource.connect.rawValue],
+                   includedParameters: [.appVersion])
         syncSetupExperimentPixels.fireSetupEndedAbandoned()
     }
 
@@ -599,6 +601,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
     
     func controllerDidFinishTransmittingRecoveryKey() {
+        Pixel.fire(pixel: .syncSetupEndedSuccessful,
+                   withAdditionalParameters: [PixelParameters.source: SyncSetupSource.exchange.rawValue],
+                   includedParameters: [.appVersion])
         dismissPresentedViewController()
     }
     
@@ -633,6 +638,10 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         presentSyncCompletionAfterDelay()
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
+            // .sharer reaches here only via the connect flow (exchange-sharer terminates in controllerDidFinishTransmittingRecoveryKey).
+            Pixel.fire(pixel: .syncSetupEndedSuccessful,
+                       withAdditionalParameters: [PixelParameters.source: SyncSetupSource.connect.rawValue],
+                       includedParameters: [.appVersion])
             return
         }
 
@@ -670,7 +679,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
 
     private func sendCodeRecognisedPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
-        guard setupSource != .recovery, setupSource != .unknown else { return }
+        guard setupSource != .unknown else { return }
         let parameters = source.map { [PixelParameters.source: $0] } ?? [PixelParameters.source: setupSource.rawValue]
         switch codeSource {
         case .qrCode:
@@ -702,7 +711,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
 
     private func sendSetupEndedSuccessfullyPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
-        guard setupSource != .recovery, setupSource != .unknown else { return }
+        guard setupSource != .unknown else { return }
         let parameters = source.map { [PixelParameters.source: $0] } ?? [PixelParameters.source: setupSource.rawValue]
         switch codeSource {
         case .pastedCode, .qrCode:

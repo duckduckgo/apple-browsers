@@ -58,6 +58,7 @@ public struct RecoverSyncedDataView: View {
             .foregroundStyle(Color(designSystemColor: .textPrimary))
         } foregroundContent: {
             Button {
+                model.delegate?.fireSyncSetupPixel(event: .recoveryConfirmedTapped)
                 model.continueRecoverFlow()
             } label: {
                 Text(UserText.recoverSyncedDataButton)

@@ -76,6 +76,7 @@ extension SyncSettingsView {
     func otherOptions() -> some View {
         Section {
             Button {
+                model.delegate?.fireSyncSetupPixel(event: .backUpThisDeviceTapped)
                 model.beginBackupFlow()
             } label: {
                 Text(UserText.syncAndBackUpThisDeviceLink)
@@ -83,12 +84,14 @@ extension SyncSettingsView {
             }
             .sheet(isPresented: $model.isSyncWithSetUpSheetVisible, content: {
                 SyncWithServerView(model: model, onCancel: {
+                    model.delegate?.fireSyncSetupPixel(event: .signupAbandoned)
                     model.isSyncWithSetUpSheetVisible = false
                 })
             })
             .disabled(!model.isAccountCreationAvailable)
 
             Button {
+                model.delegate?.fireSyncSetupPixel(event: .recoverSyncedDataTapped)
                 model.beginRecoverFlow()
             } label: {
                 Text(UserText.recoverSyncedDataLink)

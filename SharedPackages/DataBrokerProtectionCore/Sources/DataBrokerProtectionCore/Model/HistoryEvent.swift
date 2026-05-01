@@ -81,6 +81,20 @@ public struct HistoryEvent: Identifiable, Sendable {
         }
     }
 
+    /// Whether this event signals that our form-submission action against the broker successfully
+    /// completed. `optOutSubmittedAndAwaitingEmailConfirmation` is the form-submit signal in the
+    /// decoupled email-confirmation flow; `optOutRequested` plays that role for brokers that don't
+    /// email-confirm (and, in legacy email-confirming flows, for the broker acknowledgement moment —
+    /// the best signal available for those records).
+    func isFormSubmittedEvent() -> Bool {
+        switch type {
+        case .optOutRequested, .optOutSubmittedAndAwaitingEmailConfirmation:
+            return true
+        default:
+            return false
+        }
+    }
+
     func isOptOutClearEvent() -> Bool {
         switch type {
         case .optOutConfirmed, .matchRemovedByUser:

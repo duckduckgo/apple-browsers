@@ -334,11 +334,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "Συγχρονισμός άλλης συσκευής";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Όχι τώρα";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Θέλετε να συγχρονίσετε τα δεδομένα σας με άλλη συσκευή;";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Φορτώνει εικονίδια από ιστότοπους που έχετε προσθέσει σελιδοδείκτες. Οι λήψεις εικονιδίων αποκαλύπτονται στο δίκτυό σας.";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Σελιδοδείκτες";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Χρησιμοποίησε τους ίδιους σελιδοδείκτες αγαπημένων σε κινητό και υπολογιστή.";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Σύνδεση...";
@@ -363,6 +372,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Αποθηκεύστε τους σελιδοδείκτες και τα δεδομένα αυτόματης συμπλήρωσης και συγχρονίστε τα μεταξύ των συσκευών σας με κρυπτογράφηση από άκρο σε άκρο.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Χρησιμοποιήστε αυτόν τον κωδικό ώστε να επαναφέρετε τα δεδομένα σας σε περίπτωση που χάσετε την πρόσβαση σε αυτήν τη συσκευή. Δεν είναι δυνατή η ανάκτηση δεδομένων Sync & Backup έπειτα από 18 μήνες αδράνειας. [Μάθετε περισσότερα](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "Εφαρμογή DuckDuckGo";

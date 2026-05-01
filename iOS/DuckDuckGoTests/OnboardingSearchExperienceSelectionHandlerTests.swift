@@ -27,14 +27,12 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
     private var daxDialogs: DaxDialogs!
     private var mockDaxDialogsSettings: MockDaxDialogsSettings!
     private var mockAIChatSettings: ObservingMockAIChatSettingsProvider!
-    private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockOnboardingSearchExperienceProvider: MockOnboardingSearchExperienceProvider!
 
     override func setUp() {
         super.setUp()
         mockDaxDialogsSettings = MockDaxDialogsSettings()
         mockAIChatSettings = ObservingMockAIChatSettingsProvider()
-        mockFeatureFlagger = MockFeatureFlagger()
         mockOnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
 
         let mockVariantManager = MockVariantManager(isSupportedReturns: true)
@@ -50,38 +48,14 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
         daxDialogs = nil
         mockDaxDialogsSettings = nil
         mockAIChatSettings = nil
-        mockFeatureFlagger = nil
         mockOnboardingSearchExperienceProvider = nil
         super.tearDown()
     }
 
     // MARK: - updateAIChatSettings Tests
 
-    func testUpdateAIChatSettings_WhenFeatureFlagIsOff_DoesNotEnableAIChatSettings() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = []
-        mockDaxDialogsSettings.isDismissed = true
-        mockOnboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings = false
-        mockOnboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
-
-        sut = OnboardingSearchExperienceSelectionHandler(
-            daxDialogs: daxDialogs,
-            aiChatSettings: mockAIChatSettings,
-            featureFlagger: mockFeatureFlagger,
-            onboardingSearchExperienceProvider: mockOnboardingSearchExperienceProvider
-        )
-
-        // When
-        daxDialogs.isDismissedPublisher.send(true)
-
-        // Then
-        XCTAssertFalse(mockAIChatSettings.enableAIChatSearchInputUserSettingsCalled)
-        XCTAssertFalse(mockOnboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings)
-    }
-
     func testUpdateAIChatSettings_WhenDaxDialogsIsEnabled_DoesNotEnableAIChatSettings() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.onboardingSearchExperience]
         mockDaxDialogsSettings.isDismissed = false
         mockOnboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings = false
         mockOnboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
@@ -89,7 +63,6 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
         sut = OnboardingSearchExperienceSelectionHandler(
             daxDialogs: daxDialogs,
             aiChatSettings: mockAIChatSettings,
-            featureFlagger: mockFeatureFlagger,
             onboardingSearchExperienceProvider: mockOnboardingSearchExperienceProvider
         )
 
@@ -103,7 +76,6 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
 
     func testUpdateAIChatSettings_WhenDidApplyOnboardingChoiceSettingsIsTrue_DoesNotEnableAIChatSettings() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.onboardingSearchExperience]
         mockDaxDialogsSettings.isDismissed = true
         mockOnboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings = true
         mockOnboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
@@ -111,7 +83,6 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
         sut = OnboardingSearchExperienceSelectionHandler(
             daxDialogs: daxDialogs,
             aiChatSettings: mockAIChatSettings,
-            featureFlagger: mockFeatureFlagger,
             onboardingSearchExperienceProvider: mockOnboardingSearchExperienceProvider
         )
 
@@ -125,7 +96,6 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
 
     func testUpdateAIChatSettings_WhenAllConditionsMetAndUserEnabledAIChat_EnablesAIChatSettingsWithTrue() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.onboardingSearchExperience]
         mockDaxDialogsSettings.isDismissed = true
         mockOnboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings = false
         mockOnboardingSearchExperienceProvider.didMakeChoiceDuringOnboarding = true
@@ -134,7 +104,6 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
         sut = OnboardingSearchExperienceSelectionHandler(
             daxDialogs: daxDialogs,
             aiChatSettings: mockAIChatSettings,
-            featureFlagger: mockFeatureFlagger,
             onboardingSearchExperienceProvider: mockOnboardingSearchExperienceProvider
         )
 
@@ -149,7 +118,6 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
 
     func testUpdateAIChatSettings_WhenAllConditionsMetAndUserDidNotEnableAIChat_EnablesAIChatSettingsWithFalse() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.onboardingSearchExperience]
         mockDaxDialogsSettings.isDismissed = true
         mockOnboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings = false
         mockOnboardingSearchExperienceProvider.didMakeChoiceDuringOnboarding = true
@@ -158,7 +126,6 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
         sut = OnboardingSearchExperienceSelectionHandler(
             daxDialogs: daxDialogs,
             aiChatSettings: mockAIChatSettings,
-            featureFlagger: mockFeatureFlagger,
             onboardingSearchExperienceProvider: mockOnboardingSearchExperienceProvider
         )
 
@@ -173,7 +140,6 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
 
     func testUpdateAIChatSettings_WhenUserSkippedOnboarding_DoesNotApplySettings() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.onboardingSearchExperience]
         mockDaxDialogsSettings.isDismissed = true
         mockOnboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings = false
         mockOnboardingSearchExperienceProvider.didMakeChoiceDuringOnboarding = false
@@ -181,7 +147,6 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
         sut = OnboardingSearchExperienceSelectionHandler(
             daxDialogs: daxDialogs,
             aiChatSettings: mockAIChatSettings,
-            featureFlagger: mockFeatureFlagger,
             onboardingSearchExperienceProvider: mockOnboardingSearchExperienceProvider
         )
 

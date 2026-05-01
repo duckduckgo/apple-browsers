@@ -69,16 +69,30 @@ struct AutofillSettingsView: View {
                     Button {
                         viewModel.navigateToFileImport()
                     } label: {
-                        Text(UserText.autofillEmptyViewImportButtonTitle)
-                            .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .accent))
+                        HStack {
+                            Image(uiImage: DesignSystemImages.Color.Size24.`import`)
+                            Text(UserText.autofillEmptyViewImportButtonTitle)
+                                .daxBodyRegular()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+
+                            Spacer()
+
+                            SettingsCellComponents.chevron
+                        }
                     }
                     Button {
                         viewModel.navigateToImportViaSync()
                     } label: {
-                        Text(UserText.autofillEmptyViewImportViaSyncButtonTitle)
-                            .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .accent))
+                        HStack {
+                            Image(uiImage: DesignSystemImages.Color.Size24.sync)
+                            Text(UserText.autofillEmptyViewImportViaSyncButtonTitle)
+                                .daxBodyRegular()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+
+                            Spacer()
+
+                            SettingsCellComponents.chevron
+                        }
                     }
                 } else {
                     Button {
@@ -160,9 +174,7 @@ struct AutofillSettingsView: View {
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                 }
 
-                Image(systemName: "chevron.forward")
-                    .font(Font.system(.footnote).weight(.bold))
-                    .foregroundColor(Color(UIColor.tertiaryLabel))
+                SettingsCellComponents.chevron
             }
         }
     }
@@ -182,9 +194,7 @@ struct AutofillSettingsView: View {
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
 
-                Image(systemName: "chevron.forward")
-                    .font(Font.system(.footnote).weight(.bold))
-                    .foregroundColor(Color(UIColor.tertiaryLabel))
+                SettingsCellComponents.chevron
             }
         }
     }

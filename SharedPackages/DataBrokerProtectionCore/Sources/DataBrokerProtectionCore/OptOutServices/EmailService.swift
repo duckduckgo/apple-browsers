@@ -34,6 +34,7 @@ public enum EmailError: Error, Equatable, Codable {
     case requestError
     case serverError
     case retriesExceeded
+    case alreadyGeneratedEmail
 }
 
 public struct EmailData: Decodable {
@@ -236,6 +237,8 @@ extension EmailError: LocalizedError {
             return "Email server error"
         case .retriesExceeded:
             return "Email retries exceeded"
+        case .alreadyGeneratedEmail:
+            return "generateEmail action ran more than once in the same job"
         }
     }
 }

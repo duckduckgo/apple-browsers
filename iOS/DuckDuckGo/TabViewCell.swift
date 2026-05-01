@@ -182,8 +182,8 @@ class TabViewCell: UICollectionViewCell {
     }
 
     private func updatePreviewToDisplay(image: UIImage) {
-        let imageAspectRatio = image.size.height / image.size.width
-        let containerAspectRatio = (background.bounds.height - TabViewCell.Constants.cellHeaderHeight) / background.bounds.width
+        let imageAspectRatio = image.size.width > 0 ? image.size.height / image.size.width : 1.0
+        let containerAspectRatio = background.bounds.width > 0 ? (background.bounds.height - TabViewCell.Constants.cellHeaderHeight) / background.bounds.width : 1.0
 
         let strechContainerVerically = containerAspectRatio < imageAspectRatio
 

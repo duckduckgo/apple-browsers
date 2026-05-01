@@ -1408,6 +1408,24 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
     }
 
+    // MARK: - AI Chat Shortcut
+
+    func test_updateAIChatShortcutAvailability_propagatesToHandler() {
+        sut.updateAIChatShortcutAvailability(true)
+        XCTAssertTrue(sut.viewController.handler.isAIChatShortcutAvailable)
+
+        sut.updateAIChatShortcutAvailability(false)
+        XCTAssertFalse(sut.viewController.handler.isAIChatShortcutAvailable)
+    }
+
+    func test_unifiedToggleInputVCDidTapAIChatShortcut_invokesDelegate() {
+        XCTAssertEqual(mockDelegate.didRequestAIChatCount, 0)
+
+        sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
+
+        XCTAssertEqual(mockDelegate.didRequestAIChatCount, 1)
+    }
+
     // MARK: - Helpers
 
     private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false, supportedTools: [AIChatRAGTool] = []) -> AIChatModel {
@@ -1461,6 +1479,17 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         }
     }
 
+    func test_modelChipButton_usesFixedMenuElementOrder() {
+        let sut = UnifiedToggleInputToolbarView()
+
+        let modelChipButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.ModelChip", in: sut)
+
+        XCTAssertNotNil(modelChipButton)
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(modelChipButton?.preferredMenuElementOrder, .fixed)
+        }
+    }
+
     private func findButton(accessibilityLabel: String, in view: UIView) -> UIButton? {
         for subview in view.subviews {
             if let button = subview as? UIButton, button.accessibilityLabel == accessibilityLabel {
@@ -1497,6 +1526,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
     var submittedQuery: String?
     var committedMode: TextEntryMode?
+    var didRequestAIChatCount = 0
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?) {
         submittedPrompt = prompt
@@ -1507,6 +1537,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidRequestAIChat() { didRequestAIChatCount += 1 }
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
         committedMode = mode

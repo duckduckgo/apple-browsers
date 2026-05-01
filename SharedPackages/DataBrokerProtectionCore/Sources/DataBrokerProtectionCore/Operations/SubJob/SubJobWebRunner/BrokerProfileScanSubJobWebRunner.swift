@@ -56,6 +56,8 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public let executionConfig: BrokerJobExecutionConfig
     public let featureFlagger: DBPFeatureFlagging
     public let applicationNameForUserAgentProvider: () -> String?
+    public var fetchedEmail: String?
+    public var emailData: ExtractedEmailData = [:]
 
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,

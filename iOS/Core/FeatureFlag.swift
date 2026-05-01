@@ -234,9 +234,6 @@ public enum FeatureFlag: String {
     /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
     case attributedMetrics
 
-    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
-    case onboardingSearchExperience
-
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1213320237636425?focus=true
     case onboardingDuckAIQueryExperiment
 
@@ -579,8 +576,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.iPadAIChatToggle)))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AttributedMetricsSubfeature.featureEnabled)))
-        case .onboardingSearchExperience:
-            Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.onboardingSearchExperience)))
         case .onboardingDuckAIQueryExperiment:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.onboardingDuckAIQueryExperiment)),
                    cohortType: DuckAIQueryExperimentCohort.self)

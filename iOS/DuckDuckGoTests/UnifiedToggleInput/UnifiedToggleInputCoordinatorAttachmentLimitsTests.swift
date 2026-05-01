@@ -184,6 +184,20 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertTrue(sut.viewController.isImageButtonEnabled)
     }
 
+    func testWhenImageLimitReachedButFilesRemainThenAttachmentMenuOnlyShowsFileAction() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        let image = UIImage(systemName: "photo")!
+        sut.addImageAttachment(image: image, fileName: "a.jpg")
+        sut.addImageAttachment(image: image, fileName: "b.jpg")
+        sut.addImageAttachment(image: image, fileName: "c.jpg")
+
+        let menuTitles = attachmentMenuTitles(for: sut)
+        XCTAssertEqual(menuTitles, [UserText.aiChatAttachmentOptionAttachFile])
+    }
+
     func testWhenFileLimitReachedButImagesRemainThenAttachmentButtonIsEnabled() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "mixed-model"
@@ -194,6 +208,32 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.addFileAttachment(makeFileAttachment(fileName: "c.pdf"))
 
         XCTAssertTrue(sut.viewController.isImageButtonEnabled)
+    }
+
+    func testWhenFileLimitReachedButImagesRemainThenAttachmentMenuKeepsPhotoAction() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
+        sut.addFileAttachment(makeFileAttachment(fileName: "b.pdf"))
+        sut.addFileAttachment(makeFileAttachment(fileName: "c.pdf"))
+
+        let menuTitles = attachmentMenuTitles(for: sut)
+        XCTAssertTrue(menuTitles.contains(UserText.aiChatAttachmentOptionAttachPhoto))
+        XCTAssertFalse(menuTitles.contains(UserText.aiChatAttachmentOptionAttachFile))
+    }
+
+    func testWhenImageAndFileAvailableThenAttachmentMenuShowsPhotoAndFileActions() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        sut.updateImageButtonVisibility()
+
+        let menuTitles = attachmentMenuTitles(for: sut)
+        XCTAssertTrue(menuTitles.contains(UserText.aiChatAttachmentOptionAttachPhoto))
+        XCTAssertTrue(menuTitles.contains(UserText.aiChatAttachmentOptionAttachFile))
     }
 
     func testWhenSubmittingMixedAttachmentsThenImagesAndFilesAreSubmitted() {
@@ -317,6 +357,10 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
             fileSizeBytes: data.count,
             pageCount: 1
         )
+    }
+
+    private func attachmentMenuTitles(for coordinator: UnifiedToggleInputCoordinator) -> [String] {
+        coordinator.viewController.attachmentMenu?.children.map(\.title) ?? []
     }
 }
 

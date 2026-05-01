@@ -18,7 +18,6 @@
 //
 
 import AIChat
-import DesignResourcesKit
 import DesignResourcesKitIcons
 import PhotosUI
 import UIKit
@@ -26,27 +25,6 @@ import UniformTypeIdentifiers
 
 @MainActor
 final class UnifiedToggleInputAttachmentPresenter: NSObject {
-
-    private enum MenuConstants {
-        static let width: CGFloat = 270
-        static let itemHeight: CGFloat = 44
-        static let verticalPadding: CGFloat = 10
-        static let horizontalPadding: CGFloat = 16
-        static let itemLeadingInset: CGFloat = 6
-        static let itemTrailingInset: CGFloat = 8
-        static let iconSize: CGFloat = 24
-        static let iconLabelGap: CGFloat = 8
-        static let cornerRadius: CGFloat = 32
-        static let shadowRadius: CGFloat = 40
-        static let shadowOpacity: Float = 0.12
-        static let shadowOffset = CGSize(width: 0, height: 8)
-    }
-
-    private struct MenuAction {
-        let title: String
-        let icon: UIImage
-        let handler: () -> Void
-    }
 
     struct FileMetadata: Sendable {
         let fileName: String
@@ -72,168 +50,42 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         }
     }
 
-    private final class MenuItemButton: UIButton {
-
-        private let iconView = UIImageView()
-        private let menuTitleLabel = UILabel()
-
-        init(action: MenuAction) {
-            super.init(frame: .zero)
-            translatesAutoresizingMaskIntoConstraints = false
-            accessibilityLabel = action.title
-            accessibilityTraits = .button
-            setupUI()
-            configure(action: action)
-        }
-
-        @available(*, unavailable)
-        required init?(coder: NSCoder) {
-            fatalError("init(coder:) has not been implemented")
-        }
-
-        private func setupUI() {
-            iconView.contentMode = .scaleAspectFit
-            iconView.tintColor = UIColor(designSystemColor: .iconsSecondary)
-            iconView.translatesAutoresizingMaskIntoConstraints = false
-
-            menuTitleLabel.font = .daxBodyRegular()
-            menuTitleLabel.adjustsFontForContentSizeCategory = true
-            menuTitleLabel.textColor = UIColor(designSystemColor: .textPrimary)
-            menuTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-
-            addSubview(iconView)
-            addSubview(menuTitleLabel)
-
-            NSLayoutConstraint.activate([
-                iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: MenuConstants.itemLeadingInset),
-                iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
-                iconView.widthAnchor.constraint(equalToConstant: MenuConstants.iconSize),
-                iconView.heightAnchor.constraint(equalToConstant: MenuConstants.iconSize),
-
-                menuTitleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: MenuConstants.iconLabelGap),
-                menuTitleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-                menuTitleLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -MenuConstants.itemTrailingInset),
-            ])
-        }
-
-        private func configure(action: MenuAction) {
-            iconView.image = action.icon.withRenderingMode(.alwaysTemplate)
-            menuTitleLabel.text = action.title
-        }
-    }
-
-    private final class AttachmentMenuViewController: UIViewController {
-
-        private let actions: [MenuAction]
-
-        private let blurView: UIVisualEffectView = {
-            let view = UIVisualEffectView(effect: UIBlurEffect(style: .systemThinMaterial))
-            view.translatesAutoresizingMaskIntoConstraints = false
-            view.layer.cornerRadius = MenuConstants.cornerRadius
-            view.layer.cornerCurve = .continuous
-            view.clipsToBounds = true
-            return view
-        }()
-
-        private let stackView: UIStackView = {
-            let stack = UIStackView()
-            stack.axis = .vertical
-            stack.spacing = 0
-            stack.translatesAutoresizingMaskIntoConstraints = false
-            return stack
-        }()
-
-        init(actions: [MenuAction]) {
-            self.actions = actions
-            super.init(nibName: nil, bundle: nil)
-            modalPresentationStyle = .popover
-            preferredContentSize = CGSize(
-                width: MenuConstants.width,
-                height: (MenuConstants.verticalPadding * 2) + (CGFloat(actions.count) * MenuConstants.itemHeight)
-            )
-        }
-
-        @available(*, unavailable)
-        required init?(coder: NSCoder) {
-            fatalError("init(coder:) has not been implemented")
-        }
-
-        override func viewDidLoad() {
-            super.viewDidLoad()
-            view.backgroundColor = .clear
-            view.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
-            view.layer.shadowOpacity = MenuConstants.shadowOpacity
-            view.layer.shadowRadius = MenuConstants.shadowRadius
-            view.layer.shadowOffset = MenuConstants.shadowOffset
-
-            view.addSubview(blurView)
-            blurView.contentView.addSubview(stackView)
-
-            NSLayoutConstraint.activate([
-                blurView.topAnchor.constraint(equalTo: view.topAnchor),
-                blurView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                blurView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                blurView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-                stackView.topAnchor.constraint(equalTo: blurView.contentView.topAnchor, constant: MenuConstants.verticalPadding),
-                stackView.leadingAnchor.constraint(equalTo: blurView.contentView.leadingAnchor, constant: MenuConstants.horizontalPadding),
-                stackView.trailingAnchor.constraint(equalTo: blurView.contentView.trailingAnchor, constant: -MenuConstants.horizontalPadding),
-                stackView.bottomAnchor.constraint(equalTo: blurView.contentView.bottomAnchor, constant: -MenuConstants.verticalPadding),
-            ])
-
-            actions.enumerated().forEach { index, action in
-                let button = MenuItemButton(action: action)
-                button.heightAnchor.constraint(equalToConstant: MenuConstants.itemHeight).isActive = true
-                button.tag = index
-                button.addTarget(self, action: #selector(menuButtonPressed(_:)), for: .touchUpInside)
-                stackView.addArrangedSubview(button)
-            }
-        }
-
-        @objc
-        private func menuButtonPressed(_ sender: UIButton) {
-            let handler = actions[sender.tag].handler
-            dismiss(animated: true) {
-                handler()
-            }
-        }
-    }
-
     var onExpandIfNeeded: (() -> Void)?
     var onImagePicked: ((UIImage, String) -> Void)?
     var onFilePicked: ((AIChatFileAttachment) -> Void)?
     var onFileValidationFailed: ((String) -> Void)?
     var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
 
-    func presentAttachmentOptions(
-        from sourceView: UIView,
-        presenter: UIViewController,
+    func makeAttachmentMenu(
+        presenterProvider: @escaping () -> UIViewController?,
         photoSelectionLimit: Int,
         canAttachFile: Bool,
         allowedFileTypes: [UTType]
-    ) {
+    ) -> UIMenu? {
         let canAttachPhoto = photoSelectionLimit > 0
-        guard canAttachPhoto || canAttachFile else { return }
+        guard canAttachPhoto || canAttachFile else { return nil }
 
-        var actions = [MenuAction]()
+        var actions = [UIAction]()
 
         if canAttachPhoto {
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
                 actions.append(
-                    MenuAction(
+                    UIAction(
                         title: UserText.aiChatAttachmentOptionTakePhoto,
-                        icon: DesignSystemImages.Glyphs.Size24.camera
-                    ) { [weak self] in
+                        image: DesignSystemImages.Glyphs.Size24.camera
+                    ) { [weak self] _ in
+                        guard let presenter = presenterProvider() else { return }
                         self?.presentCamera(from: presenter)
                     }
                 )
             }
 
             actions.append(
-                MenuAction(
+                UIAction(
                     title: UserText.aiChatAttachmentOptionAttachPhoto,
-                    icon: DesignSystemImages.Glyphs.Size24.image
-                ) { [weak self] in
+                    image: DesignSystemImages.Glyphs.Size24.image
+                ) { [weak self] _ in
+                    guard let presenter = presenterProvider() else { return }
                     self?.presentPhotoPicker(from: presenter, selectionLimit: photoSelectionLimit)
                 }
             )
@@ -241,25 +93,17 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
 
         if canAttachFile, !allowedFileTypes.isEmpty {
             actions.append(
-                MenuAction(
+                UIAction(
                     title: UserText.aiChatAttachmentOptionAttachFile,
-                    icon: DesignSystemImages.Glyphs.Size24.folder
-                ) { [weak self] in
+                    image: DesignSystemImages.Glyphs.Size24.folder
+                ) { [weak self] _ in
+                    guard let presenter = presenterProvider() else { return }
                     self?.presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
                 }
             )
         }
 
-        let menuViewController = AttachmentMenuViewController(actions: actions)
-        menuViewController.popoverPresentationController?.delegate = self
-
-        if let popover = menuViewController.popoverPresentationController {
-            popover.sourceView = sourceView
-            popover.sourceRect = sourceView.bounds
-            popover.permittedArrowDirections = []
-        }
-
-        presenter.present(menuViewController, animated: true)
+        return UIMenu(children: actions)
     }
 
     private func presentCamera(from presenter: UIViewController) {
@@ -418,12 +262,5 @@ extension UnifiedToggleInputAttachmentPresenter: UIDocumentPickerDelegate {
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         controller.dismiss(animated: true)
         onExpandIfNeeded?()
-    }
-}
-
-extension UnifiedToggleInputAttachmentPresenter: UIPopoverPresentationControllerDelegate {
-
-    func adaptivePresentationStyle(for controller: UIPresentationController) -> UIModalPresentationStyle {
-        .none
     }
 }

@@ -1051,17 +1051,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentPolicy.canAttachFiles && !allowedFileUTTypes.isEmpty
     }
 
-    func presentAttachmentOptions() {
-        guard let presenter = attachmentPresenterViewController else { return }
-        attachmentPresenter.presentAttachmentOptions(
-            from: viewController.attachButtonView,
-            presenter: presenter,
-            photoSelectionLimit: attachmentPolicy.canAttachImages ? remainingImagesForPicker : 0,
-            canAttachFile: canPresentFilePicker,
-            allowedFileTypes: allowedFileUTTypes
-        )
-    }
-
     private func expandIfOnAITab() {
         if case .aiTab = displayState {
             showExpanded()
@@ -1122,9 +1111,26 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func updateAttachButtonVisibility() {
+        updateAttachButtonPresentation()
+    }
+
+    private func makeAttachmentMenu() -> UIMenu? {
+        attachmentPresenter.makeAttachmentMenu(
+            presenterProvider: { [weak self] in
+                self?.attachmentPresenterViewController
+            },
+            photoSelectionLimit: attachmentPolicy.canAttachImages ? remainingImagesForPicker : 0,
+            canAttachFile: canPresentFilePicker,
+            allowedFileTypes: allowedFileUTTypes
+        )
+    }
+
+    private func updateAttachButtonPresentation() {
         let supportsAttachments = selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty
+        let canAttachMore = (attachmentPolicy.canAttachImages || canPresentFilePicker) && !viewController.isGenerating
         viewController.isImageButtonHidden = !supportsAttachments
-        updateImageButtonEnabledState()
+        viewController.isImageButtonEnabled = canAttachMore
+        viewController.attachmentMenu = supportsAttachments && canAttachMore ? makeAttachmentMenu() : nil
     }
 
 }
@@ -1223,10 +1229,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController) {
         showExpanded(inputMode: .search)
-    }
-
-    func unifiedToggleInputVCDidTapAttach(_ vc: UnifiedToggleInputViewController) {
-        presentAttachmentOptions()
     }
 
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController) {
@@ -1343,8 +1345,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func updateImageButtonEnabledState() {
-        let canAttachMore = (attachmentPolicy.canAttachImages || canPresentFilePicker) && !viewController.isGenerating
-        viewController.isImageButtonEnabled = canAttachMore
+        updateAttachButtonPresentation()
     }
 
     var resolvedSelectedReasoningMode: AIChatReasoningMode? {

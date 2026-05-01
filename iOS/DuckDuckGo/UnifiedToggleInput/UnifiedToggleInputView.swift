@@ -156,6 +156,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.toolsMenu = newValue }
     }
 
+    var attachmentMenu: UIMenu? {
+        get { toolsToolbar.attachmentMenu }
+        set { toolsToolbar.attachmentMenu = newValue }
+    }
+
     var reasoningPickerMenu: UIMenu? {
         get { toolsToolbar.reasoningPickerMenu }
         set { toolsToolbar.reasoningPickerMenu = newValue }
@@ -206,14 +211,11 @@ final class UnifiedToggleInputView: UIView {
 
     // MARK: - Attachment Callbacks
 
-    var onAttachTapped: (() -> Void)?
     var onAttachmentRemoved: ((UUID) -> Void)?
     var onInlineDismissTapped: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
 
     // MARK: - Attachment API
-
-    var attachButtonView: UIView { toolsToolbar.imageButton }
 
     var isImageButtonHidden: Bool {
         get { toolsToolbar.isImageButtonHidden }
@@ -887,9 +889,6 @@ private extension UnifiedToggleInputView {
         }
         toolsToolbar.onStopGeneratingTapped = { [weak self] in
             self?.handler.stopGeneratingButtonTapped()
-        }
-        toolsToolbar.onAttachTapped = { [weak self] in
-            self?.onAttachTapped?()
         }
         toolsToolbar.onVoiceTapped = { [weak self] in
             self?.handler.microphoneButtonTapped()

@@ -227,6 +227,12 @@ final class OnboardingSharedPixelTests: XCTestCase {
     }
 }
 
+private extension OnboardingSharedPixelHandling {
+    func fire(_ event: OnboardingSharedPixelEvent) {
+        fire(event, source: nil, flow: nil, variant: nil)
+    }
+}
+
 private extension OnboardingSharedPixelTests {
     func makeHandler(platform: OnboardingSharedPixelHandler.Platform = .macOS,
                      installType: OnboardingSharedPixelHandler.InstallType? = nil,

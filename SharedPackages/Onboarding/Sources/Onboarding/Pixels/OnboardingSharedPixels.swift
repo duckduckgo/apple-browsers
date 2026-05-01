@@ -28,9 +28,13 @@ public protocol OnboardingSharedPixelHandling {
 }
 
 public extension OnboardingSharedPixelHandling {
+    #if os(macOS)
+    /// Fires the provided shared onboarding pixel event with default source and flow parameters.
+    /// For use on macOS only, which has no non-default onboarding sources, flows, or variants.
     func fire(_ event: OnboardingSharedPixelEvent) {
-        fire(event, source: nil, flow: nil, variant: nil)
+        fire(event, source: .default, flow: .default, variant: nil)
     }
+    #endif
 
     func fire(_ event: OnboardingSharedPixelEvent,
               source: OnboardingSourcePixelParameter?,
@@ -128,8 +132,12 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
                      flow: OnboardingFlowTypePixelParameter?,
                      variant: OnboardingVariantPixelParameter?) {
         var additionalParameters = installParameters
-        additionalParameters[ParameterKeys.source] = (source ?? .default).rawValue
-        additionalParameters[ParameterKeys.flow] = (flow ?? .default).rawValue
+        if let source {
+            additionalParameters[ParameterKeys.source] = source.rawValue
+        }
+        if let flow {
+            additionalParameters[ParameterKeys.flow] = flow.rawValue
+        }
         if let variant {
             additionalParameters[ParameterKeys.variant] = variant.rawValue
         }

@@ -186,8 +186,9 @@ final class OnboardingIntroViewModel: ObservableObject {
     func startOnboardingAction(isResumingOnboarding: Bool = false) {
         if isResumingOnboarding {
             pixelReporter.measureResumeOnboardingCTAAction()
+        } else {
+            pixelReporter.measureStartOnboardingCTAAction()
         }
-        pixelReporter.measureStartOnboardingCTAAction()
         makeNextViewState()
     }
 

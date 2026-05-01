@@ -591,13 +591,12 @@ class OnboardingManagerTests: XCTestCase {
 private class MockOnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     var eventsReceived: [OnboardingSharedPixelEvent] = []
 
-    func fire(_ event: OnboardingSharedPixelEvent) {
+    func fire(_ event: OnboardingSharedPixelEvent,
+              source: OnboardingSourcePixelParameter?,
+              flow: OnboardingFlowTypePixelParameter?,
+              variant: OnboardingVariantPixelParameter?) {
         eventsReceived.append(event)
     }
-
-    func setMetadata(source: OnboardingSourcePixelParameter, flow: OnboardingFlowTypePixelParameter, variant: OnboardingVariantPixelParameter?) {}
-
-    func setVariant(_ variant: OnboardingVariantPixelParameter) {}
 
     func reset() {
         eventsReceived = []

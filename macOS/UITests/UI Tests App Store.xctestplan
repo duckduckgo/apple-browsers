@@ -39,6 +39,7 @@
         "AIChatTests\/test_availableAIChatInOmnibarDefaultSettings()",
         "AIChatTests\/test_disableAIChatOmnibarFromSettings_buttonIsRemovedFromOmnibar()",
         "BookmarkSearchTests\/testShowInFolderFunctionalityOnBookmarksPanel()",
+        "DownloadsUITests\/testFireWindowWithInProgressDownloadShowsWarning()",
         "FindInPageTests",
         "FindInPageTests\/test_clickingWebViewDeactivates_thenCmdFReactivatesAndKeepsText()",
         "FindInPageTests\/test_findInPage_canBeClosedWithEscape()",

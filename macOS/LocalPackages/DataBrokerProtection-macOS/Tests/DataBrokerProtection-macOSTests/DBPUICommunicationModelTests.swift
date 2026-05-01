@@ -229,6 +229,258 @@ final class DBPUICommunicationModelTests: XCTestCase {
         XCTAssertTrue(profileMatch.hasMatchingRecordOnParentBroker)
     }
 
+    // MARK: - optOutFormSubmittedDate derivation
+
+    func testProfileMatchInit_whenNonEmailBrokerHasOptOutRequestedEvent_thenOptOutFormSubmittedDateIsThatEventDate() {
+
+        // Given — non-email-confirming broker: `.optOutRequested` is logged at form submission
+        // success, so it represents both moment 1 and moment 2.
+        let extractedProfile = ExtractedProfile.mockWithoutRemovedDate
+        let optOutRequestedDate = Calendar.current.date(byAdding: .day, value: -3, to: Date.now)!
+        let historyEvents = [
+            HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutRequested, date: optOutRequestedDate)
+        ]
+        let optOut = OptOutJobData.mock(with: extractedProfile,
+                                        historyEvents: historyEvents,
+                                        createdDate: Date.now,
+                                        submittedSuccessfullyDate: optOutRequestedDate)
+
+        // When
+        let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOut,
+                                                       dataBroker: makeUIBroker(),
+                                                       parentBrokerOptOutJobData: nil)
+
+        // Then
+        XCTAssertEqual(profileMatch.optOutFormSubmittedDate, optOutRequestedDate.timeIntervalSince1970)
+        XCTAssertEqual(profileMatch.optOutSubmittedDate, optOutRequestedDate.timeIntervalSince1970)
+    }
+
+    func testProfileMatchInit_whenEmailBrokerHasFormSubmittedAndConfirmationEvents_thenOptOutFormSubmittedDateIsTheFormSubmissionEventDate() {
+
+        // Given — email-confirming broker: `.optOutSubmittedAndAwaitingEmailConfirmation` is
+        // logged at form submission (moment 1), `.optOutRequested` is logged later, after the
+        // broker confirms by email (moment 2).
+        let extractedProfile = ExtractedProfile.mockWithoutRemovedDate
+        let formSubmittedAtDate = Calendar.current.date(byAdding: .day, value: -5, to: Date.now)!
+        let emailConfirmedDate = Calendar.current.date(byAdding: .day, value: -2, to: Date.now)!
+        let historyEvents = [
+            HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutSubmittedAndAwaitingEmailConfirmation, date: formSubmittedAtDate),
+            HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutRequested, date: emailConfirmedDate)
+        ]
+        let optOut = OptOutJobData.mock(with: extractedProfile,
+                                        historyEvents: historyEvents,
+                                        createdDate: Date.now,
+                                        submittedSuccessfullyDate: emailConfirmedDate)
+
+        // When
+        let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOut,
+                                                       dataBroker: makeUIBroker(),
+                                                       parentBrokerOptOutJobData: nil)
+
+        // Then
+        XCTAssertEqual(profileMatch.optOutFormSubmittedDate, formSubmittedAtDate.timeIntervalSince1970)
+        XCTAssertEqual(profileMatch.optOutSubmittedDate, emailConfirmedDate.timeIntervalSince1970)
+    }
+
+    func testProfileMatchInit_whenMultipleSubmissionEventsExist_thenOptOutFormSubmittedDateIsTheFirstOne() {
+
+        // Given — value should be set once at the first successful submission and not overwritten
+        // on retries.
+        let extractedProfile = ExtractedProfile.mockWithoutRemovedDate
+        let firstAttempt = Calendar.current.date(byAdding: .day, value: -10, to: Date.now)!
+        let secondAttempt = Calendar.current.date(byAdding: .day, value: -5, to: Date.now)!
+        let historyEvents = [
+            HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutRequested, date: secondAttempt),
+            HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutRequested, date: firstAttempt)
+        ]
+        let optOut = OptOutJobData.mock(with: extractedProfile,
+                                        historyEvents: historyEvents,
+                                        createdDate: Date.now,
+                                        submittedSuccessfullyDate: nil)
+
+        // When
+        let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOut,
+                                                       dataBroker: makeUIBroker(),
+                                                       parentBrokerOptOutJobData: nil)
+
+        // Then
+        XCTAssertEqual(profileMatch.optOutFormSubmittedDate, firstAttempt.timeIntervalSince1970)
+    }
+
+    func testProfileMatchInit_whenNoSubmissionEventsAndNoParent_thenOptOutFormSubmittedDateIsNil() {
+
+        // Given
+        let extractedProfile = ExtractedProfile.mockWithoutRemovedDate
+        let historyEvents = [
+            HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .matchesFound(count: 1), date: Date.now)
+        ]
+        let optOut = OptOutJobData.mock(with: extractedProfile,
+                                        historyEvents: historyEvents,
+                                        createdDate: Date.now,
+                                        submittedSuccessfullyDate: nil)
+
+        // When
+        let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOut,
+                                                       dataBroker: makeUIBroker(),
+                                                       parentBrokerOptOutJobData: nil)
+
+        // Then
+        XCTAssertNil(profileMatch.optOutFormSubmittedDate)
+    }
+
+    func testProfileMatchInit_whenChildBrokerHasNoOwnSubmissionEventsButParentDoes_thenOptOutFormSubmittedDateFallsBackToParent() {
+
+        // Given — child broker's opt-out is performed by its parent rather than directly, so the
+        // child has no submission events of its own; the parent ran the opt-out and has the
+        // submission event.
+        let extractedProfile = ExtractedProfile.mockWithName("Steve Jones", age: "20", addresses: [AddressCityState(city: "New York", state: "NY")])
+        let parentProfile = ExtractedProfile.mockWithName("Steve Jones", age: "20", addresses: [AddressCityState(city: "New York", state: "NY")])
+
+        let parentSubmissionDate = Calendar.current.date(byAdding: .day, value: -4, to: Date.now)!
+        let parentEvents = [
+            HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutRequested, date: parentSubmissionDate)
+        ]
+
+        let childOptOut = OptOutJobData.mock(with: extractedProfile, historyEvents: [])
+        let parentOptOut = OptOutJobData.mock(with: parentProfile, historyEvents: parentEvents)
+
+        // When
+        let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: childOptOut,
+                                                       dataBroker: makeUIBroker(parentURL: "parent.com"),
+                                                       parentBrokerOptOutJobData: [parentOptOut])
+
+        // Then
+        XCTAssertEqual(profileMatch.optOutFormSubmittedDate, parentSubmissionDate.timeIntervalSince1970)
+    }
+
+    func testProfileMatchInit_whenChildBrokerHasNoOwnSubmissionEventsAndParentMatchHasNone_thenOptOutFormSubmittedDateIsNil() {
+
+        // Given
+        let extractedProfile = ExtractedProfile.mockWithName("Steve Jones", age: "20", addresses: [AddressCityState(city: "New York", state: "NY")])
+        let parentProfile = ExtractedProfile.mockWithName("Steve Jones", age: "20", addresses: [AddressCityState(city: "New York", state: "NY")])
+
+        let childOptOut = OptOutJobData.mock(with: extractedProfile, historyEvents: [])
+        let parentOptOut = OptOutJobData.mock(with: parentProfile, historyEvents: [])
+
+        // When
+        let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: childOptOut,
+                                                       dataBroker: makeUIBroker(parentURL: "parent.com"),
+                                                       parentBrokerOptOutJobData: [parentOptOut])
+
+        // Then
+        XCTAssertNil(profileMatch.optOutFormSubmittedDate)
+    }
+
+    func testProfileMatchInit_whenChildHasOwnSubmissionEventAndParentAlsoHasOne_thenOptOutFormSubmittedDatePrefersChild() {
+
+        // Given — defensive: if a child somehow has its own submission event, the child's own
+        // value should win over the parent fallback.
+        let extractedProfile = ExtractedProfile.mockWithName("Steve Jones", age: "20", addresses: [AddressCityState(city: "New York", state: "NY")])
+        let parentProfile = ExtractedProfile.mockWithName("Steve Jones", age: "20", addresses: [AddressCityState(city: "New York", state: "NY")])
+
+        let childSubmission = Calendar.current.date(byAdding: .day, value: -2, to: Date.now)!
+        let parentSubmission = Calendar.current.date(byAdding: .day, value: -10, to: Date.now)!
+
+        let childOptOut = OptOutJobData.mock(
+            with: extractedProfile,
+            historyEvents: [HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutRequested, date: childSubmission)]
+        )
+        let parentOptOut = OptOutJobData.mock(
+            with: parentProfile,
+            historyEvents: [HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutRequested, date: parentSubmission)]
+        )
+
+        // When
+        let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: childOptOut,
+                                                       dataBroker: makeUIBroker(parentURL: "parent.com"),
+                                                       parentBrokerOptOutJobData: [parentOptOut])
+
+        // Then
+        XCTAssertEqual(profileMatch.optOutFormSubmittedDate, childSubmission.timeIntervalSince1970)
+    }
+
+    func testProfileMatchInit_whenChildHasNoSubmissionEventsAndParentMatchIsNotAnExactProfileMatch_thenOptOutFormSubmittedDateStillUsesParentSubmission() {
+
+        // Given — broker-level fallback: every child broker record is structurally downstream of
+        // the parent, so any parent submission is a removal request that may clear this record.
+        // The strict matcher (`doesMatchExtractedProfile`) is reserved for
+        // `hasMatchingRecordOnParentBroker`.
+        let extractedProfile = ExtractedProfile.mockWithName("Steve Jones", age: "20", addresses: [AddressCityState(city: "New York", state: "NY")])
+        let parentProfileNonmatching = ExtractedProfile.mockWithName("Jamie Jones", age: "20", addresses: [AddressCityState(city: "New York", state: "NY")])
+
+        let parentSubmission = Calendar.current.date(byAdding: .day, value: -4, to: Date.now)!
+        let childOptOut = OptOutJobData.mock(with: extractedProfile, historyEvents: [])
+        let parentOptOut = OptOutJobData.mock(
+            with: parentProfileNonmatching,
+            historyEvents: [HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutRequested, date: parentSubmission)]
+        )
+
+        // When
+        let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: childOptOut,
+                                                       dataBroker: makeUIBroker(parentURL: "parent.com"),
+                                                       parentBrokerOptOutJobData: [parentOptOut])
+
+        // Then
+        XCTAssertEqual(profileMatch.optOutFormSubmittedDate, parentSubmission.timeIntervalSince1970)
+        // Strict matcher still rejects, so the parent-broker-duplicate signal stays false.
+        XCTAssertFalse(profileMatch.hasMatchingRecordOnParentBroker)
+    }
+
+    func testProfileMatchInit_whenMultipleParentJobsHaveSubmissions_thenChildUsesMostRecent() {
+
+        // Given — three parent opt-outs, two with submissions on different dates, one without.
+        // The fallback should pick the most recent submission across all parent jobs.
+        let extractedProfile = ExtractedProfile.mockWithName("Steve Jones", age: "20", addresses: [AddressCityState(city: "New York", state: "NY")])
+        let parentA = ExtractedProfile.mockWithName("Adam P Smith", age: "46", addresses: [AddressCityState(city: "San Diego", state: "CA")])
+        let parentB = ExtractedProfile.mockWithName("Adam M Smith", age: "48", addresses: [AddressCityState(city: "San Diego", state: "CA")])
+        let parentC = ExtractedProfile.mockWithName("Adam O Smith", age: "50", addresses: [AddressCityState(city: "San Diego", state: "CA")])
+
+        let oldSubmission = Calendar.current.date(byAdding: .day, value: -10, to: Date.now)!
+        let recentSubmission = Calendar.current.date(byAdding: .day, value: -2, to: Date.now)!
+
+        let childOptOut = OptOutJobData.mock(with: extractedProfile, historyEvents: [])
+        let parentOptOutA = OptOutJobData.mock(
+            with: parentA,
+            historyEvents: [HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutRequested, date: oldSubmission)]
+        )
+        let parentOptOutB = OptOutJobData.mock(
+            with: parentB,
+            historyEvents: [HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutSubmittedAndAwaitingEmailConfirmation, date: recentSubmission)]
+        )
+        let parentOptOutC = OptOutJobData.mock(with: parentC, historyEvents: [])
+
+        // When
+        let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: childOptOut,
+                                                       dataBroker: makeUIBroker(parentURL: "parent.com"),
+                                                       parentBrokerOptOutJobData: [parentOptOutA, parentOptOutB, parentOptOutC])
+
+        // Then
+        XCTAssertEqual(profileMatch.optOutFormSubmittedDate, recentSubmission.timeIntervalSince1970)
+    }
+
+    func testProfileMatchInit_whenAllParentJobsAreMissingSubmissionEvents_thenOptOutFormSubmittedDateIsNil() {
+
+        // Given — parent has opt-outs but none reached a submission event (e.g. only started, or
+        // failed). Broker-level fallback should resolve to nil rather than papering over the
+        // missing submission.
+        let extractedProfile = ExtractedProfile.mockWithName("Steve Jones", age: "20", addresses: [AddressCityState(city: "New York", state: "NY")])
+        let parentProfile = ExtractedProfile.mockWithName("Adam P Smith", age: "46", addresses: [AddressCityState(city: "San Diego", state: "CA")])
+
+        let childOptOut = OptOutJobData.mock(with: extractedProfile, historyEvents: [])
+        let parentOptOut = OptOutJobData.mock(
+            with: parentProfile,
+            historyEvents: [HistoryEvent(extractedProfileId: 0, brokerId: 0, profileQueryId: 0, type: .optOutStarted, date: Date.now)]
+        )
+
+        // When
+        let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: childOptOut,
+                                                       dataBroker: makeUIBroker(parentURL: "parent.com"),
+                                                       parentBrokerOptOutJobData: [parentOptOut])
+
+        // Then
+        XCTAssertNil(profileMatch.optOutFormSubmittedDate)
+    }
+
     // MARK: - `profileMatches` Broker OptOut URL & Name tests
 
     func testProfileMatches_optOutUrlAndBrokerNameForChildBroker() {

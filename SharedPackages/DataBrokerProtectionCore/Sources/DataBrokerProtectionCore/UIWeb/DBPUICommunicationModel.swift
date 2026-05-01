@@ -247,6 +247,17 @@ public struct DBPUIBirthYear: Codable {
 /// Message object containing information related to a profile match on a data broker
 /// The message contains the data broker on which the profile was found and the names
 /// and addresses that were matched
+///
+/// There are three distinct moments in an opt-out's lifecycle that the contract surfaces:
+///   1. Form submitted — we successfully completed the form submission to the broker.
+///      This is `optOutFormSubmittedDate`.
+///   2. Opt-out submitted (broker-acknowledged) — for brokers that require email confirmation,
+///      the moment the broker confirmed receipt by email; for brokers that do not require email
+///      confirmation, this matches moment 1. This is `optOutSubmittedDate`.
+///   3. Removal confirmed — a follow-up scan finds the user's record gone. This is `removedDate`.
+///
+/// Web should read `optOutFormSubmittedDate ?? optOutSubmittedDate` so that older native clients
+/// (which do not yet emit `optOutFormSubmittedDate`) keep working.
 public struct DBPUIDataBrokerProfileMatch: Codable {
     public let id: Int64?
     public let dataBroker: DBPUIDataBroker
@@ -255,12 +266,31 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
     public let alternativeNames: [String]
     public let relatives: [String]
     public let foundDate: Double
+    /// Moment 2 in the opt-out lifecycle. For brokers that require email confirmation this is the
+    /// instant the broker confirmed receipt by email; for brokers that do not, it matches
+    /// `optOutFormSubmittedDate`. Set once on first success; not overwritten on retries.
     public let optOutSubmittedDate: Double?
+    /// Moment 1 in the opt-out lifecycle: the instant our form-submission action against the
+    /// broker successfully completed. Set on every match regardless of broker type, including
+    /// child brokers (where it is propagated from the most recent opt-out on the parent broker).
+    /// Set once on first success; not overwritten on retries.
+    public let optOutFormSubmittedDate: Double?
     public let estimatedRemovalDate: Double?
     public let removedDate: Double?
     public let hasMatchingRecordOnParentBroker: Bool
 
-    public init(id: Int64?, dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
+    public init(id: Int64?,
+                dataBroker: DBPUIDataBroker,
+                name: String,
+                addresses: [DBPUIUserProfileAddress],
+                alternativeNames: [String],
+                relatives: [String],
+                foundDate: Double,
+                optOutSubmittedDate: Double? = nil,
+                optOutFormSubmittedDate: Double? = nil,
+                estimatedRemovalDate: Double? = nil,
+                removedDate: Double? = nil,
+                hasMatchingRecordOnParentBroker: Bool) {
         self.id = id
         self.dataBroker = dataBroker
         self.name = name
@@ -269,6 +299,7 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
         self.relatives = relatives
         self.foundDate = foundDate
         self.optOutSubmittedDate = optOutSubmittedDate
+        self.optOutFormSubmittedDate = optOutFormSubmittedDate
         self.estimatedRemovalDate = estimatedRemovalDate
         self.removedDate = removedDate
         self.hasMatchingRecordOnParentBroker = hasMatchingRecordOnParentBroker
@@ -313,6 +344,14 @@ extension DBPUIDataBrokerProfileMatch {
             extractedProfile.doesMatchExtractedProfile(parentOptOut.extractedProfile)
         } ?? false
 
+        // Derive the form-submission moment from the events already loaded on the read path.
+        // For child brokers (no own form submission), fall back to the most recent submission
+        // across any opt-out on the parent broker — see TD note: the structural parent↔child
+        // relationship is what matters, not strict profile matching, which rejects nearly every
+        // real-world child↔parent pairing because brokers scrape name granularity inconsistently.
+        let optOutFormSubmittedDate = Self.optOutFormSubmittedDate(in: optOutJobData.historyEvents)
+            ?? parentBrokerOptOutJobData.flatMap(Self.mostRecentOptOutFormSubmittedDate(across:))
+
         self.init(id: extractedProfile.id,
                   dataBroker: dataBroker,
                   name: extractedProfile.fullName ?? "No name",
@@ -321,9 +360,42 @@ extension DBPUIDataBrokerProfileMatch {
                   relatives: extractedProfile.relatives ?? [String](),
                   foundDate: foundDate.timeIntervalSince1970,
                   optOutSubmittedDate: optOutSubmittedDate?.timeIntervalSince1970,
+                  optOutFormSubmittedDate: optOutFormSubmittedDate?.timeIntervalSince1970,
                   estimatedRemovalDate: estimatedRemovalDate?.timeIntervalSince1970,
                   removedDate: extractedProfile.removedDate?.timeIntervalSince1970,
                   hasMatchingRecordOnParentBroker: hasFoundParentMatch)
+    }
+
+    /// Derives the moment our form-submission action against the broker successfully completed,
+    /// from the history events already loaded alongside the opt-out on the read path.
+    ///
+    /// For brokers that require email confirmation, the form-submission moment is the first
+    /// `.optOutSubmittedAndAwaitingEmailConfirmation` event — `.optOutRequested` is logged later,
+    /// after the broker confirms by email, which is moment 2 not moment 1.
+    ///
+    /// For brokers that do not require email confirmation, `.optOutRequested` is logged at
+    /// form-submission success, so it represents both moment 1 and moment 2.
+    ///
+    /// Returns the earliest matching event so the value is set once at the first successful
+    /// submission and not overwritten on retries.
+    static func optOutFormSubmittedDate(in historyEvents: [HistoryEvent]) -> Date? {
+        if let firstEmailConfirmationSubmitted = historyEvents
+            .filter({ $0.type == .optOutSubmittedAndAwaitingEmailConfirmation })
+            .min(by: { $0.date < $1.date }) {
+            return firstEmailConfirmationSubmitted.date
+        }
+        return historyEvents
+            .filter { $0.type == .optOutRequested }
+            .min(by: { $0.date < $1.date })?.date
+    }
+
+    /// The most recent `optOutFormSubmittedDate` derivation across the given opt-out jobs,
+    /// regardless of whether their extracted profiles match anything. Used for the child→parent
+    /// broker-level fallback.
+    static func mostRecentOptOutFormSubmittedDate(across jobs: [OptOutJobData]) -> Date? {
+        jobs.lazy
+            .compactMap { optOutFormSubmittedDate(in: $0.historyEvents) }
+            .max()
     }
 
     /// Generates an array of `DBPUIDataBrokerProfileMatch` objects from the provided query data.

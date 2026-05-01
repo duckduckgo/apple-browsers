@@ -208,7 +208,7 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
     func testShouldDisplayPicker_WhenAlreadyShown_ReturnsFalse() {
         // Given
         setupShowCriteriaMet()
-        mockKeyValueStore.set(true, forKey: "aichat.storage.newAddressBarPickerShown")
+        mockKeyValueStore.set(true, forKey: NewAddressBarPickerStore.Key.hasBeenShown)
 
         // When
         let result = validator.shouldDisplayNewAddressBarPicker()
@@ -224,7 +224,7 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         mockOnboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
         mockAIChatSettings.isAIChatSearchInputUserSettingsEnabled = true
         mockAppSettings.currentAddressBarPosition = .top
-        mockKeyValueStore.set(false, forKey: "aichat.storage.newAddressBarPickerShown")
+        mockKeyValueStore.set(false, forKey: NewAddressBarPickerStore.Key.hasBeenShown)
 
         // When
         let result = validator.shouldDisplayNewAddressBarPicker()
@@ -267,7 +267,7 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         setupShowCriteriaMet()
         mockAIChatSettings.isAIChatAddressBarUserSettingsEnabled = false
         testUserDefaults.set(true, forKey: "experimentalAIChatSettingsEnabled")
-        mockKeyValueStore.set(true, forKey: "aichat.storage.newAddressBarPickerShown")
+        mockKeyValueStore.set(true, forKey: NewAddressBarPickerStore.Key.hasBeenShown)
 
         // When
         let result = validator.shouldDisplayNewAddressBarPicker()
@@ -299,6 +299,6 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
     private func setupNoExclusionCriteria() {
         mockAIChatSettings.isAIChatAddressBarUserSettingsEnabled = true
         testUserDefaults.set(false, forKey: "experimentalAIChatSettingsEnabled")
-        mockKeyValueStore.set(false, forKey: "aichat.storage.newAddressBarPickerShown")
+        mockKeyValueStore.set(false, forKey: NewAddressBarPickerStore.Key.hasBeenShown)
     }
 }

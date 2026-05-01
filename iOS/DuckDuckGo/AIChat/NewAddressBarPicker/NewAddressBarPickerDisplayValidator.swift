@@ -145,12 +145,14 @@ typealias NewAddressBarPickerStorage = NewAddressBarPickerStorageReading & NewAd
 struct NewAddressBarPickerStore: NewAddressBarPickerStorage {
     private let keyValueStore: KeyValueStoring
     
-    private enum Key {
+    enum Key {
         static let hasBeenShown = "aichat.storage.newAddressBarPickerShown.v2"
+        static let legacyHasBeenShown = "aichat.storage.newAddressBarPickerShown"
     }
     
     init(keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()) {
         self.keyValueStore = keyValueStore
+        cleanupLegacyNewAddressBarPickerKey()
     }
     
     var hasBeenShown: Bool {
@@ -163,6 +165,10 @@ struct NewAddressBarPickerStore: NewAddressBarPickerStorage {
     
     func reset() {
         keyValueStore.removeObject(forKey: Key.hasBeenShown)
+    }
+
+    private func cleanupLegacyNewAddressBarPickerKey() {
+        keyValueStore.removeObject(forKey: Key.legacyHasBeenShown)
     }
 }
 

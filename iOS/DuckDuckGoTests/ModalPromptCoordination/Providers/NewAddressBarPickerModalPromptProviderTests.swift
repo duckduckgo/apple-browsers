@@ -283,7 +283,7 @@ final class NewAddressBarPickerModalPromptProviderIntegrationTests {
         let mockKeyValueStore = MockKeyValueStore()
 
         testUserDefaults.set(false, forKey: "experimentalAIChatSettingsEnabled")
-        mockKeyValueStore.set(false, forKey: "aichat.storage.newAddressBarPickerShown")
+        mockKeyValueStore.set(false, forKey: NewAddressBarPickerStore.Key.hasBeenShown)
 
         let experimentalAIChatManager = ExperimentalAIChatManager(
             featureFlagger: mockFeatureFlagger,

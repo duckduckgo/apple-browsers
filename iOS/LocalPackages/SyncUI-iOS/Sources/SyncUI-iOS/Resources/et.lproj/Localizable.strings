@@ -374,7 +374,7 @@
 "sync.simplified.header.message.basic" = "Salvesta oma järjehoidjad ja automaatse täitmise andmed ning sünkrooni need oma seadmete vahel otspunktkrüpteerimise abil.";
 
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
-"sync.simplified.recovery.section.footer" = "Kasuta seda koodi oma andmete taastamiseks, kui kaotad juurdepääsu sellele seadmele. Funktsiooni Sync & Backup andmeid ei saa taastada pärast 18-kuulist mitteaktiivsust. [Learn More](%@)";
+"sync.simplified.recovery.section.footer" = "Kasuta seda koodi oma andmete taastamiseks, kui kaotad juurdepääsu sellele seadmele. Funktsiooni Sync & Backup andmeid ei saa taastada pärast 18-kuulist mitteaktiivsust. [Loe edasi](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo rakendus";

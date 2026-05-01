@@ -374,7 +374,7 @@
 "sync.simplified.header.message.basic" = "Lagre bokmerkene og autofylldataene dine, og synkroniser dem på enhetene dine med ende-til-ende-kryptering.";
 
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
-"sync.simplified.recovery.section.footer" = "Bruk denne koden til å gjenopprette dataene dine hvis du mister tilgang til enheten. Sync & Backup-data kan ikke gjenopprettes etter 18 måneder med inaktivitet. [Finn ut mer] (%@)";
+"sync.simplified.recovery.section.footer" = "Bruk denne koden til å gjenopprette dataene dine hvis du mister tilgang til enheten. Sync & Backup-data kan ikke gjenopprettes etter 18 måneder med inaktivitet. [Finn ut mer](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo-app";

@@ -194,7 +194,6 @@
 		319A37152829A55F0079FBCE /* AutofillListItemTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319A37142829A55F0079FBCE /* AutofillListItemTableViewCell.swift */; };
 		319A37172829C8AD0079FBCE /* UITableViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319A37162829C8AD0079FBCE /* UITableViewExtension.swift */; };
 		319B49C42E68AF5C00DD265F /* NewAddressBarPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319B49C32E68AF5500DD265F /* NewAddressBarPickerViewController.swift */; };
-		319B49C62E68B64400DD265F /* NewAddressBarPickerContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319B49C52E68B63E00DD265F /* NewAddressBarPickerContentView.swift */; };
 		319BE1092D47EBE300E510A4 /* AIChatUserScriptHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319BE1082D47EBE300E510A4 /* AIChatUserScriptHandlerTests.swift */; };
 		319F68782F27F96200EEBC3D /* AIChatSuggestionsReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319F68762F27F96200EEBC3D /* AIChatSuggestionsReader.swift */; };
 		319F68792F27F96200EEBC3D /* AIChatHistoryListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319F68742F27F96200EEBC3D /* AIChatHistoryListViewController.swift */; };
@@ -2726,7 +2725,6 @@
 		319A37142829A55F0079FBCE /* AutofillListItemTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillListItemTableViewCell.swift; sourceTree = "<group>"; };
 		319A37162829C8AD0079FBCE /* UITableViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITableViewExtension.swift; sourceTree = "<group>"; };
 		319B49C32E68AF5500DD265F /* NewAddressBarPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerViewController.swift; sourceTree = "<group>"; };
-		319B49C52E68B63E00DD265F /* NewAddressBarPickerContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerContentView.swift; sourceTree = "<group>"; };
 		319BE1082D47EBE300E510A4 /* AIChatUserScriptHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptHandlerTests.swift; sourceTree = "<group>"; };
 		319F68742F27F96200EEBC3D /* AIChatHistoryListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryListViewController.swift; sourceTree = "<group>"; };
 		319F68752F27F96200EEBC3D /* AIChatHistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryManager.swift; sourceTree = "<group>"; };
@@ -5859,7 +5857,6 @@
 			children = (
 				312BF6F22E6B651500411CF9 /* Resources */,
 				312BF6EE2E6B2C9B00411CF9 /* NewAddressBarPickerDisplayValidator.swift */,
-				319B49C52E68B63E00DD265F /* NewAddressBarPickerContentView.swift */,
 				0466F5E63C5ECC76F75718F8 /* NewAddressBarPickerRefreshContentView.swift */,
 				E50076755B4DB6646E1DCD0D /* NewAddressBarPickerViewModel.swift */,
 				319B49C32E68AF5500DD265F /* NewAddressBarPickerViewController.swift */,
@@ -12377,7 +12374,6 @@
 				37FCAABC2992F592000E420A /* MultilineScrollableTextFix.swift in Sources */,
 				85DFEDED24C7CCA500973FE7 /* AppWidthObserver.swift in Sources */,
 				565AC7462EDE090600639D35 /* SubscriptionTierEventReporter.swift in Sources */,
-				319B49C62E68B64400DD265F /* NewAddressBarPickerContentView.swift in Sources */,
 				91B67D60DCF5B9213184F1B9 /* NewAddressBarPickerRefreshContentView.swift in Sources */,
 				3E08C0DF4731439D2545023E /* NewAddressBarPickerViewModel.swift in Sources */,
 				4B6484F327FD1E350050A7A1 /* MenuControllerView.swift in Sources */,

@@ -176,6 +176,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         currentIntroStep = currentOnboardingStep
         copy = .default
         restorePendingOnboardingStepIfNeeded()
+        persistOnboardingSourceIfNeeded()
         persistOnboardingFlowType()
     }
 
@@ -394,6 +395,11 @@ private extension OnboardingIntroViewModel {
         default:
             break
         }
+    }
+
+    func persistOnboardingSourceIfNeeded() {
+        guard onboardingSharedPixelsStorage.onboardingSource.isNil else { return }
+        onboardingSharedPixelsStorage.onboardingSource = .default
     }
 
     func persistOnboardingFlowType() {

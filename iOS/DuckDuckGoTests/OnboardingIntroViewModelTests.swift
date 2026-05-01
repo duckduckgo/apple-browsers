@@ -632,6 +632,19 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureResumeOnboardingCTAAction)
     }
 
+    func testWhenStartOnboardingActionResumingFalseIsCalledThenPixelReporterMeasureStartOnboardingCTA() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: false))
+        XCTAssertFalse(pixelReporterMock.didCallMeasureStartOnboardingCTAAction)
+
+        // WHEN
+        sut.startOnboardingAction(isResumingOnboarding: false)
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureStartOnboardingCTAAction)
+    }
+
     // MARK: - Copy
 
     func testIntroTitleIsCorrect() {
@@ -1017,7 +1030,18 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQueryExperimentSelectionImpression)
     }
 
-    func testWhenInitializedAndCohortIsControlThenOnboardingFlowTypeIsNotPersisted() {
+    func testWhenInitializedAndOnboardingSourceIsNilThenDefaultSourceIsPersisted() {
+        // GIVEN
+        XCTAssertNil(sharedPixelsStorageMock.onboardingSource)
+
+        // WHEN
+        _ = makeSUT()
+
+        // THEN
+        XCTAssertEqual(sharedPixelsStorageMock.onboardingSource, .default)
+    }
+
+    func testWhenInitializedAndCohortIsControlThenDefaultOnboardingFlowTypeIsPersisted() {
         // GIVEN
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
         featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.control
@@ -1026,7 +1050,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         _ = makeSUT(featureFlagger: featureFlagger)
 
         // THEN
-        XCTAssertNil(sharedPixelsStorageMock.onboardingFlow)
+        XCTAssertEqual(sharedPixelsStorageMock.onboardingFlow, .default)
     }
 
     func testWhenInitializedAndCohortIsTreatmentAThenDuckAIExperimentOnboardingFlowTypeIsPersisted() {

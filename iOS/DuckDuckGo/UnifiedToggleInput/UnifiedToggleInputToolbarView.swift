@@ -199,6 +199,10 @@ final class UnifiedToggleInputToolbarView: UIView {
         config.cornerStyle = .capsule
 
         let button = UIButton(configuration: config)
+        button.accessibilityIdentifier = "AIChat.Toolbar.Button.ModelChip"
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setContentHuggingPriority(.defaultLow, for: .horizontal)
         button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)

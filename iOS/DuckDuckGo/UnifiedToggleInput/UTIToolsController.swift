@@ -75,7 +75,7 @@ final class UTIToolsController {
         return Presentation(
             isToolsButtonHidden: false,
             selectedTool: selectedTool,
-            toolsMenu: buildToolsMenu(displayState: displayState, modelStore: modelStore)
+            toolsMenu: buildToolsMenu(modelStore: modelStore)
         )
     }
 }
@@ -87,40 +87,27 @@ private extension UTIToolsController {
         return displayState != .hidden
     }
 
-    func buildToolsMenu(
-        displayState: UnifiedToggleInputDisplayState,
-        modelStore: UTIModelStore
-    ) -> UTIToolsMenu {
-        var items: [UTIToolsMenu.Item] = []
-
-        if case .aiTab = displayState {
-            items.append(.customizeResponses)
-        }
-
-        items.append(.webSearch(
-            isSelected: selectedTool == .webSearch,
-            isEnabled: modelStore.selectedModelSupports(tool: .webSearch)
-        ))
-
-        return UTIToolsMenu(items: items)
+    func buildToolsMenu(modelStore: UTIModelStore) -> UTIToolsMenu {
+        return UTIToolsMenu(items: [
+            .webSearch(
+                isSelected: selectedTool == .webSearch,
+                isEnabled: modelStore.selectedModelSupports(tool: .webSearch)
+            )
+        ])
     }
 }
 
 struct UTIToolsMenu {
 
     enum Item: Equatable {
-        case customizeResponses
         case webSearch(isSelected: Bool, isEnabled: Bool)
 
         enum Identifier {
-            case customizeResponses
             case webSearch
         }
 
         var identifier: Identifier {
             switch self {
-            case .customizeResponses:
-                return .customizeResponses
             case .webSearch:
                 return .webSearch
             }
@@ -141,13 +128,6 @@ struct UTIToolsMenuFactory {
 
     private func makeAction(_ item: UTIToolsMenu.Item, onSelect: @escaping (UTIToolsMenu.Item.Identifier) -> Void) -> UIAction {
         switch item {
-        case .customizeResponses:
-            return UIAction(
-                title: UserText.aiChatToolbarCustomizeResponsesMenuTitle,
-                image: DesignSystemImages.Glyphs.Size24.options
-            ) { _ in
-                onSelect(item.identifier)
-            }
         case let .webSearch(isSelected, isEnabled):
             return makeWebSearchAction(
                 isSelected: isSelected,

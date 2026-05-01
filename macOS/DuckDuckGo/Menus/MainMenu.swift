@@ -164,7 +164,6 @@ final class MainMenu: NSMenu {
     let autofillDebugScriptMenuItem = NSMenuItem(title: "Autofill Debug Script", action: #selector(MainMenu.toggleAutofillScriptDebugSettingsAction))
     let contentScopeDebugStateMenuItem = NSMenuItem(title: "Content Scope Scripts Debug State", action: #selector(MainMenu.toggleContentScopeStateDebugSettingsAction))
     let toggleWatchdogMenuItem = NSMenuItem(title: "Toggle Hang Watchdog", action: #selector(MainViewController.toggleWatchdog))
-    let toggleWatchdogCrashMenuItem = NSMenuItem(title: "Crash on timeout", action: #selector(MainViewController.toggleWatchdogCrash))
     let alwaysShowFirstTimeQuitSurvey = NSMenuItem(title: "Always Show First-Time Quit Survey", action: #selector(MainViewController.alwaysShowFirstTimeQuitSurvey))
     let shiftNextStepsDaysMenuItem = NSMenuItem(title: "Shift maximum Next Steps demonstration days", action: #selector(MainViewController.debugShiftNewTabOpeningDateNtimes))
 
@@ -1004,7 +1003,6 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "Hang Debugging") {
                 toggleWatchdogMenuItem
-                toggleWatchdogCrashMenuItem
                 NSMenuItem(title: "Simulate hang") {
                     NSMenuItem(title: "0.5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 0.5)
                     NSMenuItem(title: "2 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 2.0)
@@ -1245,13 +1243,7 @@ final class MainMenu: NSMenu {
 
     @MainActor
     private func updateWatchdogMenuItems() {
-       Task {
-            let isRunning = await NSApp.delegateTyped.watchdog.isRunning
-            let crashOnTimeout = await NSApp.delegateTyped.watchdog.crashOnTimeout
-
-            toggleWatchdogMenuItem.state = isRunning ? .on : .off
-            toggleWatchdogCrashMenuItem.state = crashOnTimeout ? .on : .off
-       }
+        toggleWatchdogMenuItem.state = NSApp.delegateTyped.watchdog.isRunning ? .on : .off
     }
 
     private func updateRemoteConfigurationInfo() {

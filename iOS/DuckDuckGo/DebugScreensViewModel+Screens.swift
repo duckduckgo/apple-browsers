@@ -88,6 +88,7 @@ extension DebugScreensViewModel {
                 ActionMessageView.present(message: "Fire Mode Promotion state reset")
             }),
             .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
+            .action(title: "Reset AI Toggle Selection", resetAIToggleSelection),
 
             // MARK: SwiftUI Views
             .view(title: "AI Chat", { dependencies in
@@ -314,6 +315,12 @@ extension DebugScreensViewModel {
         )
 
         store.lastPresentationTimestamp = nil
+    }
+
+    private func resetAIToggleSelection(_ dependencies: DebugScreen.Dependencies) {
+        AIChatSettings().resetAIChatSearchInputUserSettings()
+
+        ActionMessageView.present(message: "AI Toggle selection reset")
     }
 
     private var webExtensionsDebugScreen: DebugScreen? {

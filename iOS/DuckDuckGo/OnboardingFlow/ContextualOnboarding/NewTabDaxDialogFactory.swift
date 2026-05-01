@@ -177,7 +177,12 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
     }
 
     func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
-        AnyView(
+        let onDismiss = { [weak self] in
+            self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogCTAAction()
+            onDismiss()
+        }
+
+        return AnyView(
             OnboardingFinalDialog(
                 logoPosition: .top,
                 message: message,

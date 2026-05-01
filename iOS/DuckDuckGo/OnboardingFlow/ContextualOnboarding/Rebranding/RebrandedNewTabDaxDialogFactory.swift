@@ -93,7 +93,12 @@ private extension RebrandedNewTabDaxDialogFactory {
 extension RebrandedNewTabDaxDialogFactory {
 
     func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
-        AnyView(
+        let onDismiss = { [weak self] in
+            self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogCTAAction()
+            onDismiss()
+        }
+
+        return AnyView(
             FadeInView {
                 ScrollView(.vertical, showsIndicators: false) {
                     OnboardingRebranding.OnboardingEndOfJourneyDialog(

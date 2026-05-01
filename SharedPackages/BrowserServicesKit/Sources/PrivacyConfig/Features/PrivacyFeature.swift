@@ -465,6 +465,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the reasoning effort picker in the Duck.ai omnibar
     case omnibarReasoningEffort
 
+    /// Enables 1-click voice-chat access from the Duck.ai omnibar (mic icon shown when input is empty)
+    case omnibarVoiceChatAccess
+
     /// Enables querying AI Chat data directly from local storage instead of via webview
     case nativeDataAccess
 }

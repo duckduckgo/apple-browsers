@@ -131,6 +131,18 @@ final class AIChatNativeInputViewTests: XCTestCase {
         XCTAssertFalse(sut.isVoiceButtonEnabled)
     }
 
+    func testSubmitButtonUsesMinimumHitTarget() throws {
+        sut.frame = CGRect(x: 0, y: 0, width: 320, height: 160)
+        sut.text = "Hello"
+        sut.layoutIfNeeded()
+
+        let button = try XCTUnwrap(submitButton())
+        let frame = button.convert(button.bounds, to: sut)
+
+        XCTAssertEqual(frame.width, 44, accuracy: 0.5)
+        XCTAssertEqual(frame.height, 44, accuracy: 0.5)
+    }
+
     // MARK: - Context Chip Tests
 
     func testContextChipNotVisibleInitially() {
@@ -203,6 +215,20 @@ final class AIChatNativeInputViewTests: XCTestCase {
 
         // Then - second show is ignored while first is visible
         XCTAssertTrue(sut.isContextChipVisible)
+    }
+
+    private func submitButton() -> UIButton? {
+        buttons(in: sut).first { $0.accessibilityIdentifier == "AIChatNativeInputView.submitButton" }
+    }
+
+    private func buttons(in view: UIView) -> [UIButton] {
+        view.subviews.flatMap { subview -> [UIButton] in
+            var matches = buttons(in: subview)
+            if let button = subview as? UIButton {
+                matches.append(button)
+            }
+            return matches
+        }
     }
 }
 #endif

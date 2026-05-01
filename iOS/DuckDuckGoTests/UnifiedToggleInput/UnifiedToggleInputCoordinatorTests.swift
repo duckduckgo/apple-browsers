@@ -357,6 +357,28 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.viewController.isInputExpanded)
     }
 
+    func test_activateFromOmnibar_bottomPosition_leavesBarInCollapsedStartPose() {
+        sut.activateFromOmnibar(cardPosition: .bottom)
+        // Bottom pre-stages to collapsed; the show animation expands it.
+        XCTAssertFalse(sut.viewController.isInputExpanded)
+    }
+
+    func test_activateFromOmnibar_emitsIntentWithBothHeights() {
+        let exp = expectation(description: "showOmnibarEditing emitted with pending height")
+        sut.intentPublisher
+            .sink { intent in
+                if case .showOmnibarEditing(let height, let pending) = intent {
+                    XCTAssertGreaterThan(height, 0)
+                    XCTAssertNotNil(pending)
+                    exp.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        sut.activateFromOmnibar(cardPosition: .bottom)
+        waitForExpectations(timeout: 1)
+    }
+
     func test_deactivateToOmnibar_resetsVCProperties() {
         sut.activateFromOmnibar(cardPosition: .top)
         sut.deactivateToOmnibar()
@@ -554,7 +576,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(sut.displayState, .omnibar(.active))
         XCTAssertEqual(sut.viewController.inputMode, .aiChat)
-        XCTAssertTrue(sut.viewController.isInputExpanded)
+        // Bottom bar sits in show-animation start pose here; expansion runs in the intent handler.
 
         let renderState = sut.computeRenderState()
         XCTAssertEqual(renderState.cardPosition, .bottom)
@@ -819,12 +841,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
-    func test_toolsMenu_containsCustomizeResponsesAction_onAITab() {
+    func test_toolsMenu_doesNotContainCustomizeResponsesAction_onAITab() {
         sut.showExpanded()
 
         let actionTitles = toolsMenuActions().map(\.title)
 
-        XCTAssertTrue(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+        XCTAssertFalse(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
     }
 
     func test_toolsMenu_doesNotContainCustomizeResponsesAction_inOmnibar() {
@@ -1360,6 +1382,32 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.committedMode, .aiChat)
     }
 
+    // MARK: - Toolbar Voice Chat State Sync
+
+    func test_showCollapsed_whenAIVoiceChatEnabled_setsToolbarVoiceChatActive() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showCollapsed()
+        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
+    func test_showExpanded_inSearchMode_clearsToolbarVoiceChatActive() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.showExpanded(inputMode: .search)
+        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
+    func test_deactivateToOmnibar_refreshesToolbarVoiceChatFlag() {
+        sut.updateAIVoiceChatAvailability(true)
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+
+        sut.updateInputMode(.search, animated: false)
+        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+
+        sut.deactivateToOmnibar()
+        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
     // MARK: - Helpers
 
     private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false, supportedTools: [AIChatRAGTool] = []) -> AIChatModel {
@@ -1410,6 +1458,17 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertEqual(reasoningButton?.accessibilityLabel, UserText.aiChatToolbarReasoningButtonAccessibilityLabel)
         if #available(iOS 16.0, *) {
             XCTAssertEqual(reasoningButton?.preferredMenuElementOrder, .fixed)
+        }
+    }
+
+    func test_modelChipButton_usesFixedMenuElementOrder() {
+        let sut = UnifiedToggleInputToolbarView()
+
+        let modelChipButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.ModelChip", in: sut)
+
+        XCTAssertNotNil(modelChipButton)
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(modelChipButton?.preferredMenuElementOrder, .fixed)
         }
     }
 

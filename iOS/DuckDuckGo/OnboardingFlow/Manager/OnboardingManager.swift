@@ -20,7 +20,6 @@
 import AVKit
 import BrowserServicesKit
 import Core
-import PrivacyConfig
 
 enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertible {
     case notSet
@@ -43,25 +42,17 @@ typealias OnboardingManaging = OnboardingStepsProvider
 
 final class OnboardingManager {
     private var appDefaults: OnboardingDebugAppSettings
-    private let featureFlagger: FeatureFlagger
     private let variantManager: VariantManager
     private let isIphone: Bool
 
-    private let iPhoneFlowWithoutSearchExperience: [OnboardingIntroStep] = [
-        .browserComparison,
-        .addToDockPromo,
-        .appIconSelection,
-        .addressBarPositionSelection
-    ]
-    private let iPhoneFlowWithSearchExperience: [OnboardingIntroStep] = [
+    private let iPhoneFlow: [OnboardingIntroStep] = [
         .browserComparison,
         .addToDockPromo,
         .appIconSelection,
         .addressBarPositionSelection,
         .searchExperienceSelection
     ]
-    private let iPadFlowWithoutSearchExperience: [OnboardingIntroStep] = [.browserComparison, .appIconSelection]
-    private let iPadFlowWithSearchExperience: [OnboardingIntroStep] = [.browserComparison, .appIconSelection, .searchExperienceSelection]
+    private let iPadFlow: [OnboardingIntroStep] = [.browserComparison, .appIconSelection]
 
     var isNewUser: Bool {
 #if DEBUG || ALPHA
@@ -82,12 +73,10 @@ final class OnboardingManager {
 
     init(
         appDefaults: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings,
-        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         variantManager: VariantManager = DefaultVariantManager(),
         isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone
     ) {
         self.appDefaults = appDefaults
-        self.featureFlagger = featureFlagger
         self.variantManager = variantManager
         self.isIphone = isIphone
     }
@@ -103,19 +92,7 @@ final class OnboardingManager {
     }
 
     private func steps(isIphone: Bool) -> [OnboardingIntroStep] {
-        isIphone ? iPhoneFlow() : iPadFlow()
-    }
-
-    private func iPhoneFlow() -> [OnboardingIntroStep] {
-        if featureFlagger.isFeatureOn(.onboardingSearchExperience) {
-            return iPhoneFlowWithSearchExperience
-        } else {
-            return iPhoneFlowWithoutSearchExperience
-        }
-    }
-
-    private func iPadFlow() -> [OnboardingIntroStep] {
-        return iPadFlowWithoutSearchExperience
+        isIphone ? iPhoneFlow : iPadFlow
     }
 }
 

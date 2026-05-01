@@ -22,6 +22,7 @@ public enum LeakCheckTrigger: String, Codable {
     case tunnelStart = "tunnel_start"
     case reassert
     case periodic
+    case rekey
 }
 
 public struct LeakCheckEgressInfo: Equatable, Sendable {

@@ -25,7 +25,6 @@ struct UnifiedToggleInputModelMenuFactory {
     func makeMenu(
         models: [AIChatModel],
         selectedId: String?,
-        isBottomAnchored: Bool,
         hasActiveSubscription: Bool,
         advancedSectionTitle: String,
         basicSectionTitle: String,
@@ -34,7 +33,6 @@ struct UnifiedToggleInputModelMenuFactory {
         let description = UnifiedToggleInputModelMenu.build(
             models: models,
             selectedId: selectedId,
-            isBottomAnchored: isBottomAnchored,
             hasActiveSubscription: hasActiveSubscription,
             advancedSectionTitle: advancedSectionTitle,
             basicSectionTitle: basicSectionTitle

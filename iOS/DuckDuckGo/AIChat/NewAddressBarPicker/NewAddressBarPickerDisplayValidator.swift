@@ -146,7 +146,7 @@ struct NewAddressBarPickerStore: NewAddressBarPickerStorage {
     private let keyValueStore: KeyValueStoring
     
     private enum Key {
-        static let hasBeenShown = "aichat.storage.newAddressBarPickerShown"
+        static let hasBeenShown = "aichat.storage.newAddressBarPickerShown.v2"
     }
     
     init(keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()) {

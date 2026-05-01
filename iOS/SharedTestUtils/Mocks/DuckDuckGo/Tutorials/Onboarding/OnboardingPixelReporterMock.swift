@@ -83,7 +83,7 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureEndOfJourneyDialogNewTabDismissButtonTapped = false
     private(set) var didCallMeasureEndOfJourneyDialogDismissButtonTapped = false
     private(set) var didCallMeasureSubscriptionPromoDialogNewTabDismissButtonTapped = false
-    private(set) var didCallMeasureContinueOnboardingCTAAction = false
+    private(set) var didCallMeasureStartOnboardingCTAAction = false
     private(set) var didCallMeasureSkipOnboardingScreenImpression = false
     private(set) var didCallMeasureSetDefaultBrowserSkipped = false
     private(set) var didCallMeasureTrySearchDialogSuggestedSearchTapped = false
@@ -99,8 +99,8 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureOnboardingIntroImpression = true
     }
 
-    func measureContinueOnboardingCTAAction() {
-        didCallMeasureContinueOnboardingCTAAction = true
+    func measureStartOnboardingCTAAction() {
+        didCallMeasureStartOnboardingCTAAction = true
     }
 
     func measureSkipOnboardingCTAAction() {

@@ -76,7 +76,7 @@ protocol OnboardingIntroImpressionReporting {
 }
 
 protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
-    func measureContinueOnboardingCTAAction()
+    func measureStartOnboardingCTAAction()
     func measureSkipOnboardingCTAAction()
     func measureConfirmSkipOnboardingCTAAction()
     func measureResumeOnboardingCTAAction()
@@ -262,7 +262,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
         }
     }
 
-    func measureContinueOnboardingCTAAction() {
+    func measureStartOnboardingCTAAction() {
         sharedPixelHandler.fire(.welcome(.clicked(.engage)),
                                 source: sharedPixelsStorage.onboardingSource,
                                 flow: sharedPixelsStorage.onboardingFlow)

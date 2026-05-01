@@ -221,14 +221,14 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
     }
 
-    func testWhenMeasureContinueOnboardingCTAActionThenWelcomeEngageSharedPixelFires() {
+    func testWhenMeasureStartOnboardingCTAActionThenWelcomeEngageSharedPixelFires() {
         // GIVEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
         XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
 
         // WHEN
-        sut.measureContinueOnboardingCTAAction()
+        sut.measureStartOnboardingCTAAction()
 
         // THEN
         XCTAssertFalse(OnboardingPixelFireMock.didCallFire)

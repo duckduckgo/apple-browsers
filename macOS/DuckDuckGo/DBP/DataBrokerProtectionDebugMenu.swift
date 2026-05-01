@@ -573,16 +573,16 @@ private struct CustomDBPEndpointSheet: ModalView {
         CustomTextEntrySheet(
             title: "Custom Service Root",
             fieldLabel: "Service Root",
-            placeholder: "branches/some-branch or full URL",
-            content: { serviceRoot, _ in
-                let trimmedServiceRoot = serviceRoot.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            placeholder: "branches/some-branch or full URL (DEBUG build only)",
+            content: { value, _ in
+                let trimmedValue = value.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
                 let baseURL = "https://dbp-staging.duckduckgo.com"
-                let previewURL: String = if trimmedServiceRoot.isEmpty {
+                let previewURL: String = if trimmedValue.isEmpty {
                     baseURL
-                } else if trimmedServiceRoot.hasPrefix("http://") || trimmedServiceRoot.hasPrefix("https://") {
-                    trimmedServiceRoot
+                } else if trimmedValue.hasPrefix("http://") || trimmedValue.hasPrefix("https://") {
+                    trimmedValue
                 } else {
-                    URL(string: baseURL)!.appending(trimmedServiceRoot).absoluteString
+                    URL(string: baseURL)!.appending(trimmedValue).absoluteString
                 }
 
                 Text(verbatim: "Preview: \(previewURL)")

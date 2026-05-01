@@ -564,25 +564,27 @@ final class UnifiedToggleInputView: UIView {
         setExpanded(expanded, showToggle: false, animated: false)
     }
 
-    /// Top: slim card with toggle hidden. Bottom: collapsed bar.
+    /// Top + toggle-on: slim card with toggle hidden so the toggle can fade in alongside
+    /// the bar's grow animation. Top + toggle-off and bottom: collapsed bar — there's no
+    /// toggle-reveal transient to stage, so the show pose animates straight from collapsed
+    /// to expanded inside the surrounding `UIView.animate`.
     func prepareForOmnibarEditingShow() {
-        switch cardPosition {
-        case .top:
+        switch (cardPosition, isToggleEnabled) {
+        case (.top, true):
             setExpanded(false, animated: false)
             setExpandedWithToggleHidden(true)
-        case .bottom:
+        case (_, _):
             setExpanded(false, animated: false)
         }
     }
 
     /// Active editing pose. Call inside a UIView.animate block.
     func applyOmnibarEditingShowPose() {
-        switch cardPosition {
-        case .top:
-            guard isToggleEnabled else { return }
+        switch (cardPosition, isToggleEnabled) {
+        case (.top, true):
             applyToggleRevealChanges()
             layoutIfNeeded()
-        case .bottom:
+        case (_, _):
             setExpanded(true, animated: false)
         }
     }
@@ -591,20 +593,22 @@ final class UnifiedToggleInputView: UIView {
     /// Shadow swap is deferred to `finalizeOmnibarEditingDismiss` so the dominant expanded shadow
     /// stays visible during collapse instead of snapping off mid-animation.
     func applyOmnibarEditingDismissPose() {
-        switch cardPosition {
-        case .top:
-            guard isToggleEnabled else { return }
+        switch (cardPosition, isToggleEnabled) {
+        case (.top, true):
             applyToggleHideChanges()
             layoutIfNeeded()
-        case .bottom:
+        case (_, _):
             setExpanded(false, animated: false, updateShadow: false)
         }
     }
 
-    /// Snap the shadow to its collapsed-pose state. Only bottom needs this — top dismiss never
-    /// alters the shadow during animation. Call after the UTI is hidden.
+    /// Snap the shadow to its collapsed-pose state. Bottom and top + toggle-off both defer the
+    /// shadow swap during dismiss to keep the dominant expanded shadow visible across the
+    /// animation; this restores the collapsed shadow once the UTI is hidden. Top + toggle-on
+    /// never alters the shadow during animation, so it doesn't need finalizing here.
     func finalizeOmnibarEditingDismiss() {
-        guard cardPosition.isBottom else { return }
+        let needsShadowFinalize = cardPosition.isBottom || (cardPosition == .top && !isToggleEnabled)
+        guard needsShadowFinalize else { return }
         expandedShadowView.isHidden = true
         cardView.layer.shadowOpacity = 1.0
     }

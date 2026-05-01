@@ -70,6 +70,7 @@ jobs:
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
 

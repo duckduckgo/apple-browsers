@@ -576,10 +576,9 @@ final class OnboardingPixelReporterTests: XCTestCase {
         })
     }
 
-    func testWhenMeasureDuckAIExperimentFinalDialogImpressionThenLegacyFinalDialogShownUniqueAndExperimentPixelsAndEndShownSharedPixelsFire() {
+    func testWhenMeasureDuckAIExperimentFinalDialogImpressionThenLegacyFinalDialogShownUniqueAndExperimentPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingDuckAIExperimentFinalDialogShownUnique
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureDuckAIExperimentFinalDialogImpression()
@@ -593,7 +592,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
                 && $0.metric == "screen-impression"
                 && $0.value == "final-dialog"
         })
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.end(.shown)])
+    }
+
+    func testWhenMeasureDuckAIExperimentFinalDialogCTAActionThenEndEngageSharedPixelFires() {
+        // GIVEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
+
+        // WHEN
+        sut.measureDuckAIExperimentFinalDialogCTAAction()
+
+        // THEN
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.end(.clicked(.engage))])
     }
 
     // MARK: - Duck AI query experiment (linear onboarding)

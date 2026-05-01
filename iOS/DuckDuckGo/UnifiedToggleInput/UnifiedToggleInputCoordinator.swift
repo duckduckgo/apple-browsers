@@ -562,6 +562,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.isVoiceSearchAvailable = enabled
     }
 
+    func updateAIChatShortcutAvailability(_ available: Bool) {
+        viewController.handler.isAIChatShortcutAvailable = available
+    }
+
     func updateIsFireTab(_ isFireTab: Bool) {
         guard viewController.handler.isFireTab != isFireTab else { return }
         viewController.handler.isFireTab = isFireTab
@@ -809,7 +813,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.modelPickerMenu = modelStore.models.isEmpty ? nil : modelMenuFactory.makeMenu(
             models: modelStore.models,
             selectedId: selectedId,
-            isBottomAnchored: viewController.cardPosition == .bottom,
             hasActiveSubscription: modelStore.subscriptionState.hasActiveSubscription,
             advancedSectionTitle: modelStore.subscriptionState.hasActiveSubscription
                 ? UserText.aiChatAdvancedModelsSectionHeader
@@ -987,6 +990,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         // The inline X dismisses the same way the floating X does — forward to the
         // content container's shared handler so both controls route through one path.
         contentViewController.onDismissRequested?()
+    }
+
+    func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController) {
+        delegate?.unifiedToggleInputDidRequestAIChat()
     }
 }
 

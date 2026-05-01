@@ -54,6 +54,7 @@ extension MainViewController {
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
+        coordinator.updateAIChatShortcutAvailability(aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
         coordinator.onAnimatedDismissToOmnibar = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             self.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator)
@@ -277,6 +278,7 @@ private extension MainViewController {
                 let enabled = self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled
                 coordinator.updateToggleEnabled(enabled)
                 coordinator.contentViewController.isSwipeEnabled = enabled
+                coordinator.updateAIChatShortcutAvailability(self.aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
             }
             .store(in: &unifiedToggleInputCancellables)
     }
@@ -618,6 +620,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
         } else {
             handleVoiceSearchOpenRequest(preferredTarget: mode == .aiChat ? .AIChat : .SERP)
         }
+    }
+
+    func unifiedToggleInputDidRequestAIChat() {
+        onAIChatPressed()
     }
 
     func unifiedToggleInputDidChangeHeight() {

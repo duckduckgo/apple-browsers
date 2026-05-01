@@ -199,7 +199,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_search-chat-toggle": {

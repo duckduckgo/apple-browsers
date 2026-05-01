@@ -810,4 +810,13 @@ final class MockEmailConfirmationDataService: EmailConfirmationDataServiceProvid
 
     func checkForEmailConfirmationData() async throws {
     }
+
+    func getEmailData(email: String,
+                      attemptId: UUID,
+                      pollingInterval: TimeInterval,
+                      totalTimeout: TimeInterval,
+                      extract: [String],
+                      shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData {
+        [:]
+    }
 }

@@ -967,4 +967,86 @@ final class BrokerProfileJobActionTests: XCTestCase {
 
         XCTAssertNil(sut.fetchedEmail)
     }
+
+    func testWhenGenerateEmailIsFollowedByFillFormWithFetchedEmailDataSource_thenNeedsEmailFallbackIsSkipped() async {
+        let generateEmailAction = GenerateEmailAction(id: "1", actionType: .generateEmail)
+        let fillFormAction = FillFormAction(id: "2",
+                                            actionType: .fillForm,
+                                            dataSource: "fetchedEmail",
+                                            elements: [.init(type: "email")])
+        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [generateEmailAction, fillFormAction]),
+                                   extractedProfileId: 42)
+
+        await sut.runNextAction(generateEmailAction)
+        await sut.runNextAction(fillFormAction)
+
+        XCTAssertEqual(emailConfirmationDataService.getEmailAndSaveCallCount, 1)
+        XCTAssertEqual(emailConfirmationDataService.getEmailCallCount, 0)
+    }
+
+    func testWhenFillFormHasUserProfileDataSourceWithEmailElement_thenNeedsEmailFallbackStillFires() async {
+        let fillFormAction = FillFormAction(id: "1",
+                                            actionType: .fillForm,
+                                            dataSource: "userProfile",
+                                            elements: [.init(type: "email")])
+        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [fillFormAction]),
+                                   extractedProfileId: 42)
+
+        await sut.runNextAction(fillFormAction)
+
+        XCTAssertEqual(emailConfirmationDataService.getEmailAndSaveCallCount, 1)
+    }
+
+    // MARK: - getEmailData
+
+    func testWhenGetEmailDataSucceeds_thenEmailDataIsPopulatedAndPassedToService() async {
+        let action = GetEmailDataAction(id: "1", actionType: .getEmailData, pollingTime: 3)
+        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [action]))
+        sut.fetchedEmail = "polled@duck.com"
+        emailConfirmationDataService.getEmailDataReturnValue = [
+            "verificationCode": "123456",
+            "token": "abc"
+        ]
+
+        await sut.runNextAction(action)
+
+        XCTAssertEqual(emailConfirmationDataService.getEmailDataCallCount, 1)
+        XCTAssertEqual(emailConfirmationDataService.lastGetEmailDataEmail, "polled@duck.com")
+        XCTAssertEqual(emailConfirmationDataService.lastGetEmailDataPollingInterval, 3)
+        XCTAssertEqual(emailConfirmationDataService.lastGetEmailDataTotalTimeout, BrokerJobExecutionConfig.Constants.defaultGetEmailDataTotalTimeout)
+        XCTAssertEqual(sut.emailData, [
+            "verificationCode": "123456",
+            "token": "abc"
+        ])
+    }
+
+    func testWhenGetEmailDataServiceThrows_thenActionIsNotRetried() async {
+        let action = GetEmailDataAction(id: "1", actionType: .getEmailData, pollingTime: 3)
+        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [action]))
+        sut.fetchedEmail = "polled@duck.com"
+        sut.retriesCountOnError = 3
+        emailConfirmationDataService.getEmailDataThrowError = .linkExtractionTimedOut
+
+        await sut.runNextAction(action)
+
+        XCTAssertEqual(sut.retriesCountOnError, 0)
+        XCTAssertTrue(sut.emailData.isEmpty)
+    }
+
+    func testWhenGetEmailDataCalledTwice_thenKeysMergeWithLastWriteWins() async {
+        let action = GetEmailDataAction(id: "1", actionType: .getEmailData, pollingTime: 1)
+        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [action]))
+        sut.fetchedEmail = "polled@duck.com"
+
+        emailConfirmationDataService.getEmailDataReturnValue = ["code": "first", "onlyFirst": "a"]
+        await sut.runNextAction(action)
+        emailConfirmationDataService.getEmailDataReturnValue = ["code": "second", "onlySecond": "b"]
+        await sut.runNextAction(action)
+
+        XCTAssertEqual(sut.emailData, [
+            "code": "second",
+            "onlyFirst": "a",
+            "onlySecond": "b"
+        ])
+    }
 }

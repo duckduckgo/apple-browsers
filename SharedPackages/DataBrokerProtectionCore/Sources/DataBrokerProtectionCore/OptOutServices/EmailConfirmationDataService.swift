@@ -46,6 +46,16 @@ public protocol EmailConfirmationDataServiceProvider {
                              pollingInterval: TimeInterval,
                              attemptId: UUID,
                              shouldRunNextStep: @escaping () -> Bool) async throws -> URL
+
+    /// Polls until every `extract` key is present in the response (or `totalTimeout` elapses).
+    /// Returned bag is filtered to those keys. Empty `extract` returns an empty bag on first
+    /// `ready` — broker JSON is expected to always populate `extract`.
+    func getEmailData(email: String,
+                      attemptId: UUID,
+                      pollingInterval: TimeInterval,
+                      totalTimeout: TimeInterval,
+                      extract: [String],
+                      shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData
 }
 
 public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider {
@@ -120,6 +130,54 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                                                      pollingInterval: pollingInterval,
                                                      attemptId: attemptId,
                                                      shouldRunNextStep: shouldRunNextStep)
+    }
+
+    public func getEmailData(email: String,
+                             attemptId: UUID,
+                             pollingInterval: TimeInterval,
+                             totalTimeout: TimeInterval,
+                             extract: [String],
+                             shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData {
+        Logger.service.log("✉️ [EmailConfirmationDataService] Polling email-data for \(email, privacy: .public), attemptId: \(attemptId.uuidString, privacy: .public), totalTimeout: \(totalTimeout, privacy: .public)s, extract: \(extract.joined(separator: ","), privacy: .public)")
+        let deadline = Date().addingTimeInterval(totalTimeout)
+        let pollingTimeInNanoseconds = UInt64(pollingInterval * 1000) * NSEC_PER_MSEC
+        let item = EmailDataRequestItemV1(email: email, attemptId: attemptId.uuidString)
+
+        while Date() < deadline {
+            let response = try await emailServiceV1.fetchEmailData(items: [item])
+
+            if !shouldRunNextStep() {
+                throw EmailError.cancelled
+            }
+
+            guard let responseItem = response.items.first else {
+                throw EmailError.unknownStatusReceived(email: email)
+            }
+
+            switch responseItem.status {
+            case .ready:
+                let returnedKeys = Set(responseItem.data.map(\.name))
+                guard extract.allSatisfy(returnedKeys.contains) else {
+                    Logger.service.log("✉️ [EmailConfirmationDataService] Ready but missing extract keys for \(email, privacy: .public). Sleeping \(pollingInterval, privacy: .public)s")
+                    try await Task.sleep(nanoseconds: pollingTimeInNanoseconds)
+                    continue
+                }
+                var emailData: ExtractedEmailData = [:]
+                for datum in responseItem.data where extract.contains(datum.name) {
+                    emailData[datum.name] = datum.value
+                }
+                return emailData
+            case .error, .unknown:
+                Logger.service.error("✉️ [EmailConfirmationDataService] Email-data returned status=\(responseItem.status.rawValue, privacy: .public), error=\(responseItem.errorCode?.rawValue ?? "", privacy: .public)")
+                throw responseItem.errorCode?.asEmailError ?? .unknownStatusReceived(email: email)
+            case .pending:
+                Logger.service.log("✉️ [EmailConfirmationDataService] Email-data pending for \(email, privacy: .public). Sleeping \(pollingInterval, privacy: .public)s")
+                try await Task.sleep(nanoseconds: pollingTimeInNanoseconds)
+            }
+        }
+
+        Logger.service.error("✉️ [EmailConfirmationDataService] Email-data polling timed out for: \(email, privacy: .public)")
+        throw EmailError.linkExtractionTimedOut
     }
 
     public func checkForEmailConfirmationData() async throws {

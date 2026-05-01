@@ -443,6 +443,16 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
     public private(set) var getEmailCallCount: Int = 0
     public private(set) var lastExtractedProfileIdPassed: Int64?
 
+    public var getEmailDataReturnValue: ExtractedEmailData = [:]
+    /// Set to a non-nil `EmailError` to have `getEmailData` throw that specific error regardless
+    /// of `shouldThrow`. Lets tests exercise timeout / backend-error branches independently.
+    public var getEmailDataThrowError: EmailError?
+    public private(set) var getEmailDataCallCount: Int = 0
+    public private(set) var lastGetEmailDataEmail: String?
+    public private(set) var lastGetEmailDataPollingInterval: TimeInterval?
+    public private(set) var lastGetEmailDataTotalTimeout: TimeInterval?
+    public private(set) var lastGetEmailDataExtract: [String]?
+
     public init() {}
 
     public func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64?,
@@ -483,11 +493,39 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
         }
     }
 
+    public func getEmailData(email: String,
+                             attemptId: UUID,
+                             pollingInterval: TimeInterval,
+                             totalTimeout: TimeInterval,
+                             extract: [String],
+                             shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData {
+        getEmailDataCallCount += 1
+        lastGetEmailDataEmail = email
+        lastGetEmailDataPollingInterval = pollingInterval
+        lastGetEmailDataTotalTimeout = totalTimeout
+        lastGetEmailDataExtract = extract
+
+        if let error = getEmailDataThrowError {
+            throw error
+        }
+        if shouldThrow {
+            throw EmailError.cantFindEmail
+        }
+        return getEmailDataReturnValue
+    }
+
     public func reset() {
         shouldThrow = false
         getEmailAndSaveCallCount = 0
         getEmailCallCount = 0
         lastExtractedProfileIdPassed = nil
+        getEmailDataReturnValue = [:]
+        getEmailDataThrowError = nil
+        getEmailDataCallCount = 0
+        lastGetEmailDataEmail = nil
+        lastGetEmailDataPollingInterval = nil
+        lastGetEmailDataTotalTimeout = nil
+        lastGetEmailDataExtract = nil
     }
 }
 
@@ -866,12 +904,8 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public func updateRemovedDate(for extractedProfileId: Int64, with date: Date?) throws {
     }
 
-    public var hasMatchesToReturn = false
-    public var hasMatchesError: Error?
-
     public func hasMatches() throws -> Bool {
-        if let error = hasMatchesError { throw error }
-        return hasMatchesToReturn
+        false
     }
 
     public func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker] {
@@ -1303,12 +1337,8 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         optOutToReturn
     }
 
-    public var hasMatchesToReturn = false
-    public var hasMatchesError: Error?
-
     public func hasMatches() throws -> Bool {
-        if let error = hasMatchesError { throw error }
-        return hasMatchesToReturn
+        false
     }
 
     public func matchRemovedByUser(_ matchID: Int64) throws {

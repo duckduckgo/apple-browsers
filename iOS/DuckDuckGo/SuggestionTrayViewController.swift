@@ -225,14 +225,22 @@ class SuggestionTrayViewController: UIViewController {
     }
     
     override var canBecomeFirstResponder: Bool { return true }
-    
+
+    var hasContentToShow: Bool {
+        hasFavorites || hasRemoteMessages || pendingEscapeHatchModel != nil
+    }
+
     func canShow(for type: SuggestionType, animated: Bool = true) -> Bool {
         var canShow = false
         switch type {
         case .autocomplete(let query):
             canShow = canDisplayAutocompleteSuggestions(forQuery: query, animated: animated)
         case .favorites:
-            canShow = !aiChatSettings.isAIChatSearchInputUserSettingsEnabled || canDisplayFavorites || hasRemoteMessages || pendingEscapeHatchModel != nil
+            if isPad {
+                canShow = hasContentToShow
+            } else {
+                canShow = !aiChatSettings.isAIChatSearchInputUserSettingsEnabled || hasContentToShow
+            }
         }
         return canShow
     }
@@ -327,13 +335,9 @@ class SuggestionTrayViewController: UIViewController {
         view.addGestureRecognizer(backgroundTap)
         containerView.addGestureRecognizer(foregroundTap)
     }
-    
-    private var canDisplayFavorites: Bool {
-        favoritesModel.favorites.count > 0
-    }
 
     var hasFavorites: Bool {
-        canDisplayFavorites
+        favoritesModel.favorites.count > 0
     }
 
     var hasRemoteMessages: Bool {
@@ -367,7 +371,6 @@ class SuggestionTrayViewController: UIViewController {
         let dependencies = newTabPageDependencies
         let controller = NewTabPageViewController(
             isFocussedState: true,
-            dismissKeyboardOnScroll: true,
             tab: Tab(fireTab: tabsModelProvider().shouldCreateFireTabs),
             interactionModel: dependencies.favoritesModel,
             homePageMessagesConfiguration: dependencies.homePageMessagesConfiguration,

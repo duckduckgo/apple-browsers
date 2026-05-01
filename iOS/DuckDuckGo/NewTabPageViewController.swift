@@ -59,7 +59,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     var onViewDidAppear: (() -> Void)?
 
     init(isFocussedState: Bool,
-         dismissKeyboardOnScroll: Bool,
          tab: Tab,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
@@ -98,8 +97,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 fireModePromotionEligibility: fireModePromotionEligibility)
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
-                                            narrowLayoutInLandscape: narrowLayoutInLandscape,
-                                            dismissKeyboardOnScroll: dismissKeyboardOnScroll,
+                                            narrowLayoutInLandscape: narrowLayoutInLandscape,                                            
                                             viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,
                                             favoritesViewModel: self.favoritesModel))

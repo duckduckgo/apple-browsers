@@ -67,7 +67,7 @@ final class UnifiedToggleInputView: UIView {
         // Match the omnibar's small-top spacing so the dismiss snap lands on identical pill frames.
         static let collapsedCardTopMarginBottom: CGFloat = 10
         static let collapsedCardBottomMarginBottom: CGFloat = 6
-        static let cardCornerRadiusExpanded: CGFloat = 24
+        static let cardCornerRadiusExpanded: CGFloat = 28
         static let cardCornerRadiusCollapsed: CGFloat = 16
         static let toggleTopPadding: CGFloat = 8
         static let toggleBottomPadding: CGFloat = 4

@@ -22,17 +22,6 @@ public enum NetworkProtectionVPNConfigurationState: CaseIterable {
     case installedAndEnabled
     case installedButDisabled
     case missingOrInvalid
-
-    public var logDescription: String {
-        switch self {
-        case .installedAndEnabled:
-            return "installedAndEnabled"
-        case .installedButDisabled:
-            return "installedButDisabled"
-        case .missingOrInvalid:
-            return "missingOrInvalid"
-        }
-    }
 }
 
 public enum NetworkProtectionSystemStateResolver {

@@ -490,13 +490,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         let usesSystemExtension = await extensionResolver.isUsingSystemExtension
         let extensionBundleID = await extensionResolver.activeExtensionBundleID
 
-        Logger.networkProtection.info("""
-        VPN system state refresh started
-          usesSystemExtension: \(usesSystemExtension, privacy: .public)
-          activeExtensionBundleID: \(extensionBundleID, privacy: .public)
-          existingOnboardingStatus: \(self.onboardingStatusRawValue, privacy: .public)
-        """)
-
         let systemExtensionState: SystemExtensionActivationState = if usesSystemExtension {
             await networkExtensionController.systemExtensionActivationState()
         } else {
@@ -513,17 +506,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             existingStatus: existingStatus
         )
 
-        Logger.networkProtection.info("""
-        VPN system state refresh resolved
-          usesSystemExtension: \(usesSystemExtension, privacy: .public)
-          activeExtensionBundleID: \(extensionBundleID, privacy: .public)
-          systemExtensionState: \(systemExtensionState.logDescription, privacy: .public)
-          vpnConfigurationState: \(vpnConfigurationState.logDescription, privacy: .public)
-          existingOnboardingStatus: \(existingStatus.rawValue, privacy: .public)
-          resolvedOnboardingStatus: \(resolvedStatus.rawValue, privacy: .public)
-          willUpdateOnboardingStatus: \(resolvedStatus.rawValue != self.onboardingStatusRawValue, privacy: .public)
-        """)
-
         guard resolvedStatus.rawValue != onboardingStatusRawValue else {
             return
         }
@@ -533,13 +515,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     @MainActor
     private func vpnConfigurationState(extensionBundleID: String) async -> NetworkProtectionVPNConfigurationState {
-        await logVPNConfigurationSummary(expectedExtensionBundleID: extensionBundleID)
-
         guard let manager = await manager else {
-            Logger.networkProtection.info("""
-            VPN system state refresh found no active tunnel manager
-              expectedExtensionBundleID: \(extensionBundleID, privacy: .public)
-            """)
             return .missingOrInvalid
         }
 
@@ -555,15 +531,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             return .missingOrInvalid
         }
 
-        let providerBundleIdentifier = (manager.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier ?? "<nil>"
-        Logger.networkProtection.info("""
-        VPN system state refresh inspecting active tunnel manager
-          expectedExtensionBundleID: \(extensionBundleID, privacy: .public)
-          providerBundleIdentifier: \(providerBundleIdentifier, privacy: .public)
-          managerIsEnabled: \(manager.isEnabled, privacy: .public)
-          connectionStatus: \(manager.connection.status.logDescription, privacy: .public)
-        """)
-
         guard let configuration = manager.protocolConfiguration as? NETunnelProviderProtocol,
               configuration.providerBundleIdentifier == extensionBundleID,
               manager.connection.status != .invalid else {
@@ -573,32 +540,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
 
         return manager.isEnabled ? .installedAndEnabled : .installedButDisabled
-    }
-
-    @MainActor
-    private func logVPNConfigurationSummary(expectedExtensionBundleID: String) async {
-        do {
-            let managers = try await NETunnelProviderManager.loadAllFromPreferences()
-            let summary = managers.enumerated()
-                .map { index, manager -> String in
-                    let providerBundleID = (manager.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier ?? "<nil>"
-                    return "#\(index):provider=\(providerBundleID),enabled=\(manager.isEnabled),status=\(manager.connection.status.logDescription)"
-                }
-                .joined(separator: " | ")
-
-            Logger.networkProtection.info("""
-            VPN system state refresh loaded VPN configurations
-              expectedExtensionBundleID: \(expectedExtensionBundleID, privacy: .public)
-              managerCount: \(managers.count, privacy: .public)
-              managers: \(summary, privacy: .public)
-            """)
-        } catch {
-            Logger.networkProtection.error("""
-            VPN system state refresh failed to load VPN configurations
-              expectedExtensionBundleID: \(expectedExtensionBundleID, privacy: .public)
-              description: \(error.localizedDescription, privacy: .public)
-            """)
-        }
     }
 
     /// Ensures that the system extension is activated if necessary.
@@ -1166,46 +1107,6 @@ fileprivate extension VPNConnectionWideEventData.MacOSOnboardingStatus {
             return
         }
         self = .unknown
-    }
-}
-
-private extension SystemExtensionActivationState {
-    var logDescription: String {
-        switch self {
-        case .enabled:
-            return "enabled"
-        case .awaitingUserApproval:
-            return "awaitingUserApproval"
-        case .disabled:
-            return "disabled"
-        case .uninstalling:
-            return "uninstalling"
-        case .notInstalled:
-            return "notInstalled"
-        case .unknown:
-            return "unknown"
-        }
-    }
-}
-
-private extension NEVPNStatus {
-    var logDescription: String {
-        switch self {
-        case .invalid:
-            return "invalid"
-        case .disconnected:
-            return "disconnected"
-        case .connecting:
-            return "connecting"
-        case .connected:
-            return "connected"
-        case .reasserting:
-            return "reasserting"
-        case .disconnecting:
-            return "disconnecting"
-        @unknown default:
-            return "futureUnknown(\(rawValue))"
-        }
     }
 }
 

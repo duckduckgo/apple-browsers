@@ -146,20 +146,7 @@ public struct SystemExtensionManager {
                     isUninstalling: $0.isUninstalling
                 )
             }
-            let state = Self.activationState(from: snapshots)
-            let summary = snapshots.enumerated()
-                .map { index, snapshot in "#\(index):\(snapshot.logDescription)" }
-                .joined(separator: " | ")
-
-            Logger.systemExtensionManager.info("""
-            Queried system extension state
-              bundleID: \(extensionBundleID, privacy: .public)
-              state:    \(state.logDescription, privacy: .public)
-              count:    \(snapshots.count, privacy: .public)
-              matches:  \(summary, privacy: .public)
-            """)
-
-            return state
+            return Self.activationState(from: snapshots)
         } catch {
             Logger.systemExtensionManager.error("""
             Failed to query system extension state
@@ -224,31 +211,6 @@ public struct SystemExtensionManager {
     private func openSystemSettingsSecurity() {
         let url = URL(string: Self.systemSettingsSecurityURL)!
         workspace.open(url)
-    }
-}
-
-private extension SystemExtensionActivationState {
-    var logDescription: String {
-        switch self {
-        case .enabled:
-            return "enabled"
-        case .awaitingUserApproval:
-            return "awaitingUserApproval"
-        case .disabled:
-            return "disabled"
-        case .uninstalling:
-            return "uninstalling"
-        case .notInstalled:
-            return "notInstalled"
-        case .unknown:
-            return "unknown"
-        }
-    }
-}
-
-private extension SystemExtensionPropertiesSnapshot {
-    var logDescription: String {
-        "enabled=\(isEnabled),awaitingUserApproval=\(isAwaitingUserApproval),uninstalling=\(isUninstalling)"
     }
 }
 

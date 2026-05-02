@@ -485,6 +485,122 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         return configuration.providerBundleIdentifier == extensionBundleID
     }
 
+    @MainActor
+    func refreshSystemState() async {
+        let usesSystemExtension = await extensionResolver.isUsingSystemExtension
+        let extensionBundleID = await extensionResolver.activeExtensionBundleID
+
+        Logger.networkProtection.info("""
+        VPN system state refresh started
+          usesSystemExtension: \(usesSystemExtension, privacy: .public)
+          activeExtensionBundleID: \(extensionBundleID, privacy: .public)
+          existingOnboardingStatus: \(self.onboardingStatusRawValue, privacy: .public)
+        """)
+
+        let systemExtensionState: SystemExtensionActivationState = if usesSystemExtension {
+            await networkExtensionController.systemExtensionActivationState()
+        } else {
+            .enabled
+        }
+
+        let vpnConfigurationState = await vpnConfigurationState(extensionBundleID: extensionBundleID)
+        let existingStatus = OnboardingStatus(rawValue: onboardingStatusRawValue) ?? .default
+
+        let resolvedStatus = NetworkProtectionSystemStateResolver.resolvedOnboardingStatus(
+            usesSystemExtension: usesSystemExtension,
+            systemExtensionState: systemExtensionState,
+            vpnConfigurationState: vpnConfigurationState,
+            existingStatus: existingStatus
+        )
+
+        Logger.networkProtection.info("""
+        VPN system state refresh resolved
+          usesSystemExtension: \(usesSystemExtension, privacy: .public)
+          activeExtensionBundleID: \(extensionBundleID, privacy: .public)
+          systemExtensionState: \(systemExtensionState.logDescription, privacy: .public)
+          vpnConfigurationState: \(vpnConfigurationState.logDescription, privacy: .public)
+          existingOnboardingStatus: \(existingStatus.rawValue, privacy: .public)
+          resolvedOnboardingStatus: \(resolvedStatus.rawValue, privacy: .public)
+          willUpdateOnboardingStatus: \(resolvedStatus.rawValue != self.onboardingStatusRawValue, privacy: .public)
+        """)
+
+        guard resolvedStatus.rawValue != onboardingStatusRawValue else {
+            return
+        }
+
+        onboardingStatusRawValue = resolvedStatus.rawValue
+    }
+
+    @MainActor
+    private func vpnConfigurationState(extensionBundleID: String) async -> NetworkProtectionVPNConfigurationState {
+        await logVPNConfigurationSummary(expectedExtensionBundleID: extensionBundleID)
+
+        guard let manager = await manager else {
+            Logger.networkProtection.info("""
+            VPN system state refresh found no active tunnel manager
+              expectedExtensionBundleID: \(extensionBundleID, privacy: .public)
+            """)
+            return .missingOrInvalid
+        }
+
+        do {
+            try await manager.loadFromPreferences()
+        } catch {
+            Logger.networkProtection.error("""
+            VPN system state refresh failed to load active tunnel manager from preferences
+              expectedExtensionBundleID: \(extensionBundleID, privacy: .public)
+              description: \(error.localizedDescription, privacy: .public)
+            """)
+            clearInternalManager()
+            return .missingOrInvalid
+        }
+
+        let providerBundleIdentifier = (manager.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier ?? "<nil>"
+        Logger.networkProtection.info("""
+        VPN system state refresh inspecting active tunnel manager
+          expectedExtensionBundleID: \(extensionBundleID, privacy: .public)
+          providerBundleIdentifier: \(providerBundleIdentifier, privacy: .public)
+          managerIsEnabled: \(manager.isEnabled, privacy: .public)
+          connectionStatus: \(manager.connection.status.logDescription, privacy: .public)
+        """)
+
+        guard let configuration = manager.protocolConfiguration as? NETunnelProviderProtocol,
+              configuration.providerBundleIdentifier == extensionBundleID,
+              manager.connection.status != .invalid else {
+
+            clearInternalManager()
+            return .missingOrInvalid
+        }
+
+        return manager.isEnabled ? .installedAndEnabled : .installedButDisabled
+    }
+
+    @MainActor
+    private func logVPNConfigurationSummary(expectedExtensionBundleID: String) async {
+        do {
+            let managers = try await NETunnelProviderManager.loadAllFromPreferences()
+            let summary = managers.enumerated()
+                .map { index, manager -> String in
+                    let providerBundleID = (manager.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier ?? "<nil>"
+                    return "#\(index):provider=\(providerBundleID),enabled=\(manager.isEnabled),status=\(manager.connection.status.logDescription)"
+                }
+                .joined(separator: " | ")
+
+            Logger.networkProtection.info("""
+            VPN system state refresh loaded VPN configurations
+              expectedExtensionBundleID: \(expectedExtensionBundleID, privacy: .public)
+              managerCount: \(managers.count, privacy: .public)
+              managers: \(summary, privacy: .public)
+            """)
+        } catch {
+            Logger.networkProtection.error("""
+            VPN system state refresh failed to load VPN configurations
+              expectedExtensionBundleID: \(expectedExtensionBundleID, privacy: .public)
+              description: \(error.localizedDescription, privacy: .public)
+            """)
+        }
+    }
+
     /// Ensures that the system extension is activated if necessary.
     ///
     private func activateSystemExtension(waitingForUserApproval: @escaping () -> Void) async throws {
@@ -608,6 +724,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     @MainActor
     func start() async {
         Logger.networkProtection.log("🚀 Start VPN")
+        await refreshSystemState()
         setupAndStartConnectionWideEvent()
         VPNOperationErrorRecorder().beginRecordingControllerStart()
         PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionControllerStartAttempt,
@@ -671,16 +788,21 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
             self.controllerErrorStore.lastErrorMessage = nil
 
-            // We'll only update to completed if we were showing the onboarding step to
-            // allow the system extension.  Otherwise we may override the allow-VPN
-            // onboarding step.
-            //
-            // Additionally if the onboarding step was allowing the system extension, we won't
-            // start the tunnel at once, and instead require that the user enables the toggle.
-            //
+            // If activation leaves us on the system extension onboarding step, verify
+            // the real system state before deciding whether to advance. Activation may
+            // complete even when the user has manually disabled the extension.
             if onboardingStatusRawValue == OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue {
-                onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue
-                return
+                await refreshSystemState()
+
+                let refreshedStatus = OnboardingStatus(rawValue: onboardingStatusRawValue) ?? .default
+                guard NetworkProtectionSystemStateResolver.shouldContinueStartingTunnel(afterSystemExtensionActivation: refreshedStatus) else {
+                    Logger.networkProtection.info("""
+                    Pausing VPN start after system extension activation
+                      refreshedOnboardingStatus: \(refreshedStatus.rawValue, privacy: .public)
+                    """)
+                    networkExtensionController.openSystemExtensionSettings()
+                    return
+                }
             }
         } else {
             self.connectionWideEventData?.extensionType = .app
@@ -1044,6 +1166,102 @@ fileprivate extension VPNConnectionWideEventData.MacOSOnboardingStatus {
             return
         }
         self = .unknown
+    }
+}
+
+enum NetworkProtectionVPNConfigurationState: CaseIterable {
+    case installedAndEnabled
+    case installedButDisabled
+    case missingOrInvalid
+
+    var logDescription: String {
+        switch self {
+        case .installedAndEnabled:
+            return "installedAndEnabled"
+        case .installedButDisabled:
+            return "installedButDisabled"
+        case .missingOrInvalid:
+            return "missingOrInvalid"
+        }
+    }
+}
+
+enum NetworkProtectionSystemStateResolver {
+
+    static func resolvedOnboardingStatus(usesSystemExtension: Bool,
+                                         systemExtensionState: SystemExtensionActivationState,
+                                         vpnConfigurationState: NetworkProtectionVPNConfigurationState,
+                                         existingStatus: OnboardingStatus) -> OnboardingStatus {
+
+        if usesSystemExtension {
+            switch systemExtensionState {
+            case .enabled:
+                return resolvedOnboardingStatus(for: vpnConfigurationState)
+            case .awaitingUserApproval,
+                    .disabled,
+                    .uninstalling,
+                    .notInstalled:
+                return .isOnboarding(step: .userNeedsToAllowExtension)
+            case .unknown:
+                return existingStatus
+            }
+        }
+
+        return resolvedOnboardingStatus(for: vpnConfigurationState)
+    }
+
+    private static func resolvedOnboardingStatus(for vpnConfigurationState: NetworkProtectionVPNConfigurationState) -> OnboardingStatus {
+        switch vpnConfigurationState {
+        case .installedAndEnabled:
+            return .completed
+        case .installedButDisabled,
+                .missingOrInvalid:
+            return .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
+        }
+    }
+
+    static func shouldContinueStartingTunnel(afterSystemExtensionActivation onboardingStatus: OnboardingStatus) -> Bool {
+        onboardingStatus == .completed
+    }
+}
+
+private extension SystemExtensionActivationState {
+    var logDescription: String {
+        switch self {
+        case .enabled:
+            return "enabled"
+        case .awaitingUserApproval:
+            return "awaitingUserApproval"
+        case .disabled:
+            return "disabled"
+        case .uninstalling:
+            return "uninstalling"
+        case .notInstalled:
+            return "notInstalled"
+        case .unknown:
+            return "unknown"
+        }
+    }
+}
+
+private extension NEVPNStatus {
+    var logDescription: String {
+        switch self {
+        case .invalid:
+            return "invalid"
+        case .disconnected:
+            return "disconnected"
+        case .connecting:
+            return "connecting"
+        case .connected:
+            return "connected"
+        case .reasserting:
+            return "reasserting"
+        case .disconnecting:
+            return "disconnecting"
+        @unknown default:
+            return "futureUnknown(\(rawValue))"
+        }
     }
 }
 

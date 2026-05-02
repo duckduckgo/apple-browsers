@@ -94,6 +94,10 @@ final class IPCClientMock: NetworkProtectionIPCClient {
         completion(nil)
     }
 
+    func refreshSystemState() async throws {
+        return
+    }
+
     func command(_ command: VPNCommand) async throws {
         return
     }

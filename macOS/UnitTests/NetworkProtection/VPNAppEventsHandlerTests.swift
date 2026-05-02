@@ -165,10 +165,10 @@ final class VPNAppEventsHandlerTests: XCTestCase {
         }
     }
 
-    func testSystemStateResolverOnlyContinuesStartingTunnelAfterSystemExtensionActivationWhenOnboardingIsCompleted() {
+    func testSystemStateResolverContinuesStartingTunnelAfterSystemExtensionActivationWhenReadyForVPNConfiguration() {
         XCTAssertTrue(NetworkProtectionSystemStateResolver.shouldContinueStartingTunnel(afterSystemExtensionActivation: .completed))
         XCTAssertFalse(NetworkProtectionSystemStateResolver.shouldContinueStartingTunnel(afterSystemExtensionActivation: .isOnboarding(step: .userNeedsToAllowExtension)))
-        XCTAssertFalse(NetworkProtectionSystemStateResolver.shouldContinueStartingTunnel(afterSystemExtensionActivation: .isOnboarding(step: .userNeedsToAllowVPNConfiguration)))
+        XCTAssertTrue(NetworkProtectionSystemStateResolver.shouldContinueStartingTunnel(afterSystemExtensionActivation: .isOnboarding(step: .userNeedsToAllowVPNConfiguration)))
     }
 
     /// Tests that VPN login items are disabled and not restarted at startup when user has no VPN access.

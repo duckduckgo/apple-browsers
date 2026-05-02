@@ -1169,62 +1169,6 @@ fileprivate extension VPNConnectionWideEventData.MacOSOnboardingStatus {
     }
 }
 
-enum NetworkProtectionVPNConfigurationState: CaseIterable {
-    case installedAndEnabled
-    case installedButDisabled
-    case missingOrInvalid
-
-    var logDescription: String {
-        switch self {
-        case .installedAndEnabled:
-            return "installedAndEnabled"
-        case .installedButDisabled:
-            return "installedButDisabled"
-        case .missingOrInvalid:
-            return "missingOrInvalid"
-        }
-    }
-}
-
-enum NetworkProtectionSystemStateResolver {
-
-    static func resolvedOnboardingStatus(usesSystemExtension: Bool,
-                                         systemExtensionState: SystemExtensionActivationState,
-                                         vpnConfigurationState: NetworkProtectionVPNConfigurationState,
-                                         existingStatus: OnboardingStatus) -> OnboardingStatus {
-
-        if usesSystemExtension {
-            switch systemExtensionState {
-            case .enabled:
-                return resolvedOnboardingStatus(for: vpnConfigurationState)
-            case .awaitingUserApproval,
-                    .disabled,
-                    .uninstalling,
-                    .notInstalled:
-                return .isOnboarding(step: .userNeedsToAllowExtension)
-            case .unknown:
-                return existingStatus
-            }
-        }
-
-        return resolvedOnboardingStatus(for: vpnConfigurationState)
-    }
-
-    private static func resolvedOnboardingStatus(for vpnConfigurationState: NetworkProtectionVPNConfigurationState) -> OnboardingStatus {
-        switch vpnConfigurationState {
-        case .installedAndEnabled:
-            return .completed
-        case .installedButDisabled,
-                .missingOrInvalid:
-            return .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
-        }
-    }
-
-    static func shouldContinueStartingTunnel(afterSystemExtensionActivation onboardingStatus: OnboardingStatus) -> Bool {
-        onboardingStatus == .completed
-    }
-}
-
 private extension SystemExtensionActivationState {
     var logDescription: String {
         switch self {

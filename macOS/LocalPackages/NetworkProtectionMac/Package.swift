@@ -43,6 +43,7 @@ let package = Package(
         .package(path: "../XPCHelper"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../LoginItems"),
+        .package(path: "../SystemExtensionManager"),
         .package(path: "../../../SharedPackages/VPN"),
     ],
     targets: [
@@ -134,6 +135,7 @@ let package = Package(
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 .product(name: "LoginItems", package: "LoginItems"),
+                .product(name: "SystemExtensionManager", package: "SystemExtensionManager"),
                 .product(name: "Lottie", package: "lottie-spm")
             ],
             resources: [

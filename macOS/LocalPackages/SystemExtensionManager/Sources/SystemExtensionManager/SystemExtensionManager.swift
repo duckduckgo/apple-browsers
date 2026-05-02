@@ -232,7 +232,11 @@ private final class SystemExtensionPropertiesRequest: NSObject {
             request: .propertiesRequest(forExtensionWithIdentifier: bundleId, queue: .global()),
             manager: manager
         )
-        return try await query.submit()
+        // OSSystemExtensionRequest.delegate is weak. Without an explicit lifetime extension,
+        // the compiler may release `query` during the await, niling the delegate before the
+        // callback fires and leaving the continuation suspended forever.
+        let result = try await query.submit()
+        return withExtendedLifetime(query) { result }
     }
 
     private func submit() async throws -> [OSSystemExtensionProperties] {

@@ -102,6 +102,10 @@ final class StatusBarMenuTests: XCTestCase {
 
     @MainActor
     func testOpeningStatusBarMenuCallsOnWillShowPopover() async {
+        // statusBarButtonTapped reads NSApp, an implicitly-unwrapped optional that is nil until
+        // NSApplication.shared has been accessed in the process.
+        _ = NSApplication.shared
+
         let refreshExpectation = expectation(description: "Refresh system state before opening popover")
         let defaults = UserDefaults(suiteName: UUID().uuidString)!
         let item = NSStatusItem()

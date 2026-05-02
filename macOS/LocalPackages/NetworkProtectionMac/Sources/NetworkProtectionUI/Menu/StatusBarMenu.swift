@@ -143,6 +143,11 @@ public final class StatusBarMenu: NSObject {
         } else {
             await onWillShowPopover?()
 
+            // Re-check after the suspension: a concurrent invocation may have already created the popover.
+            guard popover == nil else {
+                return
+            }
+
             guard let button = statusItem.button else {
                 return
             }

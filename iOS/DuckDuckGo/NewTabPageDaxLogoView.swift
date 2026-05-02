@@ -20,12 +20,15 @@
 import SwiftUI
 
 struct NewTabPageDaxLogoView: View {
+    var rotation: Angle = .zero
+
     var body: some View {
         VStack(spacing: 12) {
             Image(.home)
                 .resizable()
                 .aspectRatio(1, contentMode: .fit)
                 .frame(width: 96)
+                .rotationEffect(rotation)
             Image(.textDuckDuckGo)
         }
     }

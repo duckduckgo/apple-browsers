@@ -30,6 +30,8 @@ struct NewTabPageView: View {
     @ObservedObject private var messagesModel: NewTabPageMessagesModel
     @ObservedObject private var favoritesViewModel: FavoritesViewModel
 
+    @State private var daxRotation: Angle = .zero
+
     let isFocussedState: Bool
     let narrowLayoutInLandscape: Bool
     let dismissKeyboardOnScroll: Bool
@@ -66,6 +68,17 @@ struct NewTabPageView: View {
                             }
                         })
                         .onEnded({ _ in viewModel.endDragging() })
+                )
+                .simultaneousGesture(
+                    DragGesture()
+                        .onChanged { value in
+                            daxRotation = .degrees(value.translation.width * 1.2)
+                        }
+                        .onEnded { _ in
+                            withAnimation(.spring(response: 0.6, dampingFraction: 0.5)) {
+                                daxRotation = .zero
+                            }
+                        }
                 )
         }
     }
@@ -135,7 +148,7 @@ private extension NewTabPageView {
         GeometryReader { proxy in
             ZStack {
                 if shouldShowLogoInEmptyState {
-                    NewTabPageDaxLogoView()
+                    NewTabPageDaxLogoView(rotation: daxRotation)
                 }
 
                 ScrollView {

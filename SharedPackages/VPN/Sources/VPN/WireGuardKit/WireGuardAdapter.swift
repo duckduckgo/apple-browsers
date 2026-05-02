@@ -182,7 +182,11 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
 
     /// Keeps track of whether a recovery attempt from temporary shutdown has already failed.
     private var temporaryShutdownRecoveryFailed = false
-    private var lastKnownPathStatus: Network.NWPath.Status?
+
+    /// Monotonically incremented to invalidate in-flight or scheduled recovery work
+    /// when the recovery is started or cancelled. Recovery work captures its epoch
+    /// and bails out if the current epoch has moved on.
+    private var temporaryShutdownRecoveryEpoch: UInt64 = 0
 
     private let wireGuardInterface: WireGuardGoInterface
 
@@ -395,6 +399,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
             self.networkMonitor?.cancel()
             self.networkMonitor = nil
 
+            self.cancelTemporaryShutdownRecovery()
             self.state = .stopped
 
             completionHandler(nil)
@@ -418,6 +423,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
             self.networkMonitor?.cancel()
             self.networkMonitor = nil
 
+            self.cancelTemporaryShutdownRecovery()
             self.state = .snoozing
 
             try? self.setNetworkSettings(nil)
@@ -473,6 +479,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
 
                 case .temporaryShutdown:
                     self.state = .temporaryShutdown(settingsGenerator)
+                    self.startTemporaryShutdownRecovery()
 
                 case .snoozing:
                     assertionFailure("Attempted to update WireGuard adapter while snoozing")
@@ -649,15 +656,36 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
         )
     }
 
-    private func attemptResume(settingsGenerator: PacketTunnelSettingsGenerating) {
+    /// Starts (or restarts) the recovery loop for the current `.temporaryShutdown` state.
+    /// Bumps the epoch so any in-flight or scheduled recovery work bails on its next tick,
+    /// then schedules an immediate attempt against the latest settings generator.
+    private func startTemporaryShutdownRecovery() {
         dispatchPrecondition(condition: .onQueue(workQueue))
 
-        guard case .temporaryShutdown(let activeGenerator) = state,
-              settingsGenerator === activeGenerator else { return }
-        guard lastKnownPathStatus?.isSatisfiable == true else { return }
+        temporaryShutdownRecoveryEpoch &+= 1
+        let myEpoch = temporaryShutdownRecoveryEpoch
+
+        workQueue.async { [weak self] in
+            self?.attemptResume(epoch: myEpoch)
+        }
+    }
+
+    /// Invalidates any in-flight or scheduled recovery work. Bumping the epoch is enough -
+    /// queued closures will see a stale epoch and bail without doing any work.
+    private func cancelTemporaryShutdownRecovery() {
+        dispatchPrecondition(condition: .onQueue(workQueue))
+
+        temporaryShutdownRecoveryEpoch &+= 1
+    }
+
+    private func attemptResume(epoch: UInt64) {
+        dispatchPrecondition(condition: .onQueue(workQueue))
+
+        guard epoch == temporaryShutdownRecoveryEpoch else { return }
+        guard case .temporaryShutdown(let settingsGenerator) = state else { return }
 
         do {
-            try bringUpBackend(with: activeGenerator)
+            try bringUpBackend(with: settingsGenerator)
 
             if temporaryShutdownRecoveryFailed {
                 eventHandler.handle(.endTemporaryShutdownStateRecoverySuccess)
@@ -674,7 +702,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
             }
 
             workQueue.asyncAfter(deadline: .now() + temporaryShutdownRecoveryDelay) { [weak self] in
-                self?.attemptResume(settingsGenerator: settingsGenerator)
+                self?.attemptResume(epoch: epoch)
             }
         }
     }
@@ -683,7 +711,6 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
     /// - Parameter status: new network status
     private func didReceivePathUpdate(status: Network.NWPath.Status) {
         self.logHandler(.verbose, "Network change detected with \(status) route")
-        self.lastKnownPathStatus = status
 
         #if os(macOS)
         if case .started(let handle, _) = self.state {
@@ -705,13 +732,17 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
                 self.state = .temporaryShutdown(settingsGenerator)
                 self.temporaryShutdownRecoveryFailed = false
                 self.wireGuardInterface.turnOff(handle: handle)
+                self.startTemporaryShutdownRecovery()
             }
 
-        case .temporaryShutdown(let settingsGenerator):
-            guard status.isSatisfiable else { return }
-
-            self.logHandler(.verbose, "Connectivity online, attempting to resume backend.")
-            attemptResume(settingsGenerator: settingsGenerator)
+        case .temporaryShutdown:
+            if status.isSatisfiable {
+                self.logHandler(.verbose, "Connectivity online, restarting recovery.")
+                self.startTemporaryShutdownRecovery()
+            } else {
+                self.logHandler(.verbose, "Connectivity offline, pausing recovery.")
+                self.cancelTemporaryShutdownRecovery()
+            }
 
         case .stopped, .snoozing:
             // no-op

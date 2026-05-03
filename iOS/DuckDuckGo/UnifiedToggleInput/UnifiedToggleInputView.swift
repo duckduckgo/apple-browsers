@@ -72,6 +72,10 @@ final class UnifiedToggleInputView: UIView {
         static let cardCornerRadiusCollapsed: CGFloat = 16
         static let toggleTopPadding: CGFloat = 8
         static let toggleBottomPadding: CGFloat = 4
+        /// Bottom padding between the input content and the card edge when the AI tools
+        /// toolbar is hidden, mirroring `toggleBottomPadding` so the input sits centered
+        /// inside its 64pt row per the Figma spec.
+        static let inputBottomPadding: CGFloat = 4
         static let toggleHeight: CGFloat = 40
         static let toggleHorizontalPadding: CGFloat = 8
         static let animationDuration: TimeInterval = 0.25
@@ -450,8 +454,9 @@ final class UnifiedToggleInputView: UIView {
         guard isExpanded else { return }
         
         if isToggleEnabled {
+            let showToolbar = mode == .aiChat
             inputTopConstraint.constant = Constants.toggleBottomPadding
-            toolbarBottomConstraint.constant = 0
+            toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
         } else {
             let usePadding = mode == .search
             let padding = usePadding ? Constants.toggleDisabledSearchTopPadding : 0
@@ -533,8 +538,11 @@ final class UnifiedToggleInputView: UIView {
                 ? Constants.toggleLeadingWithInlineDismiss
                 : Constants.toggleHorizontalPadding
             let toggleDisabledSearchPadding = expanded && !self.isToggleEnabled && self.handler.currentToggleState == .search
+            let toggleEnabledNoToolbarPadding = expanded && effectiveToggleEnabled && !showToolbar
             self.inputTopConstraint.constant = expanded && effectiveToggleEnabled ? Constants.toggleBottomPadding : (toggleDisabledSearchPadding ? Constants.toggleDisabledSearchTopPadding : 0)
-            self.toolbarBottomConstraint.constant = toggleDisabledSearchPadding ? -Constants.toggleDisabledSearchTopPadding : 0
+            self.toolbarBottomConstraint.constant = toggleDisabledSearchPadding
+                ? -Constants.toggleDisabledSearchTopPadding
+                : (toggleEnabledNoToolbarPadding ? -Constants.inputBottomPadding : 0)
             self.toggleView.alpha = (expanded && effectiveToggleEnabled) ? 1 : 0
             self.applyInlineDismissVerticalAnchor(useFieldRowAnchor: showFieldRowInlineDismiss)
             self.applyInlineDismissVisibility(showInlineDismiss || showFieldRowInlineDismiss)
@@ -625,6 +633,7 @@ final class UnifiedToggleInputView: UIView {
         toggleView.alpha = 1
         applyInlineDismissVisibility(true)
         inputTopConstraint.constant = Constants.toggleBottomPadding
+        toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
         cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
         toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
@@ -641,6 +650,7 @@ final class UnifiedToggleInputView: UIView {
         toggleView.alpha = 0
         applyInlineDismissVisibility(false)
         inputTopConstraint.constant = 0
+        toolbarBottomConstraint.constant = 0
         toolbarHeightConstraint.constant = 0
         toolsToolbar.alpha = 0
     }
@@ -698,6 +708,9 @@ final class UnifiedToggleInputView: UIView {
 
         let showToolbar = mode == .aiChat
         toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
+        if isToggleEnabled {
+            toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
+        }
         cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
         updateAttachmentsStripLayout()

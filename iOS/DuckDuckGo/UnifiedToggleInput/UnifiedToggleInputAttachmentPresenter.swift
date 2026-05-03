@@ -33,23 +33,6 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         fileprivate let url: URL
     }
 
-    private enum PDFInspectionResult: Sendable {
-        case notPDF
-        case readable(pageCount: Int)
-        case encrypted
-        case unreadable
-
-        var pageCount: Int? {
-            guard case .readable(let pageCount) = self else { return nil }
-            return pageCount
-        }
-
-        var isEncrypted: Bool {
-            guard case .encrypted = self else { return false }
-            return true
-        }
-    }
-
     var onExpandIfNeeded: (() -> Void)?
     var onImagePicked: ((UIImage, String) -> Void)?
     var onFilePicked: ((AIChatFileAttachment) -> Void)?
@@ -105,15 +88,35 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
 
         return UIMenu(children: actions)
     }
+}
 
-    private func presentCamera(from presenter: UIViewController) {
+private extension UnifiedToggleInputAttachmentPresenter {
+
+    enum PDFInspectionResult: Sendable {
+        case notPDF
+        case readable(pageCount: Int)
+        case encrypted
+        case unreadable
+
+        var pageCount: Int? {
+            guard case .readable(let pageCount) = self else { return nil }
+            return pageCount
+        }
+
+        var isEncrypted: Bool {
+            guard case .encrypted = self else { return false }
+            return true
+        }
+    }
+
+    func presentCamera(from presenter: UIViewController) {
         let picker = UIImagePickerController()
         picker.sourceType = .camera
         picker.delegate = self
         presenter.present(picker, animated: true)
     }
 
-    private func presentPhotoPicker(from presenter: UIViewController, selectionLimit: Int) {
+    func presentPhotoPicker(from presenter: UIViewController, selectionLimit: Int) {
         var config = PHPickerConfiguration()
         config.filter = .images
         config.selectionLimit = selectionLimit
@@ -122,14 +125,14 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         presenter.present(picker, animated: true)
     }
 
-    private func presentDocumentPicker(from presenter: UIViewController, allowedFileTypes: [UTType]) {
+    func presentDocumentPicker(from presenter: UIViewController, allowedFileTypes: [UTType]) {
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedFileTypes, asCopy: true)
         picker.allowsMultipleSelection = false
         picker.delegate = self
         presenter.present(picker, animated: true)
     }
 
-    nonisolated private static func fileMetadata(from url: URL) -> FileMetadata? {
+    nonisolated static func fileMetadata(from url: URL) -> FileMetadata? {
         let hasScopedAccess = url.startAccessingSecurityScopedResource()
         defer {
             if hasScopedAccess {
@@ -147,7 +150,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         }
     }
 
-    nonisolated private static func fileAttachment(from metadata: FileMetadata) -> AIChatFileAttachment? {
+    nonisolated static func fileAttachment(from metadata: FileMetadata) -> AIChatFileAttachment? {
         let hasScopedAccess = metadata.url.startAccessingSecurityScopedResource()
         defer {
             if hasScopedAccess {
@@ -172,7 +175,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         }
     }
 
-    nonisolated private static func inspectPDF(data: Data, mimeType: String) -> PDFInspectionResult {
+    nonisolated static func inspectPDF(data: Data, mimeType: String) -> PDFInspectionResult {
         guard mimeType == "application/pdf" else { return .notPDF }
         guard let provider = CGDataProvider(data: data as CFData),
               let document = CGPDFDocument(provider) else {

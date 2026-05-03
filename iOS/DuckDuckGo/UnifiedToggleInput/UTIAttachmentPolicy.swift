@@ -27,54 +27,6 @@ struct UTIAttachmentPolicy {
     let pendingAttachments: [UnifiedToggleInputAttachment]
     let model: AIChatModel?
 
-    private var pendingImageCount: Int {
-        pendingAttachments.filter(\.isImage).count
-    }
-
-    private var pendingFileCount: Int {
-        pendingAttachments.filter(\.isFile).count
-    }
-
-    private var pendingFileSizeBytes: Int {
-        pendingAttachments.reduce(0) { $0 + $1.fileSizeBytes }
-    }
-
-    private var maxImagesPerTurn: Int? {
-        attachmentLimits?.images.maxPerTurn
-    }
-
-    private var maxImagesPerConversation: Int? {
-        attachmentLimits?.images.maxPerConversation
-    }
-
-    private var maxFilesPerConversation: Int? {
-        attachmentLimits?.files.maxPerConversation
-    }
-
-    private var maxFileSizeMB: Int? {
-        attachmentLimits?.files.maxFileSizeMB
-    }
-
-    private var maxFileSizeBytes: Int? {
-        maxFileSizeMB.map { $0 * 1_048_576 }
-    }
-
-    private var maxTotalFileSizeBytes: Int? {
-        attachmentLimits?.files.maxTotalFileSizeBytes
-    }
-
-    private var maxPagesPerFile: Int? {
-        attachmentLimits?.files.maxPagesPerFile
-    }
-
-    private var maxInputCharsWithAttachments: Int? {
-        attachmentLimits?.images.maxInputCharsWithAttachments
-    }
-
-    private var maxTotalFileSizeMB: Int? {
-        maxTotalFileSizeBytes.map { Int(ceil(Double($0) / 1_048_576)) }
-    }
-
     var remainingImagesInConversation: Int {
         guard let maxImagesPerConversation else { return 0 }
         let conversationUsed = attachmentUsage?.imagesUsed ?? 0
@@ -249,8 +201,59 @@ struct UTIAttachmentPolicy {
 
         return UserText.aiChatAttachmentPromptTooLong
     }
+}
 
-    private func pageValidationMessage(for attachment: AIChatFileAttachment) -> String? {
+private extension UTIAttachmentPolicy {
+
+    var pendingImageCount: Int {
+        pendingAttachments.filter(\.isImage).count
+    }
+
+    var pendingFileCount: Int {
+        pendingAttachments.filter(\.isFile).count
+    }
+
+    var pendingFileSizeBytes: Int {
+        pendingAttachments.reduce(0) { $0 + $1.fileSizeBytes }
+    }
+
+    var maxImagesPerTurn: Int? {
+        attachmentLimits?.images.maxPerTurn
+    }
+
+    var maxImagesPerConversation: Int? {
+        attachmentLimits?.images.maxPerConversation
+    }
+
+    var maxFilesPerConversation: Int? {
+        attachmentLimits?.files.maxPerConversation
+    }
+
+    var maxFileSizeMB: Int? {
+        attachmentLimits?.files.maxFileSizeMB
+    }
+
+    var maxFileSizeBytes: Int? {
+        maxFileSizeMB.map { $0 * 1_048_576 }
+    }
+
+    var maxTotalFileSizeBytes: Int? {
+        attachmentLimits?.files.maxTotalFileSizeBytes
+    }
+
+    var maxPagesPerFile: Int? {
+        attachmentLimits?.files.maxPagesPerFile
+    }
+
+    var maxInputCharsWithAttachments: Int? {
+        attachmentLimits?.images.maxInputCharsWithAttachments
+    }
+
+    var maxTotalFileSizeMB: Int? {
+        maxTotalFileSizeBytes.map { Int(ceil(Double($0) / 1_048_576)) }
+    }
+
+    func pageValidationMessage(for attachment: AIChatFileAttachment) -> String? {
         guard attachment.mimeType == "application/pdf",
               let maxPagesPerFile else {
             return nil
@@ -263,11 +266,11 @@ struct UTIAttachmentPolicy {
         return pageCount > maxPagesPerFile ? UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: maxPagesPerFile) : nil
     }
 
-    private var acceptedFileTypeNames: [String] {
+    var acceptedFileTypeNames: [String] {
         model?.supportedFileTypes.compactMap(Self.fileTypeName(for:)) ?? []
     }
 
-    private static func fileTypeName(for mimeType: String) -> String? {
+    static func fileTypeName(for mimeType: String) -> String? {
         switch mimeType {
         case "application/pdf":
             return "PDF"

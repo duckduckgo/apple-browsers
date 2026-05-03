@@ -498,28 +498,6 @@ final class AIChatViewControllerManager {
         }
     }
 
-    private func storePromptWithAttachmentsIfNeeded(_ query: String,
-                                                    autoSend: Bool,
-                                                    tools: [AIChatRAGTool]?,
-                                                    modelId: String?,
-                                                    reasoningEffort: AIChatReasoningEffort?,
-                                                    images: [AIChatNativePrompt.NativePromptImage]?,
-                                                    files: [AIChatNativePrompt.NativePromptFile]?) {
-        guard images?.isEmpty == false || files?.isEmpty == false else { return }
-        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-
-        let prompt = AIChatNativePrompt.queryPrompt(
-            query,
-            autoSubmit: autoSend,
-            toolChoice: tools?.map(\.rawValue),
-            images: images,
-            files: files,
-            modelId: modelId,
-            reasoningEffort: reasoningEffort
-        )
-        AIChatPromptHandler.shared.setData(prompt)
-    }
-
     private func isInspectableWebViewEnabled() -> Bool {
 #if DEBUG
         return true
@@ -538,6 +516,31 @@ final class AIChatViewControllerManager {
             guard let self = self else { return }
             self.delegate?.aiChatViewControllerManager(self, didSubmitQuery: query)
         }
+    }
+}
+
+private extension AIChatViewControllerManager {
+
+    func storePromptWithAttachmentsIfNeeded(_ query: String,
+                                            autoSend: Bool,
+                                            tools: [AIChatRAGTool]?,
+                                            modelId: String?,
+                                            reasoningEffort: AIChatReasoningEffort?,
+                                            images: [AIChatNativePrompt.NativePromptImage]?,
+                                            files: [AIChatNativePrompt.NativePromptFile]?) {
+        guard images?.isEmpty == false || files?.isEmpty == false else { return }
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+
+        let prompt = AIChatNativePrompt.queryPrompt(
+            query,
+            autoSubmit: autoSend,
+            toolChoice: tools?.map(\.rawValue),
+            images: images,
+            files: files,
+            modelId: modelId,
+            reasoningEffort: reasoningEffort
+        )
+        AIChatPromptHandler.shared.setData(prompt)
     }
 }
 

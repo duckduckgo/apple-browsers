@@ -105,8 +105,11 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
             removeButton.layer.borderColor = UIColor(designSystemColor: .lines).cgColor
         }
     }
+}
 
-    private func setupUI() {
+private extension UnifiedToggleInputAttachmentThumbnailView {
+
+    func setupUI() {
         translatesAutoresizingMaskIntoConstraints = false
         addSubview(imageView)
         addSubview(fileIconView)
@@ -138,7 +141,7 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         ])
     }
 
-    private func configure() {
+    func configure() {
         switch attachment {
         case .image(let imageAttachment):
             imageView.image = imageAttachment.image
@@ -159,7 +162,7 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         }
     }
 
-    @objc private func removeTapped() {
+    @objc func removeTapped() {
         onRemove?(attachmentId)
     }
 }

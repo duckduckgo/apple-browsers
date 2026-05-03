@@ -73,23 +73,6 @@ class ActionMessageView: UIView, ActionMessagePresenting {
         
     }
     
-    private static func pin(_ messageView: ActionMessageView,
-                            to window: UIWindow,
-                            presentationLocation: PresentationLocation) {
-        switch presentationLocation {
-        case .top:
-            messageView.topAnchor.constraint(equalTo: window.safeAreaLayoutGuide.topAnchor,
-                                             constant: Constants.windowTopPadding).isActive = true
-        case .withBottomBar(let isAddressBarBottom):
-            let bottomPadding = isAddressBarBottom ? Constants.windowBottomPaddingWithAddressBar : Constants.windowBottomPaddingWithBottomBar
-            window.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: messageView.bottomAnchor,
-                                                               constant: bottomPadding).isActive = true
-        case .withoutBottomBar:
-            window.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: messageView.bottomAnchor,
-                                                               constant: Constants.windowBottomPaddingWithoutBottomBar).isActive = true
-        }
-    }
-    
     @IBOutlet weak var message: UILabel!
     @IBOutlet weak var actionButton: UIButton!
     
@@ -231,5 +214,25 @@ class ActionMessageView: UIView, ActionMessagePresenting {
     @IBAction func onButtonTap() {
         action()
         dismissAndFadeOut()
+    }
+}
+
+private extension ActionMessageView {
+
+    static func pin(_ messageView: ActionMessageView,
+                    to window: UIWindow,
+                    presentationLocation: PresentationLocation) {
+        switch presentationLocation {
+        case .top:
+            messageView.topAnchor.constraint(equalTo: window.safeAreaLayoutGuide.topAnchor,
+                                             constant: Constants.windowTopPadding).isActive = true
+        case .withBottomBar(let isAddressBarBottom):
+            let bottomPadding = isAddressBarBottom ? Constants.windowBottomPaddingWithAddressBar : Constants.windowBottomPaddingWithBottomBar
+            window.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: messageView.bottomAnchor,
+                                                               constant: bottomPadding).isActive = true
+        case .withoutBottomBar:
+            window.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: messageView.bottomAnchor,
+                                                               constant: Constants.windowBottomPaddingWithoutBottomBar).isActive = true
+        }
     }
 }

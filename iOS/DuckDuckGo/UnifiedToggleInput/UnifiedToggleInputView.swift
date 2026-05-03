@@ -468,17 +468,18 @@ final class UnifiedToggleInputView: UIView {
         let effectiveToggleEnabled = isToggleEnabled && showToggle
         let toggleHeight: CGFloat = (expanded && effectiveToggleEnabled) ? Constants.toggleHeight : 0
         let showToolbar = expanded && effectiveToggleEnabled && toggleView.selectedMode == .aiChat
-        // The card reserves space for the inline X whenever it's expanded at `.top`, so the
-        // toggle's width is stable across the toggle-hidden transient. Visibility of the X
-        // itself is gated on the toggle actually being shown, so the X can fade in together
-        // with the toggle via `applyToggleRevealChanges` rather than snapping in on activation.
-        let reservesInlineDismissSpace = expanded && cardPosition == .top
+        // The card reserves space for the inline dismiss whenever it's expanded, so the
+        // toggle's width is stable across the toggle-hidden transient. Visibility of the
+        // dismiss itself is gated on the toggle actually being shown, so the back button
+        // can fade in together with the toggle via `applyToggleRevealChanges` rather than
+        // snapping in on activation.
+        let reservesInlineDismissSpace = expanded
         let showInlineDismiss = reservesInlineDismissSpace && effectiveToggleEnabled
-        // When the toggle is disabled by the user but the card is anchored at the top, the X
-        // moves into the field row alongside the inline trailing buttons. Keyed on
-        // `isToggleEnabled` (not `effectiveToggleEnabled`) so the dismiss stays hidden during
-        // the toggle-on activation transient where `showToggle` is briefly `false`.
-        let showFieldRowInlineDismiss = expanded && cardPosition == .top && !isToggleEnabled
+        // When the toggle is disabled by the user, the dismiss moves into the field row
+        // alongside the inline buttons. Keyed on `isToggleEnabled` (not
+        // `effectiveToggleEnabled`) so the dismiss stays hidden during the toggle-on
+        // activation transient where `showToggle` is briefly `false`.
+        let showFieldRowInlineDismiss = expanded && !isToggleEnabled
 
         let hLeadingMargin: CGFloat
         let hTrailingMargin: CGFloat
@@ -622,7 +623,7 @@ final class UnifiedToggleInputView: UIView {
         toggleTopConstraint.constant = Constants.toggleTopPadding
         toggleHeightConstraint.constant = Constants.toggleHeight
         toggleView.alpha = 1
-        applyInlineDismissVisibility(cardPosition == .top)
+        applyInlineDismissVisibility(true)
         inputTopConstraint.constant = Constants.toggleBottomPadding
         cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
@@ -731,10 +732,9 @@ private extension UnifiedToggleInputView {
     /// Updates layout and opacity so the toggle either reserves space for the inline dismiss
     /// button or expands to fill the card's top row. Safe to call outside of animation blocks.
     func refreshInlineDismissPresentation() {
-        let isAtTop = isExpanded && cardPosition == .top
-        let showToggleRowDismiss = isAtTop && isToggleEnabled
-        let showFieldRowDismiss = isAtTop && !isToggleEnabled
-        toggleLeadingConstraint.constant = isAtTop
+        let showToggleRowDismiss = isExpanded && isToggleEnabled
+        let showFieldRowDismiss = isExpanded && !isToggleEnabled
+        toggleLeadingConstraint.constant = isExpanded
             ? Constants.toggleLeadingWithInlineDismiss
             : Constants.toggleHorizontalPadding
         applyInlineDismissVerticalAnchor(useFieldRowAnchor: showFieldRowDismiss)
@@ -778,9 +778,8 @@ private extension UnifiedToggleInputView {
         onInlineDismissTapped?()
     }
 
-    /// Flat, circular button styled to sit inside the card's top row. The floating dismiss
-    /// button in the content container uses Liquid Glass on iOS 26, but inside the card the
-    /// design calls for a flat control.
+    /// Flat, circular back-chevron button hosted inside the card on the leading edge.
+    /// Used as the dismiss control across all card positions and toggle states.
     static func makeInlineDismissButton() -> UIButton {
         let button = UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.chevronLeft, for: .normal)

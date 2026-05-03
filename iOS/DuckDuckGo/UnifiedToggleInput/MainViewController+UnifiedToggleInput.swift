@@ -433,10 +433,6 @@ extension MainViewController {
             applyUnifiedInputChromeBackground(chromeBackgroundState, updateWebView: false)
         }
 
-        if coordinator.isAITabState {
-            coordinator.applyDismissButtonVisibility()
-        }
-
         viewCoordinator.updateUnifiedToggleInputColors(
             inputView: coordinator.viewController.view
         )

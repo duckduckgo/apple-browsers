@@ -312,14 +312,21 @@ After all groups in a bucket, add a brief bucket summary:
 **Generate link lists programmatically.** Hand-copying GIDs into HTML by
 typing them out is error-prone (a single mistyped digit breaks the link
 silently). After clustering, write the GID list for each group to a small
-file and use `jq` or python to emit the `<li><a href="...">name</a></li>`
-HTML in one shot:
+JSON file (e.g. `/tmp/<cluster>_gids.json` containing `["gid1","gid2",...]`)
+and use `jq` or python to emit the `<li><a href="...">name</a></li>` HTML in
+one shot. Pass the GID list to `jq` with `--slurpfile`, which loads the file
+into an outer array - hence the `[0]` index in the filter:
 
 ```
-jq -r --arg pgid 1206584483643184 '.[] | select(.gid as $g | $cluster_gids | index($g)) |
-  "<li><a href=\"https://app.asana.com/0/" + $pgid + "/" + .gid + "\">" + .name + "</a></li>"' \
+jq -r --arg pgid 1206584483643184 --slurpfile cluster_gids /tmp/<cluster>_gids.json \
+  '.[] | select(.gid as $g | $cluster_gids[0] | index($g)) |
+   "<li><a href=\"https://app.asana.com/0/" + $pgid + "/" + .gid + "\">" + .name + "</a></li>"' \
   /tmp/<bucket>_all.json
 ```
+
+If you prefer to pass the list inline instead of writing a file, use
+`--argjson cluster_gids '["gid1","gid2"]'` and drop the `[0]` (the filter
+becomes `$cluster_gids | index($g)`).
 
 This also makes the per-cluster metadata extraction in step 6 cheaper because
 the same `cluster_gids` file is reused.

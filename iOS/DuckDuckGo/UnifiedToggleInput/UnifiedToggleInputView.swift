@@ -20,6 +20,7 @@
 import AIChat
 import Combine
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import UIComponents
 import UIKit
 
@@ -78,20 +79,20 @@ final class UnifiedToggleInputView: UIView {
         static let toolbarHeight: CGFloat = 56
         static let expandedBorderWidth: CGFloat = 0.5
         static let inlineDismissSize: CGFloat = 40
-        static let inlineDismissTrailingPadding: CGFloat = 8
-        static let toggleInlineDismissSpacing: CGFloat = 6
-        /// Spacing between the inline dismiss button and the field's trailing edge when the
+        static let inlineDismissLeadingPadding: CGFloat = 8
+        static let toggleInlineDismissSpacing: CGFloat = 8
+        /// Spacing between the inline dismiss button and the field's leading content when the
         /// dismiss shares the field row (toggle disabled, top position).
         static let fieldRowInlineDismissSpacing: CGFloat = 4
 
-        /// Trailing constant for the toggle when the inline dismiss button shares the top row.
-        static var toggleTrailingWithInlineDismiss: CGFloat {
-            -(inlineDismissTrailingPadding + inlineDismissSize + toggleInlineDismissSpacing)
+        /// Leading constant for the toggle when the inline dismiss button shares the top row.
+        static var toggleLeadingWithInlineDismiss: CGFloat {
+            inlineDismissLeadingPadding + inlineDismissSize + toggleInlineDismissSpacing
         }
 
-        /// Trailing constant for the text entry field when the inline dismiss shares the field row.
-        static var textEntryViewTrailingWithInlineDismiss: CGFloat {
-            -(inlineDismissTrailingPadding + inlineDismissSize + fieldRowInlineDismissSpacing)
+        /// Leading constant for the text entry field when the inline dismiss shares the field row.
+        static var textEntryViewLeadingWithInlineDismiss: CGFloat {
+            inlineDismissLeadingPadding + inlineDismissSize + fieldRowInlineDismissSpacing
         }
 
         static let allCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
@@ -313,13 +314,13 @@ final class UnifiedToggleInputView: UIView {
     private var cardBottomConstraint: NSLayoutConstraint!
     private var cardCollapsedHeightConstraint: NSLayoutConstraint!
     private var toggleTopConstraint: NSLayoutConstraint!
-    private var toggleTrailingConstraint: NSLayoutConstraint!
+    private var toggleLeadingConstraint: NSLayoutConstraint!
     private var toggleHeightConstraint: NSLayoutConstraint!
     private var inlineDismissHeightConstraint: NSLayoutConstraint!
     private var inlineDismissTopConstraint: NSLayoutConstraint!
     private var inlineDismissCenterYConstraint: NSLayoutConstraint!
     private var inputTopConstraint: NSLayoutConstraint!
-    private var textEntryViewTrailingConstraint: NSLayoutConstraint!
+    private var textEntryViewLeadingConstraint: NSLayoutConstraint!
     private var toolbarBottomConstraint: NSLayoutConstraint!
     private var attachmentsStripHeightConstraint: NSLayoutConstraint!
     private var toolbarHeightConstraint: NSLayoutConstraint!
@@ -527,16 +528,16 @@ final class UnifiedToggleInputView: UIView {
             self.cardBottomConstraint.constant = -bottomMargin
             self.toggleTopConstraint.constant = (expanded && effectiveToggleEnabled) ? Constants.toggleTopPadding : 0
             self.toggleHeightConstraint.constant = toggleHeight
-            self.toggleTrailingConstraint.constant = reservesInlineDismissSpace
-                ? Constants.toggleTrailingWithInlineDismiss
-                : -Constants.toggleHorizontalPadding
+            self.toggleLeadingConstraint.constant = reservesInlineDismissSpace
+                ? Constants.toggleLeadingWithInlineDismiss
+                : Constants.toggleHorizontalPadding
             let toggleDisabledSearchPadding = expanded && !self.isToggleEnabled && self.handler.currentToggleState == .search
             self.inputTopConstraint.constant = expanded && effectiveToggleEnabled ? Constants.toggleBottomPadding : (toggleDisabledSearchPadding ? Constants.toggleDisabledSearchTopPadding : 0)
             self.toolbarBottomConstraint.constant = toggleDisabledSearchPadding ? -Constants.toggleDisabledSearchTopPadding : 0
             self.toggleView.alpha = (expanded && effectiveToggleEnabled) ? 1 : 0
             self.applyInlineDismissVerticalAnchor(useFieldRowAnchor: showFieldRowInlineDismiss)
             self.applyInlineDismissVisibility(showInlineDismiss || showFieldRowInlineDismiss)
-            self.applyTextEntryViewTrailingInset(showFieldRowInlineDismiss: showFieldRowInlineDismiss)
+            self.applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: showFieldRowInlineDismiss)
             self.toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
             self.toolsToolbar.alpha = showToolbar ? 1 : 0
             self.updateAttachmentsStripLayout()
@@ -733,12 +734,12 @@ private extension UnifiedToggleInputView {
         let isAtTop = isExpanded && cardPosition == .top
         let showToggleRowDismiss = isAtTop && isToggleEnabled
         let showFieldRowDismiss = isAtTop && !isToggleEnabled
-        toggleTrailingConstraint.constant = isAtTop
-            ? Constants.toggleTrailingWithInlineDismiss
-            : -Constants.toggleHorizontalPadding
+        toggleLeadingConstraint.constant = isAtTop
+            ? Constants.toggleLeadingWithInlineDismiss
+            : Constants.toggleHorizontalPadding
         applyInlineDismissVerticalAnchor(useFieldRowAnchor: showFieldRowDismiss)
         applyInlineDismissVisibility(showToggleRowDismiss || showFieldRowDismiss)
-        applyTextEntryViewTrailingInset(showFieldRowInlineDismiss: showFieldRowDismiss)
+        applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: showFieldRowDismiss)
         layoutIfNeeded()
     }
 
@@ -765,11 +766,11 @@ private extension UnifiedToggleInputView {
         }
     }
 
-    /// Pulls the text entry field's trailing edge in to leave room for the inline dismiss
+    /// Pushes the text entry field's leading edge in to leave room for the inline dismiss
     /// when it shares the field row, otherwise lets the field span the card's full width.
-    func applyTextEntryViewTrailingInset(showFieldRowInlineDismiss: Bool) {
-        textEntryViewTrailingConstraint.constant = showFieldRowInlineDismiss
-            ? Constants.textEntryViewTrailingWithInlineDismiss
+    func applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: Bool) {
+        textEntryViewLeadingConstraint.constant = showFieldRowInlineDismiss
+            ? Constants.textEntryViewLeadingWithInlineDismiss
             : 0
     }
 
@@ -782,14 +783,12 @@ private extension UnifiedToggleInputView {
     /// design calls for a flat control.
     static func makeInlineDismissButton() -> UIButton {
         let button = UIButton(type: .system)
-        let image = UIImage(systemName: "xmark")?
-            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium))
-        button.setImage(image, for: .normal)
+        button.setImage(DesignSystemImages.Glyphs.Size24.chevronLeft, for: .normal)
         button.tintColor = UIColor(designSystemColor: .icons)
         button.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
         button.layer.cornerRadius = Constants.inlineDismissSize / 2
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.accessibilityLabel = UserText.keyCommandClose
+        button.accessibilityLabel = UserText.backButtonTitle
         button.alpha = 0
         button.isUserInteractionEnabled = false
         return button
@@ -905,12 +904,12 @@ private extension UnifiedToggleInputView {
         cardCollapsedHeightConstraint.isActive = true
         toggleTopConstraint = toggleView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 0)
         toggleHeightConstraint = toggleView.heightAnchor.constraint(equalToConstant: 0)
-        toggleTrailingConstraint = toggleView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -Constants.toggleHorizontalPadding)
+        toggleLeadingConstraint = toggleView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.toggleHorizontalPadding)
         inlineDismissHeightConstraint = inlineDismissButton.heightAnchor.constraint(equalToConstant: 0)
         inlineDismissTopConstraint = inlineDismissButton.topAnchor.constraint(equalTo: cardView.topAnchor, constant: Constants.toggleTopPadding)
         inlineDismissCenterYConstraint = inlineDismissButton.centerYAnchor.constraint(equalTo: textEntryView.centerYAnchor)
         inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
-        textEntryViewTrailingConstraint = textEntryView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor)
+        textEntryViewLeadingConstraint = textEntryView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor)
         toolbarBottomConstraint = toolsToolbar.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
         attachmentsStripHeightConstraint = attachmentsStrip.heightAnchor.constraint(equalToConstant: 0)
         toolbarHeightConstraint = toolsToolbar.heightAnchor.constraint(equalToConstant: 0)
@@ -922,18 +921,18 @@ private extension UnifiedToggleInputView {
             cardBottomConstraint,
 
             toggleTopConstraint,
-            toggleView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.toggleHorizontalPadding),
-            toggleTrailingConstraint,
+            toggleLeadingConstraint,
+            toggleView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -Constants.toggleHorizontalPadding),
             toggleHeightConstraint,
 
             inlineDismissTopConstraint,
-            inlineDismissButton.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -Constants.inlineDismissTrailingPadding),
+            inlineDismissButton.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.inlineDismissLeadingPadding),
             inlineDismissButton.widthAnchor.constraint(equalToConstant: Constants.inlineDismissSize),
             inlineDismissHeightConstraint,
 
             inputTopConstraint,
-            textEntryView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
-            textEntryViewTrailingConstraint,
+            textEntryViewLeadingConstraint,
+            textEntryView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
 
             attachmentsStrip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
             attachmentsStrip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),

@@ -328,7 +328,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             httpTimeout: 10, stunTimeout: 5,
             periodicInterval: 0.2,
             cooldown: 0,
-            tunnelStartDelay: 0
+            debounceDelay: 0
         )
         let service = VPNLeakCheckService(
             configuration: config,
@@ -360,7 +360,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             httpTimeout: 10, stunTimeout: 5,
             periodicInterval: 60 * 60,
             cooldown: 60,
-            tunnelStartDelay: 0
+            debounceDelay: 0
         )
         let service = VPNLeakCheckService(
             configuration: config,
@@ -387,7 +387,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             httpTimeout: 10, stunTimeout: 5,
             periodicInterval: 60 * 60,
             cooldown: 60,
-            tunnelStartDelay: 0
+            debounceDelay: 0
         )
         let service = VPNLeakCheckService(
             configuration: config,
@@ -414,7 +414,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             httpTimeout: 10, stunTimeout: 5,
             periodicInterval: 60 * 60,
             cooldown: 60,
-            tunnelStartDelay: 0
+            debounceDelay: 0
         )
         let service = VPNLeakCheckService(
             configuration: config,
@@ -493,6 +493,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertGreaterThan(wideEvent.discardedCount, 0)
+        await service.stop()
     }
 
     func testRunCheckAfterStop_isNoOp() async {
@@ -515,7 +516,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         XCTAssertNil(wideEvent.lastCompletedData)
     }
 
-    func testScheduleCheck_tunnelStart_honorsConfiguredDelay() async throws {
+    func testScheduleCheck_tunnelStart_honorsDebounceDelay() async throws {
         let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let wideEvent = MockWideEventManager()
@@ -525,7 +526,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             httpTimeout: 10, stunTimeout: 5,
             periodicInterval: 60 * 60,
             cooldown: 0,
-            tunnelStartDelay: 0.3
+            debounceDelay: 0.3
         )
         let service = VPNLeakCheckService(
             configuration: config,
@@ -545,12 +546,20 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         XCTAssertEqual(wideEvent.lastCompletedData?.trigger, .tunnelStart)
     }
 
-    func testScheduleCheck_reassert_runsImmediately() async {
+    func testScheduleCheck_reassert_honorsDebounceDelay() async {
         let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let wideEvent = MockWideEventManager()
+        let config = LeakCheckConfiguration(
+            host: "leakcheck.netp.duckduckgo.com",
+            httpPort: 80, httpsPort: 443, stunPort: 3478,
+            httpTimeout: 10, stunTimeout: 5,
+            periodicInterval: 60 * 60,
+            cooldown: 0,
+            debounceDelay: 0.3
+        )
         let service = VPNLeakCheckService(
-            configuration: .default,
+            configuration: config,
             egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
@@ -559,10 +568,133 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         )
 
         await service.scheduleCheck(trigger: .reassert)
-        try? await Task.sleep(nanoseconds: 200_000_000)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(wideEvent.startedFlows.count, 0, "reassert should wait for the debounce delay")
+
+        try? await Task.sleep(nanoseconds: 400_000_000)
 
         XCTAssertEqual(wideEvent.startedFlows.count, 1)
         XCTAssertEqual(wideEvent.lastCompletedData?.trigger, .reassert)
+    }
+
+    func testScheduleCheck_periodic_runsImmediately() async {
+        let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let config = LeakCheckConfiguration(
+            host: "leakcheck.netp.duckduckgo.com",
+            httpPort: 80, httpsPort: 443, stunPort: 3478,
+            httpTimeout: 10, stunTimeout: 5,
+            periodicInterval: 60 * 60,
+            cooldown: 0,
+            debounceDelay: 0.3
+        )
+        let service = VPNLeakCheckService(
+            configuration: config,
+            egressInfo: makeEgressInfoProvider(),
+            tunnelInterface: { Self.systemInterface },
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent
+        )
+
+        await service.scheduleCheck(trigger: .periodic)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(wideEvent.startedFlows.count, 1)
+        XCTAssertEqual(wideEvent.lastCompletedData?.trigger, .periodic)
+    }
+
+    func testScheduleCheck_periodicDoesNotCancelPendingPathChangeCheck() async {
+        let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let config = LeakCheckConfiguration(
+            host: "leakcheck.netp.duckduckgo.com",
+            httpPort: 80, httpsPort: 443, stunPort: 3478,
+            httpTimeout: 10, stunTimeout: 5,
+            periodicInterval: 60 * 60,
+            cooldown: 0,
+            debounceDelay: 0.3
+        )
+        let service = VPNLeakCheckService(
+            configuration: config,
+            egressInfo: makeEgressInfoProvider(),
+            tunnelInterface: { Self.systemInterface },
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent
+        )
+
+        await service.scheduleCheck(trigger: .rekey)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        await service.scheduleCheck(trigger: .periodic)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(wideEvent.startedFlows.count, 0, "periodic should not interrupt a pending path-change debounce")
+
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertEqual(wideEvent.startedFlows.count, 1)
+        XCTAssertEqual(wideEvent.lastCompletedData?.trigger, .rekey)
+    }
+
+    func testRunCheck_periodicSkipsWhilePathChangeCheckIsPending() async {
+        let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let config = LeakCheckConfiguration(
+            host: "leakcheck.netp.duckduckgo.com",
+            httpPort: 80, httpsPort: 443, stunPort: 3478,
+            httpTimeout: 10, stunTimeout: 5,
+            periodicInterval: 60 * 60,
+            cooldown: 0,
+            debounceDelay: 0.3
+        )
+        let service = VPNLeakCheckService(
+            configuration: config,
+            egressInfo: makeEgressInfoProvider(),
+            tunnelInterface: { Self.systemInterface },
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent
+        )
+
+        await service.scheduleCheck(trigger: .rekey)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        await service.runCheck(trigger: .periodic)
+        XCTAssertEqual(wideEvent.startedFlows.count, 0, "periodic timer should not sample during a path-change debounce")
+
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertEqual(wideEvent.startedFlows.count, 1)
+        XCTAssertEqual(wideEvent.lastCompletedData?.trigger, .rekey)
+    }
+
+    func testScheduleCheck_pathChangeCancelsInflightCheck() async {
+        let http = SlowMockHTTPClient(delaySeconds: 5)
+        let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManagerWithPending()
+        let config = LeakCheckConfiguration(
+            host: "leakcheck.netp.duckduckgo.com",
+            httpPort: 80, httpsPort: 443, stunPort: 3478,
+            httpTimeout: 10, stunTimeout: 5,
+            periodicInterval: 60 * 60,
+            cooldown: 0,
+            debounceDelay: 0.3
+        )
+        let service = VPNLeakCheckService(
+            configuration: config,
+            egressInfo: makeEgressInfoProvider(),
+            tunnelInterface: { Self.systemInterface },
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent
+        )
+
+        Task { await service.runCheck(trigger: .periodic) }
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        await service.scheduleCheck(trigger: .rekey)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertGreaterThan(wideEvent.discardedCount, 0)
     }
 
     func testScheduleCheck_stopBeforeDelayElapses_cancelsPendingCheck() async {
@@ -575,7 +707,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             httpTimeout: 10, stunTimeout: 5,
             periodicInterval: 60 * 60,
             cooldown: 0,
-            tunnelStartDelay: 0.5
+            debounceDelay: 0.5
         )
         let service = VPNLeakCheckService(
             configuration: config,
@@ -605,7 +737,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             httpTimeout: 10, stunTimeout: 5,
             periodicInterval: 60 * 60,
             cooldown: 0,
-            tunnelStartDelay: 0.4
+            debounceDelay: 0.4
         )
         let service = VPNLeakCheckService(
             configuration: config,
@@ -643,6 +775,36 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 200_000_000)
 
         XCTAssertEqual(wideEvent.startedFlows.count, 0)
+    }
+
+    func testPathGenerationChange_duringInflightCheck_completesAsInterrupted() async {
+        let http = SlowMockHTTPClient(delaySeconds: 0.3, returnIP: "5.6.7.8")
+        let stun = MockLeakCheckSTUNClient(ipv4: "5.6.7.8", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let generation = MutablePathGenerationBox(0)
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressInfo: makeEgressInfoProvider(),
+            tunnelInterface: { Self.systemInterface },
+            tunnelPathGeneration: { generation.value },
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent
+        )
+
+        async let checkTask: Void = service.runCheck(trigger: .periodic)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        generation.value = 1
+        _ = await checkTask
+
+        if case .unknown(let reason) = wideEvent.lastCompletedStatus {
+            XCTAssertEqual(reason, "check_interrupted")
+        } else {
+            XCTFail("expected UNKNOWN status")
+        }
+        XCTAssertEqual(wideEvent.lastCompletedData?.statusReason, "check_interrupted")
+        XCTAssertNil(wideEvent.lastCompletedData?.ipv4Http)
+        XCTAssertNil(wideEvent.lastCompletedData?.ipv4LeakIPType)
     }
 
     func testCompletePendingFlows_completesWithInterruptedReason() {
@@ -705,6 +867,20 @@ final class MutableEgressInfoBox: @unchecked Sendable {
     }
 
     var value: LeakCheckEgressInfo? {
+        get { lock.lock(); defer { lock.unlock() }; return _value }
+        set { lock.lock(); defer { lock.unlock() }; _value = newValue }
+    }
+}
+
+final class MutablePathGenerationBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _value: UInt64
+
+    init(_ initial: UInt64) {
+        self._value = initial
+    }
+
+    var value: UInt64 {
         get { lock.lock(); defer { lock.unlock() }; return _value }
         set { lock.lock(); defer { lock.unlock() }; _value = newValue }
     }

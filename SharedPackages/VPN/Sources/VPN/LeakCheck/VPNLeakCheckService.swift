@@ -26,18 +26,23 @@ public actor VPNLeakCheckService {
 
     public typealias TunnelInterfaceProvider = @Sendable () async -> NWInterface?
     public typealias EgressInfoProvider = @Sendable () async -> LeakCheckEgressInfo?
+    public typealias TunnelPathGenerationProvider = @Sendable () async -> UInt64
 
     private let configuration: LeakCheckConfiguration
     private let egressInfo: EgressInfoProvider
     private let tunnelInterface: TunnelInterfaceProvider
+    private let tunnelPathGeneration: TunnelPathGenerationProvider
     private let httpClient: LeakCheckHTTPClient
     private let stunClient: LeakCheckSTUNClient
     private let wideEvent: WideEventManaging
 
     private var currentCheck: Task<Void, Never>?
+    private var currentCheckID: UInt64 = 0
     private var lastCompletionDate: Date?
     private var periodicTask: Task<Void, Never>?
     private var scheduledCheck: Task<Void, Never>?
+    private var scheduledCheckID: UInt64 = 0
+    private var scheduledTrigger: LeakCheckTrigger?
     private var isStopped = false
 
     /// The service resolves both the tunnel `NWInterface` and the egress info live at the start of
@@ -54,6 +59,7 @@ public actor VPNLeakCheckService {
         configuration: LeakCheckConfiguration = .default,
         egressInfo: @escaping EgressInfoProvider,
         tunnelInterface: @escaping TunnelInterfaceProvider,
+        tunnelPathGeneration: @escaping TunnelPathGenerationProvider = { 0 },
         httpClient: LeakCheckHTTPClient,
         stunClient: LeakCheckSTUNClient,
         wideEvent: WideEventManaging
@@ -61,6 +67,7 @@ public actor VPNLeakCheckService {
         self.configuration = configuration
         self.egressInfo = egressInfo
         self.tunnelInterface = tunnelInterface
+        self.tunnelPathGeneration = tunnelPathGeneration
         self.httpClient = httpClient
         self.stunClient = stunClient
         self.wideEvent = wideEvent
@@ -78,6 +85,7 @@ public actor VPNLeakCheckService {
         periodicTask = nil
         scheduledCheck?.cancel()
         scheduledCheck = nil
+        scheduledTrigger = nil
         if let task = currentCheck {
             task.cancel()
             currentCheck = nil
@@ -87,8 +95,8 @@ public actor VPNLeakCheckService {
         }
     }
 
-    /// Schedules a leak check that runs after the trigger's natural delay
-    /// (`tunnelStartDelay` for `.tunnelStart`, immediate for `.reassert`/`.periodic`/`.rekey`).
+    /// Schedules a leak check that runs after the trigger's natural delay:
+    /// `debounceDelay` for tunnel path changes, immediate for `.periodic`.
     ///
     /// The latest schedule wins: a pending scheduled check is cancelled and replaced. This collapses
     /// rapid bursts (e.g. manual start → reconnect) into a single check using the freshest trigger,
@@ -99,16 +107,39 @@ public actor VPNLeakCheckService {
             return
         }
 
-        scheduledCheck?.cancel()
+        guard trigger != .periodic else {
+            guard scheduledTrigger == nil else {
+                Logger.networkProtectionIPLeakCheck.log("Skipping periodic leak check — tunnel path check pending")
+                return
+            }
+            Task { [weak self] in
+                await self?.runCheck(trigger: trigger)
+            }
+            return
+        }
 
-        let delay: TimeInterval = trigger == .tunnelStart ? configuration.tunnelStartDelay : 0
+        scheduledCheck?.cancel()
+        currentCheck?.cancel()
+        currentCheck = nil
+        scheduledCheckID &+= 1
+        let checkID = scheduledCheckID
+        scheduledTrigger = trigger
+
+        let delay = configuration.debounceDelay
         scheduledCheck = Task { [weak self] in
             if delay > 0 {
                 try? await Task.sleep(interval: delay)
             }
             guard !Task.isCancelled else { return }
             await self?.runCheck(trigger: trigger)
+            await self?.clearScheduledCheck(id: checkID)
         }
+    }
+
+    private func clearScheduledCheck(id: UInt64) {
+        guard scheduledCheckID == id else { return }
+        scheduledCheck = nil
+        scheduledTrigger = nil
     }
 
     public static func completeAllPendingFlows(wideEvent: WideEventManaging) {
@@ -130,6 +161,10 @@ public actor VPNLeakCheckService {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — service stopped (trigger: \(trigger.rawValue, privacy: .public))")
             return
         }
+        guard trigger != .periodic || bypassCooldown || scheduledTrigger == nil else {
+            Logger.networkProtectionIPLeakCheck.log("Skipping periodic leak check — tunnel path check pending")
+            return
+        }
         guard currentCheck == nil else {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — already in flight (trigger: \(trigger.rawValue, privacy: .public))")
             return
@@ -145,15 +180,19 @@ public actor VPNLeakCheckService {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — cooldown active (trigger: \(trigger.rawValue, privacy: .public))")
             return
         }
-        let task = Task { await executeCheck(trigger: trigger) }
+        currentCheckID &+= 1
+        let checkID = currentCheckID
+        let task = Task { await executeCheck(trigger: trigger, id: checkID) }
         currentCheck = task
         await task.value
     }
 
-    private func executeCheck(trigger: LeakCheckTrigger) async {
+    private func executeCheck(trigger: LeakCheckTrigger, id: UInt64) async {
         defer {
-            currentCheck = nil
-            if !Task.isCancelled {
+            if currentCheckID == id {
+                currentCheck = nil
+            }
+            if currentCheckID == id && !Task.isCancelled {
                 lastCompletionDate = Date()
             }
         }
@@ -164,6 +203,7 @@ public actor VPNLeakCheckService {
 
         Logger.networkProtectionIPLeakCheck.log("🟢 Starting leak check (trigger: \(trigger.rawValue, privacy: .public))")
 
+        let pathGenerationSnapshot = await tunnelPathGeneration()
         guard let egressInfoSnapshot = await egressInfo() else {
             Logger.networkProtectionIPLeakCheck.log("🔴 Skipping leak check — egress info unavailable (trigger: \(trigger.rawValue, privacy: .public))")
             return
@@ -181,6 +221,21 @@ public actor VPNLeakCheckService {
         let egressIPSnapshot = egressInfoSnapshot.ipAddress
         let startDate = Date()
         let results = await runAllLeakTests(tunnelInterface: tunnelInterfaceSnapshot)
+
+        data.latencyMsBucketed = bucketedLatency(Date().timeIntervalSince(startDate))
+
+        if Task.isCancelled {
+            Logger.networkProtectionIPLeakCheck.log("🔴 Leak check cancelled — discarding flow (trigger: \(trigger.rawValue, privacy: .public))")
+            wideEvent.discardFlow(data)
+            return
+        }
+
+        guard await tunnelPathGeneration() == pathGenerationSnapshot else {
+            Logger.networkProtectionIPLeakCheck.log("🔴 Leak check interrupted by tunnel path change (trigger: \(trigger.rawValue, privacy: .public))")
+            data.statusReason = "check_interrupted"
+            wideEvent.completeFlow(data, status: .unknown(reason: "check_interrupted"), onComplete: { _, _ in })
+            return
+        }
 
         Logger.networkProtectionIPLeakCheck.debug(
             "IP comparison — expected: \(egressIPSnapshot, privacy: .public), got ipv4[http: \(Self.describeIP(results.ipv4Http), privacy: .public), https: \(Self.describeIP(results.ipv4Https), privacy: .public), stun: \(Self.describeIP(results.ipv4Stun), privacy: .public)], ipv6[http: \(Self.describeIP(results.ipv6Http), privacy: .public), https: \(Self.describeIP(results.ipv6Https), privacy: .public), stun: \(Self.describeIP(results.ipv6Stun), privacy: .public)]"
@@ -204,18 +259,11 @@ public actor VPNLeakCheckService {
             data.ipv6LeakIPType = IPAddressClassifier.classify(leakedIP)
         }
 
-        data.latencyMsBucketed = bucketedLatency(Date().timeIntervalSince(startDate))
-
         let status = determineStatus(data: data)
         if case .unknown(let reason) = status {
             data.statusReason = reason
         }
 
-        if Task.isCancelled {
-            Logger.networkProtectionIPLeakCheck.log("🔴 Leak check cancelled — discarding flow (trigger: \(trigger.rawValue, privacy: .public))")
-            wideEvent.discardFlow(data)
-            return
-        }
         Logger.networkProtectionIPLeakCheck.log(
             "🟢 Leak check complete (trigger: \(trigger.rawValue, privacy: .public), status: \(Self.describeStatus(status), privacy: .public), latency: \(data.latencyMsBucketed ?? 0, privacy: .public)ms, \(Self.describeResults(data), privacy: .public))"
         )
@@ -313,6 +361,8 @@ public actor VPNLeakCheckService {
             case .dns:
                 return true
             case .tls:
+                return false
+            case .wifiAware:
                 return false
             @unknown default:
                 return false

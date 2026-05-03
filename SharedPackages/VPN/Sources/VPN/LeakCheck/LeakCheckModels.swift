@@ -99,7 +99,7 @@ public struct LeakCheckConfiguration {
     public let stunTimeout: TimeInterval
     public let periodicInterval: TimeInterval
     public let cooldown: TimeInterval
-    public let tunnelStartDelay: TimeInterval
+    public let debounceDelay: TimeInterval
 
     public static let `default` = LeakCheckConfiguration(
         host: "leakcheck.netp.duckduckgo.com",
@@ -110,7 +110,7 @@ public struct LeakCheckConfiguration {
         stunTimeout: 5,
         periodicInterval: 4 * 60 * 60,
         cooldown: 30,
-        tunnelStartDelay: 5
+        debounceDelay: 5
     )
 
     public init(
@@ -122,7 +122,7 @@ public struct LeakCheckConfiguration {
         stunTimeout: TimeInterval,
         periodicInterval: TimeInterval,
         cooldown: TimeInterval,
-        tunnelStartDelay: TimeInterval
+        debounceDelay: TimeInterval
     ) {
         self.host = host
         self.httpPort = httpPort
@@ -132,6 +132,6 @@ public struct LeakCheckConfiguration {
         self.stunTimeout = stunTimeout
         self.periodicInterval = periodicInterval
         self.cooldown = cooldown
-        self.tunnelStartDelay = tunnelStartDelay
+        self.debounceDelay = debounceDelay
     }
 }

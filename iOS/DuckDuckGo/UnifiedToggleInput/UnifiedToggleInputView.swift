@@ -318,9 +318,7 @@ final class UnifiedToggleInputView: UIView {
     private var cardBottomConstraint: NSLayoutConstraint!
     private var cardCollapsedHeightConstraint: NSLayoutConstraint!
     private var toggleTopConstraint: NSLayoutConstraint!
-    private var toggleLeadingConstraint: NSLayoutConstraint!
     private var toggleHeightConstraint: NSLayoutConstraint!
-    private var inlineDismissHeightConstraint: NSLayoutConstraint!
     private var inlineDismissTopConstraint: NSLayoutConstraint!
     private var inlineDismissCenterYConstraint: NSLayoutConstraint!
     private var inputTopConstraint: NSLayoutConstraint!
@@ -473,13 +471,11 @@ final class UnifiedToggleInputView: UIView {
         let effectiveToggleEnabled = isToggleEnabled && showToggle
         let toggleHeight: CGFloat = (expanded && effectiveToggleEnabled) ? Constants.toggleHeight : 0
         let showToolbar = expanded && effectiveToggleEnabled && toggleView.selectedMode == .aiChat
-        // The card reserves space for the inline dismiss whenever it's expanded, so the
-        // toggle's width is stable across the toggle-hidden transient. Visibility of the
-        // dismiss itself is gated on the toggle actually being shown, so the back button
-        // can fade in together with the toggle via `applyToggleRevealChanges` rather than
-        // snapping in on activation.
-        let reservesInlineDismissSpace = expanded
-        let showInlineDismiss = reservesInlineDismissSpace && effectiveToggleEnabled
+        // The toggle's leading slot is permanently reserved for the back button so the
+        // toggle doesn't slide right as it fades in. Visibility of the dismiss itself is
+        // gated on the toggle actually being shown, so the back button can fade in together
+        // with the toggle via `applyToggleRevealChanges` rather than snapping in on activation.
+        let showInlineDismiss = expanded && effectiveToggleEnabled
         // When the toggle is disabled by the user, the dismiss moves into the field row
         // alongside the inline buttons. Keyed on `isToggleEnabled` (not
         // `effectiveToggleEnabled`) so the dismiss stays hidden during the toggle-on
@@ -534,9 +530,6 @@ final class UnifiedToggleInputView: UIView {
             self.cardBottomConstraint.constant = -bottomMargin
             self.toggleTopConstraint.constant = (expanded && effectiveToggleEnabled) ? Constants.toggleTopPadding : 0
             self.toggleHeightConstraint.constant = toggleHeight
-            self.toggleLeadingConstraint.constant = reservesInlineDismissSpace
-                ? Constants.toggleLeadingWithInlineDismiss
-                : Constants.toggleHorizontalPadding
             let toggleDisabledSearchPadding = expanded && !self.isToggleEnabled && self.handler.currentToggleState == .search
             let toggleEnabledNoToolbarPadding = expanded && effectiveToggleEnabled && !showToolbar
             self.inputTopConstraint.constant = expanded && effectiveToggleEnabled ? Constants.toggleBottomPadding : (toggleDisabledSearchPadding ? Constants.toggleDisabledSearchTopPadding : 0)
@@ -742,28 +735,24 @@ final class UnifiedToggleInputView: UIView {
 
 private extension UnifiedToggleInputView {
 
-    /// Updates layout and opacity so the toggle either reserves space for the inline dismiss
-    /// button or expands to fill the card's top row. Safe to call outside of animation blocks.
+    /// Refreshes the inline dismiss button's row anchor, opacity, and the field's leading
+    /// inset. Safe to call outside of animation blocks.
     func refreshInlineDismissPresentation() {
         let showToggleRowDismiss = isExpanded && isToggleEnabled
         let showFieldRowDismiss = isExpanded && !isToggleEnabled
-        toggleLeadingConstraint.constant = isExpanded
-            ? Constants.toggleLeadingWithInlineDismiss
-            : Constants.toggleHorizontalPadding
         applyInlineDismissVerticalAnchor(useFieldRowAnchor: showFieldRowDismiss)
         applyInlineDismissVisibility(showToggleRowDismiss || showFieldRowDismiss)
         applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: showFieldRowDismiss)
         layoutIfNeeded()
     }
 
-    /// Apply visibility without touching the toggle trailing constraint. Intended for use
-    /// inside existing animation blocks so that opacity and layout animate together.
-    /// The height collapses to 0 when hidden so the button grows/shrinks alongside the
-    /// toggle's own height animation, mirroring its reveal behaviour.
+    /// Apply visibility without touching the toggle's leading constraint. Intended for use
+    /// inside existing animation blocks so that opacity animates with the surrounding layout.
+    /// The button is laid out at its full size at all times — only opacity is toggled — so
+    /// the chevron icon never renders into a partially-collapsed frame mid-animation.
     func applyInlineDismissVisibility(_ visible: Bool) {
         inlineDismissButton.alpha = visible ? 1 : 0
         inlineDismissButton.isUserInteractionEnabled = visible
-        inlineDismissHeightConstraint.constant = visible ? Constants.inlineDismissSize : 0
     }
 
     /// Switches the inline dismiss button between the toggle-row anchor (top of card) and the
@@ -916,8 +905,6 @@ private extension UnifiedToggleInputView {
         cardCollapsedHeightConstraint.isActive = true
         toggleTopConstraint = toggleView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 0)
         toggleHeightConstraint = toggleView.heightAnchor.constraint(equalToConstant: 0)
-        toggleLeadingConstraint = toggleView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.toggleHorizontalPadding)
-        inlineDismissHeightConstraint = inlineDismissButton.heightAnchor.constraint(equalToConstant: 0)
         inlineDismissTopConstraint = inlineDismissButton.topAnchor.constraint(equalTo: cardView.topAnchor, constant: Constants.toggleTopPadding)
         inlineDismissCenterYConstraint = inlineDismissButton.centerYAnchor.constraint(equalTo: textEntryView.centerYAnchor)
         inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
@@ -933,14 +920,14 @@ private extension UnifiedToggleInputView {
             cardBottomConstraint,
 
             toggleTopConstraint,
-            toggleLeadingConstraint,
+            toggleView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.toggleLeadingWithInlineDismiss),
             toggleView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -Constants.toggleHorizontalPadding),
             toggleHeightConstraint,
 
             inlineDismissTopConstraint,
             inlineDismissButton.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.inlineDismissLeadingPadding),
             inlineDismissButton.widthAnchor.constraint(equalToConstant: Constants.inlineDismissSize),
-            inlineDismissHeightConstraint,
+            inlineDismissButton.heightAnchor.constraint(equalToConstant: Constants.inlineDismissSize),
 
             inputTopConstraint,
             textEntryViewLeadingConstraint,

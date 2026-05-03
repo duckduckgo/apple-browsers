@@ -130,6 +130,15 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         )
     }
 
+    func test_fileMetadataValidation_whenLimitsAreMissing_returnsUnavailableMessage() {
+        let policy = makePolicy(includeAttachmentLimits: false)
+
+        XCTAssertEqual(
+            policy.fileMetadataValidationMessage(mimeType: "application/pdf", fileSizeBytes: 100),
+            UserText.aiChatAttachmentUnavailable
+        )
+    }
+
     func test_fileValidation_rejectsFileAboveRemainingTotalSize() {
         let policy = makePolicy(
             attachmentLimits: makeLimits(maxTotalFileSizeBytes: 5_242_880),
@@ -231,6 +240,15 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         XCTAssertEqual(policy.fileSubmissionValidationMessage(), UserText.aiChatAttachmentFileCountLimit(maxFilesPerConversation: 3))
     }
 
+    func test_fileSubmissionValidation_whenLimitsAreMissing_returnsUnavailableMessage() {
+        let policy = makePolicy(
+            includeAttachmentLimits: false,
+            pendingAttachments: [makeFileAttachment()]
+        )
+
+        XCTAssertEqual(policy.fileSubmissionValidationMessage(), UserText.aiChatAttachmentUnavailable)
+    }
+
     func test_imageSubmissionValidation_rejectsImagesWhenUsageChangesBeforeSubmit() {
         let policy = makePolicy(
             attachmentLimits: makeLimits(maxImagesPerConversation: 5),
@@ -239,6 +257,24 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         )
 
         XCTAssertEqual(policy.imageSubmissionValidationMessage(), UserText.aiChatAttachmentImageCountLimit(maxImagesPerConversation: 5))
+    }
+
+    func test_imageSubmissionValidation_whenLimitsAreMissing_returnsUnavailableMessage() {
+        let policy = makePolicy(
+            includeAttachmentLimits: false,
+            pendingAttachments: [makeImage()]
+        )
+
+        XCTAssertEqual(policy.imageSubmissionValidationMessage(), UserText.aiChatAttachmentUnavailable)
+    }
+
+    func test_imageSubmissionValidation_rejectsImagesAbovePerTurnLimitWithPerTurnMessage() {
+        let policy = makePolicy(
+            attachmentLimits: makeLimits(maxImagesPerTurn: 3, maxImagesPerConversation: 5),
+            pendingAttachments: (0..<4).map { _ in makeImage() }
+        )
+
+        XCTAssertEqual(policy.imageSubmissionValidationMessage(), UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: 3))
     }
 
     private func makePolicy(

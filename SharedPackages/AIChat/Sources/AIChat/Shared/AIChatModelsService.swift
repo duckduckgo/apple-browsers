@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 import WebKit
 
 // MARK: - Cookie Providing
@@ -69,6 +70,7 @@ public struct AIChatModelsResponse: Decodable {
         do {
             attachmentLimits = try container.decodeIfPresent(AIChatAttachmentLimits.self, forKey: .attachmentLimits)
         } catch {
+            Logger.aiChat.error("Failed to decode AI Chat attachment limits: \(error.localizedDescription)")
             attachmentLimits = nil
         }
     }

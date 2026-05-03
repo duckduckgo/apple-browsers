@@ -106,6 +106,9 @@ final class UTIModelStore {
                 self.clearStaleReasoningModeIfNeeded()
                 self.onModelsUpdated?()
             } catch {
+                guard !Task.isCancelled else { return }
+                self.attachmentLimits = nil
+                self.onModelsUpdated?()
                 os_log(.error, "Failed to fetch models: %{public}@", error.localizedDescription)
             }
         }

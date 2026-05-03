@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import SubscriptionTestingUtilities
 import XCTest
 @testable import DuckDuckGo
 
@@ -27,20 +28,26 @@ final class UTIModelStoreTests: XCTestCase {
 
     private var sut: UTIModelStore!
     private var preferences: StubPreferences!
+    private var modelsService: StubModelsService!
+    private var subscriptionManager: SubscriptionManagerMock!
 
     override func setUp() {
         super.setUp()
         preferences = StubPreferences()
+        modelsService = StubModelsService()
+        subscriptionManager = SubscriptionManagerMock()
         sut = UTIModelStore(
-            modelsService: StubModelsService(),
+            modelsService: modelsService,
             preferences: preferences,
-            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
+            subscriptionManager: subscriptionManager
         )
     }
 
     override func tearDown() {
         sut = nil
         preferences = nil
+        modelsService = nil
+        subscriptionManager = nil
         super.tearDown()
     }
 
@@ -241,7 +248,29 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertEqual(preferences.selectedReasoningMode, .fast)
     }
 
+    func test_fetchModels_whenModelFetchFails_clearsAttachmentLimitsAndNotifies() async {
+        let didUpdate = expectation(description: "models updated")
+        modelsService.result = .failure(StubModelsService.StubError.fetchFailed)
+        sut.attachmentLimits = makeLimits()
+        sut.onModelsUpdated = {
+            didUpdate.fulfill()
+        }
+
+        sut.fetchModels()
+
+        await fulfillment(of: [didUpdate], timeout: 1)
+        XCTAssertNil(sut.attachmentLimits)
+        XCTAssertEqual(sut.subscriptionState.userTier, .free)
+    }
+
     // MARK: - Helpers
+
+    private func makeLimits() -> AIChatAttachmentTierLimits {
+        AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 5, maxInputCharsWithAttachments: 4500)
+        )
+    }
 
     private func makeModel(
         id: String,
@@ -275,5 +304,11 @@ private final class StubPreferences: AIChatPreferencesPersisting {
 }
 
 private final class StubModelsService: AIChatModelsProviding {
-    func fetchModels() async throws -> AIChatModelsResponse { AIChatModelsResponse(models: []) }
+    enum StubError: Error {
+        case fetchFailed
+    }
+
+    var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
+
+    func fetchModels() async throws -> AIChatModelsResponse { try result.get() }
 }

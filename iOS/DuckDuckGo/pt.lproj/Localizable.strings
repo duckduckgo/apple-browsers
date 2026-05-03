@@ -1275,6 +1275,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Importar marcadores para o DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Abre o Chrome, acede ao Gestor de Palavras-passe e segue os passos abaixo:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Definições** > **Exportar Dados**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Carrega em **Continuar**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Seleciona **DuckDuckGo** como Destino";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Importar do Chrome";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Concluíste a exportação?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Tens de ir à aplicação Passwords e depois seguir os passos para importar.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Toca em **···** > **Exportar dados para outra aplicação**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Toca em **Selecionar tudo** > **Continuar**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Seleciona **DuckDuckGo** como Destino";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Importar do Passwords";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Primeiro, exporta as tuas palavras-passe e marcadores do Safari e depois volta aqui para carregar o ficheiro.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Exportar do Safari";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Importar do Safari";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Carregar ficheiro exportado...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Não foram encontrados dados compatíveis no ficheiro ZIP. Revê as instruções de exportação do Safari e tenta novamente.";
 
@@ -1284,6 +1329,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Não foi possível ler o ficheiro %@. Pode haver um problema com os dados do ficheiro.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Entendi";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Não foi possível ler o ficheiro %@. Experimenta carregar outro ficheiro ou tenta outro método de importação.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "O ficheiro pode estar corrompido";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Não foram encontrados dados compatíveis no ficheiro ZIP. Revê as instruções de exportação e tenta novamente.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Nenhum dado encontrado";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "O ficheiro selecionado não é compatível. Seleciona um ficheiro diferente e tente novamente.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Ficheiro incompatível";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1358,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Importar para o DuckDuckGo";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Seleciona **Exportar** e, no ecrã seguinte, seleciona **Marcadores** e **Guardar em Transferências**.";
@@ -1303,7 +1372,7 @@
 "data.import.passwords.instructions.chrome.step1" = "No Chrome, acede ao **Gestor de Palavras-passe da Google** e, em seguida, às **Definições**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Seleciona **Exportar palavras-passe**, depois **Guardar em Ficheiros** e guarda o ficheiro numa pasta fácil de memorizar.";
+"data.import.passwords.instructions.chrome.step2" = "Seleciona **Exportar dados**, depois **···** e por fim **Transferir para CSV**. Guarda o ficheiro numa pasta fácil de memorizar.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Como exportar palavras-passe";
@@ -1331,6 +1400,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Importar palavras-passe para o DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Abre Definições para Exportar";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Lembra-te de tocar em\n\"Exportar para Ficheiros\"";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Aplicação Passwords";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Importar de";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Sincronizar de";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo noutro dispositivo";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Marcadores";
@@ -1367,6 +1460,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Palavras-passe";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Queres importar também os teus marcadores do Safari?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Continuar";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Agora não";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Queres importar também as tuas palavras-passe?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Mês passado";
@@ -4274,6 +4379,9 @@
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Código copiado";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Dispositivo sincronizado com sucesso!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sincronização e cópia de segurança ativada";

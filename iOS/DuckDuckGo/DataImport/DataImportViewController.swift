@@ -142,7 +142,12 @@ final class DataImportViewController: UIViewController {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             
-            let summaryViewController = DataImportSummaryViewController(summary: summary, importScreen: importScreen, syncService: syncService) { [weak self] source in
+            let summaryViewController = DataImportSummaryViewController(
+                summary: summary,
+                importScreen: importScreen,
+                syncService: syncService,
+                isSafariImportFlow: viewModel.state.browser == .safari
+            ) { [weak self] source in
                 guard let self = self else { return }
                 let mainVC = self.presentingViewController as? MainViewController ?? self.navigationController?.presentingViewController as? MainViewController
                 

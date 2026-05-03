@@ -239,14 +239,15 @@ class AIChatOmnibarTests: UITestCase {
         let toggle = app.windows.firstMatch.descendants(matching: .any)[Identifiers.searchModeToggleControl]
         XCTAssertTrue(toggle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Search/Duck.ai toggle should be visible")
+        let toggleCenter = toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
 
         // Click toggle → Duck.ai mode. Whether the panel auto-opens depends on focus state and isn't
         // the contract under test here — what matters is that the typed text survives the mode flip.
-        toggle.click()
+        toggleCenter.click()
         waitForAddressBarValue(matching: "value CONTAINS 'preserved across toggle'")
 
         // Click toggle → back to Search. Text must still be there.
-        toggle.click()
+        toggleCenter.click()
         waitForAddressBarValue(matching: "value CONTAINS 'preserved across toggle'")
     }
 

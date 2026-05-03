@@ -69,6 +69,7 @@ final class MainCoordinator {
     private let featureFlagger: FeatureFlagger
     private let modalPromptCoordinationService: ModalPromptCoordinationService
     private let launchSourceManager: LaunchSourceManaging
+    private let keyValueStore: ThrowingKeyValueStoring
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
     private let wideEvent: WideEventManaging
@@ -86,7 +87,6 @@ final class MainCoordinator {
     private var webExtensionLoadTask: Task<Void, Never>?
     private var isWebExtensionLoadPending = false
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
-    private let keyValueStore: ThrowingKeyValueStoring
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -155,7 +155,6 @@ final class MainCoordinator {
         onboardingSearchExperienceSelectionHandler = OnboardingSearchExperienceSelectionHandler(
             daxDialogs: daxDialogs,
             aiChatSettings: aiChatSettings,
-            featureFlagger: featureFlagger,
             onboardingSearchExperienceProvider: OnboardingSearchExperience()
         )
         self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
@@ -723,20 +722,31 @@ extension MainCoordinator: UserActivityHandling {
 
     @discardableResult
     func handleUserActivity(_ userActivity: NSUserActivity) -> Bool {
-        switch userActivity.activityType {
-        case DataImportUserActivityHandler.browserKitImportActivityType:
-            if dataImportUserActivityHandler == nil {
-                dataImportUserActivityHandler = makeDataImportUserActivityHandler()
-            }
-            return dataImportUserActivityHandler?.handle(userActivity) ?? false
-        default:
+        if dataImportUserActivityHandler == nil {
+            dataImportUserActivityHandler = makeDataImportUserActivityHandler()
+        }
+
+        guard dataImportUserActivityHandler?.handle(userActivity) == true else {
             Logger.general.debug("Unhandled user activity type: \(userActivity.activityType)")
             return false
         }
+
+        return true
     }
 
     private func makeDataImportUserActivityHandler() -> DataImportUserActivityHandler {
-        DataImportUserActivityHandler()
+        DataImportUserActivityHandler(keyValueStore: keyValueStore) { [weak self] result in
+            self?.handleDataImportResult(result)
+        }
+    }
+
+    private func handleDataImportResult(_ result: Result<DataImportSummary, Error>) {
+        switch result {
+        case .success(let summary):
+            controller.presentDataImportSummary(summary, importScreen: .passwords)
+        case .failure(let error):
+            Logger.general.error("Data import failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
 }

@@ -486,6 +486,27 @@ Output a single line confirming the write, with a clickable link back to the
 task. Do NOT also paste the full report inline - the user asked for it to live
 in Asana.
 
+### 9. Clean up scratch files
+
+Run this regardless of whether the report was written to Asana or rendered
+inline. The scratch files written by step 2 (`/tmp/<bucket>_p*.json`,
+`/tmp/<bucket>_all.json`), step 5 (the per-cluster GID lists, e.g.
+`/tmp/<cluster>_gids.txt`), and step 8.4 (`/tmp/report.html`,
+`/tmp/report_fixed.html`) all contain Asana data and must be removed before
+the run ends:
+
+```
+rm -f /tmp/ios_feedback_*.json /tmp/macos_feedback_*.json \
+      /tmp/*_gids.txt /tmp/report.html /tmp/report_fixed.html
+```
+
+Adjust the patterns to whatever filenames you actually used. The MCP server's
+own tool-result spillover under `~/.claude/projects/.../tool-results/` is
+managed by the harness and should not be touched.
+
+If the run aborts partway through (cap hit, sensitive data halt, user
+declined the overwrite), still run the cleanup before reporting back.
+
 ## Privacy and data protection
 
 - Do **not** include user names, emails, assignees, or any PII in the output.
@@ -494,9 +515,22 @@ in Asana.
 - App Store review tasks often embed the reviewer's display name in the task
   title. Treat these as PII and replace with "App Store reviewer" in link
   labels, even though they are public on the App Store.
-- Do **not** write any Asana data to disk.
-- Do **not** make web searches or external API calls after accessing Asana
-  data.
+- Do **not** persist Asana data beyond the session.
+  - **Allowed (ephemeral, in-session):** scratch files under `/tmp/` used for
+    jq/python pipelines (the bulk-search response routinely exceeds the
+    inline tool-result cap, so a scratch file is the practical primitive),
+    and the MCP server's own tool-result spillover written under
+    `~/.claude/projects/<project>/<session>/tool-results/`.
+  - **Not allowed:** committing Asana data to the repo, writing it under
+    `.claude/` (outside the auto-managed cache), saving it to memory,
+    pasting it into other Asana tasks beyond the report destination, or
+    including it in any chat output beyond the report itself.
+  - **Always** clean up the `/tmp/` scratch files at the end of the run -
+    see step 9.
+- Web searches and external API calls after accessing Asana are blocked by
+  the session-level lethal-trifecta hook, not by this skill. If you hit a
+  block, that's the hook doing its job - do not retry. See
+  `~/.claude/rules/lethal-trifecta.md` for the policy.
 - If any task contains sensitive content (legal, HR, finance, security), halt
   and follow the sensitive data gating protocol from `ddg-required-config:ddg-asana`.
 

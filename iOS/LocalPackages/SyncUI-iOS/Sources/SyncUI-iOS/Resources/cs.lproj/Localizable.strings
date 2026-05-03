@@ -334,11 +334,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "Synchronizovat s jiným zařízením";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Teď ne";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Synchronizovat data s jiným zařízením?";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Načte ikony z webových stránek uložených do záložek. Stažené ikony jsou vidět ve tvé síti.";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Záložky";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Používej stejné oblíbené záložky na mobilu i počítači.";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Připojování...";
@@ -363,6 +372,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Ukládej si záložky a data pro automatické vyplnění a synchronizuj je mezi svými zařízeními se šifrováním end-to-end.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Použij tento kód k případnému obnovení dat, pokud ztratíš přístup k tomuto zařízení. Data Sync & Backup nelze obnovit po 18 měsících nečinnosti. [Více informací](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "Aplikace DuckDuckGo";

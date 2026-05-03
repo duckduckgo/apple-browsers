@@ -1275,6 +1275,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Uvozite zaznamke v DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Odprite Chrome, nato pojdite v Upravitelj gesel in upoštevajte spodnje korake:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Nastavitve** > **Izvoz podatkov**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Pritisnite **Nadaljuj**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Izberite **DuckDuckGo** kot cilj";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Uvozi iz Chroma";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Ste izvoz končali?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Odprite aplikacijo Gesla in nato upoštevajte korake za uvoz.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Tapnite **···** > **Izvozi podatke v drugo aplikacijo**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Tapnite **Izberi vse** > **Nadaljuj**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Izberite **DuckDuckGo** kot ciljno mesto";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Uvoz iz gesel";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Najprej izvozite gesla in zaznamke iz Safarija, nato pa se vrnite sem, da naložite datoteko.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Izvoz iz Safarija";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Uvoz iz Safarija";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Naloži izvoženo datoteko ...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "V datoteki ZIP ni najdenih podprtih podatkov. Preglejte navodila za izvoz iz Safarija in poskusite znova.";
 
@@ -1284,6 +1329,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Datoteke %@ ni bilo mogoče prebrati. Morda obstaja težava s podatki v datoteki.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Razumem";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Datoteke %@ ni bilo mogoče prebrati. Poskusite naložiti drugo datoteko ali poskusite z drugo metodo uvoza.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Datoteka je morda poškodovana";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "V datoteki ZIP ni najdenih podprtih podatkov. Preglejte navodila za izvoz in poskusite znova.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Ni najdenih podatkov";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Izbrana datoteka ni podprta. Izberite drugo datoteko in poskusite znova.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Nepodprta datoteka";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1358,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Prenesite v DuckDuckGo";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Izberite **Izvozi**, na naslednjem zaslonu pa izberite **Zaznamki** in **Shrani v prenose**.";
@@ -1303,7 +1372,7 @@
 "data.import.passwords.instructions.chrome.step1" = "V Chromu pojdite v **Googlov upravitelj gesel** in nato **Nastavitve**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Izberite **Izvozi gesla**, nato **Shrani v datoteke** in datoteko shranite v mapo, ki si jo lahko zapomnite.";
+"data.import.passwords.instructions.chrome.step2" = "Izberite **Izvozi podatke**, nato **···** in nato **Prenesi v CSV** ter shranite datoteko v mapo, ki si jo zapomnite.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Kako izvoziti gesla";
@@ -1331,6 +1400,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Uvoz gesel v DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Odpri nastavitve za izvoz";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Ne pozabite tapniti\n»Izvozi v datoteke«";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Aplikacija Gesla";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Uvoz iz";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Sinhroniziraj iz";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo v drugi napravi";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Zaznamki";
@@ -1367,6 +1460,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Gesla";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Želite prinesti tudi svoje zaznamke iz Safarija?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Nadaljuj";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Ne zdaj";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Želite prenesti tudi svoja gesla?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Pretekli mesec";
@@ -4274,6 +4379,9 @@
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Koda je kopirana";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Naprava je bila uspešno sinhronizirana";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Funkcija Sync & Backup je omogočena";

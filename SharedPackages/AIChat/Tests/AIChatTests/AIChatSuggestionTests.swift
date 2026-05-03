@@ -239,4 +239,37 @@ final class AIChatSuggestionTests: XCTestCase {
         // Then
         XCTAssertEqual(set.count, 2)
     }
+
+    // MARK: - Kind (model → chat type)
+
+    func testKind_WithVoiceModeModel_ReturnsVoice() {
+        XCTAssertEqual(AIChatSuggestion.kind(forModel: AIChatNativePrompt.voiceMode), .voice)
+    }
+
+    func testKind_WithImageGenerationModel_ReturnsImage() {
+        XCTAssertEqual(AIChatSuggestion.kind(forModel: AIChatNativePrompt.imageGenerationMode), .image)
+    }
+
+    func testKind_WithNilModel_ReturnsText() {
+        XCTAssertEqual(AIChatSuggestion.kind(forModel: nil), .text)
+    }
+
+    func testKind_WithEmptyModel_ReturnsText() {
+        XCTAssertEqual(AIChatSuggestion.kind(forModel: ""), .text)
+    }
+
+    func testKind_WithUnknownModel_ReturnsText() {
+        // A regular chat model doesn't match the voice/image tokens and falls through to .text.
+        XCTAssertEqual(AIChatSuggestion.kind(forModel: "gpt-4o-mini"), .text)
+    }
+
+    func testKind_WithModelEmbeddingVoiceTokenButNotEqual_ReturnsText() {
+        // Defensive — exact-equality matching prevents a future model whose name embeds the
+        // voice-mode token (e.g. an experimental variant) from being misclassified as `.voice`.
+        XCTAssertEqual(AIChatSuggestion.kind(forModel: "voice-mode-experimental-2"), .text)
+    }
+
+    func testKind_WithModelEmbeddingImageTokenButNotEqual_ReturnsText() {
+        XCTAssertEqual(AIChatSuggestion.kind(forModel: "image-generation-pro"), .text)
+    }
 }

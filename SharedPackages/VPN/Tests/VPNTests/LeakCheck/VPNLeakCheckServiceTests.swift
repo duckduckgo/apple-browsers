@@ -56,13 +56,18 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         LeakCheckEgressInfo(ipAddress: ip, name: name)
     }
 
+    private func makeEgressInfoProvider(ip: String = "1.2.3.4", name: String = "test-server") -> VPNLeakCheckService.EgressInfoProvider {
+        let info = LeakCheckEgressInfo(ipAddress: ip, name: name)
+        return { info }
+    }
+
     func testAllTestsMatchEgress_allSuccess() async throws {
         let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let wideEvent = MockWideEventManager()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -87,7 +92,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let wideEvent = MockWideEventManager()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -109,7 +114,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let wideEvent = MockWideEventManager()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -137,7 +142,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let wideEvent = MockWideEventManager()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -164,7 +169,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let wideEvent = MockWideEventManager()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -190,7 +195,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let wideEvent = MockWideEventManager()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -211,7 +216,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let wideEvent = MockWideEventManager()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -233,7 +238,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let wideEvent = MockWideEventManager()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -256,7 +261,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let wideEvent = MockWideEventManager()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -279,7 +284,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let wideEvent = MockWideEventManager()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -298,7 +303,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let wideEvent = MockWideEventManager()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -327,7 +332,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         )
         let service = VPNLeakCheckService(
             configuration: config,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -359,7 +364,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         )
         let service = VPNLeakCheckService(
             configuration: config,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -386,7 +391,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         )
         let service = VPNLeakCheckService(
             configuration: config,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -399,13 +404,42 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         XCTAssertEqual(wideEvent.startedFlows.count, 2)
     }
 
-    func testUpdateEgressIP_duringInflightCheck_usesSnapshot() async {
+    func testCooldown_rekeyBypassesCooldown() async {
+        let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let config = LeakCheckConfiguration(
+            host: "leakcheck.netp.duckduckgo.com",
+            httpPort: 80, httpsPort: 443, stunPort: 3478,
+            httpTimeout: 10, stunTimeout: 5,
+            periodicInterval: 60 * 60,
+            cooldown: 60,
+            tunnelStartDelay: 0
+        )
+        let service = VPNLeakCheckService(
+            configuration: config,
+            egressInfo: makeEgressInfoProvider(),
+            tunnelInterface: { Self.systemInterface },
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent
+        )
+
+        await service.runCheck(trigger: .tunnelStart)
+        await service.runCheck(trigger: .rekey)
+
+        XCTAssertEqual(wideEvent.startedFlows.count, 2)
+        XCTAssertEqual(wideEvent.lastCompletedData?.trigger, .rekey)
+    }
+
+    func testEgressIPChange_duringInflightCheck_usesSnapshot() async {
         let http = SlowMockHTTPClient(delaySeconds: 0.3, returnIP: "1.2.3.4")
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let wideEvent = MockWideEventManager()
+        let box = MutableEgressInfoBox(makeEgressInfo())
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: { box.value },
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -414,26 +448,27 @@ final class VPNLeakCheckServiceTests: XCTestCase {
 
         async let checkTask: Void = service.runCheck(trigger: .tunnelStart)
         try? await Task.sleep(nanoseconds: 100_000_000)
-        await service.updateEgressInfo(makeEgressInfo(ip: "5.6.7.8"))
+        box.value = makeEgressInfo(ip: "5.6.7.8")
         _ = await checkTask
 
         XCTAssertEqual(wideEvent.lastCompletedData?.ipv4Http?.status, .success)
         XCTAssertEqual(wideEvent.lastCompletedData?.ipv4Https?.status, .success)
     }
 
-    func testUpdateEgressIP_changesComparison() async {
+    func testEgressIPChange_beforeCheck_changesComparison() async {
         let http = MockLeakCheckHTTPClient(ipv4: "5.6.7.8", ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "5.6.7.8", ipv6Error: URLError(.cannotFindHost))
         let wideEvent = MockWideEventManager()
+        let box = MutableEgressInfoBox(makeEgressInfo())
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: { box.value },
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
             wideEvent: wideEvent
         )
-        await service.updateEgressInfo(makeEgressInfo(ip: "5.6.7.8"))
+        box.value = makeEgressInfo(ip: "5.6.7.8")
         await service.runCheck(trigger: .reassert)
 
         XCTAssertEqual(wideEvent.lastCompletedData?.ipv4Http?.status, .success)
@@ -445,7 +480,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let wideEvent = MockWideEventManagerWithPending()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -466,7 +501,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let wideEvent = MockWideEventManager()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -494,7 +529,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         )
         let service = VPNLeakCheckService(
             configuration: config,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -516,7 +551,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let wideEvent = MockWideEventManager()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -544,7 +579,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         )
         let service = VPNLeakCheckService(
             configuration: config,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -574,7 +609,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         )
         let service = VPNLeakCheckService(
             configuration: config,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -596,7 +631,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         let wideEvent = MockWideEventManager()
         let service = VPNLeakCheckService(
             configuration: .default,
-            egressInfo: makeEgressInfo(),
+            egressInfo: makeEgressInfoProvider(),
             tunnelInterface: { Self.systemInterface },
             httpClient: http,
             stunClient: stun,
@@ -658,6 +693,20 @@ final class MockWideEventManagerWithPending: WideEventManaging, @unchecked Senda
     func getFlowData<T: WideEventData>(_ type: T.Type, globalID: String) -> T? { nil }
     func getAllFlowData<T: WideEventData>(_ type: T.Type) -> [T] {
         return pending as? [T] ?? []
+    }
+}
+
+final class MutableEgressInfoBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _value: LeakCheckEgressInfo?
+
+    init(_ initial: LeakCheckEgressInfo?) {
+        self._value = initial
+    }
+
+    var value: LeakCheckEgressInfo? {
+        get { lock.lock(); defer { lock.unlock() }; return _value }
+        set { lock.lock(); defer { lock.unlock() }; _value = newValue }
     }
 }
 

@@ -163,6 +163,7 @@ public struct PixelParameters {
     public static let isExtension = "is_extension"
 
     // Data Import
+    public static let entryPoint = "entry_point"
     public static let savedCredentials = "saved_credentials"
     public static let skippedCredentials = "skipped_credentials"
     public static let savedCreditCards = "saved_creditcards"

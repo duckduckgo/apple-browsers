@@ -334,11 +334,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "別のデバイスと同期";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "後で";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "他のデバイスとデータを同期しますか？";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "ブックマークしたウェブサイトからアイコンを取得します。アイコンのダウンロードはネットワークに公開されます。";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "ブックマーク";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "モバイルとデスクトップで同じお気に入りのブックマークを使用できます。";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "接続中...";
@@ -363,6 +372,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "ブックマークや自動入力データを保存し、エンドツーエンドの暗号化でデバイス間で同期します。";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "このデバイスへのアクセスを失った場合は、このコードを使用してデータを復元してください。Sync & Backupのデータは18か月間アクティビティがないと復元できません。[詳細はこちら](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGoアプリ";

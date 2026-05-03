@@ -713,6 +713,15 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
+    func test_handleExternalPromptSubmission_fromAITab_clearsPendingAttachments() {
+        sut.showExpanded()
+        sut.viewController.addAttachment(.image(AIChatImageAttachment(image: UIImage(), fileName: "test.png")))
+
+        sut.handleExternalSubmission(.prompt)
+
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+    }
+
     func test_handleExternalPromptSubmission_noOpWhenHidden() {
         sut.handleExternalSubmission(.prompt)
         XCTAssertEqual(sut.displayState, .hidden)

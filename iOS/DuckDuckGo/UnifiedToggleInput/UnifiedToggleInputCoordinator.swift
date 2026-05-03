@@ -808,6 +808,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             case .query: hide()
             case .prompt:
                 resetToolsSelection()
+                clearAttachments()
                 showCollapsed()
             }
         case .hidden:

@@ -174,26 +174,64 @@ project alone returns ~80+ tasks per day and the full notes blob blows past the
 tool-result token cap. Fetch `notes` only on a task-by-task basis in step 3
 when needed for grouping.
 
-**Expect the response to spill to a file even without `notes`.** iOS Feedback
-and macOS Feedback tasks each carry 30+ custom fields (Reporter, Ban Type,
-Search Area, etc. - many irrelevant). A single 100-task page with
-`custom_fields.name,custom_fields.display_value` is ~110 KB and routinely
-exceeds the inline tool-result cap on these two projects. The MCP server
-saves spillover to a file at
+**Use a smaller `limit` for iOS Feedback and macOS Feedback.** These two
+projects carry 30+ custom fields per task (Reporter, Ban Type, Search Area,
+SAM Severity values, etc. - most irrelevant to this report). A 100-task page
+with `custom_fields.name,custom_fields.display_value` is ~110 KB and reliably
+exceeds the inline tool-result cap. Use a different `limit` per project:
+
+| Project | `limit` |
+|---------|---------|
+| iOS Feedback (`1206584483643184`) | `25` |
+| macOS Feedback (`1199178362774117`) | `25` |
+| All other projects (Privacy Pro, Internal Product Feedback, App Store Reviews) | `100` |
+
+`limit=25` keeps the response inline (~27 KB) with full custom fields
+intact. The deep-dive metadata in step 6 is then already on the bulk-fetch
+response - no second round of `asana_get_task` calls needed and the deep
+dive runs against the full population, not a sample. The cost is more
+pagination rounds (a 3-day window on macOS Feedback fits in ~10 pages
+instead of 2). Acceptable.
+
+**Spillover fallback (if a response still spills despite `limit=25`).** In
+extreme cases - 30-day window, schema bloat, additional custom fields added
+- a response may still spill. The MCP server saves the file at
 `/Users/<you>/.claude/projects/<project>/<session>/tool-results/...txt` and
 returns the path. When that happens:
 
-1. Don't retry the search with a smaller `limit` - you'll just paginate more.
-2. Use `jq` directly on the file to project to a slim shape, e.g.:
+1. Use `jq` directly on the file to project to a slim shape, e.g.:
    ```
    jq '.data | map({gid, name, created_at, custom_fields: (.custom_fields | map({name, display_value}))})' <path> > "$scratch_dir/<bucket>_<project_gid>_<query_key>_pN.json"
    ```
-3. Read the `created_at` of the last element for the next pagination cursor.
-4. Merge pages later with `jq -s 'add | unique_by(.gid) | sort_by(.created_at) | reverse' "$scratch_dir"/<bucket>_*_p*.json > "$scratch_dir/<bucket>_all.json"`. `add` concatenates all slurped page arrays regardless of count - use it instead of literal `.[0] + .[1] + ...` which only handles a fixed number of files.
+2. Read the `created_at` of the last element for the next pagination cursor.
+3. Merge pages later with `jq -s 'add | unique_by(.gid) | sort_by(.created_at) | reverse' "$scratch_dir"/<bucket>_*_p*.json > "$scratch_dir/<bucket>_all.json"`. `add` concatenates all slurped page arrays regardless of count - use it instead of literal `.[0] + .[1] + ...` which only handles a fixed number of files.
 
-The Privacy Pro projects, Internal Product Feedback, and App Store Reviews are
-small enough that responses come back inline; only iOS Feedback and macOS
-Feedback reliably spill.
+**Fallback for environments where `jq` on Asana data is blocked.** Some
+hardened environments (e.g. an org policy hook that prohibits combining
+Asana MCP results with Bash file processing - the error reads
+"Organization policy prohibits using Asana MCP tools and Bash/file tools in
+the same session") will deny the `jq` step above. In that case the bulk
+fetch can't carry custom fields at all, so the deep dive shifts to a
+sampled per-task fetch:
+
+1. Re-fetch iOS Feedback and macOS Feedback with **slim `opt_fields`**
+   (`name,created_at,completed` - no custom fields) at `limit=100`.
+   Responses stay inline regardless of project size. Pagination works
+   normally.
+2. Cluster from task names alone (full descriptions are still available
+   per-task via step 3 if needed for ambiguous names).
+3. For the Top 3 deep dive in step 6, fetch ~5-10 representative tasks per
+   cluster individually with `asana_get_task` (full `opt_fields` including
+   `custom_fields.name,custom_fields.display_value,tags,tags.name`) and
+   build the deep-dive table from the sample.
+4. Explicitly note in the deep-dive section that the metadata is sampled
+   ("5 of 12 tasks") rather than computed across the full cluster, so the
+   reader knows the limitation. Also note in the bucket summary that the
+   Misc / long-tail counts are approximate.
+
+The Privacy Pro projects, Internal Product Feedback, and App Store Reviews
+fit inline at `limit=100` regardless of environment - this whole
+consideration only applies to iOS Feedback and macOS Feedback.
 
 **First request (per project, per keyword, or once if no keywords):**
 
@@ -206,7 +244,7 @@ text: <keyword, or omit if no keywords>
 custom_fields: <platform filter for Internal Product Feedback only, otherwise omit>
 sort_by: "created_at"
 sort_ascending: false
-limit: 100
+limit: <25 for iOS Feedback / macOS Feedback; 100 for everything else - see table above>
 opt_fields: "name,created_at,completed,custom_fields.name,custom_fields.display_value"
 ```
 
@@ -216,18 +254,18 @@ is the DDG workspace GID (visible in any DDG Asana URL of the form
 error.
 
 `completed: false` is a **filter** that excludes resolved tasks at the API level
-- without it, completed feedback consumes pagination slots against the 100/page
-limit and the 1000-task safety cap, and resolved issues can leak into the
+- without it, completed feedback consumes pagination slots against the per-page
+`limit` and the 1000-task safety cap, and resolved issues can leak into the
 grouped output. The `completed` field also stays in `opt_fields` so the value
 is readable on each task as a sanity check.
 
 **Pagination loop (per project, per keyword query):**
 
-After each response, check whether exactly 100 results were returned. If so,
-there are likely more tasks to fetch. To get the next page, take the
-`created_at` timestamp of the **oldest** (last) task in the current batch and
-use it as the `created_at_before` filter for the next request, keeping
-`created_at_after` unchanged:
+After each response, check whether the result count equals the request's
+`limit`. If so, there are likely more tasks to fetch. To get the next page,
+take the `created_at` timestamp of the **oldest** (last) task in the current
+batch and use it as the `created_at_before` filter for the next request,
+keeping `created_at_after` unchanged:
 
 ```
 workspace: "137249556945"
@@ -239,17 +277,20 @@ text: <keyword, or omit if no keywords>
 custom_fields: <platform filter for Internal Product Feedback only, otherwise omit>
 sort_by: "created_at"
 sort_ascending: false
-limit: 100
+limit: <same per-project value as the first request>
 opt_fields: "name,created_at,completed,custom_fields.name,custom_fields.display_value"
 ```
 
 Repeat until:
-- A batch returns fewer than 100 results (you have reached the end), **or**
-- You have fetched 10 pages per project per keyword (1000 tasks) as a safety
-  cap. macOS Feedback alone can return 400+ tasks in a 5-day window, so a
-  14-day or 30-day query needs the higher cap. If the cap is hit, note
-  prominently in the output that results were truncated and the deep dive may
-  be biased toward recent items.
+- A batch returns fewer than the request's `limit` (you have reached the end),
+  **or**
+- You have fetched **1000 tasks per project per keyword** as a safety cap -
+  10 pages at `limit=100` for normal-schema projects, or 40 pages at
+  `limit=25` for iOS Feedback / macOS Feedback. macOS Feedback alone can
+  return 400+ tasks in a 5-day window, so a 14-day or 30-day query needs
+  this higher cap. If the cap is hit, note prominently in the output that
+  results were truncated and the deep dive may be biased toward recent
+  items.
 
 After all queries for a bucket complete, merge all tasks within the bucket and
 deduplicate by task GID. Each bucket is processed independently.
@@ -622,9 +663,16 @@ declined the overwrite), still run the cleanup before reporting back.
 - **Hand-typing GIDs into the link list HTML.** A single mistyped digit gives
   a broken link that looks correct at a glance. Generate the link list from
   the per-cluster GID file with `jq` (snippet in step 5).
-- **Retrying a search with a smaller `limit` after the response spilled to a
-  file.** Smaller pages just mean more pagination rounds; the per-task payload
-  is the bottleneck. Read the spilled file with `jq` and continue.
+- **Using `limit=100` for iOS Feedback or macOS Feedback.** These two
+  projects carry 30+ custom fields and a 100-task page reliably spills.
+  Use `limit=25` from the first request - don't wait for the spill. All
+  other projects (Privacy Pro, Internal Product Feedback, App Store
+  Reviews) stay at `limit=100`. See step 2.
+- **Falling through to the spillover `jq` recovery in an environment where
+  Bash on Asana data is blocked.** When the org policy hook denies `jq` on
+  the spilled file, use the slim-`opt_fields` + per-task deep-dive
+  fallback documented in step 2 instead. The deep-dive table becomes
+  sampled rather than full-population - call that out in the report.
 
 ## What to skip
 

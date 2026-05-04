@@ -58,7 +58,7 @@ final class NewAddressBarPickerViewModelTests: XCTestCase {
         sut.isDuckAISelected = true
         sut.confirm()
         XCTAssertEqual(aiChatSettings.lastEnableAIChatSearchInputValue, true)
-        XCTAssertEqual(pixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.aiChatNewAddressBarPickerConfirmed.name)
+        XCTAssertEqual(pixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.aiChatNewAddressBarPickerV2Confirmed.name)
         XCTAssertEqual(pixelFiringMock.lastDailyPixelInfo?.params?[PixelParameters.selection], "search_and_ai")
         XCTAssertEqual(dismissCallCount, 1)
     }
@@ -67,7 +67,7 @@ final class NewAddressBarPickerViewModelTests: XCTestCase {
         sut.isDuckAISelected = false
         sut.confirm()
         XCTAssertEqual(aiChatSettings.lastEnableAIChatSearchInputValue, false)
-        XCTAssertEqual(pixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.aiChatNewAddressBarPickerConfirmed.name)
+        XCTAssertEqual(pixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.aiChatNewAddressBarPickerV2Confirmed.name)
         XCTAssertEqual(pixelFiringMock.lastDailyPixelInfo?.params?[PixelParameters.selection], "search_only")
         XCTAssertEqual(dismissCallCount, 1)
     }

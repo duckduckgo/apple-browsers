@@ -103,8 +103,17 @@ final class VPNLeakCheckServiceTests: XCTestCase {
 
         let data = try XCTUnwrap(wideEvent.lastCompletedData)
         XCTAssertEqual(data.ipv4Http?.status, .leak)
+        XCTAssertEqual(data.ipv4Http?.octet1Matched, false)
+        XCTAssertEqual(data.ipv4Http?.octet2Matched, false)
+        XCTAssertEqual(data.ipv4Http?.octet3Matched, false)
+        XCTAssertEqual(data.ipv4Http?.octet4Matched, false)
         XCTAssertEqual(data.ipv4Https?.status, .leak)
+        XCTAssertEqual(data.ipv4Https?.octet1Matched, false)
         XCTAssertEqual(data.ipv4Stun?.status, .success)
+        XCTAssertNil(data.ipv4Stun?.octet1Matched)
+        XCTAssertNil(data.ipv4Stun?.octet2Matched)
+        XCTAssertNil(data.ipv4Stun?.octet3Matched)
+        XCTAssertNil(data.ipv4Stun?.octet4Matched)
         XCTAssertEqual(data.ipv4LeakIPType, .public)
     }
 
@@ -150,9 +159,42 @@ final class VPNLeakCheckServiceTests: XCTestCase {
 
         let data = try XCTUnwrap(wideEvent.lastCompletedData)
         XCTAssertEqual(data.ipv4Http?.status, .leak)
+        XCTAssertEqual(data.ipv4Http?.octet1Matched, true)
+        XCTAssertEqual(data.ipv4Http?.octet2Matched, true)
+        XCTAssertEqual(data.ipv4Http?.octet3Matched, false)
+        XCTAssertEqual(data.ipv4Http?.octet4Matched, true)
         XCTAssertEqual(data.ipv4Https?.status, .leak)
         XCTAssertEqual(data.ipv4Stun?.status, .success)
         XCTAssertEqual(data.ipv4LeakIPType, .public)
+    }
+
+    func testIPv4Leak_perTestOctetPatternsAreIndependent() async throws {
+        // HTTP returns a /24 mismatch (octet 3 differs), STUN returns a totally different IP.
+        let http = MockLeakCheckHTTPClient(ipv4: "162.245.205.118", ipv6Error: URLError(.cannotFindHost))
+        let stun = MockLeakCheckSTUNClient(ipv4: "9.8.7.6", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressInfo: makeEgressInfoProvider(ip: "162.245.204.118"),
+            tunnelInterface: { Self.systemInterface },
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent
+        )
+
+        await service.runCheck(trigger: .periodic)
+
+        let data = try XCTUnwrap(wideEvent.lastCompletedData)
+        XCTAssertEqual(data.ipv4Http?.status, .leak)
+        XCTAssertEqual(data.ipv4Http?.octet1Matched, true)
+        XCTAssertEqual(data.ipv4Http?.octet2Matched, true)
+        XCTAssertEqual(data.ipv4Http?.octet3Matched, false)
+        XCTAssertEqual(data.ipv4Http?.octet4Matched, true)
+        XCTAssertEqual(data.ipv4Stun?.status, .leak)
+        XCTAssertEqual(data.ipv4Stun?.octet1Matched, false)
+        XCTAssertEqual(data.ipv4Stun?.octet2Matched, false)
+        XCTAssertEqual(data.ipv4Stun?.octet3Matched, false)
+        XCTAssertEqual(data.ipv4Stun?.octet4Matched, false)
     }
 
     func testIPv4MalformedObservedIP_recordedAsErrorNotLeak() async throws {

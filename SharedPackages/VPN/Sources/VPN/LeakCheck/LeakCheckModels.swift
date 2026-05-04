@@ -59,23 +59,50 @@ public struct LeakCheckPerTestResult: Codable, Equatable {
     public let errorCode: Int?
     public let underlyingDomain: String?
     public let underlyingCode: Int?
+    public let octet1Matched: Bool?
+    public let octet2Matched: Bool?
+    public let octet3Matched: Bool?
+    public let octet4Matched: Bool?
 
     public init(
         status: Status,
         errorDomain: String? = nil,
         errorCode: Int? = nil,
         underlyingDomain: String? = nil,
-        underlyingCode: Int? = nil
+        underlyingCode: Int? = nil,
+        octet1Matched: Bool? = nil,
+        octet2Matched: Bool? = nil,
+        octet3Matched: Bool? = nil,
+        octet4Matched: Bool? = nil
     ) {
         self.status = status
         self.errorDomain = errorDomain
         self.errorCode = errorCode
         self.underlyingDomain = underlyingDomain
         self.underlyingCode = underlyingCode
+        self.octet1Matched = octet1Matched
+        self.octet2Matched = octet2Matched
+        self.octet3Matched = octet3Matched
+        self.octet4Matched = octet4Matched
     }
 
     public static let success = LeakCheckPerTestResult(status: .success)
     public static let leak = LeakCheckPerTestResult(status: .leak)
+
+    public static func leak(
+        octet1Matched: Bool,
+        octet2Matched: Bool,
+        octet3Matched: Bool,
+        octet4Matched: Bool
+    ) -> LeakCheckPerTestResult {
+        LeakCheckPerTestResult(
+            status: .leak,
+            octet1Matched: octet1Matched,
+            octet2Matched: octet2Matched,
+            octet3Matched: octet3Matched,
+            octet4Matched: octet4Matched
+        )
+    }
 
     public static func error(_ error: Error) -> LeakCheckPerTestResult {
         let ns = error as NSError

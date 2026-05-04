@@ -349,27 +349,36 @@ public actor VPNLeakCheckService {
     private func classifyIPv4(_ result: Result<String, Error>, egressIP: String) -> LeakCheckPerTestResult {
         switch result {
         case .success(let ip):
-            switch Self.sameIPv4ClassCSubnet(ip, egressIP) {
-            case .some(true):
-                return .success
-            case .some(false):
-                return .leak
-            case .none:
+            guard let matches = Self.ipv4OctetMatches(ip, egressIP) else {
                 let error: LeakCheckIPError = IPv4Address(ip) == nil ? .malformedObservedIP : .malformedEgressIP
                 return .error(error)
             }
+            if matches.octet1 && matches.octet2 && matches.octet3 {
+                return .success
+            }
+            return .leak(
+                octet1Matched: matches.octet1,
+                octet2Matched: matches.octet2,
+                octet3Matched: matches.octet3,
+                octet4Matched: matches.octet4
+            )
         case .failure(let error):
             return .error(error)
         }
     }
 
-    /// Returns `nil` if either string is not a parseable IPv4 address; otherwise checks whether they share the same /24 subnet.
-    private static func sameIPv4ClassCSubnet(_ lhs: String, _ rhs: String) -> Bool? {
+    /// Returns `nil` if either string is not a parseable IPv4 address; otherwise reports per-octet equality.
+    private static func ipv4OctetMatches(_ lhs: String, _ rhs: String) -> (octet1: Bool, octet2: Bool, octet3: Bool, octet4: Bool)? {
         guard let lhsAddr = IPv4Address(lhs), let rhsAddr = IPv4Address(rhs) else { return nil }
         let lhsBytes = [UInt8](lhsAddr.rawValue)
         let rhsBytes = [UInt8](rhsAddr.rawValue)
         guard lhsBytes.count == 4, rhsBytes.count == 4 else { return nil }
-        return lhsBytes[0] == rhsBytes[0] && lhsBytes[1] == rhsBytes[1] && lhsBytes[2] == rhsBytes[2]
+        return (
+            lhsBytes[0] == rhsBytes[0],
+            lhsBytes[1] == rhsBytes[1],
+            lhsBytes[2] == rhsBytes[2],
+            lhsBytes[3] == rhsBytes[3]
+        )
     }
 
     private func classifyIPv6(_ result: Result<String, Error>) -> LeakCheckPerTestResult {
@@ -419,7 +428,11 @@ public actor VPNLeakCheckService {
 
     private func firstLeakedIPv4(from results: [Result<String, Error>], egressIP: String) -> String? {
         for result in results {
-            if case .success(let ip) = result, Self.sameIPv4ClassCSubnet(ip, egressIP) == false { return ip }
+            if case .success(let ip) = result,
+               let matches = Self.ipv4OctetMatches(ip, egressIP),
+               !(matches.octet1 && matches.octet2 && matches.octet3) {
+                return ip
+            }
         }
         return nil
     }

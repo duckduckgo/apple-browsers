@@ -69,6 +69,43 @@ final class VPNIPLeakCheckWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.ipv4.leak_ip_type"] as? String, "public")
     }
 
+    func testJSONParameters_leakWithOctetMatches_emitsPerTestKeys() {
+        let data = makeEventData()
+        data.ipv4Http = .leak(octet1Matched: true, octet2Matched: true, octet3Matched: false, octet4Matched: true)
+        data.ipv4Https = .success
+        data.ipv4Stun = .leak(octet1Matched: false, octet2Matched: false, octet3Matched: false, octet4Matched: false)
+
+        let params = data.jsonParameters()
+
+        XCTAssertEqual(params["feature.data.ext.ipv4.http.leak_octet1_matched"] as? Bool, true)
+        XCTAssertEqual(params["feature.data.ext.ipv4.http.leak_octet2_matched"] as? Bool, true)
+        XCTAssertEqual(params["feature.data.ext.ipv4.http.leak_octet3_matched"] as? Bool, false)
+        XCTAssertEqual(params["feature.data.ext.ipv4.http.leak_octet4_matched"] as? Bool, true)
+
+        XCTAssertNil(params["feature.data.ext.ipv4.https.leak_octet1_matched"])
+        XCTAssertNil(params["feature.data.ext.ipv4.https.leak_octet2_matched"])
+        XCTAssertNil(params["feature.data.ext.ipv4.https.leak_octet3_matched"])
+        XCTAssertNil(params["feature.data.ext.ipv4.https.leak_octet4_matched"])
+
+        XCTAssertEqual(params["feature.data.ext.ipv4.stun.leak_octet1_matched"] as? Bool, false)
+        XCTAssertEqual(params["feature.data.ext.ipv4.stun.leak_octet4_matched"] as? Bool, false)
+    }
+
+    func testJSONParameters_ipv6Leak_doesNotEmitOctetKeys() {
+        let data = makeEventData()
+        data.ipv6Http = .leak
+        data.ipv6Https = .leak
+        data.ipv6Stun = .leak
+        data.ipv6LeakIPType = .public
+
+        let params = data.jsonParameters()
+
+        XCTAssertEqual(params["feature.data.ext.ipv6.http.status"] as? String, "leak")
+        XCTAssertNil(params["feature.data.ext.ipv6.http.leak_octet1_matched"])
+        XCTAssertNil(params["feature.data.ext.ipv6.https.leak_octet1_matched"])
+        XCTAssertNil(params["feature.data.ext.ipv6.stun.leak_octet1_matched"])
+    }
+
     func testJSONParameters_statusReason() {
         let data = makeEventData()
         data.statusReason = "checks_errored"
@@ -78,7 +115,7 @@ final class VPNIPLeakCheckWideEventDataTests: XCTestCase {
 
     func testMetadata() {
         XCTAssertEqual(VPNIPLeakCheckWideEventData.metadata.featureName, "vpn-ip-leak-check")
-        XCTAssertEqual(VPNIPLeakCheckWideEventData.metadata.version, "1.0.0")
+        XCTAssertEqual(VPNIPLeakCheckWideEventData.metadata.version, "1.0.1")
         #if os(iOS)
         XCTAssertEqual(VPNIPLeakCheckWideEventData.metadata.type, "ios-vpn-ip-leak-check")
         #elseif os(macOS)

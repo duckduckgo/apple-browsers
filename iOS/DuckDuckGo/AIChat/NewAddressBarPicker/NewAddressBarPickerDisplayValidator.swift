@@ -152,7 +152,6 @@ struct NewAddressBarPickerStore: NewAddressBarPickerStorage {
     
     init(keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()) {
         self.keyValueStore = keyValueStore
-        cleanupLegacyNewAddressBarPickerKey()
     }
     
     var hasBeenShown: Bool {
@@ -165,10 +164,6 @@ struct NewAddressBarPickerStore: NewAddressBarPickerStorage {
     
     func reset() {
         keyValueStore.removeObject(forKey: Key.hasBeenShown)
-    }
-
-    private func cleanupLegacyNewAddressBarPickerKey() {
-        keyValueStore.removeObject(forKey: Key.legacyHasBeenShown)
     }
 }
 

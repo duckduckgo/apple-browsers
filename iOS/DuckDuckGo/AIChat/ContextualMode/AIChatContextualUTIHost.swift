@@ -143,17 +143,23 @@ final class AIChatContextualUTIHost {
     func install(in contextualChatViewController: AIChatContextualWebViewController) {
         self.contextualChatViewController = contextualChatViewController
         coordinator.attachmentPresentingViewController = contextualChatViewController
-        contextualChatViewController.addChild(coordinator.viewController)
-        contextualChatViewController.view.addSubview(coordinator.viewController.view)
-        coordinator.viewController.view.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            coordinator.viewController.view.leadingAnchor.constraint(equalTo: contextualChatViewController.view.leadingAnchor),
-            coordinator.viewController.view.trailingAnchor.constraint(equalTo: contextualChatViewController.view.trailingAnchor),
-            coordinator.viewController.view.bottomAnchor.constraint(equalTo: contextualChatViewController.view.keyboardLayoutGuide.topAnchor),
-        ])
-        contextualChatViewController.anchorWebViewBottom(to: coordinator.viewController.view.topAnchor)
-        coordinator.viewController.didMove(toParent: contextualChatViewController)
-        coordinator.showExpanded()
+        // Install + lay out without animation. Otherwise the half-sheet's slide-up animation
+        // captures the UTI's first layout pass and interpolates from a zero-frame at (0,0),
+        // making the bar fly in from the top-left.
+        UIView.performWithoutAnimation {
+            contextualChatViewController.addChild(coordinator.viewController)
+            contextualChatViewController.view.addSubview(coordinator.viewController.view)
+            coordinator.viewController.view.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                coordinator.viewController.view.leadingAnchor.constraint(equalTo: contextualChatViewController.view.leadingAnchor),
+                coordinator.viewController.view.trailingAnchor.constraint(equalTo: contextualChatViewController.view.trailingAnchor),
+                coordinator.viewController.view.bottomAnchor.constraint(equalTo: contextualChatViewController.view.keyboardLayoutGuide.topAnchor),
+            ])
+            contextualChatViewController.anchorWebViewBottom(to: coordinator.viewController.view.topAnchor)
+            coordinator.viewController.didMove(toParent: contextualChatViewController)
+            coordinator.showExpanded()
+            contextualChatViewController.view.layoutIfNeeded()
+        }
         Logger.contextualUTI.info("Installed at bottom of contextual chat")
     }
 }

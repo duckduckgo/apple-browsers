@@ -1087,18 +1087,12 @@ private extension UnifiedToggleInputCoordinator {
 
     func resetSessionState() {
         isNewChatPending = false
-        // While the UTI is hidden, dismiss completion owns the visible text — clearing here would flash the placeholder.
-        if isActive {
-            setText("")
-        }
         aiChatStatus = .unknown
         aiChatInputBoxVisibility = .unknown
         attachmentUsage = nil
         hasSubmittedPrompt = false
-        resetToolsSelection()
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
-        clearAttachments()
     }
 
     // MARK: Toolbar

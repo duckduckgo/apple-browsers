@@ -179,26 +179,21 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
 
     // MARK: - Visibility
 
-    func test_visibility_noURLEmissions_isHidden() {
-        // No publisher value at all — chip stays hidden.
-        let subject = PassthroughSubject<URL?, Never>()
-        sut = UnifiedToggleInputPageContextChipViewModel(
-            originatingURLPublisher: subject.eraseToAnyPublisher(),
-            initialAttachedContext: nil,
-            isAutoAttachEnabled: { false }
-        )
-        XCTAssertFalse(sut.isVisible)
+    func test_visibility_noInitialContext_isVisibleFromStart() {
+        // Restored / fresh chat — no carry-over to suppress, show placeholder right away.
+        makeSUT()
+        XCTAssertTrue(sut.isVisible)
     }
 
-    func test_visibility_initialEmission_isHidden() {
-        // First emission (the page the user just attached from) should not show the chip.
+    func test_visibility_withInitialContext_isHiddenInitially() {
+        // Half-sheet carry-over — re-confirming the attach is noise, hide initially.
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
         XCTAssertFalse(sut.isVisible)
     }
 
-    func test_visibility_secondEmission_becomesVisible() {
+    func test_visibility_withInitialContext_becomesVisibleOnNavigation() {
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
@@ -221,8 +216,8 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
     }
 
     func test_visibility_appliesEvenWhenDetached() {
-        // Once visible, removing the attached context (X tapped) keeps the chip visible
-        // as a placeholder so the user can re-attach.
+        // Removing the attached context (X tapped) keeps the chip visible as a placeholder
+        // so the user can re-attach.
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
@@ -232,17 +227,6 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         sut.setAttached(nil)
         XCTAssertTrue(sut.isVisible)
         XCTAssertEqualState(sut.state, .placeholder)
-    }
-
-    func test_visibility_noInitialContext_firstEmissionStillHides() {
-        // Even without an initial attached context, the chip stays hidden until a navigation
-        // occurs — the half-sheet just dismissed and re-confirming attach is noise.
-        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Cat"))
-        makeSUT()
-        XCTAssertFalse(sut.isVisible)
-
-        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
-        XCTAssertTrue(sut.isVisible)
     }
 
     // MARK: - Helpers

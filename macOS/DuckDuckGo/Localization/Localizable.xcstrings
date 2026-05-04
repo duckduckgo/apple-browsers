@@ -88332,10 +88332,58 @@
       "comment" : "Cancel button label of the alert shown when the user is enabling YouTube ad blocking",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nein, danke"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "No Thanks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No, gracias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non merci"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No, grazie"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nee, bedankt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie, dziękuję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não, obrigado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет, спасибо"
           }
         }
       }
@@ -88344,10 +88392,58 @@
       "comment" : "Confirm button label of the alert shown when the user is enabling YouTube ad blocking",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anonyme Berichte senden"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Send Anonymous Reports"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar informes anónimos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer des rapports anonymes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia segnalazioni anonime"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anonieme rapporten verzenden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wysyłaj anonimowe raporty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar relatórios anónimos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправлять анонимные отчеты"
           }
         }
       }
@@ -88356,10 +88452,58 @@
       "comment" : "Description of the alert shown when the user is enabling YouTube ad blocking",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatisch anonyme Fehlerberichte an DuckDuckGo senden, wenn der YouTube-Werbeblocker aktiviert ist."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Auto-send anonymous breakage reports to DuckDuckGo when YouTube Ad Block is on."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar automáticamente informes anónimos de fallos a DuckDuckGo cuando el bloqueador de anuncios de YouTube esté activado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer automatiquement des rapports anonymes de dysfonctionnement à DuckDuckGo lorsque le blocage des publicités sur YouTube est activé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia automaticamente segnalazioni anonime di guasti a DuckDuckGo quando il blocco annunci di YouTube è attivo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuur automatisch anonieme meldingen van onderbrekingen naar DuckDuckGo wanneer YouTube Ad Block is ingeschakeld."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatycznie wysyłaj anonimowe raporty o awarii do DuckDuckGo, gdy blokowanie reklam na YouTube jest włączone."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envia automaticamente relatórios anónimos de falhas ao DuckDuckGo quando o bloqueador de anúncios no YouTube estiver ativo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автоматическая отправка анонимных отчетов о сбоях в DuckDuckGo при включенной блокировке рекламы на YouTube."
           }
         }
       }
@@ -88368,10 +88512,58 @@
       "comment" : "Title of the alert shown when the user is enabling YouTube ad blocking",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hilf mit, den YouTube-Werbeblocker für alle zu verbessern."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Help make YouTube Ad Blocking better for everyone"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayuda a que el bloqueo de anuncios de YouTube sea mejor para todos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contribuez à améliorer le blocage des publicités YouTube pour tous."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aiuta a migliorare il blocco degli annunci su YouTube per tutti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Help mee om de advertentieblokkering op YouTube voor iedereen te verbeteren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomóż usprawnić blokowanie reklam na YouTube dla wszystkich"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajuda a tornar o bloqueio de anúncios no YouTube melhor para todos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Помогите улучшить функцию блокировки рекламы на YouTube для всех"
           }
         }
       }

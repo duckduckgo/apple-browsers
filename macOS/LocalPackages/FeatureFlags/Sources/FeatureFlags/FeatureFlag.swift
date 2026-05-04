@@ -210,10 +210,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
 
-    /// New permission management view
-    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1211985993948718?focus=true
-    case newPermissionView
-
     /// Shows a survey when quitting the app for the first time in a determined period
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1212242893241885?focus=true
     case firstTimeQuitSurvey
@@ -271,6 +267,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Enables the reasoning effort picker in the Duck.ai omnibar
     case aiChatOmnibarReasoningEffort
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214283076614743?focus=true
+    case aiChatOmnibarVoiceChatAccess
 
     /// Enables attaching content from multiple open tabs to Duck.ai chat
     case aiChatAttachMoreTabs
@@ -406,7 +405,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .freemiumDBP:
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.freemium)), supportsLocalOverriding: false)
         case .contextualOnboarding:
-            Config(source: .remoteReleasable(.feature(.contextualOnboarding)), supportsLocalOverriding: false)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(ContextualOnboardingSubfeature.featureEnabled)), supportsLocalOverriding: false)
         case .onboardingRebranding:
             Config(source: .disabled)
         case .unknownUsernameCategorization:
@@ -426,11 +425,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPartialFormSaves:
             Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves)))
         case .webExtensions:
-            Config(source: .remoteReleasable(.feature(.webExtensions)), category: .webExtensions)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.featureEnabled)), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension)), category: .webExtensions)
         case .adBlockingExtension:
-            Config(source: .remoteReleasable(.feature(.adBlockingExtension)), category: .webExtensions)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.featureEnabled)), category: .webExtensions)
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout)), category: .webExtensions)
         case .syncSeamlessAccountSwitching:
@@ -438,7 +437,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabCrashDebugging:
             Config(source: .disabled)
         case .delayedWebviewPresentation:
-            Config(source: .remoteReleasable(.feature(.delayedWebviewPresentation)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DelayedWebviewPresentationSubfeature.featureEnabled)))
         case .dbpRemoteBrokerDelivery:
             Config(source: .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery)), category: .dbp)
         case .dbpEmailConfirmationDecoupling:
@@ -464,7 +463,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatOmnibarCluster:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarCluster)), category: .duckAI)
         case .aiChatSuggestions:
-            Config(source: .remoteReleasable(.feature(.duckAiChatHistory)), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(DuckAiChatHistorySubfeature.featureEnabled)), category: .duckAI)
         case .aiChatOmnibarTools:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarTools)), category: .duckAI)
         case .aiChatOmnibarOnboarding:
@@ -512,7 +511,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportNewExperience:
             Config(source: .remoteReleasable(.subfeature(DataImportSubfeature.newDataImportExperience)))
         case .attributedMetrics:
-            Config(source: .remoteReleasable(.feature(.attributedMetrics)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AttributedMetricsSubfeature.featureEnabled)))
         case .showHideAIGeneratedImagesSection:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.showHideAiGeneratedImages)))
         case .standaloneMigration:
@@ -520,11 +519,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .allowProTierPurchase:
             Config(source: .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase)), category: .subscription)
         case .popupBlocking:
-            Config(source: .remoteReleasable(.feature(.popupBlocking)), category: .popupBlocking)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(PopupBlockingSubfeature.featureEnabled)), category: .popupBlocking)
         case .webNotifications:
             Config(source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webNotifications)), category: .webNotifications)
-        case .newPermissionView:
-            Config(source: .remoteReleasable(.feature(.combinedPermissionView)))
         case .firstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey)))
         case .autofillPasswordSearchPrioritizeDomain:
@@ -559,6 +556,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarWebSearch)), category: .duckAI)
         case .aiChatOmnibarReasoningEffort:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarReasoningEffort)), category: .duckAI)
+        case .aiChatOmnibarVoiceChatAccess:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AIChatSubfeature.omnibarVoiceChatAccess)), category: .duckAI)
         case .aiChatAttachMoreTabs:
             Config(source: .remoteReleasable(.subfeature(AIChatSubfeature.attachMoreTabs)), category: .duckAI)
         case .aiChatSidebarResizable:
@@ -582,7 +581,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .semaphoreAlwaysVisible:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.semaphoreAlwaysVisible)))
         case .promoQueue:
-            Config(defaultValue: .enabled, source: .remoteReleasable(.feature(.promoQueue)))
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(PromoQueueSubfeature.featureEnabled)))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey)))
         case .tabAnimations:

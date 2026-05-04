@@ -103,6 +103,11 @@ public final class WebExtensionLoader: WebExtensionLoading {
     public func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
         var result = [Result<WebExtensionLoadResult, Error>]()
         for identifier in identifiers {
+            // Yield between extensions so the main run loop can service system
+            // events, preventing cumulative WKWebExtension file I/O from
+            // triggering the iOS watchdog (0x8badf00d).
+            await Task.yield()
+
             do {
                 let loadResult = try await loadWebExtension(identifier: identifier, into: controller)
                 result.append(.success(loadResult))
@@ -141,6 +146,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         }
 
         context.isInspectable = isInspectable
+        context.hasAccessToPrivateData = true
         return context
     }
 }

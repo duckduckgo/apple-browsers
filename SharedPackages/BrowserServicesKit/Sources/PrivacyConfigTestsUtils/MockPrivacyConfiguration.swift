@@ -30,7 +30,7 @@ public class MockPrivacyConfiguration: PrivacyConfiguration {
     }
 
     public func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
-        isSubfeatureEnabledCheck?(subfeature, versionProvider) ?? false
+        isSubfeatureEnabledCheck?(subfeature, versionProvider) ?? defaultValue
     }
 
     public func stateFor(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> PrivacyConfigurationFeatureState {
@@ -38,10 +38,8 @@ public class MockPrivacyConfiguration: PrivacyConfiguration {
     }
 
     public func stateFor(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> PrivacyConfigurationFeatureState {
-        if isSubfeatureEnabledCheck?(subfeature, versionProvider) == true {
-            return .enabled
-        }
-        return .disabled(.disabledInConfig)
+        guard let check = isSubfeatureEnabledCheck else { return .disabled(.featureMissing) }
+        return check(subfeature, versionProvider) ? .enabled : .disabled(.disabledInConfig)
     }
 
     public func stateFor(subfeatureID: SubfeatureID, parentFeatureID: ParentFeatureID, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> PrivacyConfigurationFeatureState {

@@ -18,23 +18,18 @@
 
 import Foundation
 import Combine
-import FeatureFlags
 import PrivacyDashboard
-import PrivacyConfig
 import AppKit
 
 typealias PrivacyDashboardPermissionAuthorizationState = [(permission: PermissionType, state: PermissionAuthorizationState)]
 
 final class PrivacyDashboardPermissionHandler {
 
-    init(permissionManager: PermissionManagerProtocol,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+    init(permissionManager: PermissionManagerProtocol) {
         self.permissionManager = permissionManager
-        self.featureFlagger = featureFlagger
     }
 
     private let permissionManager: PermissionManagerProtocol
-    private let featureFlagger: FeatureFlagger
     private weak var tabViewModel: TabViewModel?
     private var onPermissionChange: (([AllowedPermission]) -> Void)?
     private var cancellables = Set<AnyCancellable>()
@@ -67,65 +62,8 @@ final class PrivacyDashboardPermissionHandler {
     }
 
     private func updatePermissions() {
-        // Skip permission updates when new permission view is enabled
-        // Permission management is handled by the new Permission Center
-        if featureFlagger.isFeatureOn(.newPermissionView) {
-            onPermissionChange?([])
-            return
-        }
-
-        guard let usedPermissions = tabViewModel?.usedPermissions else {
-            assertionFailure("PrivacyDashboardViewController: tabViewModel not set")
-            return
-        }
-        guard let domain = tabViewModel?.tab.content.urlForWebView?.host else {
-            onPermissionChange?([])
-            return
-        }
-
-        let authorizationState: PrivacyDashboardPermissionAuthorizationState
-        authorizationState = permissionManager.persistedPermissionTypes.union(usedPermissions.keys)
-            .compactMap { permissionType in
-                guard permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permissionType)
-                        || usedPermissions[permissionType] != nil
-                else {
-                    return nil
-                }
-                let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
-                return (permissionType, PermissionAuthorizationState(decision: decision))
-            }
-
-        var allowedPermissions: [AllowedPermission] = []
-
-        allowedPermissions = authorizationState.map { item in
-            AllowedPermission(key: item.permission.rawValue,
-                              icon: item.permission.jsStyle,
-                              title: item.permission.jsTitle,
-                              permission: item.state.rawValue,
-                              used: usedPermissions[item.permission] != nil,
-                              paused: usedPermissions[item.permission] == .paused,
-                              options: makeOptions(for: item, domain: domain)
-            )
-        }
-
-        onPermissionChange?(allowedPermissions)
-    }
-
-    private func makeOptions(for item: (permission: PermissionType, state: PermissionAuthorizationState), domain: String) -> [[String: String]] {
-        return PermissionAuthorizationState.allCases.compactMap { decision -> [String: String]? in
-            // don't show Permanently Allow if can't persist Granted Decision
-            switch decision {
-            case .grant:
-                guard item.permission.canPersistGrantedDecision(featureFlagger: featureFlagger) else { return nil }
-            case .deny:
-                guard item.permission.canPersistDeniedDecision(featureFlagger: featureFlagger) else { return nil }
-            case .ask: break
-            }
-            return [
-                "id": decision.rawValue,
-                "title": String(format: decision.localizedFormat(for: item.permission), domain)
-            ]
-        }
+        // Permission management is handled by the Permission Center
+        onPermissionChange?([])
     }
 }
 

@@ -591,8 +591,6 @@ enum GeneralPixel: PixelKitEvent {
      */
     case userScriptLoadJSFailed(jsFile: String, error: Error, source: UserScriptError.Source)
 
-    case attributionXattrCanary(variantMatch: String, originMatch: String)
-
     // Website Autoplay
     case autoplaySettingAllowAll
     case autoplaySettingBlockAudio
@@ -1357,8 +1355,6 @@ enum GeneralPixel: PixelKitEvent {
             // UserScript
         case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
 
-        case .attributionXattrCanary: return "m_mac_attribution-xattr-canary_u"
-
             // Website Autoplay
         case .autoplaySettingAllowAll:
             return "m_mac_autoplay_setting_allow-all"
@@ -1534,9 +1530,6 @@ enum GeneralPixel: PixelKitEvent {
             params[PixelKit.Parameters.jsFile] = jsFile
             params[PixelKit.Parameters.userScriptSource] = source.rawValue
             return params
-
-        case .attributionXattrCanary(let variantMatch, let originMatch):
-            return ["variant_match": variantMatch, "origin_match": originMatch]
 
         default: return nil
         }
@@ -1933,8 +1926,7 @@ enum GeneralPixel: PixelKitEvent {
                 .siteNotWorkingShown,
                 .siteNotWorkingWebsiteIsBroken,
                 .usageSegments,
-                .userScriptLoadJSFailed,
-                .attributionXattrCanary:
+                .userScriptLoadJSFailed:
             return [.pixelSource]
         case .settingsAddToDockShowMeHowClicked:
             return nil

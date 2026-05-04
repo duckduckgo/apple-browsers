@@ -1,0 +1,268 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Sent at the end of each VPN IP leak check cycle (HTTP/HTTPS/STUN probes over IPv4 and IPv6 against the leak check endpoint, classified against the current tunnel egress IP)",
+    "$comment": "{\"owners\":[\"samsymons\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "macos-vpn-ip-leak-check" }, "version": { "const": "1.0.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the app sending the event, taken from CFBundleName. Varies across build configurations and the target (main app, VPN agent, network extension). Extend this enum when adding wide events fired from other macOS targets.",
+                    "enum": [
+                        "DuckDuckGo",
+                        "DuckDuckGo Alpha",
+                        "DuckDuckGo Review",
+                        "DuckDuckGo App Store",
+                        "DuckDuckGo VPN",
+                        "DuckDuckGo VPN Alpha",
+                        "DuckDuckGo VPN Review",
+                        "DuckDuckGo VPN App Store",
+                        "com.duckduckgo.macos.vpn.network-extension",
+                        "com.duckduckgo.macos.vpn.network-extension.debug",
+                        "com.duckduckgo.macos.vpn.network-extension.review",
+                        "com.duckduckgo.macos.vpn.network-extension.alpha",
+                        "com.duckduckgo.mobile.ios.vpn.agent.network-extension"
+                    ]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["macOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["vpn-ip-leak-check"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "trigger": {
+                                    "type": "string",
+                                    "description": "What caused the leak check cycle to run",
+                                    "enum": ["tunnel_start", "reassert", "periodic", "rekey"]
+                                },
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "Reason attached to an UNKNOWN status: one or more probes errored without a leak, or the cycle did not complete",
+                                    "enum": ["checks_errored", "check_interrupted"]
+                                },
+                                "latency_ms_bucketed": {
+                                    "type": "integer",
+                                    "description": "Total cycle duration, rounded up to the nearest 500 ms and capped at 5000",
+                                    "enum": [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]
+                                },
+                                "egress_server_name": {
+                                    "type": "string",
+                                    "description": "Name of the VPN egress server the cycle ran against"
+                                },
+                                "ipv4": {
+                                    "type": "object",
+                                    "description": "IPv4 probe outcomes",
+                                    "properties": {
+                                        "leak_ip_type": {
+                                            "type": "string",
+                                            "description": "Classification of the leaked IPv4 address, present when any IPv4 probe reported a leak",
+                                            "enum": ["public", "private", "unknown"]
+                                        },
+                                        "http": {
+                                            "type": "object",
+                                            "description": "IPv4 HTTP probe result",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "description": "Outcome of the IPv4 HTTP probe",
+                                                    "enum": ["success", "leak", "error"]
+                                                },
+                                                "error_domain": {
+                                                    "type": "string",
+                                                    "description": "Outer error domain when status is error"
+                                                },
+                                                "error_code": { "type": "integer", "description": "Outer error code when status is error" },
+                                                "underlying_domain": {
+                                                    "type": "string",
+                                                    "description": "Underlying error domain when the outer error wraps another"
+                                                },
+                                                "underlying_code": {
+                                                    "type": "integer",
+                                                    "description": "Underlying error code paired with underlying_domain"
+                                                }
+                                            }
+                                        },
+                                        "https": {
+                                            "type": "object",
+                                            "description": "IPv4 HTTPS probe result",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "description": "Outcome of the IPv4 HTTPS probe",
+                                                    "enum": ["success", "leak", "error"]
+                                                },
+                                                "error_domain": {
+                                                    "type": "string",
+                                                    "description": "Outer error domain when status is error"
+                                                },
+                                                "error_code": { "type": "integer", "description": "Outer error code when status is error" },
+                                                "underlying_domain": {
+                                                    "type": "string",
+                                                    "description": "Underlying error domain when the outer error wraps another"
+                                                },
+                                                "underlying_code": {
+                                                    "type": "integer",
+                                                    "description": "Underlying error code paired with underlying_domain"
+                                                }
+                                            }
+                                        },
+                                        "stun": {
+                                            "type": "object",
+                                            "description": "IPv4 STUN probe result",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "description": "Outcome of the IPv4 STUN probe",
+                                                    "enum": ["success", "leak", "error"]
+                                                },
+                                                "error_domain": {
+                                                    "type": "string",
+                                                    "description": "Outer error domain when status is error"
+                                                },
+                                                "error_code": { "type": "integer", "description": "Outer error code when status is error" },
+                                                "underlying_domain": {
+                                                    "type": "string",
+                                                    "description": "Underlying error domain when the outer error wraps another"
+                                                },
+                                                "underlying_code": {
+                                                    "type": "integer",
+                                                    "description": "Underlying error code paired with underlying_domain"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "ipv6": {
+                                    "type": "object",
+                                    "description": "IPv6 probe outcomes",
+                                    "properties": {
+                                        "leak_ip_type": {
+                                            "type": "string",
+                                            "description": "Classification of the leaked IPv6 address, present when any IPv6 probe reported a leak",
+                                            "enum": ["public", "private", "unknown"]
+                                        },
+                                        "http": {
+                                            "type": "object",
+                                            "description": "IPv6 HTTP probe result",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "description": "Outcome of the IPv6 HTTP probe",
+                                                    "enum": ["success", "leak", "error"]
+                                                },
+                                                "error_domain": {
+                                                    "type": "string",
+                                                    "description": "Outer error domain when status is error"
+                                                },
+                                                "error_code": { "type": "integer", "description": "Outer error code when status is error" },
+                                                "underlying_domain": {
+                                                    "type": "string",
+                                                    "description": "Underlying error domain when the outer error wraps another"
+                                                },
+                                                "underlying_code": {
+                                                    "type": "integer",
+                                                    "description": "Underlying error code paired with underlying_domain"
+                                                }
+                                            }
+                                        },
+                                        "https": {
+                                            "type": "object",
+                                            "description": "IPv6 HTTPS probe result",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "description": "Outcome of the IPv6 HTTPS probe",
+                                                    "enum": ["success", "leak", "error"]
+                                                },
+                                                "error_domain": {
+                                                    "type": "string",
+                                                    "description": "Outer error domain when status is error"
+                                                },
+                                                "error_code": { "type": "integer", "description": "Outer error code when status is error" },
+                                                "underlying_domain": {
+                                                    "type": "string",
+                                                    "description": "Underlying error domain when the outer error wraps another"
+                                                },
+                                                "underlying_code": {
+                                                    "type": "integer",
+                                                    "description": "Underlying error code paired with underlying_domain"
+                                                }
+                                            }
+                                        },
+                                        "stun": {
+                                            "type": "object",
+                                            "description": "IPv6 STUN probe result",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "description": "Outcome of the IPv6 STUN probe",
+                                                    "enum": ["success", "leak", "error"]
+                                                },
+                                                "error_domain": {
+                                                    "type": "string",
+                                                    "description": "Outer error domain when status is error"
+                                                },
+                                                "error_code": { "type": "integer", "description": "Outer error code when status is error" },
+                                                "underlying_domain": {
+                                                    "type": "string",
+                                                    "description": "Underlying error domain when the outer error wraps another"
+                                                },
+                                                "underlying_code": {
+                                                    "type": "integer",
+                                                    "description": "Underlying error code paired with underlying_domain"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

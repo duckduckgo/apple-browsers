@@ -293,16 +293,35 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertFalse(sut.isVisible)
     }
 
-    func test_visibility_auto_userDetachesViaX_hidden() {
-        // Auto mode + user X-taps → no attachment → stay hidden (auto re-attaches on chat
-        // reopen via host's retryAutoAttachIfNeeded; we don't fall back to placeholder).
+    func test_visibility_auto_userDetachesViaX_visiblePlaceholder() {
+        // Auto mode + user X-taps after at least one attachment in the session → show
+        // placeholder so they can re-attach manually. (The initial cold-start wait is the
+        // only time we hide auto + no attachment.)
         autoAttachEnabled = true
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
 
         sut.setAttached(nil)
+        XCTAssertTrue(sut.isVisible)
+        XCTAssertEqualState(sut.state, .placeholder)
+    }
+
+    func test_visibility_auto_coldStart_thenAutoAttachLands_thenDetach_visiblePlaceholder() {
+        // Cold start in auto: hidden. After auto-attach lands and the user X-taps, the
+        // placeholder must appear — the initial-wait hide rule does not re-engage post-detach.
+        autoAttachEnabled = true
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT()
         XCTAssertFalse(sut.isVisible)
+
+        sut.setAttached(makeContext(title: "Cat", url: url))
+        sut.markPromptSubmitted()
+        sut.setAttached(nil)
+
+        XCTAssertTrue(sut.isVisible)
+        XCTAssertEqualState(sut.state, .placeholder)
     }
 
     // MARK: - Helpers

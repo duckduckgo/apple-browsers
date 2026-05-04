@@ -68,17 +68,19 @@ struct TabInputState: Equatable {
 }
 ```
 
-A small `LastUsedInputDefaults` value type holds the seedable defaults (toggle, model id, reasoning, tool set — not text or attachments). The store materializes it on read by reading through to existing canonical homes:
+A small `LastUsedInputDefaults` value type holds the seedable defaults (toggle, model id, reasoning, tool set — not text or attachments). The store materializes it on read by reading through to existing canonical homes where one exists:
 
-- `toggleMode`: `ToggleModeStorage`
-- `selectedModelID`: `AIChatPreferencesPersisting.selectedModelId`
-- `selectedReasoningMode`: `AIChatPreferencesPersisting.selectedReasoningMode`
-- `selectedTools`: new in-memory field on the store (no canonical home today)
+- `toggleMode`: `ToggleModeStorage` (canonical, persisted)
+- `selectedModelID`: `AIChatPreferencesPersisting.selectedModelId` (canonical, persisted)
+- `selectedReasoningMode`: `AIChatPreferencesPersisting.selectedReasoningMode` (canonical, persisted)
+- `selectedTools`: **in-memory only on the store**. Tools have no canonical persisted home today; see Risks.
+
+`TabUID` is a typealias for `String` (matches `Tab.uid`).
 
 ## Data flow
 
 ### Tab creation (eager)
-`TabsModel.add(tab:)` → store inserts a fresh `TabInputState` for `tab.uid`, populated from `lastUsed`. `toggleMode` reads from `tab.preferredTextEntryMode` so cold-launch state survives.
+`TabsModel.add(tab:)` → store inserts a fresh `TabInputState` for `tab.uid`, populated from `lastUsed`. `toggleMode` is sourced from `tab.preferredTextEntryMode` (which is itself seeded from settings on creation, or restored from NSCoding on cold launch), so cold-launch state for the toggle survives. Other fields seed from `lastUsed`.
 
 ### Tab activation (bind)
 `refreshUnifiedToggleInput(for: tab)` → coordinator calls `store.state(for: tab.uid)` → applies it:
@@ -110,11 +112,11 @@ On successful submit, `text` and `attachments` clear in the store entry (matches
 
 | Existing | After |
 |---|---|
-| `bindToTab` calls `resetSessionState()` on different identifier | `bindToTab` calls `applyState(store.state(for: tab.uid))` |
+| `bindToTab` calls `resetSessionState()` on different identifier | `bindToTab` flushes the outgoing tab's state to the store, then calls `applyState(store.state(for: tab.uid))` |
 | State changes are local to coordinator | State changes also call `store.update(_:for: currentTabUID)` |
 | No snapshot on unbind | New `flushCurrentStateToStore(for: previousUID)` runs before re-bind / unbind |
 
-The existing `resetSessionState()` is removed in favor of explicit hydrate/flush.
+`resetSessionState()` is narrowed, not removed: it stops clearing per-tab fields (`text`, `attachments`, tools) and keeps clearing chat-binding-only state (`isNewChatPending`, `aiChatStatus`, `aiChatInputBoxVisibility`, `hasSubmittedPrompt`, `attachmentUsage`). The per-tab fields are replaced by the hydrate step.
 
 ## Files
 

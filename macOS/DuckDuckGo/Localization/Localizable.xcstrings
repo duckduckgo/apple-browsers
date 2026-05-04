@@ -88521,7 +88521,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Send Anonymous Reports"
+            "value" : "Detect Video Issues"
           }
         },
         "es" : {
@@ -88581,7 +88581,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow DuckDuckGo to auto-detect video playback issues. This helps to make ad blocking more reliable for everyone."
+            "value" : "Allow DuckDuckGo to anonymously auto-detect video playback issues. This helps to make ad blocking more reliable for everyone."
           }
         },
         "es" : {

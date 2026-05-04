@@ -4595,10 +4595,10 @@ https://duckduckgo.com/windows";
 "youtube.ad.blocking.analytics-opt-in-alert.cancel" = "No Thanks";
 
 /* Confirm button label of the alert shown when the user is enabling YouTube ad blocking */
-"youtube.ad.blocking.analytics-opt-in-alert.confirm" = "Send Anonymous Reports";
+"youtube.ad.blocking.analytics-opt-in-alert.confirm" = "Detect Video Issues";
 
 /* Description of the alert shown when the user is enabling YouTube ad blocking */
-"youtube.ad.blocking.analytics-opt-in-alert.message" = "Allow DuckDuckGo to auto-detect video playback issues. This helps to make ad blocking more reliable for everyone.";
+"youtube.ad.blocking.analytics-opt-in-alert.message" = "Allow DuckDuckGo to anonymously auto-detect video playback issues. This helps to make ad blocking more reliable for everyone.";
 
 /* Title of the alert shown when the user is enabling YouTube ad blocking */
 "youtube.ad.blocking.analytics-opt-in-alert.title" = "Help make YouTube Ad Blocking better for everyone";

@@ -4126,6 +4126,9 @@ Take back control of your personal information with the browser designed for dat
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Code copied";
 
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Device synced successfully!";
+
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup enabled";
 

@@ -117,7 +117,6 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     }
 
     private var canShowPickerAfterOnboardingSelection: Bool {
-        guard featureFlagger.isFeatureOn(.onboardingSearchExperience) else { return true }
         guard searchExperienceOnboardingProvider.didMakeChoiceDuringOnboarding else { return true }
         return searchExperienceOnboardingProvider.didEnableAIChatSearchInputDuringOnboarding
     }

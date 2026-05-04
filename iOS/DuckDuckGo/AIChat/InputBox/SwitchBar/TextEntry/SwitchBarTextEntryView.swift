@@ -106,6 +106,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     var onTextInputActivated: (() -> Void)?
+    var onAIChatShortcutTapped: (() -> Void)?
 
     var isExpandable: Bool = false {
         didSet {
@@ -229,6 +230,10 @@ class SwitchBarTextEntryView: UIView {
 
         buttonsView.onStopGeneratingTapped = { [weak self] in
             self?.handler.stopGeneratingButtonTapped()
+        }
+
+        buttonsView.onAIChatShortcutTapped = { [weak self] in
+            self?.onAIChatShortcutTapped?()
         }
     }
 

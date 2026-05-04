@@ -4380,6 +4380,9 @@
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Koodi kopioitu";
 
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Laite synkronoitu onnistuneesti!";
+
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Synkronointi ja varmuuskopiointi käytössä";
 

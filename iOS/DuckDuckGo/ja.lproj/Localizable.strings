@@ -4380,6 +4380,9 @@
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "コードがコピーされました";
 
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "デバイスが正常に同期されました！";
+
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backupが有効になりました";
 

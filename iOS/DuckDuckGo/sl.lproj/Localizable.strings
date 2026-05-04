@@ -4380,6 +4380,9 @@
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Koda je kopirana";
 
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Naprava je bila uspešno sinhronizirana";
+
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Funkcija Sync & Backup je omogočena";
 

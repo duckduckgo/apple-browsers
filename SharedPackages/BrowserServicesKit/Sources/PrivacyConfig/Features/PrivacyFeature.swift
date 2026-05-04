@@ -363,9 +363,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables native-side support for standalone migration flows in AI Chat
     case standaloneMigration
 
-    /// Allows to present Search Experience choice screen during onboarding
-    case onboardingSearchExperience
-
     /// Enables Duck.ai query experiment during onboarding
     case onboardingDuckAIQueryExperiment
 
@@ -467,6 +464,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the reasoning effort picker in the Duck.ai omnibar
     case omnibarReasoningEffort
+
+    /// Enables 1-click voice-chat access from the Duck.ai omnibar (mic icon shown when input is empty)
+    case omnibarVoiceChatAccess
 
     /// Enables querying AI Chat data directly from local storage instead of via webview
     case nativeDataAccess

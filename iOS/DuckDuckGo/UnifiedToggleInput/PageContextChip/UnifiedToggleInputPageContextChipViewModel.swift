@@ -28,9 +28,14 @@ import os.log
 /// `attachedContext` is command-driven (`setAttached(_:)`) so JS-side auto-emissions don't bleed
 /// into the chip; only the host pushes after a successful attach/detach. With auto-attach OFF,
 /// navigating away clears the attachment (mirrors legacy FE); with ON, it's preserved while the
-/// host re-collects. `isVisible` starts hidden — chip only appears once something material
-/// changes (navigation), and re-hides on prompt submission. Internal attached state is
-/// independent: the FE always gets the right context regardless of UI visibility.
+/// host re-collects.
+///
+/// Visibility is purely state-derived:
+///   - attachment exists AND its URL matches the current page → hidden (FE keeps using it
+///     silently with every prompt; on-screen chip would be redundant noise).
+///   - otherwise: manual mode shows a placeholder so the user can attach; auto mode shows the
+///     attached site if we have one (transition between navigation and re-attach), or hides
+///     when there is nothing to show (waiting for the first auto-attach, or user just detached).
 @MainActor
 final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
@@ -47,7 +52,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     private(set) var attachedContext: AIChatPageContext?
     private var attachedURL: URL?
     private var originatingURL: URL?
-    private var hasObservedFirstURL = false
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -61,17 +65,12 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         originatingURLPublisher
             .sink { [weak self] url in
                 guard let self else { return }
-                if self.hasObservedFirstURL {
-                    if !self.isVisible { self.isVisible = true }
-                } else {
-                    self.hasObservedFirstURL = true
-                }
                 self.originatingURL = url
                 if self.shouldClearOnNavigationAway { self.clearAttachment() }
-                self.recomputeState()
+                self.recompute()
             }
             .store(in: &cancellables)
-        recomputeState()
+        recompute()
     }
 
     func setAttached(_ context: AIChatPageContext?) {
@@ -81,7 +80,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         } else {
             Logger.contextualUTI.debug("PageContextChip attached")
         }
-        recomputeState()
+        recompute()
     }
 
     func tapToAttach() {
@@ -96,13 +95,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     func tapToRemove() {
         Logger.contextualUTI.info("PageContextChip remove tapped — detaching")
         onRemoveActionRequested?()
-    }
-
-    /// Hide the chip after a prompt is submitted. The attached context stays — the user already
-    /// saw "this is what's attached" and submitted with it; redisplaying is noise. The chip
-    /// re-appears on the next navigation (via the originating-URL publisher sink).
-    func markPromptSubmitted() {
-        if isVisible { isVisible = false }
     }
 
     private var shouldClearOnNavigationAway: Bool {
@@ -129,15 +121,26 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         context.flatMap { URL(string: $0.contextData.url) }
     }
 
-    private func recomputeState() {
-        guard let attachedContext, let attachedURL else {
+    private func recompute() {
+        let isMatching = attachedURL != nil && attachedURL == originatingURL
+
+        if isMatching, let ctx = attachedContext {
+            state = .attached(title: ctx.title, favicon: ctx.favicon)
+            isVisible = false
+        } else if let ctx = attachedContext, isAutoAttachEnabled() {
+            // Auto mode mid-transition (URL changed, re-attach not yet landed): keep showing the
+            // attached site rather than flashing placeholder.
+            state = .attached(title: ctx.title, favicon: ctx.favicon)
+            isVisible = true
+        } else if isAutoAttachEnabled() {
+            // Auto + no attachment: hidden — auto-attach is in flight (cold start) or the user
+            // explicitly detached and we trust them to navigate / reopen chat to retrigger.
             state = .placeholder
-            return
-        }
-        if attachedURL == originatingURL {
-            state = .attached(title: attachedContext.title, favicon: attachedContext.favicon)
+            isVisible = false
         } else {
+            // Manual: always show placeholder so the user can attach.
             state = .placeholder
+            isVisible = true
         }
     }
 }

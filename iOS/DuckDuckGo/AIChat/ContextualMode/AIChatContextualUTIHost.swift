@@ -135,9 +135,6 @@ final class AIChatContextualUTIHost {
         userScript.attachedPageContextProvider = { [weak self] in
             self?.chipViewModel.attachedContext?.contextData
         }
-        userScript.onPromptSubmitted = { [weak self] in
-            self?.chipViewModel.markPromptSubmitted()
-        }
     }
 
     func install(in contextualChatViewController: AIChatContextualWebViewController) {

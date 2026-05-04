@@ -127,6 +127,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private(set) var isExpanded = false
+    private var currentLayout: UnifiedToggleInputCardLayout = .collapsed
 
     var isToolbarSubmitHidden: Bool = false {
         didSet { toolsToolbar.isSubmitButtonHidden = isToolbarSubmitHidden }
@@ -488,8 +489,9 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool, updateShadow: Bool = true) {
+        guard layout != currentLayout else { return }
+        currentLayout = layout
         let expanded = layout.isExpanded
-        guard expanded != isExpanded else { return }
         isExpanded = expanded
         handler.isExpanded = expanded
 

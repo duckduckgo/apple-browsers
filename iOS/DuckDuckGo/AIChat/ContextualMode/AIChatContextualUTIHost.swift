@@ -96,6 +96,8 @@ final class AIChatContextualUTIHost {
 
     private func handleChipRemoveRequest() {
         Logger.contextualUTI.info("Chip onRemove — clearing attached context")
+        // Cancel any in-flight collection so a late-arriving result doesn't overwrite the clear.
+        pendingChipAttachCancellable = nil
         pageContextHandler.clearAttachedContext()
         contextualChatViewController?.pushPageContext(nil)
         chipViewModel.setAttached(nil)

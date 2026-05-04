@@ -103,6 +103,23 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
     }
 
+    func test_chipRemove_whileCollectionPending_lateResultDoesNotOverwriteClear() {
+        // Regression: user taps attach (kicks off async collection) then quickly taps X. The
+        // pending collection result must NOT land after the clear and re-attach the chip.
+        let url = URL(string: "https://example.com/a")!
+        makeSUT()
+        originatingURL.send(url)
+
+        sut.chipViewModel.tapToAttach()
+        sut.chipViewModel.tapToRemove()
+
+        // Late collection result arrives after the user already detached.
+        pageContextHandler.sendContext(makeContext(title: "Page A", url: url.absoluteString))
+
+        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
+        XCTAssertNil(sut.chipViewModel.attachedContext)
+    }
+
     func test_autoAttachOff_navigationAway_clearsAttachedContextOnHandler() {
         // Regression: when the chip clears its attachment due to nav-away (auto-attach OFF),
         // the host must also call clearAttachedContext on the handler — otherwise the FE-side

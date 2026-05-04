@@ -102,9 +102,14 @@ final class AIChatContextualUTIHost {
     }
 
     /// Routes UTI-submitted prompts through the contextual chat's JS message channel (same as the FE).
+    /// Also wires the user script's page-context provider so every prompt payload carries whatever
+    /// the chip says is currently attached — no duplicate state, single source of truth.
     func bindToUserScript(_ userScript: AIChatUserScript) {
         Logger.contextualUTI.info("Binding coordinator to AIChatUserScript")
         coordinator.bindToTab(userScript)
+        userScript.attachedPageContextProvider = { [weak self] in
+            self?.chipViewModel.attachedContext?.contextData
+        }
     }
 
     func install(in contextualChatViewController: AIChatContextualWebViewController) {

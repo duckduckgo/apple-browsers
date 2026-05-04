@@ -43,7 +43,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     var onRemoveActionRequested: (() -> Void)?
 
     private let isAutoAttachEnabled: () -> Bool
-    private var attachedContext: AIChatPageContext?
+    private(set) var attachedContext: AIChatPageContext?
     private var attachedURL: URL?
     private var originatingURL: URL?
     private var hasObservedFirstURL = false

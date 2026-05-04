@@ -100,10 +100,10 @@ final class AIChatUserScript: NSObject, Subfeature {
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
     private var inputBoxCancellables = Set<AnyCancellable>()
-    /// Last page context pushed via `submitAIChatPageContext`. Replayed on the next `submitPrompt`
-    /// so the FE always sees attached context in the prompt payload, regardless of whether it
-    /// merges separately-pushed contexts (which differs by FE composer suppression mode).
-    private var lastPushedPageContext: AIChatPageContextData?
+    /// Returns the page context currently attached to the chat session, queried at submit time
+    /// and inlined into the `submitPrompt` payload so the FE always sees it. Set by the host that
+    /// owns the attachment state (e.g. `AIChatContextualUTIHost`).
+    var attachedPageContextProvider: (() -> AIChatPageContextData?)?
 
     var inputBoxHandler: AIChatInputBoxHandling? {
         didSet { subscribeToInputBoxEvents() }
@@ -294,7 +294,7 @@ final class AIChatUserScript: NSObject, Subfeature {
             toolChoice: tools?.map(\.rawValue),
             images: images,
             modelId: modelId,
-            pageContext: lastPushedPageContext,
+            pageContext: attachedPageContextProvider?(),
             reasoningEffort: reasoningEffort
         )
         push(.submitPrompt(promptPayload))
@@ -331,7 +331,6 @@ final class AIChatUserScript: NSObject, Subfeature {
     // MARK: - Private Helper
 
     private func pushPageContextToFrontend(_ context: AIChatPageContextData?) {
-        lastPushedPageContext = context
         guard let webView = webView else { return }
         let response = PageContextResponse(pageContext: context)
         broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)

@@ -34,6 +34,7 @@ final class AIChatContextualUTIHost {
     private weak var contextualChatViewController: AIChatContextualWebViewController?
     private var pendingChipAttachCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
+    private var lastFinishedURL: URL?
 
     init(
         originatingURLPublisher: AnyPublisher<URL?, Never>,
@@ -69,7 +70,9 @@ final class AIChatContextualUTIHost {
         didFinishURLPublisher
             .removeDuplicates()
             .sink { [weak self] url in
-                guard let self, let url, self.isAutoAttachEnabled() else { return }
+                guard let self, let url else { return }
+                self.lastFinishedURL = url
+                guard self.isAutoAttachEnabled() else { return }
                 // Skip if we already have the same URL attached (e.g. half-sheet carry-over
                 // replaying the seeded didFinish value on subscribe).
                 if let attached = self.chipViewModel.attachedContext,
@@ -80,6 +83,17 @@ final class AIChatContextualUTIHost {
                 self.handleChipAttachRequest(originatingURL: url)
             }
             .store(in: &cancellables)
+    }
+
+    /// Re-runs the auto-attach check on chat re-presentation. If the user detached the chip
+    /// and reopens the chat with auto-attach still ON, the chip should re-attach to the
+    /// current page (matching the user's stated expectation of "automatic = always on").
+    func retryAutoAttachIfNeeded() {
+        guard isAutoAttachEnabled(),
+              chipViewModel.attachedContext == nil,
+              let url = lastFinishedURL else { return }
+        Logger.contextualUTI.info("Auto-attach retry on chat reopen — triggering for \(url.absoluteString, privacy: .private)")
+        handleChipAttachRequest(originatingURL: url)
     }
 
     private func handleChipAttachRequest(originatingURL: URL) {

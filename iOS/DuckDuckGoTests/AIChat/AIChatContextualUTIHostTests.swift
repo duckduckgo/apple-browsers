@@ -223,6 +223,44 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 0)
     }
 
+    func test_retryAutoAttachIfNeeded_autoAttachOnAndDetached_triggers() {
+        // User detached the chip, then reopens the chat with auto-attach ON.
+        // The view-controller's viewWillAppear calls retry — chip should re-attach.
+        autoAttachEnabled = true
+        let url = URL(string: "https://example.com/a")!
+        didFinishURL.send(url)
+        makeSUT()
+        sut.chipViewModel.tapToRemove()
+
+        XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 1)
+
+        sut.retryAutoAttachIfNeeded()
+
+        XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 2)
+    }
+
+    func test_retryAutoAttachIfNeeded_autoAttachOff_skips() {
+        autoAttachEnabled = false
+        let url = URL(string: "https://example.com/a")!
+        didFinishURL.send(url)
+        makeSUT()
+
+        sut.retryAutoAttachIfNeeded()
+
+        XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 0)
+    }
+
+    func test_retryAutoAttachIfNeeded_alreadyAttached_skips() {
+        autoAttachEnabled = true
+        let url = URL(string: "https://example.com/a")!
+        didFinishURL.send(url)
+        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString))
+
+        sut.retryAutoAttachIfNeeded()
+
+        XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 0)
+    }
+
     // MARK: - Helpers
 
     private func makeContext(title: String, url: String) -> AIChatPageContext {

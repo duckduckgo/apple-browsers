@@ -185,6 +185,72 @@ final class UnifiedInputStateStoreTests: XCTestCase {
         XCTAssertEqual(sut.state(for: "tab-evict").text, "")
     }
 
+    // MARK: - Per-tab persistence (NSCoding round-trip)
+
+    func test_observingTabsModel_seedsModelFromTabPersistedSelection() {
+        preferences.selectedModelId = "global-default"
+        let store = UnifiedInputStateStore(preferences: preferences, toggleModeStorage: toggleStorage)
+        let tabsModel = TabsModel(desktop: false)
+        let tab = Tab(
+            uid: "persisted",
+            fireTab: false,
+            preferredTextEntryMode: .aiChat,
+            selectedModelID: "tab-specific-model",
+            selectedReasoningMode: .extendedReasoning
+        )
+        store.observeTabsModel(tabsModel)
+        tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+
+        XCTAssertEqual(store.state(for: "persisted").selectedModelID, "tab-specific-model")
+        XCTAssertEqual(store.state(for: "persisted").selectedReasoningMode, .extendedReasoning)
+    }
+
+    func test_observingTabsModel_fallsBackToLastUsed_whenTabHasNoStoredModel() {
+        preferences.selectedModelId = "global-default"
+        let store = UnifiedInputStateStore(preferences: preferences, toggleModeStorage: toggleStorage)
+        let tabsModel = TabsModel(desktop: false)
+        let tab = Tab(uid: "fresh", fireTab: false, preferredTextEntryMode: .aiChat)
+        store.observeTabsModel(tabsModel)
+        tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+
+        XCTAssertEqual(store.state(for: "fresh").selectedModelID, "global-default")
+    }
+
+    func test_recordUserChoice_writesSelectedModelBackToTab() {
+        let tabsModel = TabsModel(desktop: false)
+        let tab = Tab(uid: "writeback", fireTab: false)
+        sut.observeTabsModel(tabsModel)
+        tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+
+        sut.recordUserChoice(
+            TabInputState(toggleMode: .aiChat, selectedModelID: "claude-opus", selectedReasoningMode: .reasoning),
+            for: "writeback"
+        )
+
+        XCTAssertEqual(tab.selectedModelID, "claude-opus")
+        XCTAssertEqual(tab.selectedReasoningMode, .reasoning)
+    }
+
+    func test_recordUserChoice_clearingModelOnTab_isAlsoMirrored() {
+        let tabsModel = TabsModel(desktop: false)
+        let tab = Tab(
+            uid: "clear-mirror",
+            fireTab: false,
+            selectedModelID: "old-model",
+            selectedReasoningMode: .reasoning
+        )
+        sut.observeTabsModel(tabsModel)
+        tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+
+        sut.recordUserChoice(
+            TabInputState(toggleMode: .aiChat, selectedModelID: nil, selectedReasoningMode: nil),
+            for: "clear-mirror"
+        )
+
+        XCTAssertNil(tab.selectedModelID)
+        XCTAssertNil(tab.selectedReasoningMode)
+    }
+
     // Regression for the fire-mode bug: tabs in a second observed model must also be
     // seeded and evicted.
     func test_observingMultipleTabsModels_seedsAndEvictsBothSources() {

@@ -52,6 +52,8 @@ public class Tab: NSObject, NSCoding {
         static let isExternalLaunch = "isExternalLaunch"
         static let shouldSuppressTrackerAnimationOnFirstLoad = "shouldSuppressTrackerAnimationOnFirstLoad"
         static let preferredTextEntryMode = "preferredTextEntryMode"
+        static let selectedModelID = "selectedModelID"
+        static let selectedReasoningMode = "selectedReasoningMode"
     }
 
     private var observersHolder = [WeaklyHeldTabObserver]()
@@ -133,6 +135,16 @@ public class Tab: NSObject, NSCoding {
     /// The preferred text entry mode (search or aiChat) for this tab, inherited from settings on creation.
     var preferredTextEntryMode: TextEntryMode
 
+    /// The AI Chat model selected for this tab. Persisted via NSCoding so that
+    /// reopening the app restores the tab's last-used model rather than falling
+    /// back to the global default. `nil` means the tab has not been customised
+    /// and should inherit from the global last-used selection.
+    var selectedModelID: String?
+
+    /// The AI Chat reasoning mode selected for this tab. Persisted alongside
+    /// `selectedModelID` since reasoning is model-specific.
+    var selectedReasoningMode: AIChatReasoningMode?
+
     /// Type of tab: web or AI Chat, derived from the current URL
     private var type: TabType {
         if let link, link.url.isDuckAIURL(debugSettings: aichatDebugSettings) {
@@ -155,6 +167,8 @@ public class Tab: NSObject, NSCoding {
                 isExternalLaunch: Bool = false,
                 shouldSuppressTrackerAnimationOnFirstLoad: Bool = false,
                 preferredTextEntryMode: TextEntryMode = .search,
+                selectedModelID: String? = nil,
+                selectedReasoningMode: AIChatReasoningMode? = nil,
                 aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
         self.uid = uid ?? UUID().uuidString
         self.link = link
@@ -168,6 +182,8 @@ public class Tab: NSObject, NSCoding {
         self.isExternalLaunch = isExternalLaunch
         self.shouldSuppressTrackerAnimationOnFirstLoad = shouldSuppressTrackerAnimationOnFirstLoad
         self.preferredTextEntryMode = preferredTextEntryMode
+        self.selectedModelID = selectedModelID
+        self.selectedReasoningMode = selectedReasoningMode
         self.aichatDebugSettings = aichatDebugSettings
     }
 
@@ -194,10 +210,13 @@ public class Tab: NSObject, NSCoding {
             let isDuckAI = link?.url.isDuckAIURL(debugSettings: AIChatDebugSettings()) ?? false
             preferredTextEntryMode = isDuckAI ? .aiChat : .search
         }
+        let selectedModelID = decoder.decodeObject(forKey: NSCodingKeys.selectedModelID) as? String
+        let selectedReasoningModeRaw = decoder.decodeObject(forKey: NSCodingKeys.selectedReasoningMode) as? String
+        let selectedReasoningMode = selectedReasoningModeRaw.flatMap(AIChatReasoningMode.init(rawValue:))
 
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
 
-        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, preferredTextEntryMode: preferredTextEntryMode)
+        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, preferredTextEntryMode: preferredTextEntryMode, selectedModelID: selectedModelID, selectedReasoningMode: selectedReasoningMode)
     }
 
     public func encode(with coder: NSCoder) {
@@ -213,6 +232,8 @@ public class Tab: NSObject, NSCoding {
         coder.encode(supportsTabHistory, forKey: NSCodingKeys.supportsTabHistory)
         coder.encode(fireTab, forKey: NSCodingKeys.fireTab)
         coder.encode(preferredTextEntryMode.rawValue, forKey: NSCodingKeys.preferredTextEntryMode)
+        coder.encode(selectedModelID, forKey: NSCodingKeys.selectedModelID)
+        coder.encode(selectedReasoningMode?.rawValue, forKey: NSCodingKeys.selectedReasoningMode)
         // Note: isExternalLaunch and shouldSuppressTrackerAnimationOnFirstLoad are not encoded as they are transient flags
         // Note: type is not encoded as it's now a computed property based on the link URL
     }

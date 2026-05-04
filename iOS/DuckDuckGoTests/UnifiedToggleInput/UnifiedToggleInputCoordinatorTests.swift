@@ -1839,8 +1839,6 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertEqual(store.lastUsed, baseline)
     }
 
-    // Mode/model/reasoning/tool ARE user-deliberate choices and must be reflected
-    // in lastUsed so the next new tab inherits the most recent selection.
     func test_updateInputMode_mutatesLastUsed() {
         let store = FakeInputStateStore()
         let sut = makeSUT(stateStore: store)
@@ -2027,11 +2025,6 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isReasoningButtonHidden)
     }
 
-    // Regression: every toolbar refresh path (showCollapsed/showExpanded/hide/
-    // activateFromOmnibar/deactivateToOmnibar/updateInputMode) must re-evaluate the
-    // reasoning button visibility. Otherwise a tab change followed by an omnibar
-    // activation could leave a stale reasoning button visible from the previous
-    // tab. applyToolbarPresentation centralises this rule.
     func test_showCollapsed_afterTabSwitch_refreshesReasoningButtonVisibility() {
         let store = FakeInputStateStore()
         let sut = makeSUT(stateStore: store)

@@ -30,6 +30,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     private var modelSnapshots: [ObjectIdentifier: [Tab]] = [:]
     private var tabsCancellables = Set<AnyCancellable>()
     private var knownUIDs: Set<TabUID> = []
+    private var tabsByUID: [TabUID: Tab] = [:]
 
     init(
         preferences: AIChatPreferencesPersisting,
@@ -73,6 +74,11 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         toggleModeStorage.save(state.toggleMode)
         preferences.selectedModelId = state.selectedModelID
         preferences.selectedReasoningMode = state.selectedReasoningMode
+
+        if let tab = tabsByUID[uid] {
+            tab.selectedModelID = state.selectedModelID
+            tab.selectedReasoningMode = state.selectedReasoningMode
+        }
         Logger.unifiedInputState.debug("recordUserChoice for tab [\(uid)]: \(state.summary)")
     }
 
@@ -97,8 +103,9 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     private func reconcileFromSnapshots() {
         let allTabs = modelSnapshots.values.flatMap { $0 }
         let currentUIDs = Set(allTabs.map { $0.uid })
+        tabsByUID = Dictionary(allTabs.map { ($0.uid, $0) }, uniquingKeysWith: { _, last in last })
         for tab in allTabs where !knownUIDs.contains(tab.uid) {
-            let seeded = seededState(toggleMode: tab.preferredTextEntryMode)
+            let seeded = seededState(from: tab)
             states[tab.uid] = seeded
             Logger.unifiedInputState.debug("seeded new tab [\(tab.uid)] from TabsModel insert: \(seeded.summary)")
         }
@@ -107,6 +114,17 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
             Logger.unifiedInputState.debug("evicted tab [\(uid)] on TabsModel removal")
         }
         knownUIDs = currentUIDs
+    }
+
+    private func seededState(from tab: Tab) -> TabInputState {
+        TabInputState(
+            text: "",
+            toggleMode: tab.preferredTextEntryMode,
+            attachments: [],
+            selectedModelID: tab.selectedModelID ?? trackedLastUsed.selectedModelID,
+            selectedReasoningMode: tab.selectedReasoningMode ?? trackedLastUsed.selectedReasoningMode,
+            selectedTool: trackedLastUsed.selectedTool
+        )
     }
 
     private func seededState(toggleMode: TextEntryMode) -> TabInputState {

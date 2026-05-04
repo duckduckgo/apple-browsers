@@ -429,6 +429,62 @@ class TabTests: XCTestCase {
         XCTAssertNil(decodedTab?.contextualChatURL)
     }
 
+    // MARK: - Per-Tab Model Selection Persistence
+
+    func testWhenTabWithSelectedModelEncodedThenDecodesSuccessfully() {
+        let tabToEncode = Tab(
+            link: link(),
+            fireTab: false,
+            selectedModelID: "claude-opus-4-6",
+            selectedReasoningMode: .extendedReasoning
+        )
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        XCTAssertEqual(decodedTab?.selectedModelID, "claude-opus-4-6")
+        XCTAssertEqual(decodedTab?.selectedReasoningMode, .extendedReasoning)
+    }
+
+    func testWhenTabWithNilSelectedModelEncodedThenDecodesAsNil() {
+        let tabToEncode = Tab(link: link(), fireTab: false)
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        XCTAssertNil(decodedTab?.selectedModelID)
+        XCTAssertNil(decodedTab?.selectedReasoningMode)
+    }
+
+    func testWhenTabEncodedBeforeSelectedModelPropertiesAddedThenDecodesWithNil() {
+        let tab = Tab(coder: CoderStub(properties: ["link": link(), "viewed": false]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.selectedModelID)
+        XCTAssertNil(tab?.selectedReasoningMode)
+    }
+
+    func testWhenTabHasInvalidReasoningModeRawValueThenDecodesAsNil() {
+        let tab = Tab(coder: CoderStub(properties: [
+            "link": link(),
+            "viewed": false,
+            "selectedReasoningMode": "not-a-real-mode"
+        ]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.selectedReasoningMode)
+    }
+
     private func link() -> Link {
         return Link(title: "title", url: URL(string: "http://example.com")!)
     }

@@ -32,7 +32,7 @@ struct DuckAIToggleDebugView: View {
                     Self.markCooldownPassed()
                     isShowingCooldownAlert = true
                 }, label: {
-                    Text(verbatim: "Set Install Cooldown Passed (+3days)")
+                    Text(verbatim: "Set Install Cooldown Elapsed")
                 })
                 .alert(isPresented: $isShowingCooldownAlert, content: {
                     Alert(title: Text(verbatim: "AI Toggle Prompt cooldown set"),

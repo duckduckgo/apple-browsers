@@ -1275,6 +1275,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Järjehoidjate importimine DuckDuckGo'sse";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Ava Chrome, seejärel mine paroolihaldurisse ja järgi alltoodud samme.";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Seaded** > **Andmete eksport**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Vajuta **Jätka**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Vali sihtkohaks **DuckDuckGo**";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Impordi Chrome'ist";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Kas eksportimine on lõpetatud?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Sa pead minema Paroolirakendusse ja seejärel järgima importimiseks vajalikke samme.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Puuduta valikuid **···** > **Ekspordi andmed teise rakendusse**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Puuduta **Vali kõik** > **Jätka**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Vali sihtkohaks **DuckDuckGo**";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Import paroolidest";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Esmalt ekspordi oma paroolid ja järjehoidjad Safarist ning seejärel tule siia tagasi faili üleslaadimiseks.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Eksport Safarist";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Impordi Safarist";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Laadi eksporditud fail üles…";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Zip-failist ei leitud toetatud andmeid. Vaadake Safari ekspordijuhiseid ja proovige uuesti.";
 
@@ -1284,6 +1329,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Faili %@ lugemine ebaõnnestus. Failis olevate andmetega võib esineda probleeme.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Sain aru";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Faili %@ lugemine ebaõnnestus. Proovi üles laadida mõni teine fail või proovi mõnda muud importimismeetodit.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Fail võib olla vigane";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Zip-failist ei leitud toetatud andmeid. Vaadake ekspordijuhiseid ja proovige uuesti.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Andmeid ei leitud";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Valitud faili ei toetata. Valige muu fail ja proovige uuesti.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Toetamata fail";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1358,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Too DuckDuckGo-sse";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Valige **Eksport** ning järgmisel ekraanil valige **Järjehoidjad** ja **Salvesta allalaadimiskausta**.";
@@ -1303,7 +1372,7 @@
 "data.import.passwords.instructions.chrome.step1" = "Avage Chrome'is **Google Password Manager** ja seejärel **Seaded**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Valige **Ekspordi paroolid**, seejärel **Salvesta failidesse** ja salvestage fail kausta, mida mäletate.";
+"data.import.passwords.instructions.chrome.step2" = "Vali **Ekspordi andmed**, seejärel **···** ja seejärel **Laadi CSV-failina alla** ning salvesta fail kausta, mida mäletad.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Kuidas eksportida paroole";
@@ -1331,6 +1400,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Impordi paroolid DuckDuckGosse";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Ava seaded eksportimiseks";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Pea meeles puudutada valikut\n„Ekspordi failidesse“";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Paroolid Rakendus";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Impordi alates";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Sünkrooni alates";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo teisel seadmel";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Järjehoidjad";
@@ -1367,6 +1460,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Paroolid";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Kas soovid oma järjehoidjad ka Safarist üle tuua?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Jätka";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Mitte praegu";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Kas tahad ka oma paroolid kaasa võtta?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Viimane kuu";
@@ -4274,6 +4379,9 @@
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Kood kopeeritud";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Seade sünkrooniti edukalt!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup lubatud";

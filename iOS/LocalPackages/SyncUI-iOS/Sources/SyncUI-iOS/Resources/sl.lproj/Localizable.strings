@@ -334,11 +334,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "Sinhroniziraj drugo napravo";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Ne zdaj";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Želite podatke sinhronizirati z drugo napravo?";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Naloži ikone spletnih mest, ki ste jih dodali med zaznamke. Prenosi ikon so izpostavljeni vašemu omrežju.";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Zaznamki";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Uporabljajte iste priljubljene zaznamke v mobilnih napravah in namiznih računalnikih.";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Povezovanje ...";
@@ -363,6 +372,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Shranite zaznamke in podatke za samodejno izpolnjevanje ter jih sinhronizirajte med napravami s šifriranjem od začetka do konca.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "S to kodo obnovite podatke, če izgubite dostop do te naprave. Podatkov funkcije Sync & Backup ni mogoče obnoviti po 18 mesecih nedejavnosti. [Več informacij](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "Aplikacija DuckDuckGo";

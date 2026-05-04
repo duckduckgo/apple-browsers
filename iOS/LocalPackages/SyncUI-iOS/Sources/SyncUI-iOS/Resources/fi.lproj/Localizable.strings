@@ -334,11 +334,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "Synkronoi toinen laite";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Ei nyt";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Synkronoidaanko tietosi toisen laitteen kanssa?";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Lataa kuvakkeet verkkosivustoista, jotka olet merkinnyt kirjanmerkkeihin. Kuvakelataukset näkyvät verkostollesi.";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Kirjanmerkit";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Käytä samoja suosikkikirjanmerkkejä mobiililaitteessa ja tietokoneella.";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Yhdistetään...";
@@ -363,6 +372,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Tallenna kirjanmerkit ja automaattisen täytön tiedot ja synkronoi ne laitteidesi välillä päästä päähän -salauksella.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Käytä tätä koodia tietojesi palauttamiseen, jos menetät pääsyn tähän laitteeseen. Sync & Backup -tietoja ei voida palauttaa 18 kuukauden toimettomuuden jälkeen. [Lue lisää](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo-sovellus";

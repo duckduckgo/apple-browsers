@@ -137,6 +137,11 @@ extension XCUIApplication {
         value(forKey: "bundleID") as? String
     }
 
+    var isSandboxed: Bool {
+        // Naive bundleID-based check
+        bundleID?.starts(with: "com.duckduckgo.mobile.ios") == true
+    }
+
     /// Enforces single a single window by:
     ///  1. First, closing all windows
     ///  2. Opening a new window

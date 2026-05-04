@@ -334,11 +334,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "Sinchronizuok kitą įrenginį";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Ne dabar";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Sinchronizuoti duomenis su kitu įrenginiu?";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Įkelia piktogramas iš jūsų žymėse esančių svetainių. Piktogramų atsisiuntimai rodomi jūsų tinkle.";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Žymės";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Tos pačios mėgstamiausių adresų žymės naudojamos mobiliajame telefone ir staliniame kompiuteryje.";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Jungiamasi...";
@@ -363,6 +372,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Išsaugok parankines bei automatinio pildymo duomenis ir sinchronizuok juos tarp savo įrenginių naudojant galutinį šifravimą.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Naudok šį kodą duomenims atkurti, jei prarasi prieigą prie šio įrenginio. Po 18 mėnesių neaktyvumo negalėsi atkurti „Sync & Backup“ duomenų. [Sužinoti daugiau](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "„DuckDuckGo“ programėlė";

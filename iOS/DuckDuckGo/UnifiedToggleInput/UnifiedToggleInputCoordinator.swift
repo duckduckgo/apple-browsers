@@ -392,19 +392,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         let expandedHeight = editingHeight()
 
-        if cardPosition == .top && isToggleEnabled {
-            viewController.applyCardLayout(.collapsed, animated: false)
-            viewController.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
-            let toggleHiddenHeight = editingHeight()
-            intentSubject.send(.showOmnibarEditing(expandedHeight: toggleHiddenHeight, pendingExpandedHeight: expandedHeight))
-        } else if cardPosition == .top {
-            viewController.applyCardLayout(.collapsed, animated: false)
-            viewController.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
-            let omnibarMatchingHeight = editingHeight()
-            intentSubject.send(.showOmnibarEditing(expandedHeight: omnibarMatchingHeight))
-        } else {
-            intentSubject.send(.showOmnibarEditing(expandedHeight: expandedHeight))
-        }
+        // Pre-stage to the start pose so the intent handler animates from initial to final height.
+        viewController.prepareForOmnibarEditingShow()
+        let initialHeight = editingHeight()
+        intentSubject.send(.showOmnibarEditing(expandedHeight: initialHeight, pendingExpandedHeight: expandedHeight))
 
         if cardPosition == .top {
             scheduleTopOmnibarKeyboardPresentationFallback()
@@ -456,10 +447,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             refreshToolsPresentation()
             modeChangeSubject.send(.search)
         }
-    }
-
-    func animateOmnibarExpansion(additionalAnimations: (() -> Void)? = nil) {
-        viewController.animateToggleReveal(additionalAnimations: additionalAnimations)
     }
 
     func editingHeight() -> CGFloat {
@@ -588,6 +575,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func updateVoiceSearchAvailability(_ enabled: Bool) {
         viewController.isVoiceSearchAvailable = enabled
+    }
+
+    func updateAIChatShortcutAvailability(_ available: Bool) {
+        viewController.handler.isAIChatShortcutAvailable = available
     }
 
     func updateIsFireTab(_ isFireTab: Bool) {
@@ -855,7 +846,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.modelPickerMenu = modelStore.models.isEmpty ? nil : modelMenuFactory.makeMenu(
             models: modelStore.models,
             selectedId: selectedId,
-            isBottomAnchored: viewController.cardPosition == .bottom,
             hasActiveSubscription: modelStore.subscriptionState.hasActiveSubscription,
             advancedSectionTitle: modelStore.subscriptionState.hasActiveSubscription
                 ? UserText.aiChatAdvancedModelsSectionHeader
@@ -1046,6 +1036,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         // The inline X dismisses the same way the floating X does — forward to the
         // content container's shared handler so both controls route through one path.
         contentViewController.onDismissRequested?()
+    }
+
+    func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController) {
+        delegate?.unifiedToggleInputDidRequestAIChat()
     }
 }
 

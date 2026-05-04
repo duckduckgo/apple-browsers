@@ -329,6 +329,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 return true
             }
 
+            // Voice handoff requires an explicit click on the voice button. Enter on an empty
+            // input must not implicitly start a voice session — it stays a no-op via `submit()`,
+            // mirroring the legacy disabled-submit behavior.
             omnibarController.submit()
             return true
         } else if commandSelector == #selector(NSResponder.insertTab(_:)) {

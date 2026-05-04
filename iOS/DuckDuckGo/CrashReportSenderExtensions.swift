@@ -35,6 +35,9 @@ extension CrashReportSender {
             } else {
                 Pixel.fire(pixel: .crashReportingSubmissionFailed)
             }
+
+        case CrashReportSenderError.submissionSucceeded:
+            break
         }
     }
 }

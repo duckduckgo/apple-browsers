@@ -5445,6 +5445,7 @@
 		4BBF09222830812900EE1418 /* FileSystemDSL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemDSL.swift; sourceTree = "<group>"; };
 		4BBF0924283083EC00EE1418 /* FileSystemDSLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemDSLTests.swift; sourceTree = "<group>"; };
 		4BC5E8612E174B7D00391C19 /* DesignResourcesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKit; path = ../SharedPackages/Infrastructure/DesignResourcesKit; sourceTree = SOURCE_ROOT; };
+		4BCB3EBA2FA9182900AEFF07 /* CrashReportSenderExtensionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashReportSenderExtensionsTests.swift; sourceTree = "<group>"; };
 		4BCB82792E92E25F004B7543 /* AttributedMetric */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = AttributedMetric; path = ../SharedPackages/AttributedMetric; sourceTree = SOURCE_ROOT; };
 		4BD18EFF283F0BC500058124 /* BookmarksBarViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarViewController.swift; sourceTree = "<group>"; };
 		4BD18F04283F151F00058124 /* BookmarksBar.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = BookmarksBar.storyboard; sourceTree = "<group>"; };
@@ -8840,6 +8841,7 @@
 		4B70BFFD27B0793D000386ED /* CrashReports */ = {
 			isa = PBXGroup;
 			children = (
+				4BCB3EBA2FA9182900AEFF07 /* CrashReportSenderExtensionsTests.swift */,
 				37AA017B2E2100D500844427 /* CrashPixelAppIdentifierTests.swift */,
 			);
 			path = CrashReports;
@@ -16029,6 +16031,7 @@
 				1D1C36E729FB019C001FA40C /* HistoryTabExtensionTests.swift in Sources */,
 				CCA029942F5F385D0039B81E /* DefaultBrowserAndDockPromptPresentingMock.swift in Sources */,
 				1D9FDEBB2B9B5E090040B78C /* WebTrackingProtectionPreferencesTests.swift in Sources */,
+				4BCB3EBB2FA9182900AEFF07 /* CrashReportSenderExtensionsTests.swift in Sources */,
 				CC26B6782F0D28DF00D380B6 /* MockNewTabPageNextStepsCardsActionHandler.swift in Sources */,
 				3706FDF3293F661700E42796 /* ChromiumLoginReaderTests.swift in Sources */,
 				3706FDF4293F661700E42796 /* TabCollectionTests.swift in Sources */,
@@ -18390,6 +18393,7 @@
 				B69B50472726C5C200758A2B /* VariantManagerTests.swift in Sources */,
 				8546DE6225C03056000CA5E1 /* UserAgentTests.swift in Sources */,
 				7B1522B22DE9CCA900887371 /* MockFeatureGatekeeper.swift in Sources */,
+				4BCB3EBC2FA9182900AEFF07 /* CrashReportSenderExtensionsTests.swift in Sources */,
 				9F26060B2B85C20A00819292 /* AddEditBookmarkDialogViewModelTests.swift in Sources */,
 				B63ED0DE26AFD9A300A9DAD1 /* AVCaptureDeviceMock.swift in Sources */,
 				98A95D88299A2DF900B9B81A /* BookmarkMigrationTests.swift in Sources */,

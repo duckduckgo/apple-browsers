@@ -33,6 +33,7 @@ public protocol CrashReportSending {
 public enum CrashReportSenderError: Error {
     case crcidMissing
     case submissionFailed(HTTPURLResponse?)
+    case submissionSucceeded
 }
 
 public final class CrashReportSender: CrashReportSending {
@@ -74,6 +75,7 @@ public final class CrashReportSender: CrashReportSending {
                     response.allHeaderFields.forEach { headerField in
                         Logger.general.debug("CrashReportSender: \(String(describing: headerField.key)): \(String(describing: headerField.value))")
                     }
+                    self.pixelEvents?.fire(.submissionSucceeded)
                     let receivedCRCID = response.allHeaderFields[CrashReportSender.httpHeaderCRCID]
                     if receivedCRCID == nil || receivedCRCID as? String == "" {
                         let crashReportError = CrashReportSenderError.crcidMissing

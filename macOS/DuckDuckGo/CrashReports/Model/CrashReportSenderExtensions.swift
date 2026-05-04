@@ -37,6 +37,9 @@ extension CrashReportSender {
             } else {
                 PixelKit.fire(GeneralPixel.crashReportingSubmissionFailed)
             }
+
+        case CrashReportSenderError.submissionSucceeded:
+            PixelKit.fire(GeneralPixel.crashReportSent, frequency: .dailyAndStandard)
         }
     }
 }

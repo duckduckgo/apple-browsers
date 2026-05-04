@@ -176,6 +176,8 @@ final class AIChatContextualSheetCoordinator {
     /// Called by TabViewController when the page navigates to a new URL.
     func notifyPageChanged() async {
         guard hasActiveSheet else { return }
+        // Native UTI handles nav via the chip view-model's `originatingURLPublisher` subscription.
+        if featureFlagger.isFeatureOn(.unifiedToggleInput) { return }
         sessionState.notifyPageChanged()
 
         if sessionState.shouldAutoCollectContext {

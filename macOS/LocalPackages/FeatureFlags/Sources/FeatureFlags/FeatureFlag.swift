@@ -434,9 +434,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .embeddedExtension:
             Config(source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension)), category: .webExtensions)
         case .adBlockingExtension:
-            Config(source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.featureEnabled)), category: .webExtensions)
+            Config(source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.featureEnabled)), category: .adBlocking)
         case .adBlockingAnalyticsOptInPrompt:
-            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.analyticsOptInPrompt)), category: .webExtensions)
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.analyticsOptInPrompt)), category: .adBlocking)
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout)), category: .webExtensions)
         case .syncSeamlessAccountSwitching:

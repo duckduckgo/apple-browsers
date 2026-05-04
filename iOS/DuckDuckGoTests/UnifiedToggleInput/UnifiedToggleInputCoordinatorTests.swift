@@ -1958,6 +1958,117 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertNil(store.states["tab-A"]?.selectedTool)
     }
 
+    // MARK: - Reasoning button visibility on tab switch
+
+    func test_activateForTab_reasoningModel_showsReasoningButton() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [
+            makeReasoningModel(id: "smart", supportedReasoningEffort: [.none, .low, .medium]),
+            makeReasoningModel(id: "fast", supportedReasoningEffort: [.minimal])
+        ]
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedModelID: "smart")
+
+        sut.activateForTab("tab-A")
+
+        XCTAssertFalse(sut.viewController.isReasoningButtonHidden,
+                       "Reasoning-capable model must show the picker after tab activation.")
+    }
+
+    func test_activateForTab_nonReasoningModel_hidesReasoningButton() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [
+            makeReasoningModel(id: "smart", supportedReasoningEffort: [.none, .low, .medium]),
+            makeReasoningModel(id: "fast", supportedReasoningEffort: [.minimal])
+        ]
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedModelID: "fast")
+
+        sut.activateForTab("tab-A")
+
+        XCTAssertTrue(sut.viewController.isReasoningButtonHidden,
+                      "Non-reasoning model must hide the picker after tab activation.")
+    }
+
+    func test_activateForTab_switchingFromReasoningToNonReasoning_hidesButton() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [
+            makeReasoningModel(id: "smart", supportedReasoningEffort: [.none, .low, .medium]),
+            makeReasoningModel(id: "fast", supportedReasoningEffort: [.minimal])
+        ]
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedModelID: "smart")
+        store.states["tab-B"] = TabInputState(toggleMode: .aiChat, selectedModelID: "fast")
+
+        sut.activateForTab("tab-A")
+        XCTAssertFalse(sut.viewController.isReasoningButtonHidden)
+
+        sut.activateForTab("tab-B")
+
+        XCTAssertTrue(sut.viewController.isReasoningButtonHidden,
+                      "Switching to a non-reasoning model must re-evaluate visibility and hide the picker.")
+    }
+
+    func test_activateForTab_switchingFromNonReasoningToReasoning_showsButton() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [
+            makeReasoningModel(id: "smart", supportedReasoningEffort: [.none, .low, .medium]),
+            makeReasoningModel(id: "fast", supportedReasoningEffort: [.minimal])
+        ]
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedModelID: "fast")
+        store.states["tab-B"] = TabInputState(toggleMode: .aiChat, selectedModelID: "smart")
+
+        sut.activateForTab("tab-A")
+        XCTAssertTrue(sut.viewController.isReasoningButtonHidden)
+
+        sut.activateForTab("tab-B")
+
+        XCTAssertFalse(sut.viewController.isReasoningButtonHidden)
+    }
+
+    // Regression: every toolbar refresh path (showCollapsed/showExpanded/hide/
+    // activateFromOmnibar/deactivateToOmnibar/updateInputMode) must re-evaluate the
+    // reasoning button visibility. Otherwise a tab change followed by an omnibar
+    // activation could leave a stale reasoning button visible from the previous
+    // tab. applyToolbarPresentation centralises this rule.
+    func test_showCollapsed_afterTabSwitch_refreshesReasoningButtonVisibility() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [
+            makeReasoningModel(id: "smart", supportedReasoningEffort: [.none, .low, .medium]),
+            makeReasoningModel(id: "fast", supportedReasoningEffort: [.minimal])
+        ]
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedModelID: "smart")
+        store.states["tab-B"] = TabInputState(toggleMode: .aiChat, selectedModelID: "fast")
+
+        sut.activateForTab("tab-A")
+        sut.showExpanded()
+        XCTAssertFalse(sut.viewController.isReasoningButtonHidden)
+
+        sut.activateForTab("tab-B")
+        sut.showCollapsed()
+
+        XCTAssertTrue(sut.viewController.isReasoningButtonHidden,
+                      "showCollapsed must refresh reasoning visibility from the live model.")
+    }
+
+    func test_activateFromOmnibar_refreshesReasoningButtonVisibility() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [
+            makeReasoningModel(id: "smart", supportedReasoningEffort: [.none, .low, .medium]),
+            makeReasoningModel(id: "fast", supportedReasoningEffort: [.minimal])
+        ]
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedModelID: "fast")
+
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        XCTAssertTrue(sut.viewController.isReasoningButtonHidden,
+                      "activateFromOmnibar must reflect the current tab's model reasoning capability.")
+    }
+
     // MARK: - Helpers
 
     private func makeModelWithTools(id: String, supportsImageUpload: Bool = false) -> AIChatModel {
@@ -1968,6 +2079,18 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
             supportsImageUpload: supportsImageUpload,
             supportedTools: [.webSearch],
             entityHasAccess: true
+        )
+    }
+
+    private func makeReasoningModel(id: String, supportedReasoningEffort: [AIChatReasoningEffort]) -> AIChatModel {
+        AIChatModel(
+            id: id,
+            name: id,
+            shortName: id,
+            provider: .openAI,
+            supportsImageUpload: false,
+            entityHasAccess: true,
+            supportedReasoningEffort: supportedReasoningEffort
         )
     }
 }

@@ -1184,6 +1184,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func applyToolbarPresentation() {
         refreshToolsPresentation()
+        updateReasoningPicker()
         updateToolbarAIVoiceChat()
     }
 

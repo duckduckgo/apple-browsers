@@ -167,6 +167,10 @@ public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling {
         try settingsStore.set(data, for: \.migrationStatus)
     }
 
+    // MARK: - Lifecycle
+
+    public var setupSucceeded: Bool? { dataStore.setupSucceeded }
+
     // MARK: - Private helpers
 
     private func loadSettingsBlob() throws -> [String: Any] {

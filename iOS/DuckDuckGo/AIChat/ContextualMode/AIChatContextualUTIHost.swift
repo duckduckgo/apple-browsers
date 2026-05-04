@@ -72,13 +72,10 @@ final class AIChatContextualUTIHost {
 
         Logger.contextualUTI.debug("UTIHost init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
 
-        // Context collected outside the chip flow reaches `pageContextHandler.contextPublisher`
-        // rather than `handleChipAttachRequest`. Mirror it into the chip view model with the
-        // right delivery state: pre-chat carry-over is silent, while active-chat updates remain
-        // visible until the user submits.
-        // `dropFirst` skips the synchronous replay; we step aside while a UTI-initiated attach
-        // is in flight (that path has its own one-shot subscriber in `handleChipAttachRequest`
-        // and intentionally keeps `delivered=false` so the chip shows as feedback).
+        // Out-of-band context (BEFORECHAT manual attach, FE-driven flows) reaches the chip
+        // here; pick a delivery state from session timing — pre-chat = silent, active-chat =
+        // pending. `dropFirst` skips the cold-start replay. We step aside while a UTI-driven
+        // attach is in flight; that path has its own one-shot subscriber in `handleChipAttachRequest`.
         pageContextHandler.contextPublisher
             .dropFirst()
             .sink { [weak self] context in

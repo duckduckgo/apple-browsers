@@ -30,25 +30,19 @@ enum PageContextAttachmentDeliveryState {
 
 /// Drives the page-context chip in the contextual chat UTI.
 ///
-/// `attachedContext` is command-driven (`setAttached(_:)`) so JS-side auto-emissions don't bleed
-/// into the chip; only the host pushes after a successful attach/detach. With auto-attach OFF,
-/// navigating away clears the attachment (mirrors legacy FE); with ON, it's preserved while the
-/// host re-collects.
+/// `attachedContext` is command-driven so JS-side auto-emissions don't bleed in; the host
+/// pushes after attach/detach. Auto-attach OFF clears on nav-away (mirrors legacy FE); ON
+/// preserves the attachment while the host re-collects. Half-sheet carry-over arrives
+/// `.delivered`, so the chat opens silent.
 ///
 /// Visibility:
-///   - attachment exists AND URL matches AND already submitted with → hidden (FE keeps using
-///     it silently; on-screen chip would be redundant noise).
-///   - attachment exists AND URL matches AND not yet submitted → show as `.attached` so the
-///     user sees confirmation of what they just attached, until they submit a prompt.
-///   - no attachment → placeholder (regardless of mode — the half-sheet is where the user
-///     exercises their attach/skip agency; once they're in the chat, an empty state should
-///     always offer a tap target so they can re-attach if they change their mind).
-///   - auto mode + pending attachment but URL doesn't match → show `.attached` (transition
-///     between nav and re-attach; avoids placeholder flash for visible pending feedback).
-///   - auto mode + delivered attachment but URL doesn't match → keep hidden until the new
-///     page's context lands; otherwise the already-silent old chip briefly reappears.
-/// Half-sheet carry-over starts in the "already submitted" state — the half-sheet sent the
-/// first prompt with that attachment, so the chat opens silent.
+///   - attached + URL matches + delivered → hidden (FE silently uses it).
+///   - attached + URL matches + pending → `.attached` feedback until the user submits.
+///   - attached + URL doesn't match + auto ON → `.attached` only if pending; if delivered,
+///     stay hidden until the new page's context lands (otherwise a silent old chip briefly
+///     reappears during nav transition).
+///   - no attachment → placeholder. The half-sheet is the user's attach/skip gate; once
+///     they're in the chat, an empty state always offers a tap target.
 @MainActor
 final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
@@ -135,10 +129,8 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     private func clearAttachedDueToNavigationAway() {
         Logger.contextualUTI.debug("PageContextChip clearing attachment — tab navigated away (auto-attach OFF)")
         clearAttachmentState()
-        // Propagate through the host so it clears the page-context handler buffer and pushes
-        // nil to the FE — otherwise `AIChatUserScript.lastPushedPageContext` retains the stale
-        // context and the next prompt would still carry it (chip shows detached, but AI sees
-        // the old page).
+        // Propagate through the host so it also clears the page-context handler — otherwise
+        // its cached context survives and the next prompt would carry stale context.
         onRemoveActionRequested?()
     }
 
@@ -164,19 +156,15 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
         if isMatching, let ctx = attachedContext {
             state = .attached(title: ctx.title, favicon: ctx.favicon)
-            // Show as feedback until the user submits the prompt; then go silent.
             isVisible = attachmentDeliveryState == .pendingSubmit
             branch = "matching(deliveryState=\(attachmentDeliveryState))"
         } else if let ctx = attachedContext, isAutoAttachEnabled() {
-            // Auto mode mid-transition (URL changed, re-attach not yet landed): keep showing the
-            // attached site only if it was already visible feedback.
+            // Auto-mode nav transition: keep showing the attached site only if it was
+            // pending feedback; if delivered, stay hidden so we don't briefly resurrect it.
             state = .attached(title: ctx.title, favicon: ctx.favicon)
             isVisible = attachmentDeliveryState == .pendingSubmit
             branch = "autoTransition(deliveryState=\(attachmentDeliveryState))"
         } else {
-            // No attachment: always show placeholder so the user can attach. The half-sheet
-            // is the gate for "do I want to attach this page?"; once we're in the chat, an
-            // empty state needs an affordance.
             state = .placeholder
             isVisible = true
             branch = "noAttachment"

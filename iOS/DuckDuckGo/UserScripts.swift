@@ -69,7 +69,7 @@ final class UserScripts: UserScriptsProvider {
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard,
+         keyValueStore: ThrowingKeyValueStoring,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 

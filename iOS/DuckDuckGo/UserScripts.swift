@@ -152,7 +152,7 @@ final class UserScripts: UserScriptsProvider {
                 guard let pixel = Pixel.Event.adBlockingDetectedEvent(type: type) else { return }
                 DailyPixel.fire(
                     pixel: pixel,
-                    withAdditionalParameters: loginState.map { ["loginState": $0] } ?? [:]
+                    withAdditionalParameters: ["loginState": loginState.rawValue]
                 )
             }
         )

@@ -151,7 +151,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                     && (youTubeAdBlockingStorage.youTubeAnalyticsEnabled ?? false)
             },
             onEvent: { type, loginState in
-                guard let pixel = WebExtensionPixel.adBlockingDetectedEvent(type: type, loginState: loginState) else { return }
+                guard let pixel = WebExtensionPixel.adBlockingDetectedEvent(type: type, loginState: loginState.rawValue) else { return }
                 PixelKit.fire(pixel, frequency: .daily)
             }
         )

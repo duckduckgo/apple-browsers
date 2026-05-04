@@ -318,6 +318,7 @@
             {
                 "key": "loginState",
                 "type": "string",
+                "enum": ["logged-in", "logged-out", "premium", "unknown"],
                 "description": "User's YouTube login state at the time of detection"
             }
         ]
@@ -333,6 +334,7 @@
             {
                 "key": "loginState",
                 "type": "string",
+                "enum": ["logged-in", "logged-out", "premium", "unknown"],
                 "description": "User's YouTube login state at the time of detection"
             }
         ]
@@ -348,6 +350,7 @@
             {
                 "key": "loginState",
                 "type": "string",
+                "enum": ["logged-in", "logged-out", "premium", "unknown"],
                 "description": "User's YouTube login state at the time of detection"
             }
         ]
@@ -363,6 +366,7 @@
             {
                 "key": "loginState",
                 "type": "string",
+                "enum": ["logged-in", "logged-out", "premium", "unknown"],
                 "description": "User's YouTube login state at the time of detection"
             }
         ]
@@ -378,6 +382,7 @@
             {
                 "key": "loginState",
                 "type": "string",
+                "enum": ["logged-in", "logged-out", "premium", "unknown"],
                 "description": "User's YouTube login state at the time of detection"
             }
         ]

@@ -19,6 +19,16 @@
 import Foundation
 import WebKit
 
+/// User's YouTube login state at the time a detection event was emitted.
+/// `unknown` is the catch-all for missing or unrecognised values from
+/// content-scope-scripts so the pixel always reports a schema-valid value.
+public enum LoginState: String {
+    case loggedIn = "logged-in"
+    case loggedOut = "logged-out"
+    case premium
+    case unknown
+}
+
 /// C-S-S subfeature that receives web interference detection events
 /// (currently YouTube ad-blocking related) and forwards each gated event
 /// to the platform-supplied pixel-firing closure.
@@ -28,7 +38,7 @@ import WebKit
 /// Params shape: `{ "type": String, "data": { "loginState": String? } }`.
 public final class WebEventsSubfeature: NSObject, Subfeature {
 
-    public typealias EventHandler = (_ type: String, _ loginState: String?) -> Void
+    public typealias EventHandler = (_ type: String, _ loginState: LoginState) -> Void
 
     public let messageOriginPolicy: MessageOriginPolicy = .all
     public let featureName: String = "webEvents"
@@ -68,7 +78,8 @@ public final class WebEventsSubfeature: NSObject, Subfeature {
         print("=== event type: \(type)")
         print("=== isUserOptedIn: \(isUserOptedIn())")
         guard isUserOptedIn() else { return }
-        let loginState = (payload["data"] as? [String: Any])?["loginState"] as? String
+        let raw = (payload["data"] as? [String: Any])?["loginState"] as? String
+        let loginState = raw.flatMap(LoginState.init(rawValue:)) ?? .unknown
         onEvent(type, loginState)
     }
 }

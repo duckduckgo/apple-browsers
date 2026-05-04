@@ -74,11 +74,11 @@ enum WebExtensionPixel: PixelKitEvent {
 
     // MARK: - Ad Blocking Detection Events
 
-    case adBlockingDetectedAdBlocker(loginState: String?)
-    case adBlockingDetectedPlayabilityError(loginState: String?)
-    case adBlockingDetectedVideoAd(loginState: String?)
-    case adBlockingDetectedStaticAd(loginState: String?)
-    case adBlockingDetectedBuffering(loginState: String?)
+    case adBlockingDetectedAdBlocker(loginState: String)
+    case adBlockingDetectedPlayabilityError(loginState: String)
+    case adBlockingDetectedVideoAd(loginState: String)
+    case adBlockingDetectedStaticAd(loginState: String)
+    case adBlockingDetectedBuffering(loginState: String)
 
     // MARK: - PixelKitEvent
 
@@ -182,7 +182,7 @@ enum WebExtensionPixel: PixelKitEvent {
              .adBlockingDetectedVideoAd(let loginState),
              .adBlockingDetectedStaticAd(let loginState),
              .adBlockingDetectedBuffering(let loginState):
-            return loginState.map { ["loginState": $0] }
+            return ["loginState": loginState]
         default:
             return nil
         }
@@ -194,7 +194,7 @@ enum WebExtensionPixel: PixelKitEvent {
 
     /// Maps a C-S-S `webEvent` `type` string to the matching pixel case.
     /// Returns `nil` for unknown types so the caller can no-op.
-    static func adBlockingDetectedEvent(type: String, loginState: String?) -> WebExtensionPixel? {
+    static func adBlockingDetectedEvent(type: String, loginState: String) -> WebExtensionPixel? {
         switch type {
         case "youtube_adBlocker": return .adBlockingDetectedAdBlocker(loginState: loginState)
         case "youtube_playabilityError": return .adBlockingDetectedPlayabilityError(loginState: loginState)

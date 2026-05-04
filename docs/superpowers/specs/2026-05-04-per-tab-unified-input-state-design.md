@@ -64,16 +64,18 @@ struct TabInputState: Equatable {
     var attachments: [AIChatImageAttachment]
     var selectedModelID: String?
     var selectedReasoningMode: AIChatReasoningMode?
-    var selectedTools: Set<AIChatRAGTool>
+    var selectedTool: AIChatRAGTool?
 }
 ```
+
+(The existing `UTIToolsController` exposes a single `selectedTool: AIChatRAGTool?` — only `.webSearch` is implemented today. The struct mirrors that single-value shape.)
 
 A small `LastUsedInputDefaults` value type holds the seedable defaults (toggle, model id, reasoning, tool set — not text or attachments). The store materializes it on read by reading through to existing canonical homes where one exists:
 
 - `toggleMode`: `ToggleModeStorage` (canonical, persisted)
 - `selectedModelID`: `AIChatPreferencesPersisting.selectedModelId` (canonical, persisted)
 - `selectedReasoningMode`: `AIChatPreferencesPersisting.selectedReasoningMode` (canonical, persisted)
-- `selectedTools`: **in-memory only on the store**. Tools have no canonical persisted home today; see Risks.
+- `selectedTool`: **in-memory only on the store**. Tools have no canonical persisted home today; see Risks.
 
 `TabUID` is a typealias for `String` (matches `Tab.uid`).
 
@@ -94,7 +96,9 @@ A small `LastUsedInputDefaults` value type holds the seedable defaults (toggle, 
 Before binding to a new tab, coordinator snapshots its current state and calls `store.update(_:for: previousUID)`. This replaces today's `resetSessionState()` (which discards state).
 
 ### User mutation (active tab)
-Existing change publishers fire (`textChangeSubject`, mode change, attachments change subject, model selection, tool selection). Coordinator updates its live state and pushes through to the store keyed by the active tab uid. The store also updates its `lastUsed` for seedable fields (toggle, model id, reasoning, tools) so subsequent new tabs inherit the latest choice.
+Existing change publishers fire (`textChangeSubject`, mode change, attachments change subject, model selection, tool selection). Coordinator updates its live state and pushes through to the store keyed by the active tab uid.
+
+Because toggle/model/reasoning all already have global persisted homes (`ToggleModeStorage`, `AIChatPreferencesPersisting`), and those globals are read by the model store / switch handler / `Tab.preferredTextEntryMode` initialization, the global preferences are simultaneously kept in sync with the active tab's values. This automatically gives "last used = next new tab" without an extra mechanism: when tab N becomes active, its values are written through to the globals; when a new tab is created later, eager seeding reads the same globals.
 
 ### Tab removal / burn
 Store evicts the entry on `TabsModel`-observed removal. Fire-tab burn evicts every fire-tab entry. No dangling state.

@@ -35,15 +35,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
     struct Constants {
         static let backgroundRefreshTaskIdentifier = "com.duckduckgo.app.remoteMessageRefresh"
         static let minimumConfigurationRefreshInterval: TimeInterval = 60 * 60 * 4
-        static let endpoint: URL = {
-            #if DEBUG
-                // Temporary PIR Freemium RMF test config. Revert before shipping.
-                URL(string: "https://raw.githubusercontent.com/duckduckgo/remote-messaging-config/jozsef/"
-                    + "freemium-pir-rmf-entry-point/live/ios-config/ios-config.json")!
-            #else
-                URL(string: "https://staticcdn.duckduckgo.com/remotemessaging/config/v1/ios-config.json")!
-            #endif
-        }()
+        static let endpoint = URL(string: "https://staticcdn.duckduckgo.com/remotemessaging/config/v1/ios-config.json")!
     }
 
     let endpoint: URL = Constants.endpoint

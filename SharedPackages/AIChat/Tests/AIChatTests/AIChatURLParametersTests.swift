@@ -86,32 +86,4 @@ final class AIChatURLParametersTests: XCTestCase {
         XCTAssertEqual(result.absoluteString, "https://duck.ai/chat?mode=image")
     }
 
-    // MARK: - nativeInputURL
-
-    func testNativeInputURLAppendsParameter() {
-        let baseURL = URL(string: "https://duckduckgo.com/aichat")!
-        let result = AIChatURLParameters.nativeInputURL(from: baseURL)
-        XCTAssertEqual(result.absoluteString, "https://duckduckgo.com/aichat?nativeInput=1")
-    }
-
-    func testNativeInputURLReplacesExistingParameter() {
-        let baseURL = URL(string: "https://duckduckgo.com/aichat?nativeInput=0")!
-        let result = AIChatURLParameters.nativeInputURL(from: baseURL)
-
-        let components = URLComponents(url: result, resolvingAgainstBaseURL: false)!
-        let nativeInputItems = (components.queryItems ?? []).filter { $0.name == "nativeInput" }
-        XCTAssertEqual(nativeInputItems.count, 1)
-        XCTAssertEqual(nativeInputItems.first?.value, "1")
-    }
-
-    func testNativeInputURLPreservesOtherParameters() {
-        let baseURL = URL(string: "https://duckduckgo.com/aichat?placement=sidebar&q=hello")!
-        let result = AIChatURLParameters.nativeInputURL(from: baseURL)
-
-        let components = URLComponents(url: result, resolvingAgainstBaseURL: false)!
-        let queryItems = components.queryItems ?? []
-        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "placement", value: "sidebar")))
-        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "q", value: "hello")))
-        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "nativeInput", value: "1")))
-    }
 }

@@ -252,7 +252,7 @@ final class AIChatContextualWebViewController: UIViewController {
         hasPendingChipContext = false
         pendingChipContext = nil
         loadingView.startAnimating()
-        webView.load(URLRequest(url: applyNativeInputIfNeeded(to: url)))
+        webView.load(URLRequest(url: applyContextualURLOverridesIfNeeded(to: url)))
     }
 
     // MARK: - Private Methods
@@ -290,7 +290,7 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func loadAIChat() {
         loadingView.startAnimating()
-        let contextualURL = applyNativeInputIfNeeded(to: aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar"))
+        let contextualURL = applyContextualURLOverridesIfNeeded(to: aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar"))
         Logger.aiChat.debug("[ContextualWebVC] loadAIChat - loading URL: \(contextualURL.absoluteString)")
         webView.load(URLRequest(url: contextualURL))
     }
@@ -299,11 +299,10 @@ final class AIChatContextualWebViewController: UIViewController {
         featureFlagger.isFeatureOn(.unifiedToggleInput) && utiHostInstaller != nil
     }
 
-    private func applyNativeInputIfNeeded(to url: URL) -> URL {
+    private func applyContextualURLOverridesIfNeeded(to url: URL) -> URL {
         guard isNativeUTIActive else { return url }
-        Logger.contextualUTI.debug("[ContextualWebVC] applying nativeInput=1 + stripping placement=sidebar")
-        let withNativeInput = AIChatURLParameters.nativeInputURL(from: url)
-        return removingPlacementSidebar(from: withNativeInput)
+        Logger.contextualUTI.debug("[ContextualWebVC] stripping placement=sidebar")
+        return removingPlacementSidebar(from: url)
     }
 
     private func removingPlacementSidebar(from url: URL) -> URL {

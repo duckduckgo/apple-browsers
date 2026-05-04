@@ -39,9 +39,6 @@ public enum AIChatURLParameters {
     public static let sidebarName = "sidebar"
     public static let sidebarOpenValue = "open"
 
-    public static let nativeInputName = "nativeInput"
-    public static let nativeInputEnabledValue = "1"
-
     /// Appends `?mode=voice` to the given base URL.
     public static func voiceModeURL(from baseURL: URL) -> URL {
         modeURL(from: baseURL, mode: voiceModeValue)
@@ -55,18 +52,6 @@ public enum AIChatURLParameters {
     /// Appends `?sidebar=open` to the given base URL.
     public static func sidebarOpenURL(from baseURL: URL) -> URL {
         baseURL.addingOrReplacing(URLQueryItem(name: sidebarName, value: sidebarOpenValue))
-    }
-
-    /// Appends `?nativeInput=1` to the given base URL, replacing any existing `nativeInput` value.
-    public static func nativeInputURL(from baseURL: URL) -> URL {
-        guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
-            return baseURL
-        }
-        var queryItems = components.queryItems ?? []
-        queryItems.removeAll { $0.name == nativeInputName }
-        queryItems.append(URLQueryItem(name: nativeInputName, value: nativeInputEnabledValue))
-        components.queryItems = queryItems
-        return components.url ?? baseURL
     }
 
     private static func modeURL(from baseURL: URL, mode: String) -> URL {

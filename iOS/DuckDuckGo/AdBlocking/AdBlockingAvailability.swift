@@ -33,7 +33,15 @@ final class AdBlockingAvailability: AdBlockingAvailabilityProviding {
         self.isEnabledByUserProvider = isEnabledByUserProvider
     }
 
-    var isFeatureAvailable: Bool { featureFlagger.isFeatureOn(.adBlockingExtension) }
+    /// Mirrors the OS-version + `webExtensions` flag gates used by
+    /// `WebExtensionAvailability.isAvailable` so the YouTube Ad Blocking
+    /// settings pane is never shown on a runtime that can't host the
+    /// underlying WKWebExtension. Keep the two in sync.
+    var isFeatureAvailable: Bool {
+        guard #available(iOS 18.4, *) else { return false }
+        return featureFlagger.isFeatureOn(.webExtensions)
+            && featureFlagger.isFeatureOn(.adBlockingExtension)
+    }
     var isEnabledByUser: Bool { isEnabledByUserProvider() }
 
     func shouldShowAnimation(for url: URL) -> Bool {

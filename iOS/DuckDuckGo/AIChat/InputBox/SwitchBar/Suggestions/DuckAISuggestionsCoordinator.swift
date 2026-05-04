@@ -34,7 +34,6 @@ final class DuckAISuggestionsCoordinator {
 
     weak var delegate: DuckAISuggestionsCoordinatorDelegate?
 
-    /// Fires when either fetcher's results change. Subscribed via the coordinator's own cancellables so lifetime tracks `tearDown`.
     var onContentChanged: (() -> Void)?
 
     private let chatManager: AIChatHistoryManager
@@ -52,12 +51,10 @@ final class DuckAISuggestionsCoordinator {
                         urlLastQuery: urlLoader.lastCompletedFetchQuery)
     }
 
-    /// Pure-logic split so the AND rule is unit-testable without spinning up real fetchers.
     static func hasSettled(forQuery query: String, chatLastQuery: String?, urlLastQuery: String?) -> Bool {
         chatLastQuery == query && urlLastQuery == query
     }
 
-    /// True when the surface has anything to render. Any non-empty query renders at least the "Search DuckDuckGo" row.
     var hasContent: Bool {
         !chatViewModel.filteredSuggestions.isEmpty
             || !urlLoader.topURLs.isEmpty

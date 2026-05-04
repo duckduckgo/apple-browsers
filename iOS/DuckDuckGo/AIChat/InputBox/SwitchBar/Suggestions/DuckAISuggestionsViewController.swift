@@ -101,9 +101,8 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     private var escapeHatchHostingController: UIHostingController<ReturnToTabCard>?
     private var currentEscapeHatch: EscapeHatch?
-    /// Extra top inset applied to the whole table — used to clear the floating (x) dismiss button when bottom-bar UTI is active.
     private var additionalTopInset: CGFloat = 0
-    /// While the user is actively querying, the hatch is hidden (mirrors Search-side, where typing covers the NTP+hatch with the autocomplete view).
+    /// Hatch is hidden while typing — mirrors Search-side, where the autocomplete view covers the NTP+hatch.
     private var isQueryActive = false
 
     init(chatViewModel: AIChatSuggestionsViewModel,
@@ -147,7 +146,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         return sections
     }
 
-    /// Returns the section at `indexPath` if the path is still in range; nil for stale paths during animated relayouts.
+    /// Nil for stale paths during animated relayouts.
     private func resolvedSection(at indexPath: IndexPath) -> Section? {
         resolvedSection(at: indexPath.section)
     }
@@ -167,8 +166,7 @@ final class DuckAISuggestionsViewController: UIViewController {
 
     // MARK: - Escape hatch
 
-    /// Installs/removes the "Return to tab" card above all sections. No-op when the model hasn't changed
-    /// — called repeatedly from container layout/refresh paths so a tear-down + rebuild on every call is needless churn.
+    /// No-op on identical model — called repeatedly from container layout/refresh paths.
     func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
         let next: EscapeHatch? = (model.flatMap { m in onTapped.map { EscapeHatch(model: m, onTapped: $0) } })
         guard next != currentEscapeHatch else { return }
@@ -176,16 +174,13 @@ final class DuckAISuggestionsViewController: UIViewController {
         rebuildHatch()
     }
 
-    /// Pushes the whole table down to clear the floating (x) dismiss button. Called by the container when bar position changes.
     func setAdditionalTopInset(_ inset: CGFloat) {
         guard inset != additionalTopInset else { return }
         additionalTopInset = inset
         updateContentInset()
     }
 
-    /// Hide the hatch the moment the user starts typing; restore on backspace-to-empty.
-    /// Also force-reloads so the "Recent Chats" section title (gated on `hasSearchRow`) hides/reappears immediately,
-    /// without waiting for the fetcher-settle reload-coalesce.
+    /// Force-reloads so the "Recent Chats" header (gated on `hasSearchRow`) toggles immediately, ahead of the fetcher-settle reload-coalesce.
     func setQueryActive(_ active: Bool) {
         guard active != isQueryActive else { return }
         isQueryActive = active
@@ -224,8 +219,7 @@ final class DuckAISuggestionsViewController: UIViewController {
             return
         }
 
-        // Wrap the entire setup so the SwiftUI hosting view's first layout doesn't get a default position
-        // animation when the hatch reappears after typing.
+        // Without this, the SwiftUI hosting view's first layout animates from a default position when the hatch reappears.
         UIView.performWithoutAnimation {
             let totalHeight = Constants.escapeHatchTopPadding + Constants.escapeHatchCardHeight + Constants.escapeHatchBottomPadding
             let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width

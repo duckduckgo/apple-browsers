@@ -262,7 +262,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         let sheet = CustomTextEntrySheet(
             title: "Open Debug WebView with custom URL",
             fieldLabel: "URL",
-            placeholder: "https://pixelscan.net/bot-check",
+            placeholder: "https://duckduckgo.com",
             content: { _, isValid in
                 if !isValid.wrappedValue {
                     Text(verbatim: "Please enter a valid URL.")

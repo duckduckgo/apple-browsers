@@ -357,7 +357,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         setInitialInputMode(effectiveInputMode)
         self.cardPosition = cardPosition
         viewController.handler.hidesVoiceButton = false
-        updateToolbarAIVoiceChat()
         isInputVisibleForKeyboard = true
         hasSubmittedPrompt = false
         resetToolsSelection()
@@ -378,19 +377,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         contentViewController.setDismissButtonVisible(renderState.isFloatingDismissVisible)
         let expandedHeight = editingHeight()
 
-        if cardPosition == .top && isToggleEnabled {
-            viewController.setExpanded(false, animated: false)
-            viewController.setExpandedWithToggleHidden(true)
-            let toggleHiddenHeight = editingHeight()
-            intentSubject.send(.showOmnibarEditing(expandedHeight: toggleHiddenHeight, pendingExpandedHeight: expandedHeight))
-        } else if cardPosition == .top {
-            viewController.setExpanded(false, animated: false)
-            viewController.setExpandedWithToggleHidden(true)
-            let omnibarMatchingHeight = editingHeight()
-            intentSubject.send(.showOmnibarEditing(expandedHeight: omnibarMatchingHeight))
-        } else {
-            intentSubject.send(.showOmnibarEditing(expandedHeight: expandedHeight))
-        }
+        // Pre-stage to the start pose so the intent handler animates from initial to final height.
+        viewController.prepareForOmnibarEditingShow()
+        let initialHeight = editingHeight()
+        intentSubject.send(.showOmnibarEditing(expandedHeight: initialHeight, pendingExpandedHeight: expandedHeight))
 
         if cardPosition == .top {
             scheduleTopOmnibarKeyboardPresentationFallback()
@@ -444,10 +434,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
-    func animateOmnibarExpansion(additionalAnimations: (() -> Void)? = nil) {
-        viewController.animateToggleReveal(additionalAnimations: additionalAnimations)
-    }
-
     func editingHeight() -> CGFloat {
         let screenWidth = viewController.view.window?.bounds.width ?? viewController.view.bounds.width
         let height = viewController.view.systemLayoutSizeFitting(
@@ -475,14 +461,27 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard didModeChange || needsViewSync else { return }
 
         inputMode = effectiveMode
-        if needsViewSync {
-            viewController.setInputMode(effectiveMode, animated: animated)
+
+        // Wraps toolbar-height update + content-swap broadcast in one CATransaction so they animate
+        // together; otherwise the content snaps while the toolbar is still growing.
+        let applyModeChange = { [self] in
+            if needsViewSync {
+                viewController.setInputMode(effectiveMode, animated: animated)
+            }
+            if didModeChange {
+                modeChangeSubject.send(effectiveMode)
+            }
         }
-        if didModeChange {
-            modeChangeSubject.send(effectiveMode)
+
+        if animated {
+            UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+                applyModeChange()
+            }
+        } else {
+            applyModeChange()
         }
-        updateToolbarAIVoiceChat()
-        refreshToolsPresentation()
+
+        applyToolbarPresentation()
         if didModeChange, effectiveMode == .search {
             clearAttachments()
         }
@@ -561,6 +560,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func updateVoiceSearchAvailability(_ enabled: Bool) {
         viewController.isVoiceSearchAvailable = enabled
+    }
+
+    func updateAIChatShortcutAvailability(_ available: Bool) {
+        viewController.handler.isAIChatShortcutAvailable = available
     }
 
     func updateIsFireTab(_ isFireTab: Bool) {
@@ -810,7 +813,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.modelPickerMenu = modelStore.models.isEmpty ? nil : modelMenuFactory.makeMenu(
             models: modelStore.models,
             selectedId: selectedId,
-            isBottomAnchored: viewController.cardPosition == .bottom,
             hasActiveSubscription: modelStore.subscriptionState.hasActiveSubscription,
             advancedSectionTitle: modelStore.subscriptionState.hasActiveSubscription
                 ? UserText.aiChatAdvancedModelsSectionHeader
@@ -989,6 +991,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         // content container's shared handler so both controls route through one path.
         contentViewController.onDismissRequested?()
     }
+
+    func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController) {
+        delegate?.unifiedToggleInputDidRequestAIChat()
+    }
 }
 
 private extension UnifiedToggleInputCoordinator {
@@ -1040,6 +1046,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func applyToolbarPresentation() {
         refreshToolsPresentation()
+        updateToolbarAIVoiceChat()
     }
 
     // MARK: Tools
@@ -1076,8 +1083,6 @@ private extension UnifiedToggleInputCoordinator {
 
     func handleToolsMenuSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
         switch identifier {
-        case .customizeResponses:
-            viewController.handler.customizeResponsesButtonTapped()
         case .webSearch:
             toolsController.toggleSelection(for: .webSearch, modelStore: modelStore)
             refreshToolsPresentation()

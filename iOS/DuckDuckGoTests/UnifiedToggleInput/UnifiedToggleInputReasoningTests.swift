@@ -265,6 +265,7 @@ private final class MockUnifiedToggleInputReasoningDelegate: UnifiedToggleInputD
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}
     func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidRequestAIChat() {}
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
 }

@@ -44,7 +44,7 @@ enum SubscriptionPromoPixel: PixelKitEvent {
              .promoViewed(let isEligibleForFreeTrial),
              .promoCtaActioned(let isEligibleForFreeTrial),
              .promoDismissed(let isEligibleForFreeTrial):
-            return ["is_eligible_for_free_trial": isEligibleForFreeTrial ? "true" : "false"]
+            return ["free_trial": isEligibleForFreeTrial ? "true" : "false"]
         }
     }
 }

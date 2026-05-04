@@ -91,6 +91,7 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     var sessionTimerInMinutes: Int = 30
     var isAIChatAddressBarUserSettingsEnabled: Bool = false
     var isAIChatSearchInputUserSettingsEnabled: Bool = false
+    var isAIChatSearchInputUserSettingsDisabledByUser: Bool = false
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool = false
     var isAIChatVoiceSearchUserSettingsEnabled: Bool = false
     var isAIChatTabSwitcherUserSettingsEnabled: Bool = false

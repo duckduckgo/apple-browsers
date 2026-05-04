@@ -146,6 +146,19 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
         insertAIChatTabCalls.append(InsertAIChatTabCall(url: url, payload: nil, restorationData: restorationData))
     }
 
+    /// Stubs `focusActiveVoiceSessionTab(inSourceCollection:)` for tests. When `true`, the tab
+    /// opener short-circuits to "switch to existing tab" and skips opening a new one.
+    var focusActiveVoiceSessionTabResult: Bool = false
+    var focusActiveVoiceSessionTabCallCount: Int = 0
+    var lastFocusActiveVoiceSessionSourceCollection: TabCollectionViewModel?
+
+    @MainActor
+    func focusActiveVoiceSessionTab(inSourceCollection sourceCollection: TabCollectionViewModel?) -> Bool {
+        focusActiveVoiceSessionTabCallCount += 1
+        lastFocusActiveVoiceSessionSourceCollection = sourceCollection
+        return focusActiveVoiceSessionTabResult
+    }
+
     var showTabCalls: [Tab.TabContent] = []
     struct OpenTabCall: Equatable {
         let tab: Tab

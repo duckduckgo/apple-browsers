@@ -167,7 +167,7 @@ final class AIChatContextualWebViewController: UIViewController {
         super.viewDidLoad()
         Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(String(describing: self.initialURL?.absoluteString))")
         setupUI()
-        if isNativeUTIActive, let utiHostInstaller {
+        if isUTIEnabled, let utiHostInstaller {
             Logger.contextualUTI.info("[ContextualWebVC] installing native UTI")
             utiHost = utiHostInstaller(self)
         } else if featureFlagger.isFeatureOn(.unifiedToggleInput) {
@@ -300,12 +300,12 @@ final class AIChatContextualWebViewController: UIViewController {
         webView.load(URLRequest(url: contextualURL))
     }
 
-    private var isNativeUTIActive: Bool {
+    private var isUTIEnabled: Bool {
         featureFlagger.isFeatureOn(.unifiedToggleInput) && utiHostInstaller != nil
     }
 
     private func applyContextualURLOverridesIfNeeded(to url: URL) -> URL {
-        guard isNativeUTIActive else { return url }
+        guard isUTIEnabled else { return url }
         Logger.contextualUTI.debug("[ContextualWebVC] stripping placement=sidebar")
         return removingPlacementSidebar(from: url)
     }

@@ -54,7 +54,7 @@ final class CrashReportSenderExtensionsTests: XCTestCase {
     }
 
     func testWhenSubmissionFailedIsFiredThenSuccessPixelIsNotSent() {
-        CrashReportSender.pixelEvents.fire(.submissionFailed(nil))
+        CrashReportSender.pixelEvents.fire(.failure(.submissionFailed(nil)))
 
         XCTAssertFalse(firedPixelNames.contains("m_mac_crash-report_sent"))
         XCTAssertFalse(firedPixelNames.contains("m_mac_crash-report_sent_daily"))

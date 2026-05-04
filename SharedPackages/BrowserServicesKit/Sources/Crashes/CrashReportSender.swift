@@ -22,9 +22,9 @@ import Common
 import os.log
 
 public protocol CrashReportSending {
-    var pixelEvents: EventMapping<CrashReportSenderError>? { get }
+    var pixelEvents: EventMapping<CrashReportSenderEvent>? { get }
 
-    init(platform: CrashCollectionPlatform, pixelEvents: EventMapping<CrashReportSenderError>?)
+    init(platform: CrashCollectionPlatform, pixelEvents: EventMapping<CrashReportSenderEvent>?)
 
     func send(_ crashReportData: Data, crcid: String?) async -> (result: Result<Data?, Error>, response: HTTPURLResponse?)
     func send(_ crashReportData: Data, crcid: String?, completion: @escaping (_ result: Result<Data?, Error>, _ response: HTTPURLResponse?) -> Void)
@@ -33,7 +33,11 @@ public protocol CrashReportSending {
 public enum CrashReportSenderError: Error {
     case crcidMissing
     case submissionFailed(HTTPURLResponse?)
+}
+
+public enum CrashReportSenderEvent {
     case submissionSucceeded
+    case failure(CrashReportSenderError)
 }
 
 public final class CrashReportSender: CrashReportSending {
@@ -42,11 +46,11 @@ public final class CrashReportSender: CrashReportSending {
     static let httpHeaderCRCID = "crcid"
 
     public let platform: CrashCollectionPlatform
-    public var pixelEvents: EventMapping<CrashReportSenderError>?
+    public var pixelEvents: EventMapping<CrashReportSenderEvent>?
 
     private let session = URLSession(configuration: .ephemeral)
 
-    public init(platform: CrashCollectionPlatform, pixelEvents: EventMapping<CrashReportSenderError>?) {
+    public init(platform: CrashCollectionPlatform, pixelEvents: EventMapping<CrashReportSenderEvent>?) {
         self.platform = platform
         self.pixelEvents = pixelEvents
     }
@@ -78,8 +82,7 @@ public final class CrashReportSender: CrashReportSending {
                     self.pixelEvents?.fire(.submissionSucceeded)
                     let receivedCRCID = response.allHeaderFields[CrashReportSender.httpHeaderCRCID]
                     if receivedCRCID == nil || receivedCRCID as? String == "" {
-                        let crashReportError = CrashReportSenderError.crcidMissing
-                        self.pixelEvents?.fire(crashReportError)
+                        self.pixelEvents?.fire(.failure(.crcidMissing))
                     }
                 } else {
                     assertionFailure("CrashReportSender: Failed to send the crash report: \(response.statusCode)")
@@ -88,17 +91,16 @@ public final class CrashReportSender: CrashReportSending {
                 if let data {
                     completion(.success(data), response)
                 } else if let error {
-                    let crashReportError = CrashReportSenderError.submissionFailed(response)
-                    self.pixelEvents?.fire(crashReportError)
+                    self.pixelEvents?.fire(.failure(.submissionFailed(response)))
                     completion(.failure(error), response)
                 } else {
                     let crashReportError = CrashReportSenderError.submissionFailed(response)
-                    self.pixelEvents?.fire(crashReportError)
+                    self.pixelEvents?.fire(.failure(crashReportError))
                     completion(.failure(crashReportError), response)
                 }
             } else {
                 let crashReportError = CrashReportSenderError.submissionFailed(nil)
-                self.pixelEvents?.fire(crashReportError)
+                self.pixelEvents?.fire(.failure(crashReportError))
                 completion(.failure(crashReportError), nil)
             }
         }

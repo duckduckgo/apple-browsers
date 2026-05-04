@@ -103,6 +103,36 @@ final class UnifiedInputStateStoreTests: XCTestCase {
         sut.update(state, for: "tab-1")
         XCTAssertEqual(sut.lastUsed.selectedTool, .webSearch)
     }
+
+    // MARK: - TabsModel observation
+
+    func test_observingTabsModel_seedsNewTabs() {
+        let tabsModel = TabsModel(desktop: false)
+        let tab = Tab(uid: "tab-eager", fireTab: false, preferredTextEntryMode: .aiChat)
+        sut.observeTabsModel(tabsModel)
+        tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+        XCTAssertEqual(sut.state(for: "tab-eager").toggleMode, .aiChat)
+    }
+
+    func test_observingTabsModel_seedsRemainingFieldsFromLastUsed() {
+        let tabsModel = TabsModel(desktop: false)
+        preferences.selectedModelId = "gpt-5"
+        let tab = Tab(uid: "tab-eager", fireTab: false, preferredTextEntryMode: .search)
+        sut.observeTabsModel(tabsModel)
+        tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+        XCTAssertEqual(sut.state(for: "tab-eager").selectedModelID, "gpt-5")
+    }
+
+    func test_observingTabsModel_evictsRemovedTabs() {
+        let tabsModel = TabsModel(desktop: false)
+        let tab = Tab(uid: "tab-evict", fireTab: false)
+        tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+        sut.observeTabsModel(tabsModel)
+        sut.update(TabInputState(text: "kept"), for: "tab-evict")
+
+        tabsModel.remove(tab: tab)
+        XCTAssertEqual(sut.state(for: "tab-evict").text, "")
+    }
 }
 
 // MARK: - Test Stubs

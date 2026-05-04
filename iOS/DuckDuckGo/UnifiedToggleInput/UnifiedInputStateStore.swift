@@ -21,6 +21,8 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     private let preferences: AIChatPreferencesPersisting
     private let toggleModeStorage: ToggleModeStoring
     private var lastUsedTool: AIChatRAGTool?
+    private var tabsCancellable: AnyCancellable?
+    private var knownUIDs: Set<TabUID> = []
 
     init(
         preferences: AIChatPreferencesPersisting,
@@ -56,6 +58,36 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
 
     func remove(for uid: TabUID) {
         states.removeValue(forKey: uid)
+    }
+
+    func observeTabsModel(_ tabsModel: TabsModel) {
+        tabsCancellable = tabsModel.tabsPublisher
+            .sink { [weak self] tabs in
+                self?.reconcile(with: tabs)
+            }
+    }
+
+    private func reconcile(with tabs: [Tab]) {
+        let currentUIDs = Set(tabs.map { $0.uid })
+        for tab in tabs where !knownUIDs.contains(tab.uid) {
+            states[tab.uid] = seededState(forTab: tab)
+        }
+        for uid in knownUIDs.subtracting(currentUIDs) {
+            states.removeValue(forKey: uid)
+        }
+        knownUIDs = currentUIDs
+    }
+
+    private func seededState(forTab tab: Tab) -> TabInputState {
+        let defaults = lastUsed
+        return TabInputState(
+            text: "",
+            toggleMode: tab.preferredTextEntryMode,
+            attachments: [],
+            selectedModelID: defaults.selectedModelID,
+            selectedReasoningMode: defaults.selectedReasoningMode,
+            selectedTool: defaults.selectedTool
+        )
     }
 
     private func seededState() -> TabInputState {

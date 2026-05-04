@@ -37,6 +37,7 @@ final class AIChatContextualUTIHost {
 
     init(
         originatingURLPublisher: AnyPublisher<URL?, Never>,
+        didFinishURLPublisher: AnyPublisher<URL?, Never>,
         initialAttachedContext: AIChatPageContext?,
         isAutoAttachEnabled: @escaping () -> Bool,
         pageContextHandler: AIChatPageContextHandling,
@@ -62,12 +63,14 @@ final class AIChatContextualUTIHost {
             self?.handleChipRemoveRequest()
         }
 
-        originatingURLPublisher
+        // Auto-attach trigger fires at didFinish (page actually loaded), not didCommit (URL
+        // changed but DOM still loading) — otherwise context collection returns stale content
+        // from the previous page.
+        didFinishURLPublisher
             .removeDuplicates()
-            .dropFirst()  // initial value already accounted for via initialAttachedContext
             .sink { [weak self] url in
                 guard let self, let url, self.isAutoAttachEnabled() else { return }
-                Logger.contextualUTI.info("Auto-attach on tab navigation — triggering for \(url.absoluteString, privacy: .private)")
+                Logger.contextualUTI.info("Auto-attach on page load — triggering for \(url.absoluteString, privacy: .private)")
                 self.handleChipAttachRequest(originatingURL: url)
             }
             .store(in: &cancellables)

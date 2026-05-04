@@ -72,6 +72,7 @@ final class AIChatContextualSheetCoordinator {
     /// Handler for page context - single source of truth.
     let pageContextHandler: AIChatPageContextHandling
     private let originatingTabURLPublisher: AnyPublisher<URL?, Never>
+    private let didFinishURLPublisher: AnyPublisher<URL?, Never>
     private var contextUpdateCancellable: AnyCancellable?
 
     /// Handles all pixel firing for contextual mode.
@@ -111,6 +112,7 @@ final class AIChatContextualSheetCoordinator {
          featureFlagger: FeatureFlagger,
          pageContextHandler: AIChatPageContextHandling,
          originatingTabURLPublisher: AnyPublisher<URL?, Never>,
+         didFinishURLPublisher: AnyPublisher<URL?, Never>,
          isFireTab: Bool = false,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
@@ -123,6 +125,7 @@ final class AIChatContextualSheetCoordinator {
         self.featureFlagger = featureFlagger
         self.pageContextHandler = pageContextHandler
         self.originatingTabURLPublisher = originatingTabURLPublisher
+        self.didFinishURLPublisher = didFinishURLPublisher
         self.isFireTab = isFireTab
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.debugSettings = debugSettings
@@ -295,6 +298,7 @@ private extension AIChatContextualSheetCoordinator {
                 guard let self else { return nil }
                 let host = AIChatContextualUTIHost(
                     originatingURLPublisher: self.originatingURLPublisher,
+                    didFinishURLPublisher: self.didFinishURLPublisher,
                     initialAttachedContext: self.sessionState.latestContext,
                     isAutoAttachEnabled: { [weak self] in self?.sessionState.shouldAutoCollectContext ?? false },
                     pageContextHandler: self.pageContextHandler,

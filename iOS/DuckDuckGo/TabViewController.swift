@@ -297,6 +297,14 @@ class TabViewController: UIViewController {
         urlSubject.eraseToAnyPublisher()
     }
 
+    /// Emits the URL of the underlying tab each time a navigation finishes loading. Unlike
+    /// `urlPublisher` (which fires at didCommit, before the new DOM is ready), this is the
+    /// reliable signal for "the new page's content is available to query."
+    private let didFinishURLSubject = PassthroughSubject<URL?, Never>()
+    var didFinishURLPublisher: AnyPublisher<URL?, Never> {
+        didFinishURLSubject.eraseToAnyPublisher()
+    }
+
     public var url: URL? {
         willSet {
             if newValue != url {
@@ -574,6 +582,7 @@ class TabViewController: UIViewController {
             featureFlagger: featureFlagger,
             pageContextHandler: pageContextHandler,
             originatingTabURLPublisher: urlPublisher,
+            didFinishURLPublisher: didFinishURLPublisher,
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler
         )
@@ -1869,6 +1878,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
+        didFinishURLSubject.send(webView.url)
         onTextZoomChange()
         adClickAttributionDetection.onDidFinishNavigation(url: webView.url)
         adClickExternalOpenDetector.finishNavigation()

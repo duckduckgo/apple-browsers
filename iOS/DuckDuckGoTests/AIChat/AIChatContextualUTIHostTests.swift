@@ -26,6 +26,7 @@ import XCTest
 final class AIChatContextualUTIHostTests: XCTestCase {
 
     private var originatingURL: CurrentValueSubject<URL?, Never>!
+    private var didFinishURL: PassthroughSubject<URL?, Never>!
     private var pageContextHandler: MockPageContextHandler!
     private var autoAttachEnabled = false
     private var sut: AIChatContextualUTIHost!
@@ -33,6 +34,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         originatingURL = .init(nil)
+        didFinishURL = .init()
         pageContextHandler = MockPageContextHandler()
         autoAttachEnabled = false
     }
@@ -40,6 +42,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
     override func tearDown() async throws {
         sut = nil
         pageContextHandler = nil
+        didFinishURL = nil
         originatingURL = nil
         try await super.tearDown()
     }
@@ -47,6 +50,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
     private func makeSUT(initialAttachedContext: AIChatPageContext? = nil) {
         sut = AIChatContextualUTIHost(
             originatingURLPublisher: originatingURL.eraseToAnyPublisher(),
+            didFinishURLPublisher: didFinishURL.eraseToAnyPublisher(),
             initialAttachedContext: initialAttachedContext,
             isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false },
             pageContextHandler: pageContextHandler,
@@ -135,56 +139,57 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
     }
 
-    // MARK: - Auto-attach on navigation
+    // MARK: - Auto-attach on page-load (didFinish)
 
-    func test_autoAttachOff_navigationDoesNotTriggerCollection() {
+    func test_autoAttachOff_pageLoadDoesNotTriggerCollection() {
         autoAttachEnabled = false
-        originatingURL.send(URL(string: "https://example.com/a"))
         makeSUT()
 
-        originatingURL.send(URL(string: "https://example.com/b"))
+        didFinishURL.send(URL(string: "https://example.com/b"))
 
         XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 0)
     }
 
-    func test_autoAttachOn_navigationTriggersCollection() {
+    func test_autoAttachOn_pageLoadTriggersCollection() {
         autoAttachEnabled = true
-        originatingURL.send(URL(string: "https://example.com/a"))
         makeSUT()
 
-        originatingURL.send(URL(string: "https://example.com/b"))
+        didFinishURL.send(URL(string: "https://example.com/b"))
 
         XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 1)
     }
 
-    func test_autoAttachOn_duplicateNavigationDeduped() {
+    func test_autoAttachOn_duplicatePageLoadDeduped() {
         autoAttachEnabled = true
-        originatingURL.send(URL(string: "https://example.com/a"))
         makeSUT()
 
         let same = URL(string: "https://example.com/b")
-        originatingURL.send(same)
-        originatingURL.send(same)
+        didFinishURL.send(same)
+        didFinishURL.send(same)
 
         XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 1)
     }
 
-    func test_autoAttachOn_initialEmissionDoesNotTrigger() {
+    func test_autoAttachOn_didCommitURLChangeAlone_doesNotTrigger() {
+        // Regression: triggers must NOT come from urlPublisher (didCommit) — too early, JS
+        // returns stale content from the previous page. Only didFinish should trigger.
         autoAttachEnabled = true
-        originatingURL.send(URL(string: "https://example.com/a"))
         makeSUT()
+
+        originatingURL.send(URL(string: "https://example.com/b"))
 
         XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 0)
     }
 
-    func test_autoAttachOn_navigationThenContextEmits_flipsChipToAttached() {
+    func test_autoAttachOn_pageLoadThenContextEmits_flipsChipToAttached() {
         autoAttachEnabled = true
         let urlA = URL(string: "https://example.com/a")!
         let urlB = URL(string: "https://example.com/b")!
         makeSUT(initialAttachedContext: makeContext(title: "Page A", url: urlA.absoluteString))
         originatingURL.send(urlA)
-
         originatingURL.send(urlB)
+
+        didFinishURL.send(urlB)
         pageContextHandler.sendContext(makeContext(title: "Page B", url: urlB.absoluteString))
 
         guard case .attached(let title, _) = sut.chipViewModel.state else {

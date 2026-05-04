@@ -3533,7 +3533,7 @@ extension MainViewController: OmniBarDelegate {
         }
 
         if updatedQuery.isEmpty {
-            if newTabPageViewController != nil || !omniBar.isTextFieldEditing {
+            if newTabPageViewController != nil {
                 hideSuggestionTray()
             } else {
                 let didShow = tryToShowSuggestionTray(.favorites)
@@ -3874,6 +3874,9 @@ extension MainViewController: OmniBarDelegate {
         }
         postIdleSessionInstrumentation.backPressed()
         performCancel()
+
+        // Omnibar states clear the text "on a new start", but since this is a cancel we want to restore it
+        refreshOmniBar()
     }
 
     func onAbortPressed() {

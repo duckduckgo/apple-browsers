@@ -174,28 +174,32 @@ project alone returns ~80+ tasks per day and the full notes blob blows past the
 tool-result token cap. Fetch `notes` only on a task-by-task basis in step 3
 when needed for grouping.
 
-**Use a smaller `limit` for iOS Feedback and macOS Feedback.** These two
+**Use slim `opt_fields` for iOS Feedback and macOS Feedback.** These two
 projects carry 30+ custom fields per task (Reporter, Ban Type, Search Area,
-SAM Severity values, etc. - most irrelevant to this report). A 100-task page
+SAM Severity values, etc. - most irrelevant to clustering). A 100-task page
 with `custom_fields.name,custom_fields.display_value` is ~110 KB and reliably
-exceeds the inline tool-result cap. Use a different `limit` per project:
+exceeds the inline tool-result cap. Drop the custom fields from the bulk fetch
+on these two projects; cluster from task titles alone; then in step 6 sample
+5-10 representative tasks per Top-3 cluster and fetch *those* with full custom
+fields via `asana_get_task` for the deep dive. Other projects (Privacy Pro,
+Internal Product Feedback, App Store Reviews) carry fewer fields and fit
+comfortably with full custom fields at `limit=100`.
 
-| Project | `limit` |
-|---------|---------|
-| iOS Feedback (`1206584483643184`) | `25` |
-| macOS Feedback (`1199178362774117`) | `25` |
-| All other projects (Privacy Pro, Internal Product Feedback, App Store Reviews) | `100` |
+| Project | `limit` | `opt_fields` |
+|---------|---------|--------------|
+| iOS Feedback (`1206584483643184`) | `100` | `name,created_at,completed` |
+| macOS Feedback (`1199178362774117`) | `100` | `name,created_at,completed` |
+| Privacy Pro / Internal / App Store Reviews | `100` | `name,created_at,completed,custom_fields.name,custom_fields.display_value` |
 
-`limit=25` keeps the response inline (~27 KB) with full custom fields
-intact. The deep-dive metadata in step 6 is then already on the bulk-fetch
-response - no second round of `asana_get_task` calls needed and the deep
-dive runs against the full population, not a sample. The cost is more
-pagination rounds (a 3-day window on macOS Feedback fits in ~10 pages
-instead of 2). Acceptable.
+Tradeoff: the Top-3 deep dive runs against a *sample* (5-10 tasks per cluster)
+rather than the full population. Annotate "sampled N of M" in the deep-dive
+output so the reader knows. Net win: ~3-4x fewer pagination rounds on the heavy
+projects (a 3-day window fits in ~2 pages instead of ~9), and a higher safety
+ceiling on long windows.
 
-**Spillover fallback (if a response still spills despite `limit=25`).** In
-extreme cases - 30-day window, schema bloat, additional custom fields added
-- a response may still spill. The MCP server saves the file at
+**Spillover fallback (if a Privacy Pro / Internal / App Store Reviews query
+spills).** Uncommon at `limit=100` for those projects, but possible on a
+30-day window or after schema bloat. The MCP server saves the file at
 `/Users/<you>/.claude/projects/<project>/<session>/tool-results/...txt` and
 returns the path. When that happens:
 
@@ -206,32 +210,14 @@ returns the path. When that happens:
 2. Read the `created_at` of the last element for the next pagination cursor.
 3. Merge pages later with `jq -s 'add | unique_by(.gid) | sort_by(.created_at) | reverse' "$scratch_dir"/<bucket>_*_p*.json > "$scratch_dir/<bucket>_all.json"`. `add` concatenates all slurped page arrays regardless of count - use it instead of literal `.[0] + .[1] + ...` which only handles a fixed number of files.
 
-**Fallback for environments where `jq` on Asana data is blocked.** Some
-hardened environments (e.g. an org policy hook that prohibits combining
-Asana MCP results with Bash file processing - the error reads
-"Organization policy prohibits using Asana MCP tools and Bash/file tools in
-the same session") will deny the `jq` step above. In that case the bulk
-fetch can't carry custom fields at all, so the deep dive shifts to a
-sampled per-task fetch:
-
-1. Re-fetch iOS Feedback and macOS Feedback with **slim `opt_fields`**
-   (`name,created_at,completed` - no custom fields) at `limit=100`.
-   Responses stay inline regardless of project size. Pagination works
-   normally.
-2. Cluster from task names alone (full descriptions are still available
-   per-task via step 3 if needed for ambiguous names).
-3. For the Top 3 deep dive in step 6, fetch ~5-10 representative tasks per
-   cluster individually with `asana_get_task` (full `opt_fields` including
-   `custom_fields.name,custom_fields.display_value,tags,tags.name`) and
-   build the deep-dive table from the sample.
-4. Explicitly note in the deep-dive section that the metadata is sampled
-   ("5 of 12 tasks") rather than computed across the full cluster, so the
-   reader knows the limitation. Also note in the bucket summary that the
-   Misc / long-tail counts are approximate.
-
-The Privacy Pro projects, Internal Product Feedback, and App Store Reviews
-fit inline at `limit=100` regardless of environment - this whole
-consideration only applies to iOS Feedback and macOS Feedback.
+If the run is in an environment where Bash on Asana MCP data is blocked
+(error reads "Organization policy prohibits using Asana MCP tools and
+Bash/file tools in the same session"), there is no `jq` recovery available
+for those projects. In that case, drop their `custom_fields` from
+`opt_fields` to match the iOS / macOS Feedback slim-default treatment, and
+sample per-cluster in step 6 the same way. iOS Feedback / macOS Feedback
+already use slim `opt_fields` by default, so this only affects the other
+projects when they spill.
 
 **First request (per project, per keyword, or once if no keywords):**
 
@@ -244,8 +230,8 @@ text: <keyword, or omit if no keywords>
 custom_fields: <platform filter for Internal Product Feedback only, otherwise omit>
 sort_by: "created_at"
 sort_ascending: false
-limit: <25 for iOS Feedback / macOS Feedback; 100 for everything else - see table above>
-opt_fields: "name,created_at,completed,custom_fields.name,custom_fields.display_value"
+limit: 100
+opt_fields: <project-specific - see table above>
 ```
 
 `workspace` is a **required** parameter on `asana_search_tasks`; `137249556945`
@@ -277,20 +263,17 @@ text: <keyword, or omit if no keywords>
 custom_fields: <platform filter for Internal Product Feedback only, otherwise omit>
 sort_by: "created_at"
 sort_ascending: false
-limit: <same per-project value as the first request>
-opt_fields: "name,created_at,completed,custom_fields.name,custom_fields.display_value"
+limit: 100
+opt_fields: <same project-specific value as the first request>
 ```
 
 Repeat until:
-- A batch returns fewer than the request's `limit` (you have reached the end),
-  **or**
-- You have fetched **1000 tasks per project per keyword** as a safety cap -
-  10 pages at `limit=100` for normal-schema projects, or 40 pages at
-  `limit=25` for iOS Feedback / macOS Feedback. macOS Feedback alone can
-  return 400+ tasks in a 5-day window, so a 14-day or 30-day query needs
-  this higher cap. If the cap is hit, note prominently in the output that
-  results were truncated and the deep dive may be biased toward recent
-  items.
+- A batch returns fewer than 100 (you have reached the end), **or**
+- You have fetched **1000 tasks per project per keyword** (10 pages) as a
+  safety cap. macOS Feedback alone can return 400+ tasks in a 5-day window;
+  a 14-day or 30-day query may approach this. If the cap is hit, note
+  prominently in the output that results were truncated and the deep dive
+  may be biased toward recent items.
 
 After all queries for a bucket complete, merge all tasks within the bucket and
 deduplicate by task GID. Each bucket is processed independently.
@@ -363,10 +346,12 @@ For each bucket, output a section per group with:
 - **Heading**: short descriptive label for the issue, with the count in
   parentheses (e.g. `### Privacy Pro VPN disconnects on cellular (8)`)
 - **Date range**: earliest and latest creation date in the group
-- **Links**: a bullet list of every task in the group (cap at ~50 links per
-  group; if more, list the first 50 by recency and note "(...remaining N
-  items truncated)"). Format each link as a clickable Asana link using the
-  project GID the task came from and the task GID:
+- **Links**: a bullet list of **5-10 representative tasks** by recency (not
+  every task in the group). For groups with more than 10 tasks, list the
+  most recent 5-10 and note "(...remaining N items, see Asana project view)".
+  The full enumeration belongs in Asana's project filter, not the snapshot.
+  Format each link as a clickable Asana link using the project GID the task
+  came from and the task GID:
   `- [Task name](https://app.asana.com/0/<project_gid>/<task_gid>)`.
   When a task appears in multiple projects of the bucket (rare due to dedup),
   link to the primary project. Do NOT include Asana user names or assignees in
@@ -402,7 +387,27 @@ If fewer than 3 actionable groups exist (or fewer remain after skipping
 noise clusters), do as many as you have - just one is fine. Drop the section
 entirely if there are zero.
 
-Extract these fields from each task in the group (when present):
+**Sample per cluster.** For iOS Feedback / macOS Feedback the bulk fetch in
+step 2 used slim `opt_fields`, so custom fields are not on the bucket-level
+records. Instead:
+
+1. Pick **5-10 representative tasks** by recency from each Top-3 cluster.
+2. Issue all sample fetches in parallel within the same message - they are
+   independent. Use `asana_get_task` per task with:
+   ```
+   opt_fields: "name,notes,custom_fields,custom_fields.name,custom_fields.display_value,tags,tags.name"
+   ```
+   (`tags` and `tags.name` are required by the data protection hook.)
+3. Build the deep-dive table from the sample.
+4. Annotate "sampled N of M" in the table footer or Key takeaway, so the
+   reader knows the metadata is not full-population.
+
+Bump from 5 to 10 if a cluster looks borderline (mixed signals across
+versions, sentiment, etc.). Other-bucket clusters (Privacy Pro, Internal
+Product Feedback) carry custom fields on the bulk fetch already - no
+sampling needed.
+
+Extract these fields from each sampled task (when present):
 
 - **Version** (app version, e.g. `7.216.0.3` on iOS, `1.187.0` on macOS)
 - **OS Version** (e.g. `iOS 26.4.2`, `macOS 15.6.0`)
@@ -508,19 +513,19 @@ explicitly accepted set. Let the formatting skill choose how to emit any
 given markdown construct (headings, lists, tables, links, paragraph breaks)
 - don't hand-craft HTML based on assumptions about what Asana renders.
 
-**Use Write or python to assemble the HTML, not a quoted bash heredoc.** The
-asana-formatting skill says "use `\n` for line breaks" - that means a literal
-newline byte, not the two-character escape sequence `\n`. A
-`cat << 'EOF'` heredoc preserves `\n` as literal text, which Asana renders as
-the visible characters `\n` rather than a line break. Either:
+**Pass the HTML directly as `html_notes` in the same tool call - do not
+write to a file and read it back.** Real newlines in the `html_notes`
+argument are preserved end-to-end through the MCP layer to Asana. The file
+roundtrip (`Write` to `/tmp/report.html`, then `Read` it back) doubles the
+work and only mattered when assembling via a bash heredoc, which loses real
+newlines.
 
-- Use the `Write` tool to write the HTML to `/tmp/report.html` directly (real
-  newlines in your input become real newlines on disk), then read it back to
-  pass to `asana_update_task`, **or**
-- Use a python heredoc (`python3 << 'PY' ... PY`) where `\n` inside string
-  literals becomes a real newline at runtime.
-
-Avoid the unquoted `cat << EOF` form too - it triggers shell expansion on `$`
+If you do need a file (e.g. the report is large enough that holding the
+full HTML in tool-argument context is awkward), use the `Write` tool
+directly - real newlines in your input become real newlines on disk. Avoid
+quoted bash heredocs (`cat << 'EOF'`); they preserve `\n` as the literal
+two-character escape sequence, which Asana renders as visible `\n`. Avoid
+unquoted heredocs too (`cat << EOF`) - they trigger shell expansion on `$`
 and backticks inside the report.
 
 **Do not insert blank lines between block-level tags.** Asana already renders
@@ -574,13 +579,14 @@ in Asana.
 ### 9. Clean up scratch files
 
 Run this regardless of whether the report was written to Asana or rendered
-inline. The scratch directory from step 2, step 5's per-cluster GID lists
-(e.g. `/tmp/<cluster>_gids.json`), and step 8.4 (`/tmp/report.html`) all
-contain Asana data and must be removed before the run ends:
+inline. The scratch directory from step 2 and step 5's per-cluster GID lists
+(e.g. `/tmp/<cluster>_gids.json`) contain Asana data and must be removed
+before the run ends. If you also wrote the report to a file in step 8.4
+(only needed for unusually large reports), include that path too:
 
 ```
 rm -rf "$scratch_dir"
-rm -f /tmp/*_gids.json /tmp/report.html
+rm -f /tmp/*_gids.json /tmp/report.html  # report.html only if you wrote one
 ```
 
 Adjust the patterns to whatever filenames you actually used outside
@@ -663,16 +669,22 @@ declined the overwrite), still run the cleanup before reporting back.
 - **Hand-typing GIDs into the link list HTML.** A single mistyped digit gives
   a broken link that looks correct at a glance. Generate the link list from
   the per-cluster GID file with `jq` (snippet in step 5).
-- **Using `limit=100` for iOS Feedback or macOS Feedback.** These two
-  projects carry 30+ custom fields and a 100-task page reliably spills.
-  Use `limit=25` from the first request - don't wait for the spill. All
-  other projects (Privacy Pro, Internal Product Feedback, App Store
-  Reviews) stay at `limit=100`. See step 2.
-- **Falling through to the spillover `jq` recovery in an environment where
-  Bash on Asana data is blocked.** When the org policy hook denies `jq` on
-  the spilled file, use the slim-`opt_fields` + per-task deep-dive
-  fallback documented in step 2 instead. The deep-dive table becomes
-  sampled rather than full-population - call that out in the report.
+- **Including `custom_fields` in the bulk-fetch `opt_fields` for iOS Feedback
+  or macOS Feedback.** These two projects carry 30+ custom fields per task and
+  a 100-task page with full custom fields reliably spills. Use slim `opt_fields`
+  (`name,created_at,completed`) for the bulk fetch; sample 5-10 tasks per Top-3
+  cluster via `asana_get_task` in step 6 to populate the deep dive. See step 2.
+- **Forgetting to annotate "sampled N of M" on the deep-dive output.** With the
+  slim-default for the heavy projects, the deep dive runs against a per-cluster
+  sample, not the full population. Make the sample size explicit so the reader
+  knows the limit.
+- **Writing the report HTML to `/tmp/report.html` then reading it back to pass
+  to `asana_update_task`.** Pass the HTML directly as `html_notes` in the same
+  tool call - real newlines round-trip through the MCP layer fine. The file
+  roundtrip is only needed for unusually large reports. See step 8.4.
+- **Enumerating every task in a cluster's link list.** Cap at 5-10 representative
+  tasks by recency. The full list belongs in Asana's project filter, not the
+  snapshot. See step 5.
 
 ## What to skip
 

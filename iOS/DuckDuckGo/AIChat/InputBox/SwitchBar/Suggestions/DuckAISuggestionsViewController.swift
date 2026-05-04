@@ -66,8 +66,9 @@ final class DuckAISuggestionsViewController: UIViewController {
     private let urlLoader: DuckAIURLSuggestionsLoader
     private let queryProvider: () -> String
 
-    /// Absorbs the gap between chat-fetcher (150ms debounce) and URL-fetcher (100ms debounce) so a single reload renders both.
-    /// Kept tight (≈ chat-URL debounce gap + small slack) so deleting characters fast doesn't visibly lag.
+    /// Absorbs the gap between the two fetcher debounces so a single reload renders both. Coupled to
+    /// `AIChatHistoryManager.Constants.debounceMilliseconds` (150ms) and `DuckAIURLSuggestionsLoader.debounceMilliseconds` (100ms).
+    /// Increase if either of those grows. Kept tight (≈ debounce gap + small slack) so fast typing/deleting doesn't visibly lag.
     private static let reloadCoalesceMilliseconds = 80
 
     private var cancellables = Set<AnyCancellable>()
@@ -157,7 +158,7 @@ final class DuckAISuggestionsViewController: UIViewController {
         return live[section]
     }
 
-    private func reload() {
+    func reload() {
         guard isViewLoaded else { return }
         UIView.performWithoutAnimation {
             tableView.reloadData()

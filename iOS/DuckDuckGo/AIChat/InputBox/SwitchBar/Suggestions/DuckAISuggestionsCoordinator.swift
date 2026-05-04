@@ -45,8 +45,6 @@ final class DuckAISuggestionsCoordinator {
     private var viewController: DuckAISuggestionsViewController?
     private var cancellables = Set<AnyCancellable>()
 
-    var hasCompletedInitialChatFetch: Bool { chatManager.hasCompletedInitialFetch }
-
     /// True when both fetchers have settled for `query`. Container gates Dax visibility on this to avoid mid-keystroke flashes.
     func hasSettled(forQuery query: String) -> Bool {
         chatManager.lastCompletedFetchQuery == query
@@ -104,6 +102,14 @@ final class DuckAISuggestionsCoordinator {
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak vc] active in vc?.setQueryActive(active) }
+            .store(in: &cancellables)
+
+        // Reload on every text change so the always-visible "Search DuckDuckGo" row's title (read live from queryProvider) tracks
+        // typing without waiting for the chat/URL fetcher-settle merge to fire.
+        textPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak vc] _ in vc?.reload() }
             .store(in: &cancellables)
 
         parentViewController.addChild(vc)

@@ -268,7 +268,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         updateEscapeHatchTopInset()
     }
 
-    /// Mirrors the Search-side tray's inset rule: bottom-bar adds dismiss-button clearance, top-bar pulls up to tighten the UTI↔hatch gap.
+    /// Bottom-bar Duck.ai unconditionally applies the +44pt clearance because the suggestions table starts at content y=0,
+    /// so cells need (x) dismiss-button clearance regardless of whether the hatch is present (without it, the first cell
+    /// slides under the floating dismiss button when the user is typing). Top-bar mirrors the Search-side tray's pull-up
+    /// rule, gating the negative offset on hatch presence.
     private var duckAITopInset: CGFloat {
         if isUsingTopBarPosition {
             return escapeHatchModel != nil ? Metrics.escapeHatchTopBarTrayPullUp : 0

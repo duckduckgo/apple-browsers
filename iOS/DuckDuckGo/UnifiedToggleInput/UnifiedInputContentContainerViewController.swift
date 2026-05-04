@@ -363,6 +363,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         installDaxLogoView()
     }
 
+    /// Suppresses suggestion-tray section headers per the unified-input redesign.
+    /// Flip to `true` to restore headers; selection logic below is preserved.
+    /// Consider removing this and the code it guards after release.
+    private static let areSectionHeadersEnabled = false
+
     private func updateSectionTitle() {
         let text = computedSectionTitleText()
         currentSectionTitle = text.isEmpty ? nil : text
@@ -387,7 +392,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
     }
 
+    /// Returns the header label for the currently visible tray, or `""` when none applies
+    /// (and unconditionally while `areSectionHeadersEnabled` is `false`).
     private func computedSectionTitleText() -> String {
+        guard Self.areSectionHeadersEnabled else { return "" }
+
         let mode = switchBarHandler.currentToggleState
         let hasFavorites = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
         let hasAutocomplete = suggestionTrayManager?.shouldDisplaySuggestionTray == true && !hasFavorites

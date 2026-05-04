@@ -250,7 +250,7 @@ final class AIChatContextualWebViewController: UIViewController {
         hasPendingChipContext = false
         pendingChipContext = nil
         loadingView.startAnimating()
-        webView.load(URLRequest(url: applyContextualURLOverridesIfNeeded(to: url)))
+        webView.load(URLRequest(url: url))
     }
 
     // MARK: - Private Methods
@@ -288,26 +288,13 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func loadAIChat() {
         loadingView.startAnimating()
-        let contextualURL = applyContextualURLOverridesIfNeeded(to: aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar"))
+        let contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
         Logger.aiChat.debug("[ContextualWebVC] loadAIChat - loading URL: \(contextualURL.absoluteString)")
         webView.load(URLRequest(url: contextualURL))
     }
 
     private var isUTIEnabled: Bool {
         featureFlagger.isFeatureOn(.unifiedToggleInput) && utiHostInstaller != nil
-    }
-
-    private func applyContextualURLOverridesIfNeeded(to url: URL) -> URL {
-        guard isUTIEnabled else { return url }
-        Logger.contextualUTI.debug("[ContextualWebVC] stripping placement=sidebar")
-        return removingPlacementSidebar(from: url)
-    }
-
-    private func removingPlacementSidebar(from url: URL) -> URL {
-        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return url }
-        let filtered = (components.queryItems ?? []).filter { !($0.name == "placement" && $0.value == "sidebar") }
-        components.queryItems = filtered.isEmpty ? nil : filtered
-        return components.url ?? url
     }
 
     private func setupDownloadHandler() {

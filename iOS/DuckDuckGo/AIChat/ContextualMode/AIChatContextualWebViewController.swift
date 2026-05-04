@@ -168,12 +168,7 @@ final class AIChatContextualWebViewController: UIViewController {
         Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(String(describing: self.initialURL?.absoluteString))")
         setupUI()
         if isUTIEnabled, let utiHostInstaller {
-            Logger.contextualUTI.info("[ContextualWebVC] installing native UTI")
             utiHost = utiHostInstaller(self)
-        } else if featureFlagger.isFeatureOn(.unifiedToggleInput) {
-            Logger.contextualUTI.error("[ContextualWebVC] flag on but no UTI installer wired — falling back to FE composer")
-        } else {
-            Logger.contextualUTI.info("[ContextualWebVC] flag off — using FE composer")
         }
         aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()

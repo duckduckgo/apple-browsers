@@ -86,6 +86,6 @@
         "owners": ["ayoy", "mallexxx", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

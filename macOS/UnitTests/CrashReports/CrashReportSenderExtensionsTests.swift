@@ -37,6 +37,7 @@ final class CrashReportSenderExtensionsTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        firedPixelNames = []
         PixelKit.tearDown()
     }
 

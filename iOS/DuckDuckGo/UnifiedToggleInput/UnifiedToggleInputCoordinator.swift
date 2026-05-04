@@ -368,17 +368,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func clearStoreEntryAfterSubmission() {
-        // Reset the live draft sources of truth so any subsequent persist (e.g. from
-        // clearAttachments() side effects further down the submit flow) snapshots
-        // the post-submit empty state, not the pre-submit prompt.
         currentText = ""
         textState = .empty
         guard let uid = currentTabUID else { return }
         var cleared = snapshotCurrentState()
         cleared.text = ""
         cleared.attachments = []
+        cleared.selectedTool = nil
         stateStore.update(cleared, for: uid)
-        Logger.unifiedInputState.debug("submission cleared store text + attachments for tab [\(uid)]")
+        Logger.unifiedInputState.debug("submission cleared store text + attachments + tool for tab [\(uid)]")
     }
 
     private var isNewChatPending = false
@@ -1074,11 +1072,12 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
                 : nil
             let configuration = promptSubmissionConfiguration
+
+            resetToolsSelection()
             clearAttachments()
             hasSubmittedPrompt = true
             updateModelChipVisibility()
             syncHasSubmittedPromptToHandler()
-            resetToolsSelection()
             if isOmnibarSession {
                 deactivateToOmnibar()
             } else {

@@ -1914,14 +1914,58 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertEqual(store.lastUsed.selectedTool, .webSearch)
     }
 
+    // MARK: - Tool selection cleared on submit (P1)
+
+    func test_submitAIChat_withSelectedTool_clearsToolFromStore() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "gpt-5")]
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.selectTool(.webSearch)
+        XCTAssertEqual(store.states["tab-A"]?.selectedTool, .webSearch)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .aiChat)
+
+        XCTAssertNil(store.states["tab-A"]?.selectedTool,
+                     "After AI submit the store must not retain the selected tool — otherwise reactivation restores it.")
+    }
+
+    func test_submitAIChat_withSelectedToolAndAttachments_clearsToolFromStore() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "gpt-5", supportsImageUpload: true)]
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.addImageAttachment(image: UIImage(), fileName: "x.jpg")
+        sut.selectTool(.webSearch)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .aiChat)
+
+        XCTAssertNil(store.states["tab-A"]?.selectedTool)
+    }
+
+    func test_handleExternalSubmission_prompt_withSelectedTool_clearsToolFromStore() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "gpt-5")]
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.selectTool(.webSearch)
+
+        sut.handleExternalSubmission(.prompt)
+
+        XCTAssertNil(store.states["tab-A"]?.selectedTool)
+    }
+
     // MARK: - Helpers
 
-    private func makeModelWithTools(id: String) -> AIChatModel {
+    private func makeModelWithTools(id: String, supportsImageUpload: Bool = false) -> AIChatModel {
         AIChatModel(
             id: id,
             name: id,
             provider: .unknown,
-            supportsImageUpload: false,
+            supportsImageUpload: supportsImageUpload,
             supportedTools: [.webSearch],
             entityHasAccess: true
         )

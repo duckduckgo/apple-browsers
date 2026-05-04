@@ -47,8 +47,14 @@ final class DuckAISuggestionsCoordinator {
 
     /// True when both fetchers have settled for `query`. Container gates Dax visibility on this to avoid mid-keystroke flashes.
     func hasSettled(forQuery query: String) -> Bool {
-        chatManager.lastCompletedFetchQuery == query
-            && urlLoader.lastCompletedFetchQuery == query
+        Self.hasSettled(forQuery: query,
+                        chatLastQuery: chatManager.lastCompletedFetchQuery,
+                        urlLastQuery: urlLoader.lastCompletedFetchQuery)
+    }
+
+    /// Pure-logic split so the AND rule is unit-testable without spinning up real fetchers.
+    static func hasSettled(forQuery query: String, chatLastQuery: String?, urlLastQuery: String?) -> Bool {
+        chatLastQuery == query && urlLastQuery == query
     }
 
     /// True when the surface has anything to render. Any non-empty query renders at least the "Search DuckDuckGo" row.

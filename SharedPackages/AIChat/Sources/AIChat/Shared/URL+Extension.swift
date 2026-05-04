@@ -40,7 +40,7 @@ extension URL {
      - Parameter queryItem: The query item to add or replace.
      - Returns: A new URL with the query item added or replaced, or the original URL if the query item's value is invalid.
      */
-    func addingOrReplacing(_ queryItem: URLQueryItem) -> URL {
+    public func addingOrReplacing(_ queryItem: URLQueryItem) -> URL {
         guard let queryValue = queryItem.value,
               !queryValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return self
@@ -75,6 +75,22 @@ extension URL {
     public var isStandaloneDuckAIURL: Bool {
         if host == DuckDuckGo.aiHost { return true }
         return false
+    }
+
+    /// Returns `true` if the URL points to Duck AI voice mode (`?mode=voice`).
+    public var isDuckAIVoiceMode: Bool {
+        guard isDuckAIURL else { return false }
+        return queryItems?.contains {
+            $0.name == AIChatURLParameters.modeName && $0.value == AIChatURLParameters.voiceModeValue
+        } == true
+    }
+
+    /// Returns `true` if the URL requests the Duck AI sidebar to be open on load (`?sidebar=open`).
+    public var isDuckAISidebarOpen: Bool {
+        guard isDuckAIURL else { return false }
+        return queryItems?.contains {
+            $0.name == AIChatURLParameters.sidebarName && $0.value == AIChatURLParameters.sidebarOpenValue
+        } == true
     }
 
     /// Returns the chat ID from the URL if present, or nil if not a Duck AI URL with a chat ID.

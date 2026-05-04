@@ -62,6 +62,8 @@ final class MockTabDelegate: TabDelegate {
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewBackgroundTabForUrl url: URL, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
 
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewFireTabForUrl url: URL, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
+
     func tabLoadingStateDidChange(tab: DuckDuckGo.TabViewController) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didUpdatePreview preview: UIImage) {}
@@ -108,6 +110,8 @@ final class MockTabDelegate: TabDelegate {
 
     func tabContentProcessDidTerminate(tab: DuckDuckGo.TabViewController) {}
 
+    func tabDidEngageWithPage(_ tab: DuckDuckGo.TabViewController) {}
+
     func tabDidRequestFireButtonPulse(tab: DuckDuckGo.TabViewController) {
         didRequestFireButtonPulseCalled = true
     }
@@ -122,6 +126,8 @@ final class MockTabDelegate: TabDelegate {
     func tabDidRequestSearchBarRect(tab: DuckDuckGo.TabViewController) -> CGRect { .zero }
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestPresentingTrackerAnimation privacyInfo: PrivacyDashboard.PrivacyInfo, isCollapsing: Bool) {}
+
+    func tabDidRequestPresentingYouTubeAdBlockAnimation(tab: DuckDuckGo.TabViewController) {}
 
     func tabDidRequestShowingMenuHighlighter(tab: DuckDuckGo.TabViewController) {}
 
@@ -146,6 +152,8 @@ final class MockTabDelegate: TabDelegate {
     func tabDidRequestNavigationToDifferentSite(tab: DuckDuckGo.TabViewController) {}
     
     func tab(_ tab: DuckDuckGo.TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {}
+
+    func tabDidRequestFireMode(tab: DuckDuckGo.TabViewController) {}
 }
 
 extension TabViewController {

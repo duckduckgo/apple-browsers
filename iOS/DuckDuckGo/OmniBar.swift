@@ -28,7 +28,9 @@ protocol OmniBar: AnyObject {
 
     var omniDelegate: OmniBarDelegate? { get set }
 
-    var isPhoneLandscape: Bool { get set }
+    var isExpandedPhone: Bool { get set }
+
+    func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int)
 
     var isTextFieldEditing: Bool { get }
     var text: String? { get set }
@@ -62,6 +64,7 @@ protocol OmniBar: AnyObject {
     func selectTextToEnd(_ offset: Int)
 
     func showOrScheduleCookiesManagedNotification(isCosmetic: Bool)
+    func showYouTubeAdBlockNotification()
 
     func showOrScheduleOnboardingPrivacyIconAnimation()
     func dismissOnboardingPrivacyIconAnimation()

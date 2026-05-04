@@ -19,9 +19,7 @@
 import AppKit
 import CommonObjCExtensions
 import DesignResourcesKitIcons
-import FeatureFlags
 import Foundation
-import PrivacyConfig
 import WebKit
 
 enum PermissionType: Hashable {
@@ -32,6 +30,7 @@ enum PermissionType: Hashable {
         case popups
         case notification
         case external = "external_"
+        case autoplayPolicy = "autoplay_policy"
     }
 
     case camera
@@ -40,6 +39,7 @@ enum PermissionType: Hashable {
     case popups
     case notification
     case externalScheme(scheme: String)
+    case autoplayPolicy
 
     var rawValue: String {
         switch self {
@@ -48,6 +48,7 @@ enum PermissionType: Hashable {
         case .geolocation: return Constants.geolocation.rawValue
         case .popups: return Constants.popups.rawValue
         case .notification: return Constants.notification.rawValue
+        case .autoplayPolicy: return Constants.autoplayPolicy.rawValue
         case .externalScheme(scheme: let scheme): return Constants.external.rawValue + scheme
         }
     }
@@ -59,6 +60,7 @@ enum PermissionType: Hashable {
         case Constants.geolocation.rawValue: self = .geolocation
         case Constants.popups.rawValue: self = .popups
         case Constants.notification.rawValue: self = .notification
+        case Constants.autoplayPolicy.rawValue: self = .autoplayPolicy
         default:
             if rawValue.hasPrefix(Constants.external.rawValue) {
                 let scheme = rawValue.dropping(prefix: Constants.external.rawValue)
@@ -77,37 +79,19 @@ extension PermissionType {
         return [.camera, .microphone, .geolocation, .notification]
     }
 
-    func canPersistGrantedDecision(featureFlagger: FeatureFlagger) -> Bool {
-        if featureFlagger.isFeatureOn(.newPermissionView) {
-            switch self {
-            case .camera, .microphone, .externalScheme, .popups, .geolocation, .notification:
-                return true
-            }
-        } else {
-            switch self {
-            case .camera, .microphone, .externalScheme, .popups, .notification:
-                return true
-            case .geolocation:
-                return false
-            }
+    var canPersistGrantedDecision: Bool {
+        switch self {
+        case .camera, .microphone, .externalScheme, .popups, .geolocation, .notification, .autoplayPolicy:
+            return true
         }
     }
 
-    func canPersistDeniedDecision(featureFlagger: FeatureFlagger) -> Bool {
-        if featureFlagger.isFeatureOn(.newPermissionView) {
-            switch self {
-            case .camera, .microphone, .geolocation, .externalScheme, .notification:
-                return true
-            case .popups:
-                return false
-            }
-        } else {
-            switch self {
-            case .camera, .microphone, .geolocation, .notification:
-                return true
-            case .popups, .externalScheme:
-                return false
-            }
+    var canPersistDeniedDecision: Bool {
+        switch self {
+        case .camera, .microphone, .geolocation, .externalScheme, .notification, .autoplayPolicy:
+            return true
+        case .popups:
+            return false
         }
     }
 
@@ -140,6 +124,8 @@ extension PermissionType {
             return DesignSystemImages.Glyphs.Size16.permissionsNotification
         case .externalScheme:
             return DesignSystemImages.Glyphs.Size16.openIn
+        case .autoplayPolicy:
+            return DesignSystemImages.Glyphs.Size16.videoPlayer
         }
     }
 
@@ -152,7 +138,7 @@ extension PermissionType {
             return DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid
         case .geolocation:
             return DesignSystemImages.Glyphs.Size16.permissionsLocationSolid
-        case .notification, .popups, .externalScheme:
+        case .notification, .popups, .externalScheme, .autoplayPolicy:
             return nil
         }
     }
@@ -162,7 +148,7 @@ extension PermissionType {
         switch self {
         case .geolocation, .notification:
             return true
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .externalScheme, .autoplayPolicy:
             return false
         }
     }

@@ -246,6 +246,22 @@ final class LocalStatisticsStore: StatisticsStore {
 
 }
 
+extension LocalStatisticsStore {
+
+    /// Debug helper: clears install-attribution state so the next launch re-runs first-launch logic
+    /// (variant assignment from xattr, ATB request, install pixel). Bypasses the property-setter
+    /// assertions on `atb` / `installDate` since this clearing is intentional.
+    func resetInstallAttributionState() {
+        pixelDataStore.removeValue(forKey: Keys.atb)
+        pixelDataStore.removeValue(forKey: Keys.variant)
+        pixelDataStore.removeValue(forKey: Keys.installDate)
+        pixelDataStore.removeValue(forKey: Keys.searchRetentionAtb)
+        pixelDataStore.removeValue(forKey: Keys.appRetentionAtb)
+        pixelDataStore.removeValue(forKey: Keys.duckAIRetentionAtb)
+        pixelDataStore.removeValue(forKey: Keys.lastAppRetentionRequestDate)
+    }
+}
+
 #if DEBUG
 
 // For use in tests to avoid indirect access of Database.makeDatabase

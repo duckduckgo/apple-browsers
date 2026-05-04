@@ -36,4 +36,12 @@ struct AIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
     func supportsSyncChatsDeletion() -> Bool {
         featureFlagger.isFeatureOn(for: FeatureFlag.supportsSyncChatsDeletion)
     }
+
+    func isNativeDataAccessEnabled() -> Bool {
+        featureFlagger.isFeatureOn(for: FeatureFlag.aiChatNativeDataAccess)
+    }
+
+    func isNativeDataStorageEnabled() -> Bool {
+        featureFlagger.isFeatureOn(for: FeatureFlag.aiChatNativeStorage)
+    }
 }

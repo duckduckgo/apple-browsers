@@ -97,13 +97,11 @@ public enum DataBrokerProtectionSharedPixels {
         public static let dataBrokerJsonFileKey = "data_broker_json_file"
         public static let removedAtParamKey = "removed_at"
         public static let isAuthenticated = "isAuthenticated"
-        public static let clickActionDelayReductionOptimizationKey = "click_action_delay_reduction_optimization"
         public static let isFreeScan = "free_scan"
     }
 
     case httpError(error: Error, code: Int, dataBroker: String, version: String, isFreeScan: Bool?)
     case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String, stepType: StepType?, dataBrokerParent: String?, isFreeScan: Bool?)
-    case actionPayloadTypedFallbackUnexpected(dataBroker: String, version: String, actionType: String, stepType: StepType?)
     case otherError(error: Error, dataBroker: String, version: String, isFreeScan: Bool?)
     case databaseError(error: Error, functionOccurredIn: String)
     case cocoaError(error: Error, functionOccurredIn: String)
@@ -117,12 +115,12 @@ public enum DataBrokerProtectionSharedPixels {
     case parentChildMatches(parent: String, child: String, value: Int)
 
     // Stage Pixels
-    case optOutStart(dataBroker: String, attemptId: UUID, parent: String, clickActionDelayReductionOptimization: Bool)
+    case optOutStart(dataBroker: String, attemptId: UUID, parent: String)
 
     // Process Pixels
     case optOutSubmitSuccess(dataBroker: String, attemptId: UUID, duration: Double, tries: Int, parent: String, emailPattern: String?, vpnConnectionState: String, vpnBypassStatus: String)
-    case optOutSuccess(dataBroker: String, attemptId: UUID, duration: Double, parent: String, brokerType: DataBrokerHierarchy, vpnConnectionState: String, vpnBypassStatus: String, clickActionDelayReductionOptimization: Bool)
-    case optOutFailure(dataBroker: String, dataBrokerVersion: String, attemptId: UUID, duration: Double, parent: String, errorCategory: String, errorDetails: String, stage: String, tries: Int, emailPattern: String?, actionId: String, actionType: String, vpnConnectionState: String, vpnBypassStatus: String, clickActionDelayReductionOptimization: Bool)
+    case optOutSuccess(dataBroker: String, attemptId: UUID, duration: Double, parent: String, brokerType: DataBrokerHierarchy, vpnConnectionState: String, vpnBypassStatus: String)
+    case optOutFailure(dataBroker: String, dataBrokerVersion: String, attemptId: UUID, duration: Double, parent: String, errorCategory: String, errorDetails: String, stage: String, tries: Int, emailPattern: String?, actionId: String, actionType: String, vpnConnectionState: String, vpnBypassStatus: String)
 
     // Scan/Search pixels
 #if os(iOS)
@@ -138,7 +136,7 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutCaptchaParse(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutCaptchaSend(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutCaptchaSolve(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
-    case optOutSubmit(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String, clickActionDelayReductionOptimization: Bool)
+    case optOutSubmit(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutEmailReceive(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutEmailConfirm(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutValidate(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
@@ -181,8 +179,8 @@ public enum DataBrokerProtectionSharedPixels {
     case initialScanPreStartDuration(duration: Double)
 
     // Custom stats
-    case customDataBrokerStatsOptoutSubmit(dataBrokerURL: String, optOutSubmitSuccessRate: Double, clickActionDelayReductionOptimization: Bool)
-    case customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: Double, clickActionDelayReductionOptimization: Bool)
+    case customDataBrokerStatsOptoutSubmit(dataBrokerURL: String, optOutSubmitSuccessRate: Double)
+    case customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: Double)
     case weeklyChildBrokerOrphanedOptOuts(dataBrokerURL: String, childParentRecordDifference: Int, calculatedOrphanedRecords: Int, isAuthenticated: Bool)
 
     // UserScript
@@ -240,7 +238,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             // Debug Pixels
         case .httpError: return "dbp_data_broker_http_error"
         case .actionFailedError: return "dbp_data_broker_action-failed_error"
-        case .actionPayloadTypedFallbackUnexpected: return "dbp_data_broker_action-payload_typed-fallback_unexpected"
         case .otherError: return "dbp_data_broker_other_error"
         case .databaseError: return "dbp_data_broker_database_error"
         case .cocoaError: return "dbp_data_broker_cocoa_error"
@@ -326,11 +323,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                           Consts.stepTypeKey: stepType?.rawValue ?? "unknown",
                           Consts.parentKey: dataBrokerParent ?? ""]
             return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
-        case .actionPayloadTypedFallbackUnexpected(let dataBroker, let version, let actionType, let stepType):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: version,
-                    Consts.actionTypeKey: actionType,
-                    Consts.stepTypeKey: stepType?.rawValue ?? "unknown"]
         case .otherError(let error, let dataBroker, let version, let isFreeScan):
             let params = ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
                           Consts.dataBrokerParamKey: dataBroker,
@@ -342,11 +334,10 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return ["functionOccurredIn": functionOccurredIn]
         case .parentChildMatches(let parent, let child, let value):
             return ["parent": parent, "child": child, "value": String(value)]
-        case .optOutStart(let dataBroker, let attemptId, let parent, let clickActionDelayReductionOptimization):
+        case .optOutStart(let dataBroker, let attemptId, let parent):
             return [Consts.dataBrokerParamKey: dataBroker,
                     Consts.attemptIdParamKey: attemptId.uuidString,
-                    Consts.parentKey: parent,
-                    Consts.clickActionDelayReductionOptimizationKey: String(clickActionDelayReductionOptimization)]
+                    Consts.parentKey: parent]
         case .optOutEmailGenerate(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutCaptchaParse(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutCaptchaSend(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
@@ -364,15 +355,14 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.triesKey: String(tries),
                     Consts.parentKey: parent,
                     Consts.actionIDKey: actionId]
-        case .optOutSubmit(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId, let clickActionDelayReductionOptimization):
+        case .optOutSubmit(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId):
             return [Consts.dataBrokerParamKey: dataBroker,
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.durationParamKey: String(duration),
                     Consts.dataBrokerVersionKey: dataBrokerVersion,
                     Consts.triesKey: String(tries),
                     Consts.parentKey: parent,
-                    Consts.actionIDKey: actionId,
-                    Consts.clickActionDelayReductionOptimizationKey: String(clickActionDelayReductionOptimization)]
+                    Consts.actionIDKey: actionId]
         case .optOutFinish(let dataBroker, let attemptId, let duration, let parent):
             return [Consts.dataBrokerParamKey: dataBroker,
                     Consts.attemptIdParamKey: attemptId.uuidString,
@@ -384,16 +374,15 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 params[Consts.pattern] = pattern
             }
             return params
-        case .optOutSuccess(let dataBroker, let attemptId, let duration, let parent, let type, let vpnConnectionState, let vpnBypassStatus, let clickActionDelayReductionOptimization):
+        case .optOutSuccess(let dataBroker, let attemptId, let duration, let parent, let type, let vpnConnectionState, let vpnBypassStatus):
             return [Consts.dataBrokerParamKey: dataBroker,
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.durationParamKey: String(duration),
                     Consts.parentKey: parent,
                     Consts.isParent: String(type.rawValue),
                     Consts.vpnConnectionStateParamKey: vpnConnectionState,
-                    Consts.vpnBypassStatusParamKey: vpnBypassStatus,
-                    Consts.clickActionDelayReductionOptimizationKey: String(clickActionDelayReductionOptimization)]
-        case .optOutFailure(let dataBroker, let dataBrokerVersion, let attemptId, let duration, let parent, let errorCategory, let errorDetails, let stage, let tries, let pattern, let actionId, let actionType, let vpnConnectionState, let vpnBypassStatus, let clickActionDelayReductionOptimization):
+                    Consts.vpnBypassStatusParamKey: vpnBypassStatus]
+        case .optOutFailure(let dataBroker, let dataBrokerVersion, let attemptId, let duration, let parent, let errorCategory, let errorDetails, let stage, let tries, let pattern, let actionId, let actionType, let vpnConnectionState, let vpnBypassStatus):
             var params = [Consts.dataBrokerParamKey: dataBroker,
                           Consts.dataBrokerVersionKey: dataBrokerVersion,
                           Consts.attemptIdParamKey: attemptId.uuidString,
@@ -406,8 +395,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                           Consts.stageKey: stage,
                           Consts.triesKey: String(tries),
                           Consts.vpnConnectionStateParamKey: vpnConnectionState,
-                          Consts.vpnBypassStatusParamKey: vpnBypassStatus,
-                          Consts.clickActionDelayReductionOptimizationKey: String(clickActionDelayReductionOptimization)]
+                          Consts.vpnBypassStatusParamKey: vpnBypassStatus]
             if let pattern = pattern {
                 params[Consts.pattern] = pattern
             }
@@ -531,13 +519,11 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .initialScanPreStartDuration(let duration):
             return [Consts.durationInMs: String(duration)]
-        case .customDataBrokerStatsOptoutSubmit(let dataBrokerURL, let optOutSubmitSuccessRate, let clickActionDelayReductionOptimization):
+        case .customDataBrokerStatsOptoutSubmit(let dataBrokerURL, let optOutSubmitSuccessRate):
             return [Consts.dataBrokerParamKey: dataBrokerURL,
-                    Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate),
-                    Consts.clickActionDelayReductionOptimizationKey: String(clickActionDelayReductionOptimization)]
-        case .customGlobalStatsOptoutSubmit(let optOutSubmitSuccessRate, let clickActionDelayReductionOptimization):
-            return [Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate),
-                    Consts.clickActionDelayReductionOptimizationKey: String(clickActionDelayReductionOptimization)]
+                    Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
+        case .customGlobalStatsOptoutSubmit(let optOutSubmitSuccessRate):
+            return [Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
         case .weeklyChildBrokerOrphanedOptOuts(let dataBrokerURL, let childParentRecordDifference, let calculatedOrphanedRecords, let isAuthenticated):
             return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.childParentRecordDifference: String(childParentRecordDifference),
@@ -608,7 +594,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         switch self {
         case .httpError,
                 .actionFailedError,
-                .actionPayloadTypedFallbackUnexpected,
                 .otherError,
                 .databaseError,
                 .cocoaError,
@@ -726,8 +711,6 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                 self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultDatabaseRecreated:
                 self.pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
-            case .actionPayloadTypedFallbackUnexpected:
-                self.pixelKit.fire(event, frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .httpError(let error, _, _, _, _),
                     .actionFailedError(let error, _, _, _, _, _, _, _),
                     .otherError(let error, _, _, _):

@@ -44,14 +44,14 @@ final class FireTests: XCTestCase {
 
     @MainActor
     override func tearDown() {
-        schemeHandler = nil
-        pinnedTabsManagerProvider = nil
         autoreleasepool {
             WindowsManager.closeWindows()
             for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
                 Application.appDelegate.windowControllersManager.unregister(controller)
             }
             cancellables = []
+            schemeHandler = nil
+            pinnedTabsManagerProvider = nil
         }
         // Allow WebKit IPC to settle after closing windows to avoid
         // WebProcessProxy::mainPages() assertion failures (EXC_BREAKPOINT)

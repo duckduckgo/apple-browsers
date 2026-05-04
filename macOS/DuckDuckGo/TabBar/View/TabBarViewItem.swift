@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import Common
 import DesignResourcesKitIcons
 import FeatureFlags
 import PrivacyConfig
@@ -47,7 +48,6 @@ protocol TabBarViewModel {
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> { get }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { get }
     var isSuspended: Bool { get }
-    var isSuspendedPublisher: AnyPublisher<Bool, Never> { get }
     var canBeSuspended: Bool { get }
 }
 
@@ -75,7 +75,10 @@ extension TabViewModel: TabBarViewModel {
             .eraseToAnyPublisher()
     }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { tab.webViewRenderingProgressDidChangePublisher }
-    var isSuspendedPublisher: AnyPublisher<Bool, Never> { $isSuspended.eraseToAnyPublisher() }
+
+    var isSuspended: Bool {
+        false
+    }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {
@@ -244,7 +247,6 @@ final class TabBarItemCellView: NSView {
         return view
     }()
 
-    /// Deprecated: Always hidden when `tabAnimations` is enabled
     fileprivate let rightSeparatorView = ColorView(frame: .zero)
 
     /// Deprecated: Replaced by `TabBackgroundView`
@@ -600,6 +602,7 @@ extension TabBarItemCellView: ThemeUpdateListening {
         if displaysTabsAnimations {
             backgroundView.backgroundColor = colorsProvider.navigationBackgroundColor
             backgroundView.overlayColor = tabStyleProvider.hoverTabColor
+            rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
         } else {
             leftRampView.rampColor = colorsProvider.navigationBackgroundColor
             rightRampView.rampColor = colorsProvider.navigationBackgroundColor
@@ -1036,18 +1039,6 @@ final class TabBarViewItem: NSCollectionViewItem {
                 self?.refreshProgressColors(rendered: true)
             }
             .store(in: &cancellables)
-
-        tabViewModel.isSuspendedPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isSuspended in
-                guard let self else {
-                    return
-                }
-                let alpha: CGFloat = isSuspended && featureFlagger.isFeatureOn(.tabSuspensionDebugging) ? 0.5 : 1.0
-                cell.faviconView.alphaValue = alpha
-                cell.titleView.alphaValue = alpha
-            }
-            .store(in: &cancellables)
     }
 
     func clear() {
@@ -1093,6 +1084,10 @@ final class TabBarViewItem: NSCollectionViewItem {
         let tabStyleProvider = theme.tabStyleProvider
 
         withoutAnimation {
+            let alpha = (tabViewModel?.isSuspended == true && featureFlagger.isFeatureOn(.tabSuspensionDebugging)) ? 0.5 : 1.0
+            cell.faviconView.alphaValue = alpha
+            cell.titleView.alphaValue = alpha
+
             if displaysTabsAnimations {
                 cell.mouseOverView.backgroundColor = nil
                 cell.mouseOverView.mouseOverColor = nil
@@ -1193,15 +1188,10 @@ final class TabBarViewItem: NSCollectionViewItem {
     // MARK: - Active Permission Icons in Favicon
 
     private var isShowingActivePermissionIcon: Bool {
-        featureFlagger.isFeatureOn(.newPermissionView) && !activePermissionTypes.isEmpty
+        !activePermissionTypes.isEmpty
     }
 
     private func updateActivePermissionIcons() {
-        guard featureFlagger.isFeatureOn(.newPermissionView) else {
-            stopActivePermissionIconTimer()
-            return
-        }
-
         // Collect all active permissions (camera, microphone, geolocation)
         var activeTypes: [PermissionType] = []
         if usedPermissions.camera.isActive {
@@ -1510,21 +1500,30 @@ extension TabBarViewItem: NSMenuDelegate {
         guard
             featureFlagger.isFeatureOn(.tabSuspension),
             featureFlagger.isFeatureOn(.tabSuspensionDebugging),
-            case .url = tabViewModel?.tabContent
+            let tabViewModel
         else {
             return
         }
 
-        let isSuspended = tabViewModel?.isSuspended ?? false
-        // This item is only ever visible to internal users so we don't need translations.
+        // These menu items are only ever visible to internal users so we don't need translations.
+
+        let isSuspended = tabViewModel.isSuspended
+        let statusMenuItem = NSMenuItem(title: "isSuspended: \(isSuspended)", action: nil, keyEquivalent: "")
+        statusMenuItem.isEnabled = false
+        menu.addItem(.separator())
+        menu.addItem(statusMenuItem)
+
+        guard !isBurner, case .url = tabViewModel.tabContent else {
+            return
+        }
+
         let title = isSuspended ? "Resume Tab" : "Suspend Tab"
-        let canToggleSuspension = isSuspended || (tabViewModel?.canBeSuspended == true)
+        let canToggleSuspension = isSuspended || tabViewModel.canBeSuspended
         let isEnabled = !isSelected && canToggleSuspension
 
         let menuItem = NSMenuItem(title: title, action: #selector(suspendTabAction(_:)), keyEquivalent: "")
         menuItem.target = self
         menuItem.isEnabled = isEnabled
-        menu.addItem(.separator())
         menu.addItem(menuItem)
     }
 
@@ -1800,7 +1799,6 @@ extension TabBarViewItem {
             var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never>
 
             @Published var isSuspended: Bool = false
-            var isSuspendedPublisher: AnyPublisher<Bool, Never> { $isSuspended.eraseToAnyPublisher() }
             var canBeSuspended: Bool = true
 
             init(width: CGFloat, title: String = "Test Title", url: URL? = nil, favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, isPinned: Bool = false, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, isLoading: Bool = false, error: WKError? = nil) {

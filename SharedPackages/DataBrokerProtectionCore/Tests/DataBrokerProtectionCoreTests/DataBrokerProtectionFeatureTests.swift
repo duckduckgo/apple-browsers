@@ -31,7 +31,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
     let mockBroker = UserScriptMessageBroker(context: "mock context")
 
     let mockProfileQuery = ProfileQuery(firstName: "", lastName: "", city: "", state: "", birthYear: 1970)
-    lazy var mockCCFRequestData = CCFRequestData.userData(mockProfileQuery, nil)
+    lazy var mockCCFRequestData = CCFRequestData.userData(mockProfileQuery, nil, nil, [:])
 
     override func setUp() {
         mockCSSDelegate.reset()
@@ -137,7 +137,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
         sut.pushAction(method: CCFSubscribeActionName.onActionReceived, webView: mockWebView, params: params)
 
-        await fulfillment(of: [timeoutExpectation], timeout: 3.0)
+        await fulfillment(of: [timeoutExpectation], timeout: 10.0)
 
         XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError,
                        DataBrokerProtectionError.actionFailed(actionID: actionID, message: "Action timed out"))

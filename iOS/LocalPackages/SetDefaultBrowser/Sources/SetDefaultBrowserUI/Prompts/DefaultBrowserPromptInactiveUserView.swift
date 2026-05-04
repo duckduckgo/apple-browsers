@@ -17,11 +17,12 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 import MetricBuilder
+import SwiftUI
+import UIComponents
 
 struct DefaultBrowserPromptInactiveUserView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass

@@ -39,6 +39,12 @@
         "type": "integer",
         "enum": [0, 1]
     },
+    "consentHeuristicEnabled": {
+        "key": "consentHeuristicEnabled",
+        "description": "0 when the consent heuristic feature is disabled, 1 when it is enabled",
+        "type": "integer",
+        "enum": [0, 1]
+    },
     "isInternalUser": {
         "key": "is_internal_user",
         "description": "Whether the user is flagged as internal.  Should ONLY be sent with \"true\" value",
@@ -305,5 +311,22 @@
         "key": "free_trial",
         "type": "boolean",
         "description": "Whether the user is eligible for a free trial"
+    },
+    "locale": {
+        "key": "locale",
+        "type": "string",
+        "description": "User locale",
+        "examples": ["en-US", "hu-HU"]
+    },
+    "browsingMode": {
+        "key": "browsing_mode",
+        "type": "string",
+        "description": "The current browsing mode: fire (Fire Tabs) or normal",
+        "enum": ["fire", "normal"]
+    },
+    "durationSeconds": {
+        "key": "dur",
+        "type": "string",
+        "description": "Duration in seconds (as a floating-point string)"
     }
 }

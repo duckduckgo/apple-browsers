@@ -36,6 +36,14 @@ final class TabSnapshotExtension {
     // Flag is true if the extension restored the snapshot from storage
     @MainActor private var didRestoreSnapshot = false
 
+    /// Controls whether snapshot is cleared on deinit.
+    ///
+    /// A tab that is being suspended is replaced with a new instance of `Tab`
+    /// that reuses the same UUID, in which case the "old" Tab instance needs
+    /// to be instructed not to clear its snapshot on deinit, by setting this
+    /// property to `false`.
+    var shouldClearSnapshotOnDeinit = true
+
     private weak var webView: WebView?
     private var tabContent: Tab.TabContent?
     private var cancellables = Set<AnyCancellable>()
@@ -79,7 +87,9 @@ final class TabSnapshotExtension {
 
         webView = nil
 
-        store.clearSnapshot(tabID: identifier)
+        if shouldClearSnapshotOnDeinit {
+            store.clearSnapshot(tabID: identifier)
+        }
     }
 
     @MainActor
@@ -204,6 +214,17 @@ final class TabSnapshotExtension {
         Logger.tabSnapshots.debug("Snapshot of native page rendered")
     }
 
+    @MainActor
+    func renderSnapshotSync(from view: NSView) {
+        guard let snapshot = viewSnapshotRenderer.renderSnapshotSync(view: view) else {
+            clearSnapshot()
+            return
+        }
+
+        snapshotData = SnapshotData.snapshotDataForRegularView(from: snapshot)
+        Logger.tabSnapshots.debug("Snapshot of native page rendered")
+    }
+
     private func isAllowedURL(_ url: URL) -> Bool {
         // If duck url allow exception only if it's DuckPlayer or Onboarding or History.
         guard url.navigationalScheme == .duck else { return true }
@@ -279,10 +300,12 @@ protocol TabSnapshotExtensionProtocol: AnyObject, NavigationResponder {
 
     var snapshot: NSImage? { get }
     var identifier: UUID { get }
+    var shouldClearSnapshotOnDeinit: Bool { get set }
 
     func setIdentifier(_ identifier: UUID)
     func renderWebViewSnapshot() async
     func renderSnapshot(from view: @escaping () -> NSView?) async
+    func renderSnapshotSync(from view: NSView)
 
 }
 

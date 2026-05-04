@@ -136,8 +136,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             parentURL: broker.parent,
             isFreeScan: false,
             vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
-            vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown",
-            featureFlagger: jobDependencies.featureFlagger
+            vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
         stageDurationCalculator.setStage(.emailConfirmDecoupled)
 

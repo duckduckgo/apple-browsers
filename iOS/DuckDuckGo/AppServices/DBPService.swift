@@ -50,7 +50,15 @@ final class DBPService: NSObject {
                 authenticationManager: authManager,
                 pixelHandler: notificationPixelHandler
             )
-            let eventsHandler = BrokerProfileJobEventsHandler(userNotificationService: notificationService)
+            let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
+                userDefaults: .dbp,
+                isUserAuthenticated: { [authManager] in await authManager.isUserAuthenticated },
+                isFreemiumEnabled: { [featureFlagger] in featureFlagger.isFreemiumPIREnabled }
+            )
+            let eventsHandler = BrokerProfileJobEventsHandler(
+                userNotificationService: notificationService,
+                freemiumUserStateManager: freemiumDBPUserStateManager
+            )
 
             #if DEBUG
             let isWebViewInspectable = true
@@ -82,6 +90,7 @@ final class DBPService: NSObject {
                     return view
                 },
                 eventsHandler: eventsHandler,
+                freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                 isWebViewInspectable: isWebViewInspectable,
                 freeTrialConversionService: appDependencies.freeTrialConversionService)
         } else {
@@ -102,7 +111,7 @@ final class DBPService: NSObject {
     }
 }
 
-final class DBPFeatureFlagger: DBPFeatureFlagging {
+final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     
     private let appDependencies: DependencyProvider
 
@@ -122,16 +131,16 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningWhenDashboardOpen)
     }
 
-    var isClickActionDelayReductionOptimizationOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
-    }
-
     var isContinuedProcessingFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpContinuedProcessing)
     }
 
     var isWebViewUserAgentOn: Bool {
         false
+    }
+
+    var isFreemiumPIREnabled: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpFreemiumPIR)
     }
 
     init(appDependencies: DependencyProvider) {

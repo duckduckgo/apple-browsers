@@ -18,6 +18,7 @@
 
 import Foundation
 import Combine
+import PixelKit
 
 @MainActor
 protocol BookmarkAllTabsDialogEditing: BookmarksDialogViewModel {
@@ -37,6 +38,7 @@ final class BookmarkAllTabsDialogViewModel: BookmarkAllTabsDialogEditing {
     private let websites: [WebsiteInfo]
     private let foldersStore: BookmarkFoldersStore
     private let bookmarkManager: BookmarkManager
+    private let pixelFiring: PixelFiring?
 
     private var folderCancellable: AnyCancellable?
 
@@ -62,11 +64,13 @@ final class BookmarkAllTabsDialogViewModel: BookmarkAllTabsDialogEditing {
         websites: [WebsiteInfo],
         foldersStore: BookmarkFoldersStore,
         bookmarkManager: BookmarkManager,
+        pixelFiring: PixelFiring? = PixelKit.shared,
         dateFormatterConfigurationProvider: () -> DateFormatterConfiguration = DateFormatterConfiguration.defaultConfiguration
     ) {
         self.websites = websites
         self.foldersStore = foldersStore
         self.bookmarkManager = bookmarkManager
+        self.pixelFiring = pixelFiring
 
         folders = .init(bookmarkManager.list)
         selectedFolder = foldersStore.lastBookmarkAllTabsFolderIdUsed.flatMap(bookmarkManager.getBookmarkFolder(withId:))
@@ -79,6 +83,8 @@ final class BookmarkAllTabsDialogViewModel: BookmarkAllTabsDialogEditing {
     }
 
     func addOrSave(dismiss: () -> Void) {
+        pixelFiring?.fire(GeneralPixel.bookmarksSaveAllOpenTabs, frequency: .dailyAndCount)
+
         // Save last used folder
         foldersStore.lastBookmarkAllTabsFolderIdUsed = selectedFolder?.id
 

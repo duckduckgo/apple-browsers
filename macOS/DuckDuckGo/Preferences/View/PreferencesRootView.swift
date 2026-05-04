@@ -153,6 +153,7 @@ enum Preferences {
                                 tabsModel: model.tabsPreferences,
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
+                                autoplayModel: NSApp.delegateTyped.autoplayPreferences,
                                 dockModel: model.dockPreferences)
                 case .sync:
                     SyncView()

@@ -83,11 +83,16 @@ extension DebugScreensViewModel {
             }),
             .action(title: "Show New AddressBar Modal", showNewAddressBarModal),
             .action(title: "Reset New Address Bar Picker Data", resetNewAddressBarPickerData),
+            .action(title: "Reset Fire Mode Promotion", { _ in
+                FireModePromotionsCoordinator.resetState()
+                ActionMessageView.present(message: "Fire Mode Promotion state reset")
+            }),
             .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
+            .action(title: "Reset AI Toggle Selection", resetAIToggleSelection),
 
             // MARK: SwiftUI Views
-            .view(title: "AI Chat", { _ in
-                AIChatDebugView()
+            .view(title: "AI Chat", { dependencies in
+                AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
             }),
             .view(title: "Data Audit", { _ in
                 DataAuditDebugScreen()
@@ -175,7 +180,6 @@ extension DebugScreensViewModel {
                 return self.debugStoryboard.instantiateViewController(identifier: "SyncDebugViewController") { coder in
                     SyncDebugViewController(coder: coder,
                                             sync: d.syncService,
-                                            keyValueStore: d.keyValueStore,
                                             bookmarksDatabase: d.bookmarksDatabase)
                 }
             }),
@@ -243,6 +247,10 @@ extension DebugScreensViewModel {
                     func onboardingCompleted(controller: UIViewController) {
                         controller.presentingViewController?.dismiss(animated: true)
                     }
+
+                    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType) {}
+
+                    func searchFromOnboarding(for query: String) {}
                 }
 
                 let isOnboardingRebranding = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.onboardingRebranding)
@@ -307,6 +315,12 @@ extension DebugScreensViewModel {
         )
 
         store.lastPresentationTimestamp = nil
+    }
+
+    private func resetAIToggleSelection(_ dependencies: DebugScreen.Dependencies) {
+        AIChatSettings().resetAIChatSearchInputUserSettings()
+
+        ActionMessageView.present(message: "AI Toggle selection reset")
     }
 
     private var webExtensionsDebugScreen: DebugScreen? {

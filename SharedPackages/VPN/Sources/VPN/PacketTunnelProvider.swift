@@ -22,6 +22,7 @@
 import Combine
 import Common
 import Foundation
+import Network
 import NetworkExtension
 import UserNotifications
 import os.log
@@ -47,6 +48,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case adapterEndTemporaryShutdownStateAttemptFailure(Error)
         case adapterEndTemporaryShutdownStateRecoverySuccess
         case adapterEndTemporaryShutdownStateRecoveryFailure(Error)
+
+        case connectionFailureLoopDetected(_ error: Error)
     }
 
     public enum AttemptStep: CustomDebugStringConvertible {
@@ -310,11 +313,21 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         providerEvents.fire(.rekeyAttempt(.begin))
 
+        let preRekeyEgress = await currentEgressInfo()
+
         do {
             try await updateTunnelConfiguration(
                 updateMethod: .selectServer(currentServerSelectionMethod),
                 reassert: false,
                 regenerateKey: true)
+            // A rekey that landed back on the same server can't have changed the egress path, so
+            // skip the leak check and let the periodic timer handle the routine validation. We
+            // only force an immediate check when the server (or its IP) actually changed.
+            // If `postRekeyEgress` is nil the tunnel has dropped state out from under us; the
+            // service would skip the check anyway, so don't bother scheduling.
+            if let postRekeyEgress = await currentEgressInfo(), preRekeyEgress != postRekeyEgress {
+                await leakCheckService?.scheduleCheck(trigger: .rekey)
+            }
             providerEvents.fire(.rekeyAttempt(.success))
         } catch {
             providerEvents.fire(.rekeyAttempt(.failure(error)))
@@ -373,6 +386,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private var wideEvent: WideEventManaging
     private var connectionWideEventData: VPNConnectionWideEventData?
     private let connectionTunnelTimeoutInterval: TimeInterval = .minutes(15)
+    private var leakCheckService: VPNLeakCheckService?
 
     // MARK: - Connection Tester
 
@@ -388,6 +402,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let debugEvents: EventMapping<NetworkProtectionError>
     private let providerEvents: EventMapping<Event>
     public let entitlementCheck: (() async -> Result<Bool, Error>)?
+    public let loopDetector: ConnectionFailureLoopDetector
 
     @MainActor
     public init(notificationsPresenter: VPNNotificationsPresenting,
@@ -415,7 +430,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 keyExpirationTester: KeyExpirationTesting? = nil,
                 tunnelFailureMonitor: TunnelFailureMonitoring? = nil,
                 failureRecoveryHandler: FailureRecoveryHandling? = nil,
-                entitlementCheck: (() async -> Result<Bool, Error>)?) {
+                entitlementCheck: (() async -> Result<Bool, Error>)?,
+                loopDetector: ConnectionFailureLoopDetector) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
         self.notificationsPresenter = notificationsPresenter
@@ -434,6 +450,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.latencyMonitor = latencyMonitor
         self.entitlementMonitor = entitlementMonitor
         self.entitlementCheck = entitlementCheck
+        self.loopDetector = loopDetector
 
         self.wideEvent = wideEvent ?? WideEvent(featureFlagProvider: WideEventFeatureFlagProvider(settings: settings))
 
@@ -526,7 +543,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             debugEvents: self.debugEvents,
             tunnelState: self,
             tunnelLifecycle: self,
-            snoozeManager: self
+            snoozeManager: self,
+            leakCheckController: self
         )
 
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider initialized")
@@ -741,6 +759,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 #endif
         } catch {
             if startupOptions.startupMethod == .automaticOnDemand {
+                if loopDetector.connectionFailed(isOnDemand: true) {
+                    providerEvents.fire(.connectionFailureLoopDetected(error))
+                }
+
                 // If the VPN was started by on-demand without the basic prerequisites for
                 // it to work we skip firing pixels.  This should only be possible if the
                 // manual start attempt that preceded failed, or if the subscription has
@@ -751,6 +773,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 try? await Task.sleep(interval: .seconds(15))
                 Logger.networkProtection.log("Waking up...")
             } else {
+                loopDetector.connectionFailed(isOnDemand: false)
+
                 // If the VPN was started manually without the basic prerequisites we always
                 // want to know as this should not be possible.
                 providerEvents.fire(.tunnelStartAttempt(.begin))
@@ -771,8 +795,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             try await startTunnel(onDemand: startupOptions.startupMethod == .automaticOnDemand)
 
             providerEvents.fire(.tunnelStartAttempt(.success))
+            loopDetector.connectionSucceeded()
             completeAndCleanupConnectionWideEvent()
         } catch {
+            if loopDetector.connectionFailed(isOnDemand: startupOptions.startupMethod == .automaticOnDemand) {
+                providerEvents.fire(.connectionFailureLoopDetected(error))
+            }
+
             Logger.networkProtection.error("🔴 Failed to start tunnel \(error.localizedDescription, privacy: .public)")
 
             if startupOptions.startupMethod == .automaticOnDemand {
@@ -899,6 +928,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         if case .userInitiated = reason {
             // If the user shut down the VPN deliberately, end snooze mode early.
             self.snoozeTimingStore.reset()
+            loopDetector.reset()
         }
 
         if case .superceded = reason {
@@ -932,6 +962,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         connectionStatus = .disconnecting
 
         await stopMonitors()
+        if let service = leakCheckService {
+            await service.stop()
+            leakCheckService = nil
+        }
         try await stopAdapter()
     }
 
@@ -1128,6 +1162,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 .setDNSSettings,
                 .setEnforceRoutes,
                 .setExcludeLocalNetworks,
+                .setExcludeAPNs,
+                .setExcludeCellularServices,
+                .setExcludeDeviceCommunication,
                 .setIncludeAllNetworks,
                 .setNotifyStatusChanges,
                 .setRegistrationKeyValidity,
@@ -1207,6 +1244,53 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         // and is being fixed, so we want to test the connection immediately.
         let testImmediately = startReason == .reconnected || startReason == .onDemand
         try await startMonitors(testImmediately: testImmediately)
+
+        await scheduleLeakCheck(for: startReason)
+    }
+
+    @MainActor
+    private func scheduleLeakCheck(for startReason: AdapterStartReason) async {
+        switch startReason {
+        case .manual, .onDemand, .snoozeEnded:
+            if leakCheckService == nil {
+                // Capture the interface name on the main actor; the resolver itself
+                // (which may consult NWPathMonitor) is safe to call off-main.
+                let fallbackInterfaceName = adapter.interfaceName
+                let service = VPNLeakCheckService(
+                    configuration: .default,
+                    egressInfo: { [weak self] in
+                        await self?.currentEgressInfo()
+                    },
+                    tunnelInterface: { [weak self] in
+                        await self?.resolveTunnelInterface(fallbackInterfaceName: fallbackInterfaceName)
+                    },
+                    httpClient: DefaultLeakCheckHTTPClient(),
+                    stunClient: DefaultLeakCheckSTUNClient(),
+                    wideEvent: wideEvent
+                )
+                leakCheckService = service
+                await service.start()
+            }
+            await leakCheckService?.scheduleCheck(trigger: .tunnelStart)
+        case .reconnected:
+            await leakCheckService?.scheduleCheck(trigger: .reassert)
+        case .wake:
+            break
+        }
+    }
+
+    /// Resolves the current egress info from `lastSelectedServerInfo` on the main actor. The leak
+    /// check service calls this at the start of every check so the reference IP stays in sync with
+    /// whichever server WireGuard is currently connected to — including changes made by `rekey()`,
+    /// `handleRestartAdapter()`, or any future code path that mutates `lastSelectedServer` without
+    /// going through `handleAdapterStarted`.
+    @MainActor
+    private func currentEgressInfo() -> LeakCheckEgressInfo? {
+        guard let info = lastSelectedServerInfo,
+              let ip = info.ipv4?.debugDescription else {
+            return nil
+        }
+        return LeakCheckEgressInfo(ipAddress: ip, name: info.name)
     }
 
     // MARK: - Monitors
@@ -1609,10 +1693,8 @@ private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
     let settings: VPNSettings
 
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-            return settings.wideEventPostEndpointEnabled
-        }
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }
 
@@ -1653,6 +1735,7 @@ extension PacketTunnelProvider {
 
     func setupAndStartConnectionWideEvent(with startupMethod: StartupOptions.StartupMethod) {
         completeAllPendingVPNConnectionPixels()
+        VPNLeakCheckService.completeAllPendingFlows(wideEvent: wideEvent)
         // Already measured
         guard startupMethod != .manualByMainApp else { return }
         let data = VPNConnectionWideEventData(
@@ -1730,6 +1813,13 @@ extension PacketTunnelProvider: TunnelLifecycleManaging {
 extension PacketTunnelProvider: SnoozeManaging {
     // startSnooze(duration:) — already internal @MainActor
     // cancelSnooze() — already internal @MainActor
+}
+
+extension PacketTunnelProvider: LeakCheckControlling {
+    func triggerLeakCheckFromDebugMenu() async {
+        Logger.networkProtectionIPLeakCheck.log("Debug-triggered leak check requested")
+        await leakCheckService?.runCheck(trigger: .periodic, bypassCooldown: true)
+    }
 }
 
 // MARK: - Error Description Helper

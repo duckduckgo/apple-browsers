@@ -74,10 +74,10 @@ public protocol FeatureFlagDescribing: CaseIterable {
     ///        case .sync:
     ///            return .disabled
     ///        case .duckPlayer:
-    ///            return .remoteReleasable(.feature(.duckPlayer))
+    ///            return .remoteReleasable(.subfeature(DuckPlayerSubfeature.enableDuckPlayer))
     ///        case .myInternalFeature:
     ///            // Defaults to internal-only, but can be promoted via remote config
-    ///            return .remoteReleasable(.feature(.myInternalFeature))
+    ///            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
     ///        }
     ///    }
     /// }

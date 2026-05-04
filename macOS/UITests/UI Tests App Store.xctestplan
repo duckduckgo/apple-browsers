@@ -1,0 +1,80 @@
+{
+  "configurations" : [
+    {
+      "id" : "3B3274F0-3353-49A0-B607-6F17F519C2E2",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "commandLineArgumentEntries" : [
+      {
+        "argument" : "-NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints YES"
+      },
+      {
+        "argument" : "-com.apple.CoreData.ConcurrencyDebug 1"
+      }
+    ],
+    "environmentVariableEntries" : [
+      {
+        "key" : "OS_ACTIVITY_DT_MODE",
+        "value" : "YES"
+      },
+      {
+        "key" : "OS_ACTIVITY_MODE",
+        "value" : "debug"
+      }
+    ],
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:DuckDuckGo-macOS.xcodeproj",
+      "identifier" : "3706FA6A293F65D500E42796",
+      "name" : "DuckDuckGo Privacy Browser App Store"
+    }
+  },
+  "testTargets" : [
+    {
+      "skippedTests" : [
+        "AIChatTests\/test_availableAIChatInOmnibarDefaultSettings()",
+        "AIChatTests\/test_disableAIChatOmnibarFromSettings_buttonIsRemovedFromOmnibar()",
+        "BookmarkSearchTests\/testShowInFolderFunctionalityOnBookmarksPanel()",
+        "DownloadsUITests\/testFireWindowWithInProgressDownloadShowsWarning()",
+        "FindInPageTests",
+        "FindInPageTests\/test_clickingWebViewDeactivates_thenCmdFReactivatesAndKeepsText()",
+        "FindInPageTests\/test_findInPage_canBeClosedWithEscape()",
+        "FindInPageTests\/test_findInPage_canBeClosedWithHideFindMenuItem()",
+        "FindInPageTests\/test_findInPage_canBeClosedWithShiftCommandF()",
+        "FindInPageTests\/test_findInPage_canBeOpenedWithKeyCommand()",
+        "FindInPageTests\/test_findInPage_canBeOpenedWithMenuBarItem()",
+        "FindInPageTests\/test_findInPage_canBeOpenedWithMoreOptionsMenuItem()",
+        "FindInPageTests\/test_findInPage_cyclesThroughAllOccurrences_UsingNextWrapsToFirst()",
+        "FindInPageTests\/test_findInPage_showsCorrectNumberOfOccurrences()",
+        "FindInPageTests\/test_findInPage_showsFocusAndOccurrenceHighlighting()",
+        "FindInPageTests\/test_findNext_commandGGoesToNextOccurrence()",
+        "FindInPageTests\/test_findNext_menuItemGoesToNextOccurrence()",
+        "FindInPageTests\/test_findNext_nextArrowGoesToNextOccurrence()",
+        "FindInPageTests\/test_findPrevious_viaMenuShortcutAndButton()",
+        "FindInPageTests\/test_hideAndReactivate_keepsTextAndNextWorks()",
+        "FireWindowTests\/testCrendentialsAreAutoFilledInFireWindows()",
+        "NewPermissionViewTests\/test_locationPermissions_whenAccepted_showCorrectStateInBrowser()",
+        "NewPermissionViewTests\/test_locationPermissions_whenNeverAllowIsSelected_alwaysDenies()",
+        "PermissionsTests",
+        "PrintingTests",
+        "PrintingTests\/test_pdf_contextMenuOpenWithPreview_opensPreviewAndValidatesContent()",
+        "PrintingTests\/test_pdf_contextMenuPrint_opensPrintDialog()",
+        "PrintingTests\/test_pdf_contextMenuSaveAs_opensDialogAndSavesPDF()",
+        "PrintingTests\/test_pdf_keyboardShortcutPrint_opensPrintDialog()",
+        "PrintingTests\/test_pdf_keyboardShortcutSaveAs_opensDialogAndSavesPDF()",
+        "PrintingTests\/test_pdf_saveToPDF_createsValidPDFFile()",
+        "PrintingTests\/test_pinnedTab_printingBehaviorAcrossWindows()"
+      ],
+      "target" : {
+        "containerPath" : "container:DuckDuckGo-macOS.xcodeproj",
+        "identifier" : "7B4CE8D926F02108009134B1",
+        "name" : "UI Tests"
+      }
+    }
+  ],
+  "version" : 1
+}

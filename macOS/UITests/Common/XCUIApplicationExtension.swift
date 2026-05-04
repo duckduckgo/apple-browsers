@@ -137,6 +137,11 @@ extension XCUIApplication {
         value(forKey: "bundleID") as? String
     }
 
+    var isSandboxed: Bool {
+        // Naive bundleID-based check
+        bundleID?.starts(with: "com.duckduckgo.mobile.ios") == true
+    }
+
     /// Enforces single a single window by:
     ///  1. First, closing all windows
     ///  2. Opening a new window
@@ -345,6 +350,7 @@ extension XCUIApplication {
                 scheme + naked + "/",
                 scheme + "www." + naked,
                 scheme + "www." + naked + "/",
+                url.absoluteString,
             ]), timeout: UITests.Timeouts.navigation),
             "Tab did not change URL to \(url.absoluteString) in a reasonable timeframe (current URL: \(tab.url ?? "<nil>"))."
         )

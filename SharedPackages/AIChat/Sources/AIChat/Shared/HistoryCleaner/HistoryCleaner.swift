@@ -28,251 +28,77 @@ public protocol HistoryCleaning {
 }
 
 public final class HistoryCleaner: HistoryCleaning {
-    private var continuation: CheckedContinuation<Result<Void, Error>, Never>?
-    private var navigationContinuation: CheckedContinuation<Result<Void, Error>, Never>?
-    private var webView: WKWebView?
-    private var coordinator: Coordinator?
-    private let featureFlagger: FeatureFlagger
-    private let privacyConfig: PrivacyConfigurationManaging
-    private let websiteDataStore: WKWebsiteDataStore
-    private var contentScopeUserScript: ContentScopeUserScript?
-    private var aiChatDataClearingUserScript: AIChatDataClearingUserScript?
+    private let nativeStorageHandler: DuckAiNativeStorageHandling?
+    private let featureFlagProvider: AIChatFeatureFlagProviding?
+    private let jsDataCleaner: AIChatJSDataCleaning
 
+    /// Creates a history cleaner that clears Duck.ai data from both native storage and the JS layer.
+    ///
+    /// When `nativeStorageHandler` and `featureFlagProvider` are provided and the feature flag is enabled
+    /// with migration done, chats and files are deleted from native storage. The JS clearing path
+    /// (localStorage + IndexedDB) always runs, since JS-side data is kept in sync regardless of whether
+    /// native storage is in use — without it, fire button cleanup leaves traces behind.
     public init(featureFlagger: FeatureFlagger,
                 privacyConfig: PrivacyConfigurationManaging,
-                websiteDataStore: WKWebsiteDataStore? = nil) {
-        self.featureFlagger = featureFlagger
-        self.privacyConfig = privacyConfig
-        self.websiteDataStore = websiteDataStore ?? .default()
+                websiteDataStore: WKWebsiteDataStore? = nil,
+                nativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                featureFlagProvider: AIChatFeatureFlagProviding? = nil,
+                jsDataCleaner: AIChatJSDataCleaning? = nil) {
+        self.nativeStorageHandler = nativeStorageHandler
+        self.featureFlagProvider = featureFlagProvider
+        self.jsDataCleaner = jsDataCleaner ?? WebViewAIChatJSDataCleaner(
+            featureFlagger: featureFlagger,
+            privacyConfig: privacyConfig,
+            websiteDataStore: websiteDataStore ?? .default()
+        )
     }
 
-    /// Launches a headless web view to clear Duck.ai chat history with a C-S-S feature.
+    /// Clears all Duck.ai chat history (chats and files, not settings).
     @MainActor
     public func cleanAIChatHistory() async -> Result<Void, Error> {
-        await performDelete(chatID: nil)
+        return await performClear(chatID: nil)
     }
 
-    /// Launches a headless web view to clear a single Duck.ai chat with a C-S-S feature.
+    /// Deletes a single Duck.ai chat.
     @MainActor
     public func deleteAIChat(chatID: String) async -> Result<Void, Error> {
-        await performDelete(chatID: chatID)
+        return await performClear(chatID: chatID)
     }
 
     @MainActor
-    private func performDelete(chatID: String?) async -> Result<Void, Error> {
-        guard webView == nil else {
-            return .failure(HistoryCleanerError.operationInProgress)
-        }
+    private func performClear(chatID: String?) async -> Result<Void, Error> {
+        let nativeResult = clearLocalStorageIfAvailable(chatID: chatID)
+        let jsResult = await jsDataCleaner.clearJSData(chatID: chatID)
 
-        return await withCheckedContinuation { continuation in
-            self.continuation = continuation
-            Task { @MainActor in
-                await self.processAllDomains(chatID: chatID)
-            }
+        if case .failure = nativeResult {
+            return nativeResult ?? jsResult
         }
+        return jsResult
     }
 
-    @MainActor
-    private func processAllDomains(chatID: String?) async {
+    private func clearLocalStorageIfAvailable(chatID: String?) -> Result<Void, Error>? {
+        guard let featureFlagProvider, featureFlagProvider.isNativeDataStorageEnabled(),
+              let nativeStorageHandler, (try? nativeStorageHandler.isMigrationDone()) == true else {
+            return nil
+        }
+
         do {
-            try setupWebView()
-            for domain in URL.aiChatDomains {
-                let navigationResult = await launchHistoryCleaningWebView(requestURL: domain)
-
-                guard case .success = navigationResult else {
-                    finish(result: navigationResult)
-                    return
+            if let chatID {
+                Logger.aiChat.debug("HistoryCleaner: deleting chat \(chatID) from localStorage")
+                let files = try nativeStorageHandler.listFiles().filter { $0.chatId == chatID }
+                for file in files {
+                    try nativeStorageHandler.deleteFile(uuid: file.uuid)
                 }
-
-                let clearingResult = await executeClearingScript(chatID: chatID)
-
-                guard case .success = clearingResult else {
-                    finish(result: clearingResult)
-                    return
-                }
+                try nativeStorageHandler.deleteChat(chatId: chatID)
+            } else {
+                Logger.aiChat.debug("HistoryCleaner: deleting all chats from localStorage")
+                try nativeStorageHandler.deleteAllFiles()
+                try nativeStorageHandler.deleteAllChats()
             }
-
-            finish(result: .success(()))
+            return .success(())
         } catch {
-            finish(result: .failure(error))
+            Logger.aiChat.error("HistoryCleaner: Failed to clear local storage: \(error.localizedDescription)")
+            return .failure(error)
         }
     }
-
-    // MARK: - WebView Setup
-
-    @MainActor
-    private func setupWebView() throws {
-        let aiChatDataClearing = AIChatDataClearingUserScript()
-
-        let features = ContentScopeFeatureToggles(
-            emailProtection: false,
-            emailProtectionIncontextSignup: false,
-            credentialsAutofill: false,
-            identitiesAutofill: false,
-            creditCardsAutofill: false,
-            credentialsSaving: false,
-            passwordGeneration: false,
-            inlineIconCredentials: false,
-            thirdPartyCredentialsProvider: false,
-            unknownUsernameCategorization: false,
-            partialFormSaves: false,
-            passwordVariantCategorization: false,
-            inputFocusApi: false,
-            autocompleteAttributeSupport: false
-        )
-
-        let contentScopeProperties = ContentScopeProperties(
-            gpcEnabled: false,
-            sessionKey: UUID().uuidString,
-            messageSecret: UUID().uuidString,
-            isInternalUser: featureFlagger.internalUserDecider.isInternalUser,
-            featureToggles: features
-        )
-
-        let contentScope = try ContentScopeUserScript(
-            privacyConfig,
-            properties: contentScopeProperties,
-            scriptContext: .aiChatDataClearing,
-            allowedNonisolatedFeatures: [aiChatDataClearing.featureName],
-            privacyConfigurationJSONGenerator: nil
-        )
-        contentScope.registerSubfeature(delegate: aiChatDataClearing)
-
-        let userContentController = WKUserContentController()
-        userContentController.addUserScript(contentScope.makeWKUserScriptSync())
-        userContentController.addHandler(contentScope)
-
-        let configuration = WKWebViewConfiguration()
-        configuration.userContentController = userContentController
-        configuration.websiteDataStore = websiteDataStore
-
-        let webView = WKWebView(frame: .zero, configuration: configuration)
-        let coordinator = Coordinator(cleaner: self)
-        webView.navigationDelegate = coordinator
-
-        aiChatDataClearing.webView = webView
-        self.webView = webView
-        self.coordinator = coordinator
-        self.contentScopeUserScript = contentScope
-        self.aiChatDataClearingUserScript = aiChatDataClearing
-    }
-
-    // MARK: - Domain Navigation
-
-    @MainActor
-    private func launchHistoryCleaningWebView(requestURL: URL) async -> Result<Void, Error> {
-        guard let webView = webView else {
-            return .failure(HistoryCleanerError.webViewNotInitialized)
-        }
-
-        return await withCheckedContinuation { continuation in
-            self.navigationContinuation = continuation
-
-            if #available(iOS 15.0, macOS 12.0, *) {
-                webView.loadSimulatedRequest(URLRequest(url: requestURL), responseHTML: "")
-            } else {
-                webView.loadHTMLString("", baseURL: requestURL)
-            }
-        }
-    }
-
-    @MainActor
-    private func completeNavigation(with result: Result<Void, Error>) {
-        navigationContinuation?.resume(returning: result)
-        navigationContinuation = nil
-    }
-
-    // MARK: - Script Execution
-
-    @MainActor
-    private func executeClearingScript(chatID: String?) async -> Result<Void, Error> {
-        guard let script = aiChatDataClearingUserScript else {
-            return .failure(HistoryCleanerError.scriptNotInitialized)
-        }
-
-        return await script.clearAIChatDataAsync(chatID: chatID, timeout: 5)
-    }
-
-    // MARK: - Cleanup
-
-    @MainActor
-    private func finish(result: Result<Void, Error>) {
-        tearDownClearingWebView()
-        continuation?.resume(returning: result)
-        continuation = nil
-    }
-
-    @MainActor
-    private func tearDownClearingWebView() {
-        webView?.stopLoading()
-        webView?.navigationDelegate = nil
-        webView = nil
-        coordinator = nil
-        aiChatDataClearingUserScript = nil
-        contentScopeUserScript = nil
-    }
-}
-
-// MARK: - Errors
-extension HistoryCleaner {
-    enum HistoryCleanerError: Error {
-        case webViewNotInitialized
-        case scriptNotInitialized
-        case operationInProgress
-    }
-}
-
-// MARK: - Navigation Delegate
-extension HistoryCleaner {
-    private final class Coordinator: NSObject, WKNavigationDelegate {
-        weak var cleaner: HistoryCleaner?
-
-        init(cleaner: HistoryCleaner) {
-            self.cleaner = cleaner
-        }
-
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            cleaner?.completeNavigation(with: .success(()))
-        }
-
-        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-            cleaner?.completeNavigation(with: .failure(error))
-        }
-
-        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            cleaner?.completeNavigation(with: .failure(error))
-        }
-    }
-}
-
-@MainActor
-extension WKUserContentController {
-
-    func addHandler(_ userScript: UserScript) {
-        for messageName in userScript.messageNames {
-            let contentWorld: WKContentWorld = userScript.getContentWorld()
-            if let handlerWithReply = userScript as? WKScriptMessageHandlerWithReply {
-                addScriptMessageHandler(handlerWithReply, contentWorld: contentWorld, name: messageName)
-            } else {
-                add(userScript, contentWorld: contentWorld, name: messageName)
-            }
-        }
-    }
-
-    func removeHandler(_ userScript: UserScript) {
-        userScript.messageNames.forEach {
-            let contentWorld: WKContentWorld = userScript.getContentWorld()
-            removeScriptMessageHandler(forName: $0, contentWorld: contentWorld)
-        }
-    }
-}
-
-extension URL {
-    static let duckAi = URL(string: "https://duck.ai")!
-    static let duckDuckGo = URL(string: "https://duckduckgo.com")!
-
-    static let aiChatDomains: [URL] = [
-        .duckDuckGo,
-        .duckAi
-    ]
 }

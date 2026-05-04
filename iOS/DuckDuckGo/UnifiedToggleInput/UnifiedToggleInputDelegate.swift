@@ -19,9 +19,12 @@
 
 import AIChat
 
+@MainActor
 protocol UnifiedToggleInputDelegate: AnyObject {
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, images: [AIChatNativePrompt.NativePromptImage]?)
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?)
     func unifiedToggleInputDidSubmitQuery(_ query: String)
     func unifiedToggleInputDidRequestVoiceSearch()
+    func unifiedToggleInputDidRequestAIChat()
     func unifiedToggleInputDidChangeHeight()
+    func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode)
 }

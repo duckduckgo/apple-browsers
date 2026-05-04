@@ -39,6 +39,7 @@ import AIChatTestingUtilities
 // swiftlint:disable force_try
 
 private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibilityManaging {
+    func isFeatureAvailable() -> Bool { false }
     func isEligibleForNTPAfterIdle() -> Bool { false }
     func effectiveAfterInactivityOption() -> AfterInactivityOption { .lastUsedTab }
     func idleThresholdSeconds() -> Int { 60 }
@@ -101,7 +102,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                                                               webExtensionAvailability: nil)
 
         let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
-        let modelProvider = TabsModelProvider(normalTabsModel: tabsModel, fireModeTabsModel: fireModel, persistence: tabsPersistence, featureFlagger: featureFlagger)
+        let modelProvider = TabsModelProvider(normalTabsModel: tabsModel, fireModeTabsModel: fireModel, persistence: tabsPersistence)
         let tabManager = TabManager(tabsModelProvider: modelProvider,
                                     previewsSource: MockTabPreviewsSource(),
                                     interactionStateSource: nil,

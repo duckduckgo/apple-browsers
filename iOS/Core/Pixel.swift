@@ -28,7 +28,6 @@ public struct PixelParameters {
     public static let duration = "dur"
     static let test = "test"
     public static let appVersion = "appVersion"
-    public static let osVersion = "osVersion"
 
     public static let autocompleteBookmarkCapable = "bc"
     public static let autocompleteIncludedLocalResults = "sb"
@@ -87,6 +86,7 @@ public struct PixelParameters {
 
     public static let count = "count"
     public static let source = "source"
+    public static let browsingMode = "browsing_mode"
     public static let authVersion = "authVersion"
     public static let lastUsed = "last_used"
 
@@ -163,6 +163,7 @@ public struct PixelParameters {
     public static let isExtension = "is_extension"
 
     // Data Import
+    public static let entryPoint = "entry_point"
     public static let savedCredentials = "saved_credentials"
     public static let skippedCredentials = "skipped_credentials"
     public static let savedCreditCards = "saved_creditcards"
@@ -187,6 +188,7 @@ public struct PixelParameters {
 
     public static let appState = "state"
     public static let appEvent = "event"
+    public static let windowChanged = "windowChanged"
 
     public static let didCallWillEnterForeground = "didCallWillEnterForeground"
 

@@ -54,6 +54,106 @@ final class AIChatModelsServiceTests: XCTestCase {
         XCTAssertFalse(response.models[0].supportsImageUpload)
         XCTAssertEqual(response.models[0].supportedTools, ["WebSearch"])
         XCTAssertEqual(response.models[0].accessTier, ["free"])
+        XCTAssertEqual(response.models[0].supportedReasoningEffort, [])
+    }
+
+    func testWhenJSONOmitsSupportedReasoningEffort_ThenDecodesWithEmptyArray() throws {
+        // Covers backwards compatibility: older `duckchat/v1/models` responses don't include
+        // the field, and they must still decode rather than failing with `keyNotFound`.
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "gpt-4o-mini",
+                    "name": "GPT-4o mini",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": false,
+                    "supportedTools": [],
+                    "accessTier": ["free"]
+                }
+            ]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models.count, 1)
+        XCTAssertEqual(response.models[0].supportedReasoningEffort, [])
+    }
+
+    func testWhenJSONIncludesNullSupportedReasoningEffort_ThenDecodesWithEmptyArray() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "gpt-4o-mini",
+                    "name": "GPT-4o mini",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": false,
+                    "supportedTools": [],
+                    "supportedReasoningEffort": null,
+                    "accessTier": ["free"]
+                }
+            ]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models.count, 1)
+        XCTAssertEqual(response.models[0].supportedReasoningEffort, [])
+    }
+
+    func testWhenJSONIncludesSupportedReasoningEffort_ThenValueIsDecoded() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "reasoning-model",
+                    "name": "Reasoning Model",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": false,
+                    "supportedTools": [],
+                    "supportedReasoningEffort": ["none", "low", "medium"],
+                    "accessTier": ["free"]
+                }
+            ]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models[0].supportedReasoningEffort, [.none, .low, .medium])
+    }
+
+    func testWhenJSONIncludesUnknownSupportedReasoningEffort_ThenUnknownValueIsIgnored() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "future-model",
+                    "name": "Future Model",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": false,
+                    "supportedTools": [],
+                    "supportedReasoningEffort": ["none", "future", "high"],
+                    "accessTier": ["free"]
+                }
+            ]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models[0].supportedReasoningEffort, [.none, .high])
     }
 
     func testWhenMultipleModelsAreDecoded_ThenAllAreParsed() throws {
@@ -118,6 +218,32 @@ final class AIChatModelsServiceTests: XCTestCase {
         XCTAssertEqual(model.name, "GPT-4o mini")
         XCTAssertTrue(model.entityHasAccess)
         XCTAssertFalse(model.supportsImageUpload)
+    }
+
+    func testWhenReasoningEffortIsProvided_ThenItIsDecodedAndMapped() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "gpt-5.2",
+                    "name": "GPT-5.2",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": true,
+                    "supportedTools": [],
+                    "accessTier": ["plus", "pro"],
+                    "supportedReasoningEffort": ["none", "low", "medium"]
+                }
+            ]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+        let model = AIChatModel(remoteModel: response.models[0], userTier: .plus)
+
+        XCTAssertEqual(response.models[0].supportedReasoningEffort, [.none, .low, .medium])
+        XCTAssertEqual(model.supportedReasoningEffort, [.none, .low, .medium])
     }
 
     func testWhenUserTierMatchesAccessTier_ThenEntityHasAccess() {

@@ -27,6 +27,7 @@ import Persistence
 import Common
 import Configuration
 import SystemSettingsPiPTutorial
+import AIChat
 import DataBrokerProtection_iOS
 import Subscription
 import WebExtensions
@@ -58,6 +59,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
     let webExtensionManager: WebExtensionManaging?
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -77,7 +79,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          webExtensionManager: WebExtensionManaging?,
-         syncAutoRestoreHandler: SyncAutoRestoreHandling) {
+         syncAutoRestoreHandler: SyncAutoRestoreHandling,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -97,6 +100,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.webExtensionManager = webExtensionManager
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
     }
     
     enum LegacyView {
@@ -108,7 +112,6 @@ class SettingsLegacyViewProvider: ObservableObject {
              autoconsent,
              unprotectedSites,
              fireproofSites,
-             autoclearData,
              keyboard,
              feedback,
              passwordsImport,
@@ -134,13 +137,6 @@ class SettingsLegacyViewProvider: ObservableObject {
         }
     }
 
-    private func instantiateAutoClearController() -> UIViewController {
-        let storyboard = UIStoryboard(name: StoryboardName.settings, bundle: nil)
-        return storyboard.instantiateViewController(identifier: "AutoClearSettingsViewController", creator: { coder in
-            return AutoClearSettingsViewController(appSettings: self.appSettings, coder: coder)
-        })
-    }
-
     private func instantiateDebugController() -> UIViewController {
         return DebugScreensViewController(dependencies: .init(
             syncService: self.syncService,
@@ -159,7 +155,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
-            webExtensionManager: self.webExtensionManager))
+            webExtensionManager: self.webExtensionManager,
+            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler))
     }
 
     // Legacy UIKit Views (Pushed unmodified)
@@ -170,7 +167,6 @@ class SettingsLegacyViewProvider: ObservableObject {
     var fireproofSites: UIViewController { instantiateFireproofingController() }
     var keyboard: UIViewController { instantiate("Keyboard", fromStoryboard: StoryboardName.settings) }
     var feedback: UIViewController { instantiate("Feedback", fromStoryboard: StoryboardName.feedback) }
-    var autoclearData: UIViewController { instantiateAutoClearController() }
     var debug: UIViewController { instantiateDebugController() }
 
     func appIconSettings(onChange: @escaping (AppIcon) -> Void) -> UIViewController {
@@ -212,17 +208,35 @@ class SettingsLegacyViewProvider: ObservableObject {
                                               productSurfaceTelemetry: self.productSurfaceTelemetry)
     }
 
-    func importPasswords(delegate: DataImportViewControllerDelegate) -> DataImportViewController {
+    private func makeDataImportViewController(importScreen: DataImportViewModel.ImportScreen,
+                                              delegate: DataImportViewControllerDelegate) -> DataImportViewController {
         let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
                                                   bookmarksDatabase: bookmarksDatabase,
                                                   favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
                                                   tld: AppDependencyProvider.shared.storageCache.tld)
         let viewController = DataImportViewController(importManager: dataImportManager,
-                                                      importScreen: DataImportViewModel.ImportScreen.settings,
+                                                      importScreen: importScreen,
                                                       syncService: syncService,
                                                       keyValueStore: keyValueStore)
         viewController.delegate = delegate
         return viewController
+    }
+
+    func importPasswords(importScreen: DataImportViewModel.ImportScreen = .settings,
+                         delegate: DataImportViewControllerDelegate,
+                         onFinished: (() -> Void)? = nil) -> UIViewController {
+        switch DataImportEntryPointHandler().destination(for: importScreen) {
+        case .legacy(let importScreen):
+            return makeDataImportViewController(importScreen: importScreen, delegate: delegate)
+        case .hub:
+            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: importScreen.importHubEntryPointParameters)
+            return DataImportHubViewController(syncService: syncService,
+                                                keyValueStore: keyValueStore,
+                                                bookmarksDatabase: bookmarksDatabase,
+                                                favoritesDisplayMode: appSettings.favoritesDisplayMode,
+                                                entryPoint: importScreen,
+                                                onFinished: onFinished)
+        }
     }
 
 }

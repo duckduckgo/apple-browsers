@@ -24,6 +24,7 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import BrowserServicesKit
 import PixelKit
+import PrivacyConfig
 import Networking
 import Subscription
 import os.log
@@ -36,13 +37,21 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
 
     override init() {
         Logger.dbpBackgroundAgent.log("🟢 Starting: \(NSRunningApplication.current.processIdentifier, privacy: .public)")
+        let channel: String? = {
+            guard let appConfigDefaults = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .appConfiguration)) else {
+                return nil
+            }
+            let internalUserDecider = DefaultInternalUserDecider(store: appConfigDefaults)
+            return StandardApplicationBuildType().channelName(isInternalUser: internalUserDecider.isInternalUser)
+        }()
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: "dbpBackgroundAgent",
+                       channel: channel,
                        defaultHeaders: [:],
-                       defaults: .standard) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping (Bool, Error?) -> Void) in
+                       defaults: UserDefaults.standard) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping (Bool, Error?) -> Void) in
 
             let url = URL.pixelUrl(forPixelNamed: pixelName)
             let apiHeaders = APIRequest.Headers(userAgent: userAgent, additionalHeaders: headers)

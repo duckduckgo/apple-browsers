@@ -222,6 +222,62 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a model from the model picker menu
     case aiChatAddressBarModelSelected
 
+    /// Event Trigger: User selects a reasoning effort from the native omnibar picker
+    case aiChatAddressBarReasoningEffortSelected
+
+    /// Event Trigger: User opens a new voice Duck.ai chat from the native omnibar
+    case aiChatNewVoiceChatOmnibarNative
+
+    // MARK: - Image Generation Mode
+
+    /// Event Trigger: User activates image generation mode via the Tools menu
+    case aiChatAddressBarImageGenerationActivated
+
+    /// Event Trigger: User dismisses the image generation chip (× button)
+    case aiChatAddressBarImageGenerationDeactivated
+
+    /// Event Trigger: User submits a prompt while image generation mode is active
+    case aiChatAddressBarImageGenerationSubmitted
+
+    // MARK: - Web Search Mode
+
+    /// Event Trigger: User activates web search mode via the Tools menu
+    case aiChatAddressBarWebSearchActivated
+
+    /// Event Trigger: User dismisses the web search chip (× button)
+    case aiChatAddressBarWebSearchDeactivated
+
+    /// Event Trigger: User submits a prompt while web search mode is active
+    case aiChatAddressBarWebSearchSubmitted
+
+    /// Event Trigger: User submits a prompt with images from the New Tab Page omnibar
+    case aiChatNtpSubmitWithImage(imageCount: Int)
+
+    /// Event Trigger: User selects a model from the New Tab Page model picker
+    case aiChatNtpModelSelected
+
+    /// Event Trigger: User selects a reasoning effort from the New Tab Page omnibar picker
+    case aiChatNtpReasoningEffortSelected
+
+    /// Event Trigger: User taps "View all chats" from the New Tab Page omnibar
+    case aiChatNtpViewAllChatsClicked
+
+    /// Event Trigger: User opens a new voice Duck.ai chat from the New Tab Page omnibar
+    case aiChatNewVoiceChatOmnibarNtp
+
+    // MARK: - NTP Image Generation Mode
+
+    /// Event Trigger: User submits a prompt while image generation mode is active on the New Tab Page
+    case aiChatNtpImageGenerationSubmitted
+
+    // MARK: - NTP Web Search Mode
+
+    /// Event Trigger: User submits a prompt while web search mode is active on the New Tab Page
+    case aiChatNtpWebSearchSubmitted
+
+    /// Event Trigger: User taps "View all chats" from the native address bar omnibar
+    case aiChatViewAllChatsClicked
+
     /// Event Trigger: Models API fetch fails (endpoint unreachable or returns error)
     case aiChatModelsFetchFailed
 
@@ -246,6 +302,52 @@ enum AIChatPixel: PixelKitEvent {
 
     /// Event Trigger: User completes onboarding with the Duck.ai toggle disabled
     case aiChatOnboardingFinishedToggleOff
+
+    // MARK: - Main menu
+
+    /// Event Trigger: User taps Open Duck.ai from the main menu
+    case aiChatOpenDuckAiMainMenu
+
+    /// Event Trigger: User opens a new Duck.ai chat from the main menu
+    case aiChatNewChatMainMenu
+
+    /// Event Trigger: User opens a new Duck.ai voice chat from the main menu
+    case aiChatNewVoiceChatMainMenu
+
+    /// Event Trigger: User opens a new Duck.ai image chat from the main menu
+    case aiChatNewImageChatMainMenu
+
+    /// Event Trigger: User selects a recent chat from the main menu
+    case aiChatRecentChatSelectedMainMenu
+
+    /// Event Trigger: User confirms Delete All Chats from the main menu
+    case aiChatDeleteAllChatsMainMenu
+
+    // MARK: - More options menu
+
+    /// Event Trigger: User taps Open Duck.ai from the more options menu
+    case aiChatOpenDuckAiMoreOptionsMenu
+
+    /// Event Trigger: User opens a new Duck.ai chat from the more options menu
+    case aiChatNewChatMoreOptionsMenu
+
+    /// Event Trigger: User opens a new Duck.ai voice chat from the more options menu
+    case aiChatNewVoiceChatMoreOptionsMenu
+
+    /// Event Trigger: User opens a new Duck.ai image chat from the more options menu
+    case aiChatNewImageChatMoreOptionsMenu
+
+    /// Event Trigger: User selects a recent chat from the more options menu
+    case aiChatRecentChatSelectedMoreOptionsMenu
+
+    /// Event Trigger: User confirms Delete All Chats from the more options menu
+    case aiChatDeleteAllChatsMoreOptionsMenu
+
+    /// Event Trigger: User taps "View All Chats..." from the main menu
+    case aiChatViewAllChatsMainMenu
+
+    /// Event Trigger: User taps "View All Chats..." from the more options menu
+    case aiChatViewAllChatsMoreOptionsMenu
 
     // MARK: - Daily
 
@@ -391,12 +493,72 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_submit_with_image"
         case .aiChatAddressBarModelSelected:
             return "aichat_addressbar_model_selected"
+        case .aiChatAddressBarReasoningEffortSelected:
+            return "aichat_addressbar_reasoning_effort_selected"
+        case .aiChatNewVoiceChatOmnibarNative:
+            return "aichat_new_voice_chat_omnibar_native"
+        case .aiChatAddressBarImageGenerationActivated:
+            return "aichat_addressbar_image_generation_activated"
+        case .aiChatAddressBarImageGenerationDeactivated:
+            return "aichat_addressbar_image_generation_deactivated"
+        case .aiChatAddressBarImageGenerationSubmitted:
+            return "aichat_addressbar_image_generation_submitted"
+        case .aiChatAddressBarWebSearchActivated:
+            return "aichat_addressbar_web_search_activated"
+        case .aiChatAddressBarWebSearchDeactivated:
+            return "aichat_addressbar_web_search_deactivated"
+        case .aiChatAddressBarWebSearchSubmitted:
+            return "aichat_addressbar_web_search_submitted"
+        case .aiChatNtpSubmitWithImage:
+            return "aichat_ntp_submit_with_image"
+        case .aiChatNtpModelSelected:
+            return "aichat_ntp_model_selected"
+        case .aiChatNtpReasoningEffortSelected:
+            return "aichat_ntp_reasoning_effort_selected"
+        case .aiChatNtpViewAllChatsClicked:
+            return "aichat_ntp_view_all_chats_clicked"
+        case .aiChatNewVoiceChatOmnibarNtp:
+            return "aichat_new_voice_chat_omnibar_ntp"
+        case .aiChatNtpImageGenerationSubmitted:
+            return "aichat_ntp_image_generation_submitted"
+        case .aiChatNtpWebSearchSubmitted:
+            return "aichat_ntp_web_search_submitted"
+        case .aiChatViewAllChatsClicked:
+            return "aichat_view_all_chats_clicked"
         case .aiChatModelsFetchFailed:
             return "aichat_models_fetch_failed"
         case .aiChatMetricStartNewConversation:
             return "aichat_start_new_conversation"
         case .aiChatMetricSentPromptOngoingChat:
             return "aichat_sent_prompt_ongoing_chat"
+        case .aiChatOpenDuckAiMainMenu:
+            return "aichat_open_duck_ai_main_menu"
+        case .aiChatNewChatMainMenu:
+            return "aichat_new_chat_main_menu"
+        case .aiChatNewVoiceChatMainMenu:
+            return "aichat_new_voice_chat_main_menu"
+        case .aiChatNewImageChatMainMenu:
+            return "aichat_new_image_chat_main_menu"
+        case .aiChatRecentChatSelectedMainMenu:
+            return "aichat_recent_chat_selected_main_menu"
+        case .aiChatDeleteAllChatsMainMenu:
+            return "aichat_delete_all_chats_main_menu"
+        case .aiChatOpenDuckAiMoreOptionsMenu:
+            return "aichat_open_duck_ai_more_options_menu"
+        case .aiChatNewChatMoreOptionsMenu:
+            return "aichat_new_chat_more_options_menu"
+        case .aiChatNewVoiceChatMoreOptionsMenu:
+            return "aichat_new_voice_chat_more_options_menu"
+        case .aiChatNewImageChatMoreOptionsMenu:
+            return "aichat_new_image_chat_more_options_menu"
+        case .aiChatRecentChatSelectedMoreOptionsMenu:
+            return "aichat_recent_chat_selected_more_options_menu"
+        case .aiChatDeleteAllChatsMoreOptionsMenu:
+            return "aichat_delete_all_chats_more_options_menu"
+        case .aiChatViewAllChatsMainMenu:
+            return "aichat_view_all_chats_main_menu"
+        case .aiChatViewAllChatsMoreOptionsMenu:
+            return "aichat_view_all_chats_more_options_menu"
         case .aiChatIsEnabled:
             return "aichat_is_enabled"
         }
@@ -455,15 +617,45 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageAttached,
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarModelSelected,
+                .aiChatAddressBarReasoningEffortSelected,
+                .aiChatAddressBarImageGenerationActivated,
+                .aiChatAddressBarImageGenerationDeactivated,
+                .aiChatAddressBarImageGenerationSubmitted,
+                .aiChatAddressBarWebSearchActivated,
+                .aiChatAddressBarWebSearchDeactivated,
+                .aiChatAddressBarWebSearchSubmitted,
+                .aiChatNtpModelSelected,
+                .aiChatNtpReasoningEffortSelected,
+                .aiChatNtpViewAllChatsClicked,
+                .aiChatNewVoiceChatOmnibarNtp,
+                .aiChatNtpImageGenerationSubmitted,
+                .aiChatNtpWebSearchSubmitted,
+                .aiChatViewAllChatsClicked,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,
                 .aiChatTermsAcceptedDuplicateSyncOff,
-                .aiChatTermsAcceptedDuplicateSyncOn:
+                .aiChatTermsAcceptedDuplicateSyncOn,
+                .aiChatOpenDuckAiMainMenu,
+                .aiChatNewChatMainMenu,
+                .aiChatNewVoiceChatMainMenu,
+                .aiChatNewVoiceChatOmnibarNative,
+                .aiChatNewImageChatMainMenu,
+                .aiChatRecentChatSelectedMainMenu,
+                .aiChatDeleteAllChatsMainMenu,
+                .aiChatOpenDuckAiMoreOptionsMenu,
+                .aiChatNewChatMoreOptionsMenu,
+                .aiChatNewVoiceChatMoreOptionsMenu,
+                .aiChatNewImageChatMoreOptionsMenu,
+                .aiChatRecentChatSelectedMoreOptionsMenu,
+                .aiChatDeleteAllChatsMoreOptionsMenu,
+                .aiChatViewAllChatsMainMenu,
+                .aiChatViewAllChatsMoreOptionsMenu:
             return nil
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
-        case .aiChatAddressBarSubmitWithImage(let imageCount):
+        case .aiChatAddressBarSubmitWithImage(let imageCount),
+             .aiChatNtpSubmitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
@@ -557,11 +749,41 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarSubmitWithImage,
                 .aiChatAddressBarModelSelected,
+                .aiChatAddressBarReasoningEffortSelected,
+                .aiChatNtpSubmitWithImage,
+                .aiChatNtpModelSelected,
+                .aiChatNtpReasoningEffortSelected,
+                .aiChatNtpViewAllChatsClicked,
+                .aiChatNewVoiceChatOmnibarNtp,
+                .aiChatNtpImageGenerationSubmitted,
+                .aiChatNtpWebSearchSubmitted,
+                .aiChatViewAllChatsClicked,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,
                 .aiChatTermsAcceptedDuplicateSyncOff,
                 .aiChatTermsAcceptedDuplicateSyncOn,
+                .aiChatOpenDuckAiMainMenu,
+                .aiChatNewChatMainMenu,
+                .aiChatNewVoiceChatMainMenu,
+                .aiChatNewVoiceChatOmnibarNative,
+                .aiChatNewImageChatMainMenu,
+                .aiChatRecentChatSelectedMainMenu,
+                .aiChatDeleteAllChatsMainMenu,
+                .aiChatOpenDuckAiMoreOptionsMenu,
+                .aiChatNewChatMoreOptionsMenu,
+                .aiChatNewVoiceChatMoreOptionsMenu,
+                .aiChatNewImageChatMoreOptionsMenu,
+                .aiChatRecentChatSelectedMoreOptionsMenu,
+                .aiChatDeleteAllChatsMoreOptionsMenu,
+                .aiChatViewAllChatsMainMenu,
+                .aiChatViewAllChatsMoreOptionsMenu,
+                .aiChatAddressBarImageGenerationActivated,
+                .aiChatAddressBarImageGenerationDeactivated,
+                .aiChatAddressBarImageGenerationSubmitted,
+                .aiChatAddressBarWebSearchActivated,
+                .aiChatAddressBarWebSearchDeactivated,
+                .aiChatAddressBarWebSearchSubmitted,
                 .aiChatIsEnabled:
             return [.pixelSource]
         }

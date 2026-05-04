@@ -17,9 +17,10 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import RemoteMessaging
+import SwiftUI
+import UIComponents
 
 struct NewTabPageView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -160,7 +161,7 @@ private extension NewTabPageView {
     }
 
     private var shouldShowLogoInEmptyState: Bool {
-        guard messagesModel.homeMessageViewModels.isEmpty else { return false }
+        guard messagesModel.homeMessageViewModels.isEmpty && !messagesModel.isFirePromotionVisible else { return false }
         if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
         if viewModel.escapeHatch != nil && isFocussedState { return false }
         return true
@@ -178,7 +179,27 @@ private extension NewTabPageView {
         }
     }
 
+    @ViewBuilder
     private var messagesSectionView: some View {
+        if messagesModel.isFirePromotionVisible {
+            FireModePromotionCardView(
+                onTryFireTabs: {
+                    Task { await messagesModel.firePromotionTryFireTabsTapped() }
+                },
+                onDismiss: {
+                    Task { await messagesModel.firePromotionDismissed() }
+                },
+                onClose: {
+                    Task { await messagesModel.firePromotionClosed() }
+                },
+                onDidAppear: {
+                    messagesModel.firePromotionDidAppear()
+                }
+            )
+            .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
+            .transition(.scale.combined(with: .opacity))
+        }
+
         ForEach(messagesModel.homeMessageViewModels, id: \.messageId) { messageModel in
             HomeMessageView(viewModel: messageModel)
                 .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)

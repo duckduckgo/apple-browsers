@@ -64,6 +64,7 @@ public enum PrivacyFeature: String {
     case forceOldAppDelegate
     case htmlHistoryPage
     case tabManager
+    case tabSuspension
     case tabSwitcherTrackerCount
     case webViewStateRestoration
     case experimentalTheming
@@ -85,7 +86,6 @@ public enum PrivacyFeature: String {
     case duckAiChatHistory
     case serp
     case popupBlocking
-    case combinedPermissionView
     case pageContext
     case webExtensions
     case forceDarkModeOnWebsites
@@ -155,10 +155,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
 
-    /// Whether the wide event POST endpoint is enabled
-    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
-    case wideEventPostEndpoint
-
     /// Memory Pressure Reporter
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
     case memoryPressureReporting
@@ -181,6 +177,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case websitesHistoryFirstTimeQuitSurvey
 
     case semaphoreAlwaysVisible
+
+    /// Autoplay policy control via WKWebpagePreferences
+    case autoplayPolicy
 
     case tabAnimations
 
@@ -224,10 +223,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
     case genericBackgroundTask
 
-    /// Whether the wide event POST endpoint is enabled
-    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
-    case wideEventPostEndpoint
-
     /// Failsafe flag for disabling call stack tree depth limiting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
@@ -235,19 +230,11 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
     case browsingMenuSheetEnabledByDefault
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
-    case enhancedDataClearingSettings
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091
-    case burnSingleTab
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
     case showNTPAfterIdleReturn
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213557229772465?focus=true
     case autoplayBlocking
-
-    case customXSafariRedirectHandling
 
     case crashReportOptInStatusResetting
 
@@ -259,6 +246,15 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
     case onboardingRebranding
+
+    /// https://app.asana.com/1/137249556945/task/1213314048601761
+    case fireMode
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
+    case fireButtonRefinements
+
+    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1212810377867736
+    case filterAddressBarUpdates
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -297,8 +293,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
-    case onboardingExperiment
-
+    case onboardingDismissExperiment
     case autofillPasswordsStatusBar
 }
 
@@ -314,11 +309,11 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case emailConfirmationDecoupling
     case foregroundRunningOnAppActive
     case foregroundRunningWhenDashboardOpen
-    case clickActionDelayReductionOptimization
     case continuedProcessing
     case pirRollout
     case goToMarket
     case webViewUserAgent
+    case freemiumPIR
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -371,8 +366,8 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables native-side support for standalone migration flows in AI Chat
     case standaloneMigration
 
-    /// Allows to present Search Experience choice screen during onboarding
-    case onboardingSearchExperience
+    /// Enables Duck.ai query experiment during onboarding
+    case onboardingDuckAIQueryExperiment
 
     /// Enables the omnibar toggle for AI Chat
     case omnibarToggle
@@ -416,8 +411,23 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables recent AI chats on the New Tab Page omnibar
     case ntpRecentChats
 
+    /// Enables the "View all chats" button on the New Tab Page omnibar
+    case ntpViewAllChats
+
+    /// Enables AI chat tools (model selector, image upload) on the New Tab Page omnibar
+    case ntpChatTools
+
+    /// Enables image generation mode on the New Tab Page omnibar
+    case ntpImageGeneration
+
+    /// Enables web search mode on the New Tab Page omnibar
+    case ntpWebSearch
+
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
+
+    /// Enables attaching content from multiple open tabs to Duck.ai chat
+    case attachMoreTabs
 
     /// Enables page context feature on iPad
     case iPadPageContext
@@ -433,6 +443,36 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the fire button in the contextual AI chat sheet
     case contextualFireButton
+
+    /// Enables the Duck.ai top-level main menu shortcut (macOS only)
+    case mainMenuShortcut
+
+    /// Enables the Duck.ai submenu in the more options (hamburger) menu (macOS only)
+    case moreOptionsMenuShortcut
+
+    /// Enables native-side storage for AI Chat (settings, chats, files)
+    case nativeStorage
+
+    /// Prevents about: scheme navigations (e.g. about:srcdoc) from opening new tabs in the sidebar
+    case sidebarAboutSchemeNavigationFix
+
+    /// Enabled 'View all chats' for Duck.ai in the omnibar
+    case viewAllChatsNativeOmnibar
+
+    /// Enables image generation mode toggle in the Duck.ai omnibar
+    case omnibarImageGeneration
+
+    /// Enables web search tool in the Duck.ai omnibar
+    case omnibarWebSearch
+
+    /// Enables the reasoning effort picker in the Duck.ai omnibar
+    case omnibarReasoningEffort
+
+    /// Enables 1-click voice-chat access from the Duck.ai omnibar (mic icon shown when input is empty)
+    case omnibarVoiceChatAccess
+
+    /// Enables querying AI Chat data directly from local storage instead of via webview
+    case nativeDataAccess
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -478,6 +518,10 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Risky Domain Protection for VPN
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case riskyDomainsProtection
+
+    /// Connection failure loop detection for VPN
+    /// https://app.asana.com/1/137249556945/project/1207603085593419/task/1213755794484487?focus=true
+    case connectionFailureLoopDetection
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {
@@ -502,6 +546,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncIdentities
     case aiChatSync
     case simplifiedSyncSetupExperiment
+    case allowSingleDeviceOnConnectScreen
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -529,6 +574,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
+    case subscriptionPromoFireWindow
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -550,6 +596,11 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature { .htmlHistoryPage }
     case isLaunched
+}
+
+public enum TabSuspensionSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .tabSuspension }
+    case memoryPressureTrigger
 }
 
 public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {
@@ -619,6 +670,7 @@ public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {
 public enum AttributedMetricsSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .attributedMetrics }
 
+    case featureEnabled
     case emitAllMetrics
     case retention
     case canEmitRetention
@@ -659,12 +711,14 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
         .popupBlocking
     }
 
+    case featureEnabled
     case createWebViewGatingFailsafe
 }
 
 public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .webExtensions }
 
+    case featureEnabled
     case embeddedExtension = "embedded"
     case embeddedRollout
 }
@@ -673,4 +727,82 @@ public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .forceDarkModeOnWebsites }
 
     case featureRollout
+}
+
+public enum ContextualOnboardingSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .contextualOnboarding }
+
+    case featureEnabled
+}
+
+public enum DelayedWebviewPresentationSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .delayedWebviewPresentation }
+
+    case featureEnabled
+}
+
+public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .duckAiChatHistory }
+
+    case featureEnabled
+}
+
+public enum PromoQueueSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .promoQueue }
+
+    case featureEnabled
+}
+
+public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .autofillBreakageReporter }
+
+    case featureEnabled
+}
+
+public enum IncontextSignupSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .incontextSignup }
+
+    case featureEnabled
+}
+
+public enum AutofillSurveysSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .autofillSurveys }
+
+    case featureEnabled
+}
+
+public enum AdAttributionReportingSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .adAttributionReporting }
+
+    case featureEnabled
+}
+
+public enum DaxEasterEggLogosSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .daxEasterEggLogos }
+
+    case featureEnabled
+}
+
+public enum DaxEasterEggPermanentLogoSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .daxEasterEggPermanentLogo }
+
+    case featureEnabled
+}
+
+public enum PageContextSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .pageContext }
+
+    case featureEnabled
+}
+
+public enum TabSwitcherTrackerCountSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .tabSwitcherTrackerCount }
+
+    case featureEnabled
+}
+
+public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .adBlockingExtension }
+
+    case featureEnabled
 }

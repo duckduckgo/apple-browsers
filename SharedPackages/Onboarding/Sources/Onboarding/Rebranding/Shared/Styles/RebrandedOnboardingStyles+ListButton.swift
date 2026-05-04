@@ -55,12 +55,13 @@ public extension OnboardingRebranding.OnboardingStyles {
             var body: some View {
                 configuration.label
                     .font(typography.contextual.controlSmall)
+                    .lineSpacing(20 - 15)
                     .fixedSize(horizontal: false, vertical: true)
                     .multilineTextAlignment(.leading)
                     .lineLimit(nil)
                     .foregroundColor(foregroundColor(isPressed: configuration.isPressed, isHovered: isHovered))
-                    .padding(.vertical, 12)
-                    .padding(.horizontal)
+                    .padding(.vertical, optionsListMetrics.verticalPadding)
+                    .padding(.horizontal, optionsListMetrics.horizontalPadding)
                     .frame(minWidth: 0, maxWidth: optionsListMetrics.itemMaxWidth, minHeight: optionsListMetrics.itemMinHeight)
                     .background(backgroundColor(isPressed: configuration.isPressed, isHovered: isHovered))
                     .cornerRadius(optionsListMetrics.cornerRadius)
@@ -78,11 +79,7 @@ public extension OnboardingRebranding.OnboardingStyles {
             }
 
             private func foregroundColor(isPressed: Bool, isHovered: Bool) -> Color {
-#if os(iOS)
                 return colorPalette.optionsListIconColor
-#else
-                return Color(designSystemColor: .accentTextPrimary)
-#endif
             }
 
             private func backgroundColor(isPressed: Bool, isHovered: Bool) -> Color {
@@ -90,11 +87,11 @@ public extension OnboardingRebranding.OnboardingStyles {
                 return isPressed ? colorPalette.backgroundAccent : .clear
 #else
                 if isPressed {
-                    return Color(designSystemColor: .controlsFillSecondary)
+                    return colorPalette.optionsListPressedColor
                 }
 
                 if isHovered {
-                    return Color(designSystemColor: .controlsFillPrimary)
+                    return colorPalette.optionsListHoverColor
                 }
 
                 return .clear

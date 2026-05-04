@@ -87,6 +87,9 @@ extension Pixel {
         case tabSwitcherClickCloseTab
         case tabSwitcherSwipeCloseTab
         case tabSwitchLongPressNewTab
+        case tabLongPressMenuDisplayed
+        case tabLongPressMenuNewFireTab
+        case tabLongPressMenuNewNormalTab
         case tabSwitcherOpenedDaily
         case tabManagerSwitchToAITab
         case tabManagerSwitchToWebTab
@@ -218,8 +221,6 @@ extension Pixel {
         case favoriteLaunchedWebsite
         case favoriteLaunchedWidget
 
-        case autocompleteMessageShown
-        case autocompleteMessageDismissed
         case autocompleteClickPhrase
         case autocompleteClickWebsite
         case autocompleteClickBookmark
@@ -233,8 +234,8 @@ extension Pixel {
         case autocompleteDisplayedLocalFavorite
         case autocompleteDisplayedLocalHistory
         case autocompleteDisplayedOpenedTab
-        case autocompleteSwipeToDelete
-        case autocompleteSwipeToDeleteDaily
+        case autocompleteDeleteHistoryEntry
+        case autocompleteDeleteHistoryEntryDaily
 
         case feedbackPositive
         case feedbackNegativePrefix(category: String)
@@ -256,6 +257,12 @@ extension Pixel {
         case onboardingIntroChooseSearchExperienceImpressionUnique
         case onboardingIntroAIChatSelected
         case onboardingIntroSearchOnlySelected
+        case onboardingIntroDuckAIExperimentToggleImpressionUnique
+        case onboardingIntroDuckAIExperimentToggleContinuePressedSearch
+        case onboardingIntroDuckAIExperimentToggleContinuePressedAI
+        case onboardingDuckAIExperimentFireDialogShownUnique
+        case onboardingDuckAIExperimentFireButtonCTAPressed
+        case onboardingDuckAIExperimentFinalDialogShownUnique
 
         case onboardingContextualSearchOptionTappedUnique
         case onboardingContextualSearchCustomUnique
@@ -569,6 +576,58 @@ extension Pixel {
         case importResultBookmarksParsing
         case importResultUnzipping
 
+        // MARK: Data Import Hub pixels
+
+        case importHubEntryShown
+        case importHubEntryTapped
+        case importHubDisplayed
+        case importHubSourceSelected
+        case importHubCancelled
+        case importHubSourceInstructionsDisplayed
+        case importHubSourceInstructionsCancelled
+        case importHubSourcePrimaryTapped
+        case importHubSourceUploadFileTapped
+        case importHubSafariFileSimulatedCompletion
+        case importHubSafariFileSimulatedFailure
+        case importHubSafariInterstitialDisplayed
+        case importHubSafariInterstitialExportTapped
+        case importHubSafariInterstitialCancelled
+        case importHubBrowserkitRequested
+        case importHubBrowserkitReturnedSuccess
+        case importHubBrowserkitReturnedCancelled
+        case importHubBrowserkitReturnedFailure
+        case importHubFilePickerDisplayed
+        case importHubFilePickedZip
+        case importHubFilePickedCsv
+        case importHubFilePickedHtml
+        case importHubFilePickerCancelled
+        case importHubFilePickerUnsupported
+        case importHubFileErrorDisplayed
+        case importHubResultDisplayed
+        case importHubResultPasswordsSuccess
+        case importHubResultBookmarksSuccess
+        case importHubResultCreditCardsSuccess
+        case importHubResultPasswordsParsing
+        case importHubResultBookmarksParsing
+        case importHubResultUnzipping
+        case importHubResultSyncPromoShown
+        case importHubResultSyncPromoTapped
+        case importHubResultSyncPromoDismissed
+        case importHubResultContinueToSafariPasswordsShown
+        case importHubResultContinueToSafariPasswordsTapped
+        case importHubResultContinueToSafariPasswordsDismissed
+        case importHubResultContinueToSafariBookmarksShown
+        case importHubResultContinueToSafariBookmarksTapped
+        case importHubResultContinueToSafariBookmarksDismissed
+        case importHubResultDoneTapped
+        case importHubSyncOpenSettingsTapped
+        case importHubCredentialExchangeActivityReceived
+        case importHubCredentialExchangeTokenMissing
+        case importHubCredentialExchangeSuccess
+        case importHubCredentialExchangeFailure
+        case importHubCredentialExchangeSimulatedCompletion
+        case importHubCredentialExchangeSimulatedFailure
+
         // MARK: Ad Click Attribution pixels
         
         case adClickAttributionDetected
@@ -593,6 +652,7 @@ extension Pixel {
         case networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken
         case networkProtectionTunnelStartSuccess
         case networkProtectionTunnelStartFailure
+        case networkProtectionConnectionFailureLoopDetected
 
         case networkProtectionTunnelStopAttempt
         case networkProtectionTunnelStopSuccess
@@ -668,6 +728,9 @@ extension Pixel {
         case networkProtectionNoAccessTokenFoundError
         case networkProtectionVPNAccessRevoked
         case networkProtectionUnmanagedSubscriptionError
+
+        case networkProtectionPixelStorageSetupFailure
+        case pixelFireSuppressedStorageError
 
         case networkProtectionMemoryWarning
         case networkProtectionMemoryCritical
@@ -1502,6 +1565,26 @@ extension Pixel {
         case aiChatContextualAutoAttachDAU
         case aiChatIsEnabledDaily
 
+        case duckAiNativeStorageMigrationDoneUnique(key: String)
+        case duckAiNativeStorageMigrationDoneCount(key: String)
+        case duckAiNativeStorageMigrationDoneBlankCount
+
+        case duckAiNativeStorageInitSuccess
+        case duckAiNativeStorageInitError
+        case duckAiNativeStorageMigrationStarted
+        case duckAiNativeStorageMigrationAlreadyDone
+        case duckAiNativeStorageMigrationError
+        case duckAiNativeStorageSettingsPutError
+        case duckAiNativeStorageSettingsGetError
+        case duckAiNativeStorageSettingsDeleteError
+        case duckAiNativeStorageChatPutError
+        case duckAiNativeStorageChatGetError
+        case duckAiNativeStorageChatDeleteError
+        case duckAiNativeStorageFilePutError
+        case duckAiNativeStorageFileGetError
+        case duckAiNativeStorageFileListError
+        case duckAiNativeStorageFileDeleteError
+
         case aiChatOmnibarSidebarButtonTapped
         case aiChatOmnibarNewChatButtonTapped
         
@@ -1592,6 +1675,10 @@ extension Pixel {
         case aiChatContextualFireButtonConfirmed
         case aiChatContextualPageContextCollectionEmpty
         case aiChatContextualPageContextCollectionUnavailable
+        case aiChatContextualQuickActionAskAboutPageSelected
+        case aiChatContextualRecentChatsPopupDisplayed
+        case aiChatContextualRecentChatSelected
+        case aiChatContextualViewAllChatsTapped
 
         // MARK: Customization
         case customizationAddressBarStarted
@@ -1601,6 +1688,7 @@ extension Pixel {
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
+        case sceneWillConnectToWindowCalledInConnectedState
 
         // MARK: Tab interaction state debug pixels
         case tabInteractionStateSourceMissingRootDirectory
@@ -1726,6 +1814,37 @@ extension Pixel {
         case webExtensionAdBlockingInstalled
         case webExtensionAdBlockingUpgraded
         case webExtensionAdBlockingInstallError
+
+        case webExtensionAdBlockingSettingsOpen
+        case webExtensionAdBlockingEnabled
+        case webExtensionAdBlockingDisabled
+
+        case webExtensionScriptletFetchSuccess
+        case webExtensionScriptletFetchError
+        case webExtensionScriptletValidationError
+        case webExtensionScriptletInstalled
+        case webExtensionScriptletInstallError
+
+        case webExtensionDailyAdBlockingState
+
+        // MARK: - Fire Mode
+        case fireModeNTPPromotionShown
+        case fireModeNTPPromotionDismissed
+        case fireModeNTPPromotionEngaged
+        case fireModeMenuPromotionShown
+        case fireModeMenuPromotionEngaged
+        case browsingModeSwitched
+        case tabSwitcherModeToggled
+        case fireModeBurnExecuted
+        case normalModeBurnExecuted
+        case fireModeDataCleared
+        case normalModeDataCleared
+        case fireModeLastTabClosedBurn
+        case fireModeEmptyStateNewTab
+        case linkLongPressMenuShown
+        case linkLongPressNewTab
+        case linkLongPressBackgroundTab
+        case linkLongPressFireTab
     }
 
 }
@@ -1793,6 +1912,9 @@ extension Pixel.Event {
         case .tabSwitcherClickCloseTab: return "m_tab_manager_close_tab_click"
         case .tabSwitcherSwipeCloseTab: return "m_tab_manager_close_tab_swipe"
         case .tabSwitchLongPressNewTab: return "m_tab_manager_long_press_new_tab"
+        case .tabLongPressMenuDisplayed: return "m_tab_long_press_menu_displayed"
+        case .tabLongPressMenuNewFireTab: return "m_tab_long_press_menu_new_fire_tab"
+        case .tabLongPressMenuNewNormalTab: return "m_tab_long_press_menu_new_normal_tab"
         case .tabSwitcherOpenedDaily: return "m_tab_manager_opened_daily"
         case .tabManagerSwitchToAITab: return "m_tab_manager_switch_to_ai_tab"
         case .tabManagerSwitchToWebTab: return "m_tab_manager_switch_to_web_tab"
@@ -1915,8 +2037,6 @@ extension Pixel.Event {
         case .favoriteLaunchedWebsite: return "m_favorite_launched_website"
         case .favoriteLaunchedWidget: return "m_favorite_launched_widget"
 
-        case .autocompleteMessageShown: return "m_autocomplete_message_shown"
-        case .autocompleteMessageDismissed: return "m_autocomplete_message_dismissed"
         case .autocompleteClickPhrase: return "m_autocomplete_click_phrase"
         case .autocompleteClickWebsite: return "m_autocomplete_click_website"
         case .autocompleteClickBookmark: return "m_autocomplete_click_bookmark"
@@ -1932,8 +2052,8 @@ extension Pixel.Event {
         case .autocompleteDisplayedLocalFavorite: return "m_autocomplete_display_local_favorite"
         case .autocompleteDisplayedLocalHistory: return "m_autocomplete_display_local_history"
         case .autocompleteDisplayedOpenedTab: return "m_autocomplete_display_switch_to_tab"
-        case .autocompleteSwipeToDelete: return "m_autocomplete_result_deleted"
-        case .autocompleteSwipeToDeleteDaily: return "m_autocomplete_result_deleted_daily"
+        case .autocompleteDeleteHistoryEntry: return "m_autocomplete_result_deleted"
+        case .autocompleteDeleteHistoryEntryDaily: return "m_autocomplete_result_deleted_daily"
 
         case .feedbackPositive: return "mfbs_positive_submit"
         case .feedbackNegativePrefix(category: let category): return "mfbs_negative_\(category)"
@@ -1953,6 +2073,12 @@ extension Pixel.Event {
         case .onboardingIntroChooseSearchExperienceImpressionUnique: return "m_preonboarding_choose_search_experience_impressions_unique"
         case .onboardingIntroAIChatSelected: return "m_preonboarding_aichat_selected"
         case .onboardingIntroSearchOnlySelected: return "m_preonboarding_search_only_selected"
+        case .onboardingIntroDuckAIExperimentToggleImpressionUnique: return "m_preonboarding_duckai_toggle-screen-impression_unique"
+        case .onboardingIntroDuckAIExperimentToggleContinuePressedSearch: return "m_preonboarding_duckai_toggle-continue-pressed_search"
+        case .onboardingIntroDuckAIExperimentToggleContinuePressedAI: return "m_preonboarding_duckai_toggle-continue-pressed_ai"
+        case .onboardingDuckAIExperimentFireDialogShownUnique: return "m_preonboarding_duckai_fire-dialog-impression_unique"
+        case .onboardingDuckAIExperimentFireButtonCTAPressed: return "m_preonboarding_duckai_fire-button-pressed"
+        case .onboardingDuckAIExperimentFinalDialogShownUnique: return "m_preonboarding_duckai_final-dialog-impression_unique"
 
         case .onboardingContextualSearchOptionTappedUnique: return "m_onboarding_search_option_tapped_unique"
         case .onboardingContextualSiteOptionTappedUnique: return "m_onboarding_visit_site_option_tapped_unique"
@@ -2241,6 +2367,58 @@ extension Pixel.Event {
         case .importResultBookmarksParsing: return "import_result_bookmarks_parsing"
         case .importResultUnzipping: return "import_result_unzipping"
 
+        // MARK: Data Import Hub pixels
+
+        case .importHubEntryShown: return "import_hub_entry_shown"
+        case .importHubEntryTapped: return "import_hub_entry_tapped"
+        case .importHubDisplayed: return "import_hub_displayed"
+        case .importHubSourceSelected: return "import_hub_source_selected"
+        case .importHubCancelled: return "import_hub_cancelled"
+        case .importHubSourceInstructionsDisplayed: return "import_hub_source_instructions_displayed"
+        case .importHubSourceInstructionsCancelled: return "import_hub_source_instructions_cancelled"
+        case .importHubSourcePrimaryTapped: return "import_hub_source_primary_tapped"
+        case .importHubSourceUploadFileTapped: return "import_hub_source_upload_file_tapped"
+        case .importHubSafariFileSimulatedCompletion: return "import_hub_safari_file_simulated_completion"
+        case .importHubSafariFileSimulatedFailure: return "import_hub_safari_file_simulated_failure"
+        case .importHubSafariInterstitialDisplayed: return "import_hub_safari_interstitial_displayed"
+        case .importHubSafariInterstitialExportTapped: return "import_hub_safari_interstitial_export_tapped"
+        case .importHubSafariInterstitialCancelled: return "import_hub_safari_interstitial_cancelled"
+        case .importHubBrowserkitRequested: return "import_hub_browserkit_requested"
+        case .importHubBrowserkitReturnedSuccess: return "import_hub_browserkit_returned_success"
+        case .importHubBrowserkitReturnedCancelled: return "import_hub_browserkit_returned_cancelled"
+        case .importHubBrowserkitReturnedFailure: return "import_hub_browserkit_returned_failure"
+        case .importHubFilePickerDisplayed: return "import_hub_file_picker_displayed"
+        case .importHubFilePickedZip: return "import_hub_file_picked_zip"
+        case .importHubFilePickedCsv: return "import_hub_file_picked_csv"
+        case .importHubFilePickedHtml: return "import_hub_file_picked_html"
+        case .importHubFilePickerCancelled: return "import_hub_file_picker_cancelled"
+        case .importHubFilePickerUnsupported: return "import_hub_file_picker_unsupported"
+        case .importHubFileErrorDisplayed: return "import_hub_file_error_displayed"
+        case .importHubResultDisplayed: return "import_hub_result_displayed"
+        case .importHubResultPasswordsSuccess: return "import_hub_result_passwords_success"
+        case .importHubResultBookmarksSuccess: return "import_hub_result_bookmarks_success"
+        case .importHubResultCreditCardsSuccess: return "import_hub_result_creditcards_success"
+        case .importHubResultPasswordsParsing: return "import_hub_result_passwords_parsing"
+        case .importHubResultBookmarksParsing: return "import_hub_result_bookmarks_parsing"
+        case .importHubResultUnzipping: return "import_hub_result_unzipping"
+        case .importHubResultSyncPromoShown: return "import_hub_result_sync_promo_shown"
+        case .importHubResultSyncPromoTapped: return "import_hub_result_sync_promo_tapped"
+        case .importHubResultSyncPromoDismissed: return "import_hub_result_sync_promo_dismissed"
+        case .importHubResultContinueToSafariPasswordsShown: return "import_hub_result_continue_to_safari_passwords_shown"
+        case .importHubResultContinueToSafariPasswordsTapped: return "import_hub_result_continue_to_safari_passwords_tapped"
+        case .importHubResultContinueToSafariPasswordsDismissed: return "import_hub_result_continue_to_safari_passwords_dismissed"
+        case .importHubResultContinueToSafariBookmarksShown: return "import_hub_result_continue_to_safari_bookmarks_shown"
+        case .importHubResultContinueToSafariBookmarksTapped: return "import_hub_result_continue_to_safari_bookmarks_tapped"
+        case .importHubResultContinueToSafariBookmarksDismissed: return "import_hub_result_continue_to_safari_bookmarks_dismissed"
+        case .importHubResultDoneTapped: return "import_hub_result_done_tapped"
+        case .importHubSyncOpenSettingsTapped: return "import_hub_sync_open_settings_tapped"
+        case .importHubCredentialExchangeActivityReceived: return "import_hub_credential_exchange_activity_received"
+        case .importHubCredentialExchangeTokenMissing: return "import_hub_credential_exchange_token_missing"
+        case .importHubCredentialExchangeSuccess: return "import_hub_credential_exchange_success"
+        case .importHubCredentialExchangeFailure: return "import_hub_credential_exchange_failure"
+        case .importHubCredentialExchangeSimulatedCompletion: return "import_hub_credential_exchange_simulated_completion"
+        case .importHubCredentialExchangeSimulatedFailure: return "import_hub_credential_exchange_simulated_failure"
+
             // MARK: Ad Click Attribution pixels
             
         case .adClickAttributionDetected: return "m_ad_click_detected"
@@ -2263,6 +2441,7 @@ extension Pixel.Event {
         case .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken: return "m_netp_tunnel_start_attempt_on_demand_without_access_token"
         case .networkProtectionTunnelStartSuccess: return "m_netp_tunnel_start_success"
         case .networkProtectionTunnelStartFailure: return "m_netp_tunnel_start_failure"
+        case .networkProtectionConnectionFailureLoopDetected: return "m_netp_connection_failure_loop_detected"
         case .networkProtectionTunnelStopAttempt: return "m_netp_tunnel_stop_attempt"
         case .networkProtectionTunnelStopSuccess: return "m_netp_tunnel_stop_success"
         case .networkProtectionTunnelStopFailure: return "m_netp_tunnel_stop_failure"
@@ -2319,6 +2498,8 @@ extension Pixel.Event {
         case .networkProtectionNoAccessTokenFoundError: return "m_netp_no_access_token_found_error"
         case .networkProtectionVPNAccessRevoked: return "m_vpn_access_revoked"
         case .networkProtectionUnmanagedSubscriptionError: return "m_vpn_access_unmanaged_error"
+        case .networkProtectionPixelStorageSetupFailure: return "m_netp_vpn_pixel_storage_setup_failure"
+        case .pixelFireSuppressedStorageError: return "m_pixel_fire_suppressed_storage_error"
         case .networkProtectionMemoryWarning: return "m_netp_vpn_memory_warning"
         case .networkProtectionMemoryCritical: return "m_netp_vpn_memory_critical"
         case .networkProtectionUnhandledError: return "m_netp_unhandled_error"
@@ -3088,6 +3269,26 @@ extension Pixel.Event {
         case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
         case .aiChatIsEnabledDaily: return "m_aichat_is_enabled_daily"
 
+        case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_duck-ai_native-storage_migration_done_\(key)_unique"
+        case .duckAiNativeStorageMigrationDoneCount(let key): return "m_duck-ai_native-storage_migration_done_\(key)_count"
+        case .duckAiNativeStorageMigrationDoneBlankCount: return "m_duck-ai_native-storage_migration_done_blank_count"
+
+        case .duckAiNativeStorageInitSuccess: return "m_duck-ai_native-storage_init_success"
+        case .duckAiNativeStorageInitError: return "m_duck-ai_native-storage_init_error"
+        case .duckAiNativeStorageMigrationStarted: return "m_duck-ai_native-storage_migration_started"
+        case .duckAiNativeStorageMigrationAlreadyDone: return "m_duck-ai_native-storage_migration_already-done"
+        case .duckAiNativeStorageMigrationError: return "m_duck-ai_native-storage_migration_error"
+        case .duckAiNativeStorageSettingsPutError: return "m_duck-ai_native-storage_settings-put_error"
+        case .duckAiNativeStorageSettingsGetError: return "m_duck-ai_native-storage_settings-get_error"
+        case .duckAiNativeStorageSettingsDeleteError: return "m_duck-ai_native-storage_settings-delete_error"
+        case .duckAiNativeStorageChatPutError: return "m_duck-ai_native-storage_chat-put_error"
+        case .duckAiNativeStorageChatGetError: return "m_duck-ai_native-storage_chat-get_error"
+        case .duckAiNativeStorageChatDeleteError: return "m_duck-ai_native-storage_chat-delete_error"
+        case .duckAiNativeStorageFilePutError: return "m_duck-ai_native-storage_file-put_error"
+        case .duckAiNativeStorageFileGetError: return "m_duck-ai_native-storage_file-get_error"
+        case .duckAiNativeStorageFileListError: return "m_duck-ai_native-storage_file-list_error"
+        case .duckAiNativeStorageFileDeleteError: return "m_duck-ai_native-storage_file-delete_error"
+
         case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
         case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"
 
@@ -3169,6 +3370,10 @@ extension Pixel.Event {
         case .aiChatContextualFireButtonConfirmed: return "m_aichat_contextual_fire_button_confirmed"
         case .aiChatContextualPageContextCollectionEmpty: return "m_aichat_contextual_page_context_collection_empty"
         case .aiChatContextualPageContextCollectionUnavailable: return "m_aichat_contextual_page_context_collection_unavailable"
+        case .aiChatContextualQuickActionAskAboutPageSelected: return "m_aichat_contextual_quick_action_ask_about_page_selected"
+        case .aiChatContextualRecentChatsPopupDisplayed: return "m_aichat_contextual_recent_chats_popup_displayed"
+        case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"
+        case .aiChatContextualViewAllChatsTapped: return "m_aichat_contextual_view_all_chats_tapped"
 
         // MARK: AI Chat Sync
 
@@ -3181,6 +3386,7 @@ extension Pixel.Event {
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"
+        case .sceneWillConnectToWindowCalledInConnectedState: return "m_debug_scene-will-connect-to-window-called-in-connected-state"
 
         case .debugBreakageExperiment: return "m_debug_breakage_experiment_u"
 
@@ -3364,6 +3570,37 @@ extension Pixel.Event {
         case .webExtensionAdBlockingInstalled: return "m_web_extension_ad_blocking_installed"
         case .webExtensionAdBlockingUpgraded: return "m_web_extension_ad_blocking_upgraded"
         case .webExtensionAdBlockingInstallError: return "m_web_extension_ad_blocking_install_error"
+
+        case .webExtensionScriptletFetchSuccess: return "m_web_extension_scriptlet_fetch_success"
+        case .webExtensionScriptletFetchError: return "m_web_extension_scriptlet_fetch_error"
+        case .webExtensionScriptletValidationError: return "m_web_extension_scriptlet_validation_error"
+        case .webExtensionScriptletInstalled: return "m_web_extension_scriptlet_installed"
+        case .webExtensionScriptletInstallError: return "m_web_extension_scriptlet_install_error"
+
+        case .webExtensionDailyAdBlockingState: return "m_web_extension_daily_ad_blocking_state"
+        case .webExtensionAdBlockingSettingsOpen: return "m_web_extension_ad_blocking_settings_open"
+        case .webExtensionAdBlockingEnabled: return "m_web_extension_ad_blocking_enabled"
+        case .webExtensionAdBlockingDisabled: return "m_web_extension_ad_blocking_disabled"
+
+        // MARK: - Fire Mode
+        case .fireModeNTPPromotionShown: return "m_fire-mode_ntp-promotion_shown"
+        case .fireModeNTPPromotionDismissed: return "m_fire-mode_ntp-promotion_dismissed"
+        case .fireModeNTPPromotionEngaged: return "m_fire-mode_ntp-promotion_engaged"
+        case .fireModeMenuPromotionShown: return "m_fire-mode_menu-promotion_shown"
+        case .fireModeMenuPromotionEngaged: return "m_fire-mode_menu-promotion_engaged"
+        case .browsingModeSwitched: return "m_browsing-mode_switched"
+        case .tabSwitcherModeToggled: return "m_tab-switcher_mode-toggled"
+        case .fireModeBurnExecuted: return "m_fire-mode_burn_executed"
+        case .normalModeBurnExecuted: return "m_normal-mode_burn_executed"
+        case .fireModeDataCleared: return "m_fire-mode_data-cleared"
+        case .normalModeDataCleared: return "m_normal-mode_data-cleared"
+        case .fireModeLastTabClosedBurn: return "m_fire-mode_last-tab-closed_burn"
+        case .fireModeEmptyStateNewTab: return "m_fire-mode_empty-state_new-tab"
+        case .linkLongPressMenuShown: return "m_link-long-press_menu-shown"
+        case .linkLongPressNewTab: return "m_link-long-press_new-tab"
+        case .linkLongPressBackgroundTab: return "m_link-long-press_background-tab"
+        case .linkLongPressFireTab: return "m_link-long-press_fire-tab"
+
         }
     }
 }

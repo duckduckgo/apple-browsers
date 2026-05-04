@@ -213,10 +213,12 @@ extension SimplifiedSyncSettingsView {
                     }
                 ))
                 .labelsHidden()
+                .tint(Color(designSystemColor: .accent))
             }
             .animation(.easeInOut(duration: 0.3), value: model.isBusy)
             .disabled(model.isBusy || (!model.isSyncEnabled && !model.isAccountCreationAvailable))
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     @ViewBuilder
@@ -225,28 +227,26 @@ extension SimplifiedSyncSettingsView {
             Button {
                 model.scanQRCode()
             } label: {
-                Label(title: {
+                HStack(spacing: 8) {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)
+                        .foregroundColor(Color(designSystemColor: .accent))
                     Text(UserText.simplifiedSyncWithAnotherDeviceButton)
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .accent))
-                }, icon: {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)
-                        .foregroundColor(Color(designSystemColor: .accent))
-                })
+                }
             }
             .disabled(!model.isAccountCreationAvailable)
 
             Button {
                 model.beginRecoverFlow()
             } label: {
-                Label(title: {
+                HStack(spacing: 8) {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.note)
+                        .foregroundColor(Color(designSystemColor: .accent))
                     Text(UserText.simplifiedUseRecoveryCodeButton)
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .accent))
-                }, icon: {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.note)
-                        .foregroundColor(Color(designSystemColor: .accent))
-                })
+                }
             }
             .sheet(isPresented: $model.isRecoverSyncedDataSheetVisible) {
                 RecoverSyncedDataView(model: model, onCancel: {
@@ -257,6 +257,7 @@ extension SimplifiedSyncSettingsView {
         } header: {
             Text(UserText.simplifiedAlreadySetUpSectionHeader)
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     @ViewBuilder
@@ -278,6 +279,7 @@ extension SimplifiedSyncSettingsView {
             }
             .buttonStyle(.plain)
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 }
 
@@ -390,7 +392,22 @@ extension SimplifiedSyncSettingsView {
                 ProgressView()
                     .frame(maxWidth: .infinity, alignment: .center)
             }
+
             devicesList
+
+            if model.isConnectingDevicesAvailable {
+                Button {
+                    model.scanQRCode()
+                } label: {
+                    HStack {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)
+                            .foregroundColor(Color(designSystemColor: .accent))
+                        Text(UserText.simplifiedSyncAnotherDeviceButton)
+                            .daxBodyRegular()
+                            .foregroundColor(Color(designSystemColor: .accent))
+                    }
+                }
+            }
         } header: {
             HStack {
                 Text(UserText.syncedDevicesSectionHeader)
@@ -404,6 +421,7 @@ extension SimplifiedSyncSettingsView {
                 model.delegate?.refreshDevices(clearDevices: false)
             }
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     @ViewBuilder
@@ -447,25 +465,37 @@ extension SimplifiedSyncSettingsView {
     var bookmarksSection: some View {
         Section {
             Toggle(isOn: $model.isUnifiedFavoritesEnabled) {
-                Text(UserText.unifiedFavoritesTitle)
-                    .daxBodyRegular()
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(UserText.unifiedFavoritesTitle)
+                        .daxBodyRegular()
+                    Text(UserText.simplifiedBookmarksUnifiedFavoritesCaption)
+                        .daxFootnoteRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                }
+                .fixedSize(horizontal: false, vertical: true)
             }
+            .tint(Color(designSystemColor: .accent))
             .accessibility(identifier: "UnifiedFavoritesToggle")
 
             Toggle(isOn: $model.isFaviconsFetchingEnabled) {
-                Text(UserText.fetchFaviconsOptionTitle)
-                    .daxBodyRegular()
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(UserText.fetchFaviconsOptionTitle)
+                        .daxBodyRegular()
+                    Text(UserText.simplifiedBookmarksFetchFaviconsCaption)
+                        .daxFootnoteRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                }
+                .fixedSize(horizontal: false, vertical: true)
             }
+            .tint(Color(designSystemColor: .accent))
             .accessibility(identifier: "FaviconFetchingToggle")
         } header: {
             Text(UserText.simplifiedBookmarksSectionHeader)
-        } footer: {
-            Text(LocalizedStringKey(String(format: UserText.simplifiedBookmarksSectionFooterFormat, "ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/syncing-favorites")))
-                .tint(Color(designSystemColor: .accent))
         }
         .onAppear {
             model.delegate?.updateOptions()
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     // MARK: Recovery
@@ -496,7 +526,7 @@ extension SimplifiedSyncSettingsView {
             }
 
             Button {
-                model.copyCode()
+                model.simplifiedCopyRecoveryCode()
             } label: {
                 Text(UserText.simplifiedCopyRecoveryCodeButton)
                     .foregroundColor(Color(designSystemColor: .accent))
@@ -504,8 +534,10 @@ extension SimplifiedSyncSettingsView {
         } header: {
             Text(UserText.recoverySectionHeader)
         } footer: {
-            Text(UserText.simplifiedRecoverySectionFooter)
+            Text(LocalizedStringKey(String(format: UserText.simplifiedRecoverySectionFooterFormat, "ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting#does-my-sync--backup-data-ever-expire")))
+                .tint(Color(designSystemColor: .accent))
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     // MARK: Delete
@@ -519,5 +551,6 @@ extension SimplifiedSyncSettingsView {
                 Text(UserText.simplifiedDeleteSyncDataButton)
             }
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 }

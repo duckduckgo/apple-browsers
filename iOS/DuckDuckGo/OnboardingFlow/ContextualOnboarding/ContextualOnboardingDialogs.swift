@@ -21,6 +21,7 @@ import Foundation
 import SwiftUI
 import Onboarding
 import DuckUI
+import DesignResourcesKitIcons
 
 // MARK: - Try Anonymous Search
 
@@ -83,13 +84,21 @@ struct OnboardingTryVisitingSiteDialogContent: View {
 // MARK: - Fire Dialog
 
 struct OnboardingFireDialog: View {
-    let onManualDismiss: () -> Void
+    let title: String?
+    let message: String
+    let onManualDismiss: (() -> Void)?
+
+    init(title: String? = nil, message: String, onManualDismiss: (() -> Void)? = nil) {
+        self.title = title
+        self.message = message
+        self.onManualDismiss = onManualDismiss
+    }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
                 VStack {
-                    OnboardingFireButtonDialogContent()
+                    OnboardingFireButtonDialogContent(title: title, message: message)
                 }
             }
             .padding()
@@ -98,15 +107,20 @@ struct OnboardingFireDialog: View {
 }
 
 struct OnboardingFireButtonDialogContent: View {
-    private let attributedMessage: NSAttributedString = {
+
+    let title: String?
+    let attributedMessage: NSAttributedString
+
+    init(title: String? = nil, message: String) {
+        self.title = title
         let boldString = "Fire Button."
-        return UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage
-            .attributed
-            .withFont(.daxBodyBold(), forText: boldString)
-    }()
+        attributedMessage = message.attributed.withFont(.daxBodyBold(), forText: boldString)
+    }
 
     var body: some View {
         ContextualDaxDialogContent(
+            title: title,
+            titleFont: Font(UIFont.daxTitle3()),
             message: attributedMessage,
             messageFont: Font.system(size: 16)
         )
@@ -176,7 +190,7 @@ struct OnboardingTrackersDoneDialog: View {
             }) {
                 VStack {
                     if showNextScreen {
-                        OnboardingFireButtonDialogContent()
+                        OnboardingFireButtonDialogContent(message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
                     } else {
                         ContextualDaxDialogContent(
                             message: message,
@@ -207,7 +221,19 @@ struct OnboardingFinalDialog: View {
     let message: String
     let cta: String
     let dismissAction: () -> Void
-    let onManualDismiss: () -> Void
+    let onManualDismiss: (() -> Void)?
+
+    init(logoPosition: DaxDialogLogoPosition,
+         message: String,
+         cta: String,
+         dismissAction: @escaping () -> Void,
+         onManualDismiss: (() -> Void)? = nil) {
+        self.logoPosition = logoPosition
+        self.message = message
+        self.cta = cta
+        self.dismissAction = dismissAction
+        self.onManualDismiss = onManualDismiss
+    }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -215,7 +241,12 @@ struct OnboardingFinalDialog: View {
                 ContextualDaxDialogContent(
                     title: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle,
                     titleFont: Font(UIFont.daxTitle3()),
-                    message: NSAttributedString(string: message),
+                    message: message.attributedString(
+                        withPlaceholder: UserText.Onboarding.ContextualOnboarding.onboardingChatIconToken,
+                        replacedByImage: DesignSystemImages.Glyphs.Size16.aiChatOnboarding,
+                        horizontalPadding: 0,
+                        verticalOffset: -2
+                    ) ?? NSAttributedString(string: message),
                     messageFont: Font.system(size: 16),
                     customActionView: AnyView(customActionView)
                 )
@@ -368,7 +399,10 @@ struct OnboardingAddToDockTutorialContent: View {
 }
 
 #Preview("Try Fire Button") {
-    OnboardingFireDialog(onManualDismiss: {})
+    OnboardingFireDialog(
+        message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage,
+        onManualDismiss: {}
+    )
         .padding()
 }
 

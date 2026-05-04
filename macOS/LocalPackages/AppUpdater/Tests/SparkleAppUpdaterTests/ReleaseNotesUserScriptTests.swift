@@ -278,6 +278,7 @@ private final class CapturingPixelFiring: PixelFiring {
               frequency: PixelKit.Frequency,
               includeAppVersionParameter: Bool,
               withAdditionalParameters: [String: String]?,
+              withNamePrefix: String?,
               onComplete: @escaping PixelKit.CompletionBlock) {
         firedEvents.append(event)
     }

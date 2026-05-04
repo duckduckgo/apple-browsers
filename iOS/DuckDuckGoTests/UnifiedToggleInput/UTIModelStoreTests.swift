@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Combine
 import XCTest
 @testable import DuckDuckGo
 
@@ -112,6 +113,22 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertFalse(sut.selectedModelSupportsImageUpload)
     }
 
+    // MARK: - selectedModelSupports(tool:)
+
+    func test_selectedModelSupportsTool_whenSelectedModelSupportsWebSearch_returnsTrue() {
+        preferences.selectedModelId = "gpt-5"
+        sut.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+
+        XCTAssertTrue(sut.selectedModelSupports(tool: .webSearch))
+    }
+
+    func test_selectedModelSupportsTool_whenSelectedModelDoesNotSupportWebSearch_returnsFalse() {
+        preferences.selectedModelId = "gpt-5"
+        sut.models = [makeModel(id: "gpt-5", access: true)]
+
+        XCTAssertFalse(sut.selectedModelSupports(tool: .webSearch))
+    }
+
     // MARK: - clearStaleModelSelectionIfNeeded
 
     func test_clearStale_whenSelectedModelNoLongerInList_clearsPreferences() {
@@ -177,16 +194,68 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertEqual(preferences.selectedModelShortName, "G5")
     }
 
+    func test_updateSelectedModel_whenReasoningModeIsUnsupported_clearsSelection() {
+        preferences.selectedReasoningMode = .extendedReasoning
+        sut.models = [
+            makeModel(id: "gpt-5", access: true, supportedReasoningEffort: [.none, .low])
+        ]
+
+        sut.updateSelectedModel("gpt-5")
+
+        XCTAssertNil(preferences.selectedReasoningMode)
+    }
+
+    func test_updateSelectedModel_whenReasoningModeIsSupported_preservesSelection() {
+        preferences.selectedReasoningMode = .extendedReasoning
+        sut.models = [
+            makeModel(id: "gpt-5", access: true, supportedReasoningEffort: [.none, .low, .medium])
+        ]
+
+        sut.updateSelectedModel("gpt-5")
+
+        XCTAssertEqual(preferences.selectedReasoningMode, .extendedReasoning)
+    }
+
+    func test_updateSelectedReasoningMode_whenModeIsUnsupported_doesNotWritePreference() {
+        preferences.selectedReasoningMode = .fast
+        preferences.selectedModelId = "gpt-5"
+        sut.models = [
+            makeModel(id: "gpt-5", access: true, supportedReasoningEffort: [.none, .low])
+        ]
+
+        sut.updateSelectedReasoningMode(.extendedReasoning)
+
+        XCTAssertEqual(preferences.selectedReasoningMode, .fast)
+    }
+
     // MARK: - Helpers
 
-    private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false) -> AIChatModel {
-        AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload, entityHasAccess: access)
+    private func makeModel(
+        id: String,
+        access: Bool,
+        supportsImageUpload: Bool = false,
+        supportedTools: [AIChatRAGTool] = [],
+        supportedReasoningEffort: [AIChatReasoningEffort] = []
+    ) -> AIChatModel {
+        AIChatModel(
+            id: id,
+            name: id,
+            provider: .unknown,
+            supportsImageUpload: supportsImageUpload,
+            supportedTools: supportedTools,
+            entityHasAccess: access,
+            supportedReasoningEffort: supportedReasoningEffort
+        )
     }
 }
 
 private final class StubPreferences: AIChatPreferencesPersisting {
+    var selectedReasoningEffort: String?
     var selectedModelId: String?
     var selectedModelShortName: String?
+    var selectedReasoningMode: AIChatReasoningMode?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
 private final class StubModelsService: AIChatModelsProviding {

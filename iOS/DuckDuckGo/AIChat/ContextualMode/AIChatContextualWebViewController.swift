@@ -80,13 +80,14 @@ final class AIChatContextualWebViewController: UIViewController {
 
     // MARK: - UI Components
 
-    private lazy var webView: WKWebView = {
-        let webView = WKWebView(frame: .zero, configuration: createWebViewConfiguration())
+    private lazy var webView: WebView = {
+        let webView = WebView(frame: .zero, configuration: createWebViewConfiguration())
         webView.isOpaque = false
         webView.backgroundColor = .systemBackground
         webView.customUserAgent = userAgentManager.userAgent(isDesktop: false, url: aiChatSettings.aiChatURL)
         webView.navigationDelegate = self
         webView.translatesAutoresizingMaskIntoConstraints = false
+        webView.setInputAccessoryViewHidden(true)
         if #available(iOS 16.4, *) {
             #if DEBUG
             webView.isInspectable = true

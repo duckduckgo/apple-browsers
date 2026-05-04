@@ -439,6 +439,19 @@ public final class EmailServiceMock: EmailServiceProtocol {
 public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDataServiceProvider {
 
     public var shouldThrow: Bool = false
+    public private(set) var getEmailAndSaveCallCount: Int = 0
+    public private(set) var getEmailCallCount: Int = 0
+    public private(set) var lastExtractedProfileIdPassed: Int64?
+
+    public var getEmailDataReturnValue: ExtractedEmailData = [:]
+    /// Set to a non-nil `EmailError` to have `getEmailData` throw that specific error regardless
+    /// of `shouldThrow`. Lets tests exercise timeout / backend-error branches independently.
+    public var getEmailDataThrowError: EmailError?
+    public private(set) var getEmailDataCallCount: Int = 0
+    public private(set) var lastGetEmailDataEmail: String?
+    public private(set) var lastGetEmailDataPollingInterval: TimeInterval?
+    public private(set) var lastGetEmailDataTotalTimeout: TimeInterval?
+    public private(set) var lastGetEmailDataExtract: [String]?
 
     public init() {}
 
@@ -447,6 +460,16 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
                                                     profileQueryId: Int64?,
                                                     extractedProfileId: Int64?,
                                                     attemptId: UUID) async throws -> EmailData {
+        getEmailAndSaveCallCount += 1
+        lastExtractedProfileIdPassed = extractedProfileId
+        if shouldThrow {
+            throw DataBrokerProtectionError.emailError(nil)
+        }
+        return EmailData(pattern: nil, emailAddress: "test@duck.com")
+    }
+
+    public func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData {
+        getEmailCallCount += 1
         if shouldThrow {
             throw DataBrokerProtectionError.emailError(nil)
         }
@@ -470,8 +493,39 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
         }
     }
 
+    public func getEmailData(email: String,
+                             attemptId: UUID,
+                             pollingInterval: TimeInterval,
+                             totalTimeout: TimeInterval,
+                             extract: [String],
+                             shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData {
+        getEmailDataCallCount += 1
+        lastGetEmailDataEmail = email
+        lastGetEmailDataPollingInterval = pollingInterval
+        lastGetEmailDataTotalTimeout = totalTimeout
+        lastGetEmailDataExtract = extract
+
+        if let error = getEmailDataThrowError {
+            throw error
+        }
+        if shouldThrow {
+            throw EmailError.cantFindEmail
+        }
+        return getEmailDataReturnValue
+    }
+
     public func reset() {
         shouldThrow = false
+        getEmailAndSaveCallCount = 0
+        getEmailCallCount = 0
+        lastExtractedProfileIdPassed = nil
+        getEmailDataReturnValue = [:]
+        getEmailDataThrowError = nil
+        getEmailDataCallCount = 0
+        lastGetEmailDataEmail = nil
+        lastGetEmailDataPollingInterval = nil
+        lastGetEmailDataTotalTimeout = nil
+        lastGetEmailDataExtract = nil
     }
 }
 
@@ -1977,29 +2031,29 @@ public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJob
     }
 }
 
-public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
+public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     public let isRemoteBrokerDeliveryFeatureOn: Bool
     public let isEmailConfirmationDecouplingFeatureOn: Bool
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
     public let isForegroundRunningWhenDashboardOpenFeatureOn: Bool
-    public let isClickActionDelayReductionOptimizationOn: Bool
     public let isContinuedProcessingFeatureOn: Bool
     public let isWebViewUserAgentOn: Bool
+    public let isFreemiumPIREnabled: Bool
 
     public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
                 isEmailConfirmationDecouplingFeatureOn: Bool = false,
                 isForegroundRunningOnAppActiveFeatureOn: Bool = true,
                 isForegroundRunningWhenDashboardOpenFeatureOn: Bool = true,
-                isClickActionDelayReductionOptimizationOn: Bool = false,
                 isContinuedProcessingFeatureOn: Bool = true,
-                isWebViewUserAgentOn: Bool = false) {
+                isWebViewUserAgentOn: Bool = false,
+                isFreemiumPIREnabled: Bool = false) {
         self.isRemoteBrokerDeliveryFeatureOn = isRemoteBrokerDeliveryFeatureOn
         self.isEmailConfirmationDecouplingFeatureOn = isEmailConfirmationDecouplingFeatureOn
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isForegroundRunningWhenDashboardOpenFeatureOn = isForegroundRunningWhenDashboardOpenFeatureOn
-        self.isClickActionDelayReductionOptimizationOn = isClickActionDelayReductionOptimizationOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isWebViewUserAgentOn = isWebViewUserAgentOn
+        self.isFreemiumPIREnabled = isFreemiumPIREnabled
     }
 }
 

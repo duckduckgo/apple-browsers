@@ -30,10 +30,13 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
     func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapAttach(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID)
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -52,12 +55,15 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     let isToggleEnabled: Bool
-    lazy var handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isToggleEnabled: isToggleEnabled)
+    let handler: UnifiedToggleInputHandler
 
     // MARK: - Public API
 
-    init(isToggleEnabled: Bool) {
+    init(isToggleEnabled: Bool, isFireTab: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
+        self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
+                                                 isToggleEnabled: isToggleEnabled,
+                                                 isFireTab: isFireTab)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -120,6 +126,7 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     var isGenerating: Bool = false {
         didSet {
+            guard isGenerating != oldValue else { return }
             handler.isGenerating = isGenerating
             inputBarView.isGenerating = isGenerating
         }
@@ -135,9 +142,39 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.modelPickerMenu = newValue }
     }
 
+    var toolsMenu: UIMenu? {
+        get { inputBarView.toolsMenu }
+        set { inputBarView.toolsMenu = newValue }
+    }
+
+    var reasoningPickerMenu: UIMenu? {
+        get { inputBarView.reasoningPickerMenu }
+        set { inputBarView.reasoningPickerMenu = newValue }
+    }
+
     var isModelChipHidden: Bool {
         get { inputBarView.isModelChipHidden }
         set { inputBarView.isModelChipHidden = newValue }
+    }
+
+    var selectedTool: AIChatRAGTool? {
+        get { inputBarView.selectedTool }
+        set { inputBarView.selectedTool = newValue }
+    }
+
+    var selectedReasoningMode: AIChatReasoningMode? {
+        get { inputBarView.selectedReasoningMode }
+        set { inputBarView.selectedReasoningMode = newValue }
+    }
+
+    var isToolsButtonHidden: Bool {
+        get { inputBarView.isToolsButtonHidden }
+        set { inputBarView.isToolsButtonHidden = newValue }
+    }
+
+    var isReasoningButtonHidden: Bool {
+        get { inputBarView.isReasoningButtonHidden }
+        set { inputBarView.isReasoningButtonHidden = newValue }
     }
 
     var isImageButtonHidden: Bool {
@@ -145,9 +182,14 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isImageButtonHidden = newValue }
     }
 
-    var isCustomizeResponsesButtonHidden: Bool {
-        get { inputBarView.isCustomizeResponsesButtonHidden }
-        set { inputBarView.isCustomizeResponsesButtonHidden = newValue }
+    var isImageButtonEnabled: Bool {
+        get { inputBarView.isImageButtonEnabled }
+        set { inputBarView.isImageButtonEnabled = newValue }
+    }
+
+    var modelSupportsImageAttachments: Bool {
+        get { inputBarView.modelSupportsImageAttachments }
+        set { inputBarView.modelSupportsImageAttachments = newValue }
     }
 
     var isAttachmentsFull: Bool {
@@ -180,20 +222,34 @@ final class UnifiedToggleInputViewController: UIViewController {
         setExpanded(config.isExpanded, animated: animated)
     }
 
+    func applyToolsPresentation(
+        isToolsButtonHidden: Bool,
+        selectedTool: AIChatRAGTool?,
+        toolsMenu: UIMenu?
+    ) {
+        self.isToolsButtonHidden = isToolsButtonHidden
+        self.selectedTool = selectedTool
+        self.toolsMenu = toolsMenu
+    }
+
     func setExpanded(_ expanded: Bool, animated: Bool) {
         inputBarView.setExpanded(expanded, animated: animated)
     }
 
-    func setExpandedWithToggleHidden(_ expanded: Bool) {
-        inputBarView.setExpandedWithToggleHidden(expanded)
+    func prepareForOmnibarEditingShow() {
+        inputBarView.prepareForOmnibarEditingShow()
     }
 
-    func animateToggleReveal(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
-        inputBarView.animateToggleReveal(additionalAnimations: additionalAnimations, completion: completion)
+    func applyOmnibarEditingShowPose() {
+        inputBarView.applyOmnibarEditingShowPose()
     }
 
-    func animateToggleHide(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
-        inputBarView.animateToggleHide(additionalAnimations: additionalAnimations, completion: completion)
+    func applyOmnibarEditingDismissPose() {
+        inputBarView.applyOmnibarEditingDismissPose()
+    }
+
+    func finalizeOmnibarEditingDismiss() {
+        inputBarView.finalizeOmnibarEditingDismiss()
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {
@@ -202,6 +258,28 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func selectAllText() {
         inputBarView.selectAllText()
+    }
+
+    var placeholderWindowX: CGFloat? { inputBarView.placeholderWindowX }
+
+    var defaultPlaceholderColor: UIColor { inputBarView.defaultPlaceholderColor }
+
+    var placeholderTextColor: UIColor {
+        get { inputBarView.placeholderTextColor }
+        set { inputBarView.placeholderTextColor = newValue }
+    }
+
+    func animatePlaceholderColorTransition(from: UIColor, to color: UIColor, duration: TimeInterval) {
+        inputBarView.animatePlaceholderColorTransition(from: from, to: color, duration: duration)
+    }
+
+    func setTextHorizontalShift(_ shift: CGFloat) {
+        inputBarView.setTextHorizontalShift(shift)
+    }
+
+    @discardableResult
+    func alignPlaceholderHorizontally(toWindowX windowX: CGFloat) -> CGFloat {
+        inputBarView.alignPlaceholderHorizontally(toWindowX: windowX)
     }
 
     func updateToggleEnabled(_ enabled: Bool) {
@@ -219,6 +297,10 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func deactivateInput() {
         inputBarView.resignFirstResponder()
+    }
+
+    func refreshFireMode(fireMode: Bool) {
+        inputBarView.refreshFireMode(fireMode: fireMode)
     }
 
     // MARK: - Lifecycle
@@ -242,6 +324,14 @@ final class UnifiedToggleInputViewController: UIViewController {
         barView.onAttachmentsLayoutDidChange = { [weak self] in
             guard let self else { return }
             delegate?.unifiedToggleInputVCDidChangeAttachments(self)
+        }
+        barView.onInlineDismissTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVCDidTapInlineDismiss(self)
+        }
+        barView.onAIChatShortcutTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVCDidTapAIChatShortcut(self)
         }
         view = barView
     }
@@ -269,5 +359,9 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidTapSearchGoTo(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidTapSearchGoTo(self)
+    }
+
+    func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidClearSelectedTool(self)
     }
 }

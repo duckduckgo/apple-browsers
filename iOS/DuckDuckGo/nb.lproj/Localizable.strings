@@ -109,12 +109,14 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Faner lukket og data slettet";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Fjern faner, data og Duck.ai-chatter";
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Åpne i bakgrunnen";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Ny Fire-fane";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Åpne i en Fire-fane";
 /* Create New Tab action */
 "action.title.newTabAction" = "Ny fane";
 
@@ -210,6 +212,33 @@
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Ta et bilde";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Til analytiske oppgaver";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Utvidet resonnering";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Svarer raskt";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Rask";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "For komplekse oppgaver";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Resonnement";
+
+/* Title for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.title" = "Tilpass svar";
+
+/* Subtitle for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.subtitle" = "Finn oppdatert informasjon";
+
+/* Title for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.title" = "Nettsøk";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Eksisterende bokmerker blir ikke duplisert.";
@@ -354,12 +383,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Søk i DuckDuckGo";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Søkeforslag inkluderer nå nylig besøkte nettsteder. Slå dem av i innstillingene, eller slett dem når som helst med Fire Button 🔥.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Samme personvern.\nBedre søkeforslag!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Bytt til fane";
@@ -871,6 +894,9 @@
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Nei takk";
 
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Ikke nå";
+
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Lagre passordet ditt trygt på enheten med DuckDuckGos passord og autofyll.";
 
@@ -936,6 +962,15 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Vil du oppdatere brukernavnet?";
+
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Tillat lyd og video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Blokker lyd og video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Blokker lyd";
 
 /* No comment provided by engineer. */
 "Available Products" = "Tilgjengelige produkter";
@@ -1228,8 +1263,6 @@
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Egendefinert URL-adresse: %@";
 
-/* No comment provided by engineer. */
-
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importer bokmerkefil ...";
 
@@ -1242,6 +1275,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Importer bokmerker til DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Åpne Chrome, gå til passordbehandlingen og følg trinnene nedenfor:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Innstillinger** > **Eksporter data**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Trykk på **Fortsett**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Velg **DuckDuckGo** som destinasjon";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Importer fra Chrome";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Ferdig med å eksportere?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Du må gå til Passwords-appen og følge trinnene for å importere.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Trykk på **···** > **Eksporter data til en annen app**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Trykk på **Velg alle** > **Fortsett**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Velg **DuckDuckGo** som destinasjon";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Importer fra Passwords-appen";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Først må du eksportere passordene og bokmerkene dine fra Safari, og så komme tilbake hit for å laste opp filen.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Eksporter fra Safari";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Importer fra Safari";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Last opp den eksporterte filen ...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Ingen støttede data ble funnet i zip-filen. Sjekk eksportinstruksjonene for Safari og prøv igjen.";
 
@@ -1251,6 +1329,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Filen %@ kunne ikke leses. Det kan være et problem med dataene i filen.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Den er grei";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Filen %@ kunne ikke leses. Prøv å laste opp en annen fil eller prøv en annen importmetode.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Filen kan være ødelagt";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Ingen støttede data ble funnet i zip-filen. Les eksportinstruksjonene og prøv igjen.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Ingen data er funnet";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Den valgte filen støttes ikke. Velg en annen fil og prøv igjen.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Filen er ikke støttet";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1259,6 +1358,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Ta med til DuckDuckGo";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Velg **Eksporter**, og på neste skjermbilde **Bokmerker** og **Lagre i Nedlastinger**.";
@@ -1270,7 +1372,7 @@
 "data.import.passwords.instructions.chrome.step1" = "I Chrome går du til **Google passordlagring** og deretter **Innstillinger**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Velg **Eksporter passord**, deretter **Lagre i Filer**, og så lagrer du filen i en mappe du kan huske.";
+"data.import.passwords.instructions.chrome.step2" = "Velg **Eksporter data**, deretter **···** og så **Last ned til CSV**, og lagre filen i en mappe som du kan huske.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Slik eksporterer du passord";
@@ -1298,6 +1400,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Importer passord til DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Åpne innstillingene for å eksportere";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Husk å trykke på\n«Eksporter til filer»";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Passwords-app";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Importer fra";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Synkroniser fra";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo på en annen enhet";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Bokmerker";
@@ -1334,6 +1460,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Passord";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Vil du ha med bokmerkene dine fra Safari også?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Fortsett";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Ikke nå";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Vil du ha med passordene dine også?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Foregående måned";
@@ -1476,6 +1614,15 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Sendt med meldingen din til Duck.ai";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Nylige chatter";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Nylige chatter";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Vis alle chatter";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Legg til Duck.ai Voice-snarveien i kontrollsenteret ditt";
 
@@ -1485,8 +1632,20 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Legg ved sideinnhold";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Spør om siden";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Oppsummer denne siden";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Oppsummer siden";
+
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Legg til Duck.ai i kontrollsenteret";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Legg til Duck.ai-widgeten på startskjermen";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Vis Duck.ai-knapper og -lenker i søkeresultatene i DuckDuckGo.";
@@ -1496,12 +1655,6 @@
 
 /* Toggle text to enable/disable Duck.ai to ask follow-up questions */
 "duckai.settings.allowFollowUpQuestions.toggle" = "Still oppfølgingsspørsmål";
-
-/* AI Chat settings row for adding Duck.ai to Control Center */
-"duckai.settings.add.control-center.widget" = "Legg til Duck.ai i kontrollsenteret";
-
-/* AI Chat settings row for adding the Duck.ai widget to home screen */
-"duckai.settings.add.widget" = "Legg til Duck.ai-widgeten på startskjermen";
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Snarveier i nettleseren";
@@ -1527,9 +1680,6 @@
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
-/* No comment provided by engineer. */
-"DuckDuckGo for iOS" = "DuckDuckGo for iOS";
-
 /* Section header for Duck.ai shortcuts in AI Chat settings */
 "duckai.shortcuts.section.header" = "Snarveier";
 
@@ -1547,6 +1697,15 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Snakk med Duck.ai ved hjelp av Siri!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Alle chatter er %@ private";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "private";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "DuckDuckGo for iOS";
 
 /* Header title for the subscription activation view */
 "duckduckgo.subscription.activate.header.title" = "Legg til DuckDuckGo-abonnementet ditt på denne enheten";
@@ -1623,11 +1782,11 @@
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Videoer som åpnes i Duck Player, begynner automatisk å spille av. Slå av dette hvis du vil starte avspilling av videoer åpnet i Duck Player manuelt.";
 
-/* Label for the auto-play toggle in Duck Player settings */
+/* Label for the autoplay toggle in Duck Player settings */
 "duckplayer.settings.autoplay.label" = "Automatisk avspilling av videoer";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Åpner videoer i en privat kinomodus som hindrer at det du ser på, har innflytelse på YouTube-feeden din.";
+"duckplayer.settings.enable-footer" = "Åpner videoer i en kinomodus som hindrer at det du ser på, påvirker YouTube-feeden din.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Aktiver Duck Player";
@@ -1824,6 +1983,8 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Bytter til denne fanen";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Sist brukte Fire-fane";
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Gå tilbake til %@";
 
@@ -2133,6 +2294,47 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Velg hva som skal slettes";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Logg inn på et nettsted med en annen konto";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Surf uten å lagre lokal historikk";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Feilsøk nettsteder";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire-faner er isolert fra andre nettleserdata. Dataene deres blir slettet når du lukker alle sammen. De gir deg samme sporingsbeskyttelse som andre faner.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Ny Fire-fane";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire-faner";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Ny";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Nyhet! Surf uten å lagre lokal historikk eller logg inn på nettsteder med en annen konto.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Ikke nå";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Prøv Fire-faner";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Prøv Fire-faner";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Prøv Fire-faner for å surfe uten å lagre lokal historikk.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Nyhet: Fire-faner";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire-fane";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luftstrøm";
 
@@ -2197,7 +2399,7 @@
 "import.passwords.promo.title" = "Importer passordene dine til DuckDuckGo";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Spør privat";
+"input.field.placeholder.duckai" = "Spør om hva som helst, privat";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Still et oppfølgingsspørsmål ...";
@@ -2255,6 +2457,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Søk eller skriv inn adresse";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Ny Fire-fane";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Ny fane";
@@ -2659,8 +2864,6 @@
 "No active subscriptions" = "Ingen aktive abonnementer";
 
 /* No comment provided by engineer. */
-
-/* No comment provided by engineer. */
 "No existing subscription found" = "Ingen eksisterende abonnementer er funnet";
 
 /* No comment provided by engineer. */
@@ -2702,8 +2905,8 @@
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
-/* No comment provided by engineer. */
-"On App Store builds, this screen will only show if you're signed in as an internal user via **use-login.duckduckgo.com**." = "På App Store-versjoner vises dette skjermbildet bare hvis du er logget på som en intern bruker via **use-login.duckduckgo.com**.";
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "Annonseblokkering på YouTube er på";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Den er grei";
@@ -2759,8 +2962,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Hopp over";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Heisann.\n\nKlar for en raskere nettleser som holder deg beskyttet?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Heisann.\n\nEr du klar for en raskere nettleser som beskytter deg og lar deg selv bestemme når og hvordan du skal bruke AI?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Neste";
@@ -2774,11 +2977,17 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Innstillinger > AI-funksjoner.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vil du ha enklere tilgang til privat AI-chat?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Bytt mellom\nSøk og Duck.ai";
 
-/* Button to continue the onboarding process */
-"onboarding.intro.cta" = "Sett i gang!";
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Bare søk";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vil du ha enkel tilgang til privat AI-chat i adresselinjen?";
+
+/* Button to continue the onboarding process. */
+"onboarding.intro.cta" = "Vi setter i gang!";
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Jeg har vært her før";
@@ -2805,7 +3014,7 @@
 "onboarding.rebranding.first-search-done.title" = "Det er DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Klar for en raskere nettleser som holder deg beskyttet?";
+"onboarding.rebranding.intro.message" = "Er du klar for en raskere nettleser som beskytter deg og lar deg selv bestemme når og hvordan du skal bruke AI?";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Heisann.";
@@ -2884,9 +3093,6 @@
 
 /* No comment provided by engineer. */
 "Opting Out..." = "Velger bort...";
-
-/* No comment provided by engineer. */
-"Override" = "Overstyre";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Får ikke tilgang til Duck.ai-modeller som må abonneres på";
@@ -3146,6 +3352,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skanner...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Vil du slette Fire-faner og dataene i dem?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Vil du slette faner og nettstedsdata?";
 
@@ -3275,12 +3483,6 @@
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Ny fane";
 
-/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_and_duckai" = "Søk og Duck.ai";
-
-/* Title for the 'Search Only' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_only" = "Bare søk";
-
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Prøv det nye alternativet der du kan veksle mellom søk og Duck.ai i adressefeltet.";
 
@@ -3344,12 +3546,6 @@
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Tilbakestill";
 
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Lukk faner og slett data";
-
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Fjern faner, data og Duck.ai-chatter";
-
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Lukk alle åpne faner";
 
@@ -3410,20 +3606,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Slett data automatisk";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Autoplay";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Duck Player-innstillinger";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Innstillingene for automatisk avspilling gjelder kun for nylig åpnede faner. Endringer kan ikke gjøres på eksisterende faner med mindre programmet startes på nytt. For å administrere automatisk avspilling i Duck Player kan du gå til ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Nettlesertilbakemelding";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button sletter også Duck.ai-historikken, inkludert festede chatter.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Fjern Duck.ai-chatter";
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Fjern nettleserdata";
-
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Slett data automatisk";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Fullfør oppsettet";
@@ -3443,12 +3642,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Tilpass";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Fjerner alle faner, Duck.ai-chatter og data for nettsteder du ikke har brukt Fireproof på.";
-
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Fjerner alle faner og data for nettsteder du ikke har brukt Fireproof på.";
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Sletting av data";
 
@@ -3458,10 +3651,21 @@
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardnettleser";
 
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
 /* Footer text explaining the toggle position setting in AI Features settings */
 "settings.default.omnibar.mode.footer" = "Standard bryterposisjon på nye faner.";
-/* Header text for the toggle position setting in AI Features settings */
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
 "settings.default.omnibar.mode.header" = "Bryterposisjon";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Sist brukt";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "Søk";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Slett Duck.ai-chatter";
 
@@ -3507,9 +3711,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Animasjon for brannknappen";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Brannsikre nettsteder";
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Nettsteder med Fireproof";
 
@@ -3551,6 +3752,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Administrer konto";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Media";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Mer fra DuckDuckGo";
@@ -4105,7 +4309,7 @@
 "sync.delete.all.confirm.action" = "Slett serverdata";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Alle enheter blir frakoblet og dine synkroniserte data blir slettet fra serveren.";
+"sync.delete.all.confirm.message" = "Sikkerhetskopien din blir slettet fra serveren. Alle enheter blir koblet fra synkronisering, men ingenting blir slettet fra noen enhet.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Vil du slette serverdata?";
@@ -4173,6 +4377,30 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Vil du fjerne enheten?";
 
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Koden er kopiert";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Enheten er synkronisert!";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup er aktivert";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Gjenopprettingskoden er kopiert";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Kunne ikke aktivere Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Slå av";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Bokmerkene og passordene dine på denne enheten blir ikke berørt.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Vil du slå av Sync & Backup?";
+
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Fjern";
 
@@ -4191,15 +4419,36 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Beklager, men synkronisering og sikkerhetskopiering er ikke lenger tilgjengelig i denne appversjonen. Oppdater DuckDuckGo til den nyeste versjonen for å fortsette.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Lukk fane";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Fane ulest";
+
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Lukk Fire-fane";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Lukk fane";
 /* Accessibility label on remove button */
 "tab.close.home" = "Lukk hjem-fane";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Lukk \"%1$@\" på %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire-fane";
+
+/* New tab title */
+"tab.new.title" = "Ny fane";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Åpne hjem-fane";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Åpne ny fane";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Åpne Fire-fane";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Åpne \"%1$@\" på %2$@";
 
@@ -4638,12 +4887,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hva vil du importere?";
 
-
-/* Autoplay settings translations */
-"autoplay.mode.allowAll" = "Tillat lyd og video";
-"autoplay.mode.blockAll" = "Blokker lyd og video";
-"autoplay.mode.blockAudio" = "Blokker lyd";
-"settings.autoplay" = "Autoplay";
-"settings.autoplay.duck.player.link" = "Duck Player-innstillinger";
-"settings.autoplay.footer" = "Innstillingene for automatisk avspilling gjelder kun for nylig åpnede faner. Endringer kan ikke gjøres på eksisterende faner med mindre programmet startes på nytt. For å administrere automatisk avspilling i Duck Player kan du gå til ";
-"settings.media.section" = "Media";

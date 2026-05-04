@@ -21,6 +21,7 @@ import Foundation
 import Persistence
 import PrivacyConfig
 import Common
+import Core
 
 public final class LaunchOptionsHandler {
 
@@ -44,7 +45,7 @@ public final class LaunchOptionsHandler {
         static let configRolloutPrefix = "config.rollout."
 
         /// Launch param format: experiment.<featureFlagRawValue>=<cohortID>
-        /// Example: -experiment.onboardingSearchExperience control
+        /// Example: -experiment.onboardingDuckAIQueryExperiment treatmentA
         static let experimentCohortPrefix = "experiment."
     }
 

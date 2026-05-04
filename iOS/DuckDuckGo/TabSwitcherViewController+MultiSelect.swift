@@ -91,7 +91,9 @@ extension TabSwitcherViewController {
                               duration: 0.3,
                               options: .transitionCrossDissolve, animations: {
                 self.refreshTitleViews()
-                self.collectionView.reloadData()
+                // Reload both pages so the inactive one also picks up the new cell type.
+                self.normalPageController.reloadData()
+                self.firePageController?.reloadData()
             }, completion: { _ in
                 self.isProcessingUpdates = false
             })
@@ -102,18 +104,13 @@ extension TabSwitcherViewController {
 
     func burn(sender: AnyObject) {
         func presentFireConfirmation() {
-            let presenter = FireConfirmationPresenter(tabsModel: tabsModel,
-                                                      featureFlagger: featureFlagger,
-                                                      historyManager: historyManager,
-                                                      fireproofing: fireproofing,
-                                                      aiChatSettings: aiChatSettings,
-                                                      keyValueFilesStore: keyValueStore)
+            let presenter = FireConfirmationPresenter()
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: sender,
                 tabViewModel: nil,
                 pixelSource: .tabSwitcher,
-                daxDialogsManager: daxDialogsManager,
+                fireContext: .default(daxDialogsManager: daxDialogsManager),
                 browsingMode: selectedBrowsingMode,
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAll(fireRequest)
@@ -122,24 +119,25 @@ extension TabSwitcherViewController {
             )
         }
 
-        Pixel.fire(pixel: .forgetAllPressedTabSwitching)
-        DailyPixel.fire(pixel: .forgetAllPressedTabSwitcherDaily)
+        let browsingModeParam = [PixelParameters.browsingMode: selectedBrowsingMode.pixelParamValue]
+        Pixel.fire(pixel: .forgetAllPressedTabSwitching, withAdditionalParameters: browsingModeParam)
+        DailyPixel.fire(pixel: .forgetAllPressedTabSwitcherDaily, withAdditionalParameters: browsingModeParam)
         ViewHighlighter.hideAll()
         presentFireConfirmation()
     }
 
     func transitionToMultiSelect() {
         self.isEditing = true
-        collectionView.reloadData()
+        pagingScrollView.isScrollEnabled = false
+        activePageController.enterEditingMode()
         updateUIForSelectionMode()
         refreshTitleViews()
     }
 
     func transitionFromMultiSelect(reloadCollectionView: Bool = true) {
         self.isEditing = false
-        if reloadCollectionView {
-            collectionView.reloadData()
-        }
+        pagingScrollView.isScrollEnabled = firePageController != nil
+        activePageController.exitEditingMode(reloadData: reloadCollectionView)
         updateUIForSelectionMode()
         refreshTitleViews()
     }
@@ -167,7 +165,7 @@ extension TabSwitcherViewController {
     }
 
     func closeSelectedTabs() {
-        self.closeTabs(withIndexPaths: collectionView.indexPathsForSelectedItems ?? [],
+        self.closeTabs(withIndexPaths: activePageController.selectedIndexPaths,
                        confirmTitle: UserText.alertTitleCloseSelectedTabs(withCount: selectedTabs.count),
                        confirmMessage: UserText.alertMessageCloseTabs(withCount: selectedTabs.count))
     }
@@ -186,7 +184,7 @@ extension TabSwitcherViewController {
                                       style: .destructive) { [weak self] _ in
             guard let self else { return }
             self.fireConfirmCloseTabsPixel()
-            self.deleteTabsAtIndexPaths(indexPaths)
+            self.activePageController.deleteTabsAtIndexPaths(indexPaths)
         })
 
         present(alert, animated: true)
@@ -200,7 +198,8 @@ extension TabSwitcherViewController {
     func deselectAllTabs() {
         Pixel.fire(pixel: .tabSwitcherDeselectAll)
         DailyPixel.fire(pixel: .tabSwitcherDeselectAllDaily)
-        collectionView.reloadData()
+        activePageController.deselectAll()
+        activePageController.reloadData()
         updateUIForSelectionMode()
         refreshTitleViews()
     }
@@ -208,10 +207,8 @@ extension TabSwitcherViewController {
     func selectAllTabs() {
         Pixel.fire(pixel: .tabSwitcherSelectAll)
         DailyPixel.fire(pixel: .tabSwitcherSelectAllDaily)
-        collectionView.reloadData()
-        tabsModel.tabs.indices.forEach {
-            collectionView.selectItem(at: IndexPath(row: $0, section: 0), animated: true, scrollPosition: [])
-        }
+        activePageController.reloadData()
+        activePageController.selectAll()
         updateUIForSelectionMode()
         refreshTitleViews()
     }
@@ -283,9 +280,9 @@ extension TabSwitcherViewController {
         barsHandler.update(state)
         barsHandler.configureButtonActions(tabsStyle: tabsStyle, canShowSelectionMenu: canShowSelectionMenu)
 
-        titleBarView.topItem?.titleView = isEditing ? nil : segmentedPickerHostingController?.view
-        titleBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
-        titleBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
+        titleBarView.setCenterView(isEditing ? nil : segmentedPickerHostingController?.view)
+        titleBarView.setLeadingButtons(barsHandler.topBarLeftButtons)
+        titleBarView.setTrailingButtons(barsHandler.topBarRightButtons)
         toolbar.items = barsHandler.bottomBarItems
         toolbar.isHidden = barsHandler.isBottomBarHidden
         collectionView.contentInset.bottom = barsHandler.isBottomBarHidden ? 0 : toolbar.frame.height
@@ -457,7 +454,7 @@ extension TabSwitcherViewController {
 
         if indexPaths.count == 1 {
             // No confirmation for a single tab
-            self.deleteTabsAtIndexPaths(indexPaths)
+            self.activePageController.deleteTabsAtIndexPaths(indexPaths)
             return
         }
         
@@ -467,7 +464,7 @@ extension TabSwitcherViewController {
         alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
         alert.addAction(title: UserText.closeTabs(withCount: indexPaths.count), style: .destructive) { [weak self] in
             guard let self else { return }
-            self.deleteTabsAtIndexPaths(indexPaths)
+            self.activePageController.deleteTabsAtIndexPaths(indexPaths)
         }
         present(alert, animated: true, completion: nil)
     }

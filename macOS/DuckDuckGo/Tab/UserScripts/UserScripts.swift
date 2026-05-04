@@ -19,6 +19,7 @@
 import AIChat
 import AppUpdaterShared
 import BrowserServicesKit
+import os.log
 import Foundation
 import HistoryView
 import Persistence
@@ -57,21 +58,31 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let subscriptionUserScript: SubscriptionUserScript?
     let historyViewUserScript: HistoryViewUserScript
     let serpSettingsUserScript: SERPSettingsUserScript?
+    let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let faviconScript = FaviconUserScript()
+    let webTelemetryScript = WebTelemetryUserScript()
+    let tabSuspensionScript = TabSuspensionUserScript()
 
     private let contentScopePreferences: ContentScopePreferences
 
     // swiftlint:disable:next cyclomatic_complexity
     init(with sourceProvider: ScriptSourceProviding,
          contentScopePreferences: ContentScopePreferences,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
         clickToLoadScript = ClickToLoadUserScript()
         contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
+        let isNativeStorageBridgeAvailable = sourceProvider.featureFlagger.isFeatureOn(.aiChatNativeStorage) && duckAiNativeStorageHandler != nil
+        let aiChatMessageHandler = AIChatMessageHandler(
+            featureFlagger: sourceProvider.featureFlagger,
+            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable
+        )
         let aiChatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
+            messageHandling: aiChatMessageHandler,
             windowControllersManager: sourceProvider.windowControllersManager,
             pixelFiring: PixelKit.shared,
             statisticsLoader: StatisticsLoader.shared,
@@ -90,6 +101,23 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
+
+        if isNativeStorageBridgeAvailable,
+           let duckAiNativeStorageHandler {
+            var originRules: [HostnameMatchingRule] = [
+                .exactOrSubdomain(hostname: "duck.ai"),
+            ]
+            if let customHostname = aiChatDebugURLSettings.customURLHostname {
+                originRules.append(.exact(hostname: customHostname))
+            }
+            duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
+                handler: duckAiNativeStorageHandler,
+                originRules: originRules,
+                pixelFiring: DuckAiNativeStoragePixelAdapter()
+            )
+        } else {
+            duckAiNativeStorageUserScript = nil
+        }
 
         let isGPCEnabled = sourceProvider.webTrackingProtectionPreferences.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig
@@ -168,7 +196,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             userScripts.append(autoconsentUserScript)
         }
 
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: tabSuspensionScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
@@ -192,6 +222,10 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
         if let serpSettingsUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
+        }
+
+        if let duckAiNativeStorageUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
         }
 
         if let specialPages = specialPages {

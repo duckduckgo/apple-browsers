@@ -44,16 +44,17 @@ public struct UserText {
     public static let actionDelete = NSLocalizedString("action.title.delete", value: "Delete", comment: "Delete action - button shown in alert")
     public static let actionBookmark = NSLocalizedString("action.title.bookmark", value: "Bookmark", comment: "Confirmation of Add to Bookmarks action in Add All Open Tabs to Bookmarks alert")
     public static let actionNewTab = NSLocalizedString("action.title.newTabAction", value: "New Tab", comment: "Create New Tab action")
+    public static let actionNewFireTab = NSLocalizedString("action.title.newFireTabAction", value: "New Fire Tab", comment: "Create New Fire Tab action")
     public static let actionNewTabForUrl = NSLocalizedString("action.title.newTabForUrl", value: "Open in New Tab", comment: "Open in New Tab action")
+    public static let actionNewFireTabForUrl = NSLocalizedString("action.title.newFireTabForUrl", value: "Open in Fire Tab", comment: "Open in New Fire Tab action")
     public static let actionNewBackgroundTabForUrl = NSLocalizedString("action.title.newBackgroundTabForUrl", value: "Open in Background", comment: "Open in New Background Tab action")
     public static let actionForgetAll = NSLocalizedString("action.title.forgetAll", value: "Clear Tabs and Data", comment: "")
-    public static let actionForgetAllWithAIChat = NSLocalizedString("action.title.forgetAllWithAIChat", value: "Clear Tabs, Data, and Duck.ai Chats", comment: "Fire button title when AI chat clearing is enabled")
     public static let actionForgetAllDone = NSLocalizedString("action.title.forgetAllDone", value: "Tabs and data cleared", comment: "Confirmation message")
 
     // MARK: Scoped Fire Confirmation
 
     public static let scopedFireConfirmationAlertTitle = NSLocalizedString("scoped.fire.confirmation.alert.title", value: "Delete tabs and site data?", comment: "Title for scoped fire confirmation dialog asking user to delete tabs and site data")
-    public static let scopedFireConfirmationAlertFireModeTitle = NotLocalizedString("scoped.fire.confirmation.alert.fireMode.title", value: "Delete Fire Tabs and their data?", comment: "Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data")
+    public static let scopedFireConfirmationAlertFireModeTitle = NSLocalizedString("scoped.fire.confirmation.alert.fireMode.title", value: "Delete Fire Tabs and their data?", comment: "Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data")
     public static let scopedFireConfirmationAlertTitleWithAIChat = NSLocalizedString("scoped.fire.confirmation.alert.title.with.aichat", value: "Delete tabs, site data, and chats?", comment: "Title for scoped fire confirmation dialog when AI chat clearing is enabled")
     public static let scopedFireConfirmationDeleteAllButton = NSLocalizedString("scoped.fire.confirmation.delete.all.button", value: "Delete All", comment: "Button to delete all tabs and data in scoped fire confirmation dialog")
     public static let scopedFireConfirmationDeleteThisTabButton = NSLocalizedString("scoped.fire.confirmation.delete.this.tab.button", value: "Delete This Tab", comment: "Button to delete only the current tab in scoped fire confirmation dialog")
@@ -73,21 +74,41 @@ public struct UserText {
 
     // MARK: Fire Mode Empty State
 
-    public static let fireModeEmptyStateTitle = NotLocalizedString("fire.mode.empty.state.title", value: "Fire Tabs", comment: "Title shown on the Fire Mode empty state screen")
-    public static let fireTabEmptyStateTitle = NotLocalizedString("fire.tab.empty.state.title", value: "Fire Tab", comment: "Title shown on the Fire tab empty state screen")
-    public static let fireModeEmptyStateBulletHistory = NotLocalizedString("fire.mode.empty.state.bullet.history", value: "Browse without saving local history", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
-    public static let fireModeEmptyStateBulletAccount = NotLocalizedString("fire.mode.empty.state.bullet.account", value: "Sign in to a site with a different account", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
-    public static let fireModeEmptyStateBulletTroubleshoot = NotLocalizedString("fire.mode.empty.state.bullet.troubleshoot", value: "Troubleshoot websites", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
-    public static let fireModeEmptyStateDescription = NotLocalizedString("fire.mode.empty.state.description", value: "Fire Tabs are isolated from other browser data, and their data is burned when you close them all. They have the same tracking protection as other tabs.", comment: "Description explaining how Fire Tabs work on the empty state screen")
-    public static let fireModeEmptyStateNewFireTab = NotLocalizedString("fire.mode.empty.state.new.fire.tab", value: "New Fire Tab", comment: "Button label to create a new Fire Tab on the empty state screen")
-    
+    public static let fireModeEmptyStateTitle = NSLocalizedString("fire.mode.empty.state.title", value: "Fire Tabs", comment: "Title shown on the Fire Mode empty state screen")
+    public static let fireTabEmptyStateTitle = NSLocalizedString("fire.tab.empty.state.title", value: "Fire Tab", comment: "Title shown on the Fire tab empty state screen")
+    public static let fireModeEmptyStateBulletHistory = NSLocalizedString("fire.mode.empty.state.bullet.history", value: "Browse without saving local history", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
+    public static let fireModeEmptyStateBulletAccount = NSLocalizedString("fire.mode.empty.state.bullet.account", value: "Sign in to a site with a different account", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
+    public static let fireModeEmptyStateBulletTroubleshoot = NSLocalizedString("fire.mode.empty.state.bullet.troubleshoot", value: "Troubleshoot websites", comment: "Bullet point describing Fire Tab benefit on the empty state screen")
+    public static let fireModeEmptyStateDescription = NSLocalizedString("fire.mode.empty.state.description", value: "Fire Tabs are isolated from other browser data. Their data is burned when you close them all. They give you the same tracking protection as other tabs.", comment: "Description explaining how Fire Tabs work on the empty state screen")
+    public static let fireModeEmptyStateNewFireTab = NSLocalizedString("fire.mode.empty.state.new.fire.tab", value: "New Fire Tab", comment: "Button label to create a new Fire Tab on the empty state screen")
+
+    // MARK: Fire Mode NTP Promotion
+
+    public static let fireModePromotionTitle = NSLocalizedString("fire.mode.promotion.title", value: "Try Fire Tabs", comment: "Title for promotion element for pushing users to try fire mode.")
+    public static let fireModeNTPPromotionDescription = NSLocalizedString("fire.mode.ntp.promotion.description", value: "New! Browse without saving local history or sign in to sites with a different account.", comment: "Description for the Fire Mode promotion card shown on the new tab page")
+    public static let fireModeNTPPromotionPrimaryAction = NSLocalizedString("fire.mode.ntp.promotion.primary.action", value: "Try Fire Tabs", comment: "Primary action button on the Fire Mode promotion card that opens Fire Mode")
+    public static let fireModeNTPPromotionDismiss = NSLocalizedString("fire.mode.ntp.promotion.dismiss", value: "Not Now", comment: "Dismiss button on the Fire Mode promotion card on the new tab page")
+
+    // MARK: Fire Mode Tab Switcher Tip
+
+    public static let fireModeTabSwitcherTipTitle = NSLocalizedString("fire.mode.tab.switcher.tip.title", value: "New: Fire Tabs", comment: "Title for the Fire Tabs popover tip shown on the tab switcher picker")
+    public static let fireModeTabSwitcherTipDescription = NSLocalizedString("fire.mode.tab.switcher.tip.description", value: "Try Fire Tabs to browse without saving local history.", comment: "Description for the Fire Tabs popover tip shown on the tab switcher picker")
+
+    // MARK: Fire Mode Menu Promotion
+
+    public static let fireModeMenuPromotionBadge = NSLocalizedString("fire.mode.menu.promotion.badge", value: "New", comment: "Badge label on the Fire Mode promotion entry in the browsing menu")
+
     // MARK: - Tab Switcher Fire Mode
-    public static let openNewTab = NotLocalizedString("tab.open.new", value: "Open new tab", comment: "Accessibility label on tab cell")
-    public static let openNewFireTab = NotLocalizedString("tab.open.newFireTab", value: "Open fire tab", comment: "Accessibility label on tab cell")
-    public static let closeFireTab = NotLocalizedString("tab.close.closeFireTab", value: "Close fire tab", comment: "Accessibility label on tab cell")
-    public static let closeNewTab = NotLocalizedString("tab.close.closeNewTab", value: "Close tab", comment: "Accessibility label on tab cell")
-    public static let newTabTitle = NotLocalizedString("tab.new.title", value: "New Tab", comment: "New tab title")
-    public static let fireTabTitle = NotLocalizedString("tab.fire.title", value: "Fire Tab", comment: "Fire tab title")
+    public static let openNewTab = NSLocalizedString("tab.open.new", value: "Open new tab", comment: "Accessibility label on tab cell")
+    public static let openNewFireTab = NSLocalizedString("tab.open.newFireTab", value: "Open fire tab", comment: "Accessibility label on tab cell")
+    public static let closeFireTab = NSLocalizedString("tab.close.closeFireTab", value: "Close fire tab", comment: "Accessibility label on tab cell")
+    public static let closeNewTab = NSLocalizedString("tab.close.closeNewTab", value: "Close tab", comment: "Accessibility label on tab cell")
+
+    // MARK: - Tab Cell Accessibility
+    public static let tabCellCloseButtonAccessibility = NSLocalizedString("tab.cell.closeButton.accessibility", value: "Close Tab", comment: "Accessibility label for the close button on a tab cell")
+    public static let tabCellUnreadAccessibility = NSLocalizedString("tab.cell.unread.accessibility", value: "Tab Unread", comment: "Accessibility label for the unread indicator on a tab cell")
+    public static let newTabTitle = NSLocalizedString("tab.new.title", value: "New Tab", comment: "New tab title")
+    public static let fireTabTitle = NSLocalizedString("tab.fire.title", value: "Fire Tab", comment: "Fire tab title")
 
     public static let actionOpen = NSLocalizedString("action.title.open", value: "Open", comment: "Open action")
     public static let actionCopy = NSLocalizedString("action.title.copy", value: "Copy", comment: "Copy action")
@@ -233,6 +254,7 @@ public struct UserText {
 
     public static let keyCommandShowAllTabs = NSLocalizedString("keyCommandShowAllTabs", value: "Show All Tabs", comment: "")
     public static let keyCommandNewTab = NSLocalizedString("keyCommandNewTab", value: "New Tab", comment: "")
+    public static let keyCommandNewFireTab = NSLocalizedString("keyCommandNewFireTab", value: "New Fire Tab", comment: "Discoverability title for the keyboard command that opens a new Fire Tab")
     public static let keyCommandCloseTab = NSLocalizedString("keyCommandCloseTab", value: "Close Tab", comment: "")
     public static let keyCommandNextTab = NSLocalizedString("keyCommandNextTab", value: "Next Tab", comment: "")
     public static let keyCommandPreviousTab = NSLocalizedString("keyCommandPreviousTab", value: "Previous Tab", comment: "")
@@ -580,6 +602,8 @@ public struct UserText {
     public static let autofillOnboardingKeyFeaturesSyncTitle = NSLocalizedString("autofill.onboarding.key-features.sync.title", value: "Sync between devices", comment: "Title of autofill onboarding prompt's sync feature")
     public static let autofillOnboardingKeyFeaturesSyncDescription = NSLocalizedString("autofill.onboarding.key-features.sync.description", value: "End-to-end encrypted and easy to set up when you’re ready.", comment: "Description of autofill onboarding prompt's sync feature")
     public static let autofillSaveLoginNoThanksCTA = NSLocalizedString("autofill.save-login.no-thanks.CTA", value: "No Thanks", comment: "CTA displayed on modal asking if the user wants to dismiss the save login action for now")
+
+    public static let autofillSaveLoginNotNowCTA = NSLocalizedString("autofill.save-login.not-now.CTA", value: "Not Now", comment: "CTA displayed on modal allowing the user to dismiss the save login prompt for now")
 
     public static let autofillSavePasswordSaveCTA = NSLocalizedString("autofill.save-password.save.CTA", value: "Save Password", comment: "Confirm CTA displayed on modal asking for the user to save the password")
     public static let autofillUpdatePasswordSaveCTA = NSLocalizedString("autofill.update-password.save.CTA", value: "Update Password", comment: "Confirm CTA displayed on modal asking for the user to update the password")
@@ -1204,14 +1228,17 @@ public struct UserText {
 
         return String.localizedStringWithFormat(omnibarNotificationTrackersBlockedFormat, count)
     }
+
+    public static let omnibarNotificationYouTubeAdBlockOn = NSLocalizedString("omnibar.notification.youtube-ad-block-on", value: "YouTube Ad Block On", comment: "Text displayed on notification appearing in the address bar when YouTube ad blocking is active")
+
     // MARK: Sync
 
     public static let syncUserUserAuthenticationReason = NSLocalizedString("sync.user.auth.reason", value: "Unlock device to set up Sync & Backup", comment: "Reason for auth when setting up Sync")
     public static let syncTurnOffConfirmTitle = NSLocalizedString("sync.turn.off.confirm.title", value: "Turn Off Sync?", comment: "Title of the dialog to confirm turning off Sync")
     public static let syncTurnOffConfirmMessage = NSLocalizedString("sync.turn.off.confirm.message", value: "This Device will no longer be able to access your synced data.", comment: "Message for the dialog to confirm turning off Sync")
     public static let syncTurnOffConfirmAction = NSLocalizedString("sync.turn.off.confirm.action", value: "Remove", comment: "Caption for a button to remove current device from Sync")
-    public static let syncDeleteAllConfirmTitle = NSLocalizedString("sync.delete.all.confirm.title", value: "Delete Server Data?", comment: "Title of the dialog to confirm deleting Sync server data")
-    public static let syncDeleteAllConfirmMessage = NSLocalizedString("sync.delete.all.confirm.message", value: "All devices will be disconnected and your synced data will be deleted from the server.", comment: "Message for the dialog to confirm deleting Sync server data")
+    public static let syncDeleteAllConfirmTitle = NSLocalizedString("sync.delete.all.confirm.title", value: "Delete server data?", comment: "Title of the dialog to confirm deleting Sync server data")
+    public static let syncDeleteAllConfirmMessage = NSLocalizedString("sync.delete.all.confirm.message", value: "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device.", comment: "Message for the dialog to confirm deleting Sync server data")
     public static let syncDeleteAllConfirmAction = NSLocalizedString("sync.delete.all.confirm.action", value: "Delete Server Data", comment: "Caption for a button to delete Sync server data")
     public static let syncRemoveDeviceTitle = NSLocalizedString("sync.remove-device.title", value: "Remove Device?", comment: "Title of the dialog to remove device from Sync")
     public static func syncRemoveDeviceMessage(_ deviceName: String) -> String {
@@ -1221,11 +1248,15 @@ public struct UserText {
     public static let syncRemoveDeviceConfirmAction = NSLocalizedString("sync.remove-device.action", value: "Remove", comment: "Caption for a button to remove device from Sync")
     public static let syncCodeCopied = NSLocalizedString("sync.code.copied", value: "Recovery code copied to clipboard", comment: "Message confirming that recovery code was copied to clipboard")
 
-    // Simplified Sync (not yet localized)
-    public static let simplifiedSyncEnabledToast = NotLocalizedString("sync.simplified.enabled.toast", value: "Sync & Backup enabled", comment: "Toast message shown after sync is successfully enabled")
-    public static let simplifiedSyncTurnOffTitle = NotLocalizedString("sync.simplified.turn.off.title", value: "Turn Off Sync & Backup?", comment: "Alert title when turning off sync")
-    public static let simplifiedSyncTurnOffMessage = NotLocalizedString("sync.simplified.turn.off.message", value: "Your bookmarks and passwords on this device won't be affected.", comment: "Alert message when turning off sync")
-    public static let simplifiedSyncTurnOffAction = NotLocalizedString("sync.simplified.turn.off.action", value: "Turn Off", comment: "Alert button to confirm turning off sync")
+    // Simplified Sync
+    public static let simplifiedSyncEnabledToast = NSLocalizedString("sync.simplified.enabled.toast", value: "Sync & Backup enabled", comment: "Toast message shown after sync is successfully enabled")
+    public static let simplifiedDeviceSyncedSuccessfullyToast = NSLocalizedString("sync.simplified.device-synced.toast", value: "Device synced successfully!", comment: "Toast message shown after sync is enabled by connecting with another device")
+    public static let simplifiedSyncTurnOffTitle = NSLocalizedString("sync.simplified.turn.off.title", value: "Turn Off Sync & Backup?", comment: "Alert title when turning off sync")
+    public static let simplifiedSyncTurnOffMessage = NSLocalizedString("sync.simplified.turn.off.message", value: "Your bookmarks and passwords on this device won't be affected.", comment: "Alert message when turning off sync")
+    public static let simplifiedSyncTurnOffAction = NSLocalizedString("sync.simplified.turn.off.action", value: "Turn Off", comment: "Alert button to confirm turning off sync")
+    public static let simplifiedCodeCopiedToast = NSLocalizedString("sync.simplified.code.copied.toast", value: "Code copied", comment: "Toast message shown after copying sync code to clipboard")
+    public static let simplifiedRecoveryCodeCopiedToast = NSLocalizedString("sync.simplified.recovery.code.copied.toast", value: "Recovery code copied", comment: "Toast message shown after copying recovery code to clipboard from settings")
+    public static let simplifiedSyncSetupFailedToast = NSLocalizedString("sync.simplified.setup.failed.toast", value: "Couldn't enable Sync & Backup", comment: "Toast message shown when sync setup fails")
 
     // MARK: Sync Errors
     static let syncLimitExceededTitle = NSLocalizedString("prefrences.sync.limit-exceeded-title", value: "Sync Paused", comment: "Title for sync limits exceeded warning")
@@ -1530,19 +1561,14 @@ public struct UserText {
     public static let settingsGPC = NSLocalizedString("settings.gpc", value: "Global Privacy Control (GPC)", comment: "Settings screen cell text for GPC")
     public static let settingsCookiePopups = NSLocalizedString("settings.cookie.popups", value: "Manage Cookie Pop-ups", comment: "Settings screen cell text for Cookie popups")
     public static let settingsUnprotectedSites = NSLocalizedString("settings.unprotected.sites", value: "Unprotected Sites", comment: "Settings screen cell text for Unprotected Sites")
-    public static let settingsFireproofSites = NSLocalizedString("settings.fireproof.sites", value: "Fireproof Sites", comment: "Settings screen cell text for Fireproof Sites")
     public static let settingsFireproofedSites = NSLocalizedString("settings.fireproofed.sites", value: "Fireproofed Sites", comment: "Settings screen cell text for Fireproofed Sites")
     public static func settingsFireproofedSitesSubtitle(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "settings.fireproofed.sites.subtitle", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
     }
-    public static let settingsClearData = NSLocalizedString("settings.clear.data", value: "Automatically Clear Data", comment: "Settings screen cell text for Automatically Clearing Data")
     public static let settingsAutomaticDataClearing = NSLocalizedString("settings.automatic.data.clearing.title", value: "Automatic Data Clearing", comment: "Settings row title for automatic data clearing")
     public static let settingsDataClearingDescription = NSLocalizedString("settings.data.clearing.description", value: "Deleting your data can help protect your privacy online. Use the Fire Button to clear data manually, or set up automatic clearing.", comment: "Data Clearing settings header description")
     public static let settingsClearBrowsingData = NSLocalizedString("settings.clear.browsing.data", value: "Clear Browsing Data", comment: "Button to clear browsing data")
-    public static let settingsAutoClearTabsAndData = NSLocalizedString("settings.autoclear.tabs.and.data", value: "Clear Tabs and Data", comment: "Autoclear action option to clear tabs and data")
-    public static let settingsAutoClearTabsAndDataWithAIChat = NSLocalizedString("settings.autoclear.tabs.and.data.with.aichat", value: "Clear Tabs, Data, and Duck.ai Chats", comment: "Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled")
-    public static let settingsClearAIChatHistory = NSLocalizedString("settings.clear.aichat.history.title", value: "Clear Duck.ai Chats", comment: "Settings screen cell text for clearing AI chat history")
     public static let settingsClearAIChatHistoryFooter = NSLocalizedString("settings.clear.aichat.history.footer", value: "Fire Button will also delete Duck.ai history, including pinned chats.", comment: "Settings screen footer text explaining that Fire Button also clears AI chat history")
 
     // MARK: - Auto Clear Settings
@@ -1589,9 +1615,7 @@ public struct UserText {
     public static let escapeHatchReturnToAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.accessibility.label", value: "Return to %@", comment: "Accessibility label for escape hatch card; %@ is the tab title")
     public static let escapeHatchReturnToWithSubtitleAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.withSubtitle.accessibility.label", value: "Return to %@, %@", comment: "Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain")
     public static let escapeHatchAccessibilityHint = NSLocalizedString("escapeHatch.accessibility.hint", value: "Switches to this tab", comment: "Accessibility hint for the escape hatch card")
-
-    public static let settingsDataClearingForgetAllFootnote = NSLocalizedString("settings.data.clear.forget.all.footnote", value: "Clears all tabs and data for any sites you haven't fireproofed.", comment: "Clear data button explanation")
-    public static let settingsDataClearingForgetAllWithAiChatFootnote = NSLocalizedString("settings.data.clear.forget.all.duck.ai.footnote", value: "Clears all tabs, Duck.ai chats, and data for any sites you haven't fireproofed.", comment: "Clear data button explanation")
+    public static let escapeHatchFireTabTitle = NSLocalizedString("escapeHatch.fireTab.title", value: "Last used Fire Tab", comment: "Title shown on the escape hatch card when the target is a fire tab")
 
     // Subscription Section
     public static let settingsSubscriptionSection = NSLocalizedString("settings.subscription.Section", value: "DuckDuckGo Subscription", comment: "Product name for the subscription bundle")
@@ -1922,8 +1946,6 @@ public struct UserText {
     static let winBackCampaignSubscriptionSettingsMenuExistingSubscriptionButton = NSLocalizedString("win-back.campaign.subscription.settings.menu.existing.subscription.button", value: "I Have a Subscription", comment: "Button for using existing subscription during the win-back campaign")
 
     // Autocomplete
-    public static let autocompleteHistoryWarningTitle = NSLocalizedString("autocomplete.history.warning.title", value: "Same privacy.\nBetter search suggestions!", comment: "Title for message show in suggestions")
-    public static let autocompleteHistoryWarningDescription = NSLocalizedString("autocomplete.history.warning.message", value: "Search suggestions now include your recently visited sites. Turn off in Settings, or clear anytime with the 🔥 Fire Button.", comment: "The message text shown in suggestions")
     public static let autocompleteSearchDuckDuckGo = NSLocalizedString("autocomplete.history.search.duckduckgo", value: "Search DuckDuckGo", comment: "Subtitle for search history items")
     public static let autocompleteSwitchToTab = NSLocalizedString("autocomplete.switch.to.tab", value: "Switch to Tab", comment: "Switch to tab hint")
 
@@ -1950,7 +1972,7 @@ public struct UserText {
     public static let duckPlayerAskLabel = NSLocalizedString("duckPlayer.ask.label", value: "Ask every time", comment: "Text displayed when DuckPlayer is in 'Ask' mode.")
     public static let duckPlayerDisabledLabel = NSLocalizedString("duckPlayer.never.label", value: "Never", comment: "Text displayed when DuckPlayer is in off.")
     public static let duckPlayerEnableToggle = NSLocalizedString("duckplayer.settings.enable-toggle", value: "Enable Duck Player", comment: "Toggle to enable Duck Player")
-    public static let duckPlayerEnableFooter = NSLocalizedString("duckplayer.settings.enable-footer", value: "Opens videos in a private theatre mode that prevents what you watch from influencing your YouTube feed.", comment: "Footer text for Enable Duck Player toggle")
+    public static let duckPlayerEnableFooter = NSLocalizedString("duckplayer.settings.enable-footer", value: "Opens videos in theater mode that prevents what you watch from influencing your YouTube feed.", comment: "Footer text for Enable Duck Player toggle")
     public static let duckPlayerAlwaysOpenToggle = NSLocalizedString("duckplayer.settings.always-open-toggle", value: "Always open YouTube videos in Duck Player", comment: "Toggle to always open videos in Duck Player")
     public static let duckPlayerExplanation = NSLocalizedString("duckplayer.settings.explanation", value: "Duck Player lets you watch YouTube without targeted ads and prevents viewing activity from influencing your recommendations.", comment: "Explanation footer for Duck Player settings")
     public static let settingsOpenVideosInDuckPlayerLabel = NSLocalizedString("duckplayer.settings.open-videos-in", value: "Open YouTube Videos in Duck Player", comment: "Settings screen cell text for DuckPlayer settings")
@@ -2025,8 +2047,21 @@ public struct UserText {
     // MARK: - AI Chat
     public static let aiChatToolbarSearchButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.search.button.accessibility.label", value: "Search web", comment: "Accessibility label for the search/globe button in the Duck.ai native input toolbar")
     public static let aiChatToolbarCustomizeResponsesButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.customizeResponses.button.accessibility.label", value: "Customize Responses", comment: "Accessibility label for the customize responses button in the Duck.ai native input toolbar")
+    public static let aiChatToolbarCustomizeResponsesMenuTitle = NSLocalizedString("aichat.toolbar.tools.customizeResponses.title", value: "Customize Responses", comment: "Title for the customize responses action in the unified input tools menu")
+    public static let aiChatToolbarToolsButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.tools.button.accessibility.label", value: "Tools", comment: "Accessibility label for the tools button in the unified input toolbar")
+    public static let aiChatToolbarClearSelectedToolAccessibilityLabel = NotLocalizedString("aichat.toolbar.tools.clear.button.accessibility.label", value: "Clear selected tool", comment: "Accessibility label for the button that clears the selected Duck.ai tool in unified input")
     public static let aiChatToolbarAttachButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.attach.button.accessibility.label", value: "Attach image", comment: "Accessibility label for the image/attach button in the Duck.ai native input toolbar")
     public static let aiChatToolbarSubmitButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.submit.button.accessibility.label", value: "Submit", comment: "Accessibility label for the submit button in the Duck.ai native input toolbar")
+    public static let aiChatToolbarStopGeneratingButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.stop.button.accessibility.label", value: "Stop generating", comment: "Accessibility label for the stop generating button in the Duck.ai native input toolbar")
+    public static let aiChatToolbarWebSearchToolTitle = NSLocalizedString("aichat.toolbar.tools.websearch.title", value: "Web Search", comment: "Title for the web search tool in the unified input tools menu")
+    public static let aiChatToolbarWebSearchToolSubtitle = NSLocalizedString("aichat.toolbar.tools.websearch.subtitle", value: "Find current information", comment: "Subtitle for the web search tool in the unified input tools menu")
+    public static let aiChatToolbarReasoningButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.reasoning.button.accessibility.label", value: "Reasoning mode", comment: "Accessibility label for the reasoning mode button in the Duck.ai native input toolbar")
+    public static let aiChatReasoningModeFastTitle = NSLocalizedString("aichat.reasoning.fast.title", value: "Fast", comment: "Title for the fast reasoning mode in the Duck.ai reasoning picker")
+    public static let aiChatReasoningModeFastSubtitle = NSLocalizedString("aichat.reasoning.fast.subtitle", value: "Answers quickly", comment: "Subtitle for the fast reasoning mode in the Duck.ai reasoning picker")
+    public static let aiChatReasoningModeReasoningTitle = NSLocalizedString("aichat.reasoning.reasoning.title", value: "Reasoning", comment: "Title for the reasoning mode in the Duck.ai reasoning picker")
+    public static let aiChatReasoningModeReasoningSubtitle = NSLocalizedString("aichat.reasoning.reasoning.subtitle", value: "For complex tasks", comment: "Subtitle for the reasoning mode in the Duck.ai reasoning picker")
+    public static let aiChatReasoningModeExtendedTitle = NSLocalizedString("aichat.reasoning.extended.title", value: "Extended Reasoning", comment: "Title for the extended reasoning mode in the Duck.ai reasoning picker")
+    public static let aiChatReasoningModeExtendedSubtitle = NSLocalizedString("aichat.reasoning.extended.subtitle", value: "For analytical tasks", comment: "Subtitle for the extended reasoning mode in the Duck.ai reasoning picker")
 
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")
@@ -2133,19 +2168,24 @@ public struct UserText {
     
     public static let aiChatSettingsAllowFollowUpQuestionsDescription = NSLocalizedString("duckai.settings.allowFollowUpQuestions.section.description", value: "Show Duck.ai buttons and links in DuckDuckGo search results.", comment: "Description text explaining what the 'Ask Follow-up Questions' toggle does")
 
-    public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask privately", comment: "Placeholder text for the duck.ai input field")
+    public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask anything privately", comment: "Placeholder text for the duck.ai input field")
 
     public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Ask a follow-up question...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
 
     // MARK: - AI Chat Welcome Message
-    public static let aiChatWelcomeAskAnything = NotLocalizedString("duckai.welcome.ask.anything", value: "Ask Anything ", comment: "First part of the welcome message in Duck.ai contextual sheet, before the shield icon")
-    public static let aiChatWelcomePrivately = NotLocalizedString("duckai.welcome.privately", value: " privately", comment: "Second part of the welcome message in Duck.ai contextual sheet, after the shield icon, shown in green")
+    public static let aiChatWelcomeMessage = NSLocalizedString("duckai.welcome.message", value: "All chats are %@ private", comment: "Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green.")
+    public static let aiChatWelcomePrivateWord = NSLocalizedString("duckai.welcome.private.word", value: "private", comment: "The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message.")
 
     // MARK: - AI Chat Quick Actions
-    public static let aiChatQuickActionAskAboutPage = NotLocalizedString("duckai.quick.action.ask.about.page", value: "Ask about page", comment: "Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content.")
+    public static let aiChatQuickActionAskAboutPage = NSLocalizedString("duckai.quick.action.ask.about.page", value: "Ask about page", comment: "Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content.")
     public static let aiChatQuickActionSummarize = NSLocalizedString("duckai.quick.action.summarize", value: "Summarize This Page", comment: "Title for the summarize quick action chip in Duck.ai contextual sheet")
-    public static let aiChatQuickActionSummarizePage = NotLocalizedString("duckai.quick.action.summarize.page", value: "Summarize Page", comment: "Title for the summarize page quick action chip in the improved Duck.ai contextual sheet")
+    public static let aiChatQuickActionSummarizePage = NSLocalizedString("duckai.quick.action.summarize.page", value: "Summarize page", comment: "Title for the summarize page quick action chip in the improved Duck.ai contextual sheet")
     public static let aiChatQuickActionAttach = NSLocalizedString("duckai.quick.action.attach", value: "Attach Page Content", comment: "Title for the attach page content quick action chip in Duck.ai contextual sheet")
+
+    // MARK: - AI Chat Recent Chats Popup
+    public static let aiChatRecentChatsButtonAccessibility = NSLocalizedString("duckai.contextual.recent.chats.button", value: "Recent Chats", comment: "Accessibility label for the recent chats button in the Duck.ai contextual sheet header")
+    public static let aiChatRecentChatsSectionTitle = NSLocalizedString("duckai.contextual.recent.chats.section", value: "Recent Chats", comment: "Section header in the recent chats popup")
+    public static let aiChatViewAllChats = NSLocalizedString("duckai.contextual.view.all.chats", value: "View all chats", comment: "Action to view all chats in the recent chats popup")
 
     // MARK: - AI Chat Context Chip
     public static let aiChatAttachPageContent = NSLocalizedString("duckai.attach.page.content", value: "Attach Page Content", comment: "Menu option to attach current page content to Duck.ai chat")
@@ -2158,9 +2198,6 @@ public struct UserText {
         comment: "Footer under the AI picker, descriptive sentence without link"
     )
 
-    // MARK: - AI Features Picker
-    public static let settingsAIPickerSearchOnly = NSLocalizedString("settings.ai.experimental.picker.search_only", value: "Search Only", comment: "Title for the 'Search Only' option in the AI experimental picker")
-
     // MARK: - New Address Bar Picker
     public static let newAddressBarPickerTitle = NSLocalizedString("new.address.bar.picker.title", value: "Address bar option", comment: "Title for the new address bar picker modal")
     public static let newAddressBarPickerHeadline = NSLocalizedString("new.address.bar.picker.subheadline.private", value: "Want easier access to private AI chat?", comment: "Headline for the new address bar picker modal")
@@ -2169,7 +2206,6 @@ public struct UserText {
     public static let newAddressBarPickerConfirm = NSLocalizedString("new.address.bar.picker.confirm", value: "Confirm", comment: "Confirm button for the new address bar picker")
     public static let newAddressBarPickerNotNow = NSLocalizedString("new.address.bar.picker.not.now", value: "Not Now", comment: "Not now button for the new address bar picker")
     public static let newAddressBarPickerFooter = NSLocalizedString("new.address.bar.picker.footer", value: "Adjust in Settings > AI Features", comment: "Footer text for the new address bar picker")
-    public static let settingsAIPickerSearchAndDuckAI = NSLocalizedString("settings.ai.experimental.picker.search_and_duckai", value: "Search & Duck.ai", comment: "Title for the 'Search & Duck.ai' option in the AI experimental picker")
 
     // MARK: - Default Omnibar Mode Setting
     public static let settingsDefaultOmnibarModeHeader = NSLocalizedString("settings.default.omnibar.mode.header", value: "Toggle Position", comment: "Label for the default omnibar toggle position picker in AI Features settings")
@@ -2196,32 +2232,15 @@ public struct UserText {
                 public static var title: String {
                     NSLocalizedString("onboarding.rebranding.intro.title", value: "Hi there.", comment: "The title of the onboarding intro")
                 }
-                public static var message: String {
-                    if Locale.current.isEnglishLanguage {
-                        NotLocalizedString("onboarding.rebranding.intro.message.english-only", value: "Ready for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The message of the onboarding dialog popup")
-                    } else {
-                        NSLocalizedString("onboarding.rebranding.intro.message", value: "Ready for a faster browser that keeps you protected?", comment: "The message of the onboarding dialog popup")
-                    }
-                }
+                public static let message = NSLocalizedString("onboarding.rebranding.intro.message", value: "Ready for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The message of the onboarding dialog popup")
             }
         }
 
         public enum Intro {
-            public static var title: String {
-                if Locale.current.isEnglishLanguage {
-                    NotLocalizedString("onboarding.highlights.intro.title.english-only", value: "Hi there.\n\nReady for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The title of the onboarding dialog popup for English-language copy update")
-                } else {
-                    NSLocalizedString("onboarding.highlights.intro.title", value: "Hi there.\n\nReady for a faster browser that keeps you protected?", comment: "The title of the onboarding dialog popup")
-                }
-            }
+            public static let title = NSLocalizedString("onboarding.highlights.intro.title", value: "Hi there.\n\nReady for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The title of the onboarding dialog popup.")
 
-            public static var continueCTA: String {
-                if Locale.current.isEnglishLanguage {
-                    NotLocalizedString("onboarding.intro.cta.english-only", value: "Let’s get started!", comment: "Button to continue the onboarding process for English-language copy update")
-                } else {
-                    NSLocalizedString("onboarding.intro.cta", value: "Let’s do it!", comment: "Button to continue the onboarding process")
-                }
-            }
+            public static let continueCTA = NSLocalizedString("onboarding.intro.cta", value: "Let’s get started!", comment: "Button to continue the onboarding process.")
+
             public static let skipCTA = NSLocalizedString("onboarding.intro.cta.skip", value: "I’ve been here before", comment: "Button to skip the onboarding process")
 
             enum Debug {
@@ -2265,47 +2284,26 @@ public struct UserText {
         }
 
         enum SearchExperience {
-            public static var title: String {
-                if Locale.current.isEnglishLanguage {
-                    NotLocalizedString(
-                        "onboarding.highlights.searchExperience.title.english-only",
-                        value: "Want easy access to private AI chat in the address bar?",
-                        comment: "The title of the onboarding dialog popup to select the preferred search experience for English-language copy update."
-                    )
-                } else {
-                    NSLocalizedString(
-                        "onboarding.highlights.searchExperience.title",
-                        value: "Want easy access to private AI chat?",
-                        comment: "The title of the onboarding dialog popup to select the preferred search experience."
-                    )
-                }
-            }
+            public static let title = NSLocalizedString(
+                "onboarding.highlights.searchExperience.title",
+                value: "Want easy access to private AI chat in the address bar?",
+                comment: "The title of the onboarding dialog popup to select the preferred search experience."
+            )
+
             public static let footer = NSLocalizedString("onboarding.highlights.searchExperience.footer", value: "AI features are private and optional. You can make changes in Settings > AI Features.", comment: "The footer disclaimer text for the search experience onboarding screen.")
             public static let cta = NSLocalizedString("onboarding.highlights.searchExperience.cta", value: "Next", comment: "The title of the CTA to progress to the next onboarding screen.")
 
-            public static var searchOnlyOption: String {
-                if Locale.current.isEnglishLanguage {
-                    NotLocalizedString(
-                        "onboarding.highlights.searchExperience.searchOnly.english-only",
-                        value: "Search only",
-                        comment: "Title for the search-only option in onboarding picker for English-language copy update."
-                    )
-                } else {
-                    UserText.settingsAIPickerSearchOnly
-                }
-            }
+            public static let searchOnlyOption = NSLocalizedString(
+                "onboarding.highlights.searchExperience.searchOnly",
+                value: "Search only",
+                comment: "Title for the search-only option in onboarding picker."
+            )
 
-            public static var searchAndDuckAIOption: String {
-                if Locale.current.isEnglishLanguage {
-                    NotLocalizedString(
-                        "onboarding.highlights.searchExperience.searchAndDuckAI.english-only",
-                        value: "Toggle between\nSearch and Duck.ai",
-                        comment: "Title for the search and Duck.ai option in onboarding picker for English-language copy update."
-                    )
-                } else {
-                    UserText.settingsAIPickerSearchAndDuckAI
-                }
-            }
+            public static let searchAndDuckAIOption = NSLocalizedString(
+                "onboarding.highlights.searchExperience.searchAndDuckAI",
+                value: "Toggle between\nSearch and Duck.ai",
+                comment: "Title for the search and Duck.ai option in onboarding picker."
+            )
             
             static func footerAttributed() -> NSAttributedString {
                 let settingsPathBold = NSLocalizedString(
@@ -2333,6 +2331,56 @@ public struct UserText {
             }
         }
 
+        enum DuckAIQueryExperiment {
+            public static let title = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.title",
+                value: "Ready to get started?\nTry a search or AI chat!",
+                comment: "Title for the onboarding Duck.ai query experiment screen."
+            )
+            public static let aiPlaceholder = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.placeholder.ai",
+                value: "Ask anything privately",
+                comment: "Placeholder for AI query input in onboarding Duck.ai query experiment screen."
+            )
+            public static let searchPlaceholder = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.placeholder.search",
+                value: "Search privately",
+                comment: "Placeholder for search query input in onboarding Duck.ai query experiment screen."
+            )
+            public static let suggestionOption1 = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.suggestion.option1",
+                value: "Explain the stock market like I'm 10",
+                comment: "First suggestion chip label in onboarding Duck.ai query experiment screen."
+            )
+            public static let suggestionOption2 = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.suggestion.option2",
+                value: "Plan a perfect day in London",
+                comment: "Second suggestion chip label in onboarding Duck.ai query experiment screen."
+            )
+            public static let suggestionOption3VisibleTitle = Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle
+            public static let suggestionOption3Prompt = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.suggestion.option3.prompt",
+                value: "What are 10 fascinating facts across science, nature, and history?",
+                comment: "Prompt submitted when user taps the third suggestion in onboarding Duck.ai query experiment screen."
+            )
+
+            public static let fireOnboardingTitle = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.fire.title",
+                value: "That’s Duck.ai!",
+                comment: "Experiment-only fire onboarding title shown after the first Duck.ai response."
+            )
+            public static let fireOnboardingMessage = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.fire.message",
+                value: "Private AI chats you can delete anytime with the Fire Button. Give it a try! 🔥",
+                comment: "Experiment-only fire onboarding message shown after the first Duck.ai response."
+            )
+            public static let completionOnboardingMessage = NotLocalizedString(
+                "onboarding.highlights.duckAIQueryExperiment.completion.message",
+                value: "Use the address bar to search and visit sites or toggle to Duck.ai for private AI chat.\n\nYou can use Duck.ai from anywhere you see the chat icon [[chat_icon]]",
+                comment: "Experiment-only completion onboarding message shown after finishing Fire onboarding in Duck.ai flow."
+            )
+        }
+
         enum ContextualOnboarding {
 
             enum Rebranding {
@@ -2344,6 +2392,7 @@ public struct UserText {
             static let onboardingTryASearchMessage = NSLocalizedString("contextual.onboarding.highlights.try-a-search.message", value: "Your DuckDuckGo searches are always private.", comment: "Message of a popover on the browser that invites the user to try a search explaining that their searches are private")
             static let onboardingFirstSearchDoneMessage = NSLocalizedString("contextual.onboarding.highlights.first-search-done.message", value: "That’s DuckDuckGo Search! Private. Fast. Fewer ads.", comment: "After the user performs their first search using the browser, this dialog explains the advantages of using DuckDuckGo")
             static let onboardingTryASiteTitle = NSLocalizedString("contextual.onboarding.try-a-site.title", value: "Next, try visiting a site!", comment: "Title of a popover on the browser that invites the user to try a visiting a website")
+            static let onboardingChatIconToken = "[[chat_icon]]"
             static let onboardingFinalScreenMessage = NSLocalizedString("contextual.onboarding.highlights.final-screen.message", value: "Remember: every time you browse with me a creepy ad loses its wings.", comment: "Message of the last screen of the onboarding to the browser app.")
             static let tryASearchOptionSurpriseMe = NSLocalizedString("contextual.onboarding.highlights.try-search.surprise-me", value: "baby ducklings", comment: "Browser Search query for baby ducklings")
             static let onboardingTryASiteNTPTitle = NSLocalizedString("contextual.onboarding.ntp.try-a-site.title", value: "Try visiting a site!", comment: "Title of a popover on the new tab page browser that invites the user to try a visiting a website")
@@ -2410,6 +2459,45 @@ public struct UserText {
     public static let dataImportBookmarksSubtitle = NSLocalizedString("data.import.bookmarks.subtitle", value: "Select the file containing bookmarks. This is usually a ZIP or HTML file.", comment: "Subtitle for screen to import bookmarks")
     public static let dataImportBookmarksFileButton = NSLocalizedString("data.import.bookmarks.file-button", value: "Import Bookmarks File...", comment: "Button label to select zip or html file for importing")
 
+    public static let dataImportHubTitle = NSLocalizedString("data.import.hub.title", value: "Bring to DuckDuckGo", comment: "Title for the data import hub screen")
+    public static let importSourceSectionImportFrom = NSLocalizedString("data.import.source.section.import-from", value: "Import From", comment: "Section header for password import sources on the hub screen")
+    public static let importSourceSectionSyncFrom = NSLocalizedString("data.import.source.section.sync-from", value: "Sync From", comment: "Section header for sync-based import sources on the hub screen")
+    public static let importSourcePasswordsApp = NSLocalizedString("data.import.source.passwords-app", value: "Passwords App", comment: "Row title for importing from the Apple Passwords app")
+    public static let importSourceSafari = NSLocalizedString("data.import.source.safari", value: "Safari", comment: "Row title for importing passwords from Safari")
+    public static let importSourceChrome = NSLocalizedString("data.import.source.chrome", value: "Chrome", comment: "Row title for importing passwords from Chrome")
+    public static let importSourceSyncFromDuckDuckGo = NSLocalizedString("data.import.source.sync-duckduckgo", value: "DuckDuckGo on Another Device", comment: "Row title for syncing passwords from DuckDuckGo on another device")
+
+    public static let importDetailPasswordsTitle = NSLocalizedString("data.import.detail.passwords.title", value: "Import from Passwords", comment: "Navigation title for the Passwords App import detail screen")
+    public static let importDetailPasswordsDescription = NSLocalizedString("data.import.detail.passwords.description", value: "You need to go to the Passwords app, then follow the steps to import.", comment: "Description on the Passwords App import detail screen")
+    public static let importDetailPasswordsStep1 = NSLocalizedString("data.import.detail.passwords.step1", value: "Tap **···** > **Export Data to Another App**", comment: "Step 1 instruction for importing from the Passwords app")
+    public static let importDetailPasswordsStep2 = NSLocalizedString("data.import.detail.passwords.step2", value: "Tap **Select All** > **Continue**", comment: "Step 2 instruction for importing from the Passwords app")
+    public static let importDetailPasswordsStep3 = NSLocalizedString("data.import.detail.passwords.step3", value: "Select **DuckDuckGo** as Destination", comment: "Step 3 instruction for importing from the Passwords app")
+
+    public static let importDetailSafariTitle = NSLocalizedString("data.import.detail.safari.title", value: "Import from Safari", comment: "Navigation title for the Safari import detail screen")
+    public static let importDetailSafariDescription = NSLocalizedString("data.import.detail.safari.description", value: "First, export your passwords and bookmarks from Safari, then come back here to upload the file.", comment: "Description on the Safari import detail screen")
+    public static let importDetailSafariExportButton = NSLocalizedString("data.import.detail.safari.export-button", value: "Export from Safari", comment: "Primary button on the Safari import detail screen to start the export flow")
+
+    public static let importDetailChromeTitle = NSLocalizedString("data.import.detail.chrome.title", value: "Import from Chrome", comment: "Navigation title for the Chrome import detail screen")
+    public static let importDetailChromeDescription = NSLocalizedString("data.import.detail.chrome.description", value: "Open Chrome, then go to Password Manager and follow the steps below:", comment: "Description on the Chrome import detail screen")
+    public static let importDetailChromeStep1 = NSLocalizedString("data.import.detail.chrome.step1", value: "**Settings** > **Export Data**", comment: "Step 1 instruction for importing from Chrome")
+    public static let importDetailChromeStep2 = NSLocalizedString("data.import.detail.chrome.step2", value: "Press **Continue**", comment: "Step 2 instruction for importing from Chrome")
+    public static let importDetailChromeStep3 = NSLocalizedString("data.import.detail.chrome.step3", value: "Select **DuckDuckGo** as Destination", comment: "Step 3 instruction for importing from Chrome")
+
+    public static let importDetailDoneExportingHeader = NSLocalizedString("data.import.detail.done-exporting-header", value: "Done Exporting?", comment: "Section header above the upload file row on the Safari import detail screen")
+    public static let importDetailUploadFileRow = NSLocalizedString("data.import.detail.upload-file-row", value: "Upload Exported File...", comment: "Row label on import detail screens that opens a file picker to upload an exported password file")
+
+    // MARK: Safari Export Interstitial
+
+    public static let safariExportInterstitialTip = NSLocalizedString("data.import.safari.interstitial.tip", value: "Remember to tap\n\"Export to Files\"", comment: "Tip text on the Safari export interstitial reminding users to click Export to Files")
+    public static let safariExportInterstitialButton = NSLocalizedString("data.import.safari.interstitial.button", value: "Open Settings to Export", comment: "Button on the Safari export interstitial that triggers the system import sheet")
+
+    public static let fileImportErrorCorruptTitle = NSLocalizedString("data.import.file-error.corrupt.title", value: "File may be corrupt", comment: "Title on the error sheet shown when an imported file cannot be read")
+    public static let fileImportErrorCorruptMessage = NSLocalizedString("data.import.file-error.corrupt.message", value: "The %@ file could not be read. Try uploading another file or try another import method.", comment: "Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.)")
+    public static let fileImportErrorUnsupportedTitle = NSLocalizedString("data.import.file-error.unsupported.title", value: "Unsupported File", comment: "Title on the error sheet shown when the selected file type is not supported")
+    public static let fileImportErrorUnsupportedMessage = NSLocalizedString("data.import.file-error.unsupported.message", value: "The file selected is not supported. Please select a different file and try again.", comment: "Message on the error sheet when an unsupported file type is selected")
+    public static let fileImportErrorNoDataTitle = NSLocalizedString("data.import.file-error.no-data.title", value: "No Data Found", comment: "Title on the error sheet shown when no supported data is found in the file")
+    public static let fileImportErrorNoDataMessage = NSLocalizedString("data.import.file-error.no-data.message", value: "No supported data found in the zip file. Please review the export instructions and try again.", comment: "Message on the error sheet when no supported data is found in the zip file")
+    public static let fileImportErrorButton = NSLocalizedString("data.import.file-error.button", value: "Got It", comment: "Dismiss button on the file import error sheet")
 
     public static let dataImportFailedNoDataInZipErrorMessage = NSLocalizedString("data.import.failed.no-data-in-zip-error-message", value: "No supported data found in the zip file. Please review the Safari export instructions and try again.", comment: "Error message displayed when no supported data is found in the zip file")
     public static let dataImportFailedReadErrorMessage = NSLocalizedString("data.import.failed.zip-read-error-message", value: "The %@ file could not be read. There may be an issue with the data in the file.", comment: "Error message displayed when the (csv|html|zip) file can't be read.")
@@ -2419,7 +2507,7 @@ public struct UserText {
     public static let dataImportFailedUnsupportedFileErrorMessage = NSLocalizedString("data.import.failed.unsupported-file-error-message", value: "The file selected is not supported. Please select a different file and try again.", comment: "Error message displayed when the user has selected an unsupported file")
 
     public static let dataImportPasswordsInstructionsChromeStep1 = NSLocalizedString("data.import.passwords.instructions.chrome.step1", value: "In Chrome, go to **Google Password Manager** and then **Settings**.", comment: "Step 1 for instructions to import passwords from Chrome")
-    public static let dataImportPasswordsInstructionsChromeStep2 = NSLocalizedString("data.import.passwords.instructions.chrome.step2", value: "Select **Export passwords**, then **Save to Files** and save the file in a folder that you can remember.", comment: "Step 2 for instructions to import passwords.")
+    public static let dataImportPasswordsInstructionsChromeStep2 = NSLocalizedString("data.import.passwords.instructions.chrome.step2", value: "Select **Export data**, then **···** and then **Donwload to CSV** and save the file in a folder that you can remember.", comment: "Step 2 for instructions to import passwords.")
 
     public static let zipContentSelectionTitle = NSLocalizedString("zip.content.import.types.title", value: "What do you want to import?", comment: "Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords)")
     public static let zipContentSelectionPasswords = NSLocalizedString("zip.content.import.type.passwords", value: "Passwords", comment: "Option to select to import passwords")
@@ -2439,6 +2527,10 @@ public struct UserText {
     public static let dataImportSummarySyncPasswords = NSLocalizedString("data.import.summary.button.title.sync.passwords", value: "Passwords", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncBookmarks = NSLocalizedString("data.import.summary.button.title.sync.bookmarks", value: "Bookmarks", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncData = NSLocalizedString("data.import.summary.button.title.sync.data", value: "Data", comment: "Parameter for data.import.summary.button.title.sync")
+    public static let dataImportSummaryPasswordsPromoTitle = NSLocalizedString("data.import.summary.promo.passwords.title", value: "Want to bring your passwords too?", comment: "Title for the summary footer promo that suggests importing passwords")
+    public static let dataImportSummaryBookmarksPromoTitle = NSLocalizedString("data.import.summary.promo.bookmarks.title", value: "Want to bring your bookmarks from Safari too?", comment: "Title for the summary footer promo that suggests importing Safari bookmarks")
+    public static let dataImportSummaryPromoDismissAction = NSLocalizedString("data.import.summary.promo.dismiss.action", value: "Not Now", comment: "Dismiss button title for summary footer promos")
+    public static let dataImportSummaryPromoContinueAction = NSLocalizedString("data.import.summary.promo.continue.action", value: "Continue", comment: "Continue button title for summary footer promos")
     public static let dataImportSummaryVisitSyncSettings = NotLocalizedString("data.import.summary.message.sync.settings", value: "Visit Settings to securely sync bookmarks and passwords between your devices.", comment: "Message informing the user to visit settings to sync bookmarks and passwords. Used from What's New and for en_US locale only.")
     
     public enum SubscriptionPromotionOnboarding {

@@ -19,6 +19,7 @@
 import AppKit
 import Foundation
 import SwiftUI
+import UIComponents
 
 public enum PopoverStyle {
     case basic

@@ -1558,3 +1558,104 @@ private final class MockToggleModeStorage: ToggleModeStoring {
     func save(_ mode: TextEntryMode) { storedMode = mode }
     func restore() -> TextEntryMode? { storedMode }
 }
+
+@MainActor
+private final class FakeInputStateStore: UnifiedInputStateStoring {
+    var states: [TabUID: TabInputState] = [:]
+    var lastUsedDefaults = LastUsedInputDefaults(
+        toggleMode: .search,
+        selectedModelID: nil,
+        selectedReasoningMode: nil,
+        selectedTool: nil
+    )
+
+    var lastUsed: LastUsedInputDefaults { lastUsedDefaults }
+
+    func state(for uid: TabUID) -> TabInputState {
+        states[uid] ?? TabInputState(toggleMode: lastUsedDefaults.toggleMode)
+    }
+
+    func update(_ state: TabInputState, for uid: TabUID) {
+        states[uid] = state
+    }
+
+    func remove(for uid: TabUID) {
+        states.removeValue(forKey: uid)
+    }
+}
+
+// MARK: - Per-tab state regression tests
+
+@MainActor
+final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
+
+    private func makeSUT(stateStore: UnifiedInputStateStoring) -> UnifiedToggleInputCoordinator {
+        UnifiedToggleInputCoordinator(
+            isToggleEnabled: true,
+            preferences: MockAIChatPreferencesForPerTab(),
+            toggleModeStorage: MockToggleModeStorageForPerTab(),
+            stateStore: stateStore
+        )
+    }
+
+    func test_activateForTab_appliesStoredText() {
+        let store = FakeInputStateStore()
+        store.states["tab-A"] = TabInputState(text: "remembered")
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        XCTAssertEqual(sut.currentText, "remembered")
+    }
+
+    func test_activateForTab_flushesPreviousTab() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("typed")
+        sut.activateForTab("tab-B")
+        XCTAssertEqual(store.states["tab-A"]?.text, "typed")
+    }
+
+    func test_endToEnd_twoTabSwitches_preserveIndependentState() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+
+        sut.activateForTab("tab-A")
+        sut.setText("from A")
+        sut.updateInputMode(.aiChat, animated: false)
+
+        sut.activateForTab("tab-B")
+        sut.setText("from B")
+        sut.updateInputMode(.search, animated: false)
+
+        sut.activateForTab("tab-A")
+        XCTAssertEqual(sut.currentText, "from A")
+        XCTAssertEqual(sut.inputMode, .aiChat)
+
+        sut.activateForTab("tab-B")
+        XCTAssertEqual(sut.currentText, "from B")
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_textChange_propagatesToStore() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("typing")
+        XCTAssertEqual(store.states["tab-A"]?.text, "typing")
+    }
+}
+
+private final class MockAIChatPreferencesForPerTab: AIChatPreferencesPersisting {
+    var selectedReasoningEffort: String?
+    var selectedModelId: String?
+    var selectedModelShortName: String?
+    var selectedReasoningMode: AIChatReasoningMode?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+}
+
+private final class MockToggleModeStorageForPerTab: ToggleModeStoring {
+    private var storedMode: TextEntryMode?
+    func save(_ mode: TextEntryMode) { storedMode = mode }
+    func restore() -> TextEntryMode? { storedMode }
+}

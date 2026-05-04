@@ -30,12 +30,17 @@ import os.log
 /// navigating away clears the attachment (mirrors legacy FE); with ON, it's preserved while the
 /// host re-collects.
 ///
-/// Visibility is purely state-derived:
-///   - attachment exists AND its URL matches the current page → hidden (FE keeps using it
-///     silently with every prompt; on-screen chip would be redundant noise).
-///   - otherwise: manual mode shows a placeholder so the user can attach; auto mode shows the
-///     attached site if we have one (transition between navigation and re-attach), or hides
-///     when there is nothing to show (waiting for the first auto-attach, or user just detached).
+/// Visibility:
+///   - attachment exists AND URL matches AND already submitted with → hidden (FE keeps using
+///     it silently; on-screen chip would be redundant noise).
+///   - attachment exists AND URL matches AND not yet submitted → show as `.attached` so the
+///     user sees confirmation of what they just attached, until they submit a prompt.
+///   - manual mode + no attachment → placeholder (user can attach).
+///   - auto mode + attached but URL doesn't match → show `.attached` (transition between nav
+///     and re-attach; avoids placeholder flash).
+///   - auto mode + no attachment → hidden (waiting for auto-attach, or user detached).
+/// Half-sheet carry-over starts in the "already submitted" state — the half-sheet sent the
+/// first prompt with that attachment, so the chat opens silent.
 @MainActor
 final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
@@ -52,6 +57,10 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     private(set) var attachedContext: AIChatPageContext?
     private var attachedURL: URL?
     private var originatingURL: URL?
+    /// Whether the current attachment has already been included in a submitted prompt. Resets
+    /// to false on every attachment change (new context = new "needs feedback" cycle); flips
+    /// true on `markPromptSubmitted()` and starts true for half-sheet carry-over.
+    private var attachmentDelivered: Bool = false
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -62,6 +71,8 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         self.isAutoAttachEnabled = isAutoAttachEnabled
         self.attachedContext = initialAttachedContext
         self.attachedURL = Self.url(of: initialAttachedContext)
+        // Carry-over implies the half-sheet already submitted with this attachment.
+        self.attachmentDelivered = initialAttachedContext != nil
         originatingURLPublisher
             .sink { [weak self] url in
                 guard let self else { return }
@@ -97,6 +108,14 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         onRemoveActionRequested?()
     }
 
+    /// Mark the current attachment as delivered (submitted in a prompt). Hides the chip if the
+    /// attachment is matching — we don't need to keep showing what's silently riding along.
+    func markPromptSubmitted() {
+        guard !attachmentDelivered else { return }
+        attachmentDelivered = true
+        recompute()
+    }
+
     private var shouldClearOnNavigationAway: Bool {
         guard let attachedURL, attachedURL != originatingURL else { return false }
         return !isAutoAttachEnabled()
@@ -115,6 +134,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     private func updateAttachment(_ context: AIChatPageContext?) {
         attachedContext = context
         attachedURL = Self.url(of: context)
+        attachmentDelivered = false
     }
 
     private static func url(of context: AIChatPageContext?) -> URL? {
@@ -126,7 +146,8 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
         if isMatching, let ctx = attachedContext {
             state = .attached(title: ctx.title, favicon: ctx.favicon)
-            isVisible = false
+            // Show as feedback until the user submits the prompt; then go silent.
+            isVisible = !attachmentDelivered
         } else if let ctx = attachedContext, isAutoAttachEnabled() {
             // Auto mode mid-transition (URL changed, re-attach not yet landed): keep showing the
             // attached site rather than flashing placeholder.

@@ -174,16 +174,46 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
     }
 
-    func test_visibility_manual_attachLands_hidden() {
-        // 3. User taps placeholder, host pushes the collected context → URL matches → hide.
+    func test_visibility_manual_attachLands_visibleAttachedAsFeedback() {
+        // 3. User taps placeholder, host pushes the collected context. Show .attached as
+        // feedback so the user sees what they just attached, until they submit.
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT()
         XCTAssertTrue(sut.isVisible)
 
         sut.setAttached(makeContext(title: "Cat", url: url))
+        XCTAssertTrue(sut.isVisible)
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
+    }
+
+    func test_visibility_manual_afterSubmit_hidden() {
+        // After submit with a matching attachment, chip goes silent — FE keeps including the
+        // context with every subsequent prompt; on-screen UI would be redundant.
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT()
+        sut.setAttached(makeContext(title: "Cat", url: url))
+        XCTAssertTrue(sut.isVisible)
+
+        sut.markPromptSubmitted()
         XCTAssertFalse(sut.isVisible)
         XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
+    }
+
+    func test_visibility_manual_reAttachAfterSubmit_visibleAgain() {
+        // Detach and re-attach restarts the "needs feedback" cycle — the new attachment is a
+        // distinct user action and should be visible until the next submit.
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT()
+        sut.setAttached(makeContext(title: "Cat", url: url))
+        sut.markPromptSubmitted()
+        XCTAssertFalse(sut.isVisible)
+
+        sut.setAttached(nil)
+        sut.setAttached(makeContext(title: "Cat", url: url))
+        XCTAssertTrue(sut.isVisible)
     }
 
     func test_visibility_manual_navigateAway_visiblePlaceholder() {
@@ -244,8 +274,9 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
     }
 
-    func test_visibility_auto_reAttachLands_hidden() {
-        // After the host re-attaches with the new URL's context, URL matches again → hide.
+    func test_visibility_auto_reAttachLands_visibleUntilSubmit() {
+        // After the host re-attaches with the new URL's context, that's a fresh attachment —
+        // show it as feedback until the user submits a prompt for this page.
         autoAttachEnabled = true
         let originalURL = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: originalURL))
@@ -255,8 +286,11 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         originatingURL.send(URL(string: newURL))
         sut.setAttached(makeContext(title: "Dog", url: newURL))
 
-        XCTAssertFalse(sut.isVisible)
+        XCTAssertTrue(sut.isVisible)
         XCTAssertEqualState(sut.state, .attached(title: "Dog", favicon: nil))
+
+        sut.markPromptSubmitted()
+        XCTAssertFalse(sut.isVisible)
     }
 
     func test_visibility_auto_userDetachesViaX_hidden() {

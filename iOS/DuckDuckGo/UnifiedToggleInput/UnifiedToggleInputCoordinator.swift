@@ -325,11 +325,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // `if let` shape we used to skip the write when state was nil, the live
         // preferences kept the previous tab's reasoning/model and the next snapshot
         // wrote that leaked value back into this tab's stored state.
-        modelStore.preferences.selectedModelId = state.selectedModelID
-        modelStore.preferences.selectedModelShortName = state.selectedModelID.flatMap { id in
-            modelStore.models.first(where: { $0.id == id })?.shortName
-        }
-        modelStore.preferences.selectedReasoningMode = state.selectedReasoningMode
+        modelStore.applyPersistedSelection(
+            modelID: state.selectedModelID,
+            reasoningMode: state.selectedReasoningMode
+        )
         handleModelsUpdated()
         updateReasoningPicker()
 

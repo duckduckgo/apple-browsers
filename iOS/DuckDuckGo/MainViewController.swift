@@ -3812,7 +3812,10 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onEditingEnd() -> OmniBarEditingEndResult {
-        newTabPageViewController?.dismissDuckAICompletionDialogIfNeededOnEditingEnd()
+        if let newTabPageViewController {
+            newTabPageViewController.dismissDuckAICompletionDialogIfNeededOnEditingEnd()
+            return .dismissed
+        }
         return .suspended
     }
 

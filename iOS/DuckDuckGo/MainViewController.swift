@@ -2087,9 +2087,6 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             if let tabModel = tabManager.currentTabsModel.currentTab {
                 viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tabModel))
-                // Switch the per-tab input state to the new tab even when there's no
-                // TabViewController yet (fresh NTP). Without this the shared coordinator
-                // keeps the previous tab's strip contents (e.g. attachments) visible.
                 unifiedToggleInputCoordinator?.activateForTab(tabModel.uid)
             }
             updateBrowsingMenuHeaderDataSource()

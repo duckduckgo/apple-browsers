@@ -1022,10 +1022,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
         commitCurrentToggleState()
-        // Eagerly clear the store entry's text + attachments for the active tab.
-        // The visible input clear is mode-specific (some paths defer it to a dismiss
-        // animation), so without this the store would briefly hold the submitted
-        // text, and a tab switch during the animation could miss the deferred clear.
         clearStoreEntryAfterSubmission()
 
         switch mode {
@@ -1064,9 +1060,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String) {
-        // Dismiss-time visible clears emit "" through the handler's text publisher.
-        // Ignoring those callbacks keeps the user's typed draft (currentText) intact
-        // so the next activateForTab snapshot for this tab preserves it.
         if isPerformingDismissCleanup { return }
         currentText = text
         textState = text.isEmpty ? .empty : .userTyped

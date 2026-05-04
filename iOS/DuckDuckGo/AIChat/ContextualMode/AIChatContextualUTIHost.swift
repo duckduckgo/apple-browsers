@@ -64,9 +64,7 @@ final class AIChatContextualUTIHost {
             self?.handleChipRemoveRequest()
         }
 
-        // Auto-attach trigger fires at didFinish (page actually loaded), not didCommit (URL
-        // changed but DOM still loading) — otherwise context collection returns stale content
-        // from the previous page.
+        // didFinish (not didCommit) so the new DOM is ready when JS reads it.
         didFinishURLPublisher
             .removeDuplicates()
             .sink { [weak self] url in

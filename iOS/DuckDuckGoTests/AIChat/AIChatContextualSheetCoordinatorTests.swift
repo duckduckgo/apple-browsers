@@ -144,8 +144,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: mockFeatureFlagger,
             pageContextHandler: mockPageContextHandler,
-            originatingTabURLPublisher: originatingTabURLSubject.eraseToAnyPublisher(),
-            didFinishURLPublisher: PassthroughSubject<URL?, Never>().eraseToAnyPublisher()
+            tabURLPublishers: AIChatTabURLPublishers(
+                originating: originatingTabURLSubject.eraseToAnyPublisher(),
+                didFinish: PassthroughSubject<URL?, Never>().eraseToAnyPublisher()
+            )
         )
         mockDelegate = MockDelegate()
         mockPresentingVC = MockPresentingViewController()

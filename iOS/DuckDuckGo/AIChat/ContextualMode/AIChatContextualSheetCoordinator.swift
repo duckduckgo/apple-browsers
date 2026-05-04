@@ -27,6 +27,14 @@ import PrivacyConfig
 import UIKit
 import WebKit
 
+/// Underlying-tab URL publishers the contextual chat needs.
+/// `originating` fires at didCommit (drives chip display state); `didFinish` fires when the new
+/// page is actually loaded (drives auto-attach context collection so JS sees fresh DOM).
+struct AIChatTabURLPublishers {
+    let originating: AnyPublisher<URL?, Never>
+    let didFinish: AnyPublisher<URL?, Never>
+}
+
 /// Delegate protocol for coordinating actions that require interaction with the browser.
 protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     /// Called when the user requests to load a URL externally.
@@ -71,8 +79,7 @@ final class AIChatContextualSheetCoordinator {
 
     /// Handler for page context - single source of truth.
     let pageContextHandler: AIChatPageContextHandling
-    private let originatingTabURLPublisher: AnyPublisher<URL?, Never>
-    private let didFinishURLPublisher: AnyPublisher<URL?, Never>
+    private let tabURLPublishers: AIChatTabURLPublishers
     private var contextUpdateCancellable: AnyCancellable?
 
     /// Handles all pixel firing for contextual mode.
@@ -99,7 +106,7 @@ final class AIChatContextualSheetCoordinator {
 
     /// Publishes the URL of the page that originated the contextual chat session, with replay of the last value.
     var originatingURLPublisher: AnyPublisher<URL?, Never> {
-        originatingTabURLPublisher
+        tabURLPublishers.originating
     }
 
     // MARK: - Initialization
@@ -111,8 +118,7 @@ final class AIChatContextualSheetCoordinator {
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
          pageContextHandler: AIChatPageContextHandling,
-         originatingTabURLPublisher: AnyPublisher<URL?, Never>,
-         didFinishURLPublisher: AnyPublisher<URL?, Never>,
+         tabURLPublishers: AIChatTabURLPublishers,
          isFireTab: Bool = false,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
@@ -124,8 +130,7 @@ final class AIChatContextualSheetCoordinator {
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
         self.pageContextHandler = pageContextHandler
-        self.originatingTabURLPublisher = originatingTabURLPublisher
-        self.didFinishURLPublisher = didFinishURLPublisher
+        self.tabURLPublishers = tabURLPublishers
         self.isFireTab = isFireTab
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.debugSettings = debugSettings
@@ -298,7 +303,7 @@ private extension AIChatContextualSheetCoordinator {
                 guard let self else { return nil }
                 let host = AIChatContextualUTIHost(
                     originatingURLPublisher: self.originatingURLPublisher,
-                    didFinishURLPublisher: self.didFinishURLPublisher,
+                    didFinishURLPublisher: self.tabURLPublishers.didFinish,
                     initialAttachedContext: self.sessionState.latestContext,
                     isAutoAttachEnabled: { [weak self] in self?.sessionState.shouldAutoCollectContext ?? false },
                     pageContextHandler: self.pageContextHandler,

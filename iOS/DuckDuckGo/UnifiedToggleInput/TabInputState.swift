@@ -38,4 +38,14 @@ struct TabInputState: Equatable {
         self.selectedReasoningMode = selectedReasoningMode
         self.selectedTool = selectedTool
     }
+
+    // AIChatImageAttachment is Identifiable but not Equatable, so compare attachments by id.
+    static func == (lhs: TabInputState, rhs: TabInputState) -> Bool {
+        lhs.text == rhs.text
+            && lhs.toggleMode == rhs.toggleMode
+            && lhs.attachments.map(\.id) == rhs.attachments.map(\.id)
+            && lhs.selectedModelID == rhs.selectedModelID
+            && lhs.selectedReasoningMode == rhs.selectedReasoningMode
+            && lhs.selectedTool == rhs.selectedTool
+    }
 }

@@ -18,7 +18,7 @@ import Combine
 final class UnifiedInputStateStore: UnifiedInputStateStoring {
 
     private var states: [TabUID: TabInputState] = [:]
-    private let preferences: AIChatPreferencesPersisting
+    private var preferences: AIChatPreferencesPersisting
     private let toggleModeStorage: ToggleModeStoring
     private var lastUsedTool: AIChatRAGTool?
     private var tabsCancellable: AnyCancellable?
@@ -60,7 +60,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         states.removeValue(forKey: uid)
     }
 
-    func observeTabsModel(_ tabsModel: TabsModel) {
+    func observeTabsModel(_ tabsModel: TabsModelManaging) {
         tabsCancellable = tabsModel.tabsPublisher
             .sink { [weak self] tabs in
                 self?.reconcile(with: tabs)

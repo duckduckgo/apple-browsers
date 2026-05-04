@@ -45,11 +45,21 @@ extension MainViewController {
     func setUpUnifiedToggleInputIfNeeded() {
         guard unifiedToggleInputFeature.isAvailable else { return }
 
+        let aiChatPreferences = AIChatPreferencesPersistor()
+        let stateStore = UnifiedInputStateStore(
+            preferences: aiChatPreferences,
+            toggleModeStorage: toggleModeStorage
+        )
+        stateStore.observeTabsModel(tabManager.currentTabsModel)
+        self.unifiedInputStateStore = stateStore
+
         let coordinator = UnifiedToggleInputCoordinator(
             isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
             isFireTab: isCurrentTabFireTab(),
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            toggleModeStorage: toggleModeStorage
+            preferences: aiChatPreferences,
+            toggleModeStorage: toggleModeStorage,
+            stateStore: stateStore
         )
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
@@ -86,6 +96,8 @@ extension MainViewController {
               let coordinator = unifiedToggleInputCoordinator else {
             return
         }
+
+        coordinator.activateForTab(tab.tabModel.uid)
 
         let action = refreshAction(for: tab, coordinator: coordinator)
 

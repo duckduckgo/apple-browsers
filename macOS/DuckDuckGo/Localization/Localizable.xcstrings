@@ -88461,7 +88461,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Auto-send anonymous breakage reports to DuckDuckGo when YouTube Ad Block is on."
+            "value" : "Allow DuckDuckGo to auto-detect video playback issues. This helps to make ad blocking more reliable for everyone."
           }
         },
         "es" : {

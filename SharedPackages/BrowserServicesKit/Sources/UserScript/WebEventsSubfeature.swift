@@ -75,8 +75,6 @@ public final class WebEventsSubfeature: NSObject, Subfeature {
         guard let payload = params as? [String: Any],
               let type = payload["type"] as? String else { return }
 
-        print("=== event type: \(type)")
-        print("=== isUserOptedIn: \(isUserOptedIn())")
         guard isUserOptedIn() else { return }
         let raw = (payload["data"] as? [String: Any])?["loginState"] as? String
         let loginState = raw.flatMap(LoginState.init(rawValue:)) ?? .unknown

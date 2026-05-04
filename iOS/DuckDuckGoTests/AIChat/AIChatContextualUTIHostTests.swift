@@ -198,79 +198,29 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(title, "Page B")
     }
 
-    func test_autoAttachOn_coldStart_replayedDidFinish_triggersCollection() {
-        // Cold start: the page already finished loading before the chat opened, so
-        // didFinishURLSubject's CurrentValue is already set. Host must trigger collection
-        // when it subscribes (replayed value) so the chip auto-attaches to the current page.
-        autoAttachEnabled = true
-        let url = URL(string: "https://example.com/a")!
-        didFinishURL.send(url)  // simulate "page already finished before chat opened"
-
-        makeSUT()
-
-        XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 1)
-    }
-
-    func test_autoAttachOn_coldStart_withCarryOver_doesNotReTrigger() {
-        // Half-sheet carry-over: chip is already attached to the page. Replayed didFinish
-        // for the same URL must NOT re-trigger collection.
+    func test_autoAttachOn_coldStart_optedOutAtHalfSheet_doesNotTrigger() {
+        // Cold start with no carry-over means the user opted out at the half-sheet. The chat
+        // must respect that and NOT auto-attach on the replayed didFinish — otherwise the
+        // chip would flip to .attached immediately, overriding the user's skip choice.
         autoAttachEnabled = true
         let url = URL(string: "https://example.com/a")!
         didFinishURL.send(url)
 
-        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString))
+        makeSUT()
 
         XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 0)
     }
 
-    func test_retryAutoAttachIfNeeded_autoAttachOnAndDetached_triggers() {
-        // User detached the chip, then reopens the chat with auto-attach ON.
-        // The view-controller's viewWillAppear calls retry — chip should re-attach.
+    func test_autoAttachOn_optedOut_thenInChatNavigation_triggers() {
+        // Once the user navigates within the chat, that's a signal change auto-mode should
+        // act on. The opt-out only sticks for the URL the half-sheet was opened on.
         autoAttachEnabled = true
-        let url = URL(string: "https://example.com/a")!
-        didFinishURL.send(url)
-        makeSUT()
-        sut.chipViewModel.tapToRemove()
-
-        XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 1)
-
-        sut.retryAutoAttachIfNeeded()
-
-        XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 2)
-    }
-
-    func test_retryAutoAttachIfNeeded_autoAttachOff_skips() {
-        autoAttachEnabled = false
-        let url = URL(string: "https://example.com/a")!
-        didFinishURL.send(url)
+        let urlA = URL(string: "https://example.com/a")!
+        didFinishURL.send(urlA)
         makeSUT()
 
-        sut.retryAutoAttachIfNeeded()
-
-        XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 0)
-    }
-
-    func test_retryAutoAttachIfNeeded_alreadyAttached_skips() {
-        autoAttachEnabled = true
-        let url = URL(string: "https://example.com/a")!
-        didFinishURL.send(url)
-        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString))
-
-        sut.retryAutoAttachIfNeeded()
-
-        XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 0)
-    }
-
-    func test_retryAutoAttachIfNeeded_collectionInFlight_skips() {
-        // Regression: cold-start replays didFinish in init, kicking off a collection. Before JS
-        // responds, viewWillAppear fires and would otherwise trigger a second redundant collection.
-        autoAttachEnabled = true
-        let url = URL(string: "https://example.com/a")!
-        didFinishURL.send(url)
-        makeSUT()
-        XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 1)
-
-        sut.retryAutoAttachIfNeeded()  // viewWillAppear before JS response
+        let urlB = URL(string: "https://example.com/b")!
+        didFinishURL.send(urlB)
 
         XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 1)
     }

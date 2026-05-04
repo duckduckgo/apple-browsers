@@ -182,11 +182,6 @@ final class AIChatContextualWebViewController: UIViewController {
         }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        utiHost?.retryAutoAttachIfNeeded()
-    }
-
     deinit {
         urlObservation?.invalidate()
     }

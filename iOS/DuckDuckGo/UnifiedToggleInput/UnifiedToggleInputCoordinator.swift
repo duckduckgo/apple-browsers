@@ -513,6 +513,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         currentText = text
         textState = text.isEmpty ? .empty : .userTyped
         viewController.text = text
+        persistCurrentStateToStore()
     }
 
     // MARK: - Input Management
@@ -548,6 +549,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if didModeChange, effectiveMode == .search {
             clearAttachments()
         }
+        persistCurrentStateToStore()
     }
 
     func updateAIVoiceChatAvailability(_ enabled: Bool) {
@@ -850,20 +852,24 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func updateSelectedModel(_ modelId: String) {
         modelStore.updateSelectedModel(modelId)
         handleModelsUpdated()
+        persistCurrentStateToStore()
     }
 
     func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
         modelStore.updateSelectedReasoningMode(mode)
         updateReasoningPicker()
+        persistCurrentStateToStore()
     }
 
     func selectTool(_ tool: AIChatRAGTool) {
         toolsController.select(tool, for: modelStore)
         refreshToolsPresentation()
+        persistCurrentStateToStore()
     }
 
     func clearSelectedTool() {
         resetToolsSelection()
+        persistCurrentStateToStore()
     }
 
     private func updateModelChipLabel() {
@@ -948,15 +954,18 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard !viewController.isAttachmentsFull, !isConversationImageLimitReached else { return }
         let attachment = AIChatImageAttachment(image: image, fileName: fileName)
         viewController.addAttachment(attachment)
+        persistCurrentStateToStore()
     }
 
     func removeAttachment(id: UUID) {
         viewController.removeAttachment(id: id)
+        persistCurrentStateToStore()
     }
 
     func clearAttachments() {
         guard !viewController.currentAttachments.isEmpty else { return }
         viewController.removeAllAttachments()
+        persistCurrentStateToStore()
     }
 
     func updateImageButtonVisibility() {

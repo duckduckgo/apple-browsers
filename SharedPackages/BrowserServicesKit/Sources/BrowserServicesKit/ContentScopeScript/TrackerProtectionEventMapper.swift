@@ -141,7 +141,12 @@ public struct TrackerProtectionEventMapper {
     /// unaffiliated cross-site resources are reported as `.otherThirdPartyRequest`.
     public func makeThirdPartyRequest(from observation: TrackerProtectionSubfeature.ResourceObservation) -> DetectedRequest? {
         guard !isSameSiteObservation(observation) else { return nil }
-        let requestETLDp1 = tld.eTLDplus1(forStringURL: observation.url) ?? observation.url
+        // Fall back to the request host (never the full URL) so `eTLDplus1` always holds a
+        // domain-shaped value. DetectedRequest.networkNameForDisplay and any aggregators
+        // keyed by eTLD+1 would otherwise surface a raw URL to UI/pixels.
+        let requestETLDp1 = tld.eTLDplus1(forStringURL: observation.url)
+            ?? URL(string: observation.url)?.host
+            ?? observation.url
         let entity = mainTrackerData.findEntity(forHost: requestETLDp1)
             ?? Entity(displayName: requestETLDp1, domains: nil, prevalence: nil)
         let mainResolver = TrackerResolver(tds: mainTrackerData,

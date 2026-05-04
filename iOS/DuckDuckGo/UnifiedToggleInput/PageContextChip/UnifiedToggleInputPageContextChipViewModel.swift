@@ -105,6 +105,11 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     private func clearAttachment() {
         Logger.contextualUTI.debug("PageContextChip clearing attachment — tab navigated away (auto-attach OFF)")
         updateAttachment(nil)
+        // Propagate through the host so it clears the page-context handler buffer and pushes
+        // nil to the FE — otherwise `AIChatUserScript.lastPushedPageContext` retains the stale
+        // context and the next prompt would still carry it (chip shows detached, but AI sees
+        // the old page).
+        onRemoveActionRequested?()
     }
 
     private func updateAttachment(_ context: AIChatPageContext?) {

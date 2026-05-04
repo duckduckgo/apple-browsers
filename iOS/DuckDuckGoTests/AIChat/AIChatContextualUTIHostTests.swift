@@ -103,6 +103,21 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
     }
 
+    func test_autoAttachOff_navigationAway_clearsAttachedContextOnHandler() {
+        // Regression: when the chip clears its attachment due to nav-away (auto-attach OFF),
+        // the host must also call clearAttachedContext on the handler — otherwise the FE-side
+        // cached page context would survive and the next prompt would ship stale context.
+        autoAttachEnabled = false
+        let urlA = URL(string: "https://example.com/a")!
+        originatingURL.send(urlA)
+        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: urlA.absoluteString))
+
+        originatingURL.send(URL(string: "https://example.com/b"))
+
+        XCTAssertEqual(pageContextHandler.clearAttachedContextCallCount, 1)
+        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
+    }
+
     // MARK: - Auto-attach on navigation
 
     func test_autoAttachOff_navigationDoesNotTriggerCollection() {

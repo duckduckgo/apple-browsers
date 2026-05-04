@@ -100,6 +100,31 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqualState(sut.state, .placeholder)
     }
 
+    func test_autoAttachOff_navigationAway_invokesRemoveCallback() {
+        // Regression: nav-away clearing must propagate through onRemoveActionRequested so the
+        // host clears the FE-side cached page context. Otherwise the next prompt would ship
+        // stale context even though the chip displays placeholder.
+        let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: attachedUrl))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl))
+        XCTAssertEqual(removeCalls, 0)
+
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
+        XCTAssertEqual(removeCalls, 1)
+    }
+
+    func test_autoAttachOn_navigationAway_doesNotInvokeRemoveCallback() {
+        // With auto-attach ON, the attachment is preserved while the host re-collects, so
+        // the remove callback must NOT fire on nav-away.
+        autoAttachEnabled = true
+        let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: attachedUrl))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl))
+
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
+        XCTAssertEqual(removeCalls, 0)
+    }
+
     func test_autoAttachOn_originatingURLChangesAway_attachmentPreservedInternally() {
         // With auto-attach ON, navigating away does NOT clear the underlying attachment —
         // the host is responsible for re-attaching with the new page's context. Returning to

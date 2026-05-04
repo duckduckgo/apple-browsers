@@ -346,6 +346,11 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725495563625
     case adBlockingExtension
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214488276270162
+    /// Failsafe: enabled by default, can be remotely disabled to suppress the
+    /// analytics opt-in alert when the user enables YouTube Ad Blocking.
+    case adBlockingAnalyticsOptInPrompt
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692854?focus=true
     case supportsSyncChatsDeletion
 
@@ -648,6 +653,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout)))
         case .adBlockingExtension:
             Config(source: .remoteReleasable(.feature(.adBlockingExtension)))
+        case .adBlockingAnalyticsOptInPrompt:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.analyticsOptInPrompt)))
         case .autofillOnboardingDismissExperiment:
             Config(source: .remoteReleasable(.subfeature(AutofillSubfeature.onboardingDismissExperiment)), cohortType: AutofillOnboardingDismissExperimentCohort.self)
         case .supportsSyncChatsDeletion:

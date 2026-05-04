@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import DuckPlayer
+import FeatureFlags
 import Foundation
 import Persistence
 import PixelKit
@@ -36,7 +37,15 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
 
     private var settings: any KeyedStoring<YouTubeAdBlockingSettings>
     private let pixelFiring: PixelFiring?
+    private let featureFlagger: FeatureFlagger
     private var cancellables = Set<AnyCancellable>()
+
+    /// Failsafe: when the corresponding remote flag is disabled, the analytics
+    /// opt-in alert is suppressed and toggling YouTube Ad Blocking on goes
+    /// straight through.
+    var isAnalyticsOptInPromptEnabled: Bool {
+        featureFlagger.isFeatureOn(.adBlockingAnalyticsOptInPrompt)
+    }
 
     @Published
     var youTubeAdBlockingEnabled: Bool {
@@ -109,10 +118,12 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
 
     init(settings: (any KeyedStoring<YouTubeAdBlockingSettings>)? = nil,
          duckPlayerPreferences: DuckPlayerPreferences? = nil,
-         pixelFiring: PixelFiring? = nil) {
+         pixelFiring: PixelFiring? = nil,
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
         self.settings = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
         self.duckPlayerPreferences = duckPlayerPreferences ?? DuckPlayerPreferences()
         self.pixelFiring = pixelFiring
+        self.featureFlagger = featureFlagger
         youTubeAdBlockingEnabled = self.settings.youTubeAdBlockingEnabled ?? false
 
         self.duckPlayerPreferences.objectWillChange

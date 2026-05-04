@@ -68,6 +68,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725495563625
     case adBlockingExtension
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214488276270165
+    /// Failsafe: enabled by default, can be remotely disabled to suppress the
+    /// analytics opt-in alert when the user enables YouTube Ad Blocking.
+    case adBlockingAnalyticsOptInPrompt
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213538183403577
     case forceDarkModeOnWebsites
 
@@ -427,6 +432,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension)), category: .webExtensions)
         case .adBlockingExtension:
             Config(source: .remoteReleasable(.feature(.adBlockingExtension)), category: .webExtensions)
+        case .adBlockingAnalyticsOptInPrompt:
+            Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.analyticsOptInPrompt)), category: .webExtensions)
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout)), category: .webExtensions)
         case .syncSeamlessAccountSwitching:

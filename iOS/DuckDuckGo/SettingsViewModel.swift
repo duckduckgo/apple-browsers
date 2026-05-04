@@ -680,6 +680,10 @@ final class SettingsViewModel: ObservableObject {
         try? youTubeAdBlockingStorage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
     }
 
+    var isYouTubeAnalyticsOptInPromptEnabled: Bool {
+        featureFlagger.isFeatureOn(.adBlockingAnalyticsOptInPrompt)
+    }
+
       var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
         Binding<NativeDuckPlayerYoutubeMode>(
             get: {

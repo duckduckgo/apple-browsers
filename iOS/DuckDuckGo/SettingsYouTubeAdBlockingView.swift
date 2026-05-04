@@ -37,7 +37,7 @@ struct SettingsYouTubeAdBlockingView: View {
             set: { newValue in
                 let isTurningOn = newValue && !viewModel.youTubeAdBlockingEnabled.wrappedValue
                 viewModel.youTubeAdBlockingEnabled.wrappedValue = newValue
-                if isTurningOn {
+                if isTurningOn, viewModel.isYouTubeAnalyticsOptInPromptEnabled {
                     showAnalyticsOptInAlert = true
                 }
             }

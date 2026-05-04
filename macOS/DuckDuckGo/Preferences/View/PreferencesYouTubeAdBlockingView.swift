@@ -42,7 +42,7 @@ extension Preferences {
             } set: { newValue in
                 let isTurningOn = newValue && !model.youTubeAdBlockingEnabled
                 model.youTubeAdBlockingEnabled = newValue
-                guard isTurningOn else { return }
+                guard isTurningOn, model.isAnalyticsOptInPromptEnabled else { return }
                 let response = NSAlert.youTubeAdBlockingAnalyticsOptIn().runModal()
                 model.youTubeAnalyticsEnabled = (response == .alertFirstButtonReturn)
             }

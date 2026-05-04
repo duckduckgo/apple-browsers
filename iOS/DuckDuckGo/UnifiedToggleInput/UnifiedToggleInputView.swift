@@ -696,10 +696,9 @@ final class UnifiedToggleInputView: UIView {
                 let verticalMargin: CGFloat = (!self.usesOmnibarMargins && self.cardPosition == .bottom)
                     ? Constants.cardVerticalMarginBottom
                     : Constants.cardVerticalMargin
-                // Toolbar visibility tracks `selectedMode` only — same rule `updateToolbarVisibility` uses.
-                // The previous additional `isToggleEnabled` clause incorrectly hid the toolbar for hosts
-                // that disable the toggle row but still want the toolbar (e.g. contextual chat).
-                let showToolbar = self.toggleView.selectedMode == .aiChat
+                // Use handler's currentToggleState — toggleView.selectedMode is only updated when
+                // isToggleEnabled, so it goes stale in toggle-off omnibar (search-only).
+                let showToolbar = self.handler.currentToggleState == .aiChat
                 self.cardTopConstraint.constant = verticalMargin
                 self.cardLeadingConstraint.constant = leadingMargin
                 self.cardTrailingConstraint.constant = -trailingMargin

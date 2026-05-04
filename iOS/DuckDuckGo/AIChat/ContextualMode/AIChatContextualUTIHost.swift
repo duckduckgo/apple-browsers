@@ -89,6 +89,7 @@ final class AIChatContextualUTIHost {
     func retryAutoAttachIfNeeded() {
         guard isAutoAttachEnabled(),
               chipViewModel.attachedContext == nil,
+              pendingChipAttachCancellable == nil,
               let url = lastFinishedURL else { return }
         Logger.contextualUTI.info("Auto-attach retry on chat reopen — triggering for \(url.absoluteString, privacy: .private)")
         handleChipAttachRequest(originatingURL: url)
@@ -105,6 +106,7 @@ final class AIChatContextualUTIHost {
             .prefix(1)
             .sink { [weak self] context in
                 guard let self else { return }
+                self.pendingChipAttachCancellable = nil
                 guard let context else {
                     Logger.contextualUTI.error("Collection completed with nil context")
                     return

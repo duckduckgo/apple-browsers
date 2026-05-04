@@ -261,6 +261,20 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 0)
     }
 
+    func test_retryAutoAttachIfNeeded_collectionInFlight_skips() {
+        // Regression: cold-start replays didFinish in init, kicking off a collection. Before JS
+        // responds, viewWillAppear fires and would otherwise trigger a second redundant collection.
+        autoAttachEnabled = true
+        let url = URL(string: "https://example.com/a")!
+        didFinishURL.send(url)
+        makeSUT()
+        XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 1)
+
+        sut.retryAutoAttachIfNeeded()  // viewWillAppear before JS response
+
+        XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
     // MARK: - Helpers
 
     private func makeContext(title: String, url: String) -> AIChatPageContext {

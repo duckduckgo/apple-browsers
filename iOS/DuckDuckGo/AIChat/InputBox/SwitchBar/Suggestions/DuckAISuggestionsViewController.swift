@@ -129,8 +129,10 @@ final class DuckAISuggestionsViewController: UIViewController {
         ])
 
         // Reload on fetcher settle (not text change), so the search-row title and section data update together.
-        let chatChanges = chatViewModel.$filteredSuggestions.map { _ in () }.eraseToAnyPublisher()
-        let urlChanges = urlLoader.$topURLs.map { _ in () }.eraseToAnyPublisher()
+        // `removeDuplicates` on each fetcher's output suppresses redundant emissions of identical data, which
+        // otherwise produce a second no-op `reloadData` per keystroke and a visible cell-reflow bump.
+        let chatChanges = chatViewModel.$filteredSuggestions.removeDuplicates().map { _ in () }.eraseToAnyPublisher()
+        let urlChanges = urlLoader.$topURLs.removeDuplicates().map { _ in () }.eraseToAnyPublisher()
         Publishers.MergeMany([chatChanges, urlChanges])
             .debounce(for: .milliseconds(Self.reloadCoalesceMilliseconds), scheduler: DispatchQueue.main)
             .sink { [weak self] in self?.reload() }
@@ -162,6 +164,16 @@ final class DuckAISuggestionsViewController: UIViewController {
         UIView.performWithoutAnimation {
             tableView.reloadData()
         }
+    }
+
+    /// In-place title refresh for the always-visible "Search DuckDuckGo" row. Avoids `reloadData` so a per-keystroke
+    /// reflow doesn't bump cells around as the user types.
+    func updateSearchRowTitle() {
+        guard isViewLoaded,
+              let searchSectionIndex = liveSections.firstIndex(of: .search) else { return }
+        let path = IndexPath(row: 0, section: searchSectionIndex)
+        guard let cell = tableView.cellForRow(at: path) else { return }
+        configureSearchCell(cell, query: queryProvider())
     }
 
     // MARK: - Escape hatch

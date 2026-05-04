@@ -107,12 +107,12 @@ final class DuckAISuggestionsCoordinator {
             .sink { [weak vc] active in vc?.setQueryActive(active) }
             .store(in: &cancellables)
 
-        // Reload on every text change so the always-visible "Search DuckDuckGo" row's title (read live from queryProvider) tracks
-        // typing without waiting for the chat/URL fetcher-settle merge to fire.
+        // In-place title refresh on every text change — full `reload()` would land inside the container's per-keystroke
+        // spring animator and bounce the table.
         textPublisher
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak vc] _ in vc?.reload() }
+            .sink { [weak vc] _ in vc?.updateSearchRowTitle() }
             .store(in: &cancellables)
 
         parentViewController.addChild(vc)

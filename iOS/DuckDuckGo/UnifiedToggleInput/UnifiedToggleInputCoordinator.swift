@@ -138,6 +138,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var textState: InputTextState = .empty
     private(set) var inputMode: TextEntryMode = .aiChat
     private let toggleModeStorage: ToggleModeStoring
+    private let stateStore: UnifiedInputStateStoring
+    private(set) var currentTabUID: TabUID?
+    private var isApplyingState = false
     private(set) var committedInputMode: TextEntryMode = .search
     private(set) var cardPosition: UnifiedToggleInputCardPosition = .bottom
     private(set) var isInputVisibleForKeyboard: Bool = true
@@ -212,10 +215,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         modelsService: AIChatModelsProviding = AIChatModelsService(),
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
-        toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
+        toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
+        stateStore: UnifiedInputStateStoring? = nil
     ) {
         self.isToggleEnabled = isToggleEnabled
         self.toggleModeStorage = toggleModeStorage
+        self.stateStore = stateStore ?? UnifiedInputStateStore(
+            preferences: preferences,
+            toggleModeStorage: toggleModeStorage
+        )
         self.modelStore = UTIModelStore(
             modelsService: modelsService,
             preferences: preferences,
@@ -277,6 +285,61 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         boundUserScript = nil
         boundUserScriptIdentifier = nil
         resetSessionState()
+    }
+
+    // MARK: - Per-Tab State
+
+    func activateForTab(_ uid: TabUID) {
+        if let previous = currentTabUID, previous != uid {
+            stateStore.update(snapshotCurrentState(), for: previous)
+        }
+        currentTabUID = uid
+        applyState(stateStore.state(for: uid))
+    }
+
+    func applyState(_ state: TabInputState) {
+        isApplyingState = true
+        defer { isApplyingState = false }
+
+        setText(state.text)
+        syncInputModeFromExternalSource(state.toggleMode)
+
+        viewController.removeAllAttachments()
+        for attachment in state.attachments {
+            viewController.addAttachment(attachment)
+        }
+
+        if let modelID = state.selectedModelID {
+            modelStore.updateSelectedModel(modelID)
+            handleModelsUpdated()
+        }
+        if let reasoning = state.selectedReasoningMode {
+            modelStore.updateSelectedReasoningMode(reasoning)
+            updateReasoningPicker()
+        }
+
+        if let tool = state.selectedTool {
+            toolsController.select(tool, for: modelStore)
+        } else {
+            toolsController.clearSelection()
+        }
+        refreshToolsPresentation()
+    }
+
+    func snapshotCurrentState() -> TabInputState {
+        TabInputState(
+            text: currentText,
+            toggleMode: inputMode,
+            attachments: viewController.currentAttachments,
+            selectedModelID: modelStore.persistedModelId,
+            selectedReasoningMode: modelStore.selectedReasoningMode,
+            selectedTool: toolsController.selectedTool
+        )
+    }
+
+    private func persistCurrentStateToStore() {
+        guard !isApplyingState, let uid = currentTabUID else { return }
+        stateStore.update(snapshotCurrentState(), for: uid)
     }
 
     private var isNewChatPending = false

@@ -28,8 +28,9 @@ import os.log
 /// `attachedContext` is command-driven (`setAttached(_:)`) so JS-side auto-emissions don't bleed
 /// into the chip; only the host pushes after a successful attach/detach. With auto-attach OFF,
 /// navigating away clears the attachment (mirrors legacy FE); with ON, it's preserved while the
-/// host re-collects. `isVisible` is hidden initially only when carrying over from the half-sheet
-/// (re-confirming the attach is noise) — flips to true on first navigation, and stays visible.
+/// host re-collects. `isVisible` starts hidden — chip only appears once something material
+/// changes (navigation), and re-hides on prompt submission. Internal attached state is
+/// independent: the FE always gets the right context regardless of UI visibility.
 @MainActor
 final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
@@ -57,9 +58,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         self.isAutoAttachEnabled = isAutoAttachEnabled
         self.attachedContext = initialAttachedContext
         self.attachedURL = Self.url(of: initialAttachedContext)
-        // Hide initially only when carrying over from the half-sheet — re-confirming the attach
-        // is noise. With no carry-over (restored / fresh chat), show the placeholder right away.
-        self.isVisible = initialAttachedContext == nil
         originatingURLPublisher
             .sink { [weak self] url in
                 guard let self else { return }

@@ -179,21 +179,20 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
 
     // MARK: - Visibility
 
-    func test_visibility_noInitialContext_isVisibleFromStart() {
-        // Restored / fresh chat — no carry-over to suppress, show placeholder right away.
+    func test_visibility_noInitialContext_isHiddenInitially() {
+        // Same URL, page hasn't changed — chip should be hidden regardless of carry-over.
         makeSUT()
-        XCTAssertTrue(sut.isVisible)
+        XCTAssertFalse(sut.isVisible)
     }
 
     func test_visibility_withInitialContext_isHiddenInitially() {
-        // Half-sheet carry-over — re-confirming the attach is noise, hide initially.
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
         XCTAssertFalse(sut.isVisible)
     }
 
-    func test_visibility_withInitialContext_becomesVisibleOnNavigation() {
+    func test_visibility_becomesVisibleOnNavigation() {
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
@@ -220,6 +219,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT()
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
         XCTAssertTrue(sut.isVisible)
 
         sut.markPromptSubmitted()
@@ -232,10 +232,11 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT()
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
         sut.markPromptSubmitted()
         XCTAssertFalse(sut.isVisible)
 
-        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Bird"))
 
         XCTAssertTrue(sut.isVisible)
     }

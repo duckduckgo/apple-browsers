@@ -667,6 +667,9 @@ final class SettingsViewModel: ObservableObject {
                 guard $0 != self.state.youTubeAdBlockingEnabled else { return }
                 try? self.youTubeAdBlockingStorage.set($0, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
                 self.state.youTubeAdBlockingEnabled = $0
+                if !$0 {
+                    self.setYouTubeAnalyticsEnabled(false)
+                }
                 DailyPixel.fireDailyAndCount(
                     pixel: $0 ? .webExtensionAdBlockingEnabled : .webExtensionAdBlockingDisabled,
                     pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes

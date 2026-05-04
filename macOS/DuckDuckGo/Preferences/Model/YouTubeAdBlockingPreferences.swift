@@ -52,6 +52,9 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
         didSet {
             guard youTubeAdBlockingEnabled != oldValue else { return }
             settings.youTubeAdBlockingEnabled = youTubeAdBlockingEnabled
+            if !youTubeAdBlockingEnabled {
+                youTubeAnalyticsEnabled = false
+            }
             pixelFiring?.fire(
                 youTubeAdBlockingEnabled ? WebExtensionPixel.adBlockingExtensionEnabled : WebExtensionPixel.adBlockingExtensionDisabled,
                 frequency: .dailyAndCount)

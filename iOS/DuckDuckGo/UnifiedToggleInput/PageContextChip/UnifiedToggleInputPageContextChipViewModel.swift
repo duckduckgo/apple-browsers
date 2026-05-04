@@ -35,12 +35,11 @@ import os.log
 ///     it silently; on-screen chip would be redundant noise).
 ///   - attachment exists AND URL matches AND not yet submitted → show as `.attached` so the
 ///     user sees confirmation of what they just attached, until they submit a prompt.
-///   - manual mode + no attachment → placeholder (user can attach).
+///   - no attachment → placeholder (regardless of mode — the half-sheet is where the user
+///     exercises their attach/skip agency; once they're in the chat, an empty state should
+///     always offer a tap target so they can re-attach if they change their mind).
 ///   - auto mode + attached but URL doesn't match → show `.attached` (transition between nav
 ///     and re-attach; avoids placeholder flash).
-///   - auto mode + no attachment → hidden during the initial wait (cold start before the first
-///     auto-attach lands), then placeholder once we've seen at least one attachment in this
-///     session — auto-attach gives the user agency to re-attach manually after detaching.
 /// Half-sheet carry-over starts in the "already submitted" state — the half-sheet sent the
 /// first prompt with that attachment, so the chat opens silent.
 @MainActor
@@ -63,10 +62,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     /// to false on every attachment change (new context = new "needs feedback" cycle); flips
     /// true on `markPromptSubmitted()` and starts true for half-sheet carry-over.
     private var attachmentDelivered: Bool = false
-    /// Latches true the first time an attachment exists in this session. Used in auto mode to
-    /// distinguish the cold-start wait (hide) from a post-detach state (show placeholder so
-    /// the user can re-attach).
-    private var hasEverAttached: Bool = false
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -79,7 +74,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         self.attachedURL = Self.url(of: initialAttachedContext)
         // Carry-over implies the half-sheet already submitted with this attachment.
         self.attachmentDelivered = initialAttachedContext != nil
-        self.hasEverAttached = initialAttachedContext != nil
         originatingURLPublisher
             .sink { [weak self] url in
                 guard let self else { return }
@@ -142,7 +136,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         attachedContext = context
         attachedURL = Self.url(of: context)
         attachmentDelivered = false
-        if context != nil { hasEverAttached = true }
     }
 
     private static func url(of context: AIChatPageContext?) -> URL? {
@@ -161,15 +154,10 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
             // attached site rather than flashing placeholder.
             state = .attached(title: ctx.title, favicon: ctx.favicon)
             isVisible = true
-        } else if isAutoAttachEnabled() {
-            // Auto + no attachment: hide during the initial wait (no attachment seen yet) to
-            // avoid a placeholder flash before the first auto-attach lands. Once we've had any
-            // attachment in this session, surface a placeholder so the user can re-attach
-            // after detaching with the X.
-            state = .placeholder
-            isVisible = hasEverAttached
         } else {
-            // Manual: always show placeholder so the user can attach.
+            // No attachment: always show placeholder so the user can attach. The half-sheet
+            // is the gate for "do I want to attach this page?"; once we're in the chat, an
+            // empty state needs an affordance.
             state = .placeholder
             isVisible = true
         }

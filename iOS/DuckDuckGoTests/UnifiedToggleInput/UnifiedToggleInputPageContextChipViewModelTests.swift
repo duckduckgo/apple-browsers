@@ -243,14 +243,16 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
 
     // MARK: - Visibility (auto mode)
 
-    func test_visibility_auto_coldStart_noCarryOver_hidden() {
-        // 6. Auto mode + cold start with no carry-over → hidden, waiting for auto-attach to
-        // land. Otherwise we'd flash a placeholder before the attachment arrives.
+    func test_visibility_auto_optedOutInHalfSheet_visiblePlaceholder() {
+        // Auto mode + user opted out at the half-sheet (no carry-over) → show placeholder.
+        // The half-sheet is where the user exercises their attach/skip agency; the chat is
+        // not a "waiting for first attach" surface, so we never hide an empty auto state.
         autoAttachEnabled = true
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT()
-        XCTAssertFalse(sut.isVisible)
+        XCTAssertTrue(sut.isVisible)
+        XCTAssertEqualState(sut.state, .placeholder)
     }
 
     func test_visibility_auto_coldStart_carryOverMatchingURL_hidden() {
@@ -307,19 +309,19 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqualState(sut.state, .placeholder)
     }
 
-    func test_visibility_auto_coldStart_thenAutoAttachLands_thenDetach_visiblePlaceholder() {
-        // Cold start in auto: hidden. After auto-attach lands and the user X-taps, the
-        // placeholder must appear — the initial-wait hide rule does not re-engage post-detach.
+    func test_visibility_auto_attachThenSubmitThenDetach_returnsToPlaceholder() {
+        // After auto-attach lands and the user submits, then X-taps, the placeholder reappears
+        // so they can re-attach manually.
         autoAttachEnabled = true
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT()
-        XCTAssertFalse(sut.isVisible)
 
         sut.setAttached(makeContext(title: "Cat", url: url))
         sut.markPromptSubmitted()
-        sut.setAttached(nil)
+        XCTAssertFalse(sut.isVisible)
 
+        sut.setAttached(nil)
         XCTAssertTrue(sut.isVisible)
         XCTAssertEqualState(sut.state, .placeholder)
     }

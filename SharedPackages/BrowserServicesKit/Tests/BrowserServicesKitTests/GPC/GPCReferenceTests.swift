@@ -28,7 +28,6 @@ import XCTest
 @testable import TrackerRadarKit
 
 final class GPCReferenceTests: XCTestCase {
-    private let userScriptDelegateMock = MockSurrogatesUserScriptDelegate()
     private let navigationDelegateMock = MockNavigationDelegate()
     private let schemeHandler = TestSchemeHandler()
     private static let data = JsonTestDataLoader()

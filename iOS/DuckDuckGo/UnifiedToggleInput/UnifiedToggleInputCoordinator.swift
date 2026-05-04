@@ -349,6 +349,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         stateStore.recordUserChoice(snapshotCurrentState(), for: uid)
     }
 
+    private func clearStoreEntryAfterSubmission() {
+        guard let uid = currentTabUID else { return }
+        var cleared = snapshotCurrentState()
+        cleared.text = ""
+        cleared.attachments = []
+        stateStore.update(cleared, for: uid)
+        Logger.unifiedInputState.debug("submission cleared store text + attachments for tab [\(uid)]")
+    }
+
     private var isNewChatPending = false
 
     // MARK: - AI Tab State
@@ -994,6 +1003,11 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
         commitCurrentToggleState()
+        // Eagerly clear the store entry's text + attachments for the active tab.
+        // The visible input clear is mode-specific (some paths defer it to a dismiss
+        // animation), so without this the store would briefly hold the submitted
+        // text, and a tab switch during the animation could miss the deferred clear.
+        clearStoreEntryAfterSubmission()
 
         switch mode {
         case .search:

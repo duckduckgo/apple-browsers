@@ -1654,6 +1654,54 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertEqual(store.states["tab-A"]?.text, "typing")
     }
 
+    // Regression: a brand-new tab must not inherit another tab's attachments. The
+    // previous tab's attachments are still in the live view at the moment of
+    // activateForTab; applyState must clear them before any user can see them.
+    func test_activateForTab_newTabDoesNotInheritPreviousTabAttachments() {
+        let store = FakeInputStateStore()
+        let attachment = AIChatImageAttachment(image: UIImage(), fileName: "x.jpg")
+        store.states["tab-1"] = TabInputState(attachments: [attachment])
+        let sut = makeSUT(stateStore: store)
+
+        sut.activateForTab("tab-1")
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+
+        // tab-2 has no entry in the store — it should get a fresh empty seed.
+        sut.activateForTab("tab-2")
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 0,
+                       "tab-2 must start with no attachments; the previous tab's strip contents must be cleared.")
+    }
+
+    // Regression: submitting a search/prompt empties the live input. The store entry
+    // for the active tab must reflect that emptiness eagerly — the visible clear may
+    // be deferred to a dismiss animation, but the store entry shouldn't hold the
+    // submitted text in the meantime, since a tab switch during the animation would
+    // miss the deferred clear.
+    func test_submitSearch_clearsStoreEntryEagerly() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("hello")
+        XCTAssertEqual(store.states["tab-A"]?.text, "hello")
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .search)
+        XCTAssertEqual(store.states["tab-A"]?.text ?? "", "")
+    }
+
+    func test_submitPrompt_clearsStoreTextAndAttachmentsEagerly() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("ask claude something")
+        sut.addImageAttachment(image: UIImage(), fileName: "x.jpg")
+        XCTAssertEqual(store.states["tab-A"]?.text, "ask claude something")
+        XCTAssertEqual(store.states["tab-A"]?.attachments.count, 1)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "ask claude something", mode: .aiChat)
+        XCTAssertEqual(store.states["tab-A"]?.text ?? "", "")
+        XCTAssertEqual(store.states["tab-A"]?.attachments.count, 0)
+    }
+
     // Regression: user keystrokes flow through unifiedToggleInputVC(_:didChangeText:),
     // not setText(_:), so the persistence must be wired on the delegate callback too.
     func test_didChangeText_propagatesToStore() {

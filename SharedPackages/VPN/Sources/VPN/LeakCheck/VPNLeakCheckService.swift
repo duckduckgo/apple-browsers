@@ -36,6 +36,10 @@ private enum LeakCheckIPError: Error, CustomNSError {
     }
 }
 
+private enum LeakCheckStatusReason {
+    static let checkInterrupted = "check_interrupted"
+}
+
 public actor VPNLeakCheckService {
 
     public typealias TunnelInterfaceProvider = @Sendable () async -> NWInterface?
@@ -56,7 +60,6 @@ public actor VPNLeakCheckService {
     private var periodicTask: Task<Void, Never>?
     private var scheduledCheck: Task<Void, Never>?
     private var scheduledCheckID: UInt64 = 0
-    private var scheduledTrigger: LeakCheckTrigger?
     private var isStopped = false
 
     /// The service resolves both the tunnel `NWInterface` and the egress info live at the start of
@@ -99,7 +102,6 @@ public actor VPNLeakCheckService {
         periodicTask = nil
         scheduledCheck?.cancel()
         scheduledCheck = nil
-        scheduledTrigger = nil
         if let task = currentCheck {
             task.cancel()
             currentCheck = nil
@@ -122,7 +124,7 @@ public actor VPNLeakCheckService {
         }
 
         guard trigger != .periodic else {
-            guard scheduledTrigger == nil else {
+            guard scheduledCheck == nil else {
                 Logger.networkProtectionIPLeakCheck.log("Skipping periodic leak check — tunnel path check pending")
                 return
             }
@@ -137,7 +139,6 @@ public actor VPNLeakCheckService {
         currentCheck = nil
         scheduledCheckID &+= 1
         let checkID = scheduledCheckID
-        scheduledTrigger = trigger
 
         let delay = configuration.debounceDelay
         scheduledCheck = Task { [weak self] in
@@ -153,7 +154,6 @@ public actor VPNLeakCheckService {
     private func clearScheduledCheck(id: UInt64) {
         guard scheduledCheckID == id else { return }
         scheduledCheck = nil
-        scheduledTrigger = nil
     }
 
     public static func completeAllPendingFlows(wideEvent: WideEventManaging) {
@@ -164,7 +164,7 @@ public actor VPNLeakCheckService {
         for data in pending {
             wideEvent.completeFlow(
                 data,
-                status: .unknown(reason: "check_interrupted"),
+                status: .unknown(reason: LeakCheckStatusReason.checkInterrupted),
                 onComplete: { _, _ in }
             )
         }
@@ -175,7 +175,7 @@ public actor VPNLeakCheckService {
             Logger.networkProtectionIPLeakCheck.log("Skipping leak check — service stopped (trigger: \(trigger.rawValue, privacy: .public))")
             return
         }
-        guard trigger != .periodic || bypassCooldown || scheduledTrigger == nil else {
+        guard trigger != .periodic || bypassCooldown || scheduledCheck == nil else {
             Logger.networkProtectionIPLeakCheck.log("Skipping periodic leak check — tunnel path check pending")
             return
         }
@@ -205,9 +205,9 @@ public actor VPNLeakCheckService {
         defer {
             if currentCheckID == id {
                 currentCheck = nil
-            }
-            if currentCheckID == id && !Task.isCancelled {
-                lastCompletionDate = Date()
+                if !Task.isCancelled {
+                    lastCompletionDate = Date()
+                }
             }
         }
 
@@ -246,8 +246,8 @@ public actor VPNLeakCheckService {
 
         guard await tunnelPathGeneration() == pathGenerationSnapshot else {
             Logger.networkProtectionIPLeakCheck.log("🔴 Leak check interrupted by tunnel path change (trigger: \(trigger.rawValue, privacy: .public))")
-            data.statusReason = "check_interrupted"
-            wideEvent.completeFlow(data, status: .unknown(reason: "check_interrupted"), onComplete: { _, _ in })
+            data.statusReason = LeakCheckStatusReason.checkInterrupted
+            wideEvent.completeFlow(data, status: .unknown(reason: LeakCheckStatusReason.checkInterrupted), onComplete: { _, _ in })
             return
         }
 

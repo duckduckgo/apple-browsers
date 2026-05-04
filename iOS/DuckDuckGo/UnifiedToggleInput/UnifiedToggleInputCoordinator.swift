@@ -142,6 +142,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let stateStore: UnifiedInputStateStoring
     private(set) var currentTabUID: TabUID?
     private var isApplyingState = false
+    /// True while a dismiss-time visible-text clear is in flight. The deferred
+    /// `clearText()` is a UI cleanup, not a user intent to delete their typed text;
+    /// per-tab persistence must keep the draft so re-activating the same tab restores it.
+    private var isPerformingDismissCleanup = false
     private(set) var committedInputMode: TextEntryMode = .search
     private(set) var cardPosition: UnifiedToggleInputCardPosition = .bottom
     private(set) var isInputVisibleForKeyboard: Bool = true
@@ -345,7 +349,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func persistCurrentStateToStore() {
-        guard !isApplyingState, let uid = currentTabUID else { return }
+        guard !isApplyingState, !isPerformingDismissCleanup, let uid = currentTabUID else { return }
         stateStore.recordUserChoice(snapshotCurrentState(), for: uid)
     }
 
@@ -692,7 +696,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func clearText() {
+        // Dismiss-time clear: scrub the visible input but keep the per-tab draft.
+        // The flag also covers the deferred `didChangeText` callback that fires
+        // asynchronously after `setText("")` triggers the handler's text publisher.
+        isPerformingDismissCleanup = true
         setText("")
+        DispatchQueue.main.async { [weak self] in
+            self?.isPerformingDismissCleanup = false
+        }
     }
 
     func stopGeneratingButtonTapped() {

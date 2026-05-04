@@ -1654,6 +1654,23 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertEqual(store.states["tab-A"]?.text, "typing")
     }
 
+    // Regression: clearText is a dismiss-time visible-input cleanup. With per-tab
+    // persistence it must NOT wipe the stored draft — the user may re-activate the
+    // same tab and expect their typed text back. Without this guard, tapping outside
+    // the omnibar (or opening a new tab) eventually fires the deferred clearText and
+    // overwrites the per-tab entry with empty text.
+    func test_clearText_doesNotWipeStoreEntry() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "draft to keep")
+        XCTAssertEqual(store.states["tab-A"]?.text, "draft to keep")
+
+        sut.clearText()
+        XCTAssertEqual(store.states["tab-A"]?.text, "draft to keep",
+                       "Dismiss-time clearText must preserve the per-tab stored draft.")
+    }
+
     // Regression: a brand-new tab must not inherit another tab's attachments. The
     // previous tab's attachments are still in the live view at the moment of
     // activateForTab; applyState must clear them before any user can see them.

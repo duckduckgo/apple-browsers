@@ -134,7 +134,6 @@ final class SafariRedirectHandler: SafariRedirectHandling {
 
         let stayAction = UIAlertAction(title: UserText.xSafariHTTPSStayInDDG, style: .default, handler: { [weak self] _ in
             guard let self else { return }
-            DailyPixel.fireDaily(.webViewExternalSchemeNavigationXSafariHTTPSStay)
             self.hostStates[host] = HostState(isSafariRedirectSuppressed: true, alertShown: true)
             self.convertAndLoad(url: url)
         })
@@ -142,7 +141,6 @@ final class SafariRedirectHandler: SafariRedirectHandling {
 
         alert.addAction(UIAlertAction(title: UserText.xSafariHTTPSOpenInSafari, style: .default, handler: { [weak self] _ in
             guard let self else { return }
-            DailyPixel.fireDaily(.webViewExternalSchemeNavigationXSafariHTTPSOpenInSafari)
             self.hostStates[host]?.alertShown = false
             self.delegate?.safariRedirectHandler(self, didRequestOpenExternallyURL: url)
         }))
@@ -167,7 +165,6 @@ final class SafariRedirectHandler: SafariRedirectHandling {
 
         alert.addAction(UIAlertAction(title: UserText.xSafariHTTPSOpenInSafari, style: .default, handler: { [weak self] _ in
             guard let self else { return }
-            DailyPixel.fireDaily(.webViewExternalSchemeNavigationXSafariHTTPSLoopOpenInSafari)
             self.hostStates[host] = HostState()
             self.delegate?.safariRedirectHandler(self, didRequestOpenExternallyURL: url)
         }))

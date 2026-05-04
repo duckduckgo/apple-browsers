@@ -341,4 +341,3 @@ private struct SuggestionListItem: View {
     }
 
 }
-

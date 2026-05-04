@@ -110,4 +110,3 @@ final class DuckAIURLSuggestionsLoaderTests: XCTestCase {
         cancellable.cancel()
     }
 }
-

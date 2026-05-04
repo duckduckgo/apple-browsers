@@ -215,6 +215,31 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertTrue(sut.isVisible)
     }
 
+    func test_markPromptSubmitted_hidesChip() {
+        // After submit, chip auto-hides — user already saw "this is attached" and committed.
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT()
+        XCTAssertTrue(sut.isVisible)
+
+        sut.markPromptSubmitted()
+
+        XCTAssertFalse(sut.isVisible)
+    }
+
+    func test_markPromptSubmitted_chipReappearsOnNextNavigation() {
+        // After submit + nav, chip re-appears so user sees the new attachment context.
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT()
+        sut.markPromptSubmitted()
+        XCTAssertFalse(sut.isVisible)
+
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
+
+        XCTAssertTrue(sut.isVisible)
+    }
+
     func test_visibility_appliesEvenWhenDetached() {
         // Removing the attached context (X tapped) keeps the chip visible as a placeholder
         // so the user can re-attach.

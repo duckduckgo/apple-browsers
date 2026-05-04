@@ -100,6 +100,13 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         onRemoveActionRequested?()
     }
 
+    /// Hide the chip after a prompt is submitted. The attached context stays — the user already
+    /// saw "this is what's attached" and submitted with it; redisplaying is noise. The chip
+    /// re-appears on the next navigation (via the originating-URL publisher sink).
+    func markPromptSubmitted() {
+        if isVisible { isVisible = false }
+    }
+
     private var shouldClearOnNavigationAway: Bool {
         guard let attachedURL, attachedURL != originatingURL else { return false }
         return !isAutoAttachEnabled()

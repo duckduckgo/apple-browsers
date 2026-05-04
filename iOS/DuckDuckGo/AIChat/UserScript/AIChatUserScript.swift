@@ -105,6 +105,10 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// owns the attachment state (e.g. `AIChatContextualUTIHost`).
     var attachedPageContextProvider: (() -> AIChatPageContextData?)?
 
+    /// Fires after a prompt is submitted via the multi-modal `submitPrompt(_:images:modelId:tools:reasoningEffort:)`
+    /// path (used by the native UTI). Set by the host so the chip can auto-hide post-submit.
+    var onPromptSubmitted: (() -> Void)?
+
     var inputBoxHandler: AIChatInputBoxHandling? {
         didSet { subscribeToInputBoxEvents() }
     }
@@ -298,6 +302,7 @@ final class AIChatUserScript: NSObject, Subfeature {
             reasoningEffort: reasoningEffort
         )
         push(.submitPrompt(promptPayload))
+        onPromptSubmitted?()
     }
 
     /// Submits a start chat action to the web content, initiating a new AI Chat conversation.

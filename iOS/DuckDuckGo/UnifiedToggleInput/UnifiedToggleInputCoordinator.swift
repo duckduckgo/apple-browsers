@@ -339,7 +339,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func persistCurrentStateToStore() {
         guard !isApplyingState, let uid = currentTabUID else { return }
-        stateStore.update(snapshotCurrentState(), for: uid)
+        stateStore.recordUserChoice(snapshotCurrentState(), for: uid)
     }
 
     private var isNewChatPending = false

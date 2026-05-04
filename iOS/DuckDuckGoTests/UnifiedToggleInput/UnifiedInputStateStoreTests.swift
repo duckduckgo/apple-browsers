@@ -42,10 +42,12 @@ final class UnifiedInputStateStoreTests: XCTestCase {
 
     // MARK: - get/set/remove
 
-    func test_state_forUnknownUID_returnsSeededFromLastUsed() {
+    func test_state_forUnknownUID_returnsSeededFromLastUsedAtConstruction() {
+        // lastUsed is captured at init time from preferences/storage.
         toggleStorage.stored = .aiChat
         preferences.selectedModelId = "gpt-5"
-        let state = sut.state(for: "tab-1")
+        let sutWithSeed = UnifiedInputStateStore(preferences: preferences, toggleModeStorage: toggleStorage)
+        let state = sutWithSeed.state(for: "tab-1")
         XCTAssertEqual(state.toggleMode, .aiChat)
         XCTAssertEqual(state.selectedModelID, "gpt-5")
         XCTAssertEqual(state.text, "")
@@ -53,7 +55,7 @@ final class UnifiedInputStateStoreTests: XCTestCase {
     }
 
     func test_state_whenToggleStorageEmpty_defaultsToSearch() {
-        toggleStorage.stored = nil
+        // sut was constructed in setUp with toggleStorage.stored == nil.
         let state = sut.state(for: "tab-1")
         XCTAssertEqual(state.toggleMode, .search)
     }
@@ -74,34 +76,74 @@ final class UnifiedInputStateStoreTests: XCTestCase {
         XCTAssertEqual(sut.state(for: "tab-1").text, "")
     }
 
-    // MARK: - lastUsed write-through on update
+    // MARK: - update vs recordUserChoice
 
-    func test_update_writesThroughToggleModeToStorage() {
+    func test_update_doesNotWriteThroughToGlobals() {
         var state = TabInputState()
         state.toggleMode = .aiChat
+        state.selectedModelID = "claude-opus"
+        state.selectedReasoningMode = .reasoning
         sut.update(state, for: "tab-1")
+        XCTAssertNil(toggleStorage.stored)
+        XCTAssertNil(preferences.selectedModelId)
+        XCTAssertNil(preferences.selectedReasoningMode)
+    }
+
+    func test_update_doesNotMutateLastUsed() {
+        // lastUsed reflects construction-time defaults until a user choice is recorded.
+        let initialLastUsed = sut.lastUsed
+        var state = TabInputState()
+        state.toggleMode = .aiChat
+        state.selectedModelID = "claude-opus"
+        sut.update(state, for: "tab-1")
+        XCTAssertEqual(sut.lastUsed, initialLastUsed)
+    }
+
+    func test_recordUserChoice_writesThroughToggleModeToStorage() {
+        var state = TabInputState()
+        state.toggleMode = .aiChat
+        sut.recordUserChoice(state, for: "tab-1")
         XCTAssertEqual(toggleStorage.stored, .aiChat)
     }
 
-    func test_update_writesThroughSelectedModelIDToPreferences() {
+    func test_recordUserChoice_writesThroughSelectedModelIDToPreferences() {
         var state = TabInputState()
         state.selectedModelID = "claude-opus"
-        sut.update(state, for: "tab-1")
+        sut.recordUserChoice(state, for: "tab-1")
         XCTAssertEqual(preferences.selectedModelId, "claude-opus")
     }
 
-    func test_update_writesThroughReasoningModeToPreferences() {
+    func test_recordUserChoice_writesThroughReasoningModeToPreferences() {
         var state = TabInputState()
         state.selectedReasoningMode = .reasoning
-        sut.update(state, for: "tab-1")
+        sut.recordUserChoice(state, for: "tab-1")
         XCTAssertEqual(preferences.selectedReasoningMode, .reasoning)
     }
 
-    func test_update_setsLastUsedTool() {
+    func test_recordUserChoice_updatesLastUsed() {
         var state = TabInputState()
+        state.toggleMode = .aiChat
+        state.selectedModelID = "claude-opus"
         state.selectedTool = .webSearch
-        sut.update(state, for: "tab-1")
+        sut.recordUserChoice(state, for: "tab-1")
+        XCTAssertEqual(sut.lastUsed.toggleMode, .aiChat)
+        XCTAssertEqual(sut.lastUsed.selectedModelID, "claude-opus")
         XCTAssertEqual(sut.lastUsed.selectedTool, .webSearch)
+    }
+
+    // Regression for the new-tab inheritance bug: tab-flush after a user choice in another
+    // tab must not overwrite lastUsed with the flushed (active-tab) values.
+    func test_update_afterRecordUserChoiceElsewhere_preservesLastUsed() {
+        var deliberateA = TabInputState()
+        deliberateA.selectedModelID = "user-picked-A"
+        sut.recordUserChoice(deliberateA, for: "tab-A")
+
+        // Simulate a tab-switch flush of an unrelated, never-deliberately-chosen tab.
+        var driftB = TabInputState()
+        driftB.selectedModelID = "drift-B"
+        sut.update(driftB, for: "tab-B")
+
+        XCTAssertEqual(sut.lastUsed.selectedModelID, "user-picked-A")
     }
 
     // MARK: - TabsModel observation
@@ -115,12 +157,15 @@ final class UnifiedInputStateStoreTests: XCTestCase {
     }
 
     func test_observingTabsModel_seedsRemainingFieldsFromLastUsed() {
-        let tabsModel = TabsModel(desktop: false)
+        // lastUsed is captured at init from preferences, or updated via recordUserChoice.
+        // Re-construct sut after setting preferences so init picks them up.
         preferences.selectedModelId = "gpt-5"
+        let store = UnifiedInputStateStore(preferences: preferences, toggleModeStorage: toggleStorage)
+        let tabsModel = TabsModel(desktop: false)
         let tab = Tab(uid: "tab-eager", fireTab: false, preferredTextEntryMode: .search)
-        sut.observeTabsModel(tabsModel)
+        store.observeTabsModel(tabsModel)
         tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
-        XCTAssertEqual(sut.state(for: "tab-eager").selectedModelID, "gpt-5")
+        XCTAssertEqual(store.state(for: "tab-eager").selectedModelID, "gpt-5")
     }
 
     func test_observingTabsModel_evictsRemovedTabs() {
@@ -132,6 +177,29 @@ final class UnifiedInputStateStoreTests: XCTestCase {
 
         tabsModel.remove(tab: tab)
         XCTAssertEqual(sut.state(for: "tab-evict").text, "")
+    }
+
+    // Regression for the fire-mode bug: tabs in a second observed model must also be
+    // seeded and evicted.
+    func test_observingMultipleTabsModels_seedsAndEvictsBothSources() {
+        let normalModel = TabsModel(desktop: false)
+        let fireModel = TabsModel(desktop: false, mode: .fire)
+        sut.observeTabsModel(normalModel)
+        sut.observeTabsModel(fireModel)
+
+        let normalTab = Tab(uid: "normal-1", fireTab: false, preferredTextEntryMode: .search)
+        let fireTab = Tab(uid: "fire-1", fireTab: true, preferredTextEntryMode: .aiChat)
+        normalModel.insert(tab: normalTab, placement: .atEnd, selectNewTab: true)
+        fireModel.insert(tab: fireTab, placement: .atEnd, selectNewTab: true)
+
+        XCTAssertEqual(sut.state(for: "normal-1").toggleMode, .search)
+        XCTAssertEqual(sut.state(for: "fire-1").toggleMode, .aiChat)
+
+        sut.update(TabInputState(text: "fire kept"), for: "fire-1")
+        fireModel.remove(tab: fireTab)
+        XCTAssertEqual(sut.state(for: "fire-1").text, "")
+        // Normal-tab entry must still be present.
+        XCTAssertEqual(sut.state(for: "normal-1").toggleMode, .search)
     }
 }
 

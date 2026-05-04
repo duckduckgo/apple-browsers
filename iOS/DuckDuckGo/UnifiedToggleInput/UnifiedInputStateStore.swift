@@ -20,8 +20,9 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     private var states: [TabUID: TabInputState] = [:]
     private var preferences: AIChatPreferencesPersisting
     private let toggleModeStorage: ToggleModeStoring
-    private var lastUsedTool: AIChatRAGTool?
-    private var tabsCancellable: AnyCancellable?
+    private var trackedLastUsed: LastUsedInputDefaults
+    private var modelSnapshots: [ObjectIdentifier: [Tab]] = [:]
+    private var tabsCancellables = Set<AnyCancellable>()
     private var knownUIDs: Set<TabUID> = []
 
     init(
@@ -30,47 +31,67 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     ) {
         self.preferences = preferences
         self.toggleModeStorage = toggleModeStorage
-    }
-
-    var lastUsed: LastUsedInputDefaults {
-        LastUsedInputDefaults(
+        self.trackedLastUsed = LastUsedInputDefaults(
             toggleMode: toggleModeStorage.restore() ?? .search,
             selectedModelID: preferences.selectedModelId,
             selectedReasoningMode: preferences.selectedReasoningMode,
-            selectedTool: lastUsedTool
+            selectedTool: nil
         )
     }
+
+    var lastUsed: LastUsedInputDefaults { trackedLastUsed }
 
     func state(for uid: TabUID) -> TabInputState {
         if let existing = states[uid] {
             return existing
         }
-        return seededState()
+        return seededState(toggleMode: trackedLastUsed.toggleMode)
     }
 
     func update(_ state: TabInputState, for uid: TabUID) {
         states[uid] = state
+    }
+
+    func recordUserChoice(_ state: TabInputState, for uid: TabUID) {
+        states[uid] = state
+        trackedLastUsed = LastUsedInputDefaults(
+            toggleMode: state.toggleMode,
+            selectedModelID: state.selectedModelID,
+            selectedReasoningMode: state.selectedReasoningMode,
+            selectedTool: state.selectedTool
+        )
         toggleModeStorage.save(state.toggleMode)
         preferences.selectedModelId = state.selectedModelID
         preferences.selectedReasoningMode = state.selectedReasoningMode
-        lastUsedTool = state.selectedTool
     }
 
     func remove(for uid: TabUID) {
         states.removeValue(forKey: uid)
     }
 
+    /// Observes one tabs model for eager seeding and eviction. Can be called multiple
+    /// times to observe both normal- and fire-mode tabs models.
+    ///
+    /// `@Published` fires in `willSet`, so the publisher's closure parameter holds the
+    /// post-mutation value while the source-of-truth accessor still returns the old
+    /// value. We track each model's latest emission separately and reconcile from the
+    /// union, avoiding the stale-read trap.
     func observeTabsModel(_ tabsModel: TabsModelManaging) {
-        tabsCancellable = tabsModel.tabsPublisher
+        let modelID = ObjectIdentifier(tabsModel)
+        tabsModel.tabsPublisher
             .sink { [weak self] tabs in
-                self?.reconcile(with: tabs)
+                guard let self else { return }
+                self.modelSnapshots[modelID] = tabs
+                self.reconcileFromSnapshots()
             }
+            .store(in: &tabsCancellables)
     }
 
-    private func reconcile(with tabs: [Tab]) {
-        let currentUIDs = Set(tabs.map { $0.uid })
-        for tab in tabs where !knownUIDs.contains(tab.uid) {
-            states[tab.uid] = seededState(forTab: tab)
+    private func reconcileFromSnapshots() {
+        let allTabs = modelSnapshots.values.flatMap { $0 }
+        let currentUIDs = Set(allTabs.map { $0.uid })
+        for tab in allTabs where !knownUIDs.contains(tab.uid) {
+            states[tab.uid] = seededState(toggleMode: tab.preferredTextEntryMode)
         }
         for uid in knownUIDs.subtracting(currentUIDs) {
             states.removeValue(forKey: uid)
@@ -78,27 +99,14 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         knownUIDs = currentUIDs
     }
 
-    private func seededState(forTab tab: Tab) -> TabInputState {
-        let defaults = lastUsed
-        return TabInputState(
+    private func seededState(toggleMode: TextEntryMode) -> TabInputState {
+        TabInputState(
             text: "",
-            toggleMode: tab.preferredTextEntryMode,
+            toggleMode: toggleMode,
             attachments: [],
-            selectedModelID: defaults.selectedModelID,
-            selectedReasoningMode: defaults.selectedReasoningMode,
-            selectedTool: defaults.selectedTool
-        )
-    }
-
-    private func seededState() -> TabInputState {
-        let defaults = lastUsed
-        return TabInputState(
-            text: "",
-            toggleMode: defaults.toggleMode,
-            attachments: [],
-            selectedModelID: defaults.selectedModelID,
-            selectedReasoningMode: defaults.selectedReasoningMode,
-            selectedTool: defaults.selectedTool
+            selectedModelID: trackedLastUsed.selectedModelID,
+            selectedReasoningMode: trackedLastUsed.selectedReasoningMode,
+            selectedTool: trackedLastUsed.selectedTool
         )
     }
 }

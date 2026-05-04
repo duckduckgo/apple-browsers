@@ -1579,6 +1579,16 @@ private final class FakeInputStateStore: UnifiedInputStateStoring {
         states[uid] = state
     }
 
+    func recordUserChoice(_ state: TabInputState, for uid: TabUID) {
+        states[uid] = state
+        lastUsedDefaults = LastUsedInputDefaults(
+            toggleMode: state.toggleMode,
+            selectedModelID: state.selectedModelID,
+            selectedReasoningMode: state.selectedReasoningMode,
+            selectedTool: state.selectedTool
+        )
+    }
+
     func remove(for uid: TabUID) {
         states.removeValue(forKey: uid)
     }
@@ -1642,6 +1652,22 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.activateForTab("tab-A")
         sut.setText("typing")
         XCTAssertEqual(store.states["tab-A"]?.text, "typing")
+    }
+
+    // Regression: tab switch must NOT mutate lastUsed. New tabs should keep inheriting
+    // the most recent deliberate choice, not the active tab's mirror.
+    func test_activateForTab_doesNotMutateLastUsed() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+
+        sut.activateForTab("tab-A")
+        sut.setText("deliberate A")
+        let lastUsedAfterChoice = store.lastUsed
+
+        sut.activateForTab("tab-B")
+        sut.activateForTab("tab-A")
+
+        XCTAssertEqual(store.lastUsed, lastUsedAfterChoice)
     }
 }
 

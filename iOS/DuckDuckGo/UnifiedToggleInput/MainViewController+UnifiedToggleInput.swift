@@ -50,7 +50,8 @@ extension MainViewController {
             preferences: aiChatPreferences,
             toggleModeStorage: toggleModeStorage
         )
-        stateStore.observeTabsModel(tabManager.currentTabsModel)
+        stateStore.observeTabsModel(tabManager.normalTabsModel)
+        stateStore.observeTabsModel(tabManager.fireModeTabsModel)
         self.unifiedInputStateStore = stateStore
 
         let coordinator = UnifiedToggleInputCoordinator(

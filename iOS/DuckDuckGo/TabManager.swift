@@ -111,6 +111,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     var normalTabsModel: TabsModelManaging {
         tabsModelProvider.normalTabsModel
     }
+
+    var fireModeTabsModel: TabsModelManaging {
+        tabsModelProvider.fireModeTabsModel
+    }
     
     var allTabsModel: TabsModelReading {
         tabsModelProvider.aggregateTabsModel

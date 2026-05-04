@@ -228,11 +228,11 @@ public struct UserText {
     static let simplifiedGetDesktopBrowserSubtitle = NSLocalizedString("sync.simplified.get.desktop.browser.subtitle", bundle: Bundle.module, value: "DuckDuckGo for Mac and Windows", comment: "Button subtitle to get the DuckDuckGo desktop browser")
     static let simplifiedSyncAnotherDeviceButton = NSLocalizedString("sync.simplified.another.device.button", bundle: Bundle.module, value: "Sync Another Device", comment: "Primary button to sync another device when sync is enabled")
     static let simplifiedBookmarksSectionHeader = NSLocalizedString("sync.simplified.bookmarks.section.header", bundle: Bundle.module, value: "Bookmarks", comment: "Bookmarks section header in sync settings")
-    static let simplifiedBookmarksUnifiedFavoritesCaption = NotLocalizedString("sync.simplified.bookmarks.section.unified-favorites.caption", bundle: Bundle.module, value: "Use the same favorite bookmarks on mobile and desktop.", comment: "Caption displayed on 'unify favorites' toggle.")
-    static let simplifiedBookmarksFetchFaviconsCaption = NotLocalizedString("sync.simplified.bookmarks.section.fetch-favicons.caption", bundle: Bundle.module, value: "Loads icons from websites you've bookmarked. Icon downloads are exposed to your network.", comment: "Caption displayed on 'auto-download bookmarks icons' toggle.")
+    static let simplifiedBookmarksUnifiedFavoritesCaption = NSLocalizedString("sync.simplified.bookmarks.section.unified-favorites.caption", bundle: Bundle.module, value: "Use the same favorite bookmarks on mobile and desktop.", comment: "Caption displayed on 'unify favorites' toggle.")
+    static let simplifiedBookmarksFetchFaviconsCaption = NSLocalizedString("sync.simplified.bookmarks.section.fetch-favicons.caption", bundle: Bundle.module, value: "Loads icons from websites you've bookmarked. Icon downloads are exposed to your network.", comment: "Caption displayed on 'auto-download bookmarks icons' toggle.")
     static let simplifiedDownloadRecoveryCodeButton = NSLocalizedString("sync.simplified.download.recovery.code.button", bundle: Bundle.module, value: "Download Recovery Code", comment: "Sync settings 'Download Recovery Code' button")
     static let simplifiedCopyRecoveryCodeButton = NSLocalizedString("sync.simplified.copy.recovery.code.button", bundle: Bundle.module, value: "Copy Recovery Code", comment: "Sync settings 'Copy Recovery Code' button")
-    static let simplifiedRecoverySectionFooterFormat = NotLocalizedString("sync.simplified.recovery.section.footer", bundle: Bundle.module, value: "Use this code to restore your data if you lose access to this device. Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn More](%@)", comment: "Sync settings data recovery section footer. %@ is replaced with the URL.")
+    static let simplifiedRecoverySectionFooterFormat = NSLocalizedString("sync.simplified.recovery.section.footer", bundle: Bundle.module, value: "Use this code to restore your data if you lose access to this device. Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn More](%@)", comment: "Sync settings data recovery section footer. %@ is replaced with the URL.")
     static let simplifiedDeleteSyncDataButton = NSLocalizedString("sync.simplified.delete.sync.data.button", bundle: Bundle.module, value: "Turn Off Sync and Delete Server Data", comment: "Sync settings action button title to turn off sync and delete server data")
 
     // Simplified Sync Toggle
@@ -241,7 +241,7 @@ public struct UserText {
     // Simplified Sync Another Device Prompt
     static let simplifiedSyncAnotherDeviceTitle = NSLocalizedString("sync.simplified.another.device.title", bundle: Bundle.module, value: "Sync your data with another device?", comment: "Prompt title after enabling sync")
     static let simplifiedSyncAnotherDeviceBody = NSLocalizedString("sync.simplified.another.device.body", bundle: Bundle.module, value: "Your bookmarks, autofill data, and Duck.ai chats are securely backed up. Now keep them in sync with your computer or tablet.", comment: "Prompt body text after enabling sync")
-    static let simplifiedSyncAnotherDeviceNotNow = NotLocalizedString("sync.simplified.another.device.notnow", bundle: Bundle.module, value: "Not Now", comment: "Prompt secondary button")
+    static let simplifiedSyncAnotherDeviceNotNow = NSLocalizedString("sync.simplified.another.device.notnow", bundle: Bundle.module, value: "Not Now", comment: "Prompt secondary button")
 
     // Simplified QR Scanning
     static let simplifiedScanTitle = NSLocalizedString("sync.simplified.scan-or-view-code.title", bundle: Bundle.module, value: "Sync Your Devices", comment: "Navigation title for simplified QR scanning screen")

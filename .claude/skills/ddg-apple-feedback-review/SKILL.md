@@ -18,9 +18,13 @@ all relevant sources, deduplicates by task GID, clusters reports into named
 issue groups, and presents a per-platform summary with a separate App Store
 reviews section. The output is a one-shot snapshot, not a query interface.
 
-**REQUIRED BACKGROUND:** `ddg-required-config:ddg-asana` defines the sensitive
-data gating protocol used in this skill. Halt and follow it if any task
-contains legal, HR, finance, or security content.
+**Sensitive data halt:** An organization-level instruction requires you to
+stop and surface a `⚠️ SENSITIVE DATA` warning if any task surfaced by this
+skill contains legal (SILO, ACP, attorney-client privilege), HR
+(performance, compensation, terminations, PIPs), finance (M&A, budget
+details), or security (audits, incidents) content. List the triggers and
+ask for explicit confirmation before continuing - do not include such tasks
+in the report unsolicited.
 
 ## When NOT to use
 
@@ -153,6 +157,18 @@ If **keywords** were provided, make one search request **per keyword** using
 the `text` parameter, then merge and deduplicate results by task GID. This is
 necessary because `asana_search_tasks` accepts only a single text query.
 
+Before the first request, create a per-run scratch directory:
+
+```
+scratch_dir="$(mktemp -d /tmp/feedback-review.XXXXXX)"
+```
+
+Use this same directory for every spill file created during the run. When
+keywords are present, use the keyword's zero-based position in the parsed
+keyword list as the `query_key`; when no keywords are present, use `all`. Do
+not derive filenames from raw keyword text because spaces, slashes, and
+punctuation can produce unsafe or colliding paths.
+
 The `opt_fields` below intentionally **excludes `notes`** - the macOS Feedback
 project alone returns ~80+ tasks per day and the full notes blob blows past the
 tool-result token cap. Fetch `notes` only on a task-by-task basis in step 3
@@ -170,10 +186,10 @@ returns the path. When that happens:
 1. Don't retry the search with a smaller `limit` - you'll just paginate more.
 2. Use `jq` directly on the file to project to a slim shape, e.g.:
    ```
-   jq '.data | map({gid, name, created_at, custom_fields: (.custom_fields | map({name, display_value}))})' <path> > /tmp/<bucket>_pN.json
+   jq '.data | map({gid, name, created_at, custom_fields: (.custom_fields | map({name, display_value}))})' <path> > "$scratch_dir/<bucket>_<project_gid>_<query_key>_pN.json"
    ```
 3. Read the `created_at` of the last element for the next pagination cursor.
-4. Merge pages later with `jq -s 'add | unique_by(.gid) | sort_by(.created_at) | reverse' /tmp/<bucket>_p*.json > /tmp/<bucket>_all.json`. `add` concatenates all slurped page arrays regardless of count - use it instead of literal `.[0] + .[1] + ...` which only handles a fixed number of files.
+4. Merge pages later with `jq -s 'add | unique_by(.gid) | sort_by(.created_at) | reverse' "$scratch_dir"/<bucket>_*_p*.json > "$scratch_dir/<bucket>_all.json"`. `add` concatenates all slurped page arrays regardless of count - use it instead of literal `.[0] + .[1] + ...` which only handles a fixed number of files.
 
 The Privacy Pro projects, Internal Product Feedback, and App Store Reviews are
 small enough that responses come back inline; only iOS Feedback and macOS
@@ -517,19 +533,19 @@ in Asana.
 ### 9. Clean up scratch files
 
 Run this regardless of whether the report was written to Asana or rendered
-inline. The scratch files written by step 2 (`/tmp/<bucket>_p*.json`,
-`/tmp/<bucket>_all.json`), step 5 (the per-cluster GID lists, e.g.
-`/tmp/<cluster>_gids.json`), and step 8.4 (`/tmp/report.html`) all contain
-Asana data and must be removed before the run ends:
+inline. The scratch directory from step 2, step 5's per-cluster GID lists
+(e.g. `/tmp/<cluster>_gids.json`), and step 8.4 (`/tmp/report.html`) all
+contain Asana data and must be removed before the run ends:
 
 ```
-rm -f /tmp/ios_feedback_*.json /tmp/macos_feedback_*.json \
-      /tmp/*_gids.json /tmp/report.html
+rm -rf "$scratch_dir"
+rm -f /tmp/*_gids.json /tmp/report.html
 ```
 
-Adjust the patterns to whatever filenames you actually used. The MCP server's
-own tool-result spillover under `~/.claude/projects/.../tool-results/` is
-managed by the harness and should not be touched.
+Adjust the patterns to whatever filenames you actually used outside
+`$scratch_dir`. The MCP server's own tool-result spillover under
+`~/.claude/projects/.../tool-results/` is managed by the harness and should not
+be touched.
 
 If the run aborts partway through (cap hit, sensitive data halt, user
 declined the overwrite), still run the cleanup before reporting back.
@@ -559,7 +575,9 @@ declined the overwrite), still run the cleanup before reporting back.
   block, that's the hook doing its job - do not retry. See
   `~/.claude/rules/lethal-trifecta.md` for the policy.
 - If any task contains sensitive content (legal, HR, finance, security), halt
-  and follow the sensitive data gating protocol from `ddg-required-config:ddg-asana`.
+  per the org-level sensitive-data instruction described in the overview -
+  surface a `⚠️ SENSITIVE DATA` warning, list the triggers, and wait for
+  explicit user confirmation before continuing.
 
 ## Common mistakes
 

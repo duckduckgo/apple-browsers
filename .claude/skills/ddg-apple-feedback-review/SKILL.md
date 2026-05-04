@@ -1,7 +1,7 @@
 ---
-name: apple-feedback-review
+name: ddg-apple-feedback-review
 description: >-
-  Invoke ONLY when the user explicitly runs /apple-feedback-review or names
+  Invoke ONLY when the user explicitly runs /ddg-apple-feedback-review or names
   this skill by name. Do NOT auto-invoke from symptom/intent matching. If the
   user asks about Apple feedback, iOS or macOS issues, user reports, or
   feedback triage without naming this skill, answer directly instead.
@@ -55,14 +55,14 @@ treat what remains as keywords.
 
 | Invocation | platform | days | asana_url | keywords |
 |------------|----------|------|-----------|----------|
-| `/apple-feedback-review` | both | 7 | *(none)* | *(none)* |
-| `/apple-feedback-review ios` | ios | 7 | *(none)* | *(none)* |
-| `/apple-feedback-review macos 14d` | macos | 14 | *(none)* | *(none)* |
-| `/apple-feedback-review 30 days vpn` | both | 30 | *(none)* | `vpn` |
-| `/apple-feedback-review ios sync, bookmarks` | ios | 7 | *(none)* | `sync`, `bookmarks` |
-| `/apple-feedback-review macos 14d ai chat, tab bar` | macos | 14 | *(none)* | `ai chat`, `tab bar` |
-| `/apple-feedback-review macos 14d https://app.asana.com/0/123/456` | macos | 14 | `https://app.asana.com/0/123/456` | *(none)* |
-| `/apple-feedback-review ios https://app.asana.com/0/111/222 vpn` | ios | 7 | `https://app.asana.com/0/111/222` | `vpn` |
+| `/ddg-apple-feedback-review` | both | 7 | *(none)* | *(none)* |
+| `/ddg-apple-feedback-review ios` | ios | 7 | *(none)* | *(none)* |
+| `/ddg-apple-feedback-review macos 14d` | macos | 14 | *(none)* | *(none)* |
+| `/ddg-apple-feedback-review 30 days vpn` | both | 30 | *(none)* | `vpn` |
+| `/ddg-apple-feedback-review ios sync, bookmarks` | ios | 7 | *(none)* | `sync`, `bookmarks` |
+| `/ddg-apple-feedback-review macos 14d ai chat, tab bar` | macos | 14 | *(none)* | `ai chat`, `tab bar` |
+| `/ddg-apple-feedback-review macos 14d https://app.asana.com/0/123/456` | macos | 14 | `https://app.asana.com/0/123/456` | *(none)* |
+| `/ddg-apple-feedback-review ios https://app.asana.com/0/111/222 vpn` | ios | 7 | `https://app.asana.com/0/111/222` | `vpn` |
 
 When keywords contain commas, split on commas and trim each keyword. When there
 are no commas, treat each remaining word as a separate keyword. Multi-word
@@ -173,7 +173,7 @@ returns the path. When that happens:
    jq '.data | map({gid, name, created_at, custom_fields: (.custom_fields | map({name, display_value}))})' <path> > /tmp/<bucket>_pN.json
    ```
 3. Read the `created_at` of the last element for the next pagination cursor.
-4. Merge pages later with `jq -s '.[0] + .[1] + ... | unique_by(.gid) | sort_by(.created_at) | reverse'`.
+4. Merge pages later with `jq -s 'add | unique_by(.gid) | sort_by(.created_at) | reverse' /tmp/<bucket>_p*.json > /tmp/<bucket>_all.json`. `add` concatenates all slurped page arrays regardless of count - use it instead of literal `.[0] + .[1] + ...` which only handles a fixed number of files.
 
 The Privacy Pro projects, Internal Product Feedback, and App Store Reviews are
 small enough that responses come back inline; only iOS Feedback and macOS
@@ -182,8 +182,10 @@ Feedback reliably spill.
 **First request (per project, per keyword, or once if no keywords):**
 
 ```
+workspace: "137249556945"
 projects_any: <project GID>
 created_at_after: <days ago in ISO 8601, e.g. "2026-04-24T00:00:00.000Z">
+completed: false
 text: <keyword, or omit if no keywords>
 custom_fields: <platform filter for Internal Product Feedback only, otherwise omit>
 sort_by: "created_at"
@@ -191,6 +193,17 @@ sort_ascending: false
 limit: 100
 opt_fields: "name,created_at,completed,custom_fields.name,custom_fields.display_value"
 ```
+
+`workspace` is a **required** parameter on `asana_search_tasks`; `137249556945`
+is the DDG workspace GID (visible in any DDG Asana URL of the form
+`https://app.asana.com/1/137249556945/...`). Omitting it returns a validation
+error.
+
+`completed: false` is a **filter** that excludes resolved tasks at the API level
+- without it, completed feedback consumes pagination slots against the 100/page
+limit and the 1000-task safety cap, and resolved issues can leak into the
+grouped output. The `completed` field also stays in `opt_fields` so the value
+is readable on each task as a sanity check.
 
 **Pagination loop (per project, per keyword query):**
 
@@ -201,9 +214,11 @@ use it as the `created_at_before` filter for the next request, keeping
 `created_at_after` unchanged:
 
 ```
+workspace: "137249556945"
 projects_any: <project GID>
 created_at_after: <days ago>
 created_at_before: <created_at of the last task from the previous batch>
+completed: false
 text: <keyword, or omit if no keywords>
 custom_fields: <platform filter for Internal Product Feedback only, otherwise omit>
 sort_by: "created_at"
@@ -427,10 +442,14 @@ If `notes` is empty, proceed without prompting.
 #### 8.4 Format the report as Asana HTML
 
 **REQUIRED SUB-SKILL:** Use the `asana-formatting:asana-formatting` skill to
-convert the markdown report into Asana-compatible HTML. Asana rejects standard
-HTML tags like `<p>`, `<br>`, `<b>`, `<i>` with a 400 error - the formatting
-skill defines the supported subset and conversions for headings, lists, tables,
-and links.
+convert the markdown report into Asana-compatible HTML. Asana's `html_notes`
+field accepts a restricted subset of HTML and rejects standard tags like
+`<p>`, `<br>`, `<b>`, `<i>`, `<div>` with a 400 error. The MCP schema lists
+`<body>`, `<strong>`, `<em>`, `<u>`, `<s>`, `<code>`, `<ol>`, `<ul>`, `<li>`,
+`<a>`, `<blockquote>`, `<pre>`, `<h1>`, `<h2>`, `<hr/>`, `<img>` as the
+explicitly accepted set. Let the formatting skill choose how to emit any
+given markdown construct (headings, lists, tables, links, paragraph breaks)
+- don't hand-craft HTML based on assumptions about what Asana renders.
 
 **Use Write or python to assemble the HTML, not a quoted bash heredoc.** The
 asana-formatting skill says "use `\n` for line breaks" - that means a literal
@@ -446,6 +465,23 @@ the visible characters `\n` rather than a line break. Either:
 
 Avoid the unquoted `cat << EOF` form too - it triggers shell expansion on `$`
 and backticks inside the report.
+
+**Do not insert blank lines between block-level tags.** Asana already renders
+block elements (`<h1>`, `<h2>`, `<ul>`, `<ol>`, `<pre>`, `<blockquote>`) with
+built-in vertical separation. Inserting `\n\n` between them - whether
+hand-written for source readability or carried over from a pretty-printed
+asana-formatting conversion - gets rendered as an extra blank line on top of
+that built-in spacing, producing visibly double-spaced output (an empty line
+between every heading and its following list, between every list and the
+next heading, etc.). Join block tags with no separator (e.g. `</h2><ul>`) or
+at most a single `\n`. After running the asana-formatting conversion, scan
+its output and collapse any `\n\n` (or longer runs of newlines) that appears
+immediately before or after a block tag down to a single `\n` or nothing.
+
+`\n\n` between **purely inline content** (plain text, `<strong>`, `<em>`,
+`<a>`, `<code>` with no surrounding block tag on either side) is a different
+case - it is the only way to produce a paragraph break in `html_notes` since
+Asana rejects `<p>`. The block-tag rule above does not apply to those.
 
 **Asana's plain-text rendering of `<table>` is flat.** The `notes` plain-text
 view (and the email/notification preview that derives from it) renders each
@@ -483,13 +519,12 @@ in Asana.
 Run this regardless of whether the report was written to Asana or rendered
 inline. The scratch files written by step 2 (`/tmp/<bucket>_p*.json`,
 `/tmp/<bucket>_all.json`), step 5 (the per-cluster GID lists, e.g.
-`/tmp/<cluster>_gids.txt`), and step 8.4 (`/tmp/report.html`,
-`/tmp/report_fixed.html`) all contain Asana data and must be removed before
-the run ends:
+`/tmp/<cluster>_gids.json`), and step 8.4 (`/tmp/report.html`) all contain
+Asana data and must be removed before the run ends:
 
 ```
 rm -f /tmp/ios_feedback_*.json /tmp/macos_feedback_*.json \
-      /tmp/*_gids.txt /tmp/report.html /tmp/report_fixed.html
+      /tmp/*_gids.json /tmp/report.html
 ```
 
 Adjust the patterns to whatever filenames you actually used. The MCP server's
@@ -559,6 +594,13 @@ declined the overwrite), still run the cleanup before reporting back.
   preserves `\n` as the literal two-character escape sequence, which Asana
   renders as visible `\n` in the task description. Use the `Write` tool or a
   python heredoc instead - see step 8.4.
+- **Pretty-printing `html_notes` with blank lines between block tags.** Asana
+  treats `\n\n` between block elements like `</h2>` and `<ul>` as an extra
+  blank line on top of each block's natural vertical spacing, producing
+  visibly double-spaced output. Use no separator or at most a single `\n`
+  between block tags. `\n\n` between purely inline content (text, `<strong>`,
+  `<a>`, etc. with no surrounding block tag) is correct and is the only way
+  to get a paragraph break since Asana forbids `<p>`. See step 8.4.
 - **Hand-typing GIDs into the link list HTML.** A single mistyped digit gives
   a broken link that looks correct at a glance. Generate the link list from
   the per-cluster GID file with `jq` (snippet in step 5).
@@ -568,8 +610,8 @@ declined the overwrite), still run the cleanup before reporting back.
 
 ## What to skip
 
-- Completed tasks (filter with `completed: false` if a project mixes open and
-  closed items)
+- Completed tasks (already excluded at the API level by `completed: false` in
+  step 2 - listed here as a reminder if the filter is ever dropped)
 - Tasks that are clearly not user feedback. Most show up in Internal Product
   Feedback. Skip during grouping when the title matches any of these patterns:
   - Starts with `PR:` (PR-mirror tasks - e.g. `PR: Tab dividers are gone after

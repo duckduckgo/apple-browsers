@@ -1654,6 +1654,16 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertEqual(store.states["tab-A"]?.text, "typing")
     }
 
+    // Regression: user keystrokes flow through unifiedToggleInputVC(_:didChangeText:),
+    // not setText(_:), so the persistence must be wired on the delegate callback too.
+    func test_didChangeText_propagatesToStore() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "user-typed")
+        XCTAssertEqual(store.states["tab-A"]?.text, "user-typed")
+    }
+
     // Regression: tab switch must NOT mutate lastUsed. New tabs should keep inheriting
     // the most recent deliberate choice, not the active tab's mirror.
     func test_activateForTab_doesNotMutateLastUsed() {

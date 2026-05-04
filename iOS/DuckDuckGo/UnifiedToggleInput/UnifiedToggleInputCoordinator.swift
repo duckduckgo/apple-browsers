@@ -1034,6 +1034,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         currentText = text
         textState = text.isEmpty ? .empty : .userTyped
         textChangeSubject.send(text)
+        persistCurrentStateToStore()
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {

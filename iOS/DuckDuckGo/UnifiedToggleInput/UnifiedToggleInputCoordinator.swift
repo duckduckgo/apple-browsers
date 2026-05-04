@@ -320,14 +320,18 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.addAttachment(attachment)
         }
 
-        if let modelID = state.selectedModelID {
-            modelStore.updateSelectedModel(modelID)
-            handleModelsUpdated()
+        // Always sync the live model store from per-tab state — including nil values —
+        // so the previous tab's selections don't leak through preferences. With the
+        // `if let` shape we used to skip the write when state was nil, the live
+        // preferences kept the previous tab's reasoning/model and the next snapshot
+        // wrote that leaked value back into this tab's stored state.
+        modelStore.preferences.selectedModelId = state.selectedModelID
+        modelStore.preferences.selectedModelShortName = state.selectedModelID.flatMap { id in
+            modelStore.models.first(where: { $0.id == id })?.shortName
         }
-        if let reasoning = state.selectedReasoningMode {
-            modelStore.updateSelectedReasoningMode(reasoning)
-            updateReasoningPicker()
-        }
+        modelStore.preferences.selectedReasoningMode = state.selectedReasoningMode
+        handleModelsUpdated()
+        updateReasoningPicker()
 
         if let tool = state.selectedTool {
             toolsController.select(tool, for: modelStore)

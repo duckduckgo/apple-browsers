@@ -1671,6 +1671,37 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
                        "Dismiss-time clearText must preserve the per-tab stored draft.")
     }
 
+    // Regression: applyState must always sync the live model store from per-tab
+    // state, even when state values are nil. Otherwise the previous tab's reasoning
+    // mode (or model id) leaks through preferences, and the next snapshot writes
+    // that leaked value into the current tab's stored state — corrupting it.
+    func test_applyState_clearsLiveReasoningWhenStateHasNoReasoning() {
+        let store = FakeInputStateStore()
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedReasoningMode: .reasoning)
+        store.states["tab-B"] = TabInputState(toggleMode: .aiChat, selectedReasoningMode: nil)
+        let sut = makeSUT(stateStore: store)
+
+        sut.activateForTab("tab-A")
+        XCTAssertEqual(sut.snapshotCurrentState().selectedReasoningMode, .reasoning)
+
+        sut.activateForTab("tab-B")
+        XCTAssertNil(sut.snapshotCurrentState().selectedReasoningMode,
+                     "Live reasoning must clear to match tab-B's nil state, otherwise it leaks into tab-B's snapshot.")
+    }
+
+    func test_applyState_clearsLiveModelIDWhenStateHasNoModel() {
+        let store = FakeInputStateStore()
+        store.states["tab-A"] = TabInputState(toggleMode: .aiChat, selectedModelID: "claude-opus")
+        store.states["tab-B"] = TabInputState(toggleMode: .aiChat, selectedModelID: nil)
+        let sut = makeSUT(stateStore: store)
+
+        sut.activateForTab("tab-A")
+        sut.activateForTab("tab-B")
+        // The live preferences must reflect tab-B's nil model id, not tab-A's.
+        XCTAssertNil(sut.modelStore.currentModelId,
+                     "Live preferences.selectedModelId must clear when state has nil model id.")
+    }
+
     // Regression: clearText only clears the visible input; the coordinator's tracked
     // draft (currentText) must remain so the very next activateForTab flush captures
     // the user's text, not the cleared visible state.

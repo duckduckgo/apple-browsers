@@ -167,13 +167,11 @@ final class AIChatContextualWebViewController: UIViewController {
         super.viewDidLoad()
         Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(String(describing: self.initialURL?.absoluteString))")
         setupUI()
-        if featureFlagger.isFeatureOn(.unifiedToggleInput) {
-            if let utiHostInstaller {
-                Logger.contextualUTI.info("[ContextualWebVC] flag on — installing native UTI")
-                utiHost = utiHostInstaller(self)
-            } else {
-                Logger.contextualUTI.error("[ContextualWebVC] flag on but no UTI installer wired — falling back to FE composer")
-            }
+        if isNativeUTIActive, let utiHostInstaller {
+            Logger.contextualUTI.info("[ContextualWebVC] installing native UTI")
+            utiHost = utiHostInstaller(self)
+        } else if featureFlagger.isFeatureOn(.unifiedToggleInput) {
+            Logger.contextualUTI.error("[ContextualWebVC] flag on but no UTI installer wired — falling back to FE composer")
         } else {
             Logger.contextualUTI.info("[ContextualWebVC] flag off — using FE composer")
         }
@@ -297,9 +295,13 @@ final class AIChatContextualWebViewController: UIViewController {
         webView.load(URLRequest(url: contextualURL))
     }
 
+    private var isNativeUTIActive: Bool {
+        featureFlagger.isFeatureOn(.unifiedToggleInput) && utiHostInstaller != nil
+    }
+
     private func applyNativeInputIfNeeded(to url: URL) -> URL {
-        guard featureFlagger.isFeatureOn(.unifiedToggleInput) else { return url }
-        Logger.contextualUTI.debug("[ContextualWebVC] applying nativeInput=1 + stripping placement=sidebar (flag on)")
+        guard isNativeUTIActive else { return url }
+        Logger.contextualUTI.debug("[ContextualWebVC] applying nativeInput=1 + stripping placement=sidebar")
         let withNativeInput = AIChatURLParameters.nativeInputURL(from: url)
         return removingPlacementSidebar(from: withNativeInput)
     }

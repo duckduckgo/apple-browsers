@@ -254,8 +254,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
 
         // Contextual chat boots in expanded form; no collapsed/inactive states are reachable.
+        // The chat is already post-submit by the time the contextual UTI installs, so
+        // `hasSubmittedPrompt` should reflect that — drives follow-up placeholder + model chip hide.
         if host == .contextualChat {
             displayState = .aiTab(.expanded)
+            hasSubmittedPrompt = true
+            syncHasSubmittedPromptToHandler()
             updateModelChipVisibility()
         }
     }
@@ -775,10 +779,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isFloatingSubmitVisible: isFloatingSubmitVisible,
             isToggleEnabled: isToggleEnabled,
             contentInputMode: inputMode,
-            inputMode: inputMode,
-            isSuggestionsAllowed: host == .omnibar,
-            isFloatingSubmitAllowed: host == .omnibar,
-            isPageContextChipVisible: host == .contextualChat
+            inputMode: inputMode
         )
     }
 

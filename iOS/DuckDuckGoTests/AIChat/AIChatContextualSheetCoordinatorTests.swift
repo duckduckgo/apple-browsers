@@ -57,6 +57,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         func resubscribe() {
             resubscribeCallCount += 1
         }
+
+        func clearAttachedContext() {
+            contextSubject.send(nil)
+        }
     }
 
     private final class MockDelegate: AIChatContextualSheetCoordinatorDelegate {

@@ -291,12 +291,10 @@ private extension AIChatContextualSheetCoordinator {
             pixelHandler: pixelHandler,
             utiHostInstaller: { [weak self] contextualChatViewController in
                 guard let self else { return nil }
-                let attachedURLPublisher = self.pageContextHandler.contextPublisher
-                    .map { $0.flatMap { URL(string: $0.contextData.url) } }
-                    .eraseToAnyPublisher()
                 let host = AIChatContextualUTIHost(
                     originatingURLPublisher: self.originatingURLPublisher,
-                    attachedURLPublisher: attachedURLPublisher,
+                    initialAttachedContext: self.sessionState.latestContext,
+                    isAutoAttachEnabled: { [weak self] in self?.sessionState.shouldAutoCollectContext ?? false },
                     pageContextHandler: self.pageContextHandler,
                     isFireTab: self.isFireTab
                 )

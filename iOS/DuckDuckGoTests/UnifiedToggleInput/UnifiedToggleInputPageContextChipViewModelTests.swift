@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Combine
 import XCTest
 @testable import DuckDuckGo
@@ -25,70 +26,215 @@ import XCTest
 final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
 
     private var originatingURL: CurrentValueSubject<URL?, Never>!
-    private var attachedURL: CurrentValueSubject<URL?, Never>!
     private var sut: UnifiedToggleInputPageContextChipViewModel!
     private var attachCalls: [URL] = []
+    private var removeCalls: Int = 0
+    private var autoAttachEnabled = false
 
     override func setUp() async throws {
         try await super.setUp()
         originatingURL = .init(nil)
-        attachedURL = .init(nil)
         attachCalls = []
+        removeCalls = 0
+        autoAttachEnabled = false
+    }
+
+    private func makeSUT(initialAttachedContext: AIChatPageContext? = nil) {
         sut = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURL.eraseToAnyPublisher(),
-            attachedURLPublisher: attachedURL.eraseToAnyPublisher(),
-            onAttach: { [weak self] url in self?.attachCalls.append(url) }
+            initialAttachedContext: initialAttachedContext,
+            isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false }
         )
+        sut.onAttachActionRequested = { [weak self] url in self?.attachCalls.append(url) }
+        sut.onRemoveActionRequested = { [weak self] in self?.removeCalls += 1 }
     }
 
-    func test_initial_noURLs_chipHidden() {
-        XCTAssertFalse(sut.isVisible)
+    func test_initial_noContext_isPlaceholder() {
+        makeSUT()
+        XCTAssertEqualState(sut.state, .placeholder)
     }
 
-    func test_originatingURL_set_attachedNil_showsChip() {
+    func test_initial_attachedAndOriginatingMatches_isAttached() {
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT(initialAttachedContext: makeContext(title: "Wikipedia", url: url))
+        XCTAssertEqualState(sut.state, .attached(title: "Wikipedia", favicon: nil))
+    }
+
+    func test_initial_attachedButOriginatingDifferent_isPlaceholder() {
+        originatingURL.send(URL(string: "https://other.example.com"))
+        makeSUT(initialAttachedContext: makeContext(title: "Wikipedia", url: "https://en.wikipedia.org/wiki/Cat"))
+        XCTAssertEqualState(sut.state, .placeholder)
+    }
+
+    func test_setAttached_withMatchingOriginating_flipsToAttached() {
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT()
+        sut.setAttached(makeContext(title: "Cat", url: url))
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
+    }
+
+    func test_setAttached_withNonMatchingOriginating_staysPlaceholder() {
+        originatingURL.send(URL(string: "https://other.example.com"))
+        makeSUT()
+        sut.setAttached(makeContext(title: "Cat", url: "https://en.wikipedia.org/wiki/Cat"))
+        XCTAssertEqualState(sut.state, .placeholder)
+    }
+
+    func test_setAttachedNil_flipsToPlaceholder() {
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
+        sut.setAttached(nil)
+        XCTAssertEqualState(sut.state, .placeholder)
+    }
+
+    func test_originatingURLChange_awayFromAttachedPage_displayFlipsToPlaceholder() {
+        let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: attachedUrl))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl))
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
+
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
+        XCTAssertEqualState(sut.state, .placeholder)
+    }
+
+    func test_autoAttachOn_originatingURLChangesAway_attachmentPreservedInternally() {
+        // With auto-attach ON, navigating away does NOT clear the underlying attachment —
+        // the host is responsible for re-attaching with the new page's context. Returning to
+        // the original page restores the attached display.
+        autoAttachEnabled = true
+        let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: attachedUrl))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl))
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
+
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
+        XCTAssertEqualState(sut.state, .placeholder)
+
+        originatingURL.send(URL(string: attachedUrl))
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
+    }
+
+    func test_originatingURLChange_awayThenBack_doesNotRestoreAttached() {
+        // Half-sheet behavior with auto-attach OFF: leaving the page clears the attachment.
+        // Navigating back does NOT restore — the user must tap the placeholder to re-attach.
+        let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: attachedUrl))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl))
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
+
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
+        XCTAssertEqualState(sut.state, .placeholder)
+
+        originatingURL.send(URL(string: attachedUrl))
+        XCTAssertEqualState(sut.state, .placeholder)
+    }
+
+    func test_tapToAttach_withOriginatingURL_callsOnAttach() {
+        makeSUT()
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
-        XCTAssertTrue(sut.isVisible)
-    }
-
-    func test_originatingMatchesAttached_chipHidden() {
-        let url = URL(string: "https://example.com/a")!
-        originatingURL.send(url)
-        attachedURL.send(url)
-        XCTAssertFalse(sut.isVisible)
-    }
-
-    func test_originatingChangesAfterAttach_chipReappears() {
-        let urlA = URL(string: "https://example.com/a")!
-        let urlB = URL(string: "https://example.com/b")!
-        originatingURL.send(urlA)
-        attachedURL.send(urlA)
-        XCTAssertFalse(sut.isVisible)
-        originatingURL.send(urlB)
-        XCTAssertTrue(sut.isVisible)
-    }
-
-    func test_tapped_callsOnAttach_withCurrentOriginatingURL() {
-        let url = URL(string: "https://example.com/a")!
-        originatingURL.send(url)
-        sut.tapped()
+        sut.tapToAttach()
         XCTAssertEqual(attachCalls, [url])
     }
 
-    func test_tapped_noOriginatingURL_doesNotCallOnAttach() {
-        sut.tapped()
+    func test_tapToAttach_noOriginatingURL_doesNotCallOnAttach() {
+        makeSUT()
+        sut.tapToAttach()
         XCTAssertTrue(attachCalls.isEmpty)
     }
 
-    // MARK: - View ↔ View-Model wiring
+    func test_tapToRemove_callsOnRemove() {
+        makeSUT()
+        sut.tapToRemove()
+        XCTAssertEqual(removeCalls, 1)
+    }
 
-    func test_chipView_tap_routesToViewModel() {
-        originatingURL.send(URL(string: "https://example.com")!)
-        let chip = UnifiedToggleInputPageContextChipView()
-        chip.bind(to: sut)
+    // MARK: - Visibility
 
-        chip.sendActions(for: .touchUpInside)
+    func test_visibility_noURLEmissions_isHidden() {
+        // No publisher value at all — chip stays hidden.
+        let subject = PassthroughSubject<URL?, Never>()
+        sut = UnifiedToggleInputPageContextChipViewModel(
+            originatingURLPublisher: subject.eraseToAnyPublisher(),
+            initialAttachedContext: nil,
+            isAutoAttachEnabled: { false }
+        )
+        XCTAssertFalse(sut.isVisible)
+    }
 
-        XCTAssertEqual(attachCalls, [URL(string: "https://example.com")!])
+    func test_visibility_initialEmission_isHidden() {
+        // First emission (the page the user just attached from) should not show the chip.
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
+        XCTAssertFalse(sut.isVisible)
+    }
+
+    func test_visibility_secondEmission_becomesVisible() {
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
+        XCTAssertFalse(sut.isVisible)
+
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
+        XCTAssertTrue(sut.isVisible)
+    }
+
+    func test_visibility_staysVisibleAfterSubsequentChanges() {
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
+
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
+        XCTAssertTrue(sut.isVisible)
+
+        originatingURL.send(URL(string: url))
+        XCTAssertTrue(sut.isVisible)
+    }
+
+    func test_visibility_appliesEvenWhenDetached() {
+        // Once visible, removing the attached context (X tapped) keeps the chip visible
+        // as a placeholder so the user can re-attach.
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
+        XCTAssertTrue(sut.isVisible)
+
+        sut.setAttached(nil)
+        XCTAssertTrue(sut.isVisible)
+        XCTAssertEqualState(sut.state, .placeholder)
+    }
+
+    func test_visibility_noInitialContext_firstEmissionStillHides() {
+        // Even without an initial attached context, the chip stays hidden until a navigation
+        // occurs — the half-sheet just dismissed and re-confirming attach is noise.
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Cat"))
+        makeSUT()
+        XCTAssertFalse(sut.isVisible)
+
+        originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
+        XCTAssertTrue(sut.isVisible)
+    }
+
+    // MARK: - Helpers
+
+    private func makeContext(title: String, url: String) -> AIChatPageContext {
+        let data = AIChatPageContextData(title: title, favicon: [], url: url, content: "", truncated: false, fullContentLength: 0)
+        return AIChatPageContext(contextData: data, favicon: nil)
+    }
+
+    private func XCTAssertEqualState(_ lhs: AIChatContextChipView.State, _ rhs: AIChatContextChipView.State, file: StaticString = #filePath, line: UInt = #line) {
+        switch (lhs, rhs) {
+        case (.placeholder, .placeholder):
+            return
+        case (.attached(let lt, _), .attached(let rt, _)) where lt == rt:
+            return
+        default:
+            XCTFail("State mismatch: \(lhs) vs \(rhs)", file: file, line: line)
+        }
     }
 }

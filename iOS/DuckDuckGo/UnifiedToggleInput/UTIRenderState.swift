@@ -31,12 +31,6 @@ struct UTIRenderState: Equatable {
     var isToggleEnabled: Bool
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
-    /// Read in Chunk E to gate the suggestions overlay install in the omnibar host extension.
-    var isSuggestionsAllowed: Bool
-    /// Read in Chunk E to gate the floating submit install in the omnibar host extension.
-    var isFloatingSubmitAllowed: Bool
-    /// Read in Chunk E by the page-context chip view-model wired in by the contextual UTI host installer.
-    var isPageContextChipVisible: Bool
 
     var isExpanded: Bool { cardLayout.isExpanded }
 

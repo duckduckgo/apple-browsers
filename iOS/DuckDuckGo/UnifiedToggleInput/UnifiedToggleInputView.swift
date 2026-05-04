@@ -245,7 +245,25 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - Page-Context Chip
 
     func bindPageContextChip(to viewModel: UnifiedToggleInputPageContextChipViewModel) {
-        pageContextChip.bind(to: viewModel)
+        pageContextChipCancellables.removeAll()
+        pageContextChip.onTapToAttach = { [weak viewModel] in viewModel?.tapToAttach() }
+        pageContextChip.onRemove = { [weak viewModel] in viewModel?.tapToRemove() }
+        viewModel.$state
+            .sink { [weak self] state in self?.pageContextChip.configure(state: state) }
+            .store(in: &pageContextChipCancellables)
+        viewModel.$isVisible
+            .sink { [weak self] isVisible in self?.isPageContextChipPresent = isVisible }
+            .store(in: &pageContextChipCancellables)
+    }
+
+    private var isPageContextChipPresent: Bool = false {
+        didSet {
+            guard oldValue != isPageContextChipPresent else { return }
+            pageContextChip.isHidden = !isPageContextChipPresent
+            pageContextChipHeightConstraint.isActive = !isPageContextChipPresent
+            layoutIfNeeded()
+            onNeedsHierarchyLayout?()
+        }
     }
 
     // MARK: - Components
@@ -261,7 +279,8 @@ final class UnifiedToggleInputView: UIView {
     private lazy var inlineDismissButton: UIButton = Self.makeInlineDismissButton()
     private let attachmentsStrip = UnifiedToggleInputAttachmentsStripView()
     private let toolsToolbar = UnifiedToggleInputToolbarView()
-    private let pageContextChip = UnifiedToggleInputPageContextChipView()
+    private let pageContextChip = AIChatContextChipView()
+    private var pageContextChipCancellables = Set<AnyCancellable>()
 
     // MARK: - Shadow
 
@@ -605,7 +624,10 @@ final class UnifiedToggleInputView: UIView {
                 let verticalMargin: CGFloat = (!self.usesOmnibarMargins && self.cardPosition == .bottom)
                     ? Constants.cardVerticalMarginBottom
                     : Constants.cardVerticalMargin
-                let showToolbar = self.isToggleEnabled && self.toggleView.selectedMode == .aiChat
+                // Toolbar visibility tracks `selectedMode` only — same rule `updateToolbarVisibility` uses.
+                // The previous additional `isToggleEnabled` clause incorrectly hid the toolbar for hosts
+                // that disable the toggle row but still want the toolbar (e.g. contextual chat).
+                let showToolbar = self.toggleView.selectedMode == .aiChat
                 self.cardTopConstraint.constant = verticalMargin
                 self.cardLeadingConstraint.constant = leadingMargin
                 self.cardTrailingConstraint.constant = -trailingMargin
@@ -759,12 +781,7 @@ private extension UnifiedToggleInputView {
         addSubview(textEntryView)
 
         pageContextChip.translatesAutoresizingMaskIntoConstraints = false
-        pageContextChip.onVisibilityChange = { [weak self] visible in
-            guard let self else { return }
-            self.pageContextChipHeightConstraint.constant = visible ? UnifiedToggleInputPageContextChipView.Constants.expandedHeight : 0
-            self.layoutIfNeeded()
-            self.onNeedsHierarchyLayout?()
-        }
+        pageContextChip.isHidden = true
         addSubview(pageContextChip)
 
         attachmentsStrip.translatesAutoresizingMaskIntoConstraints = false
@@ -853,8 +870,7 @@ private extension UnifiedToggleInputView {
             textEntryView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
 
             pageContextChip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
-            pageContextChip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
-            pageContextChip.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+            pageContextChip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.cardHorizontalMargin),
             pageContextChipHeightConstraint,
 
             attachmentsStrip.topAnchor.constraint(equalTo: pageContextChip.bottomAnchor),

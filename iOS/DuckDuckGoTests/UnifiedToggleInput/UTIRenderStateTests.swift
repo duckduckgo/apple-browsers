@@ -256,23 +256,17 @@ final class UTIRenderStateTests: XCTestCase {
 
     // MARK: - Host-Driven Render Flags
 
-    func test_omnibarHost_renderState_showsToggleAndAllowsContent_chipHidden() {
+    func test_omnibarHost_renderState_showsToggle() {
         sut.activateFromOmnibar()
         let state = sut.computeRenderState()
         XCTAssertTrue(state.cardLayout.showsToggle)
-        XCTAssertTrue(state.isSuggestionsAllowed)
-        XCTAssertTrue(state.isFloatingSubmitAllowed)
-        XCTAssertFalse(state.isPageContextChipVisible)
     }
 
-    func test_contextualChatHost_renderState_hidesToggleSuggestionsFloatingSubmit_showsChip() {
+    func test_contextualChatHost_renderState_hidesToggle_showsToolbar() {
         sut = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false)
         sut.showExpanded()
         let state = sut.computeRenderState()
         XCTAssertFalse(state.cardLayout.showsToggle)
         XCTAssertTrue(state.cardLayout.showsToolbar)
-        XCTAssertFalse(state.isSuggestionsAllowed)
-        XCTAssertFalse(state.isFloatingSubmitAllowed)
-        XCTAssertTrue(state.isPageContextChipVisible)
     }
 }

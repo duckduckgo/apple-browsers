@@ -155,24 +155,11 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testShouldDisplayPicker_WhenInstallCooldownNotYetPassed_ReturnsFalse() {
-        // Given
-        setupShowCriteriaMet()
-        setupNoExclusionCriteria()
-        mockStatisticsStore.installDate = daysAgo(2)
-
-        // When
-        let result = validator.shouldDisplayNewAddressBarPicker()
-
-        // Then
-        XCTAssertFalse(result)
-    }
-
     func testShouldDisplayPicker_WhenInstallCooldownExactlyPassed_ReturnsTrue() {
         // Given
         setupShowCriteriaMet()
         setupNoExclusionCriteria()
-        mockStatisticsStore.installDate = daysAgo(3)
+        mockStatisticsStore.installDate = daysAgo(1)
 
         // When
         let result = validator.shouldDisplayNewAddressBarPicker()

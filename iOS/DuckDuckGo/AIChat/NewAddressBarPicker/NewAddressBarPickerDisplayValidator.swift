@@ -32,7 +32,7 @@ protocol NewAddressBarPickerDisplayValidating {
 
 struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating {
 
-    static let installCooldownDays = 3
+    static let installCooldownDays = 1
 
     // MARK: - Dependencies
     

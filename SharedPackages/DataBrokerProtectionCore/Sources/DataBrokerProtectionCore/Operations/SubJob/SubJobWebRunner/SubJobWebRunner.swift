@@ -287,6 +287,7 @@ public extension SubJobWebRunning {
         }
         do {
             let totalTimeout = executionConfig.getEmailDataTotalTimeout
+            stageCalculator.setStage(.emailGetData)
             recordDebugEvent(kind: .wait,
                              actionType: action.actionType,
                              details: "Polling email-data endpoint (polling interval \(action.pollingTime)s, total timeout \(totalTimeout)s)")
@@ -304,6 +305,9 @@ public extension SubJobWebRunning {
             recordDebugEvent(kind: .wait,
                              actionType: action.actionType,
                              details: "Email data received (\(fetched.count) keys)")
+            if actionsHandler?.stepType == .optOut {
+                stageCalculator.fireOptOutEmailGetData()
+            }
             await executeNextStep()
         } catch {
             recordDebugEvent(kind: .actionResponse,

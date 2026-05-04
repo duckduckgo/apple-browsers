@@ -139,6 +139,7 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutSubmit(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutEmailReceive(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutEmailConfirm(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
+    case optOutEmailGetData(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutValidate(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutFillForm(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutConditionFound(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
@@ -215,6 +216,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .optOutSubmit: return "dbp_optout_stage_submit"
         case .optOutEmailReceive: return "dbp_optout_stage_email-receive"
         case .optOutEmailConfirm: return "dbp_optout_stage_email-confirm"
+        case .optOutEmailGetData: return "dbp_optout_stage_email-get-data"
         case .optOutValidate: return "dbp_optout_stage_validate"
         case .optOutFillForm: return "dbp_optout_stage_fill-form"
         case .optOutConditionFound: return "dbp_optout_stage_condition-found"
@@ -344,6 +346,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
              .optOutCaptchaSolve(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutEmailReceive(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutEmailConfirm(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
+             .optOutEmailGetData(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutValidate(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutFillForm(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutConditionFound(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
@@ -620,6 +623,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .optOutSubmit,
                 .optOutEmailReceive,
                 .optOutEmailConfirm,
+                .optOutEmailGetData,
                 .optOutValidate,
                 .optOutFillForm,
                 .optOutConditionFound,
@@ -735,6 +739,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .optOutSubmit,
                     .optOutEmailReceive,
                     .optOutEmailConfirm,
+                    .optOutEmailGetData,
                     .optOutValidate,
                     .optOutFinish,
                     .optOutSubmitSuccess,

@@ -117,8 +117,12 @@ final class UTIModelStore {
     /// `updateSelectedReasoningMode` so the live state matches the stored state exactly.
     func applyPersistedSelection(modelID: String?, reasoningMode: AIChatReasoningMode?) {
         preferences.selectedModelId = modelID
-        preferences.selectedModelShortName = modelID.flatMap { id in
-            models.first(where: { $0.id == id })?.shortName
+        if let modelID {
+            if let shortName = models.first(where: { $0.id == modelID })?.shortName {
+                preferences.selectedModelShortName = shortName
+            }
+        } else {
+            preferences.selectedModelShortName = nil
         }
         preferences.selectedReasoningMode = reasoningMode
     }

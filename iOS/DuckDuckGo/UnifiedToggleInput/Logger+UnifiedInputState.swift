@@ -15,5 +15,5 @@ import Foundation
 import os.log
 
 extension Logger {
-    static let unifiedInputState = Logger(subsystem: "UnifiedInputState", category: "")
+    static let unifiedInputState = Logger(subsystem: "UnifiedInputState", category: "PerTab")
 }

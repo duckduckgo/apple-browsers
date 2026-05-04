@@ -1783,13 +1783,148 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         let sut = makeSUT(stateStore: store)
 
         sut.activateForTab("tab-A")
-        sut.setText("deliberate A")
+        sut.updateInputMode(.aiChat, animated: false)
         let lastUsedAfterChoice = store.lastUsed
 
         sut.activateForTab("tab-B")
         sut.activateForTab("tab-A")
 
         XCTAssertEqual(store.lastUsed, lastUsedAfterChoice)
+    }
+
+    // MARK: - Persistence split: drafts vs user-deliberate choices
+
+    func test_setText_doesNotMutateLastUsed() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        let baseline = store.lastUsed
+
+        sut.setText("just typing")
+
+        XCTAssertEqual(store.lastUsed, baseline)
+    }
+
+    func test_didChangeText_doesNotMutateLastUsed() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        let baseline = store.lastUsed
+
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "keystrokes")
+
+        XCTAssertEqual(store.lastUsed, baseline)
+    }
+
+    func test_addImageAttachment_doesNotMutateLastUsed() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        let baseline = store.lastUsed
+
+        sut.addImageAttachment(image: UIImage(), fileName: "x.jpg")
+
+        XCTAssertEqual(store.lastUsed, baseline)
+    }
+
+    func test_clearAttachments_doesNotMutateLastUsed() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.addImageAttachment(image: UIImage(), fileName: "x.jpg")
+        let baseline = store.lastUsed
+
+        sut.clearAttachments()
+
+        XCTAssertEqual(store.lastUsed, baseline)
+    }
+
+    // Mode/model/reasoning/tool ARE user-deliberate choices and must be reflected
+    // in lastUsed so the next new tab inherits the most recent selection.
+    func test_updateInputMode_mutatesLastUsed() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+
+        sut.updateInputMode(.aiChat, animated: false)
+
+        XCTAssertEqual(store.lastUsed.toggleMode, .aiChat)
+    }
+
+    func test_selectTool_mutatesLastUsed() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "gpt-5")]
+        sut.activateForTab("tab-A")
+
+        sut.selectTool(.webSearch)
+
+        XCTAssertEqual(store.lastUsed.selectedTool, .webSearch)
+    }
+
+    // MARK: - External submission clears the store (P1)
+
+    func test_handleExternalSubmission_query_clearsStoreText() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("submitted via suggestion")
+        XCTAssertEqual(store.states["tab-A"]?.text, "submitted via suggestion")
+
+        sut.handleExternalSubmission(.query)
+
+        XCTAssertEqual(store.states["tab-A"]?.text ?? "", "")
+    }
+
+    func test_handleExternalSubmission_prompt_clearsStoreTextAndAttachments() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("voice prompt body")
+        sut.addImageAttachment(image: UIImage(), fileName: "x.jpg")
+
+        sut.handleExternalSubmission(.prompt)
+
+        XCTAssertEqual(store.states["tab-A"]?.text ?? "", "")
+        XCTAssertEqual(store.states["tab-A"]?.attachments.count, 0)
+    }
+
+    func test_handleExternalSubmission_resetsCoordinatorCurrentText() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("about to submit")
+
+        sut.handleExternalSubmission(.query)
+
+        XCTAssertEqual(sut.currentText, "")
+    }
+
+    // MARK: - Tool menu selection persists (P2)
+
+    func test_handleToolsMenuSelection_webSearch_persistsSelection() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "gpt-5")]
+        sut.activateForTab("tab-A")
+
+        sut.handleToolsMenuSelection(.webSearch)
+
+        XCTAssertEqual(store.states["tab-A"]?.selectedTool, .webSearch)
+        XCTAssertEqual(store.lastUsed.selectedTool, .webSearch)
+    }
+
+    // MARK: - Helpers
+
+    private func makeModelWithTools(id: String) -> AIChatModel {
+        AIChatModel(
+            id: id,
+            name: id,
+            provider: .unknown,
+            supportsImageUpload: false,
+            supportedTools: [.webSearch],
+            entityHasAccess: true
+        )
     }
 }
 

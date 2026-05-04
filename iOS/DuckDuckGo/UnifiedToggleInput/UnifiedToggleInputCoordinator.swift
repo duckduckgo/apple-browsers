@@ -351,12 +351,28 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
     }
 
-    private func persistCurrentStateToStore() {
+    /// Persists per-tab-only state — text and attachments. These are drafts the user
+    /// is actively building; they belong to the tab, not to the global last-used
+    /// defaults, and must not write through to global preferences.
+    private func persistDraftToStore() {
+        guard !isApplyingState, !isPerformingDismissCleanup, let uid = currentTabUID else { return }
+        stateStore.update(snapshotCurrentState(), for: uid)
+    }
+
+    /// Persists a user-deliberate choice — toggle mode, model, reasoning, tool. These
+    /// update the global last-used defaults and write through to the canonical global
+    /// preference homes so other components (e.g. NTP omnibar) observe the change.
+    private func recordUserChoiceToStore() {
         guard !isApplyingState, !isPerformingDismissCleanup, let uid = currentTabUID else { return }
         stateStore.recordUserChoice(snapshotCurrentState(), for: uid)
     }
 
     private func clearStoreEntryAfterSubmission() {
+        // Reset the live draft sources of truth so any subsequent persist (e.g. from
+        // clearAttachments() side effects further down the submit flow) snapshots
+        // the post-submit empty state, not the pre-submit prompt.
+        currentText = ""
+        textState = .empty
         guard let uid = currentTabUID else { return }
         var cleared = snapshotCurrentState()
         cleared.text = ""
@@ -536,7 +552,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         currentText = text
         textState = text.isEmpty ? .empty : .userTyped
         viewController.text = text
-        persistCurrentStateToStore()
+        persistDraftToStore()
     }
 
     // MARK: - Input Management
@@ -572,7 +588,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if didModeChange, effectiveMode == .search {
             clearAttachments()
         }
-        persistCurrentStateToStore()
+        recordUserChoiceToStore()
     }
 
     func updateAIVoiceChatAvailability(_ enabled: Bool) {
@@ -745,6 +761,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func handleExternalSubmission(_ type: ExternalSubmissionType) {
         commitCurrentToggleState()
+        // External submissions (suggestion taps, voice, intent dispatch) bypass
+        // unifiedToggleInputVC(_:didSubmitText:mode:), so the per-tab store entry
+        // would otherwise retain the just-submitted text and be restored on the
+        // next activation of the same tab. Mirror the internal-submit cleanup.
+        clearStoreEntryAfterSubmission()
         switch displayState {
         case .omnibar:
             deactivateToOmnibar()
@@ -887,24 +908,24 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func updateSelectedModel(_ modelId: String) {
         modelStore.updateSelectedModel(modelId)
         handleModelsUpdated()
-        persistCurrentStateToStore()
+        recordUserChoiceToStore()
     }
 
     func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
         modelStore.updateSelectedReasoningMode(mode)
         updateReasoningPicker()
-        persistCurrentStateToStore()
+        recordUserChoiceToStore()
     }
 
     func selectTool(_ tool: AIChatRAGTool) {
         toolsController.select(tool, for: modelStore)
         refreshToolsPresentation()
-        persistCurrentStateToStore()
+        recordUserChoiceToStore()
     }
 
     func clearSelectedTool() {
         resetToolsSelection()
-        persistCurrentStateToStore()
+        recordUserChoiceToStore()
     }
 
     private func updateModelChipLabel() {
@@ -989,18 +1010,18 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard !viewController.isAttachmentsFull, !isConversationImageLimitReached else { return }
         let attachment = AIChatImageAttachment(image: image, fileName: fileName)
         viewController.addAttachment(attachment)
-        persistCurrentStateToStore()
+        persistDraftToStore()
     }
 
     func removeAttachment(id: UUID) {
         viewController.removeAttachment(id: id)
-        persistCurrentStateToStore()
+        persistDraftToStore()
     }
 
     func clearAttachments() {
         guard !viewController.currentAttachments.isEmpty else { return }
         viewController.removeAllAttachments()
-        persistCurrentStateToStore()
+        persistDraftToStore()
     }
 
     func updateImageButtonVisibility() {
@@ -1010,6 +1031,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateImageButtonEnabledState()
     }
 
+}
+
+// MARK: - Tools Menu Selection
+
+extension UnifiedToggleInputCoordinator {
+
+    func handleToolsMenuSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
+        switch identifier {
+        case .webSearch:
+            toolsController.toggleSelection(for: .webSearch, modelStore: modelStore)
+            refreshToolsPresentation()
+            recordUserChoiceToStore()
+        }
+    }
 }
 
 // MARK: - UnifiedToggleInputViewControllerDelegate
@@ -1064,7 +1099,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         currentText = text
         textState = text.isEmpty ? .empty : .userTyped
         textChangeSubject.send(text)
-        persistCurrentStateToStore()
+        persistDraftToStore()
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
@@ -1183,14 +1218,6 @@ private extension UnifiedToggleInputCoordinator {
     func resetToolsSelection() {
         toolsController.clearSelection()
         refreshToolsPresentation()
-    }
-
-    func handleToolsMenuSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
-        switch identifier {
-        case .webSearch:
-            toolsController.toggleSelection(for: .webSearch, modelStore: modelStore)
-            refreshToolsPresentation()
-        }
     }
 
     func updateImageButtonEnabledState() {

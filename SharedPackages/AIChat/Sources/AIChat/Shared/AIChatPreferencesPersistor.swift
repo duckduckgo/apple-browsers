@@ -110,6 +110,8 @@ public final class AIChatPreferencesPersistor: AIChatPreferencesPersisting {
             return AIChatReasoningMode(rawValue: rawValue)
         }
         set {
+            let current = try? keyValueStore.object(forKey: Key.selectedReasoningMode.rawValue) as? String
+            guard newValue?.rawValue != current else { return }
             if let value = newValue?.rawValue {
                 try? keyValueStore.set(value, forKey: Key.selectedReasoningMode.rawValue)
             } else {

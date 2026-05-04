@@ -87,9 +87,11 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         let modelID = ObjectIdentifier(tabsModel)
         tabsModel.tabsPublisher
             .sink { [weak self] tabs in
-                guard let self else { return }
-                self.modelSnapshots[modelID] = tabs
-                self.reconcileFromSnapshots()
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.modelSnapshots[modelID] = tabs
+                    self.reconcileFromSnapshots()
+                }
             }
             .store(in: &tabsCancellables)
     }

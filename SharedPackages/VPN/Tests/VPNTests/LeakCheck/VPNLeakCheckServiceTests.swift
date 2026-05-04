@@ -108,6 +108,106 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         XCTAssertEqual(data.ipv4LeakIPType, .public)
     }
 
+    /// The i3d VPN egress pool can NAT a single flow's traffic across multiple IPs in the same /24,
+    /// so the externally observed IP can differ from the egress IP we expected. We treat a same-/24
+    /// match as success rather than a leak.
+    func testIPv4SameClassCSubnet_treatedAsSuccess() async throws {
+        let http = MockLeakCheckHTTPClient(ipv4: "162.245.204.123", ipv6Error: URLError(.cannotFindHost))
+        let stun = MockLeakCheckSTUNClient(ipv4: "162.245.204.99", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressInfo: makeEgressInfoProvider(ip: "162.245.204.118"),
+            tunnelInterface: { Self.systemInterface },
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent
+        )
+
+        await service.runCheck(trigger: .periodic)
+
+        let data = try XCTUnwrap(wideEvent.lastCompletedData)
+        XCTAssertEqual(data.ipv4Http?.status, .success)
+        XCTAssertEqual(data.ipv4Https?.status, .success)
+        XCTAssertEqual(data.ipv4Stun?.status, .success)
+        XCTAssertNil(data.ipv4LeakIPType)
+    }
+
+    func testIPv4DifferentClassCSubnet_detectsLeak() async throws {
+        let http = MockLeakCheckHTTPClient(ipv4: "162.245.205.118", ipv6Error: URLError(.cannotFindHost))
+        let stun = MockLeakCheckSTUNClient(ipv4: "162.245.204.118", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressInfo: makeEgressInfoProvider(ip: "162.245.204.118"),
+            tunnelInterface: { Self.systemInterface },
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent
+        )
+
+        await service.runCheck(trigger: .periodic)
+
+        let data = try XCTUnwrap(wideEvent.lastCompletedData)
+        XCTAssertEqual(data.ipv4Http?.status, .leak)
+        XCTAssertEqual(data.ipv4Https?.status, .leak)
+        XCTAssertEqual(data.ipv4Stun?.status, .success)
+        XCTAssertEqual(data.ipv4LeakIPType, .public)
+    }
+
+    func testIPv4MalformedObservedIP_recordedAsErrorNotLeak() async throws {
+        let http = MockLeakCheckHTTPClient(ipv4: "not-an-ip", ipv6Error: URLError(.cannotFindHost))
+        let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressInfo: makeEgressInfoProvider(),
+            tunnelInterface: { Self.systemInterface },
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent
+        )
+
+        await service.runCheck(trigger: .periodic)
+
+        let data = try XCTUnwrap(wideEvent.lastCompletedData)
+        XCTAssertEqual(data.ipv4Http?.status, .error)
+        XCTAssertEqual(data.ipv4Http?.errorDomain, "VPNLeakCheckIPError")
+        XCTAssertEqual(data.ipv4Http?.errorCode, 1)
+        XCTAssertEqual(data.ipv4Https?.status, .error)
+        XCTAssertEqual(data.ipv4Stun?.status, .success)
+        XCTAssertNil(data.ipv4LeakIPType)
+        if case .unknown(let reason) = wideEvent.lastCompletedStatus {
+            XCTAssertEqual(reason, "checks_errored")
+        } else {
+            XCTFail("expected UNKNOWN status")
+        }
+    }
+
+    func testIPv4MalformedEgressIP_recordedAsErrorNotLeak() async throws {
+        let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
+        let wideEvent = MockWideEventManager()
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressInfo: makeEgressInfoProvider(ip: "garbage"),
+            tunnelInterface: { Self.systemInterface },
+            httpClient: http,
+            stunClient: stun,
+            wideEvent: wideEvent
+        )
+
+        await service.runCheck(trigger: .periodic)
+
+        let data = try XCTUnwrap(wideEvent.lastCompletedData)
+        XCTAssertEqual(data.ipv4Http?.status, .error)
+        XCTAssertEqual(data.ipv4Http?.errorDomain, "VPNLeakCheckIPError")
+        XCTAssertEqual(data.ipv4Http?.errorCode, 2)
+        XCTAssertEqual(data.ipv4Https?.status, .error)
+        XCTAssertEqual(data.ipv4Stun?.status, .error)
+        XCTAssertNil(data.ipv4LeakIPType)
+    }
+
     func testIPv6Response_detectsLeak() async throws {
         let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6: "2001:db8::1")
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))

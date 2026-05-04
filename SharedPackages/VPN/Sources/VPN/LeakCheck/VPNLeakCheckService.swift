@@ -22,6 +22,20 @@ import Network
 import os.log
 import PixelKit
 
+private enum LeakCheckIPError: Error, CustomNSError {
+    case malformedObservedIP
+    case malformedEgressIP
+
+    static var errorDomain: String { "VPNLeakCheckIPError" }
+
+    var errorCode: Int {
+        switch self {
+        case .malformedObservedIP: return 1
+        case .malformedEgressIP: return 2
+        }
+    }
+}
+
 public actor VPNLeakCheckService {
 
     public typealias TunnelInterfaceProvider = @Sendable () async -> NWInterface?
@@ -250,12 +264,12 @@ public actor VPNLeakCheckService {
 
         let ipv4Tests: [LeakCheckPerTestResult?] = [data.ipv4Http, data.ipv4Https, data.ipv4Stun]
         if ipv4Tests.contains(where: { $0?.status == .leak }),
-           let leakedIP = firstLeakedIP(from: [results.ipv4Http, results.ipv4Https, results.ipv4Stun], egressIP: egressIPSnapshot) {
+           let leakedIP = firstLeakedIPv4(from: [results.ipv4Http, results.ipv4Https, results.ipv4Stun], egressIP: egressIPSnapshot) {
             data.ipv4LeakIPType = IPAddressClassifier.classify(leakedIP)
         }
         let ipv6Tests: [LeakCheckPerTestResult?] = [data.ipv6Http, data.ipv6Https, data.ipv6Stun]
         if ipv6Tests.contains(where: { $0?.status == .leak }),
-           let leakedIP = firstLeakedIP(from: [results.ipv6Http, results.ipv6Https, results.ipv6Stun], egressIP: egressIPSnapshot) {
+           let leakedIP = firstSuccessfulIP(from: [results.ipv6Http, results.ipv6Https, results.ipv6Stun]) {
             data.ipv6LeakIPType = IPAddressClassifier.classify(leakedIP)
         }
 
@@ -335,10 +349,27 @@ public actor VPNLeakCheckService {
     private func classifyIPv4(_ result: Result<String, Error>, egressIP: String) -> LeakCheckPerTestResult {
         switch result {
         case .success(let ip):
-            return ip == egressIP ? .success : .leak
+            switch Self.sameIPv4ClassCSubnet(ip, egressIP) {
+            case .some(true):
+                return .success
+            case .some(false):
+                return .leak
+            case .none:
+                let error: LeakCheckIPError = IPv4Address(ip) == nil ? .malformedObservedIP : .malformedEgressIP
+                return .error(error)
+            }
         case .failure(let error):
             return .error(error)
         }
+    }
+
+    /// Returns `nil` if either string is not a parseable IPv4 address; otherwise checks whether they share the same /24 subnet.
+    private static func sameIPv4ClassCSubnet(_ lhs: String, _ rhs: String) -> Bool? {
+        guard let lhsAddr = IPv4Address(lhs), let rhsAddr = IPv4Address(rhs) else { return nil }
+        let lhsBytes = [UInt8](lhsAddr.rawValue)
+        let rhsBytes = [UInt8](rhsAddr.rawValue)
+        guard lhsBytes.count == 4, rhsBytes.count == 4 else { return nil }
+        return lhsBytes[0] == rhsBytes[0] && lhsBytes[1] == rhsBytes[1] && lhsBytes[2] == rhsBytes[2]
     }
 
     private func classifyIPv6(_ result: Result<String, Error>) -> LeakCheckPerTestResult {
@@ -386,9 +417,16 @@ public actor VPNLeakCheckService {
         return false
     }
 
-    private func firstLeakedIP(from results: [Result<String, Error>], egressIP: String) -> String? {
+    private func firstLeakedIPv4(from results: [Result<String, Error>], egressIP: String) -> String? {
         for result in results {
-            if case .success(let ip) = result, ip != egressIP { return ip }
+            if case .success(let ip) = result, Self.sameIPv4ClassCSubnet(ip, egressIP) == false { return ip }
+        }
+        return nil
+    }
+
+    private func firstSuccessfulIP(from results: [Result<String, Error>]) -> String? {
+        for result in results {
+            if case .success(let ip) = result { return ip }
         }
         return nil
     }

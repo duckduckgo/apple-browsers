@@ -13,6 +13,7 @@
 
 import AIChat
 import Combine
+import os.log
 
 @MainActor
 final class UnifiedInputStateStore: UnifiedInputStateStoring {
@@ -43,13 +44,17 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
 
     func state(for uid: TabUID) -> TabInputState {
         if let existing = states[uid] {
+            Logger.unifiedInputState.debug("state(for:) hit for tab [\(uid)]: \(existing.summary)")
             return existing
         }
-        return seededState(toggleMode: trackedLastUsed.toggleMode)
+        let seeded = seededState(toggleMode: trackedLastUsed.toggleMode)
+        Logger.unifiedInputState.debug("state(for:) miss for tab [\(uid)] — returning fresh seed: \(seeded.summary)")
+        return seeded
     }
 
     func update(_ state: TabInputState, for uid: TabUID) {
         states[uid] = state
+        Logger.unifiedInputState.debug("update flush for tab [\(uid)]: \(state.summary)")
     }
 
     func recordUserChoice(_ state: TabInputState, for uid: TabUID) {
@@ -63,10 +68,12 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         toggleModeStorage.save(state.toggleMode)
         preferences.selectedModelId = state.selectedModelID
         preferences.selectedReasoningMode = state.selectedReasoningMode
+        Logger.unifiedInputState.debug("recordUserChoice for tab [\(uid)]: \(state.summary)")
     }
 
     func remove(for uid: TabUID) {
-        states.removeValue(forKey: uid)
+        guard states.removeValue(forKey: uid) != nil else { return }
+        Logger.unifiedInputState.debug("remove for tab [\(uid)]")
     }
 
     /// Observes one tabs model for eager seeding and eviction. Can be called multiple
@@ -91,10 +98,13 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         let allTabs = modelSnapshots.values.flatMap { $0 }
         let currentUIDs = Set(allTabs.map { $0.uid })
         for tab in allTabs where !knownUIDs.contains(tab.uid) {
-            states[tab.uid] = seededState(toggleMode: tab.preferredTextEntryMode)
+            let seeded = seededState(toggleMode: tab.preferredTextEntryMode)
+            states[tab.uid] = seeded
+            Logger.unifiedInputState.debug("seeded new tab [\(tab.uid)] from TabsModel insert: \(seeded.summary)")
         }
         for uid in knownUIDs.subtracting(currentUIDs) {
             states.removeValue(forKey: uid)
+            Logger.unifiedInputState.debug("evicted tab [\(uid)] on TabsModel removal")
         }
         knownUIDs = currentUIDs
     }

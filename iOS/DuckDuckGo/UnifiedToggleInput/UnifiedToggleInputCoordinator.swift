@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import os.log
 import Subscription
 import UIKit
 
@@ -290,8 +291,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Per-Tab State
 
     func activateForTab(_ uid: TabUID) {
-        if let previous = currentTabUID, previous != uid {
-            stateStore.update(snapshotCurrentState(), for: previous)
+        let previous = currentTabUID
+        if let previous, previous != uid {
+            let snapshot = snapshotCurrentState()
+            Logger.unifiedInputState.debug("activateForTab [\(uid)]: flushing previous tab [\(previous)] — \(snapshot.summary)")
+            stateStore.update(snapshot, for: previous)
+        } else if previous == nil {
+            Logger.unifiedInputState.debug("activateForTab [\(uid)]: first activation, no flush")
         }
         currentTabUID = uid
         applyState(stateStore.state(for: uid))
@@ -300,6 +306,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func applyState(_ state: TabInputState) {
         isApplyingState = true
         defer { isApplyingState = false }
+        Logger.unifiedInputState.debug("applyState for tab [\(self.currentTabUID ?? "nil")]: \(state.summary)")
 
         setText(state.text)
         syncInputModeFromExternalSource(state.toggleMode)

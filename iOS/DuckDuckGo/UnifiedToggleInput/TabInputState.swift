@@ -48,4 +48,17 @@ struct TabInputState: Equatable {
             && lhs.selectedReasoningMode == rhs.selectedReasoningMode
             && lhs.selectedTool == rhs.selectedTool
     }
+
+    /// Compact, privacy-aware description for debug logs. Reports text length and
+    /// attachment count rather than the values themselves so user prompts and image
+    /// data don't end up in `os_log` output.
+    var summary: String {
+        let mode = toggleMode.rawValue
+        let textLen = text.count
+        let attachments = self.attachments.count
+        let model = selectedModelID ?? "nil"
+        let reasoning = selectedReasoningMode?.rawValue ?? "nil"
+        let tool = selectedTool?.rawValue ?? "nil"
+        return "mode=\(mode) text.count=\(textLen) attachments=\(attachments) model=\(model) reasoning=\(reasoning) tool=\(tool)"
+    }
 }

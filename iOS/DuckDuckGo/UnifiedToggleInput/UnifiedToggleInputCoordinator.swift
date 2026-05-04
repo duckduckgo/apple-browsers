@@ -697,10 +697,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func clearText() {
         // Dismiss-time clear: scrub the visible input but keep the per-tab draft.
-        // The flag also covers the deferred `didChangeText` callback that fires
-        // asynchronously after `setText("")` triggers the handler's text publisher.
+        // - Bypass setText() so coordinator.currentText (the source of truth for the
+        //   flush snapshot) isn't reset to "".
+        // - textState reflects what's visible, so reset it to .empty.
+        // - The handler's text publisher still emits "" downstream (because the
+        //   text view's text changes); the gate in unifiedToggleInputVC(_:didChangeText:)
+        //   covers the queued sink that fires next runloop tick.
         isPerformingDismissCleanup = true
-        setText("")
+        textState = .empty
+        viewController.text = ""
         DispatchQueue.main.async { [weak self] in
             self?.isPerformingDismissCleanup = false
         }
@@ -1056,6 +1061,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String) {
+        // Dismiss-time visible clears emit "" through the handler's text publisher.
+        // Ignoring those callbacks keeps the user's typed draft (currentText) intact
+        // so the next activateForTab snapshot for this tab preserves it.
+        if isPerformingDismissCleanup { return }
         currentText = text
         textState = text.isEmpty ? .empty : .userTyped
         textChangeSubject.send(text)

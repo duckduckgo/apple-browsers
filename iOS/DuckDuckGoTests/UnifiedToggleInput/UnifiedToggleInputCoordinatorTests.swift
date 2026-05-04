@@ -1671,6 +1671,22 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
                        "Dismiss-time clearText must preserve the per-tab stored draft.")
     }
 
+    // Regression: clearText only clears the visible input; the coordinator's tracked
+    // draft (currentText) must remain so the very next activateForTab flush captures
+    // the user's text, not the cleared visible state.
+    func test_clearText_thenActivateAnotherTab_flushesPreviousTabDraft() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "tab A draft")
+        sut.clearText()
+
+        sut.activateForTab("tab-B")
+
+        XCTAssertEqual(store.states["tab-A"]?.text, "tab A draft",
+                       "Flushing the outgoing tab after a dismiss-clear must store the user's draft, not the cleared live state.")
+    }
+
     // Regression: a brand-new tab must not inherit another tab's attachments. The
     // previous tab's attachments are still in the live view at the moment of
     // activateForTab; applyState must clear them before any user can see them.

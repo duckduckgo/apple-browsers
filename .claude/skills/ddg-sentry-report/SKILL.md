@@ -1,6 +1,6 @@
 ---
 name: ddg-sentry-report
-description: Invoke ONLY when the user explicitly runs `/ddg-sentry-report` or names this skill by name (e.g. "use ddg-sentry-report for macOS 1.186"). Do NOT auto-invoke from symptom/intent matching — producing a Sentry report writes to a shared Asana task and must be user-initiated. If the user asks about Sentry issues or crash triage without naming this skill, answer directly instead. Accepts three parameters when explicitly invoked: Asana parent task URL (the report is filed as a new subtask under it), project (iOS or macOS), and version (e.g. 1.186 or 7.217).
+description: Invoke ONLY when the user explicitly runs `/ddg-sentry-report` or names this skill by name (e.g. "use ddg-sentry-report for macOS 1.186"). Do NOT auto-invoke from symptom/intent matching — producing a Sentry report writes to a shared Asana task and must be user-initiated. If the user asks about Sentry issues or crash triage without naming this skill, answer directly instead. Accepts four parameters when explicitly invoked: Asana parent task URL (the report is filed as a new subtask under it), project (iOS or macOS), version (e.g. 1.186 or 7.217), and an optional time range (e.g. 24h, 72h, 7d) — defaults to 72h on Mondays (Fri–Sun coverage) or 24h on any other day.
 ---
 
 # ddg-sentry-report
@@ -16,6 +16,7 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
 | Asana parent task URL | `https://app.asana.com/1/137249556945/task/1214175611004136` | Extract the task GID from the URL path — this is the **parent** task. The summary report is created as a **new subtask** under it (never written to the parent itself). Subtask name: `Sentry summary - <platform> <version> - <YYYY-MM-DD>`. |
 | Project | `iOS` or `macOS` | Maps to Sentry project slug `apple-ios` / `apple-macos`. A single version ships under multiple release strings (main app + extensions) — see Non-obvious constants. |
 | Version | `1.186.0`, `1.186.*`, or `1.186` (macOS) / `7.216.x` (iOS) | Pass-through: an exact version (`1.186.0`) goes to `app_version:1.186.0`; a series (`1.186` or `1.186.*`) becomes the wildcard `app_version:1.186.*`. Always use the wildcard form when the user supplies a series. |
+| Time range (optional) | `24h`, `72h`, `7d`, `14d` | Sentry-style relative time. **Default when omitted:** `72h` when the skill runs on a Monday (covers Friday–Sunday), `24h` on any other day. Determine today's weekday via `date +%u` (Bash; `1`=Monday … `7`=Sunday). The resolved value is used in two places: appended to step-3 `list_issues` queries as `lastSeen:-<range>` (e.g. `lastSeen:-24h`), and substituted into the rewritten query URLs as `&statsPeriod=<range>`. **Does NOT apply** to the step-2 crash-free short-circuit check (that confirmation remains a global "is there any data for this version" query — adding a time filter would cause false crash-free readings for versions whose only events fall outside the window). |
 
 ## Non-obvious constants
 
@@ -45,14 +46,18 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
 1. **Load MCP tools** via ToolSearch:
    - `mcp__sentry__find_projects`, `mcp__sentry__find_releases`, `mcp__sentry__list_issues`, `mcp__sentry__get_sentry_resource`
    - `mcp__plugin_asana_asana__asana_get_task`, `mcp__plugin_asana_asana__asana_update_task`, `mcp__plugin_asana_asana__asana_search_tasks`, `mcp__plugin_asana_asana__asana_create_task`
+
+   **Resolve the time range.** If the user supplied one, use it verbatim (validate it's a Sentry-style relative duration: `<integer><h|d|w>`). If omitted, run `date +%u` via Bash to get today's weekday number; `1` (Monday) → default to `72h`, anything else (`2`–`7`) → default to `24h`. Hold the resolved value as `<TIME_RANGE>` for use in steps 3 and 7, and surface it in the report body. The time range never affects step 2's crash-free check.
 2. **Resolve releases + version filter.** Call `find_releases` with `query="<version>"` (e.g. `1.186`) to enumerate all release strings matching the series — needed for `firstRelease:` in step 3. Keep **all** of them (main app + extensions — do not filter down to a single prefix). For event matching, build the `app_version` filter directly from the user input: a series like `1.186` becomes `app_version:1.186.*`, an exact version like `1.186.0` stays `app_version:1.186.0`.
 
    **Match the user-supplied version literally.** The version parameter is authoritative. Never substitute a different version (e.g. falling back to a previously-shipped release because the requested one looks "wrong" or returns no data). If you suspect a typo, ask the user; do not silently retarget.
 
-   **Crash-free release short-circuit (runs before step 3).** If `find_releases(query="<version>")` returns no releases **and** a confirmation query `list_issues(query="is:unresolved app_version:<version_filter>", sort="freq", limit=1)` returns zero issues, the version is a **crash-free release** — typically an internal-testing or code-frozen build that has no events in Sentry yet. This is a valid outcome of the check, not an error: pre-release runs exist specifically to verify there are no new crashes in internal testing. File the "Crash-free release" report (template below) as a **new subtask** of the user-supplied parent task via `asana_create_task(parent="<PARENT_GID>", name="Sentry summary - <platform> <version> - <YYYY-MM-DD>", html_notes="<body>...</body>")`, and **STOP** — do not run steps 3–11. Do not query a previous version's data, do not file tracking tasks, do not dispatch subagents.
-3. **Two Sentry queries, sorted by `freq`:**
-   - All unresolved in the series: `is:unresolved app_version:1.186.*` (wildcard) or `is:unresolved app_version:1.186.0` (exact) — limit 30+. Pass the value unquoted; quoting (e.g. `app_version:"1.186.*"`) breaks wildcard matching.
-   - New-in-series only: `is:unresolved firstRelease:[<all releases from step 2>]` — limit 50+ (iOS routinely hits 60–70 new issues). Include extension releases in the list or you'll miss extension regressions.
+   **Crash-free release short-circuit (runs before step 3).** If `find_releases(query="<version>")` returns no releases **and** a confirmation query `list_issues(query="is:unresolved app_version:<version_filter>", sort="freq", limit=1)` returns zero issues, the version is a **crash-free release** — typically an internal-testing or code-frozen build that has no events in Sentry yet. **Do not add `lastSeen:-<TIME_RANGE>` to this query** — the short-circuit asks "does this version have *any* Sentry data ever?", not "any data in the last X hours." Filtering by time would mark older releases with stale events as falsely crash-free. This is a valid outcome of the check, not an error: pre-release runs exist specifically to verify there are no new crashes in internal testing. File the "Crash-free release" report (template below) as a **new subtask** of the user-supplied parent task via `asana_create_task(parent="<PARENT_GID>", name="Sentry summary - <platform> <version> - <YYYY-MM-DD>", html_notes="<body>...</body>")`, and **STOP** — do not run steps 3–11. Do not query a previous version's data, do not file tracking tasks, do not dispatch subagents.
+3. **Two Sentry queries, sorted by `freq`, scoped to the resolved time range:**
+   - All unresolved in the series: `is:unresolved app_version:1.186.* lastSeen:-<TIME_RANGE>` (wildcard) or `is:unresolved app_version:1.186.0 lastSeen:-<TIME_RANGE>` (exact) — limit 30+. Pass the values unquoted; quoting (e.g. `app_version:"1.186.*"` or `lastSeen:"-24h"`) breaks matching.
+   - New-in-series only: `is:unresolved firstRelease:[<all releases from step 2>] lastSeen:-<TIME_RANGE>` — limit 50+ (iOS routinely hits 60–70 new issues). Include extension releases in the list or you'll miss extension regressions.
+
+   `<TIME_RANGE>` is the value resolved in step 1 (e.g. `24h`, `72h`, `7d`). The `lastSeen:-Xh` filter restricts to issues whose latest event falls inside the window — exactly what we want for "what crashed in the last X hours" triage. Note: `list_issues` has no separate `statsPeriod` parameter; the filter must live inside `query`.
 4. **Classify severity** (use both user count and new-vs-pre-existing):
    - 🔴 HIGH: new-in-version AND a visible cluster (≥3 issues in same subsystem) OR new-in-version with ≥10 users
    - 🟡 MEDIUM: new-in-version, single occurrence, app-code culprit
@@ -82,7 +87,7 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
    - `git log -n 5 --since=<~2 months ago>` on the file for recent PRs
    - Capture PR numbers from commit subjects (GitHub auto-appends `(#NNNN)`)
    - If the culprit is too generic (`value`, `NSBundle.module`, `main`, OS symbols) — skip attribution
-7. **Compose URL-rewritten issue links.** Every `https://ddg.sentry.io/issues/<SHORT_ID>` becomes `https://errors.duckduckgo.com/organizations/ddg/issues/<SHORT_ID>/?project=<PROJECT_FILTER>`. Query links use `/organizations/ddg/issues/?project=<PROJECT_FILTER>&query=...&statsPeriod=7d`.
+7. **Compose URL-rewritten issue links.** Every `https://ddg.sentry.io/issues/<SHORT_ID>` becomes `https://errors.duckduckgo.com/organizations/ddg/issues/<SHORT_ID>/?project=<PROJECT_FILTER>`. Query links use `/organizations/ddg/issues/?project=<PROJECT_FILTER>&query=...&statsPeriod=<TIME_RANGE>` — substitute the value resolved in step 1 (e.g. `statsPeriod=24h`, `statsPeriod=72h`) so the linked Sentry view matches the analysis window. Single-issue URLs remain unfiltered (no `statsPeriod`).
 8. **Root-cause analysis (subagents) — for each new issue with an informative stacktrace that survived step 5's gate.** Especially worth investigating: unhandled exceptions where the message itself encodes the contract violation (e.g. `NSInternalInconsistencyException: Invalid update: ...`), or app-code culprits with a deep first-party call chain.
 
    **Eligibility rule (count first-party frames, don't eyeball the leaf).** Count the DuckDuckGo / first-party frames in the stacktrace. If there are **≥3 first-party frames**, the issue is eligible — dispatch the subagent. The fact that the *leaf* (deepest frame, where the fault occurred) is in libobjc, UIKit, Swift runtime, libsystem, JavaScriptCore, or other OS/runtime code does **not** disqualify the issue. SIGBUS/SIGSEGV inside `__sel_registerName`, `objc_msgSend`, `_swift_release`, `bmalloc`, `WKWebView` internals, etc. routinely have first-party root causes (renamed `@IBAction`, over-released object, retain-cycle break, allocation pressure from a specific code path) — the subagent's job is to investigate and either confirm or rule that out.
@@ -125,11 +130,11 @@ Produces a structured Sentry crash triage report for a DuckDuckGo Apple release 
 <body>
 <strong>{iOS|macOS} Sentry review — releases {version}.x</strong>
 
-Reviewed on {today}. Scope: unresolved issues with events in {release list}.
+Reviewed on {today}. Scope: unresolved issues with events in {release list} whose latest event falls within the last <code>{TIME_RANGE}</code>.
 
 <strong>Totals</strong>
-• N unresolved issues with events in {version}.x
-• M issues first seen in {version}.x (new regressions)
+• N unresolved issues with events in {version}.x in the last {TIME_RANGE}
+• M issues first seen in {version}.x (new regressions) with events in the last {TIME_RANGE}
 
 Full list in Sentry: <a href="...">unresolved in {version}.x</a>
 New-in-{version}.x only: <a href="...">firstRelease filter</a>
@@ -228,6 +233,11 @@ Likely caused by <a href="https://github.com/duckduckgo/apple-browsers/pull/<NNN
 | Writing full employee names to Asana | Hook blocks it. Use initials + PR links. If the hook blocks even initials, fall back to PR-number-only. |
 | Retrying a BLOCKED Asana response with different params | Never. The Asana data-protection policy says: accept the block. Ask the user how to proceed. |
 | Trusting the "culprit" field for blame when generic | Symbols like `value`, `NSBundle.module`, `__pthread_kill`, `objc_release`, `main` are not attributable. Skip them. |
+| Forgetting the time-range filter on step-3 queries | Both `list_issues` calls in step 3 must include `lastSeen:-<TIME_RANGE>` (the value resolved in step 1 — `24h` non-Monday default, `72h` Monday default, or the user-supplied override). Without it, the queries return all-time data and the report becomes a mixed history dump instead of "what crashed this window." |
+| Quoting the `lastSeen` value (e.g. `lastSeen:"-24h"`) | Same trap as `app_version`. Pass the value unquoted: `lastSeen:-24h`. |
+| Applying the time-range filter to the step-2 crash-free check | The crash-free short-circuit (`find_releases` empty + `list_issues` zero) is a global "is there any data for this version" question. Adding `lastSeen:-<TIME_RANGE>` causes false crash-free readings when a version has events outside the window. Keep step 2's confirmation query unfiltered by time. |
+| Hard-coding `&statsPeriod=7d` in URLs | Use the resolved `<TIME_RANGE>` value in the rewritten query URLs (step 7) so the linked Sentry view matches what the report analyzed. Single-issue URLs stay unfiltered. |
+| Computing the Monday default from the wrong clock | Use `date +%u` via Bash (the runtime's local time) — not the hard-coded date in the conversation context. The user runs this skill from various time zones and sessions can cross day boundaries. |
 | Treating every iOS SIGKILL as a bug | Most SIGKILL+`main` crashes on iOS are Jetsam memory kills, not app bugs. LOW severity unless volume spikes or culprit is specific app code. |
 | Forgetting `&project=<filter>` in errors.duckduckgo.com query URLs | The project filter is required for listing pages to render correctly; optional but recommended for single-issue URLs. |
 | Skipping the find-or-create lookup and creating a duplicate tracking task | Always run the step 5 `asana_search_tasks` lookup against `Sentry Crash Reports` filtered by `custom_fields.1214294661819893.value=<SHORT_ID>` first. The custom field is comma-separated, so split the returned value on `,` and require an **exact element** match — substring matches like `APPLE-MACOS-BD7` matching `APPLE-MACOS-BD70` (or matching `APPLE-MACOS-BD7,APPLE-MACOS-XYZ`) are false positives. |
@@ -245,12 +255,12 @@ Likely caused by <a href="https://github.com/duckduckgo/apple-browsers/pull/<NNN
 
 ## Example invocation
 
-> "Post a Sentry summary subtask under {asana_url} for macOS 1.186 — severity, new issues, blame."
+> "Post a Sentry summary subtask under {asana_url} for macOS 1.186 — severity, new issues, blame." (no explicit time range — the skill picks the default)
 
-1. Extract parent task GID `1214175611004136`, project `apple-macos`, version series `1.186`. The summary will be filed as a new subtask under this parent.
+1. Extract parent task GID `1214175611004136`, project `apple-macos`, version series `1.186`. No time range supplied → run `date +%u` via Bash. If today is Monday (`1`), use `72h`; otherwise `24h`. Hold this as `<TIME_RANGE>`. The summary will be filed as a new subtask under the parent.
 2. `find_releases(query="1.186")` → `DuckDuckGo@1.186.0`, `DuckDuckGo@1.186.1`, `com.duckduckgo.macos.vpn.network-extension@1.186.0`, `com.duckduckgo.macos.vpn.network-extension@1.186.1`, ... (keep all — needed for `firstRelease:`).
-3. `list_issues(query="is:unresolved app_version:1.186.*", sort="freq", limit=30)` — wildcard catches main app + extensions in one query. (For an exact version: `app_version:1.186.0`.)
-4. `list_issues(query="is:unresolved firstRelease:[DuckDuckGo@1.186.0,DuckDuckGo@1.186.1,com.duckduckgo.macos.vpn.network-extension@1.186.0,com.duckduckgo.macos.vpn.network-extension@1.186.1,...]", sort="freq", limit=50)`.
+3. `list_issues(query="is:unresolved app_version:1.186.* lastSeen:-24h", sort="freq", limit=30)` — wildcard catches main app + extensions in one query, scoped to the resolved window. (For an exact version: `app_version:1.186.0`. For Monday: `lastSeen:-72h`.)
+4. `list_issues(query="is:unresolved firstRelease:[DuckDuckGo@1.186.0,DuckDuckGo@1.186.1,com.duckduckgo.macos.vpn.network-extension@1.186.0,com.duckduckgo.macos.vpn.network-extension@1.186.1,...] lastSeen:-24h", sort="freq", limit=50)`.
 5. **Pre-flight lookup (gates the rest).** Group new issues into clusters by culprit. For each cluster: `asana_search_tasks(workspace="137249556945", projects.any="1214294661819890", sections.any="1214291024165659", custom_fields.1214294661819893.value="<SHORT_ID>", opt_fields="name,permalink_url,custom_fields,memberships.section.gid,tags,tags.name,completed")`. For each result, check `completed` and the highest `<platform>-app-release-X.Y.Z` tag. Branch: not-found → continue; open → skip culprit work, just link; completed-with-tag-greater-than-1.186 → "fix shipped" bucket, skip culprit work; completed-with-tag-≤-1.186-or-no-tag → reopen via `asana_update_task(completed=false)` and treat as regression.
 6. For each new issue that survived step 5: grep culprit symbol → `git blame` → capture PR from commit `(#NNNN)`.
 7. Rewrite all `ddg.sentry.io` URLs to `errors.duckduckgo.com/organizations/ddg/issues/<SHORT_ID>/?project=6`.

@@ -70,6 +70,12 @@ final class AIChatContextualUTIHost {
             .removeDuplicates()
             .sink { [weak self] url in
                 guard let self, let url, self.isAutoAttachEnabled() else { return }
+                // Skip if we already have the same URL attached (e.g. half-sheet carry-over
+                // replaying the seeded didFinish value on subscribe).
+                if let attached = self.chipViewModel.attachedContext,
+                   URL(string: attached.contextData.url) == url {
+                    return
+                }
                 Logger.contextualUTI.info("Auto-attach on page load — triggering for \(url.absoluteString, privacy: .private)")
                 self.handleChipAttachRequest(originatingURL: url)
             }

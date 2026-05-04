@@ -26,7 +26,7 @@ import XCTest
 final class AIChatContextualUTIHostTests: XCTestCase {
 
     private var originatingURL: CurrentValueSubject<URL?, Never>!
-    private var didFinishURL: PassthroughSubject<URL?, Never>!
+    private var didFinishURL: CurrentValueSubject<URL?, Never>!
     private var pageContextHandler: MockPageContextHandler!
     private var autoAttachEnabled = false
     private var sut: AIChatContextualUTIHost!
@@ -34,7 +34,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         originatingURL = .init(nil)
-        didFinishURL = .init()
+        didFinishURL = .init(nil)
         pageContextHandler = MockPageContextHandler()
         autoAttachEnabled = false
     }
@@ -196,6 +196,31 @@ final class AIChatContextualUTIHostTests: XCTestCase {
             return XCTFail("Expected .attached on Page B, got \(sut.chipViewModel.state)")
         }
         XCTAssertEqual(title, "Page B")
+    }
+
+    func test_autoAttachOn_coldStart_replayedDidFinish_triggersCollection() {
+        // Cold start: the page already finished loading before the chat opened, so
+        // didFinishURLSubject's CurrentValue is already set. Host must trigger collection
+        // when it subscribes (replayed value) so the chip auto-attaches to the current page.
+        autoAttachEnabled = true
+        let url = URL(string: "https://example.com/a")!
+        didFinishURL.send(url)  // simulate "page already finished before chat opened"
+
+        makeSUT()
+
+        XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
+    func test_autoAttachOn_coldStart_withCarryOver_doesNotReTrigger() {
+        // Half-sheet carry-over: chip is already attached to the page. Replayed didFinish
+        // for the same URL must NOT re-trigger collection.
+        autoAttachEnabled = true
+        let url = URL(string: "https://example.com/a")!
+        didFinishURL.send(url)
+
+        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString))
+
+        XCTAssertEqual(pageContextHandler.triggerContextCollectionCallCount, 0)
     }
 
     // MARK: - Helpers

@@ -299,8 +299,10 @@ class TabViewController: UIViewController {
 
     /// Emits the URL of the underlying tab each time a navigation finishes loading. Unlike
     /// `urlPublisher` (which fires at didCommit, before the new DOM is ready), this is the
-    /// reliable signal for "the new page's content is available to query."
-    private let didFinishURLSubject = PassthroughSubject<URL?, Never>()
+    /// reliable signal for "the new page's content is available to query." Replays the last
+    /// finished URL on subscribe so late subscribers (e.g. a contextual chat opened after
+    /// the page already loaded) still see the current page.
+    private let didFinishURLSubject = CurrentValueSubject<URL?, Never>(nil)
     var didFinishURLPublisher: AnyPublisher<URL?, Never> {
         didFinishURLSubject.eraseToAnyPublisher()
     }

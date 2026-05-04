@@ -23,6 +23,11 @@ import Foundation
 import UIKit
 import os.log
 
+enum PageContextAttachmentDeliveryState {
+    case pendingSubmit
+    case delivered
+}
+
 /// Drives the page-context chip in the contextual chat UTI.
 ///
 /// `attachedContext` is command-driven (`setAttached(_:)`) so JS-side auto-emissions don't bleed
@@ -38,8 +43,10 @@ import os.log
 ///   - no attachment → placeholder (regardless of mode — the half-sheet is where the user
 ///     exercises their attach/skip agency; once they're in the chat, an empty state should
 ///     always offer a tap target so they can re-attach if they change their mind).
-///   - auto mode + attached but URL doesn't match → show `.attached` (transition between nav
-///     and re-attach; avoids placeholder flash).
+///   - auto mode + pending attachment but URL doesn't match → show `.attached` (transition
+///     between nav and re-attach; avoids placeholder flash for visible pending feedback).
+///   - auto mode + delivered attachment but URL doesn't match → keep hidden until the new
+///     page's context lands; otherwise the already-silent old chip briefly reappears.
 /// Half-sheet carry-over starts in the "already submitted" state — the half-sheet sent the
 /// first prompt with that attachment, so the chat opens silent.
 @MainActor
@@ -58,40 +65,43 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     private(set) var attachedContext: AIChatPageContext?
     private var attachedURL: URL?
     private var originatingURL: URL?
-    /// Whether the current attachment has already been included in a submitted prompt. Resets
-    /// to false on every attachment change (new context = new "needs feedback" cycle); flips
-    /// true on `markPromptSubmitted()` and starts true for half-sheet carry-over.
-    private var attachmentDelivered: Bool = false
+    /// Whether the current attachment is waiting to be included in a prompt or has already
+    /// been delivered. `markPromptSubmitted()` flips pending attachments to delivered.
+    private var attachmentDeliveryState: PageContextAttachmentDeliveryState = .pendingSubmit
     private var cancellables = Set<AnyCancellable>()
 
     init(
         originatingURLPublisher: AnyPublisher<URL?, Never>,
         initialAttachedContext: AIChatPageContext?,
+        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
         isAutoAttachEnabled: @escaping () -> Bool
     ) {
         self.isAutoAttachEnabled = isAutoAttachEnabled
         self.attachedContext = initialAttachedContext
         self.attachedURL = Self.url(of: initialAttachedContext)
-        // Carry-over implies the half-sheet already submitted with this attachment.
-        self.attachmentDelivered = initialAttachedContext != nil
+        self.attachmentDeliveryState = initialAttachedContext == nil ? .pendingSubmit : initialAttachmentDeliveryState
+        Logger.contextualUTI.debug("ChipViewModel init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
         originatingURLPublisher
             .sink { [weak self] url in
                 guard let self else { return }
+                Logger.contextualUTI.debug("ChipViewModel originatingURL changed → \(url?.absoluteString ?? "nil", privacy: .private)")
                 self.originatingURL = url
-                if self.shouldClearOnNavigationAway { self.clearAttachment() }
+                if self.shouldClearOnNavigationAway { self.clearAttachedDueToNavigationAway() }
                 self.recompute()
             }
             .store(in: &cancellables)
         recompute()
     }
 
-    func setAttached(_ context: AIChatPageContext?) {
-        updateAttachment(context)
-        if context == nil {
-            Logger.contextualUTI.debug("PageContextChip detached")
-        } else {
-            Logger.contextualUTI.debug("PageContextChip attached")
-        }
+    func setAttached(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
+        updateAttachment(context, deliveryState: deliveryState)
+        Logger.contextualUTI.debug("PageContextChip attached")
+        recompute()
+    }
+
+    func clearAttached() {
+        clearAttachmentState()
+        Logger.contextualUTI.debug("PageContextChip detached")
         recompute()
     }
 
@@ -112,8 +122,8 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     /// Mark the current attachment as delivered (submitted in a prompt). Hides the chip if the
     /// attachment is matching — we don't need to keep showing what's silently riding along.
     func markPromptSubmitted() {
-        guard !attachmentDelivered else { return }
-        attachmentDelivered = true
+        guard attachedContext != nil, attachmentDeliveryState != .delivered else { return }
+        attachmentDeliveryState = .delivered
         recompute()
     }
 
@@ -122,9 +132,9 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         return !isAutoAttachEnabled()
     }
 
-    private func clearAttachment() {
+    private func clearAttachedDueToNavigationAway() {
         Logger.contextualUTI.debug("PageContextChip clearing attachment — tab navigated away (auto-attach OFF)")
-        updateAttachment(nil)
+        clearAttachmentState()
         // Propagate through the host so it clears the page-context handler buffer and pushes
         // nil to the FE — otherwise `AIChatUserScript.lastPushedPageContext` retains the stale
         // context and the next prompt would still carry it (chip shows detached, but AI sees
@@ -132,10 +142,16 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         onRemoveActionRequested?()
     }
 
-    private func updateAttachment(_ context: AIChatPageContext?) {
+    private func updateAttachment(_ context: AIChatPageContext?, deliveryState: PageContextAttachmentDeliveryState) {
         attachedContext = context
         attachedURL = Self.url(of: context)
-        attachmentDelivered = false
+        attachmentDeliveryState = deliveryState
+    }
+
+    private func clearAttachmentState() {
+        attachedContext = nil
+        attachedURL = nil
+        attachmentDeliveryState = .pendingSubmit
     }
 
     private static func url(of context: AIChatPageContext?) -> URL? {
@@ -144,22 +160,34 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
     private func recompute() {
         let isMatching = attachedURL != nil && attachedURL == originatingURL
+        let branch: String
 
         if isMatching, let ctx = attachedContext {
             state = .attached(title: ctx.title, favicon: ctx.favicon)
             // Show as feedback until the user submits the prompt; then go silent.
-            isVisible = !attachmentDelivered
+            isVisible = attachmentDeliveryState == .pendingSubmit
+            branch = "matching(deliveryState=\(attachmentDeliveryState))"
         } else if let ctx = attachedContext, isAutoAttachEnabled() {
             // Auto mode mid-transition (URL changed, re-attach not yet landed): keep showing the
-            // attached site rather than flashing placeholder.
+            // attached site only if it was already visible feedback.
             state = .attached(title: ctx.title, favicon: ctx.favicon)
-            isVisible = true
+            isVisible = attachmentDeliveryState == .pendingSubmit
+            branch = "autoTransition(deliveryState=\(attachmentDeliveryState))"
         } else {
             // No attachment: always show placeholder so the user can attach. The half-sheet
             // is the gate for "do I want to attach this page?"; once we're in the chat, an
             // empty state needs an affordance.
             state = .placeholder
             isVisible = true
+            branch = "noAttachment"
         }
+
+        let stateDesc: String = {
+            switch state {
+            case .placeholder: return "placeholder"
+            case .attached(let title, _): return "attached(\(title))"
+            }
+        }()
+        Logger.contextualUTI.debug("ChipViewModel recompute → \(branch, privacy: .public) state=\(stateDesc, privacy: .public) isVisible=\(self.isVisible, privacy: .public) auto=\(self.isAutoAttachEnabled(), privacy: .public) attached=\(self.attachedContext != nil, privacy: .public) attachedURL=\(self.attachedURL?.absoluteString ?? "nil", privacy: .private) originatingURL=\(self.originatingURL?.absoluteString ?? "nil", privacy: .private)")
     }
 }

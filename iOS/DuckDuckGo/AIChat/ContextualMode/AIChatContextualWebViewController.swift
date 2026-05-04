@@ -191,6 +191,9 @@ final class AIChatContextualWebViewController: UIViewController {
     /// Queues prompt if web view not ready yet; otherwise submits immediately.
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         Logger.aiChat.debug("[ContextualWebVC] submitPrompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
+        if pageContext != nil {
+            utiHost?.markPromptSubmitted()
+        }
         if isPageReady && isContentHandlerReady {
             Logger.aiChat.debug("[ContextualWebVC] Submitting prompt immediately")
             aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)

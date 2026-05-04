@@ -159,6 +159,14 @@ final class AIChatContextualChatSessionState {
         latestContext != nil
     }
 
+    /// The page context the user has currently chosen to attach (nil if they opted out via X
+    /// or never attached). Distinct from `latestContext`, which is just the last collected
+    /// payload and stays cached after the user downgrades to placeholder.
+    var intendedAttachedContext: AIChatPageContext? {
+        if case .attached(let context) = chipState { return context }
+        return nil
+    }
+
     /// Whether automatic context collection is enabled
     var shouldAutoCollectContext: Bool {
         aiChatSettings.isAutomaticContextAttachmentEnabled

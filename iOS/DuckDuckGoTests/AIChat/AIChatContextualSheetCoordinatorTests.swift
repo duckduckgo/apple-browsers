@@ -33,6 +33,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var triggerContextCollectionCallCount = 0
         var triggerContextCollectionReturnValue = true
         var clearCallCount = 0
+        var clearAttachedContextCallCount = 0
         var resubscribeCallCount = 0
 
         private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
@@ -59,6 +60,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         }
 
         func clearAttachedContext() {
+            clearAttachedContextCallCount += 1
             contextSubject.send(nil)
         }
     }
@@ -328,6 +330,18 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
     }
 
+    @MainActor
+    func testRemoveChipRequestClearsAttachedContextFromHandler() async {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.sendContext(makeTestContext())
+
+        sut.aiChatContextualSheetViewControllerDidRequestRemoveChip(sut.sheetViewController!)
+
+        XCTAssertEqual(sut.sessionState.chipState, .placeholder)
+        XCTAssertEqual(mockPageContextHandler.clearAttachedContextCallCount, 1)
+    }
+
     // MARK: - Session Timer Tests
 
     // MARK: - Multiple Page Contexts Tests
@@ -497,5 +511,17 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func makeTestContext(title: String = "Test Page") -> AIChatPageContext {
+        let contextData = AIChatPageContextData(
+            title: title,
+            favicon: [],
+            url: "https://example.com",
+            content: "Test content",
+            truncated: false,
+            fullContentLength: 12
+        )
+        return AIChatPageContext(contextData: contextData, favicon: nil)
+    }
 
 }

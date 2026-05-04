@@ -301,10 +301,13 @@ private extension AIChatContextualSheetCoordinator {
             pixelHandler: pixelHandler,
             utiHostInstaller: { [weak self] contextualChatViewController in
                 guard let self else { return nil }
+                let initialUTIAttachment = self.initialUTIAttachment
                 let host = AIChatContextualUTIHost(
                     originatingURLPublisher: self.originatingURLPublisher,
                     didFinishURLPublisher: self.tabURLPublishers.didFinish,
-                    initialAttachedContext: self.sessionState.latestContext,
+                    initialAttachedContext: initialUTIAttachment.context,
+                    initialAttachmentDeliveryState: initialUTIAttachment.deliveryState,
+                    hasActiveChat: { [weak self] in self?.sessionState.hasActiveChat ?? false },
                     isAutoAttachEnabled: { [weak self] in self?.sessionState.shouldAutoCollectContext ?? false },
                     pageContextHandler: self.pageContextHandler,
                     isFireTab: self.isFireTab
@@ -315,6 +318,16 @@ private extension AIChatContextualSheetCoordinator {
         )
 
         return webVC
+    }
+
+    var initialUTIAttachment: (context: AIChatPageContext?, deliveryState: PageContextAttachmentDeliveryState) {
+        if let context = sessionState.intendedAttachedContext {
+            return (context, .delivered)
+        }
+        if sessionState.hasActiveChat, let context = sessionState.latestContext {
+            return (context, .pendingSubmit)
+        }
+        return (nil, .delivered)
     }
     
     /// Starts the session timer after the sheet is dismissed.
@@ -408,6 +421,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
 
     func aiChatContextualSheetViewControllerDidRequestRemoveChip(_ viewController: AIChatContextualSheetViewController) {
         sessionState.downgradeToPlaceholder()
+        pageContextHandler.clearAttachedContext()
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didUpdateContextualChatURL url: URL?) {

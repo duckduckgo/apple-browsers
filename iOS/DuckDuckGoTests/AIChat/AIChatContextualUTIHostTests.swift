@@ -29,6 +29,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
     private var didFinishURL: CurrentValueSubject<URL?, Never>!
     private var pageContextHandler: MockPageContextHandler!
     private var autoAttachEnabled = false
+    private var hasActiveChat = false
     private var sut: AIChatContextualUTIHost!
 
     override func setUp() async throws {
@@ -37,6 +38,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         didFinishURL = .init(nil)
         pageContextHandler = MockPageContextHandler()
         autoAttachEnabled = false
+        hasActiveChat = false
     }
 
     override func tearDown() async throws {
@@ -47,11 +49,16 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         try await super.tearDown()
     }
 
-    private func makeSUT(initialAttachedContext: AIChatPageContext? = nil) {
+    private func makeSUT(
+        initialAttachedContext: AIChatPageContext? = nil,
+        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered
+    ) {
         sut = AIChatContextualUTIHost(
             originatingURLPublisher: originatingURL.eraseToAnyPublisher(),
             didFinishURLPublisher: didFinishURL.eraseToAnyPublisher(),
             initialAttachedContext: initialAttachedContext,
+            initialAttachmentDeliveryState: initialAttachmentDeliveryState,
+            hasActiveChat: { [weak self] in self?.hasActiveChat ?? false },
             isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false },
             pageContextHandler: pageContextHandler,
             isFireTab: false
@@ -103,7 +110,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
         sut.chipViewModel.tapToRemove()
 
-        XCTAssertEqual(pageContextHandler.clearAttachedContextCallCount, 1)
+        XCTAssertEqual(pageContextHandler.clearCallCount, 1)
         XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
     }
 
@@ -124,10 +131,46 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertNil(sut.chipViewModel.attachedContext)
     }
 
+    func test_chipRemove_lateResultIgnoredUntilNextAutoAttachRequest() {
+        autoAttachEnabled = true
+        let urlA = URL(string: "https://example.com/a")!
+        let urlB = URL(string: "https://example.com/b")!
+        makeSUT()
+        originatingURL.send(urlA)
+
+        sut.chipViewModel.tapToAttach()
+        sut.chipViewModel.tapToRemove()
+        pageContextHandler.sendContext(makeContext(title: "Page A", url: urlA.absoluteString))
+
+        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
+        XCTAssertNil(sut.chipViewModel.attachedContext)
+
+        originatingURL.send(urlB)
+        didFinishURL.send(urlB)
+        pageContextHandler.sendContext(makeContext(title: "Page B", url: urlB.absoluteString))
+
+        XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page B", favicon: nil))
+    }
+
+    func test_chipRemove_attachRequestFails_keepsIgnoringLateExternalContext() {
+        let url = URL(string: "https://example.com/a")!
+        makeSUT()
+        originatingURL.send(url)
+
+        sut.chipViewModel.tapToAttach()
+        sut.chipViewModel.tapToRemove()
+        pageContextHandler.triggerContextCollectionReturnValue = false
+        sut.chipViewModel.tapToAttach()
+        pageContextHandler.sendContext(makeContext(title: "Page A", url: url.absoluteString))
+
+        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
+        XCTAssertNil(sut.chipViewModel.attachedContext)
+    }
+
     func test_autoAttachOff_navigationAway_clearsAttachedContextOnHandler() {
         // Regression: when the chip clears its attachment due to nav-away (auto-attach OFF),
-        // the host must also call clearAttachedContext on the handler — otherwise the FE-side
-        // cached page context would survive and the next prompt would ship stale context.
+        // the host must also clear the handler — otherwise the FE-side cached page context
+        // would survive and the next prompt would ship stale context.
         autoAttachEnabled = false
         let urlA = URL(string: "https://example.com/a")!
         originatingURL.send(urlA)
@@ -135,7 +178,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
         originatingURL.send(URL(string: "https://example.com/b"))
 
-        XCTAssertEqual(pageContextHandler.clearAttachedContextCallCount, 1)
+        XCTAssertEqual(pageContextHandler.clearCallCount, 1)
         XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
     }
 
@@ -196,6 +239,67 @@ final class AIChatContextualUTIHostTests: XCTestCase {
             return XCTFail("Expected .attached on Page B, got \(sut.chipViewModel.state)")
         }
         XCTAssertEqual(title, "Page B")
+    }
+
+    func test_autoAttachOn_duplicateContextAfterAutoAttach_doesNotMarkAttachmentDelivered() {
+        autoAttachEnabled = true
+        let urlA = URL(string: "https://example.com/a")!
+        let urlB = URL(string: "https://example.com/b")!
+        let contextB = makeContext(title: "Page B", url: urlB.absoluteString)
+        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: urlA.absoluteString))
+        originatingURL.send(urlA)
+        originatingURL.send(urlB)
+
+        didFinishURL.send(urlB)
+        pageContextHandler.sendContext(contextB)
+        XCTAssertTrue(sut.chipViewModel.isVisible)
+
+        pageContextHandler.sendContext(contextB)
+
+        XCTAssertTrue(sut.chipViewModel.isVisible)
+        XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page B", favicon: nil))
+    }
+
+    func test_autoAttachOn_contextEmitsAfterChatIsBound_staysVisibleUntilPromptSubmit() {
+        autoAttachEnabled = true
+        hasActiveChat = true
+        let urlA = URL(string: "https://example.com/a")!
+        let urlB = URL(string: "https://example.com/b")!
+        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: urlA.absoluteString))
+        originatingURL.send(urlA)
+        sut.bindToUserScript(makeTestUserScript())
+
+        originatingURL.send(urlB)
+        pageContextHandler.sendContext(makeContext(title: "Page B", url: urlB.absoluteString))
+
+        XCTAssertTrue(sut.chipViewModel.isVisible)
+        XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page B", favicon: nil))
+    }
+
+    func test_restoredChat_initialAttachedContext_staysVisibleUntilPromptSubmit() {
+        autoAttachEnabled = true
+        hasActiveChat = true
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+
+        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString), initialAttachmentDeliveryState: .pendingSubmit)
+
+        XCTAssertTrue(sut.chipViewModel.isVisible)
+        XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page A", favicon: nil))
+    }
+
+    func test_activeChatPromptSubmittedWithAttachedContext_marksAttachmentDelivered() {
+        hasActiveChat = true
+        let url = URL(string: "https://example.com/a")!
+        makeSUT()
+        originatingURL.send(url)
+        pageContextHandler.sendContext(makeContext(title: "Page A", url: url.absoluteString))
+        XCTAssertTrue(sut.chipViewModel.isVisible)
+
+        sut.markPromptSubmitted()
+
+        XCTAssertFalse(sut.chipViewModel.isVisible)
+        XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page A", favicon: nil))
     }
 
     func test_autoAttachOn_coldStart_optedOutAtHalfSheet_doesNotTrigger() {

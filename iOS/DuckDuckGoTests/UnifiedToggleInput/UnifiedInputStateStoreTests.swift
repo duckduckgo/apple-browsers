@@ -156,19 +156,17 @@ final class UnifiedInputStateStoreTests: XCTestCase {
 
     func test_observingTabsModel_seedsNewTabs() {
         let tabsModel = TabsModel(desktop: false)
-        let tab = Tab(uid: "tab-eager", fireTab: false, preferredTextEntryMode: .aiChat)
+        let tab = Tab(uid: "tab-eager", fireTab: false, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: .aiChat))
         sut.observeTabsModel(tabsModel)
         tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
         XCTAssertEqual(sut.state(for: "tab-eager").toggleMode, .aiChat)
     }
 
     func test_observingTabsModel_seedsRemainingFieldsFromLastUsed() {
-        // lastUsed is captured at init from preferences, or updated via recordUserChoice.
-        // Re-construct sut after setting preferences so init picks them up.
         preferences.selectedModelId = "gpt-5"
         let store = UnifiedInputStateStore(preferences: preferences, toggleModeStorage: toggleStorage)
         let tabsModel = TabsModel(desktop: false)
-        let tab = Tab(uid: "tab-eager", fireTab: false, preferredTextEntryMode: .search)
+        let tab = Tab(uid: "tab-eager", fireTab: false, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: .search))
         store.observeTabsModel(tabsModel)
         tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
         XCTAssertEqual(store.state(for: "tab-eager").selectedModelID, "gpt-5")
@@ -194,9 +192,11 @@ final class UnifiedInputStateStoreTests: XCTestCase {
         let tab = Tab(
             uid: "persisted",
             fireTab: false,
-            preferredTextEntryMode: .aiChat,
-            selectedModelID: "tab-specific-model",
-            selectedReasoningMode: .extendedReasoning
+            unifiedInputState: UnifiedInputTabState(
+                preferredTextEntryMode: .aiChat,
+                selectedModelID: "tab-specific-model",
+                selectedReasoningMode: .extendedReasoning
+            )
         )
         store.observeTabsModel(tabsModel)
         tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
@@ -209,7 +209,7 @@ final class UnifiedInputStateStoreTests: XCTestCase {
         preferences.selectedModelId = "global-default"
         let store = UnifiedInputStateStore(preferences: preferences, toggleModeStorage: toggleStorage)
         let tabsModel = TabsModel(desktop: false)
-        let tab = Tab(uid: "fresh", fireTab: false, preferredTextEntryMode: .aiChat)
+        let tab = Tab(uid: "fresh", fireTab: false, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: .aiChat))
         store.observeTabsModel(tabsModel)
         tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
 
@@ -227,8 +227,8 @@ final class UnifiedInputStateStoreTests: XCTestCase {
             for: "writeback"
         )
 
-        XCTAssertEqual(tab.selectedModelID, "claude-opus")
-        XCTAssertEqual(tab.selectedReasoningMode, .reasoning)
+        XCTAssertEqual(tab.unifiedInputState.selectedModelID, "claude-opus")
+        XCTAssertEqual(tab.unifiedInputState.selectedReasoningMode, .reasoning)
     }
 
     func test_recordUserChoice_clearingModelOnTab_isAlsoMirrored() {
@@ -236,8 +236,10 @@ final class UnifiedInputStateStoreTests: XCTestCase {
         let tab = Tab(
             uid: "clear-mirror",
             fireTab: false,
-            selectedModelID: "old-model",
-            selectedReasoningMode: .reasoning
+            unifiedInputState: UnifiedInputTabState(
+                selectedModelID: "old-model",
+                selectedReasoningMode: .reasoning
+            )
         )
         sut.observeTabsModel(tabsModel)
         tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
@@ -247,8 +249,8 @@ final class UnifiedInputStateStoreTests: XCTestCase {
             for: "clear-mirror"
         )
 
-        XCTAssertNil(tab.selectedModelID)
-        XCTAssertNil(tab.selectedReasoningMode)
+        XCTAssertNil(tab.unifiedInputState.selectedModelID)
+        XCTAssertNil(tab.unifiedInputState.selectedReasoningMode)
     }
 
     // Regression for the fire-mode bug: tabs in a second observed model must also be
@@ -259,8 +261,8 @@ final class UnifiedInputStateStoreTests: XCTestCase {
         sut.observeTabsModel(normalModel)
         sut.observeTabsModel(fireModel)
 
-        let normalTab = Tab(uid: "normal-1", fireTab: false, preferredTextEntryMode: .search)
-        let fireTab = Tab(uid: "fire-1", fireTab: true, preferredTextEntryMode: .aiChat)
+        let normalTab = Tab(uid: "normal-1", fireTab: false, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: .search))
+        let fireTab = Tab(uid: "fire-1", fireTab: true, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: .aiChat))
         normalModel.insert(tab: normalTab, placement: .atEnd, selectNewTab: true)
         fireModel.insert(tab: fireTab, placement: .atEnd, selectNewTab: true)
 

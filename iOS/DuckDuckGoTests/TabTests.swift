@@ -435,8 +435,10 @@ class TabTests: XCTestCase {
         let tabToEncode = Tab(
             link: link(),
             fireTab: false,
-            selectedModelID: "claude-opus-4-6",
-            selectedReasoningMode: .extendedReasoning
+            unifiedInputState: UnifiedInputTabState(
+                selectedModelID: "claude-opus-4-6",
+                selectedReasoningMode: .extendedReasoning
+            )
         )
 
         guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
@@ -447,8 +449,8 @@ class TabTests: XCTestCase {
 
         let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
 
-        XCTAssertEqual(decodedTab?.selectedModelID, "claude-opus-4-6")
-        XCTAssertEqual(decodedTab?.selectedReasoningMode, .extendedReasoning)
+        XCTAssertEqual(decodedTab?.unifiedInputState.selectedModelID, "claude-opus-4-6")
+        XCTAssertEqual(decodedTab?.unifiedInputState.selectedReasoningMode, .extendedReasoning)
     }
 
     func testWhenTabWithNilSelectedModelEncodedThenDecodesAsNil() {
@@ -462,16 +464,16 @@ class TabTests: XCTestCase {
 
         let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
 
-        XCTAssertNil(decodedTab?.selectedModelID)
-        XCTAssertNil(decodedTab?.selectedReasoningMode)
+        XCTAssertNil(decodedTab?.unifiedInputState.selectedModelID)
+        XCTAssertNil(decodedTab?.unifiedInputState.selectedReasoningMode)
     }
 
     func testWhenTabEncodedBeforeSelectedModelPropertiesAddedThenDecodesWithNil() {
         let tab = Tab(coder: CoderStub(properties: ["link": link(), "viewed": false]))
 
         XCTAssertNotNil(tab)
-        XCTAssertNil(tab?.selectedModelID)
-        XCTAssertNil(tab?.selectedReasoningMode)
+        XCTAssertNil(tab?.unifiedInputState.selectedModelID)
+        XCTAssertNil(tab?.unifiedInputState.selectedReasoningMode)
     }
 
     func testWhenTabHasInvalidReasoningModeRawValueThenDecodesAsNil() {
@@ -482,7 +484,7 @@ class TabTests: XCTestCase {
         ]))
 
         XCTAssertNotNil(tab)
-        XCTAssertNil(tab?.selectedReasoningMode)
+        XCTAssertNil(tab?.unifiedInputState.selectedReasoningMode)
     }
 
     private func link() -> Link {

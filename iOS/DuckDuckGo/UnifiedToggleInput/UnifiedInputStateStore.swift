@@ -30,7 +30,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     private var modelSnapshots: [ObjectIdentifier: [Tab]] = [:]
     private var tabsCancellables = Set<AnyCancellable>()
     private var knownUIDs: Set<TabUID> = []
-    private var tabsByUID: [TabUID: Tab] = [:]
+    private var tabsByUID: [TabUID: any UnifiedInputTabStateProviding] = [:]
 
     init(
         preferences: AIChatPreferencesPersisting,
@@ -76,8 +76,10 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         preferences.selectedReasoningMode = state.selectedReasoningMode
 
         if let tab = tabsByUID[uid] {
-            tab.selectedModelID = state.selectedModelID
-            tab.selectedReasoningMode = state.selectedReasoningMode
+            var inputState = tab.unifiedInputState
+            inputState.selectedModelID = state.selectedModelID
+            inputState.selectedReasoningMode = state.selectedReasoningMode
+            tab.unifiedInputState = inputState
         }
         Logger.unifiedInputState.debug("recordUserChoice for tab [\(uid)]: \(state.summary)")
     }
@@ -103,9 +105,12 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     private func reconcileFromSnapshots() {
         let allTabs = modelSnapshots.values.flatMap { $0 }
         let currentUIDs = Set(allTabs.map { $0.uid })
-        tabsByUID = Dictionary(allTabs.map { ($0.uid, $0) }, uniquingKeysWith: { _, last in last })
+        tabsByUID = Dictionary(
+            allTabs.map { ($0.uid, $0 as any UnifiedInputTabStateProviding) },
+            uniquingKeysWith: { _, last in last }
+        )
         for tab in allTabs where !knownUIDs.contains(tab.uid) {
-            let seeded = seededState(from: tab)
+            let seeded = seededState(from: tab.unifiedInputState)
             states[tab.uid] = seeded
             Logger.unifiedInputState.debug("seeded new tab [\(tab.uid)] from TabsModel insert: \(seeded.summary)")
         }
@@ -116,13 +121,13 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         knownUIDs = currentUIDs
     }
 
-    private func seededState(from tab: Tab) -> TabInputState {
+    private func seededState(from inputState: UnifiedInputTabState) -> TabInputState {
         TabInputState(
             text: "",
-            toggleMode: tab.preferredTextEntryMode,
+            toggleMode: inputState.preferredTextEntryMode,
             attachments: [],
-            selectedModelID: tab.selectedModelID ?? trackedLastUsed.selectedModelID,
-            selectedReasoningMode: tab.selectedReasoningMode ?? trackedLastUsed.selectedReasoningMode,
+            selectedModelID: inputState.selectedModelID ?? trackedLastUsed.selectedModelID,
+            selectedReasoningMode: inputState.selectedReasoningMode ?? trackedLastUsed.selectedReasoningMode,
             selectedTool: trackedLastUsed.selectedTool
         )
     }

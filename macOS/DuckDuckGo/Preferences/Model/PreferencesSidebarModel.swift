@@ -415,7 +415,7 @@ final class PreferencesSidebarModel: ObservableObject {
             if subscriptionManager.isSubscriptionPresent() {
                 do {
                     let entitlementStatus = await subscriptionManager.getAllEntitlementStatus()
-                    let subscriptionFeatures = try await subscriptionManager.currentSubscriptionFeatures(forceRefresh: false)
+                    let subscriptionFeatures = try await subscriptionManager.currentSubscriptionFeatures(forceRefresh: true)
 
                     updatedState = PreferencesSidebarSubscriptionState(
                         hasSubscription: true,

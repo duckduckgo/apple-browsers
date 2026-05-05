@@ -33,7 +33,7 @@ struct SettingsYouTubeAdBlockingView: View {
     var description: SettingsDescription {
         SettingsDescription(imageName: "SettingsYoutubeHero",
                             title: UserText.youTubeAdBlockingTitle,
-                            status: .on,
+                            status: .alwaysOn,
                             explanation: UserText.adBlockingDescription)
     }
 

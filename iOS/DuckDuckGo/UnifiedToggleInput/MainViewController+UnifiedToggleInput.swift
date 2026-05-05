@@ -137,18 +137,21 @@ extension MainViewController {
             webViewBackgroundColor = nil
         case .aiTabSearchChromeHidden:
             // Match the top status background so the area around the input card — and the area
-            // behind the keyboard's translucency — blend with the chat surface.
+            // behind the keyboard's translucency — blend with the chat surface. The web view
+            // also takes the same colour so the brief moment after a frame change (before
+            // WKWebView's out-of-process renderer catches up) shows the same colour rather
+            // than the parent flashing through.
             statusBackgroundPresentation = .aiTabSearchChromeHidden
             rootBackgroundColor = UIColor(designSystemColor: .panel)
             navigationBarContainerColor = rootBackgroundColor
             inputContentContainerColor = .clear
-            webViewBackgroundColor = .clear
+            webViewBackgroundColor = rootBackgroundColor
         case .aiTabChatChromeHidden:
             statusBackgroundPresentation = .aiTabChatChromeHidden
             rootBackgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
             navigationBarContainerColor = rootBackgroundColor
             inputContentContainerColor = .clear
-            webViewBackgroundColor = .clear
+            webViewBackgroundColor = rootBackgroundColor
         }
 
         viewCoordinator.setStatusBackgroundPresentation(statusBackgroundPresentation)

@@ -123,21 +123,31 @@ extension MainViewController {
     func applyUnifiedInputChromeBackground(_ state: UnifiedInputChromeBackgroundState, updateWebView: Bool = true) {
 
         let statusBackgroundPresentation: MainViewCoordinator.StatusBackgroundPresentation
-        let containerBackgroundColor: UIColor?
+        let rootBackgroundColor: UIColor
+        let navigationBarContainerColor: UIColor?
+        let inputContentContainerColor: UIColor
         let webViewBackgroundColor: UIColor?
 
         switch state {
         case .standardChrome:
             statusBackgroundPresentation = .standard
-            containerBackgroundColor = nil
+            rootBackgroundColor = ThemeManager.shared.currentTheme.mainViewBackgroundColor
+            navigationBarContainerColor = nil
+            inputContentContainerColor = .clear
             webViewBackgroundColor = nil
         case .aiTabSearchChromeHidden:
+            // Match the top status background so the area around the input card — and the area
+            // behind the keyboard's translucency — blend with the chat surface.
             statusBackgroundPresentation = .aiTabSearchChromeHidden
-            containerBackgroundColor = .clear
+            rootBackgroundColor = UIColor(designSystemColor: .panel)
+            navigationBarContainerColor = rootBackgroundColor
+            inputContentContainerColor = .clear
             webViewBackgroundColor = .clear
         case .aiTabChatChromeHidden:
             statusBackgroundPresentation = .aiTabChatChromeHidden
-            containerBackgroundColor = .clear
+            rootBackgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            navigationBarContainerColor = rootBackgroundColor
+            inputContentContainerColor = .clear
             webViewBackgroundColor = .clear
         }
 
@@ -146,8 +156,9 @@ extension MainViewController {
             refreshStatusBarBackgroundAfterAIChrome()
         }
 
-        viewCoordinator.navigationBarContainer.backgroundColor = containerBackgroundColor
-        viewCoordinator.unifiedInputContentContainer?.backgroundColor = containerBackgroundColor ?? .clear
+        view.backgroundColor = rootBackgroundColor
+        viewCoordinator.navigationBarContainer.backgroundColor = navigationBarContainerColor
+        viewCoordinator.unifiedInputContentContainer?.backgroundColor = inputContentContainerColor
         viewCoordinator.unifiedToggleInputContainer.backgroundColor = .clear
         unifiedToggleInputCoordinator?.viewController.view.backgroundColor = .clear
 

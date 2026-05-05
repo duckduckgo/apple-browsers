@@ -477,11 +477,7 @@ class MainViewCoordinator {
         case safeArea
     }
 
-    func extendContentContainerBehindInput() {
-        setContentContainerBottomAnchorMode(.toolbar)
-    }
-
-    func stopContentContainerBehindInput() {
+    func anchorContentContainerToInputTop() {
         setContentContainerBottomAnchorMode(.unifiedToggleInput)
     }
 

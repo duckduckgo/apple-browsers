@@ -51,7 +51,7 @@ private extension NewAddressBarPickerViewModel {
     func fireConfirmPixel() {
         let selectionValue = isDuckAISelected ? "search_and_ai" : "search_only"
         dailyPixelFiring.fireDailyAndCount(
-            .aiChatNewAddressBarPickerConfirmed,
+            .aiChatNewAddressBarPickerV2Confirmed,
             error: nil,
             withAdditionalParameters: [PixelParameters.selection: selectionValue]
         )

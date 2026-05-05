@@ -41,7 +41,7 @@ final class NewAddressBarPickerViewController: UIViewController {
         super.viewDidLoad()
         
         setupContentView()
-        DailyPixel.fireDailyAndCount(pixel: .aiChatNewAddressBarPickerDisplayed)
+        DailyPixel.fireDailyAndCount(pixel: .aiChatNewAddressBarPickerV2Displayed)
     }
     
     private func setupContentView() {

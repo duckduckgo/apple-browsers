@@ -389,6 +389,7 @@ public extension DesignSystemImages {
             public static var bookmarksList: DesignSystemImage { .init(resource: .bookmarksList24) }
             public static var bookmarksOpen: DesignSystemImage { .init(resource: .bookmarksOpen24) }
             public static var calendar: DesignSystemImage { .init(resource: .calendar24) }
+            public static var camera: DesignSystemImage { .init(resource: .camera24) }
             public static var card: DesignSystemImage { .init(resource: .card24) }
             public static var check: DesignSystemImage { .init(resource: .check24) }
             public static var checkAccent: DesignSystemImage { .init(resource: .checkAccent24) }

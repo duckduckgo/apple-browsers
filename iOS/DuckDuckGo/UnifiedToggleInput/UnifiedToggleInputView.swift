@@ -156,6 +156,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.toolsMenu = newValue }
     }
 
+    var attachmentMenu: UIMenu? {
+        get { toolsToolbar.attachmentMenu }
+        set { toolsToolbar.attachmentMenu = newValue }
+    }
+
     var reasoningPickerMenu: UIMenu? {
         get { toolsToolbar.reasoningPickerMenu }
         set { toolsToolbar.reasoningPickerMenu = newValue }
@@ -199,16 +204,6 @@ final class UnifiedToggleInputView: UIView {
     var usesOmnibarMargins: Bool = false
     private(set) var isToggleEnabled: Bool
 
-    var modelSupportsImageAttachments: Bool = true {
-        didSet {
-            guard modelSupportsImageAttachments != oldValue else { return }
-            updateAttachmentsStripLayout()
-            layoutIfNeeded()
-            onNeedsHierarchyLayout?()
-            onAttachmentsLayoutDidChange?()
-        }
-    }
-
     var handlerIsTopBarPosition: Bool {
         get { handler.isTopBarPosition }
         set { handler.isTopBarPosition = newValue }
@@ -216,14 +211,11 @@ final class UnifiedToggleInputView: UIView {
 
     // MARK: - Attachment Callbacks
 
-    var onAttachTapped: (() -> Void)?
     var onAttachmentRemoved: ((UUID) -> Void)?
     var onInlineDismissTapped: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
 
     // MARK: - Attachment API
-
-    var attachButtonView: UIView { toolsToolbar.imageButton }
 
     var isImageButtonHidden: Bool {
         get { toolsToolbar.isImageButtonHidden }
@@ -235,15 +227,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.isImageButtonEnabled = newValue }
     }
 
-    var isAttachmentsFull: Bool {
-        attachmentsStrip.isFull
-    }
-
-    var currentAttachments: [AIChatImageAttachment] {
+    var currentAttachments: [UnifiedToggleInputAttachment] {
         attachmentsStrip.attachments
     }
 
-    func addAttachment(_ attachment: AIChatImageAttachment) {
+    func addAttachment(_ attachment: UnifiedToggleInputAttachment) {
         attachmentsStrip.addAttachment(attachment)
     }
 
@@ -745,8 +733,8 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func updateAttachmentsStripLayout() {
-        let hasImages = !attachmentsStrip.attachments.isEmpty
-        let showStrip = hasImages && isExpanded && handler.currentToggleState == .aiChat && modelSupportsImageAttachments
+        let hasAttachments = !attachmentsStrip.attachments.isEmpty
+        let showStrip = hasAttachments && isExpanded && handler.currentToggleState == .aiChat
         attachmentsStripHeightConstraint.constant = showStrip ? UnifiedToggleInputAttachmentsStripView.Constants.stripHeight : 0
         attachmentsStrip.alpha = showStrip ? 1 : 0
     }
@@ -901,9 +889,6 @@ private extension UnifiedToggleInputView {
         }
         toolsToolbar.onStopGeneratingTapped = { [weak self] in
             self?.handler.stopGeneratingButtonTapped()
-        }
-        toolsToolbar.onAttachTapped = { [weak self] in
-            self?.onAttachTapped?()
         }
         toolsToolbar.onVoiceTapped = { [weak self] in
             self?.handler.microphoneButtonTapped()

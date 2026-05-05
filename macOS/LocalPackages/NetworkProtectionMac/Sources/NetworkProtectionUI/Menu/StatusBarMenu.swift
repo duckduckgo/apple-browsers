@@ -143,8 +143,9 @@ public final class StatusBarMenu: NSObject {
         } else {
             await onWillShowPopover?()
 
-            // Re-check after the suspension: a concurrent invocation may have already created the popover.
-            guard popover == nil else {
+            // Re-check after the suspension: a concurrent invocation may have already shown the popover.
+            // Note: a non-nil but not-shown popover is expected after a `.transient` dismissal, so don't bail in that case.
+            guard popover?.isShown != true else {
                 return
             }
 

@@ -36,6 +36,13 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "m_mac_aichat_new_voice_chat_omnibar_ntp": {
+        "description": "Fired when user opens a new Duck.ai voice chat from the New Tab Page omnibar",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "m_mac_aichat_ntp_image_generation_submitted": {
         "description": "Fired when user submits a prompt while image generation mode is active on the New Tab Page",
         "owners": ["tomasstrba"],

@@ -631,6 +631,85 @@ class AppPrivacyConfigurationTests: XCTestCase {
         XCTAssertEqual(config.stateFor(AutofillSubfeature.credentialsAutofill), .disabled(.disabledInConfig))
     }
 
+    let exampleDisabledParentMissingSubfeatureConfig =
+    """
+    {
+        "features": {
+            "autofill": {
+                "state": "disabled",
+                "exceptions": [],
+                "features": {}
+            }
+        },
+        "unprotectedTemporary": []
+    }
+    """.data(using: .utf8)!
+
+    func testWhenCheckingSubfeatureState_andSubfeatureMissing_andParentDisabled_thenParentStateOverridesDefaultValue() {
+        let mockEmbeddedData = MockEmbeddedDataProvider(data: exampleDisabledParentMissingSubfeatureConfig, etag: "test")
+        let manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                                  fetchedData: nil,
+                                                  embeddedDataProvider: mockEmbeddedData,
+                                                  localProtection: MockDomainsProtectionStore(),
+                                                  internalUserDecider: MockInternalUserDecider())
+
+        let config = manager.privacyConfig
+
+        // Parent is disabled in config; the subfeature key isn't present. The parent kill-switch must win
+        // over `defaultValue` so a remote disable cannot be bypassed by a missing-subfeature fallback.
+        XCTAssertEqual(config.stateFor(AutofillSubfeature.credentialsAutofill), .disabled(.disabledInConfig))
+        XCTAssertFalse(config.isSubfeatureEnabled(AutofillSubfeature.credentialsAutofill, defaultValue: true))
+        XCTAssertFalse(config.isSubfeatureEnabled(AutofillSubfeature.credentialsAutofill, defaultValue: false))
+    }
+
+    let exampleInternalParentMissingSubfeatureConfig =
+    """
+    {
+        "features": {
+            "autofill": {
+                "state": "internal",
+                "exceptions": [],
+                "features": {}
+            }
+        },
+        "unprotectedTemporary": []
+    }
+    """.data(using: .utf8)!
+
+    func testWhenCheckingSubfeatureState_andSubfeatureMissing_andParentInternalAndUserNotInternal_thenParentStateOverridesDefaultValue() {
+        let mockEmbeddedData = MockEmbeddedDataProvider(data: exampleInternalParentMissingSubfeatureConfig, etag: "test")
+        let manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                                  fetchedData: nil,
+                                                  embeddedDataProvider: mockEmbeddedData,
+                                                  localProtection: MockDomainsProtectionStore(),
+                                                  internalUserDecider: MockInternalUserDecider(isInternalUser: false))
+
+        let config = manager.privacyConfig
+
+        // Mirrors live config for `adBlockingExtension`: parent is internal-only and the new
+        // `featureEnabled` subfeature isn't in the JSON. Non-internal users must still see it disabled
+        // even if the flag is declared with `defaultValue: .enabled`.
+        XCTAssertEqual(config.stateFor(AutofillSubfeature.credentialsAutofill), .disabled(.limitedToInternalUsers))
+        XCTAssertFalse(config.isSubfeatureEnabled(AutofillSubfeature.credentialsAutofill, defaultValue: true))
+    }
+
+    func testWhenCheckingSubfeatureState_andSubfeatureMissing_andParentInternalAndUserInternal_thenFallsThroughToDefaultValue() {
+        let mockEmbeddedData = MockEmbeddedDataProvider(data: exampleInternalParentMissingSubfeatureConfig, etag: "test")
+        let manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                                  fetchedData: nil,
+                                                  embeddedDataProvider: mockEmbeddedData,
+                                                  localProtection: MockDomainsProtectionStore(),
+                                                  internalUserDecider: MockInternalUserDecider(isInternalUser: true))
+
+        let config = manager.privacyConfig
+
+        // Internal users: parent resolves to enabled, so a missing subfeature legitimately falls through
+        // to `defaultValue` — preserving the existing fallback behavior we rely on for new subfeatures.
+        XCTAssertEqual(config.stateFor(AutofillSubfeature.credentialsAutofill), .disabled(.featureMissing))
+        XCTAssertTrue(config.isSubfeatureEnabled(AutofillSubfeature.credentialsAutofill, defaultValue: true))
+        XCTAssertFalse(config.isSubfeatureEnabled(AutofillSubfeature.credentialsAutofill, defaultValue: false))
+    }
+
     let exampleDisabledFeatureMinVersionOverridingSubfeatureConfig =
     """
     {

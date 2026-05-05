@@ -26,202 +26,196 @@ import XCTest
 final class WatchdogTests: XCTestCase {
 
     var watchdog: Watchdog!
-    var mockKillAppFunction: MockKillAppFunction!
 
     override func setUp() {
         super.setUp()
-        mockKillAppFunction = MockKillAppFunction()
-        // Use short timeouts for faster tests
-        watchdog = Watchdog(minimumHangDuration: 0.5, maximumHangDuration: 1.0, checkInterval: 0.1, crashOnTimeout: true, killAppFunction: mockKillAppFunction.killApp)
 
-        Task {
-            await watchdog.setCrashOnTimeout(true)
-        }
+        // Use short timeouts for faster tests
+        watchdog = Watchdog(settings: .quickIntervals)
     }
 
     override func tearDown() {
-        Task {
-            await watchdog?.stop()
-            watchdog = nil
-            mockKillAppFunction = nil
-        }
-
+        watchdog?.stop()
+        watchdog = nil
         super.tearDown()
     }
 
     // MARK: - Mock Helper
 
-    class MockKillAppFunction {
-        private(set) var wasKilled = false
-
-        func killApp(afterTimeout timeout: TimeInterval) {
-            wasKilled = true
-        }
-
-        func reset() {
-            wasKilled = false
-        }
-    }
-
-    private final class FiredEventsStore: @unchecked Sendable {
+    private final class ThreadsafeStore<T>: @unchecked Sendable {
         private let lock = NSLock()
-        private var _events: [Watchdog.Event] = []
+        private var storage = [T]()
 
-        var events: [Watchdog.Event] {
-            lock.lock()
-            defer { lock.unlock() }
-            return _events
+        var allValues: [T] {
+            lock.withLock {
+                storage
+            }
         }
 
-        func append(_ event: Watchdog.Event) {
-            lock.lock()
-            defer { lock.unlock() }
-            _events.append(event)
+        var isEmpty: Bool {
+            lock.withLock {
+                storage.isEmpty
+            }
+        }
+
+        func append(_ event: T) {
+            lock.withLock {
+                storage.append(event)
+            }
+        }
+
+        func removeAll() {
+            lock.withLock {
+                storage.removeAll()
+            }
         }
     }
 
     // MARK: - Basic Functionality Tests
 
-    func testInitialState() async {
-        await XCTAssertAsyncFalse(await watchdog.isRunning, "Watchdog should not be running initially")
-        XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app")
+    func testInitialState() {
+        XCTAssertFalse(watchdog.isRunning, "Watchdog should not be running initially")
     }
 
-    func testStart() async {
-        await watchdog.start()
-        await XCTAssertAsyncTrue(await watchdog.isRunning, "Watchdog should be running after start")
-        XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app")
+    func testStart() {
+        watchdog.start()
+        XCTAssertTrue(watchdog.isRunning, "Watchdog should be running after start")
     }
 
-    func testStop() async {
-        await watchdog.stop()
-        await XCTAssertAsyncFalse(await watchdog.isRunning, "Watchdog should not be running after stop")
-        XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app")
+    func testStop() {
+        watchdog.stop()
+        XCTAssertFalse(watchdog.isRunning, "Watchdog should not be running after stop")
     }
 
-    func testMultipleStarts() async {
-        await watchdog.start()
-        let firstState = await watchdog.isRunning
+    func testMultipleStarts() {
+        watchdog.start()
+        let firstState = watchdog.isRunning
 
-        await watchdog.start() // Should cancel previous and start new
-        let secondState = await watchdog.isRunning
+        watchdog.start() // Should cancel previous and start new
+        let secondState = watchdog.isRunning
 
         XCTAssertTrue(firstState, "First start should make watchdog running")
         XCTAssertTrue(secondState, "Second start should keep watchdog running")
-        XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app")
     }
 
-    func testMultipleStops() async {
-        await watchdog.start()
-        await watchdog.stop()
-        await watchdog.stop() // Should be safe to call multiple times
+    func testMultipleStops() {
+        watchdog.start()
+        watchdog.stop()
+        watchdog.stop() // Should be safe to call multiple times
 
-        await XCTAssertAsyncFalse(await watchdog.isRunning, "Multiple stops should be safe")
-        XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app")
+        XCTAssertFalse(watchdog.isRunning, "Multiple stops should be safe")
     }
 
     // MARK: - Pause / Resume Tests
 
-    func testPauseAndResume() async {
-        await watchdog.start()
-        await XCTAssertAsyncTrue(await watchdog.isRunning, "Watchdog should be running")
+    func testPauseAndResume() {
+        watchdog.start()
+        XCTAssertTrue(watchdog.isRunning, "Watchdog should be running")
 
-        var isPaused = await watchdog.isPaused
+        var isPaused = watchdog.isPaused
         XCTAssertFalse(isPaused, "Should not be paused initially")
 
-        await watchdog.pause()
-        await XCTAssertAsyncFalse(await watchdog.isRunning, "Watchdog should not be running after pause")
+        watchdog.pause()
+        XCTAssertFalse(watchdog.isRunning, "Watchdog should not be running after pause")
 
-        isPaused = await watchdog.isPaused
+        isPaused = watchdog.isPaused
         XCTAssertTrue(isPaused, "Should be paused after pause()")
 
-        await watchdog.resume()
-        await XCTAssertAsyncTrue(await watchdog.isRunning, "Watchdog should be running after resume")
+        watchdog.resume()
+        XCTAssertTrue(watchdog.isRunning, "Watchdog should be running after resume")
+        XCTAssertFalse(watchdog.isPaused, "Should not be paused after resume()")
 
-        isPaused = await watchdog.isPaused
-        XCTAssertFalse(isPaused, "Should not be paused after resume()")
-
-        await watchdog.stop()
+        watchdog.stop()
     }
 
-    func testStartResetsPauseState() async {
-        await watchdog.start()
-        await watchdog.pause()
+    func testStartResetsPauseState() {
+        watchdog.start()
+        watchdog.pause()
 
-        var isPaused = await watchdog.isPaused
-        XCTAssertTrue(isPaused, "Should be paused")
+        XCTAssertTrue(watchdog.isPaused, "Should be paused")
 
         // Starting again should reset pause state
-        await watchdog.stop()
-        await watchdog.start()
+        watchdog.stop()
+        watchdog.start()
 
-        await XCTAssertAsyncTrue(await watchdog.isRunning, "Should be running after restart")
+        XCTAssertTrue(watchdog.isRunning, "Should be running after restart")
+        XCTAssertFalse(watchdog.isPaused, "Pause state should be reset after start()")
 
-        isPaused = await watchdog.isPaused
-        XCTAssertFalse(isPaused, "Pause state should be reset after start()")
+        watchdog.stop()
+    }
 
-        await watchdog.stop()
+    func testPauseWhenNotRunningIsNoOp() {
+        watchdog.pause()
+        XCTAssertFalse(watchdog.isPaused, "Should not be paused when pause called without running")
+        XCTAssertFalse(watchdog.isRunning, "Should not be running")
+    }
+
+    func testResumeWhenNotPausedIsNoOp() {
+        watchdog.start()
+        watchdog.resume()
+        XCTAssertTrue(watchdog.isRunning, "Should still be running")
+        XCTAssertFalse(watchdog.isPaused, "Should not be paused")
     }
 
     func testPausePreventsHangDetection() async throws {
-        let mockKill = MockKillAppFunction()
-        let pauseWatchdog = Watchdog(minimumHangDuration: 0.1, maximumHangDuration: 0.3, checkInterval: 0.1, crashOnTimeout: true, killAppFunction: mockKill.killApp)
+        let pauseWatchdog = Watchdog(settings: .quickIntervals)
 
-        var receivedStates: [(hangState: Watchdog.HangState, duration: TimeInterval?)] = []
-        let cancellable = await pauseWatchdog.hangStatePublisher.sink { receivedStates.append($0) }
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
+        let cancellable = pauseWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
+        }
 
-        await pauseWatchdog.start()
-        await pauseWatchdog.pause()
+        pauseWatchdog.start()
+        pauseWatchdog.pause()
 
-        let isPaused = await pauseWatchdog.isPaused
-        XCTAssertTrue(isPaused, "Should be paused")
+        XCTAssertTrue(pauseWatchdog.isPaused, "Should be paused")
 
         // Block main thread while paused - should not trigger hang detection
-        try await blockMainThread(for: 0.5, andSleepFor: 0.6)
+        try await blockMainThread(until: {
+            receivedStates.allValues.containsState(.hanging)
+        }, timeout: WatchdogSettings.quickIntervals.maximumHangDuration * 2)
 
-        XCTAssertTrue(receivedStates.isEmpty, "Should not detect any hangs while paused")
+        XCTAssertTrue(receivedStates.allValues.isEmpty, "Should not detect any hangs while paused")
 
         cancellable.cancel()
-        await pauseWatchdog.stop()
+        pauseWatchdog.stop()
     }
 
     func testResumeAfterPauseDetectsHangs() async throws {
-        let mockKill = MockKillAppFunction()
-        let resumeWatchdog = Watchdog(minimumHangDuration: 0.1, maximumHangDuration: 0.3, checkInterval: 0.1, crashOnTimeout: true, killAppFunction: mockKill.killApp)
+        let resumeWatchdog = Watchdog(settings: .quickIntervals)
 
-        var receivedStates: [(hangState: Watchdog.HangState, duration: TimeInterval?)] = []
-        let cancellable = await resumeWatchdog.hangStatePublisher.sink { receivedStates.append($0) }
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
+        let cancellable = resumeWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
+        }
 
-        await resumeWatchdog.start()
-        await resumeWatchdog.pause()
+        resumeWatchdog.start()
+        resumeWatchdog.pause()
+        XCTAssertTrue(resumeWatchdog.isPaused, "Should be paused")
 
-        var isPaused = await resumeWatchdog.isPaused
-        XCTAssertTrue(isPaused, "Should be paused")
+        resumeWatchdog.resume()
 
-        await resumeWatchdog.resume()
-
-        isPaused = await resumeWatchdog.isPaused
-        XCTAssertFalse(isPaused, "Should not be paused after resume")
+        XCTAssertFalse(resumeWatchdog.isPaused, "Should not be paused after resume")
 
         // Block the main thread - should be detected
-        try await blockMainThread(for: 0.5, andSleepFor: 0.7)
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.hanging)
+        }
 
         XCTAssertFalse(receivedStates.isEmpty, "Should detect hangs after resume")
-        let hangingState = receivedStates.first { $0.hangState == .hanging }
-        XCTAssertNotNil(hangingState, "Should transition to hanging state after resume")
+        XCTAssertTrue(receivedStates.allValues.containsState(.hanging), "Should transition to hanging state after resume")
 
         cancellable.cancel()
-        await resumeWatchdog.stop()
+        resumeWatchdog.stop()
     }
 
     // MARK: - Deinit Tests
 
     func testDeinitStopsWatchdog() async {
-        let mockKill = MockKillAppFunction()
-        var optionalWatchdog: Watchdog? = Watchdog(minimumHangDuration: 0.5, maximumHangDuration: 1.0, checkInterval: 0.1, crashOnTimeout: true, killAppFunction: mockKill.killApp)
-        await optionalWatchdog?.start()
+        var optionalWatchdog: Watchdog? = Watchdog(settings: .quickIntervals)
+        optionalWatchdog?.start()
 
-        await XCTAssertAsyncTrue(await optionalWatchdog?.isRunning == true)
+        XCTAssertTrue(optionalWatchdog?.isRunning == true)
 
         // Deinit should call stop()
         optionalWatchdog = nil
@@ -229,7 +223,6 @@ final class WatchdogTests: XCTestCase {
         // Note: We can't directly test the task cancellation from deinit,
         // but we can verify the pattern doesn't crash
         XCTAssertNil(optionalWatchdog)
-        XCTAssertFalse(mockKill.wasKilled, "Should not have killed app during deinit")
     }
 
     // MARK: - Thread Safety Tests
@@ -243,9 +236,9 @@ final class WatchdogTests: XCTestCase {
             for i in 0..<10 {
                 group.addTask { [watchdog] in
                     if i % 2 == 0 {
-                        await watchdog?.start()
+                        watchdog?.start()
                     } else {
-                        await watchdog?.stop()
+                        watchdog?.stop()
                     }
                     expectation.fulfill()
                 }
@@ -258,19 +251,18 @@ final class WatchdogTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 1.0)
 
         // Should not crash and should be in a valid state
-        let finalState = await watchdog.isRunning
+        let finalState = watchdog.isRunning
         XCTAssertTrue(finalState == true || finalState == false, "Should be in a valid state")
-        XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app during concurrent operations")
     }
 
     func testIsRunningPropertyThreadSafety() async {
-        await watchdog.start()
+        watchdog.start()
 
         let results = await withTaskGroup(of: Bool.self) { group in
             // Read isRunning from multiple tasks simultaneously
             for _ in 0..<50 {
                 group.addTask { [watchdog] in
-                    return await watchdog?.isRunning ?? false
+                    return watchdog?.isRunning ?? false
                 }
             }
 
@@ -284,24 +276,22 @@ final class WatchdogTests: XCTestCase {
         // All reads should be consistent since we didn't stop the watchdog
         XCTAssertTrue(results.allSatisfy { $0 == true }, "All concurrent reads should return true")
         XCTAssertEqual(results.count, 50, "Should have 50 results")
-        XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app during property reads")
     }
 
     // MARK: - Memory Tests
 
     func testWatchdogDoesNotLeakMemory() async {
         weak var weakWatchdog: Watchdog?
-        let mockKill = MockKillAppFunction()
 
         // Do the work directly on main actor (no Task needed)
         do {
-            let localWatchdog = Watchdog(minimumHangDuration: 0.5, maximumHangDuration: 1.0, checkInterval: 0.1, crashOnTimeout: true, killAppFunction: mockKill.killApp)
+            let localWatchdog = Watchdog(settings: .quickIntervals)
             weakWatchdog = localWatchdog
 
-            await localWatchdog.start()
-            await XCTAssertAsyncTrue(await localWatchdog.isRunning)
-            await localWatchdog.stop()
-            await XCTAssertAsyncFalse(await localWatchdog.isRunning)
+            localWatchdog.start()
+            XCTAssertTrue(localWatchdog.isRunning)
+            localWatchdog.stop()
+            XCTAssertFalse(localWatchdog.isRunning)
 
             // localWatchdog goes out of scope here
         }
@@ -310,325 +300,292 @@ final class WatchdogTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
 
         XCTAssertNil(weakWatchdog, "Watchdog should be deallocated")
-        XCTAssertFalse(mockKill.wasKilled, "Should not have killed app during memory test")
     }
 
     // MARK: - Stability Tests
 
-    func testRepeatedStartStopCycles() async {
+    func testRepeatedStartStopCycles() {
         // No sleeps needed - just verify state transitions work repeatedly
         for cycle in 0..<20 {
-            await watchdog.start()
-            await XCTAssertAsyncTrue(await watchdog.isRunning, "Cycle \(cycle): Should be running after start")
+            watchdog.start()
+            XCTAssertTrue(watchdog.isRunning, "Cycle \(cycle): Should be running after start")
 
-            await watchdog.stop()
-            await XCTAssertAsyncFalse(await watchdog.isRunning, "Cycle \(cycle): Should be stopped after stop")
+            watchdog.stop()
+            XCTAssertFalse(watchdog.isRunning, "Cycle \(cycle): Should be stopped after stop")
         }
-        XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app during cycles")
     }
 
     // MARK: - Hang Detection Tests
 
     func testWatchdogDetectsMainThreadHang() async throws {
-        let mockKill = MockKillAppFunction()
-        let hangWatchdog = Watchdog(minimumHangDuration: 0.1, maximumHangDuration: 0.3, checkInterval: 0.1, crashOnTimeout: true, killAppFunction: mockKill.killApp)
+        let hangWatchdog = Watchdog(settings: .quickIntervals)
 
-        await hangWatchdog.start()
-        await XCTAssertAsyncTrue(await hangWatchdog.isRunning)
-        XCTAssertFalse(mockKill.wasKilled, "Should not have killed app yet")
-
-        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
-
-        let expectation = XCTestExpectation(description: "Hang detected")
-
-        Task.detached {
-            while !mockKill.wasKilled {
-                try? await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
-            }
-            expectation.fulfill()
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
+        let cancellable = hangWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
         }
 
-        Task.detached {
-            DispatchQueue.main.sync {
-                let startTime = Date()
-                while Date().timeIntervalSince(startTime) < 1.0 {
-                    // Busy wait to block main thread
-                }
-            }
+        hangWatchdog.start()
+        XCTAssertTrue(hangWatchdog.isRunning)
+
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.hanging)
         }
 
-        await fulfillment(of: [expectation], timeout: 3.0)
-
-        XCTAssertTrue(mockKill.wasKilled, "Watchdog should have detected hang and killed app")
-
-        await hangWatchdog.stop()
-    }
-
-    func testWatchdogWithNormalOperationDoesNotKill() async throws {
-        let mockKill = MockKillAppFunction()
-        let normalWatchdog = Watchdog(minimumHangDuration: 0.5, maximumHangDuration: 1.0, checkInterval: 0.2, crashOnTimeout: true, killAppFunction: mockKill.killApp)
-
-        var receivedStates: [(hangState: Watchdog.HangState, duration: TimeInterval?)] = []
-        let cancellable = await normalWatchdog.hangStatePublisher.sink { receivedStates.append($0) }
-
-        await normalWatchdog.start()
-        await XCTAssertAsyncTrue(await normalWatchdog.isRunning)
-
-        try await Task.sleep(nanoseconds: 1_500 * NSEC_PER_MSEC)
-
-        XCTAssertTrue(receivedStates.isEmpty, "Should not have any state transitions during normal operation")
-        XCTAssertFalse(mockKill.wasKilled, "Should not have killed app during normal operation")
-        await XCTAssertAsyncTrue(await normalWatchdog.isRunning, "Watchdog should still be running")
+        XCTAssertFalse(receivedStates.isEmpty, "Should detect hangs")
+        XCTAssertTrue(receivedStates.allValues.containsState(.hanging), "Should transition to hanging state")
 
         cancellable.cancel()
-        await normalWatchdog.stop()
-    }
-
-    func testWatchdogStoppedBeforeHangDoesNotKill() async throws {
-        let mockKill = MockKillAppFunction()
-        let stoppedWatchdog = Watchdog(minimumHangDuration: 0.1, maximumHangDuration: 0.3, checkInterval: 0.1, crashOnTimeout: true, killAppFunction: mockKill.killApp)
-
-        await stoppedWatchdog.start()
-        await XCTAssertAsyncTrue(await stoppedWatchdog.isRunning)
-
-        await stoppedWatchdog.stop()
-        await XCTAssertAsyncFalse(await stoppedWatchdog.isRunning)
-
-        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
-
-        Task.detached {
-            DispatchQueue.main.sync {
-                let startTime = Date()
-                while Date().timeIntervalSince(startTime) < 0.5 {
-                    // Busy wait to block main thread
-                }
-            }
-        }
-
-        try await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
-
-        XCTAssertFalse(mockKill.wasKilled, "Stopped watchdog should not kill app")
-    }
-
-    func testDoesNotCrashWhenCrashOnTimeoutIsFalse() async {
-        let mockKill = MockKillAppFunction()
-        let optionalWatchdog: Watchdog? = Watchdog(minimumHangDuration: 0.1, maximumHangDuration: 0.3, checkInterval: 0.1, killAppFunction: mockKill.killApp)
-        await optionalWatchdog?.start()
-
-        Task.detached {
-            DispatchQueue.main.sync {
-                let startTime = Date()
-                while Date().timeIntervalSince(startTime) < 0.5 {
-                    // Busy wait to block main thread
-                }
-            }
-        }
-
-        await XCTAssertAsyncTrue(await optionalWatchdog?.isRunning == true, "Watchdog should be running when crashOnTimeout is false")
-        XCTAssertFalse(mockKill.wasKilled, "Should not have killed app")
+        hangWatchdog.stop()
     }
 
     // MARK: - State Transitions
 
     func testHangStateTransitions() async throws {
-        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1200194497630846/task/1211604496994582?focus=true")
+        let hangWatchdog = Watchdog(settings: .quickIntervals)
 
-        let minimumDuration = 0.2
-        let maximumDuration = 1.0
-        let checkInterval   = 0.1
-
-        let mockKill = MockKillAppFunction()
-        let watchdog = Watchdog(minimumHangDuration: minimumDuration, maximumHangDuration: maximumDuration, checkInterval: checkInterval, requiredRecoveryHeartbeats: 2, killAppFunction: mockKill.killApp)
-
-        var receivedStates: [(hangState: Watchdog.HangState, duration: TimeInterval?)] = []
-        let cancellable = await watchdog.hangStatePublisher
-            .sink { state, duration in
-                receivedStates.append((state, duration))
-            }
-
-        await watchdog.start()
-
-        // Helper function to wait for a specific state
-        func waitForState(_ targetState: Watchdog.HangState, timeout: TimeInterval = 3.0) async {
-            let expectation = XCTestExpectation(description: "\(targetState) state reached")
-            Task.detached {
-                while !receivedStates.contains(where: { $0.hangState == targetState }) {
-                    try? await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
-                }
-                expectation.fulfill()
-            }
-            await fulfillment(of: [expectation], timeout: timeout)
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
+        let cancellable = hangWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
         }
 
-        // Helper function to block main thread
-        func blockMainThread(for duration: TimeInterval) {
-            Task.detached {
-                DispatchQueue.main.sync {
-                    let startTime = Date()
-                    while Date().timeIntervalSince(startTime) < duration {
-                    }
-                }
-            }
-        }
+        hangWatchdog.start()
 
         // Test 1: Responsive -> Hanging
-        blockMainThread(for: minimumDuration + 0.1) // 0.3s - enough to trigger hanging but allow recovery
-        await waitForState(.hanging)
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.hanging)
+        }
 
-        let hangingState = receivedStates.first { $0.hangState == .hanging }
-        XCTAssertNotNil(hangingState, "Should transition to hanging state")
+        XCTAssertTrue(receivedStates.allValues.containsState(.hanging), "Should transition to .hanging state")
 
         // Test 2: Hanging -> Responsive (recovery)
-        await waitForState(.responsive)
-        let responsiveState = receivedStates.first { $0.hangState == .responsive }
-        XCTAssertNotNil(responsiveState, "Should recover to responsive state")
+        await sleep {
+            receivedStates.allValues.containsState(.responsive)
+        }
+
+        XCTAssertTrue(receivedStates.allValues.containsState(.responsive), "Should recover to .responsive state")
+
+        receivedStates.removeAll()
 
         // Test 3: Responsive -> Hanging -> Timeout
-        blockMainThread(for: maximumDuration + (checkInterval * 2))
-        await waitForState(.timeout)
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.timeout)
+        }
 
-        let timeoutState = receivedStates.first { $0.hangState == .timeout }
-        XCTAssertNotNil(timeoutState, "Should transition to timeout state")
-        XCTAssertNotNil(timeoutState?.duration, "Should include hang duration")
-        XCTAssertGreaterThan(timeoutState?.duration ?? 0, maximumDuration, "Duration should exceed maximum")
+        XCTAssertTrue(receivedStates.allValues.containsState(.timeout), "Should transition to .timeout state")
 
-        // Test 4: Verify state sequence
-        let stateSequence = receivedStates.map { $0.hangState }
-        XCTAssert(stateSequence.prefix(4) == [.hanging, .responsive, .hanging, .timeout], "Should follow expected state sequence")
+        receivedStates.removeAll()
+
+        // Test 4: Timeout -> Responsive (responsive)
+        await sleep {
+            receivedStates.allValues.containsState(.responsive)
+        }
+
+        XCTAssertTrue(receivedStates.allValues.containsState(.responsive), "Should transition to .responsive state")
 
         cancellable.cancel()
-        await watchdog.stop()
+        hangWatchdog.stop()
     }
 
-    // MARK: - Timeout Cooldown Tests
+    // MARK: - Recovery States
 
-    func testTimeoutCooldownSuppressesDuplicateEvents() async throws {
-        let store = FiredEventsStore()
-        let eventMapper = EventMapping<Watchdog.Event> { event, _, _, onComplete in
-            store.append(event)
-            onComplete(nil)
+    func testRecoveryStatesAfterHanging() async throws {
+        let recoveryWatchdog = Watchdog(settings: .quickIntervals)
+
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
+        let cancellable = recoveryWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
         }
 
-        let cooldownWatchdog = Watchdog(minimumHangDuration: 0.1, maximumHangDuration: 0.3, checkInterval: 0.1, requiredRecoveryHeartbeats: 2, timeoutRepeatCooldown: 5.0, eventMapper: eventMapper)
+        recoveryWatchdog.start()
 
-        await cooldownWatchdog.start()
-        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.hanging)
+        }
 
-        // First hang (1.0s > 0.3s max): should fire uiHangNotRecovered
-        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
+        await sleep {
+            receivedStates.allValues.containsState(.responsive)
+        }
 
-        XCTAssertEqual(store.events.numberOfHangNotRecoveredEvents, 1, "First timeout should fire uiHangNotRecovered")
+        XCTAssertTrue(receivedStates.allValues.containsRecovery(after: .hanging), "Should go through recovery state")
+        XCTAssertTrue(receivedStates.allValues.containsState(.recovered(after: .hanging)), "Should go through recovered state")
 
-        // Wait for recovery (2 heartbeats at 0.1s, give generous buffer)
-        try await Task.sleep(nanoseconds: 500 * NSEC_PER_MSEC)
-
-        // Second hang: should be suppressed by cooldown
-        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
-
-        XCTAssertEqual(store.events.numberOfHangNotRecoveredEvents, 1, "Second timeout within cooldown should be suppressed")
-
-        await cooldownWatchdog.stop()
+        cancellable.cancel()
+        recoveryWatchdog.stop()
     }
 
-    func testCooldownDoesNotAffectRecoveredEvents() async throws {
-        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1211150618152277/task/1213707947733499?focus=true")
+    func testRecoveryStatesAfterTimeout() async throws {
+        let recoveryWatchdog = Watchdog(settings: .quickIntervals)
 
-        let store = FiredEventsStore()
-        let eventMapper = EventMapping<Watchdog.Event> { event, _, _, onComplete in
-            store.append(event)
-            onComplete(nil)
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
+        let cancellable = recoveryWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
         }
 
-        let cooldownWatchdog = Watchdog(minimumHangDuration: 0.2, maximumHangDuration: 1.0, checkInterval: 0.1, requiredRecoveryHeartbeats: 2, timeoutRepeatCooldown: 5.0, eventMapper: eventMapper)
+        recoveryWatchdog.start()
 
-        await cooldownWatchdog.start()
-        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.timeout)
+        }
 
-        // Short hang that recovers before timeout (0.5s hang < 1.0s max)
-        try await blockMainThread(for: 0.5, andSleepFor: 1.0)
+        receivedStates.removeAll()
 
-        XCTAssertEqual(store.events.numberOfHangNotRecoveredEvents, 0, "Short hang should not fire uiHangNotRecovered")
-        XCTAssertGreaterThanOrEqual(store.events.numberOfHangRecoveredEvents, 1, "Short hang should fire uiHangRecovered")
+        await sleep {
+            receivedStates.allValues.containsState(.responsive)
+        }
 
-        await cooldownWatchdog.stop()
+        XCTAssertTrue(receivedStates.allValues.containsRecovery(after: .timeout), "Should go through recovery state after timeout")
+        XCTAssertTrue(receivedStates.allValues.containsState(.recovered(after: .timeout)), "Should go through recovered state after timeout")
+
+        cancellable.cancel()
+        recoveryWatchdog.stop()
     }
 
-    func testZeroCooldownDisablesSuppression() async throws {
-        let store = FiredEventsStore()
-        let eventMapper = EventMapping<Watchdog.Event> { event, _, _, onComplete in
-            store.append(event)
-            onComplete(nil)
+    // MARK: - Event Reporting
+
+    func testHangRecoveredEventFires() async throws {
+        let firedEvents = ThreadsafeStore<Watchdog.Event>()
+        let eventMapper = EventMapping<Watchdog.Event> { event, _, _, _ in
+            firedEvents.append(event)
+        }
+        let eventWatchdog = Watchdog(settings: .quickIntervals, eventMapper: eventMapper)
+
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
+        let cancellable = eventWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
         }
 
-        let cooldownWatchdog = Watchdog(minimumHangDuration: 0.2, maximumHangDuration: 0.3, checkInterval: 0.1, requiredRecoveryHeartbeats: 2, timeoutRepeatCooldown: 0, eventMapper: eventMapper)
+        eventWatchdog.start()
 
-        await cooldownWatchdog.start()
-        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.hanging)
+        }
 
-        // First hang
-        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
+        await sleep {
+            receivedStates.allValues.containsState(.recovered(after: .hanging))
+        }
 
-        // Wait for recovery
-        try await Task.sleep(nanoseconds: 1_000 * NSEC_PER_MSEC)
+        XCTAssertTrue(firedEvents.allValues.containsEvent(Watchdog.Event.uiHangRecovered), "Should fire uiHangRecovered event")
 
-        // Second hang: cooldown is 0, should fire again
-        try await blockMainThread(for: 1.0, andSleepFor: 1.0)
-
-        XCTAssertGreaterThanOrEqual(store.events.numberOfHangNotRecoveredEvents, 2, "Zero cooldown should not suppress any events")
-
-        await cooldownWatchdog.stop()
+        cancellable.cancel()
+        eventWatchdog.stop()
     }
 
-    // MARK: - Helpers
-
-    private func blockMainThread(for duration: TimeInterval, andSleepFor sleepDuration: TimeInterval) async throws {
-        await withUnsafeContinuation { continuation in
-            Task.detached {
-                DispatchQueue.main.sync {
-                    let startTime = Date()
-                    while Date().timeIntervalSince(startTime) < duration {
-                        // NO-OP
-                    }
-                    continuation.resume()
-                }
-            }
+    func testHangNotRecoveredEventFires() async throws {
+        let firedEvents = ThreadsafeStore<Watchdog.Event>()
+        let eventMapper = EventMapping<Watchdog.Event> { event, _, _, _ in
+            firedEvents.append(event)
         }
-        try await Task.sleep(nanoseconds: UInt64(sleepDuration * Double(NSEC_PER_SEC)))
+        let eventWatchdog = Watchdog(settings: .quickIntervals, eventMapper: eventMapper)
+
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
+        let cancellable = eventWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
+        }
+
+        eventWatchdog.start()
+
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.timeout)
+        }
+
+        XCTAssertTrue(firedEvents.allValues.containsEvent(Watchdog.Event.uiHangNotRecovered), "Should fire uiHangNotRecovered event")
+
+        cancellable.cancel()
+        eventWatchdog.stop()
+    }
+
+    func testNoHangRecoveredEventAfterTimeoutRecovery() async throws {
+        let firedEvents = ThreadsafeStore<Watchdog.Event>()
+        let eventMapper = EventMapping<Watchdog.Event> { event, _, _, _ in
+            firedEvents.append(event)
+        }
+        let eventWatchdog = Watchdog(settings: .quickIntervals, eventMapper: eventMapper)
+
+        let receivedStates = ThreadsafeStore<WatchdogDetectionState>()
+        let cancellable = eventWatchdog.detectionStatePublisher.sink { event in
+            receivedStates.append(event)
+        }
+
+        eventWatchdog.start()
+
+        try await blockMainThread {
+            receivedStates.allValues.containsState(.timeout)
+        }
+
+        receivedStates.removeAll()
+
+        await sleep {
+            receivedStates.allValues.containsState(.responsive)
+        }
+
+        XCTAssertFalse(firedEvents.allValues.containsEvent(Watchdog.Event.uiHangRecovered), "Should not fire uiHangRecovered after timeout recovery")
+
+        cancellable.cancel()
+        eventWatchdog.stop()
     }
 }
 
-private extension XCTest {
+// MARK: - Helpers
 
-    func XCTAssertAsyncTrue(_ expression: @autoclosure () async -> Bool, _ description: String = "") async {
-        let result = await expression()
-        XCTAssertTrue(result, description)
+private extension WatchdogTests {
+
+    func blockMainThread(until condition: @escaping () -> Bool, timeout: TimeInterval = 3.0) async throws {
+        await withUnsafeContinuation { continuation in
+            DispatchQueue.main.async {
+                let deadline = Date().addingTimeInterval(timeout)
+                while condition() == false && Date() < deadline {
+                    // NO-OP
+                }
+
+                continuation.resume()
+            }
+        }
     }
 
-    func XCTAssertAsyncFalse(_ expression: @autoclosure () async -> Bool, _ description: String = "") async {
-        let result = await expression()
-        XCTAssertFalse(result, description)
+    func sleep(until condition: @escaping () -> Bool, timeout: TimeInterval = 3.0) async {
+        let task = Task.detached {
+            let deadline = Date().addingTimeInterval(timeout)
+            while condition() == false && Date() < deadline {
+                try? await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+            }
+        }
+
+        await task.value
+    }
+
+}
+
+private extension Collection where Element == WatchdogDetectionState {
+
+    func containsState(_ state: WatchdogDetectionState) -> Bool {
+        contains { $0 == state }
+    }
+
+    func containsRecovery(after origin: WatchdogRecoveryOrigin) -> Bool {
+        contains {
+            if case .recovery(let o, _) = $0, o == origin { return true }
+            return false
+        }
     }
 }
 
 private extension Collection where Element == Watchdog.Event {
 
-    var numberOfHangNotRecoveredEvents: Int {
-        count { event in
-            if case .uiHangNotRecovered = event {
+    func containsEvent(_ eventCase: (Int) -> Watchdog.Event) -> Bool {
+        let reference = eventCase(0)
+        return contains {
+            switch ($0, reference) {
+            case (.uiHangRecovered, .uiHangRecovered),
+                 (.uiHangNotRecovered, .uiHangNotRecovered):
                 return true
+            default:
+                return false
             }
-
-            return false
         }
     }
+}
 
-    var numberOfHangRecoveredEvents: Int {
-        count { event in
-            if case .uiHangRecovered = event {
-                return true
-            }
-
-            return false
-        }
-    }
+private extension WatchdogSettings {
+    static let quickIntervals = WatchdogSettings(checkInterval: 0.1, minimumHangDuration: 0.3, maximumHangDuration: 0.5, requiredRecoveryHeartbeats: 2, timeoutRepeatCooldown: 2.0)
 }

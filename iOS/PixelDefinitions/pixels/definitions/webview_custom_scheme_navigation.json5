@@ -1,33 +1,9 @@
 {
-    "m_webview_external-scheme-navigation_x-safari-https_stay": {
-        "description": "Fires when the user taps Stay in DuckDuckGo on the x-safari-https redirect alert",
-        "owners": ["dus7"],
-        "triggers": ["other"],
-        "suffixes": ["daily", "platform", "form_factor"],
-        "parameters": ["appVersion"],
-        "expires": "2026-04-20"
-    },
-    "m_webview_external-scheme-navigation_x-safari-https_open-in-safari": {
-        "description": "Fires when the user taps Open in Safari on the x-safari-https redirect alert",
-        "owners": ["dus7"],
-        "triggers": ["other"],
-        "suffixes": ["daily", "platform", "form_factor"],
-        "parameters": ["appVersion"],
-        "expires": "2026-04-20"
-    },
     "m_webview_external-scheme-navigation_x-safari-https_loop-detected": {
         "description": "Fires when a redirect loop is detected after user chose to stay in DuckDuckGo",
         "owners": ["dus7"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
-    },
-    "m_webview_external-scheme-navigation_x-safari-https_loop-open-in-safari": {
-        "description": "Fires when the user taps Open in Safari on the redirect loop alert",
-        "owners": ["dus7"],
-        "triggers": ["other"],
-        "suffixes": ["daily", "platform", "form_factor"],
-        "parameters": ["appVersion"],
-        "expires": "2026-04-20"
     }
 }

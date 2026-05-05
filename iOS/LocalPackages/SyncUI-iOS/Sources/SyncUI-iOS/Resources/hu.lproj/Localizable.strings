@@ -334,11 +334,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "Szinkronizálás másik eszközzel";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Most nem";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Szinkronizálod az adataidat egy másik eszközzel?";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Betölti az ikonokat az általad könyvjelzővel megjelölt webhelyekről. Az ikonletöltések láthatók a hálózaton.";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Könyvjelzők";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Használd ugyanazokat a kedvenc könyvjelzőket mobilon és asztali gépen.";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Csatlakozás…";
@@ -363,6 +372,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Mentsd el a könyvjelzőidet és az automatikus kitöltési adataidat, és szinkronizáld őket az eszközeiden végpontok közötti titkosítással.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Ezzel a kóddal állíthatod vissza az adataidat, ha elveszíted a hozzáférést ehhez az eszközhöz. A Sync & Backup-adatok 18 hónapnyi inaktivitás után nem állíthatók vissza. [További részletek](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo alkalmazás";

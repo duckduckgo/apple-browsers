@@ -29,6 +29,13 @@ import UIKit
 
 extension MainViewController {
 
+    enum Constants {
+        // Bottom is longer to accommodate concurrent keyboard descent.
+        static func omnibarTransitionDuration(isBottom: Bool) -> TimeInterval {
+            isBottom ? 0.35 : 0.25
+        }
+    }
+
     enum UnifiedInputChromeBackgroundState: String {
         case standardChrome
         case aiTabSearchChromeHidden
@@ -38,15 +45,28 @@ extension MainViewController {
     func setUpUnifiedToggleInputIfNeeded() {
         guard unifiedToggleInputFeature.isAvailable else { return }
 
+        let aiChatPreferences = AIChatPreferencesPersistor()
+        let stateStore = UnifiedInputStateStore(
+            preferences: aiChatPreferences,
+            toggleModeStorage: toggleModeStorage
+        )
+        stateStore.observeTabsModel(tabManager.normalTabsModel)
+        stateStore.observeTabsModel(tabManager.fireModeTabsModel)
+        self.unifiedInputStateStore = stateStore
+
         let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
             isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
             isFireTab: isCurrentTabFireTab(),
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            toggleModeStorage: toggleModeStorage
+            preferences: aiChatPreferences,
+            toggleModeStorage: toggleModeStorage,
+            stateStore: stateStore
         )
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
+        coordinator.updateAIChatShortcutAvailability(aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
         coordinator.onAnimatedDismissToOmnibar = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             self.dismissUnifiedToggleInputToOmnibar(coordinator: coordinator)
@@ -78,6 +98,8 @@ extension MainViewController {
               let coordinator = unifiedToggleInputCoordinator else {
             return
         }
+
+        coordinator.activateForTab(tab.tabModel.uid)
 
         let action = refreshAction(for: tab, coordinator: coordinator)
 
@@ -270,6 +292,7 @@ private extension MainViewController {
                 let enabled = self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled
                 coordinator.updateToggleEnabled(enabled)
                 coordinator.contentViewController.isSwipeEnabled = enabled
+                coordinator.updateAIChatShortcutAvailability(self.aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
             }
             .store(in: &unifiedToggleInputCancellables)
     }
@@ -296,7 +319,6 @@ private extension MainViewController {
     }
 
     func refreshInactiveNonAITab(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator) {
-        coordinator.unbind()
         viewCoordinator.hideAITabChrome()
         applyUnifiedInputChromeBackground(.standardChrome)
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
@@ -375,9 +397,6 @@ private extension MainViewController {
     }
 
     func refreshNonAITab(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator) {
-        coordinator.deactivateToOmnibar()
-        coordinator.hide()
-        coordinator.unbind()
         viewCoordinator.hideAITabChrome()
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
@@ -523,31 +542,41 @@ private extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator) {
         applyUnifiedInputChromeBackground(.standardChrome)
-        let isTopPosition = coordinator.cardPosition == .top
-        if isTopPosition && coordinator.isToggleEnabled {
-            coordinator.viewController.animateToggleHide(additionalAnimations: { [weak self] in
+        // Resign up-front so the keyboard descent runs concurrent with the bar collapse.
+        coordinator.viewController.deactivateInput()
+        let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
+        let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
+        let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
+        let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
+        UIView.animate(
+            withDuration: duration,
+            delay: 0,
+            options: .curveEaseOut,
+            animations: { [weak self] in
                 guard let self else { return }
+                coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 0
-            }, completion: { [weak self] in
+                if let omnibarPlaceholderWindowX {
+                    coordinator.viewController.alignPlaceholderHorizontally(toWindowX: omnibarPlaceholderWindowX)
+                }
+            },
+            completion: { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
+                coordinator.viewController.setTextHorizontalShift(0)
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
-            })
-        } else if isTopPosition {
-            UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut, animations: { [weak self] in
-                guard let self else { return }
-                self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
-                self.viewCoordinator.unifiedInputContentContainer.alpha = 0
-            }, completion: { [weak self] _ in
-                guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
-                self.viewCoordinator.unifiedInputContentContainer.isHidden = true
-                self.viewCoordinator.unifiedInputContentContainer.alpha = 1
-                coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
-            })
-        } else {
-            coordinator.deactivateToOmnibar()
+                coordinator.viewController.finalizeOmnibarEditingDismiss()
+            }
+        )
+
+        if let omnibarPlaceholderColor {
+            coordinator.viewController.animatePlaceholderColorTransition(
+                from: utiPlaceholderColor,
+                to: omnibarPlaceholderColor,
+                duration: duration
+            )
         }
     }
 
@@ -576,7 +605,7 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
             return .allowDefault
         }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
-        let inputMode = tabManager.currentTabsModel.currentTab?.preferredTextEntryMode ?? .search
+        let inputMode = tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode ?? .search
         coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: inputMode, cardPosition: position)
         return .intercept
     }
@@ -587,7 +616,7 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
 extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
-        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
+        tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode = mode
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?) {
@@ -605,6 +634,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
         } else {
             handleVoiceSearchOpenRequest(preferredTarget: mode == .aiChat ? .AIChat : .SERP)
         }
+    }
+
+    func unifiedToggleInputDidRequestAIChat() {
+        onAIChatPressed()
     }
 
     func unifiedToggleInputDidChangeHeight() {

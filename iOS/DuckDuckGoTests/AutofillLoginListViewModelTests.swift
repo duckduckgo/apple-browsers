@@ -649,6 +649,36 @@ class AutofillLoginListViewModelTests: XCTestCase {
         assertSuggestionsContainsDomain(suggestionsSection, domain: "example.com", message: "Suggestions should be restored to currentTabUrl matches when search is cleared")
     }
 
+    func testWhenSearchSuggestionsNoLongerContainCurrentTabDomainThenBreakageReporterPromptIsHidden() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.autofillPasswordSearchPrioritizeDomain])
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "user1", domain: "example.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "user2", domain: "test.com", created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   currentTabUrl: URL(string: "https://example.com"),
+                                                   privacyConfig: makePrivacyConfig(from: configEnabled),
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   featureFlagger: featureFlagger)
+
+        model.updateData()
+        XCTAssertEqual(model.rowsInSection(0), 2, "Should show one suggested credential row and one breakage reporter row for current tab domain")
+
+        model.isSearching = true
+        model.filterData(with: "test")
+
+        let suggestionsSection = findSuggestionsSection(in: model.sections)
+        XCTAssertNotNil(suggestionsSection, "Should still have suggestions section for search query domain matches")
+        assertSuggestionsContainsDomain(suggestionsSection, domain: "test.com", message: "Suggestions should contain account matching the search query")
+        assertSuggestionsDoesNotContainDomain(suggestionsSection, domain: "example.com", message: "Suggestions should not contain account that matched current tab URL")
+        XCTAssertEqual(model.rowsInSection(0), 1, "Should hide breakage reporter row when current tab domain is not in suggested results")
+    }
+
     func testWhenFeatureFlagEnabledAndSearchCleared_ThenSuggestionsAreCleared() {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.autofillPasswordSearchPrioritizeDomain])
 

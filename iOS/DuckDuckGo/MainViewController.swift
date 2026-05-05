@@ -339,6 +339,7 @@ class MainViewController: UIViewController {
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
     lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
+    var unifiedInputStateStore: UnifiedInputStateStore?
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
 
@@ -1563,6 +1564,7 @@ class MainViewController: UIViewController {
 
         let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
         controller.setEscapeHatch(hatch)
+        controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
         currentNTPEscapeHatch = hatch
         
         if hasCompletedInitialLoad {
@@ -1942,7 +1944,17 @@ class MainViewController: UIViewController {
 
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
         dismissOmniBar()
+        resetUnifiedToggleInputForTabTransition(to: tab)
         attachTab(tab: tab)
+    }
+
+    private func resetUnifiedToggleInputForTabTransition(to tab: TabViewController) {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        coordinator.deactivateToOmnibar()
+        if !tab.isAITab {
+            coordinator.hide()
+            coordinator.unbind()
+        }
     }
 
     private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
@@ -1951,6 +1963,8 @@ class MainViewController: UIViewController {
         previousTab?.tabModel.openedAfterIdle = false
         previousTab?.dismiss()
         hideNotificationBarIfBrokenSitePromptShown()
+
+        resetUnifiedToggleInputForTabTransition(to: tab)
 
         let shouldSaveTabs = tab.tabModel.viewed == false
         tab.tabModel.viewed = true
@@ -2057,6 +2071,10 @@ class MainViewController: UIViewController {
         omniBarTabSwitcherButton?.isFireMode = isFireMode
     }
 
+    private func displayedTextEntryMode(for tab: Tab) -> TextEntryMode {
+        tab.unifiedInputState.preferredTextEntryMode.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+    }
+
     func refreshOmniBar() {
         updateOmniBarLoadingState()
         viewCoordinator.omniBar.refreshFireMode(fireMode: isCurrentTabFireTab())
@@ -2068,7 +2086,13 @@ class MainViewController: UIViewController {
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             if let tabModel = tabManager.currentTabsModel.currentTab {
-                viewCoordinator.omniBar.setSelectedTextEntryMode(tabModel.preferredTextEntryMode)
+                viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tabModel))
+                // Only activate from the model when there's no TabViewController to drive
+                // refreshUnifiedToggleInput(for:) below — otherwise it would fire activateForTab
+                // a second time for the same uid, causing redundant attachment teardown.
+                if currentTab == nil {
+                    unifiedToggleInputCoordinator?.activateForTab(tabModel.uid)
+                }
             }
             updateBrowsingMenuHeaderDataSource()
             if let tab = currentTab {
@@ -2101,7 +2125,7 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
-            viewCoordinator.omniBar.setSelectedTextEntryMode(tab.tabModel.preferredTextEntryMode)
+            viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tab.tabModel))
         }
 
         restorePostFireAddressBarPickerIfNeeded()
@@ -2146,6 +2170,7 @@ class MainViewController: UIViewController {
     func dismissOmniBar() {
         hideSuggestionTray()
         viewCoordinator.omniBar.endEditing()
+        unifiedToggleInputCoordinator?.deactivateToOmnibar()
         refreshOmniBar()
     }
 
@@ -2263,6 +2288,8 @@ class MainViewController: UIViewController {
             applySmallWidth()
         }
 
+        updateNewTabPageLayoutForCurrentChromeMode()
+
         DispatchQueue.main.async {
             // Do this async otherwise the toolbar buttons skew to the right
             if self.viewCoordinator.constraints.navigationBarContainerTop.constant >= 0,
@@ -2275,7 +2302,6 @@ class MainViewController: UIViewController {
             
             // Do this on the next UI thread pass so we definitely have the right width
             self.applyWidthToTrayController()
-            self.newTabPageViewController?.widthChanged()
         }
     }
 
@@ -2299,6 +2325,11 @@ class MainViewController: UIViewController {
             let bottomOmniBarHeight = appSettings.currentAddressBarPosition.isBottom ? omniBar.barView.expectedHeight : 0
             self.suggestionTrayController?.fill(bottomOffset: bottomOmniBarHeight)
         }
+    }
+
+    private func updateNewTabPageLayoutForCurrentChromeMode() {
+        newTabPageViewController?.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
+        newTabPageViewController?.widthChanged()
     }
     
     private var isInMinimalChromeLayout: Bool = false
@@ -2448,15 +2479,27 @@ class MainViewController: UIViewController {
           )
       }
 
-
     func launchDataImport(source: DataImportViewModel.ImportScreen, onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
-        let dataImportViewController = makeDataImportViewController(source: source, onFinished: onFinished, onCancelled: onCancelled)
+        let rootViewController: UIViewController
+        switch DataImportEntryPointHandler().destination(for: source) {
+        case .legacy(let importScreen):
+            rootViewController = makeDataImportViewController(source: importScreen, onFinished: onFinished, onCancelled: onCancelled)
+        case .hub:
+            rootViewController = DataImportHubViewController(syncService: syncService,
+                                                             keyValueStore: keyValueStore,
+                                                             bookmarksDatabase: bookmarksDatabase,
+                                                             favoritesDisplayMode: appSettings.favoritesDisplayMode,
+                                                             entryPoint: source,
+                                                             onFinished: onFinished,
+                                                             onCancelled: onCancelled)
+            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: source.importHubEntryPointParameters)
+        }
 
-        let navigationController = UINavigationController(rootViewController: dataImportViewController)
-        dataImportViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(title: UserText.autofillNavigationButtonItemTitleClose,
-                                                                                          style: .plain,
-                                                                                          target: self,
-                                                                                          action: #selector(closeAutofillModal))
+        let navigationController = UINavigationController(rootViewController: rootViewController)
+        rootViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(title: UserText.autofillNavigationButtonItemTitleClose,
+                                                                               style: .plain,
+                                                                               target: self,
+                                                                               action: #selector(closeAutofillModal))
         self.present(navigationController, animated: true, completion: nil)
     }
 
@@ -3160,6 +3203,7 @@ class MainViewController: UIViewController {
             return
         }
 
+        unifiedToggleInputCoordinator?.dismissOmnibarKeyboard()
         prepareTabForRequest {
             currentTab.loadVoiceMode()
         }
@@ -4048,8 +4092,8 @@ extension MainViewController: OmniBarDelegate {
         // Restore the tab's committed mode — the user may have toggled without submitting.
         // Safe on iPhone: the experimental editing state prevents textFieldDidEndEditing from
         // firing (text field never becomes first responder during that flow).
-        if let tabMode = tabManager.currentTabsModel.currentTab?.preferredTextEntryMode {
-            viewCoordinator.omniBar.setSelectedTextEntryMode(tabMode)
+        if let tab = tabManager.currentTabsModel.currentTab {
+            viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tab))
         }
     }
 
@@ -4274,7 +4318,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func preferredTextEntryModeForCurrentTab() -> TextEntryMode? {
-        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode
+        tabManager.currentTabsModel.currentTab.map { displayedTextEntryMode(for: $0) }
     }
 
     /// Saves the current omnibar toggle state to the tab on submission,
@@ -4286,7 +4330,7 @@ extension MainViewController: OmniBarDelegate {
 
     /// Shared commit logic for all toggle paths (iPad, iPhone editing state, unified toggle input).
     func commitToggleMode(_ mode: TextEntryMode) {
-        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
+        tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode = mode
         toggleModeStorage.save(mode)
     }
     
@@ -4766,9 +4810,6 @@ extension MainViewController: TabDelegate {
         let previousTab = tabManager.current()
         if let tab = tabManager.select(tab, dismissCurrent: false)  {
             transitionTo(tab: tab, from: previousTab)
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            self.performCancel()
         }
     }
 
@@ -5726,12 +5767,23 @@ extension MainViewController: MessageNavigationDelegate {
         case .dismissModalsAndPresentFromRoot:
             assertionFailure("Not implemented yet.")
         case .withinCurrentContext:
-            let dataImportVC = makeDataImportViewController(source: .whatsNew)
+            let destinationViewController: UIViewController
+            switch DataImportEntryPointHandler().destination(for: .whatsNew) {
+            case .legacy(let importScreen):
+                destinationViewController = makeDataImportViewController(source: importScreen)
+            case .hub:
+                destinationViewController = DataImportHubViewController(syncService: syncService,
+                                                                         keyValueStore: keyValueStore,
+                                                                         bookmarksDatabase: bookmarksDatabase,
+                                                                         favoritesDisplayMode: appSettings.favoritesDisplayMode,
+                                                                         entryPoint: .whatsNew)
+                Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: DataImportViewModel.ImportScreen.whatsNew.importHubEntryPointParameters)
+            }
             guard let viewController = topMostPresentedViewController() else {
                 assertionFailure("No ViewController presented.")
                 return
             }
-            viewController.show(dataImportVC, sender: nil)
+            viewController.show(destinationViewController, sender: nil)
         }
     }
 

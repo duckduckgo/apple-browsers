@@ -277,6 +277,67 @@
         "parameters": ["appVersion", "pixelSource"]
     },
 
+    "m_mac_store_subscribe": {
+        "description": "Fired when a subscription purchase is completed successfully on App Store distribution. Used for attribution tracking.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "origin",
+                "type": "string",
+                "description": "Purchase funnel entry point",
+                "enum": [
+                    "funnel_appsettings_macos",
+                    "funnel_appmenu_macos",
+                    "funnel_freescan_macos",
+                    "funnel_toolbar_macos",
+                    "funnel_applaunch_macos_winback",
+                    "funnel_appmenu_macos_winback",
+                    "funnel_appsettings_macos_winback",
+                    "funnel_newtab_macos_winback",
+                    "funnel_onboarding_macOS__nextstepscard",
+                    "funnel_purchaseoffer_macos",
+                    "funnel_prepurchasecheck_macos"
+                ]
+            },
+            "locale",
+            "freeTrial"
+        ]
+    },
+    "m_mac_direct_subscribe": {
+        "description": "Fired when a subscription purchase is completed successfully on direct distribution. Used for attribution tracking.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "origin",
+                "type": "string",
+                "description": "Purchase funnel entry point",
+                "enum": [
+                    "funnel_appsettings_macos",
+                    "funnel_appmenu_macos",
+                    "funnel_freescan_macos",
+                    "funnel_toolbar_macos",
+                    "funnel_applaunch_macos_winback",
+                    "funnel_appmenu_macos_winback",
+                    "funnel_appsettings_macos_winback",
+                    "funnel_newtab_macos_winback",
+                    "funnel_onboarding_macOS__nextstepscard",
+                    "funnel_purchaseoffer_macos",
+                    "funnel_prepurchasecheck_macos"
+                ]
+            },
+            "locale",
+            "freeTrial"
+        ]
+    },
+
     "m_mac_store_privacy-pro_app_subscription-purchase_failure": {
         "description": "The error encountered when an App Store subscription purchase fails",
         "owners": ["federicocappelli"],

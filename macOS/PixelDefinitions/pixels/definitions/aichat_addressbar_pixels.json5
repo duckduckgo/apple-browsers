@@ -128,6 +128,13 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "m_mac_aichat_new_voice_chat_omnibar_native": {
+        "description": "Fired when user opens a new Duck.ai voice chat from the native omnibar",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "m_mac_aichat_recent_chat_delete_button_clicked": {
         "description": "Fired when user clicks the delete button on a recent chat suggestion in the address bar",
         "owners": ["Bunn"],

@@ -363,9 +363,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables native-side support for standalone migration flows in AI Chat
     case standaloneMigration
 
-    /// Allows to present Search Experience choice screen during onboarding
-    case onboardingSearchExperience
-
     /// Enables Duck.ai query experiment during onboarding
     case onboardingDuckAIQueryExperiment
 
@@ -467,6 +464,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the reasoning effort picker in the Duck.ai omnibar
     case omnibarReasoningEffort
+
+    /// Enables 1-click voice-chat access from the Duck.ai omnibar (mic icon shown when input is empty)
+    case omnibarVoiceChatAccess
 
     /// Enables querying AI Chat data directly from local storage instead of via webview
     case nativeDataAccess
@@ -667,6 +667,7 @@ public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {
 public enum AttributedMetricsSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .attributedMetrics }
 
+    case featureEnabled
     case emitAllMetrics
     case retention
     case canEmitRetention
@@ -707,12 +708,14 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
         .popupBlocking
     }
 
+    case featureEnabled
     case createWebViewGatingFailsafe
 }
 
 public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .webExtensions }
 
+    case featureEnabled
     case embeddedExtension = "embedded"
     case embeddedRollout
 }
@@ -721,4 +724,82 @@ public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .forceDarkModeOnWebsites }
 
     case featureRollout
+}
+
+public enum ContextualOnboardingSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .contextualOnboarding }
+
+    case featureEnabled
+}
+
+public enum DelayedWebviewPresentationSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .delayedWebviewPresentation }
+
+    case featureEnabled
+}
+
+public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .duckAiChatHistory }
+
+    case featureEnabled
+}
+
+public enum PromoQueueSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .promoQueue }
+
+    case featureEnabled
+}
+
+public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .autofillBreakageReporter }
+
+    case featureEnabled
+}
+
+public enum IncontextSignupSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .incontextSignup }
+
+    case featureEnabled
+}
+
+public enum AutofillSurveysSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .autofillSurveys }
+
+    case featureEnabled
+}
+
+public enum AdAttributionReportingSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .adAttributionReporting }
+
+    case featureEnabled
+}
+
+public enum DaxEasterEggLogosSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .daxEasterEggLogos }
+
+    case featureEnabled
+}
+
+public enum DaxEasterEggPermanentLogoSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .daxEasterEggPermanentLogo }
+
+    case featureEnabled
+}
+
+public enum PageContextSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .pageContext }
+
+    case featureEnabled
+}
+
+public enum TabSwitcherTrackerCountSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .tabSwitcherTrackerCount }
+
+    case featureEnabled
+}
+
+public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .adBlockingExtension }
+
+    case featureEnabled
 }

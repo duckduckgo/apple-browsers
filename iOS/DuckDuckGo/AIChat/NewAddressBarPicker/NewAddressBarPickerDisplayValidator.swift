@@ -82,8 +82,8 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         guard !isAIChatSearchInputEnabled else { return false }
         Logger.addressBarPicker.info("✓ AIChat address bar is disabled")
 
-        guard !isAddressBarPositionBottom else { return false }
-        Logger.addressBarPicker.info("✓ Address bar position is not bottom")
+        guard !isAIChatSearchInputDisabledByUser else { return false }
+        Logger.addressBarPicker.info("✓ AIChat address bar was NOT explicitly disabled by the user")
 
         guard !hasForceChoiceBeenShown else { return false }
         Logger.addressBarPicker.info("✓ Force choice has not been shown yet")
@@ -103,13 +103,13 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     }
     
     // MARK: - Exclusion Criteria Variables
-    
+
+    private var isAIChatSearchInputDisabledByUser: Bool {
+        aiChatSettings.isAIChatSearchInputUserSettingsDisabledByUser
+    }
+
     private var isAIChatSearchInputEnabled: Bool {
         aiChatSettings.isAIChatSearchInputUserSettingsEnabled
-    }
-    
-    private var isAddressBarPositionBottom: Bool {
-        appSettings.currentAddressBarPosition.isBottom
     }
 
     private var hasForceChoiceBeenShown: Bool {
@@ -117,7 +117,6 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     }
 
     private var canShowPickerAfterOnboardingSelection: Bool {
-        guard featureFlagger.isFeatureOn(.onboardingSearchExperience) else { return true }
         guard searchExperienceOnboardingProvider.didMakeChoiceDuringOnboarding else { return true }
         return searchExperienceOnboardingProvider.didEnableAIChatSearchInputDuringOnboarding
     }

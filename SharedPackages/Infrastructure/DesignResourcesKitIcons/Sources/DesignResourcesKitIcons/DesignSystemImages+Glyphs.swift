@@ -527,6 +527,7 @@ public extension DesignSystemImages {
             public static var timer: DesignSystemImage { .init(resource: .timer24) }
             public static var trash: DesignSystemImage { .init(resource: .trash24) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize24) }
+            public static var uploadFile: DesignSystemImage { .init(resource: .uploadFile24) }
             public static var vpn: DesignSystemImage { .init(resource: .VPN_24) }
             public static var vpnUnlocked: DesignSystemImage { .init(resource: .vpnUnlocked24) }
             public static var video: DesignSystemImage { .init(resource: .video24) }

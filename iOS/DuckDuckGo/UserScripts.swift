@@ -82,7 +82,7 @@ final class UserScripts: UserScriptsProvider {
         do {
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
-                                                                scriptContext: .contentScope,
+                                                                scriptContext: .contentScope(),
                                                                 allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue],
                                                                 privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
@@ -100,17 +100,24 @@ final class UserScripts: UserScriptsProvider {
             webExtensionAvailability: sourceProvider.webExtensionAvailability
         )
 
+        // `setupSucceeded == nil` (setup still in flight) is treated as "available"
+        // so the launch path is not blocked. Only force the JS fallback when a
+        // permanent setup failure has been observed.
+        let isNativeStorageBridgeAvailable = featureFlagger.isFeatureOn(.aiChatNativeStorage)
+            && duckAiNativeStorageHandler != nil
+            && duckAiNativeStorageHandler?.setupSucceeded != false
         let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
         let aiChatSettings = AIChatSettings()
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager,
                                                           syncHandler: AIChatSyncHandler(sync: sourceProvider.sync,
                                                                                          httpRequestErrorHandler: sourceProvider.syncErrorHandler.handleAiChatsError),
-                                                          featureFlagger: featureFlagger)
+                                                          featureFlagger: featureFlagger,
+                                                          isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings, featureFlagger: featureFlagger))
 
-        if featureFlagger.isFeatureOn(.aiChatNativeStorage),
+        if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
             var originRules: [HostnameMatchingRule] = [
                 .exactOrSubdomain(hostname: "duck.ai"),

@@ -138,7 +138,7 @@ enum UserText {
 
     // Delete Account Dialog
     static let deleteAccountTitle = NSLocalizedString("prefrences.sync.delete-account.title", bundle: Bundle.module, value: "Delete server data?", comment: "Title for delete account confirmation pop up")
-    static let deleteAccountMessage = NSLocalizedString("prefrences.sync.delete-account.message", bundle: Bundle.module, value: "These devices will be disconnected and your synced data will be deleted from the server.", comment: "Message for delete account confirmation pop up")
+    static let deleteAccountMessage = NSLocalizedString("prefrences.sync.delete-account.message", bundle: Bundle.module, value: "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device.", comment: "Message for delete account confirmation pop up")
     static let deleteAccountButton = NSLocalizedString("prefrences.sync.delete-account.button", bundle: Bundle.module, value: "Delete Data", comment: "Label for delete account button")
 
     // Sync enabled options

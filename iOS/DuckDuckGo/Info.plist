@@ -182,6 +182,7 @@
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>ConfigurationIntent</string>
+		<string>ASCredentialExchangeActivityType</string>
 	</array>
 	<key>OSLogPreferences</key>
 	<dict>

@@ -87,6 +87,7 @@ jobs:
           -skipMacroValidation \
           ONLY_ACTIVE_ARCH=NO \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
         | tee xcodebuild.log
 
     - name: Compute Compilation Cache hash

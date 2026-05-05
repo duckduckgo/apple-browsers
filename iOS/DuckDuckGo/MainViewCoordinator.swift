@@ -214,6 +214,7 @@ class MainViewCoordinator {
         unifiedToggleInputContainer.layer.removeAllAnimations()
         navigationBarCollectionView.isUserInteractionEnabled = false
 
+        // Snap omnibar out, no fade — mirror of `finishUnifiedToggleInputOmnibarDismiss`.
         navigationBarCollectionView.alpha = 0
         unifiedToggleInputContainer.alpha = 1
         unifiedToggleInputContainer.isHidden = false
@@ -269,15 +270,12 @@ class MainViewCoordinator {
     // MARK: - Omnibar Editing Layout
 
     @MainActor
-    func hideUnifiedToggleInputOmnibar(completion: (() -> Void)? = nil) {
-        if addressBarPosition.isBottom {
-            setNavBarContainerBottomToToolbar()
-        }
-
+    func hideUnifiedToggleInputOmnibar(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
         omnibarDismissAnimator?.stopAnimation(true)
 
-        let animator = UIViewPropertyAnimator(duration: 0.2, curve: .easeInOut) { [weak self] in
+        let animator = UIViewPropertyAnimator(duration: MainViewController.Constants.omnibarTransitionDuration(isBottom: addressBarPosition.isBottom), curve: .easeOut) { [weak self] in
             self?.animateUnifiedToggleInputOmnibarDismissLayout()
+            additionalAnimations?()
         }
         animator.addCompletion { [weak self] position in
             guard let self else { return }
@@ -291,9 +289,11 @@ class MainViewCoordinator {
         animator.startAnimation()
     }
 
+    /// Call inside an animation context — alpha swap is deferred to completion to avoid a crossfade gap.
     func animateUnifiedToggleInputOmnibarDismissLayout() {
-        navigationBarCollectionView.alpha = 1
-        unifiedToggleInputContainer.alpha = 0
+        if addressBarPosition.isBottom {
+            setNavBarContainerBottomToToolbar()
+        }
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
         superview.layoutIfNeeded()
     }
@@ -309,6 +309,8 @@ class MainViewCoordinator {
             unifiedToggleInputContainer.isHidden = false
             unifiedToggleInputContainer.alpha = 1
         } else {
+            // Snap omnibar in, no fade — crossfading would produce visible double-text mid-dismiss.
+            navigationBarCollectionView.alpha = 1
             unifiedToggleInputContainer.isHidden = true
             unifiedToggleInputContainer.alpha = 1
         }

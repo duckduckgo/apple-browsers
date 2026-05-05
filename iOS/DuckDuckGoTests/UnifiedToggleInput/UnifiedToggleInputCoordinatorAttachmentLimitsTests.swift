@@ -192,6 +192,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
     private func makeCoordinator(preferences: AIChatPreferencesPersisting = StubAIChatPreferences()) -> UnifiedToggleInputCoordinator {
         UnifiedToggleInputCoordinator(
+            host: .omnibar,
             isToggleEnabled: true,
             preferences: preferences)
     }
@@ -210,6 +211,7 @@ private final class SpyUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}
     func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidRequestAIChat() {}
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
 }

@@ -804,6 +804,19 @@ final class MockEmailConfirmationDataService: EmailConfirmationDataServiceProvid
         EmailData(pattern: "", emailAddress: "hello@example.com")
     }
 
+    func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData {
+        EmailData(pattern: "", emailAddress: "hello@example.com")
+    }
+
     func checkForEmailConfirmationData() async throws {
+    }
+
+    func getEmailData(email: String,
+                      attemptId: UUID,
+                      pollingInterval: TimeInterval,
+                      totalTimeout: TimeInterval,
+                      extract: [String],
+                      shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData {
+        [:]
     }
 }

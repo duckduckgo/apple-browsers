@@ -320,9 +320,9 @@ class MockCrashReportSender: CrashReportSending {
     var responseCRCID: String?
     var responseStatusCode = 200
 
-    var pixelEvents: EventMapping<CrashReportSenderError>?
+    var pixelEvents: EventMapping<CrashReportSenderEvent>?
 
-    required init(platform: CrashCollectionPlatform, pixelEvents: EventMapping<CrashReportSenderError>?) {
+    required init(platform: CrashCollectionPlatform, pixelEvents: EventMapping<CrashReportSenderEvent>?) {
         self.platform = platform
     }
 

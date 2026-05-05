@@ -79,7 +79,6 @@ public final class CrashReportSender: CrashReportSending {
                     response.allHeaderFields.forEach { headerField in
                         Logger.general.debug("CrashReportSender: \(String(describing: headerField.key)): \(String(describing: headerField.value))")
                     }
-                    self.pixelEvents?.fire(.submissionSucceeded)
                     let receivedCRCID = response.allHeaderFields[CrashReportSender.httpHeaderCRCID]
                     if receivedCRCID == nil || receivedCRCID as? String == "" {
                         self.pixelEvents?.fire(.failure(.crcidMissing))
@@ -89,6 +88,10 @@ public final class CrashReportSender: CrashReportSending {
                 }
 
                 if let data {
+                    if response.statusCode == 200 {
+                        self.pixelEvents?.fire(.submissionSucceeded)
+                    }
+
                     completion(.success(data), response)
                 } else if let error {
                     self.pixelEvents?.fire(.failure(.submissionFailed(response)))

@@ -256,7 +256,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
         }
 
-        let supportsNativeChatInput = supportsFullMode && featureFlagger.isFeatureOn(.unifiedToggleInput)
+        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode) && featureFlagger.isFeatureOn(.unifiedToggleInput)
         let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt
         let fireMode = isFireModeProvider?() ?? false
 

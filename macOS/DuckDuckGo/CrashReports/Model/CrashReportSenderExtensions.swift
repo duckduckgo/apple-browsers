@@ -22,12 +22,15 @@ import PixelKit
 
 extension CrashReportSender {
 
-    static let pixelEvents: EventMapping<CrashReportSenderError> = .init { event, _, _, _ in
+    static let pixelEvents: EventMapping<CrashReportSenderEvent> = .init { event, _, _, _ in
         switch event {
-        case CrashReportSenderError.crcidMissing:
+        case .submissionSucceeded:
+            PixelKit.fire(GeneralPixel.crashReportSent, frequency: .dailyAndStandard)
+
+        case .failure(.crcidMissing):
             PixelKit.fire(GeneralPixel.crashReportCRCIDMissing)
 
-        case CrashReportSenderError.submissionFailed(let error):
+        case .failure(.submissionFailed(let error)):
             if let error {
                 PixelKit.fire(DebugEvent(GeneralPixel.crashReportingSubmissionFailed),
                               frequency: .standard,

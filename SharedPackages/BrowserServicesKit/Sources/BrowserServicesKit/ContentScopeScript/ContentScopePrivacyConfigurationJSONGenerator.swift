@@ -29,25 +29,24 @@ public protocol CustomisedPrivacyConfigurationJSONGenerating {
 public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating {
     let featureFlagger: FeatureFlagger
     let privacyConfigurationManager: PrivacyConfigurationManaging
+    let excludedFeatures: [String]
 
-    public init(featureFlagger: FeatureFlagger, privacyConfigurationManager: PrivacyConfigurationManaging) {
+    public init(featureFlagger: FeatureFlagger,
+                privacyConfigurationManager: PrivacyConfigurationManaging,
+                excludedFeatures: [String] = [
+                    PrivacyConfigurationData.CodingKeys.trackerAllowlist.rawValue,
+                    PrivacyFeature.autoconsent.rawValue
+                ]) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.excludedFeatures = excludedFeatures
     }
 
-    /// Generates and returns the privacy configuration as JSON data.
-    ///
-    /// Note: this was used for an experiment but left so that in the future we can pass ContentScope only the needed configuration
     public var privacyConfiguration: Data? {
         guard let config = try? PrivacyConfigurationData(data: privacyConfigurationManager.currentConfig) else { return nil }
 
         let newConfig = PrivacyConfigurationData(features: config.features, unprotectedTemporary: config.unprotectedTemporary, trackerAllowlist: config.trackerAllowlist, version: config.version)
-        return try? newConfig.toJSONData(
-            excludeFeatures: [
-                PrivacyConfigurationData.CodingKeys.trackerAllowlist.rawValue,
-                PrivacyFeature.autoconsent.rawValue
-            ]
-        )
+        return try? newConfig.toJSONData(excludeFeatures: excludedFeatures)
     }
 
 }

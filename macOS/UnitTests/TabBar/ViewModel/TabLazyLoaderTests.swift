@@ -336,6 +336,13 @@ class TabLazyLoaderTests: XCTestCase {
 
         await waitForLoadingDidFinishEvent(lazyLoader) {
             lazyLoader.scheduleLazyLoading()
+
+            // The lazy loader's reaction to selection is deferred to the next
+            // runloop turn, so spin until the first reload lands before asserting.
+            let deadline = Date(timeIntervalSinceNow: 1)
+            while reloadedTabsUrls.isEmpty && Date() < deadline {
+                RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.01))
+            }
             XCTAssertEqual(reloadedTabsUrls, [newTab.url])
 
             // unpause lazy loading here

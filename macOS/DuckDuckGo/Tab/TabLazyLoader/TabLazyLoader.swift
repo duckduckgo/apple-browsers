@@ -138,6 +138,7 @@ final class TabLazyLoader<DataSource: TabLazyLoaderDataSource> {
             .store(in: &cancellables)
 
         willReloadNextTab
+            .receive(on: RunLoop.main)
             .sink { [weak self] in
                 self?.findAndReloadNextTab()
             }

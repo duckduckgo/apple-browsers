@@ -506,12 +506,12 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertTrue(sharedPixelHandlerMock.eventsFired.isEmpty)
     }
 
-    func testWhenMeasureSharedOnboardingScreenImpressionIsCalledThenSharedPixelFires() {
+    func testWhenMeasureScreenImpressionIsCalledWithSharedOnboardingPixelThenSharedPixelFires() {
         // GIVEN
         XCTAssertTrue(sharedPixelHandlerMock.eventsFired.isEmpty)
 
         // WHEN
-        sut.measureSharedOnboardingScreenImpression(.searchResults(.shown))
+        sut.measureScreenImpression(.searchResults(.shown))
 
         // THEN
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)

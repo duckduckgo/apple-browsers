@@ -190,7 +190,7 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         capturedScreenImpression = event
     }
 
-    func measureSharedOnboardingScreenImpression(_ event: OnboardingSharedPixelEvent) {
+    func measureScreenImpression(_ event: OnboardingSharedPixelEvent) {
         didCallMeasureSharedOnboardingScreenImpression = true
         capturedSharedOnboardingScreenImpression = event
     }

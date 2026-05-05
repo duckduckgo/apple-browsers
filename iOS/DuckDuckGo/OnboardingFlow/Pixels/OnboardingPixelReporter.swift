@@ -110,7 +110,7 @@ protocol OnboardingCustomInteractionPixelReporting {
 
 protocol OnboardingDaxDialogsReporting {
     func measureScreenImpression(event: Pixel.Event)
-    func measureSharedOnboardingScreenImpression(_ event: OnboardingSharedPixelEvent)
+    func measureScreenImpression(_ event: OnboardingSharedPixelEvent)
     func measureSearchResultsDialogGotItAction()
     func measureTrackersDialogGotItAction()
     func measureSubscriptionPromoDialogShown()
@@ -511,7 +511,7 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
         }
     }
 
-    func measureSharedOnboardingScreenImpression(_ event: OnboardingSharedPixelEvent) {
+    func measureScreenImpression(_ event: OnboardingSharedPixelEvent) {
         sharedPixelHandler.fire(event,
                                 source: sharedPixelsStorage.onboardingSource,
                                 flow: sharedPixelsStorage.onboardingFlow,

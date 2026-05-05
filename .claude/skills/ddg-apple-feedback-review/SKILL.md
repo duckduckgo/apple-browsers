@@ -535,14 +535,35 @@ asana-formatting conversion - gets rendered as an extra blank line on top of
 that built-in spacing, producing visibly double-spaced output (an empty line
 between every heading and its following list, between every list and the
 next heading, etc.). Join block tags with no separator (e.g. `</h2><ul>`) or
-at most a single `\n`. After running the asana-formatting conversion, scan
-its output and collapse any `\n\n` (or longer runs of newlines) that appears
-immediately before or after a block tag down to a single `\n` or nothing.
+at most a single real newline. After running the asana-formatting conversion,
+scan its output and collapse any `\n\n` (or longer runs of newlines) that
+appears immediately before or after a block tag down to a single real newline
+or nothing.
 
 `\n\n` between **purely inline content** (plain text, `<strong>`, `<em>`,
 `<a>`, `<code>` with no surrounding block tag on either side) is a different
 case - it is the only way to produce a paragraph break in `html_notes` since
 Asana rejects `<p>`. The block-tag rule above does not apply to those.
+
+**`\n` escape sequences in tool-call XML parameters are literal text, not
+newlines.** Claude Code passes parameter content to MCP tools without
+processing JSON-style escape sequences. If you type `text.\n<h1>Heading</h1>`
+inside the `html_notes` XML parameter, Asana stores those characters
+verbatim - the `\n` is two literal characters (backslash + n), and the
+HTML view renders them as visible `\n` text before the heading. The fix:
+
+- Between **block tags**, use no separator at all (`</h2><ul>`). Block
+  elements have their own vertical spacing in Asana. This is the safest
+  default and avoids the escape-sequence trap entirely.
+- Where you genuinely need a real newline (paragraph break between inline
+  content - the `\n\n` case above), break the parameter content across
+  physical lines in the XML. Real line breaks in the parameter source pass
+  through as real newlines.
+- The asana-formatting skill's documented `\n` / `\n\n` syntax assumes
+  JSON-encoded tool calls, where `\n` is processed to a newline. Inside a
+  Claude Code `<parameter>...</parameter>` block, that processing does not
+  happen, so do not literally type the two-character `\n` sequence and
+  expect a newline.
 
 **Asana's plain-text rendering of `<table>` is flat.** The `notes` plain-text
 view (and the email/notification preview that derives from it) renders each
@@ -648,10 +669,18 @@ not be touched.
 - **Pretty-printing `html_notes` with blank lines between block tags.** Asana
   treats `\n\n` between block elements like `</h2>` and `<ul>` as an extra
   blank line on top of each block's natural vertical spacing, producing
-  visibly double-spaced output. Use no separator or at most a single `\n`
-  between block tags. `\n\n` between purely inline content (text, `<strong>`,
-  `<a>`, etc. with no surrounding block tag) is correct and is the only way
-  to get a paragraph break since Asana forbids `<p>`. See step 8.4.
+  visibly double-spaced output. Use no separator or at most a single real
+  newline between block tags. `\n\n` between purely inline content (text,
+  `<strong>`, `<a>`, etc. with no surrounding block tag) is correct and is
+  the only way to get a paragraph break since Asana forbids `<p>`. See step
+  8.4.
+- **Typing literal `\n` escape sequences inside the `html_notes` XML
+  parameter.** Claude Code does not process JSON-style escape sequences in
+  tool-call XML parameters - `\n` is two literal characters (backslash + n)
+  and Asana renders them as visible `\n` text in the HTML view. Default to
+  no separator between block tags (`</h2><ul>`); where you need a real
+  newline (paragraph break between inline content), break the parameter
+  across physical lines in the XML. See step 8.4.
 - **Hand-typing GIDs into the link list HTML from memory.** A single mistyped
   digit gives a broken link that looks correct at a glance. Transcribe each
   GID character-by-character from the `asana_search_tasks` / `asana_get_task`

@@ -1767,6 +1767,82 @@ final class PromoServiceTests: XCTestCase {
         XCTAssertFalse(internalRecord.actioned)
     }
 
+    func testWhenInternalPromoVisibleAndExternalBecomesVisible_ThenInternalIsRetractedWithNoChangeHistory() async {
+        let externalDelegate = MockExternalPromoDelegate(initialVisibility: false)
+        let internalDelegate = MockPromoDelegate(isEligible: true)
+        let externalPromo = PromoTestHelpers.makePromo(id: "external-promo", delegate: externalDelegate)
+        let internalPromo = PromoTestHelpers.makePromo(id: "internal-promo", delegate: internalDelegate)
+        let promoService = makeService(promos: [externalPromo, internalPromo])
+
+        let internalVisibleExpectation = XCTestExpectation(description: "internal promo visible")
+        let onlyExternalExpectation = XCTestExpectation(description: "only external visible after retraction")
+        var sawInternalVisible = false
+        promoService.visiblePromosPublisher
+            .sink { promos in
+                let ids = Set(promos.map(\.id))
+                if ids.contains(internalPromo.id) {
+                    sawInternalVisible = true
+                    internalVisibleExpectation.fulfill()
+                }
+                if sawInternalVisible, ids == Set([externalPromo.id]) {
+                    onlyExternalExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [internalVisibleExpectation], timeout: timeout)
+
+        externalDelegate.setVisible(true)
+        await fulfillment(of: [onlyExternalExpectation], timeout: timeout)
+
+        let externalRecord = historyStore.record(for: externalPromo.id)
+        XCTAssertNotNil(externalRecord.lastShown)
+        let internalRecord = historyStore.record(for: internalPromo.id)
+        XCTAssertEqual(internalRecord.timesDismissed, 0)
+        XCTAssertNil(internalRecord.lastShown)
+        XCTAssertFalse(internalRecord.actioned)
+    }
+
+    func testWhenInternalAndExternalMutuallyCoexist_AndExternalBecomesVisible_ThenInternalIsNotRetracted() async {
+        let externalDelegate = MockExternalPromoDelegate(initialVisibility: false)
+        let internalDelegate = MockPromoDelegate(isEligible: true)
+        let externalPromo = PromoTestHelpers.makePromo(id: "external-promo", coexistingPromoIDs: ["internal-promo"], delegate: externalDelegate)
+        let internalPromo = PromoTestHelpers.makePromo(id: "internal-promo", coexistingPromoIDs: ["external-promo"], delegate: internalDelegate)
+        let promoService = makeService(promos: [externalPromo, internalPromo])
+
+        let internalVisibleExpectation = XCTestExpectation(description: "internal promo visible")
+        let bothVisibleExpectation = XCTestExpectation(description: "internal and external both visible")
+        let onlyExternalExpectation = XCTestExpectation(description: "only external visible")
+        onlyExternalExpectation.isInverted = true // When external becomes visible, internal should remain visible
+        var sawInternalVisible = false
+        promoService.visiblePromosPublisher
+            .sink { promos in
+                let ids = Set(promos.map(\.id))
+                if ids.contains(internalPromo.id) {
+                    sawInternalVisible = true
+                    internalVisibleExpectation.fulfill()
+                }
+                if ids == Set([externalPromo.id, internalPromo.id]) {
+                    bothVisibleExpectation.fulfill()
+                }
+                if sawInternalVisible, ids == Set([externalPromo.id]) {
+                    onlyExternalExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [internalVisibleExpectation], timeout: timeout)
+
+        externalDelegate.setVisible(true)
+        await fulfillment(of: [bothVisibleExpectation, onlyExternalExpectation], timeout: timeout)
+
+        XCTAssertEqual(internalDelegate.hideCallCount, 0)
+    }
+
     func testWhenDismissExternalPromo_ThenRemovedFromVisibleAndResultApplied() async {
         let externalDelegate = MockExternalPromoDelegate(initialVisibility: true)
         let promo = PromoTestHelpers.makePromo(id: "external-dismiss-call", delegate: externalDelegate)

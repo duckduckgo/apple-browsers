@@ -97,6 +97,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "width",
                 "description": "The final sidebar width in points",
@@ -131,14 +132,14 @@
         "owners": ["jaceklyp"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_sidebar_floating_tab_activated": {
         "description": "Fired when user clicks the floating title button to activate the associated tab",
         "owners": ["jaceklyp"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_tabbar_button_clicked": {
         "description": "Fired when user clicks the Duck.ai button in the tab bar to open a new chat tab",

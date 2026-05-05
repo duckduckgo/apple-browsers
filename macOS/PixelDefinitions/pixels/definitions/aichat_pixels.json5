@@ -97,7 +97,6 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            "channel",
             {
                 "key": "width",
                 "description": "The final sidebar width in points",

@@ -1271,24 +1271,8 @@ class MainViewController: UIViewController {
             }
         }
 
-        if appSettings.currentAddressBarPosition.isBottom,
-           let ntp = self.newTabPageViewController,
-           !ntp.isShowingLogo {
-            self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
-        }
-
         UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
             self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-
-            if self.appSettings.currentAddressBarPosition.isBottom,
-               !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-               let ntp = self.newTabPageViewController,
-               ntp.isShowingLogo {
-                self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
-            } else {
-                self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
-            }
-            self.currentTab?.borderView.layoutIfNeeded()
         }
     }
 

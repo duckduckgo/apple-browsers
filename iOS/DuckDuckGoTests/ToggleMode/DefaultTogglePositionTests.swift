@@ -102,11 +102,11 @@ final class TabPreferredTextEntryModeCodingTests: XCTestCase {
 
         let dataAI = try NSKeyedArchiver.archivedData(withRootObject: tabAI, requiringSecureCoding: false)
         let decodedAI = try NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(dataAI) as? Tab
-        XCTAssertEqual(decodedAI?.preferredTextEntryMode, .aiChat)
+        XCTAssertEqual(decodedAI?.unifiedInputState.preferredTextEntryMode, .aiChat)
 
         let dataSearch = try NSKeyedArchiver.archivedData(withRootObject: tabSearch, requiringSecureCoding: false)
         let decodedSearch = try NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(dataSearch) as? Tab
-        XCTAssertEqual(decodedSearch?.preferredTextEntryMode, .search)
+        XCTAssertEqual(decodedSearch?.unifiedInputState.preferredTextEntryMode, .search)
     }
 
     func testLegacyTabWithoutStoredModeInfersFromURL() {
@@ -114,17 +114,17 @@ final class TabPreferredTextEntryModeCodingTests: XCTestCase {
         let regularTab = Tab(coder: LegacyCoderStub(properties: [
             "link": Link(title: nil, url: URL(string: "https://example.com")!)
         ]))
-        XCTAssertEqual(regularTab?.preferredTextEntryMode, .search)
+        XCTAssertEqual(regularTab?.unifiedInputState.preferredTextEntryMode, .search)
 
         // Tab with duck.ai URL — should infer .aiChat
         let aiTab = Tab(coder: LegacyCoderStub(properties: [
             "link": Link(title: nil, url: URL(string: "https://duck.ai/chat")!)
         ]))
-        XCTAssertEqual(aiTab?.preferredTextEntryMode, .aiChat)
+        XCTAssertEqual(aiTab?.unifiedInputState.preferredTextEntryMode, .aiChat)
 
         // Tab with no URL — should default to .search
         let emptyTab = Tab(coder: LegacyCoderStub(properties: [:]))
-        XCTAssertEqual(emptyTab?.preferredTextEntryMode, .search)
+        XCTAssertEqual(emptyTab?.unifiedInputState.preferredTextEntryMode, .search)
     }
 }
 
@@ -203,13 +203,13 @@ final class TabCreationModeInheritanceTests: XCTestCase {
         let tab5 = Tab(link: nil, preferredTextEntryMode: resolve())
 
         // Original tabs retain their mode
-        XCTAssertEqual(tab1.preferredTextEntryMode, .search)
-        XCTAssertEqual(tab2.preferredTextEntryMode, .search)
-        XCTAssertEqual(tab3.preferredTextEntryMode, .search)
+        XCTAssertEqual(tab1.unifiedInputState.preferredTextEntryMode, .search)
+        XCTAssertEqual(tab2.unifiedInputState.preferredTextEntryMode, .search)
+        XCTAssertEqual(tab3.unifiedInputState.preferredTextEntryMode, .search)
 
         // New tabs have the updated mode
-        XCTAssertEqual(tab4.preferredTextEntryMode, .aiChat)
-        XCTAssertEqual(tab5.preferredTextEntryMode, .aiChat)
+        XCTAssertEqual(tab4.unifiedInputState.preferredTextEntryMode, .aiChat)
+        XCTAssertEqual(tab5.unifiedInputState.preferredTextEntryMode, .aiChat)
     }
 
     func testLastUsedSettingPicksUpCommittedMode() {
@@ -223,20 +223,20 @@ final class TabCreationModeInheritanceTests: XCTestCase {
 
         // No stored value — defaults to search
         let tab1 = Tab(link: nil, preferredTextEntryMode: resolve())
-        XCTAssertEqual(tab1.preferredTextEntryMode, .search)
+        XCTAssertEqual(tab1.unifiedInputState.preferredTextEntryMode, .search)
 
         // Simulate commit: user submitted in aiChat mode
         storage.save(.aiChat)
 
         // New tab inherits last committed mode
         let tab2 = Tab(link: nil, preferredTextEntryMode: resolve())
-        XCTAssertEqual(tab2.preferredTextEntryMode, .aiChat)
+        XCTAssertEqual(tab2.unifiedInputState.preferredTextEntryMode, .aiChat)
 
         // Simulate commit: user submitted in search mode
         storage.save(.search)
 
         let tab3 = Tab(link: nil, preferredTextEntryMode: resolve())
-        XCTAssertEqual(tab3.preferredTextEntryMode, .search)
+        XCTAssertEqual(tab3.unifiedInputState.preferredTextEntryMode, .search)
     }
 }
 

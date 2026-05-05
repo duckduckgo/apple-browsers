@@ -297,7 +297,7 @@ class SwitchBarTextEntryView: UIView {
             textView.returnKeyType = .search
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
-            textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
+            textView.keyboardType = .default
             textView.returnKeyType = .default
             if handler.shouldDisableAutocorrectOnEmpty && textView.text.isEmpty {
                 disableAutoCorrectionAndSpellChecking()
@@ -547,8 +547,8 @@ class SwitchBarTextEntryView: UIView {
         if isTextEmpty {
             disableAutoCorrectionAndSpellChecking()
         } else {
-            textView.keyboardType = handler.isToggleEnabled ? .default : .webSearch
-            textView.returnKeyType = .default
+            textView.keyboardType = currentMode == .aiChat ? .default : .webSearch
+            textView.returnKeyType = currentMode == .aiChat ? .default : .search
             enableAutoCorrectionAndSpellChecking()
         }
 
@@ -690,7 +690,9 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
-            if currentMode == .aiChat && handler.isToggleEnabled {
+            // AI-chat mode allows multi-line input regardless of host. Search modes (omnibar
+            // toggle-off, omnibar search via toggle, AI-tab search) submit on Return.
+            if currentMode == .aiChat {
                 return true
             }
             fireKeyboardGoPressedPixel()

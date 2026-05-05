@@ -1100,7 +1100,6 @@
 		98D98A7425ED88D100D8E3DF /* BrowsingMenuEntryViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98D98A7225ED88D100D8E3DF /* BrowsingMenuEntryViewCell.swift */; };
 		98D98A8225ED88E300D8E3DF /* BrowsingMenuSeparatorViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98D98A8025ED88E300D8E3DF /* BrowsingMenuSeparatorViewCell.swift */; };
 		98D98A8F25ED952F00D8E3DF /* BrowsingMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98D98A8E25ED952F00D8E3DF /* BrowsingMenuButton.swift */; };
-		98D98A9B25ED954100D8E3DF /* BrowsingMenuButton.xib in Resources */ = {isa = PBXBuildFile; fileRef = 98D98A9A25ED954100D8E3DF /* BrowsingMenuButton.xib */; };
 		98DA35C4268CC81E00159906 /* DomainMatchingReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98DA35C3268CC81E00159906 /* DomainMatchingReportTests.swift */; };
 		98DA6B3322243CC3006EA9EB /* Feedback.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 98DA6B3222243CC3006EA9EB /* Feedback.xcassets */; };
 		98DA6ECA2181E41F00E65433 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98DA6EC92181E41F00E65433 /* ThemeManager.swift */; };
@@ -1692,7 +1691,6 @@
 		B6AD9E3728D4510A0019CDE9 /* ContentBlockingUpdatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6AD9E3528D4510A0019CDE9 /* ContentBlockingUpdatingTests.swift */; };
 		B6AD9E3828D4512E0019CDE9 /* EmbeddedTrackerDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9801F08927E4B21100191874 /* EmbeddedTrackerDataTests.swift */; };
 		B6BA95C328891E33004ABA20 /* BrowsingMenuAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6BA95C228891E33004ABA20 /* BrowsingMenuAnimator.swift */; };
-		B6BA95C528894A28004ABA20 /* BrowsingMenuViewController.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B6BA95C428894A28004ABA20 /* BrowsingMenuViewController.storyboard */; };
 		B6BA95E828924730004ABA20 /* JSAlertController.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B6BA95E728924730004ABA20 /* JSAlertController.storyboard */; };
 		B772933486CDFE9E9DDBD2BF /* FileCorruptErrorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B772933186CDFE9E9DDBD2BF /* FileCorruptErrorViewController.swift */; };
 		B7A3E1F20A1B2C3D4E5F6A70 /* AIChatRecentChatsPopupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8C4F2A31B2C3D4E5F6A7081 /* AIChatRecentChatsPopupViewModel.swift */; };
@@ -1865,6 +1863,12 @@
 		C18390B72F4F6F16001939B9 /* UnifiedToggleInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390B62F4F6F16001939B9 /* UnifiedToggleInputView.swift */; };
 		C18390B92F4F6F19001939B9 /* UnifiedToggleInputViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390B82F4F6F19001939B9 /* UnifiedToggleInputViewController.swift */; };
 		C18390BB2F4F6F54001939B9 /* UnifiedToggleInputCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390BA2F4F6F54001939B9 /* UnifiedToggleInputCoordinator.swift */; };
+		BBA0000000000000000A0002 /* TabInputState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0000000000000000A0001 /* TabInputState.swift */; };
+		BBA0000000000000000B0002 /* UnifiedInputStateStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0000000000000000B0001 /* UnifiedInputStateStoring.swift */; };
+		BBA0000000000000000C0002 /* UnifiedInputStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0000000000000000C0001 /* UnifiedInputStateStore.swift */; };
+		BBA0000000000000000E0002 /* Logger+UnifiedInputState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0000000000000000E0001 /* Logger+UnifiedInputState.swift */; };
+		BBA0000000000000000F0002 /* UnifiedInputTabState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0000000000000000F0001 /* UnifiedInputTabState.swift */; };
+		BBA0000000000000000D0004 /* UnifiedInputStateStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0000000000000000D0003 /* UnifiedInputStateStoreTests.swift */; };
 		C18390BD2F4F6F57001939B9 /* UnifiedToggleInputDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390BC2F4F6F57001939B9 /* UnifiedToggleInputDelegate.swift */; };
 		C18390BF2F4F6F5E001939B9 /* UnifiedToggleInputFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390BE2F4F6F5E001939B9 /* UnifiedToggleInputFeature.swift */; };
 		C18390C22F4F712A001939B9 /* AIChatNativeInputViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390C12F4F712A001939B9 /* AIChatNativeInputViewController.swift */; };
@@ -1872,6 +1876,8 @@
 		C18390C72F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390C62F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift */; };
 		C18390CA2F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390C92F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift */; };
 		C18390CC2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390CB2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift */; };
+		BBA0000000000000000A0004 /* TabInputStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0000000000000000A0003 /* TabInputStateTests.swift */; };
+		A1B2C3D4E5F60014A1B2C3D4 /* UnifiedToggleInputReasoningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60013A1B2C3D4 /* UnifiedToggleInputReasoningTests.swift */; };
 		C18390CE2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */; };
 		C18390D12F50A001001939B9 /* UnifiedToggleInputImageEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390D02F50A001001939B9 /* UnifiedToggleInputImageEncoder.swift */; };
 		C18390D32F50A002001939B9 /* UnifiedToggleInputAttachmentThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390D22F50A002001939B9 /* UnifiedToggleInputAttachmentThumbnailView.swift */; };
@@ -2062,6 +2068,12 @@
 		CB6D17972FA232E000ECD5AE /* Suggestion+URLFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17962FA232E000ECD5AE /* Suggestion+URLFilter.swift */; };
 		CB6D17992FA24B9800ECD5AE /* DuckAISuggestionsViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17982FA24B9800ECD5AE /* DuckAISuggestionsViewControllerTests.swift */; };
 		CB6D179B2FA2524F00ECD5AE /* EmptySuggestionLoadingDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D179A2FA2524F00ECD5AE /* EmptySuggestionLoadingDataSource.swift */; };
+		CB6D179D2FA38CAF00ECD5AE /* Logger+ContextualUTI.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D179C2FA38CAF00ECD5AE /* Logger+ContextualUTI.swift */; };
+		CB6D179F2FA38FAD00ECD5AE /* UnifiedToggleInputHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D179E2FA38FAD00ECD5AE /* UnifiedToggleInputHost.swift */; };
+		CB6D17A22FA397FC00ECD5AE /* UnifiedToggleInputPageContextChipViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17A12FA397FC00ECD5AE /* UnifiedToggleInputPageContextChipViewModelTests.swift */; };
+		CB6D17A42FA3983100ECD5AE /* UnifiedToggleInputPageContextChipViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17A32FA3983100ECD5AE /* UnifiedToggleInputPageContextChipViewModel.swift */; };
+		CB6D17A82FA39FC900ECD5AE /* AIChatContextualUTIHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17A72FA39FC900ECD5AE /* AIChatContextualUTIHost.swift */; };
+		CB6D17AA2FA4B57900ECD5AE /* AIChatContextualUTIHostTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17A92FA4B57900ECD5AE /* AIChatContextualUTIHostTests.swift */; };
 		CB6D17AC2FA8C59900ECD5AE /* DuckAISuggestionsCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17AB2FA8C59900ECD5AE /* DuckAISuggestionsCoordinatorTests.swift */; };
 		CB7CF9FA2F9A6C100051BEE9 /* CircularButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7CF9F92F9A6C100051BEE9 /* CircularButton.swift */; };
 		CB7E0A212D5E1D96002A7C0C /* UIInteractionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */; };
@@ -3888,7 +3900,6 @@
 		98D98A7225ED88D100D8E3DF /* BrowsingMenuEntryViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowsingMenuEntryViewCell.swift; sourceTree = "<group>"; };
 		98D98A8025ED88E300D8E3DF /* BrowsingMenuSeparatorViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowsingMenuSeparatorViewCell.swift; sourceTree = "<group>"; };
 		98D98A8E25ED952F00D8E3DF /* BrowsingMenuButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowsingMenuButton.swift; sourceTree = "<group>"; };
-		98D98A9A25ED954100D8E3DF /* BrowsingMenuButton.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = BrowsingMenuButton.xib; sourceTree = "<group>"; };
 		98DA35C3268CC81E00159906 /* DomainMatchingReportTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DomainMatchingReportTests.swift; sourceTree = "<group>"; };
 		98DA6B3222243CC3006EA9EB /* Feedback.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Feedback.xcassets; sourceTree = "<group>"; };
 		98DA6EC92181E41F00E65433 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
@@ -4260,7 +4271,6 @@
 		B652DF11287C336E00C12A9C /* ContentBlockingUpdating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentBlockingUpdating.swift; sourceTree = "<group>"; };
 		B6AD9E3528D4510A0019CDE9 /* ContentBlockingUpdatingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentBlockingUpdatingTests.swift; sourceTree = "<group>"; };
 		B6BA95C228891E33004ABA20 /* BrowsingMenuAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowsingMenuAnimator.swift; sourceTree = "<group>"; };
-		B6BA95C428894A28004ABA20 /* BrowsingMenuViewController.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = BrowsingMenuViewController.storyboard; sourceTree = "<group>"; };
 		B6BA95E728924730004ABA20 /* JSAlertController.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = JSAlertController.storyboard; sourceTree = "<group>"; };
 		B772933186CDFE9E9DDBD2BF /* FileCorruptErrorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCorruptErrorViewController.swift; sourceTree = "<group>"; };
 		BB10B2A12EABF99D0005F174 /* SERPSettingsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SERPSettingsProvider.swift; sourceTree = "<group>"; };
@@ -4442,6 +4452,12 @@
 		C18390B62F4F6F16001939B9 /* UnifiedToggleInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputView.swift; sourceTree = "<group>"; };
 		C18390B82F4F6F19001939B9 /* UnifiedToggleInputViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputViewController.swift; sourceTree = "<group>"; };
 		C18390BA2F4F6F54001939B9 /* UnifiedToggleInputCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputCoordinator.swift; sourceTree = "<group>"; };
+		BBA0000000000000000A0001 /* TabInputState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabInputState.swift; sourceTree = "<group>"; };
+		BBA0000000000000000B0001 /* UnifiedInputStateStoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputStateStoring.swift; sourceTree = "<group>"; };
+		BBA0000000000000000C0001 /* UnifiedInputStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputStateStore.swift; sourceTree = "<group>"; };
+		BBA0000000000000000E0001 /* Logger+UnifiedInputState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+UnifiedInputState.swift"; sourceTree = "<group>"; };
+		BBA0000000000000000F0001 /* UnifiedInputTabState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputTabState.swift; sourceTree = "<group>"; };
+		BBA0000000000000000D0003 /* UnifiedInputStateStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputStateStoreTests.swift; sourceTree = "<group>"; };
 		C18390BC2F4F6F57001939B9 /* UnifiedToggleInputDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputDelegate.swift; sourceTree = "<group>"; };
 		C18390BE2F4F6F5E001939B9 /* UnifiedToggleInputFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputFeature.swift; sourceTree = "<group>"; };
 		C18390C12F4F712A001939B9 /* AIChatNativeInputViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatNativeInputViewController.swift; sourceTree = "<group>"; };
@@ -4449,6 +4465,8 @@
 		C18390C62F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+UnifiedToggleInput.swift"; sourceTree = "<group>"; };
 		C18390C92F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputHandlerTests.swift; sourceTree = "<group>"; };
 		C18390CB2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputCoordinatorTests.swift; sourceTree = "<group>"; };
+		BBA0000000000000000A0003 /* TabInputStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabInputStateTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60013A1B2C3D4 /* UnifiedToggleInputReasoningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputReasoningTests.swift; sourceTree = "<group>"; };
 		C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputFeatureTests.swift; sourceTree = "<group>"; };
 		C18390D02F50A001001939B9 /* UnifiedToggleInputImageEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputImageEncoder.swift; sourceTree = "<group>"; };
 		C18390D22F50A002001939B9 /* UnifiedToggleInputAttachmentThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputAttachmentThumbnailView.swift; sourceTree = "<group>"; };
@@ -4653,6 +4671,12 @@
 		CB6D17962FA232E000ECD5AE /* Suggestion+URLFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Suggestion+URLFilter.swift"; sourceTree = "<group>"; };
 		CB6D17982FA24B9800ECD5AE /* DuckAISuggestionsViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsViewControllerTests.swift; sourceTree = "<group>"; };
 		CB6D179A2FA2524F00ECD5AE /* EmptySuggestionLoadingDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptySuggestionLoadingDataSource.swift; sourceTree = "<group>"; };
+		CB6D179C2FA38CAF00ECD5AE /* Logger+ContextualUTI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+ContextualUTI.swift"; sourceTree = "<group>"; };
+		CB6D179E2FA38FAD00ECD5AE /* UnifiedToggleInputHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputHost.swift; sourceTree = "<group>"; };
+		CB6D17A12FA397FC00ECD5AE /* UnifiedToggleInputPageContextChipViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputPageContextChipViewModelTests.swift; sourceTree = "<group>"; };
+		CB6D17A32FA3983100ECD5AE /* UnifiedToggleInputPageContextChipViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputPageContextChipViewModel.swift; sourceTree = "<group>"; };
+		CB6D17A72FA39FC900ECD5AE /* AIChatContextualUTIHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualUTIHost.swift; sourceTree = "<group>"; };
+		CB6D17A92FA4B57900ECD5AE /* AIChatContextualUTIHostTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualUTIHostTests.swift; sourceTree = "<group>"; };
 		CB6D17AB2FA8C59900ECD5AE /* DuckAISuggestionsCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsCoordinatorTests.swift; sourceTree = "<group>"; };
 		CB7407BC2AF6D56D0090A41C /* pl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pl; path = pl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CB75AA132AF6D5AA00AED266 /* sl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sl; path = sl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -5659,6 +5683,7 @@
 				3124186C2F48C9FE0023B9DE /* IPadModeToggleTextModelTests.swift */,
 				97D99E632F7420A900EE34E7 /* AIVoiceChatIntentTests.swift */,
 				97B908642F75457100372B50 /* DuckAIVoiceControlWidgetTests.swift */,
+				CB6D17A92FA4B57900ECD5AE /* AIChatContextualUTIHostTests.swift */,
 			);
 			path = AIChat;
 			sourceTree = "<group>";
@@ -7720,11 +7745,9 @@
 				9830A06225ED0DB900DB64DE /* BrowsingMenu.xcassets */,
 				B6BA95C228891E33004ABA20 /* BrowsingMenuAnimator.swift */,
 				986B16C225E92DF0007D23E8 /* BrowsingMenuViewController.swift */,
-				B6BA95C428894A28004ABA20 /* BrowsingMenuViewController.storyboard */,
 				98D98A7225ED88D100D8E3DF /* BrowsingMenuEntryViewCell.swift */,
 				98D98A8025ED88E300D8E3DF /* BrowsingMenuSeparatorViewCell.swift */,
 				98D98A8E25ED952F00D8E3DF /* BrowsingMenuButton.swift */,
-				98D98A9A25ED954100D8E3DF /* BrowsingMenuButton.xib */,
 			);
 			path = BrowsingMenu;
 			sourceTree = "<group>";
@@ -8877,6 +8900,8 @@
 				4C0B70EF2418A35A5D863506 /* AIChatRecentChatsPopupViewController.swift */,
 				D8C4F2A31B2C3D4E5F6A7081 /* AIChatRecentChatsPopupViewModel.swift */,
 				C1AIREPO2F2E000000E35AD5 /* AIChatPageContextHandler.swift */,
+				CB6D179C2FA38CAF00ECD5AE /* Logger+ContextualUTI.swift */,
+				CB6D17A72FA39FC900ECD5AE /* AIChatContextualUTIHost.swift */,
 			);
 			path = ContextualMode;
 			sourceTree = "<group>";
@@ -9087,6 +9112,11 @@
 				C18390B42F4F6ED0001939B9 /* UnifiedToggleInputToolbarView.swift */,
 				C18390C32F4F73AE001939B9 /* UnifiedToggleInputHandler.swift */,
 				C18390BA2F4F6F54001939B9 /* UnifiedToggleInputCoordinator.swift */,
+				BBA0000000000000000A0001 /* TabInputState.swift */,
+				BBA0000000000000000B0001 /* UnifiedInputStateStoring.swift */,
+				BBA0000000000000000C0001 /* UnifiedInputStateStore.swift */,
+				BBA0000000000000000E0001 /* Logger+UnifiedInputState.swift */,
+				BBA0000000000000000F0001 /* UnifiedInputTabState.swift */,
 				F2B8A10436AA100000C0DE01 /* UnifiedToggleInputAttachmentPresenter.swift */,
 				AABB00010001000100010008 /* UTIAttachmentPolicy.swift */,
 				AABB0001000100010001000C /* UTIModelStore.swift */,
@@ -9104,6 +9134,8 @@
 				C18390D02F50A001001939B9 /* UnifiedToggleInputImageEncoder.swift */,
 				C18390D22F50A002001939B9 /* UnifiedToggleInputAttachmentThumbnailView.swift */,
 				C18390D42F50A003001939B9 /* UnifiedToggleInputAttachmentsStripView.swift */,
+				CB6D179E2FA38FAD00ECD5AE /* UnifiedToggleInputHost.swift */,
+				CB6D17A02FA397DC00ECD5AE /* PageContextChip */,
 			);
 			path = UnifiedToggleInput;
 			sourceTree = "<group>";
@@ -9113,6 +9145,8 @@
 			children = (
 				C18390C92F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift */,
 				C18390CB2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift */,
+				BBA0000000000000000A0003 /* TabInputStateTests.swift */,
+				BBA0000000000000000D0003 /* UnifiedInputStateStoreTests.swift */,
 				97C00D0B2F98EEE300593A53 /* UnifiedInputContentContainerViewControllerTests.swift */,
 				A1B2C3D4E5F60013A1B2C3D4 /* UnifiedToggleInputReasoningTests.swift */,
 				9AD3EE389CF6162AB1F6B023 /* UnifiedToggleInputCoordinatorAttachmentLimitsTests.swift */,
@@ -9125,6 +9159,7 @@
 				CB6D178A2FA2109C00ECD5AE /* DuckAIURLSuggestionsLoaderTests.swift */,
 				CB6D17982FA24B9800ECD5AE /* DuckAISuggestionsViewControllerTests.swift */,
 				CB6D179A2FA2524F00ECD5AE /* EmptySuggestionLoadingDataSource.swift */,
+				CB6D17A12FA397FC00ECD5AE /* UnifiedToggleInputPageContextChipViewModelTests.swift */,
 				CB6D17AB2FA8C59900ECD5AE /* DuckAISuggestionsCoordinatorTests.swift */,
 			);
 			path = UnifiedToggleInput;
@@ -9604,6 +9639,14 @@
 				CB6D17902FA2147600ECD5AE /* DuckAISuggestionsCoordinator.swift */,
 			);
 			path = Suggestions;
+			sourceTree = "<group>";
+		};
+		CB6D17A02FA397DC00ECD5AE /* PageContextChip */ = {
+			isa = PBXGroup;
+			children = (
+				CB6D17A32FA3983100ECD5AE /* UnifiedToggleInputPageContextChipViewModel.swift */,
+			);
+			path = PageContextChip;
 			sourceTree = "<group>";
 		};
 		CBAA195627BFDD9800A4BD49 /* SmarterEncryption */ = {
@@ -11660,7 +11703,6 @@
 				6F33F3962E7969B1002E95B1 /* duckduckgo-ai-transition-dark.json in Resources */,
 				C15516062D47D2EF001B94E9 /* burst-blob-passwords.json in Resources */,
 				984147B424F0264B00362052 /* Authentication.storyboard in Resources */,
-				98D98A9B25ED954100D8E3DF /* BrowsingMenuButton.xib in Resources */,
 				D664C7B72B289AA200CBFA76 /* Subscription.storekit in Resources */,
 				85AE668E2097206E0014CF04 /* NotificationView.xib in Resources */,
 				85A313972028E78A00327D00 /* release_notes.txt in Resources */,
@@ -11692,7 +11734,6 @@
 				310C24E02E6B6AC500D5A372 /* toggle-ios-dark.json in Resources */,
 				0A6CC0EF23904D5400E4F627 /* Settings.bundle in Resources */,
 				85A9C37920E0E00C00073340 /* HomeRow.xcassets in Resources */,
-				B6BA95C528894A28004ABA20 /* BrowsingMenuViewController.storyboard in Resources */,
 				1E908BF229827C480008C8F3 /* autoconsent-bundle.js in Resources */,
 				F143C2B21E49D78C00CFDE3A /* Assets.xcassets in Resources */,
 				310C24E82E6B6D1900D5A372 /* NewAddressBarPicker.xcassets in Resources */,
@@ -12224,6 +12265,7 @@
 				9FF362DA2F3DC6A200824B30 /* RebrandedContextualOnboardingDialogs+SubscriptionPromo.swift in Sources */,
 				8569E1702D52C9A4004A3CB7 /* TabSwitcherBarsStateHandler.swift in Sources */,
 				9FE08BDC2C2A88FA001D5EBC /* OnboardingIntroViewController.swift in Sources */,
+				CB6D179F2FA38FAD00ECD5AE /* UnifiedToggleInputHost.swift in Sources */,
 				C13C36702F4B5B3A008E7D08 /* SyncAutoRestoreHandler.swift in Sources */,
 				3157B43527F497F50042D3D7 /* SaveLoginViewController.swift in Sources */,
 				317A247F2D8336650033A0D6 /* DownloadsDirectoryHandling.swift in Sources */,
@@ -12362,6 +12404,7 @@
 				C153BE2F2EC4E0A9001B9757 /* AutofillExtensionPromotionHeaderView.swift in Sources */,
 				C153BE302EC4E0A9001B9757 /* AutofillExtensionPromotionManager.swift in Sources */,
 				310D09212799FD1A00DC0060 /* MIMEType.swift in Sources */,
+				CB6D179D2FA38CAF00ECD5AE /* Logger+ContextualUTI.swift in Sources */,
 				31800C562F44B233002AFAB2 /* PadOmnibarToggleView.swift in Sources */,
 				859DB8152CE6263C001F7210 /* TextZoomEditorModel.swift in Sources */,
 				80A09D582F6B96E700AACDEE /* BookmarksFireWorker.swift in Sources */,
@@ -12692,6 +12735,11 @@
 				EEC02C142B0519DE0045CE11 /* NetworkProtectionVPNLocationViewModel.swift in Sources */,
 				D63FF8962C1B67E9006DE24D /* YoutubeOverlayUserScript.swift in Sources */,
 				C18390BB2F4F6F54001939B9 /* UnifiedToggleInputCoordinator.swift in Sources */,
+				BBA0000000000000000A0002 /* TabInputState.swift in Sources */,
+				BBA0000000000000000B0002 /* UnifiedInputStateStoring.swift in Sources */,
+				BBA0000000000000000C0002 /* UnifiedInputStateStore.swift in Sources */,
+				BBA0000000000000000E0002 /* Logger+UnifiedInputState.swift in Sources */,
+				BBA0000000000000000F0002 /* UnifiedInputTabState.swift in Sources */,
 				F2B8A10136AA100000C0DE01 /* UnifiedToggleInputAttachmentPresenter.swift in Sources */,
 				AABB00010001000100010007 /* UTIAttachmentPolicy.swift in Sources */,
 				AABB0001000100010001000B /* UTIModelStore.swift in Sources */,
@@ -12868,6 +12916,7 @@
 				9FBE93BC2EB040F5003E74FB /* ShareAction+UIActivity.swift in Sources */,
 				C1FA13652ECFA067001392FA /* AutofillExtensionEnableCoordinator.swift in Sources */,
 				6FB864C52ED0CE1500E8333F /* ListExtension.swift in Sources */,
+				CB6D17A42FA3983100ECD5AE /* UnifiedToggleInputPageContextChipViewModel.swift in Sources */,
 				7B4F87EA2D0738F90010B18F /* SiriEducationView.swift in Sources */,
 				AA4D6A6A23DB87B1007E8790 /* AppIconManager.swift in Sources */,
 				8563A03C1F9288D600F04442 /* BrowserChromeManager.swift in Sources */,
@@ -12900,6 +12949,7 @@
 				CBD72E6E2E2528EB00DB0938 /* ClearInteractionStateTask.swift in Sources */,
 				C1A1AEDC2EBCF97400D49A2F /* AutofillExtensionPromptViewController.swift in Sources */,
 				C1A1AEDD2EBCF97400D49A2F /* AutofillExtensionPromptViewModel.swift in Sources */,
+				CB6D17A82FA39FC900ECD5AE /* AIChatContextualUTIHost.swift in Sources */,
 				C11F41132F2CCBD800C126C3 /* AIChatContextualChatSessionState.swift in Sources */,
 				C1A1AEDE2EBCF97400D49A2F /* AutofillExtensionPromptView.swift in Sources */,
 				C1E28C2E2F50F2D3007B8230 /* OnboardingView+RestorePromptDialogContent.swift in Sources */,
@@ -13452,6 +13502,7 @@
 				C19888EC2EF18B69004612AD /* DaxEasterEggLogoStoreTests.swift in Sources */,
 				98E563FF2DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */,
 				98E564002DE8B32D00E6E75F /* MockTimer.swift in Sources */,
+				CB6D17A22FA397FC00ECD5AE /* UnifiedToggleInputPageContextChipViewModelTests.swift in Sources */,
 				80C947FE2F53E819002EDB79 /* Tab+ConvenienceInitializer.swift in Sources */,
 				9FB099162EEA3F6C00CB7394 /* WhatsNewRepositoryTests.swift in Sources */,
 				98E564012DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift in Sources */,
@@ -13475,6 +13526,8 @@
 				4BC21A2F27238B7500229F0E /* RunLoopExtensionTests.swift in Sources */,
 				C18390CA2F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift in Sources */,
 				C18390CC2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift in Sources */,
+				BBA0000000000000000A0004 /* TabInputStateTests.swift in Sources */,
+				BBA0000000000000000D0004 /* UnifiedInputStateStoreTests.swift in Sources */,
 				A1B2C3D4E5F60014A1B2C3D4 /* UnifiedToggleInputReasoningTests.swift in Sources */,
 				F101D53CD31E95F9C9FE2AC1 /* UnifiedToggleInputCoordinatorAttachmentLimitsTests.swift in Sources */,
 				AABB00010001000100010009 /* UTIAttachmentPolicyTests.swift in Sources */,
@@ -13610,6 +13663,7 @@
 				569437292BDD487600C0881B /* SyncCredentialsAdapterTests.swift in Sources */,
 				6AC98419288055C1005FA9CA /* BarsAnimatorTests.swift in Sources */,
 				8536A1CA209AF6490050739E /* HomeRowReminderTests.swift in Sources */,
+				CB6D17AA2FA4B57900ECD5AE /* AIChatContextualUTIHostTests.swift in Sources */,
 				9FA0AF1E2EB4894A00713387 /* RemoteMessagingPixelReporterTests.swift in Sources */,
 				5650E36F2D3E8E5900D41ECF /* PageRefreshMonitorExtensionTests.swift in Sources */,
 				9FE59CDD2E31AD9D00C4B65D /* DefaultBrowserPiPTutorialURLProviderTests.swift in Sources */,

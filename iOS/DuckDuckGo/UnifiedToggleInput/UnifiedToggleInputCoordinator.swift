@@ -438,6 +438,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState = .hidden
         isInputVisibleForKeyboard = true
         resetToolsSelection()
+        // The live state is no longer authoritative for the previous tab; clearing
+        // currentTabUID prevents the next activateForTab from snapshotting the
+        // (now tool-cleared) live state back over the previous tab's stored entry.
+        currentTabUID = nil
 
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)

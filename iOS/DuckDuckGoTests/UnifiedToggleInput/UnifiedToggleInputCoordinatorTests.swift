@@ -1603,6 +1603,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
 
     private func makeSUT(stateStore: UnifiedInputStateStoring) -> UnifiedToggleInputCoordinator {
         UnifiedToggleInputCoordinator(
+            host: .omnibar,
             isToggleEnabled: true,
             preferences: MockAIChatPreferencesForPerTab(),
             toggleModeStorage: MockToggleModeStorageForPerTab(),

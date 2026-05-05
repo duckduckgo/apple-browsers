@@ -181,20 +181,36 @@ actor SubscriptionRequestCoalescer {
         case forceRefresh
     }
 
-    private var inFlightTasks: [FetchMode: Task<DuckDuckGoSubscription?, Error>] = [:]
+    // Keyed by FetchMode. Presence signals "work is in flight"; the array holds joiners waiting
+    // for the result. Using continuations instead of Task.value prevents joiner cancellation
+    // from propagating to the shared work or to other joiners.
+    private var inFlight: [FetchMode: [CheckedContinuation<DuckDuckGoSubscription?, Error>]] = [:]
 
-    /// If a task for `forceRefresh` is already in flight, suspends and returns its result.
-    /// Otherwise, creates a new task from `work`, stores it, awaits it, and cleans up.
+    /// If work for `forceRefresh` is already in flight, suspends until it completes and returns
+    /// its result. Otherwise, runs `work`, resolves all waiting joiners, and returns the result.
+    /// Cancelling any individual joiner does not affect the shared work or other joiners.
     func coalesce(forceRefresh: Bool, work: @Sendable @escaping () async throws -> DuckDuckGoSubscription?) async throws -> DuckDuckGoSubscription? {
         let mode: FetchMode = forceRefresh ? .forceRefresh : .cached
-        if let existingTask = inFlightTasks[mode] {
-            return try await existingTask.value
+        if inFlight[mode] != nil {
+            return try await withCheckedThrowingContinuation { continuation in
+                inFlight[mode]?.append(continuation)
+            }
         }
 
-        let task = Task<DuckDuckGoSubscription?, Error> { try await work() }
-        inFlightTasks[mode] = task
-        defer { inFlightTasks.removeValue(forKey: mode) }
-        return try await task.value
+        inFlight[mode] = []
+
+        let result: Result<DuckDuckGoSubscription?, Error>
+        do {
+            result = .success(try await work())
+        } catch {
+            result = .failure(error)
+        }
+
+        let waiters = inFlight.removeValue(forKey: mode) ?? []
+        for continuation in waiters {
+            continuation.resume(with: result)
+        }
+        return try result.get()
     }
 }
 

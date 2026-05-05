@@ -63,8 +63,8 @@ final class SubscriptionRequestCoalescerTests: XCTestCase {
         XCTAssertEqual(counter.value, 2, "Sequential calls must each invoke work independently")
     }
 
-    /// Verifies that after a call completes, its Task is removed from inFlightTasks (via `defer`)
-    /// so the next call runs fresh work and does not return the previous task's cached result.
+    /// Verifies that after a call completes, its entry is removed from `inFlight`
+    /// so the next call runs fresh work and does not return the previous result.
     func testCoalesce_CompletedTaskIsNotReusedBySubsequentCall() async throws {
         let coalescer = SubscriptionRequestCoalescer()
         let first = SubscriptionMockFactory.appleSubscription
@@ -92,11 +92,11 @@ final class SubscriptionRequestCoalescerTests: XCTestCase {
     //
     // The tests below use unstructured Tasks + semaphore handshake to guarantee ordering:
     //   1. `firstTask` is created and we wait for its work to signal `workIsInFlight`,
-    //      confirming inFlightTasks[forceRefresh] is populated.
+    //      confirming inFlight[mode] is populated.
     //   2. Only then is `secondTask` created, so it is guaranteed to find the in-flight
-    //      task and join rather than create a new one.
+    //      entry and register its continuation rather than create a new one.
     //   3. A 1 ms sleep before releasing the gate gives `secondTask` time to call the
-    //      actor and suspend on `existingTask.value`. Actor calls complete in nanoseconds;
+    //      actor and register its continuation. Actor calls complete in nanoseconds;
     //      1 ms is ~1000× headroom, making this robust without being flaky.
 
     func testCoalesce_ConcurrentCallsSameKeyShareOneExecution() async throws {
@@ -138,8 +138,8 @@ final class SubscriptionRequestCoalescerTests: XCTestCase {
 
     // MARK: - Cancellation behaviour
 
-    /// When the originating task is cancelled while its work is in-flight, joiners that are
-    /// already suspended on `existingTask.value` must receive `CancellationError`, not hang.
+    /// When the originating task is cancelled while its work is in-flight, joiners waiting
+    /// on their continuation must receive `CancellationError`, not hang.
     func testCoalesce_CancelledOriginator_JoinerReceivesCancellationError() async throws {
         let coalescer = SubscriptionRequestCoalescer()
         let workIsInFlight = AsyncSemaphore()
@@ -174,11 +174,55 @@ final class SubscriptionRequestCoalescerTests: XCTestCase {
 
         do {
             _ = try await joinerTask.value
-            XCTFail("Joiner should propagate CancellationError from originator's task")
+            XCTFail("Joiner should receive CancellationError when originator's work is cancelled")
         } catch is CancellationError {}
     }
 
-    /// After an originator's task is cancelled and removed from `inFlightTasks`, a new caller
+    /// Cancelling one joiner must not affect other joiners or the shared work.
+    func testCoalesce_CancelledJoiner_DoesNotAffectOtherJoinersOrWork() async throws {
+        let coalescer = SubscriptionRequestCoalescer()
+        let subscription = SubscriptionMockFactory.appleSubscription
+        let workIsInFlight = AsyncSemaphore()
+        let releaseGate = AsyncSemaphore()
+
+        let originatorTask = Task<DuckDuckGoSubscription?, Error> {
+            try await coalescer.coalesce(forceRefresh: false) {
+                workIsInFlight.signal()
+                await releaseGate.wait()
+                return subscription
+            }
+        }
+
+        await workIsInFlight.wait()
+
+        let cancelledJoiner = Task<DuckDuckGoSubscription?, Error> {
+            try await coalescer.coalesce(forceRefresh: false) {
+                XCTFail("Joiner's work must not execute")
+                return nil
+            }
+        }
+
+        let survivingJoiner = Task<DuckDuckGoSubscription?, Error> {
+            try await coalescer.coalesce(forceRefresh: false) {
+                XCTFail("Joiner's work must not execute")
+                return nil
+            }
+        }
+
+        try await Task.sleep(nanoseconds: 1_000_000)  // let both joiners register their continuations
+        cancelledJoiner.cancel()
+        releaseGate.signal()
+
+        _ = try? await cancelledJoiner.value  // drain (may throw CancellationError)
+
+        let originatorResult = try await originatorTask.value
+        let survivingResult = try await survivingJoiner.value
+
+        XCTAssertEqual(originatorResult, subscription, "Originator must complete normally")
+        XCTAssertEqual(survivingResult, subscription, "Surviving joiner must receive the work result unaffected by the cancelled joiner")
+    }
+
+    /// After an originator's task is cancelled and removed from `inFlight`, a new caller
     /// must run its own fresh work rather than hang or silently receive nil.
     func testCoalesce_AfterCancelledTask_NewCallerRunsFreshWork() async throws {
         let coalescer = SubscriptionRequestCoalescer()

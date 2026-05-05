@@ -291,13 +291,17 @@ final class NewAddressBarPickerModalPromptProviderIntegrationTests {
         )
         pickerStorage = NewAddressBarPickerStore(keyValueStore: mockKeyValueStore)
 
+        let mockStatisticsStore = MockStatisticsStore()
+        mockStatisticsStore.installDate = Calendar.current.date(byAdding: .day, value: -7, to: Date())
+
         validator = NewAddressBarPickerDisplayValidator(
             aiChatSettings: mockAIChatSettings,
             featureFlagger: mockFeatureFlagger,
             experimentalAIChatManager: experimentalAIChatManager,
             appSettings: mockAppSettings,
             pickerStorage: pickerStorage,
-            searchExperienceOnboardingProvider: MockOnboardingSearchExperienceProvider()
+            searchExperienceOnboardingProvider: MockOnboardingSearchExperienceProvider(),
+            statisticsStore: mockStatisticsStore
         )
     }
 

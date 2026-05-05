@@ -339,6 +339,7 @@ class MainViewController: UIViewController {
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
     lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
+    var unifiedInputStateStore: UnifiedInputStateStore?
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
 
@@ -2071,7 +2072,7 @@ class MainViewController: UIViewController {
     }
 
     private func displayedTextEntryMode(for tab: Tab) -> TextEntryMode {
-        tab.preferredTextEntryMode.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+        tab.unifiedInputState.preferredTextEntryMode.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
     }
 
     func refreshOmniBar() {
@@ -2086,6 +2087,12 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             if let tabModel = tabManager.currentTabsModel.currentTab {
                 viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tabModel))
+                // Only activate from the model when there's no TabViewController to drive
+                // refreshUnifiedToggleInput(for:) below — otherwise it would fire activateForTab
+                // a second time for the same uid, causing redundant attachment teardown.
+                if currentTab == nil {
+                    unifiedToggleInputCoordinator?.activateForTab(tabModel.uid)
+                }
             }
             updateBrowsingMenuHeaderDataSource()
             if let tab = currentTab {
@@ -4323,7 +4330,7 @@ extension MainViewController: OmniBarDelegate {
 
     /// Shared commit logic for all toggle paths (iPad, iPhone editing state, unified toggle input).
     func commitToggleMode(_ mode: TextEntryMode) {
-        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
+        tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode = mode
         toggleModeStorage.save(mode)
     }
     

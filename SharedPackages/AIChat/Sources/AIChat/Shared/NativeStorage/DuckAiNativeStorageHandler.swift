@@ -59,14 +59,21 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
                 let dataStore = try DuckAiNativeDataStore(
                     databaseURL: path.appendingPathComponent("chats.db"),
                     filesDirectoryURL: path.appendingPathComponent("files"),
-                    key: encryptionKey
+                    key: encryptionKey,
+                    setupCompletion: { result in
+                        switch result {
+                        case .success:
+                            pixelFiring.fire(.initSuccess)
+                        case .failure(let error):
+                            pixelFiring.fire(.initError(error))
+                        }
+                    }
                 )
                 self.backing = DuckAiNativeDiskStorageHandler(
                     settingsStore: settingsStore.throwingKeyedStoring(),
                     dataStore: dataStore
                 )
                 Logger.aiChat.debug("DuckAiNativeStorageHandler: disk store initialized at \(path.path)")
-                pixelFiring.fire(.initSuccess)
             } catch {
                 pixelFiring.fire(.initError(error))
                 throw error
@@ -103,4 +110,6 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     public func isMigrationDone() throws -> Bool { try backing.isMigrationDone() }
     public func isMigrationDone(key: String) throws -> Bool { try backing.isMigrationDone(key: key) }
     public func markMigrationDone(key: String) throws { try backing.markMigrationDone(key: key) }
+
+    public var setupSucceeded: Bool? { backing.setupSucceeded }
 }

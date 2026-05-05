@@ -32,8 +32,8 @@ public protocol SubscriptionCachingService {
     /// Stores a subscription in the cache with appropriate expiration.
     func set(_ subscription: DuckDuckGoSubscription) async
 
-    /// Clears the cached subscription.
-    func reset() async
+    /// Clears the cached subscription. Synchronous: guaranteed complete on return.
+    func reset()
 }
 
 /// Default implementation backed by `UserDefaultsCache<DuckDuckGoSubscription>`.
@@ -81,7 +81,9 @@ public actor DefaultSubscriptionCachingService: SubscriptionCachingService {
         }
     }
 
-    public func reset() {
+    // nonisolated: subscriptionCache is nonisolated(unsafe) and UserDefaults is thread-safe,
+    // so no actor isolation is needed. This preserves the synchronous clearing guarantee.
+    public nonisolated func reset() {
         subscriptionCache.reset()
     }
 }

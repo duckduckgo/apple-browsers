@@ -40,7 +40,7 @@ public final class SubscriptionCachingServiceMock: SubscriptionCachingService {
         cachedSubscription = subscription
     }
 
-    public func reset() async {
+    public func reset() {
         resetCalled = true
         cachedSubscription = nil
     }

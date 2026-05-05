@@ -323,7 +323,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             }
         } catch SubscriptionManagerError.noTokenAvailable {
             Logger.subscription.log("No Subscription available")
-            await subscriptionCachingService.reset()
+            subscriptionCachingService.reset()
         } catch {
             Logger.subscription.error("Failed to load initial subscription data: \(error, privacy: .public)")
         }
@@ -364,7 +364,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             do {
                 tokenContainer = try await getTokenContainer(policy: .localValid)
             } catch SubscriptionManagerError.noTokenAvailable {
-                await subscriptionCachingService.reset()
+                subscriptionCachingService.reset()
                 throw SubscriptionManagerError.noTokenAvailable
             } catch {
                 // Token refresh failed — fall back to cache if available
@@ -377,7 +377,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 remoteSubscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken)
             } catch SubscriptionEndpointServiceError.noData {
                 // No subscription on backend — clear cache and notify if state changed
-                await subscriptionCachingService.reset()
+                subscriptionCachingService.reset()
                 if previousSubscription != nil {
                     NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: nil)
                 }
@@ -415,7 +415,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     public func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws -> DuckDuckGoSubscription {
-        await subscriptionCachingService.reset()
+        subscriptionCachingService.reset()
         let enrichedSubscription = try await enrichSubscriptionWithFeatures(subscription)
         await subscriptionCachingService.set(enrichedSubscription)
         NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: enrichedSubscription])
@@ -444,7 +444,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     public func clearSubscriptionCache() {
-        Task { await subscriptionCachingService.reset() }
+        subscriptionCachingService.reset()
     }
 
     /// Enriches a subscription with tier features fetched from the backend.
@@ -674,7 +674,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         Logger.subscriptionTokensManagement.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI ? "true" : "false"), User Initiated: \(userInitiated ? "true" : "false")")
 
         try? await oAuthClient.logout()
-        await subscriptionCachingService.reset()
+        subscriptionCachingService.reset()
 
         if notifyUI {
                 updateCachedIsUserAuthenticated(false, userInitiated: userInitiated)

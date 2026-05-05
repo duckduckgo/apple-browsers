@@ -140,7 +140,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var inputMode: TextEntryMode = .aiChat
     private let toggleModeStorage: ToggleModeStoring
     private(set) var committedInputMode: TextEntryMode = .search
-    private let subscriptionManager: any SubscriptionManager
     private(set) var cardPosition: UnifiedToggleInputCardPosition = .bottom
     private(set) var isInputVisibleForKeyboard: Bool = true
     private var isAwaitingTopOmnibarKeyboardPresentation = false
@@ -220,7 +219,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.toggleModeStorage = toggleModeStorage
-        self.subscriptionManager = subscriptionManager
         self.modelStore = UTIModelStore(
             modelsService: modelsService,
             preferences: preferences,
@@ -870,26 +868,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
 
         return UIMenu(options: .singleSelection, children: actions)
-    }
-
-    // MARK: - Subscription Resolution
-
-    nonisolated private func resolveSubscriptionState() async -> SubscriptionState {
-        do {
-            guard let subscription = try await subscriptionManager.getSubscription(),
-                  subscription.isActive,
-                  let tier = subscription.tier else {
-                return .free
-            }
-            let userTier: AIChatUserTier
-            switch tier {
-            case .plus: userTier = .plus
-            case .pro: userTier = .pro
-            }
-            return SubscriptionState(userTier: userTier, hasActiveSubscription: true)
-        } catch {
-            return .free
-        }
     }
 
     private func updateReasoningPicker() {

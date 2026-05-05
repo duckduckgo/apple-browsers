@@ -68,7 +68,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725495563625
     case adBlockingExtension
 
-    /// Ad Blocking Extension public rollout subfeature
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214534686173932
     case adBlockingExtensionEnabledByDefault
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213538183403577

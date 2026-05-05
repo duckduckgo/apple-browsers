@@ -155,6 +155,21 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testShouldDisplayPicker_WhenInstalledLessThan24HoursAgo_ReturnsFalse() {
+        // Given: install was 23 hours and 59 minutes ago — i.e. almost-but-not-quite a full day.
+        // This pins the "1 day cooldown means 24 hours, not a midnight boundary" intent.
+        setupShowCriteriaMet()
+        setupNoExclusionCriteria()
+        let almostOneDay = TimeInterval.hours(23) + TimeInterval.minutes(59)
+        mockStatisticsStore.installDate = Date().addingTimeInterval(-almostOneDay)
+
+        // When
+        let result = validator.shouldDisplayNewAddressBarPicker()
+
+        // Then
+        XCTAssertFalse(result)
+    }
+
     func testShouldDisplayPicker_WhenInstallCooldownExactlyPassed_ReturnsTrue() {
         // Given
         setupShowCriteriaMet()

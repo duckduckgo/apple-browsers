@@ -57,11 +57,7 @@ struct DuckAIToggleDebugView: View {
     }
 
     private static func markCooldownPassed() {
-        StatisticsUserDefaults().installDate = Calendar.current.date(
-            byAdding: .day,
-            value: -NewAddressBarPickerDisplayValidator.installCooldownDays,
-            to: Date()
-        )
+        StatisticsUserDefaults().installDate = Date().addingTimeInterval(-NewAddressBarPickerDisplayValidator.installCooldown)
     }
 
     private static func showTogglePrompt() {

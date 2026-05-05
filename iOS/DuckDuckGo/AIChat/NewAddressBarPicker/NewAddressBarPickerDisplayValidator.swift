@@ -32,7 +32,7 @@ protocol NewAddressBarPickerDisplayValidating {
 
 struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating {
 
-    static let installCooldownDays = 1
+    static let installCooldown: TimeInterval = .days(1)
 
     // MARK: - Dependencies
     
@@ -113,8 +113,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
 
     private var hasInstallCooldownPassed: Bool {
         guard let installDate = statisticsStore.installDate else { return false }
-        let daysSinceInstall = Calendar.current.dateComponents([.day], from: installDate, to: Date()).day ?? 0
-        return daysSinceInstall >= Self.installCooldownDays
+        return Date().timeIntervalSince(installDate) >= Self.installCooldown
     }
 
     // MARK: - Exclusion Criteria Variables

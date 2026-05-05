@@ -1784,6 +1784,8 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
     func test_submitPrompt_clearsStoreTextAndAttachmentsEagerly() {
         let store = FakeInputStateStore()
         let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "image-model", supportsImageUpload: true)]
+        sut.modelStore.attachmentLimits = makeLimits()
         sut.activateForTab("tab-A")
         sut.setText("ask claude something")
         sut.addImageAttachment(image: UIImage(), fileName: "x.jpg")
@@ -2101,6 +2103,13 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
             supportsImageUpload: supportsImageUpload,
             supportedTools: [.webSearch],
             entityHasAccess: true
+        )
+    }
+
+    private func makeLimits() -> AIChatAttachmentTierLimits {
+        AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 5, maxInputCharsWithAttachments: 4500)
         )
     }
 

@@ -35,6 +35,7 @@ extension OnboardingRebranding.OnboardingView {
 
         @State private var showSkipOnboarding = false
         @State private var shouldStartTyping = false
+        @State private var showContent = false
         @Binding var isVisible: Bool
 
         init(
@@ -71,11 +72,14 @@ extension OnboardingRebranding.OnboardingView {
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)
                 ),
+                showContent: $showContent,
                 title: {
-                    TypingText(Copy.title, startAnimating: $shouldStartTyping)
-                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .font(onboardingTheme.typography.title)
-                        .multilineTextAlignment(.center)
+                    TypingText(Copy.title, startAnimating: $shouldStartTyping, onTypingFinished: {
+                        withAnimation { showContent = true }
+                    })
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.title)
+                    .multilineTextAlignment(.center)
                 },
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
@@ -93,16 +97,7 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
             )
-            // Delay typing start until the bubble's fade-in completes; reset on hide.
-            .onChange(of: isVisible) { showing in
-                if showing {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInAnimationDuration) {
-                        shouldStartTyping = true
-                    }
-                } else {
-                    shouldStartTyping = false
-                }
-            }
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
 
         /// Runs a three-phase child transition (hide -> resize -> show) to switch to the skip dialog.

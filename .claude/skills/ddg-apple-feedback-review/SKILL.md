@@ -40,6 +40,13 @@ blocks WebFetch and most non-allowlisted MCP tools for the rest of the
 session once Asana is touched. If the user needs WebFetch, Slack, or other
 non-allowlisted tools afterwards, run this skill in a separate session.
 
+The hook in this environment is also stricter about **Bash**: once Asana
+has been touched, Bash calls that look like they're "preparing report
+content to post back" are denied, including `python3`, `jq`, and `rm` on
+scratch files. This skill is therefore designed to run **without Bash
+post-Asana** - all task data stays in tool-call context, the report HTML
+is built in-message, and there are no scratch files to clean up.
+
 ## Parameters
 
 This skill accepts optional arguments. Parse them from the free-text args
@@ -157,17 +164,12 @@ If **keywords** were provided, make one search request **per keyword** using
 the `text` parameter, then merge and deduplicate results by task GID. This is
 necessary because `asana_search_tasks` accepts only a single text query.
 
-Before the first request, create a per-run scratch directory:
-
-```
-scratch_dir="$(mktemp -d /tmp/feedback-review.XXXXXX)"
-```
-
-Use this same directory for every spill file created during the run. When
-keywords are present, use the keyword's zero-based position in the parsed
-keyword list as the `query_key`; when no keywords are present, use `all`. Do
-not derive filenames from raw keyword text because spaces, slashes, and
-punctuation can produce unsafe or colliding paths.
+**No scratch directory.** This skill keeps all task data in tool-call context
+across steps 2-7 and assembles the final report HTML directly in step 8.5's
+`asana_update_task` call. There is no `mktemp` / `$scratch_dir`, no on-disk
+JSON dumps, no `jq` pipelines, and no cleanup step. If a step here ever
+suggests writing Asana data to disk, treat that as a bug in the skill and
+ignore it.
 
 The `opt_fields` below intentionally **excludes `notes`** - the macOS Feedback
 project alone returns ~80+ tasks per day and the full notes blob blows past the
@@ -199,25 +201,16 @@ ceiling on long windows.
 
 **Spillover fallback (if a Privacy Pro / Internal / App Store Reviews query
 spills).** Uncommon at `limit=100` for those projects, but possible on a
-30-day window or after schema bloat. The MCP server saves the file at
-`/Users/<you>/.claude/projects/<project>/<session>/tool-results/...txt` and
-returns the path. When that happens:
-
-1. Use `jq` directly on the file to project to a slim shape, e.g.:
-   ```
-   jq '.data | map({gid, name, created_at, custom_fields: (.custom_fields | map({name, display_value}))})' <path> > "$scratch_dir/<bucket>_<project_gid>_<query_key>_pN.json"
-   ```
-2. Read the `created_at` of the last element for the next pagination cursor.
-3. Merge pages later with `jq -s 'add | unique_by(.gid) | sort_by(.created_at) | reverse' "$scratch_dir"/<bucket>_*_p*.json > "$scratch_dir/<bucket>_all.json"`. `add` concatenates all slurped page arrays regardless of count - use it instead of literal `.[0] + .[1] + ...` which only handles a fixed number of files.
-
-If the run is in an environment where Bash on Asana MCP data is blocked
-(error reads "Organization policy prohibits using Asana MCP tools and
-Bash/file tools in the same session"), there is no `jq` recovery available
-for those projects. In that case, drop their `custom_fields` from
-`opt_fields` to match the iOS / macOS Feedback slim-default treatment, and
-sample per-cluster in step 6 the same way. iOS Feedback / macOS Feedback
-already use slim `opt_fields` by default, so this only affects the other
-projects when they spill.
+30-day window or after schema bloat. When the MCP server reports a
+tool-result spillover for those projects, drop
+`custom_fields.name,custom_fields.display_value` from their `opt_fields`
+to match the slim-default treatment used for iOS / macOS Feedback, and
+sample per-cluster in step 6 the same way. Do **not** attempt to recover
+the spilled file via `jq`, `cat`, or any other shell tool - this skill
+does not assume Bash is available post-Asana, and Bash will likely be
+denied at this point in the session even if it appears to exist. iOS
+Feedback / macOS Feedback already use slim `opt_fields` by default, so
+this only affects the other projects when they spill.
 
 **First request (per project, per keyword, or once if no keywords):**
 
@@ -366,15 +359,15 @@ After all groups in a bucket, add a brief bucket summary:
 - Number of distinct issue groups identified
 - Top 3 issues by volume
 
-**Generate link lists programmatically, do not hand-type GIDs.** A single
-mistyped digit breaks the link silently. After clustering, persist each
-cluster's GID list to a scratch file inside `$scratch_dir` (e.g.
-`"$scratch_dir/<cluster>_gids.json"`) and emit the
-`<li><a href="...">name</a></li>` HTML from that file in one shot using
-whichever tool fits (jq, python, etc.). Reusing the same per-cluster GID
-file in step 6 also keeps the metadata extraction cheap. Keeping these
-files inside `$scratch_dir` (rather than bare `/tmp/`) means the step 9
-cleanup catches them automatically and concurrent runs cannot collide.
+**Don't hand-type GIDs from memory.** A single mistyped digit breaks the link
+silently. The GIDs you need are already in the JSON tool-result text returned
+by `asana_search_tasks` (step 2) and `asana_get_task` (step 6). When you emit
+each `<li><a href="https://app.asana.com/0/<project_gid>/<task_gid>"><name></a></li>`,
+transcribe the GID and name verbatim from those tool results - copy the digits,
+do not paraphrase or abbreviate. HTML-escape `&`, `<`, `>`, and `"` in the name;
+everything else (Unicode, emoji, punctuation, apostrophes) passes through. There
+is no scratch-file step here - the tool results are still in your context, so
+build the link list directly in the same `asana_update_task` call.
 
 ### 6. Top 3 deep dive (per platform feedback bucket)
 
@@ -516,23 +509,23 @@ explicitly accepted set. Let the formatting skill choose how to emit any
 given markdown construct (headings, lists, tables, links, paragraph breaks)
 - don't hand-craft HTML based on assumptions about what Asana renders.
 
-**Pass the HTML directly as `html_notes` in the same tool call - do not
-write to a file and read it back.** Real newlines in the `html_notes`
-argument are preserved end-to-end through the MCP layer to Asana. The file
-roundtrip (`Write` to `/tmp/report.html`, then `Read` it back) doubles the
-work and only mattered when assembling via a bash heredoc, which loses real
-newlines.
+**Pass the HTML directly as `html_notes` in the same tool call.** Real
+newlines in the `html_notes` argument round-trip through the MCP layer to
+Asana correctly. Build the HTML in-message and call `asana_update_task`
+with the assembled string in one shot.
 
-If you do need a file (e.g. the report is large enough that holding the
-full HTML in tool-argument context is awkward), use the `Write` tool
-directly and put it inside `$scratch_dir` (e.g.
-`"$scratch_dir/report.html"`) so the step 9 cleanup catches it and
-concurrent runs cannot collide on a shared `/tmp/report.html` path. Real
-newlines in your input become real newlines on disk. Avoid quoted bash
-heredocs (`cat << 'EOF'`); they preserve `\n` as the literal two-character
-escape sequence, which Asana renders as visible `\n`. Avoid unquoted
-heredocs too (`cat << EOF`) - they trigger shell expansion on `$` and
-backticks inside the report.
+Do **not**:
+
+- Write the HTML to a file and read it back. The roundtrip is unnecessary
+  for any report size that fits in Asana's `html_notes` field, and writing
+  Asana data to disk violates the persistence rules in the privacy section.
+- Assemble the HTML in a bash heredoc (`cat << EOF` or `cat << 'EOF'`).
+  The unquoted form expands `$` and backticks inside the report; the quoted
+  form preserves `\n` as the literal two-character escape sequence, which
+  Asana renders as visible `\n`. More fundamentally, Bash will likely be
+  denied at this point in the session, so heredocs are not a path forward.
+- Shell out to `python` or any other interpreter to render the HTML. Same
+  Bash-denial reason. Build the HTML in tool-call arguments instead.
 
 **Do not insert blank lines between block-level tags.** Asana already renders
 block elements (`<h1>`, `<h2>`, `<ul>`, `<ol>`, `<pre>`, `<blockquote>`) with
@@ -582,26 +575,14 @@ Output a single line confirming the write, with a clickable link back to the
 task. Do NOT also paste the full report inline - the user asked for it to live
 in Asana.
 
-### 9. Clean up scratch files
+### 9. Done
 
-Run this regardless of whether the report was written to Asana or rendered
-inline. The scratch directory from step 2 contains Asana data and must be
-removed before the run ends. As long as step 5's per-cluster GID lists and
-the optional step 8.4 report file were written inside `$scratch_dir` (as
-those steps direct), a single `rm -rf` covers everything:
+This skill keeps all Asana data in tool-call context only - no scratch
+files, no temp directories, nothing on disk. There is no cleanup step.
 
-```
-rm -rf "$scratch_dir"
-```
-
-Do not use bare `/tmp/*_gids.json` or `/tmp/report.html` globs - they would
-match files belonging to other concurrent runs or unrelated work. The MCP
-server's own tool-result spillover under
+The MCP server's own tool-result spillover under
 `~/.claude/projects/.../tool-results/` is managed by the harness and should
 not be touched.
-
-If the run aborts partway through (cap hit, sensitive data halt, user
-declined the overwrite), still run the cleanup before reporting back.
 
 ## Privacy and data protection
 
@@ -612,19 +593,16 @@ declined the overwrite), still run the cleanup before reporting back.
   title. Treat these as PII and replace with "App Store reviewer" in link
   labels, even though they are public on the App Store.
 - Do **not** persist Asana data beyond the session.
-  - **Allowed (ephemeral, in-session):** scratch files inside the per-run
-    `$scratch_dir` (created via `mktemp -d` in step 2) used for jq/python
-    pipelines - the bulk-search response routinely exceeds the inline
-    tool-result cap, so a scratch file is the practical primitive. Also
-    allowed: the MCP server's own tool-result spillover written under
-    `~/.claude/projects/<project>/<session>/tool-results/`.
-  - **Not allowed:** writing Asana data to bare `/tmp/` paths (use
-    `$scratch_dir` so concurrent runs cannot collide and step 9 cleanup
-    catches everything), committing Asana data to the repo, writing it
-    under `.claude/` (outside the auto-managed cache), saving it to memory,
-    pasting it into other Asana tasks beyond the report destination, or
-    including it in any chat output beyond the report itself.
-  - **Always** clean up `$scratch_dir` at the end of the run - see step 9.
+  - **Allowed (ephemeral, in-session):** task data held in tool-call context
+    while the skill runs, plus the MCP server's own tool-result spillover
+    under `~/.claude/projects/<project>/<session>/tool-results/` (managed
+    by the harness, not by this skill).
+  - **Not allowed:** writing Asana data to disk in any form - no scratch
+    directories, no `/tmp/` files, no Write-tool dumps under `.claude/` or
+    elsewhere, no `Write` of the rendered report HTML. Also not allowed:
+    committing Asana data to the repo, saving it to memory, pasting it
+    into other Asana tasks beyond the report destination, or including it
+    in any chat output beyond the report itself.
 - Web searches and external API calls after accessing Asana are blocked by
   the session-level lethal-trifecta hook, not by this skill. If you hit a
   block, that's the hook doing its job - do not retry. See
@@ -663,10 +641,10 @@ declined the overwrite), still run the cleanup before reporting back.
 - **Dumping the full report inline AND writing it to Asana.** When `asana_url`
   is provided, the inline render is replaced by a one-line confirmation. Only
   fall back to inline output if the user declined the overwrite in step 8.3.
-- **Assembling the report HTML in a quoted bash heredoc.** `cat << 'EOF'`
-  preserves `\n` as the literal two-character escape sequence, which Asana
-  renders as visible `\n` in the task description. Use the `Write` tool or a
-  python heredoc instead - see step 8.4.
+- **Trying to render the HTML via `python3` or any other Bash command.** Bash
+  calls that look like report-rendering are denied after Asana access in this
+  environment. Build the HTML directly in the `asana_update_task` argument -
+  see step 8.4.
 - **Pretty-printing `html_notes` with blank lines between block tags.** Asana
   treats `\n\n` between block elements like `</h2>` and `<ul>` as an extra
   blank line on top of each block's natural vertical spacing, producing
@@ -674,9 +652,11 @@ declined the overwrite), still run the cleanup before reporting back.
   between block tags. `\n\n` between purely inline content (text, `<strong>`,
   `<a>`, etc. with no surrounding block tag) is correct and is the only way
   to get a paragraph break since Asana forbids `<p>`. See step 8.4.
-- **Hand-typing GIDs into the link list HTML.** A single mistyped digit gives
-  a broken link that looks correct at a glance. Generate the link list from
-  the per-cluster GID file with `jq` (snippet in step 5).
+- **Hand-typing GIDs into the link list HTML from memory.** A single mistyped
+  digit gives a broken link that looks correct at a glance. Transcribe each
+  GID character-by-character from the `asana_search_tasks` / `asana_get_task`
+  tool result that's still in your context - do not retype from memory or
+  paraphrase. See step 5.
 - **Including `custom_fields` in the bulk-fetch `opt_fields` for iOS Feedback
   or macOS Feedback.** These two projects carry 30+ custom fields per task and
   a 100-task page with full custom fields reliably spills. Use slim `opt_fields`
@@ -686,16 +666,11 @@ declined the overwrite), still run the cleanup before reporting back.
   slim-default for the heavy projects, the deep dive runs against a per-cluster
   sample, not the full population. Make the sample size explicit so the reader
   knows the limit.
-- **Writing the report HTML to a file then reading it back to pass to
-  `asana_update_task`.** Pass the HTML directly as `html_notes` in the same
-  tool call - real newlines round-trip through the MCP layer fine. The file
-  roundtrip is only needed for unusually large reports, and even then the
-  file goes inside `$scratch_dir`, never bare `/tmp/`. See step 8.4.
-- **Cleaning up with bare `/tmp/*_gids.json` or `/tmp/report.html` globs.**
-  Those patterns match files belonging to other concurrent runs or
-  unrelated work. Per-cluster GID files (step 5) and the optional report
-  file (step 8.4) both live inside `$scratch_dir`, so a single
-  `rm -rf "$scratch_dir"` is the only cleanup needed. See step 9.
+- **Writing the report HTML to a file (anywhere on disk) before posting.**
+  This skill keeps Asana data in tool-call context only. Pass the assembled
+  HTML directly as `html_notes` - no `Write` to `/tmp/`, no `Write` under
+  `.claude/`, nothing on disk. Real newlines round-trip through MCP fine.
+  See step 8.4 and the privacy section.
 - **Enumerating every task in a cluster's link list.** Cap at 5-10 representative
   tasks by recency. The full list belongs in Asana's project filter, not the
   snapshot. See step 5.

@@ -38,6 +38,7 @@ enum OnboardingSteps: String, CaseIterable {
 /// Defines which onboarding steps should be excluded from the flow
 enum OnboardingExcludedStep: String {
     case addressBarMode
+    case duckPlayerSingle
 }
 
 enum OnboardingRow: String, Decodable {
@@ -154,7 +155,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     private func buildExcludedSteps() -> [String] {
-        var excludedSteps: [String] = []
+        var excludedSteps: [String] = [OnboardingExcludedStep.duckPlayerSingle.rawValue]
 
         let isAIChatOmnibarToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
         let isAIChatOmnibarOnboardingEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)

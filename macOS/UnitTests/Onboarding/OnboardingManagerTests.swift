@@ -100,7 +100,7 @@ class OnboardingManagerTests: XCTestCase {
         let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
             order: "v3",
             env: "development",
             locale: "en",
@@ -128,7 +128,7 @@ class OnboardingManagerTests: XCTestCase {
         let stepDefinitions = StepDefinitions(systemSettings: SystemSettings(rows: ["import"]))
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
             order: "v3",
             env: "development",
             locale: "en",
@@ -159,7 +159,7 @@ class OnboardingManagerTests: XCTestCase {
         let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
             order: "v3",
             env: "development",
             locale: "en",
@@ -190,7 +190,7 @@ class OnboardingManagerTests: XCTestCase {
         let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
             order: "v3",
             env: "development",
             locale: "en",
@@ -221,7 +221,7 @@ class OnboardingManagerTests: XCTestCase {
         let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [],
+            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue],
             order: "v3",
             env: "development",
             locale: "en",

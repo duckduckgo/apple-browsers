@@ -320,9 +320,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let faviconManager = NSApp.delegateTyped.faviconManager
         let tabMetadata: [AIChatTabMetadata] = allTabs.compactMap { tab in
             guard case .url(let url, _, _) = tab.content else { return nil }
-            // The DDG homepage carries no useful page context for an AI chat — hide it from the
-            // multi-tab picker. SERP URLs (which have a `q=` parameter) are NOT excluded.
+            // Hide tabs that carry no useful page context for an AI chat:
+            // - DDG homepage (SERP results with `q=` are still listed)
+            // - `about:blank` (transient state, no content)
+            // - Duck.ai itself (avoids meta-attaching one chat to another)
             guard !url.isDuckDuckGoHomepage else { return nil }
+            guard url != .blankPage else { return nil }
+            guard !url.isDuckAIURL else { return nil }
             let favicon: [AIChatPageContextData.PageContextFavicon]
             if let image = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image,
                let base64 = image.base64PNGDataURL {

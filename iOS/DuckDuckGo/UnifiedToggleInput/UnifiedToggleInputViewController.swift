@@ -31,7 +31,6 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
     func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController)
-    func unifiedToggleInputVCDidTapAttach(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID)
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController)
@@ -89,8 +88,6 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.inputMode
     }
 
-    var attachButtonView: UIView { inputBarView.attachButtonView }
-
     var isVoiceSearchAvailable: Bool {
         get { handler.isVoiceSearchEnabled }
         set {
@@ -147,6 +144,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.toolsMenu = newValue }
     }
 
+    var attachmentMenu: UIMenu? {
+        get { inputBarView.attachmentMenu }
+        set { inputBarView.attachmentMenu = newValue }
+    }
+
     var reasoningPickerMenu: UIMenu? {
         get { inputBarView.reasoningPickerMenu }
         set { inputBarView.reasoningPickerMenu = newValue }
@@ -187,20 +189,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isImageButtonEnabled = newValue }
     }
 
-    var modelSupportsImageAttachments: Bool {
-        get { inputBarView.modelSupportsImageAttachments }
-        set { inputBarView.modelSupportsImageAttachments = newValue }
-    }
-
-    var isAttachmentsFull: Bool {
-        inputBarView.isAttachmentsFull
-    }
-
-    var currentAttachments: [AIChatImageAttachment] {
+    var currentAttachments: [UnifiedToggleInputAttachment] {
         inputBarView.currentAttachments
     }
 
-    func addAttachment(_ attachment: AIChatImageAttachment) {
+    func addAttachment(_ attachment: UnifiedToggleInputAttachment) {
         inputBarView.addAttachment(attachment)
     }
 
@@ -318,10 +311,6 @@ final class UnifiedToggleInputViewController: UIViewController {
             guard let self else { return }
             self.view.window?.layoutIfNeeded()
             self.delegate?.unifiedToggleInputVCDidChangeHeight(self)
-        }
-        barView.onAttachTapped = { [weak self] in
-            guard let self else { return }
-            delegate?.unifiedToggleInputVCDidTapAttach(self)
         }
         barView.onAttachmentRemoved = { [weak self] id in
             guard let self else { return }

@@ -19,6 +19,7 @@
 
 import AIChat
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import UIKit
 
 final class UnifiedToggleInputAttachmentThumbnailView: UIView {
@@ -35,6 +36,7 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
 
     let attachmentId: UUID
     var onRemove: ((UUID) -> Void)?
+    private let attachment: UnifiedToggleInputAttachment
 
     private let imageView: UIImageView = {
         let iv = UIImageView()
@@ -45,6 +47,24 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         iv.layer.borderColor = UIColor(designSystemColor: .lines).cgColor
         iv.translatesAutoresizingMaskIntoConstraints = false
         return iv
+    }()
+
+    private let fileIconView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
+    }()
+
+    private let fileExtensionLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.daxCaptionBold()
+        label.adjustsFontForContentSizeCategory = true
+        label.textAlignment = .center
+        label.textColor = UIColor(designSystemColor: .textPrimary)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
     }()
 
     private lazy var removeButton: UIButton = {
@@ -61,11 +81,12 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         return button
     }()
 
-    init(attachment: AIChatImageAttachment) {
+    init(attachment: UnifiedToggleInputAttachment) {
+        self.attachment = attachment
         self.attachmentId = attachment.id
         super.init(frame: .zero)
-        imageView.image = attachment.image
         setupUI()
+        configure()
     }
 
     @available(*, unavailable)
@@ -84,10 +105,15 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
             removeButton.layer.borderColor = UIColor(designSystemColor: .lines).cgColor
         }
     }
+}
 
-    private func setupUI() {
+private extension UnifiedToggleInputAttachmentThumbnailView {
+
+    func setupUI() {
         translatesAutoresizingMaskIntoConstraints = false
         addSubview(imageView)
+        addSubview(fileIconView)
+        addSubview(fileExtensionLabel)
         addSubview(removeButton)
 
         NSLayoutConstraint.activate([
@@ -95,6 +121,15 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
             imageView.bottomAnchor.constraint(equalTo: bottomAnchor),
             imageView.widthAnchor.constraint(equalToConstant: Constants.thumbnailSize),
             imageView.heightAnchor.constraint(equalToConstant: Constants.thumbnailSize),
+
+            fileIconView.centerXAnchor.constraint(equalTo: imageView.centerXAnchor),
+            fileIconView.centerYAnchor.constraint(equalTo: imageView.centerYAnchor, constant: -6),
+            fileIconView.widthAnchor.constraint(equalToConstant: 24),
+            fileIconView.heightAnchor.constraint(equalToConstant: 24),
+
+            fileExtensionLabel.leadingAnchor.constraint(equalTo: imageView.leadingAnchor, constant: 4),
+            fileExtensionLabel.trailingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: -4),
+            fileExtensionLabel.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: -6),
 
             removeButton.widthAnchor.constraint(equalToConstant: Constants.removeButtonSize),
             removeButton.heightAnchor.constraint(equalToConstant: Constants.removeButtonSize),
@@ -106,7 +141,28 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         ])
     }
 
-    @objc private func removeTapped() {
+    func configure() {
+        switch attachment {
+        case .image(let imageAttachment):
+            imageView.image = imageAttachment.image
+            imageView.backgroundColor = .clear
+            imageView.isHidden = false
+            fileIconView.isHidden = true
+            fileExtensionLabel.isHidden = true
+            accessibilityLabel = imageAttachment.fileName
+        case .file(let fileAttachment):
+            imageView.image = nil
+            imageView.backgroundColor = UIColor(designSystemColor: .surface)
+            imageView.isHidden = false
+            fileIconView.image = DesignSystemImages.Glyphs.Size24.folder.withRenderingMode(.alwaysTemplate)
+            fileExtensionLabel.text = attachment.fileExtensionDisplayName
+            fileIconView.isHidden = false
+            fileExtensionLabel.isHidden = false
+            accessibilityLabel = fileAttachment.fileName
+        }
+    }
+
+    @objc func removeTapped() {
         onRemove?(attachmentId)
     }
 }

@@ -354,7 +354,8 @@
                 "key": "extendedPerformance.totalResourcesSizeBucket",
                 "type": "string",
                 "description": "Total resources size bucket"
-            }
+            },
+            "channel"
         ]
     },
 
@@ -672,7 +673,8 @@
                 "key": "extendedPerformance.totalResourcesSizeBucket",
                 "type": "string",
                 "description": "Total resources size bucket"
-            }
+            },
+            "channel"
         ]
     }
 }

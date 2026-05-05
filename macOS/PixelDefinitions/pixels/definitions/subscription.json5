@@ -131,14 +131,14 @@
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_direct_subscription_tier-options_success": {
         "description": "Fired when subscription tier options are successfully retrieved (direct distribution)",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_direct_subscription_tier-options_failure": {
         "description": "Fired when subscription tier options fail to be retrieved (direct distribution)",
@@ -524,7 +524,8 @@
                 "type": "string",
                 "description": "The funnel that led to the restore flow",
                 "pattern": "^funnel_"
-            }
+            },
+            "channel"
         ]
     },
     // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211468169482228?focus=true

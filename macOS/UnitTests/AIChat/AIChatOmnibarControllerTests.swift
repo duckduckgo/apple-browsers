@@ -1209,10 +1209,10 @@ private class MockAIChatModelsProviding: AIChatModelsProviding {
     var modelsToReturn: [AIChatRemoteModel] = []
     var errorToThrow: Error?
 
-    func fetchModels() async throws -> [AIChatRemoteModel] {
+    func fetchModels() async throws -> AIChatModelsResponse {
         if let error = errorToThrow {
             throw error
         }
-        return modelsToReturn
+        return AIChatModelsResponse(models: modelsToReturn)
     }
 }

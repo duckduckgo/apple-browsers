@@ -26,20 +26,46 @@ import Onboarding
 
 struct NewAddressBarPickerRefreshContentView: View {
     @StateObject var viewModel: NewAddressBarPickerViewModel
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: Metrics.stackSpacing) {
-                Header()
-                PickerCard(viewModel: viewModel)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: Metrics.stackSpacing) {
+                    Header()
+                    PickerCard(viewModel: viewModel)
+                        .id(Metrics.pickerCardID)
+
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: cardMaxWidth)
+                .frame(maxWidth: .infinity)
+                .padding(.top, Metrics.topPadding)
+                .padding(.horizontal, Metrics.horizontalPadding)
             }
-            .frame(maxWidth: cardMaxWidth)
-            .frame(maxWidth: .infinity)
-            .padding(.top, Metrics.topPadding)
-            .padding(.horizontal, Metrics.horizontalPadding)
+            .background(BackgroundIllustration())
+            .modifier(ScrollBounceBehaviorModifier())
+            .onAppear {
+                centerPickerCardIfNeeded(proxy: proxy)
+            }
+            .onChange(of: verticalSizeClass) { newVerticalSizeClass in
+                centerPickerCardIfNeeded(proxy: proxy, newVerticalSizeClass: newVerticalSizeClass)
+            }
         }
-        .background(BackgroundIllustration())
-        .modifier(ScrollBounceBehaviorModifier())
+        .ignoresSafeArea(.container, edges: isVerticallyCompact() ? .vertical : [])
+    }
+
+    private func centerPickerCardIfNeeded(proxy: ScrollViewProxy, newVerticalSizeClass: UserInterfaceSizeClass? = nil) {
+        guard isVerticallyCompact(newVerticalSizeClass: newVerticalSizeClass) else {
+            return
+        }
+
+        proxy.scrollTo(Metrics.pickerCardID, anchor: .center)
+    }
+
+    private func isVerticallyCompact(newVerticalSizeClass: UserInterfaceSizeClass? = nil) -> Bool {
+        let targetClass = newVerticalSizeClass ?? verticalSizeClass
+        return targetClass == .compact
     }
 
     private var cardMaxWidth: CGFloat {
@@ -52,6 +78,7 @@ struct NewAddressBarPickerRefreshContentView: View {
         static let stackSpacing: CGFloat = 24
         static let topPadding: CGFloat = 24
         static let horizontalPadding: CGFloat = 16
+        static let pickerCardID = "pickerCard"
     }
 }
 

@@ -426,7 +426,7 @@ final class WideEventTests: XCTestCase {
         // Error parameters
         XCTAssertEqual(parameters["feature.data.error.domain"], "TestErrorDomain")
         XCTAssertEqual(parameters["feature.data.error.code"], "12345")
-        XCTAssertEqual(parameters["feature.data.error.description"], "Test Error")
+        XCTAssertEqual(parameters["feature.data.ext.error_description"], "Test Error")
 
         // Context parameters
         XCTAssertEqual(parameters["context.name"], "test-funnel")

@@ -17,10 +17,15 @@
             "wideEventFeatureStatusReason",
             "wideEventErrorDomain",
             "wideEventErrorCode",
-            "wideEventErrorDescription",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             "wideEventMetaVersion",
+            {
+                "key": "feature.data.ext.error_description",
+                "type": "string",
+                "description": "Description of the failure when the data import flow ends in error.",
+                "examples": ["Failed to import data: bookmarks, passwords, creditCards", "No supported data in zip"]
+            },
             {
                 "key": "meta.type",
                 "type": "string",

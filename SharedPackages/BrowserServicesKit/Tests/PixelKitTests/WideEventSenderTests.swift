@@ -341,7 +341,7 @@ final class WideEventSenderTests: XCTestCase {
         let parameters = capturedPixels[0].parameters
         XCTAssertEqual(parameters["feature.data.error.domain"], "TestErrorDomain")
         XCTAssertEqual(parameters["feature.data.error.code"], "42")
-        XCTAssertEqual(parameters["feature.data.error.description"], "Test error description")
+        XCTAssertEqual(parameters["feature.data.ext.error_description"], "Test error description")
     }
 
     func testSendIncludesUnderlyingErrorsWhenPresent() {

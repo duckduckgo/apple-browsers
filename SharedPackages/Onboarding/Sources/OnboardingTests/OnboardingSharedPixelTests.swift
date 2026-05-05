@@ -69,7 +69,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(event.additionalParameters?["source"], "duckai_cpp")
-        XCTAssertEqual(event.additionalParameters?["flow"], "duckai_experiment")
+        XCTAssertEqual(event.additionalParameters?["flow"], "duckai")
         XCTAssertEqual(event.additionalParameters?["variant"], "search_plus_duckai-search")
     }
 

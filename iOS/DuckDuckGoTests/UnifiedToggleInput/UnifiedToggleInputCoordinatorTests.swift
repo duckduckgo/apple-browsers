@@ -1549,6 +1549,7 @@ private final class MockAIChatPreferences: AIChatPreferencesPersisting {
     var selectedModelId: String?
     var selectedModelShortName: String?
     var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
@@ -2093,6 +2094,7 @@ private final class MockAIChatPreferencesForPerTab: AIChatPreferencesPersisting 
     var selectedModelId: String?
     var selectedModelShortName: String?
     var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }

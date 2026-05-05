@@ -26,15 +26,18 @@ public struct UnifiedInputTabState: Equatable {
     public var preferredTextEntryMode: TextEntryMode
     public var selectedModelID: String?
     public var selectedReasoningMode: AIChatReasoningMode?
+    public var selectedTool: AIChatRAGTool?
 
     public init(
         preferredTextEntryMode: TextEntryMode = .search,
         selectedModelID: String? = nil,
-        selectedReasoningMode: AIChatReasoningMode? = nil
+        selectedReasoningMode: AIChatReasoningMode? = nil,
+        selectedTool: AIChatRAGTool? = nil
     ) {
         self.preferredTextEntryMode = preferredTextEntryMode
         self.selectedModelID = selectedModelID
         self.selectedReasoningMode = selectedReasoningMode
+        self.selectedTool = selectedTool
     }
 }
 

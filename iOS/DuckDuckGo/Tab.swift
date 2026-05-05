@@ -54,6 +54,7 @@ public class Tab: NSObject, NSCoding {
         static let preferredTextEntryMode = "preferredTextEntryMode"
         static let selectedModelID = "selectedModelID"
         static let selectedReasoningMode = "selectedReasoningMode"
+        static let selectedTool = "selectedTool"
     }
 
     private var observersHolder = [WeaklyHeldTabObserver]()
@@ -201,10 +202,13 @@ public class Tab: NSObject, NSCoding {
         let selectedModelID = decoder.decodeObject(forKey: NSCodingKeys.selectedModelID) as? String
         let selectedReasoningModeRaw = decoder.decodeObject(forKey: NSCodingKeys.selectedReasoningMode) as? String
         let selectedReasoningMode = selectedReasoningModeRaw.flatMap(AIChatReasoningMode.init(rawValue:))
+        let selectedToolRaw = decoder.decodeObject(forKey: NSCodingKeys.selectedTool) as? String
+        let selectedTool = selectedToolRaw.flatMap(AIChatRAGTool.init(rawValue:))
         let unifiedInputState = UnifiedInputTabState(
             preferredTextEntryMode: preferredTextEntryMode,
             selectedModelID: selectedModelID,
-            selectedReasoningMode: selectedReasoningMode
+            selectedReasoningMode: selectedReasoningMode,
+            selectedTool: selectedTool
         )
 
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
@@ -227,6 +231,7 @@ public class Tab: NSObject, NSCoding {
         coder.encode(unifiedInputState.preferredTextEntryMode.rawValue, forKey: NSCodingKeys.preferredTextEntryMode)
         coder.encode(unifiedInputState.selectedModelID, forKey: NSCodingKeys.selectedModelID)
         coder.encode(unifiedInputState.selectedReasoningMode?.rawValue, forKey: NSCodingKeys.selectedReasoningMode)
+        coder.encode(unifiedInputState.selectedTool?.rawValue, forKey: NSCodingKeys.selectedTool)
         // Note: isExternalLaunch and shouldSuppressTrackerAnimationOnFirstLoad are not encoded as they are transient flags
         // Note: type is not encoded as it's now a computed property based on the link URL
     }

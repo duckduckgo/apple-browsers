@@ -437,7 +437,8 @@ class TabTests: XCTestCase {
             fireTab: false,
             unifiedInputState: UnifiedInputTabState(
                 selectedModelID: "claude-opus-4-6",
-                selectedReasoningMode: .extendedReasoning
+                selectedReasoningMode: .extendedReasoning,
+                selectedTool: .webSearch
             )
         )
 
@@ -451,6 +452,7 @@ class TabTests: XCTestCase {
 
         XCTAssertEqual(decodedTab?.unifiedInputState.selectedModelID, "claude-opus-4-6")
         XCTAssertEqual(decodedTab?.unifiedInputState.selectedReasoningMode, .extendedReasoning)
+        XCTAssertEqual(decodedTab?.unifiedInputState.selectedTool, .webSearch)
     }
 
     func testWhenTabWithNilSelectedModelEncodedThenDecodesAsNil() {
@@ -466,6 +468,7 @@ class TabTests: XCTestCase {
 
         XCTAssertNil(decodedTab?.unifiedInputState.selectedModelID)
         XCTAssertNil(decodedTab?.unifiedInputState.selectedReasoningMode)
+        XCTAssertNil(decodedTab?.unifiedInputState.selectedTool)
     }
 
     func testWhenTabEncodedBeforeSelectedModelPropertiesAddedThenDecodesWithNil() {
@@ -474,6 +477,7 @@ class TabTests: XCTestCase {
         XCTAssertNotNil(tab)
         XCTAssertNil(tab?.unifiedInputState.selectedModelID)
         XCTAssertNil(tab?.unifiedInputState.selectedReasoningMode)
+        XCTAssertNil(tab?.unifiedInputState.selectedTool)
     }
 
     func testWhenTabHasInvalidReasoningModeRawValueThenDecodesAsNil() {
@@ -485,6 +489,17 @@ class TabTests: XCTestCase {
 
         XCTAssertNotNil(tab)
         XCTAssertNil(tab?.unifiedInputState.selectedReasoningMode)
+    }
+
+    func testWhenTabHasInvalidSelectedToolRawValueThenDecodesAsNil() {
+        let tab = Tab(coder: CoderStub(properties: [
+            "link": link(),
+            "viewed": false,
+            "selectedTool": "not-a-real-tool"
+        ]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.unifiedInputState.selectedTool)
     }
 
     private func link() -> Link {

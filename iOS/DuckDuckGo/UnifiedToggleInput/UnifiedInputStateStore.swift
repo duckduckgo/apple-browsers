@@ -42,7 +42,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
             toggleMode: toggleModeStorage.restore() ?? .search,
             selectedModelID: preferences.selectedModelId,
             selectedReasoningMode: preferences.selectedReasoningMode,
-            selectedTool: nil
+            selectedTool: preferences.selectedTool
         )
     }
 
@@ -74,11 +74,13 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         toggleModeStorage.save(state.toggleMode)
         preferences.selectedModelId = state.selectedModelID
         preferences.selectedReasoningMode = state.selectedReasoningMode
+        preferences.selectedTool = state.selectedTool
 
         if let tab = tabsByUID[uid] {
             var inputState = tab.unifiedInputState
             inputState.selectedModelID = state.selectedModelID
             inputState.selectedReasoningMode = state.selectedReasoningMode
+            inputState.selectedTool = state.selectedTool
             tab.unifiedInputState = inputState
         }
         Logger.unifiedInputState.debug("recordUserChoice for tab [\(uid)]: \(state.summary)")
@@ -128,7 +130,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
             attachments: [],
             selectedModelID: inputState.selectedModelID ?? trackedLastUsed.selectedModelID,
             selectedReasoningMode: inputState.selectedReasoningMode ?? trackedLastUsed.selectedReasoningMode,
-            selectedTool: trackedLastUsed.selectedTool
+            selectedTool: inputState.selectedTool ?? trackedLastUsed.selectedTool
         )
     }
 

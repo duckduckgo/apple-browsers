@@ -286,6 +286,7 @@ final class StoreStubPreferences: AIChatPreferencesPersisting {
     var selectedReasoningEffort: String?
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
     var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
 }
 
 final class StoreStubToggleModeStorage: ToggleModeStoring {

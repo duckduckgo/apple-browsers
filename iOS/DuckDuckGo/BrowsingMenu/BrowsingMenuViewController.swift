@@ -45,7 +45,7 @@ final class BrowsingMenuViewController: UIViewController {
     
     typealias DismissHandler = () -> Void
     
-    private let backgroundTapButton = UIButton(type: .close)
+    private let backgroundTapButton = UIButton(type: .custom)
     let menuView = UIView()
     private let arrowView = UIView()
     private let verticalStackView = UIStackView()

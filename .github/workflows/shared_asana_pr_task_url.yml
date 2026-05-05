@@ -100,3 +100,31 @@ jobs:
           -H "Content-Type: application/json" \
           --output /dev/null \
           -d "{\"data\": {\"task\": \"${{ needs.add-task-to-project.outputs.task_id }}\"}}"
+
+  comment-not-moved-to-release:
+
+    name: Comment when not moved to Waiting for Release
+
+    runs-on: ubuntu-latest
+    needs: [add-task-to-project]
+    if: >
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      needs.add-task-to-project.outputs.task_in_project == '1' &&
+      !(
+        github.base_ref == 'main' ||
+        startsWith(github.base_ref, 'hotfix/') ||
+        startsWith(github.base_ref, 'release/')
+      )
+
+    steps:
+    - name: Add Asana comment
+      env:
+        ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+        TASK_ID: ${{ needs.add-task-to-project.outputs.task_id }}
+      run: |
+        curl -fLSs -X POST "https://app.asana.com/api/1.0/tasks/${TASK_ID}/stories" \
+          -H "Authorization: Bearer $ASANA_ACCESS_TOKEN" \
+          -H "Content-Type: application/json" \
+          --output /dev/null \
+          -d "{\"data\": {\"text\": \"PR #${{ github.event.pull_request.number }} was merged into '${{ github.base_ref }}'. Task is already in the App Board project, but it was not moved to Waiting for Release because the base branch is not main, hotfix/*, or release/*.\"}}"

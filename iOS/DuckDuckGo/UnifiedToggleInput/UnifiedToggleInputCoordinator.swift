@@ -346,7 +346,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         viewController.removeAllAttachments()
         for attachment in state.attachments {
-            viewController.addAttachment(attachment)
+            viewController.addAttachment(.image(attachment))
         }
 
         // Always sync the live model store from per-tab state — including nil values —
@@ -373,7 +373,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         TabInputState(
             text: currentText,
             toggleMode: inputMode,
-            attachments: viewController.currentAttachments,
+            attachments: currentImageAttachmentsForTabState,
             selectedModelID: modelStore.persistedModelId,
             selectedReasoningMode: modelStore.selectedReasoningMode,
             selectedTool: toolsController.selectedTool
@@ -1212,6 +1212,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 private extension UnifiedToggleInputCoordinator {
 
     // MARK: Attachments
+
+    var currentImageAttachmentsForTabState: [AIChatImageAttachment] {
+        viewController.currentAttachments.compactMap { attachment in
+            guard case .image(let imageAttachment) = attachment else { return nil }
+            return imageAttachment
+        }
+    }
 
     var canPresentFilePicker: Bool {
         attachmentPolicy.canAttachFiles && !allowedFileUTTypes.isEmpty

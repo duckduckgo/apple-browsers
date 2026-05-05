@@ -296,11 +296,19 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func activateForTab(_ uid: TabUID) {
         let previous = currentTabUID
-        if let previous, previous != uid {
+        if previous == uid {
+            // refreshOmniBar fires on focus/blur/navigation/fire-mode toggles. Skip
+            // the re-apply — applyState tears down and re-adds attachment chips. Safe
+            // because hide() resets currentTabUID to nil, so post-hide re-activation
+            // still runs the full path below.
+            Logger.unifiedInputState.debug("activateForTab [\(uid)]: already active, skipping re-apply")
+            return
+        }
+        if let previous {
             let snapshot = snapshotCurrentState()
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: flushing previous tab [\(previous)] — \(snapshot.summary)")
             stateStore.update(snapshot, for: previous)
-        } else if previous == nil {
+        } else {
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: first activation, no flush")
         }
         currentTabUID = uid

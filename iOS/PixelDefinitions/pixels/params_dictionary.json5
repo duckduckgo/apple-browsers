@@ -350,12 +350,12 @@
         "key": "flow",
         "type": "string",
         "description": "Version of the onboarding flow the user entered",
-        "enum": ["default", "duckai_experiment"]
+        "enum": ["default", "duckai"]
     },
     "onboardingFlowVariant": {
         "key": "variant",
         "type": "string",
-        "description": "Variant of the onboarding flow the user selected after branching",
-        "enum": ["search", "search_plus_duckai-search", "search_plus_duckai-chat"]
+        "description": "Variant of the onboarding flow the user selected after branching on the 'Try a search or AI chat' step",
+        "enum": ["search_plus_duckai-search", "search_plus_duckai-chat"]
     }
 }

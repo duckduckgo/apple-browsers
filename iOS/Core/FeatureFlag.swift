@@ -72,7 +72,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710317371
     case autoconsentOnByDefault
 
-    /// https://app.asana.com/1/137249556945/project/1201621853593513/task/1212068164128054?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214554020534806
     case heuristicAction
 
     // Duckplayer 'Web based' UI
@@ -169,11 +169,11 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611615737
     case canPromoteImportPasswordsInBrowser
-    
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866463389460
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
-    
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611730044
     case personalInformationRemoval
 

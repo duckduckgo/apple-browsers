@@ -176,18 +176,24 @@ extension SubscriptionManager {
 /// Deduplicates concurrent async calls that share the same key, so only one in-flight
 /// request runs at a time per key. Subsequent callers suspend and receive the same result.
 actor SubscriptionRequestCoalescer {
-    private var inFlightTasks: [Bool: Task<DuckDuckGoSubscription?, Error>] = [:]
+    private enum FetchMode: Hashable {
+        case cached
+        case forceRefresh
+    }
+
+    private var inFlightTasks: [FetchMode: Task<DuckDuckGoSubscription?, Error>] = [:]
 
     /// If a task for `forceRefresh` is already in flight, suspends and returns its result.
     /// Otherwise, creates a new task from `work`, stores it, awaits it, and cleans up.
     func coalesce(forceRefresh: Bool, work: @Sendable @escaping () async throws -> DuckDuckGoSubscription?) async throws -> DuckDuckGoSubscription? {
-        if let existingTask = inFlightTasks[forceRefresh] {
+        let mode: FetchMode = forceRefresh ? .forceRefresh : .cached
+        if let existingTask = inFlightTasks[mode] {
             return try await existingTask.value
         }
 
         let task = Task<DuckDuckGoSubscription?, Error> { try await work() }
-        inFlightTasks[forceRefresh] = task
-        defer { inFlightTasks.removeValue(forKey: forceRefresh) }
+        inFlightTasks[mode] = task
+        defer { inFlightTasks.removeValue(forKey: mode) }
         return try await task.value
     }
 }
@@ -317,7 +323,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             }
         } catch SubscriptionManagerError.noTokenAvailable {
             Logger.subscription.log("No Subscription available")
-            clearSubscriptionCache()
+            await subscriptionCachingService.reset()
         } catch {
             Logger.subscription.error("Failed to load initial subscription data: \(error, privacy: .public)")
         }
@@ -325,8 +331,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     /// Returns the cached subscription if available, firing the isActive pixel as a side effect.
     /// When no cache exists, throws `fallbackError` so callers propagate the appropriate error.
-    private func cachedSubscriptionOrThrow(_ fallbackError: Error) throws -> DuckDuckGoSubscription {
-        guard let cached = subscriptionCachingService.get() else {
+    private func cachedSubscriptionOrThrow(_ fallbackError: Error) async throws -> DuckDuckGoSubscription {
+        guard let cached = await subscriptionCachingService.get() else {
             throw fallbackError
         }
         if cached.isActive { pixelHandler.handle(pixel: .subscriptionIsActive) }
@@ -348,21 +354,21 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
         // Return cached subscription when available and refresh not forced
         if !forceRefresh,
-            let cachedSubscription = subscriptionCachingService.get() {
+            let cachedSubscription = await subscriptionCachingService.get() {
             subscription = cachedSubscription
         } else {
-            let previousSubscription = subscriptionCachingService.get()
+            let previousSubscription = await subscriptionCachingService.get()
 
             // Obtain a valid token for the remote request
             var tokenContainer: TokenContainer
             do {
                 tokenContainer = try await getTokenContainer(policy: .localValid)
             } catch SubscriptionManagerError.noTokenAvailable {
-                clearSubscriptionCache()
+                await subscriptionCachingService.reset()
                 throw SubscriptionManagerError.noTokenAvailable
             } catch {
                 // Token refresh failed — fall back to cache if available
-                return try cachedSubscriptionOrThrow(SubscriptionManagerError.noLocalSubscription)
+                return try await cachedSubscriptionOrThrow(SubscriptionManagerError.noLocalSubscription)
             }
 
             // Fetch subscription from backend
@@ -371,14 +377,14 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 remoteSubscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken)
             } catch SubscriptionEndpointServiceError.noData {
                 // No subscription on backend — clear cache and notify if state changed
-                subscriptionCachingService.reset()
+                await subscriptionCachingService.reset()
                 if previousSubscription != nil {
                     NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: nil)
                 }
                 return nil
             } catch {
                 // Transient error (network failure, HTTP 500, etc.) — fall back to cache if available
-                return try cachedSubscriptionOrThrow(error)
+                return try await cachedSubscriptionOrThrow(error)
             }
 
             // Enrich with features
@@ -387,11 +393,11 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 finalSubscription = try await enrichSubscriptionWithFeatures(remoteSubscription)
             } catch {
                 // Tier-features endpoint failed — fall back to cache if available
-                return try cachedSubscriptionOrThrow(error)
+                return try await cachedSubscriptionOrThrow(error)
             }
 
             // Update cache
-            subscriptionCachingService.set(finalSubscription)
+            await subscriptionCachingService.set(finalSubscription)
 
             // Notify only if the subscription actually changed
             if finalSubscription != previousSubscription {
@@ -405,13 +411,13 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     public func isSubscriptionPresent() -> Bool {
-        subscriptionCachingService.get() != nil
+        subscriptionCachingService.isPresent
     }
 
     public func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws -> DuckDuckGoSubscription {
-        subscriptionCachingService.reset()
+        await subscriptionCachingService.reset()
         let enrichedSubscription = try await enrichSubscriptionWithFeatures(subscription)
-        subscriptionCachingService.set(enrichedSubscription)
+        await subscriptionCachingService.set(enrichedSubscription)
         NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: enrichedSubscription])
         return enrichedSubscription
     }
@@ -438,7 +444,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     public func clearSubscriptionCache() {
-        subscriptionCachingService.reset()
+        Task { await subscriptionCachingService.reset() }
     }
 
     /// Enriches a subscription with tier features fetched from the backend.
@@ -668,7 +674,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         Logger.subscriptionTokensManagement.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI ? "true" : "false"), User Initiated: \(userInitiated ? "true" : "false")")
 
         try? await oAuthClient.logout()
-        clearSubscriptionCache()
+        await subscriptionCachingService.reset()
 
         if notifyUI {
                 updateCachedIsUserAuthenticated(false, userInitiated: userInitiated)

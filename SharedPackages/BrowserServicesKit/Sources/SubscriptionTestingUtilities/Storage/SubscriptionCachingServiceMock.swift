@@ -25,20 +25,22 @@ public final class SubscriptionCachingServiceMock: SubscriptionCachingService {
     public var setCalled: Bool = false
     public var resetCalled: Bool = false
 
+    public var isPresent: Bool { cachedSubscription != nil }
+
     public init(cachedSubscription: DuckDuckGoSubscription? = nil) {
         self.cachedSubscription = cachedSubscription
     }
 
-    public func get() -> DuckDuckGoSubscription? {
+    public func get() async -> DuckDuckGoSubscription? {
         return cachedSubscription
     }
 
-    public func set(_ subscription: DuckDuckGoSubscription) {
+    public func set(_ subscription: DuckDuckGoSubscription) async {
         setCalled = true
         cachedSubscription = subscription
     }
 
-    public func reset() {
+    public func reset() async {
         resetCalled = true
         cachedSubscription = nil
     }

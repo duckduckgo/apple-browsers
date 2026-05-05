@@ -218,9 +218,9 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func isSubscriptionPresent() -> Bool {
         switch resultSubscription {
-        case .success(let success):
+        case .success:
             return true
-        case .failure(let failure):
+        case .failure:
             return false
         case nil:
             return false

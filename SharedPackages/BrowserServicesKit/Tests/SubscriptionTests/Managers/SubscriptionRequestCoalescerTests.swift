@@ -136,6 +136,81 @@ final class SubscriptionRequestCoalescerTests: XCTestCase {
         XCTAssertEqual(r2, subscription, "Both callers must receive the same result")
     }
 
+    // MARK: - Cancellation behaviour
+
+    /// When the originating task is cancelled while its work is in-flight, joiners that are
+    /// already suspended on `existingTask.value` must receive `CancellationError`, not hang.
+    func testCoalesce_CancelledOriginator_JoinerReceivesCancellationError() async throws {
+        let coalescer = SubscriptionRequestCoalescer()
+        let workIsInFlight = AsyncSemaphore()
+        let releaseGate = AsyncSemaphore()
+
+        let originatorTask = Task<DuckDuckGoSubscription?, Error> {
+            try await coalescer.coalesce(forceRefresh: false) {
+                workIsInFlight.signal()
+                await releaseGate.wait()
+                try Task.checkCancellation()
+                return nil
+            }
+        }
+
+        await workIsInFlight.wait()
+
+        let joinerTask = Task<DuckDuckGoSubscription?, Error> {
+            try await coalescer.coalesce(forceRefresh: false) {
+                XCTFail("Joiner's work must not execute")
+                return nil
+            }
+        }
+
+        try await Task.sleep(nanoseconds: 1_000_000)  // let joiner join the in-flight task
+        originatorTask.cancel()
+        releaseGate.signal()
+
+        do {
+            _ = try await originatorTask.value
+            XCTFail("Originator should throw CancellationError")
+        } catch is CancellationError {}
+
+        do {
+            _ = try await joinerTask.value
+            XCTFail("Joiner should propagate CancellationError from originator's task")
+        } catch is CancellationError {}
+    }
+
+    /// After an originator's task is cancelled and removed from `inFlightTasks`, a new caller
+    /// must run its own fresh work rather than hang or silently receive nil.
+    func testCoalesce_AfterCancelledTask_NewCallerRunsFreshWork() async throws {
+        let coalescer = SubscriptionRequestCoalescer()
+        let subscription = SubscriptionMockFactory.appleSubscription
+        let counter = AtomicCounter()
+        let workIsInFlight = AsyncSemaphore()
+        let releaseGate = AsyncSemaphore()
+
+        let cancelledTask = Task<DuckDuckGoSubscription?, Error> {
+            try await coalescer.coalesce(forceRefresh: false) {
+                counter.increment()
+                workIsInFlight.signal()
+                await releaseGate.wait()
+                try Task.checkCancellation()
+                return nil
+            }
+        }
+
+        await workIsInFlight.wait()
+        cancelledTask.cancel()
+        releaseGate.signal()
+        _ = try? await cancelledTask.value  // drain the cancelled task
+
+        let result = try await coalescer.coalesce(forceRefresh: false) {
+            counter.increment()
+            return subscription
+        }
+
+        XCTAssertEqual(result, subscription, "Fresh call after cancellation must return its own work's result")
+        XCTAssertEqual(counter.value, 2, "Fresh call must run new work, not reuse the cancelled task")
+    }
+
     func testCoalesce_ConcurrentCallsSameKeyBothReceiveError() async throws {
         let coalescer = SubscriptionRequestCoalescer()
         struct Sentinel: Error {}

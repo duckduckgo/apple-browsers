@@ -302,6 +302,45 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertTrue(result!.isActive)
     }
 
+    /// When the token is unavailable, the cache must be cleared but no `.subscriptionDidChange`
+    /// notification is posted — even if a subscription was previously cached.
+    /// This documents a known asymmetry: the `noData` path posts a notification on state change,
+    /// while the `noToken` path does not, which can leave the UI stale until the next refresh.
+    func testGetSubscription_NoToken_WithCachedSubscription_ClearsCacheButDoesNotPostNotification() async throws {
+        let cachedSubscription = DuckDuckGoSubscription(
+            productId: "testProduct",
+            name: "Test Subscription",
+            billingPeriod: .monthly,
+            startedAt: Date().addingTimeInterval(.minutes(-5)),
+            expiresOrRenewsAt: Date().addingTimeInterval(.days(30)),
+            platform: .apple,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: nil,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionCachingService.cachedSubscription = cachedSubscription
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.missingTokenContainer)
+        mockOAuthClient.internalCurrentTokenContainer = nil
+
+        let notificationExpectation = XCTestExpectation(description: "subscriptionDidChange must NOT fire")
+        notificationExpectation.isInverted = true
+        let observer = NotificationCenter.default.addObserver(forName: .subscriptionDidChange, object: nil, queue: nil) { _ in
+            notificationExpectation.fulfill()
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        do {
+            _ = try await subscriptionManager.getSubscription(forceRefresh: true)
+            XCTFail("Expected SubscriptionManagerError.noTokenAvailable")
+        } catch SubscriptionManagerError.noTokenAvailable {}
+
+        await fulfillment(of: [notificationExpectation], timeout: 0.1)
+        XCTAssertTrue(mockSubscriptionCachingService.resetCalled, "Cache must be cleared when token is unavailable")
+        XCTAssertNil(mockSubscriptionCachingService.cachedSubscription, "Cached subscription must be nil after token loss")
+    }
+
     func testGetSubscription_CachedSubscription_ReturnsCachedWithoutRefresh() async throws {
         // First, populate the cache with an active subscription
         let activeSubscription = DuckDuckGoSubscription(

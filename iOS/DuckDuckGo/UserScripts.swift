@@ -97,7 +97,8 @@ final class UserScripts: UserScriptsProvider {
         }
         autoconsentUserScript = AutoconsentUserScript(
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
-            webExtensionAvailability: sourceProvider.webExtensionAvailability
+            webExtensionAvailability: sourceProvider.webExtensionAvailability,
+            featureFlagger: featureFlagger
         )
 
         // `setupSucceeded == nil` (setup still in flight) is treated as "available"

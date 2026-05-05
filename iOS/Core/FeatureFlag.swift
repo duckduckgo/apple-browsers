@@ -72,6 +72,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710317371
     case autoconsentOnByDefault
 
+    /// https://app.asana.com/1/137249556945/project/1201621853593513/task/1212068164128054?focus=true
+    case heuristicAction
+
     // Duckplayer 'Web based' UI
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609457246
     case duckPlayer
@@ -474,6 +477,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(.subfeature(IncontextSignupSubfeature.featureEnabled)), supportsLocalOverriding: false)
         case .autoconsentOnByDefault:
             Config(source: .remoteReleasable(.subfeature(AutoconsentSubfeature.onByDefault)), supportsLocalOverriding: false)
+        case .heuristicAction:
+            Config(source: .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction)))
         case .duckPlayer:
             Config(source: .remoteReleasable(.subfeature(DuckPlayerSubfeature.enableDuckPlayer)), supportsLocalOverriding: false)
         case .duckPlayerOpenInNewTab:

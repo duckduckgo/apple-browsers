@@ -385,6 +385,31 @@ class TabLazyLoaderTests: XCTestCase {
         XCTAssertEqual(materializedIndices, [0, 1, 2])
     }
 
+    // The lazy loader's reaction to a selection-driven `isSelectedTabLoading = false`
+    // must be asynchronous. If it fires synchronously, it can re-enter
+    // `tabCollection.replaceTab → didReplaceTabAt → reloadItems` while a tab insert
+    // is mid-flight on the collection view, raising NSInternalInconsistencyException
+    // (APPLE-MACOS-BD7).
+    @MainActor
+    func testWillReloadNextTab_DoesNotMaterializeSynchronously() {
+        var materializeCount = 0
+        let selected = TabMock(isUrl: false)
+        dataSource.selectedTab = selected
+        dataSource.totalTabCount = 1
+        dataSource.unloadedTabCount = 1
+        dataSource.isUnloadedHandler = { _ in true }
+        dataSource.materializeHandler = { _ in
+            materializeCount += 1
+            return TabMock()
+        }
+
+        let lazyLoader = TabLazyLoader(dataSource: dataSource)!
+        lazyLoader.scheduleLazyLoading()
+
+        dataSource.isSelectedTabLoadingSubject.send(false)
+        XCTAssertEqual(materializeCount, 0, "materialize must not fire synchronously")
+    }
+
     @MainActor
     func waitForLoadingDidFinishEvent<DataSource>(
         _ lazyLoader: TabLazyLoader<DataSource>,

@@ -368,10 +368,13 @@ After all groups in a bucket, add a brief bucket summary:
 
 **Generate link lists programmatically, do not hand-type GIDs.** A single
 mistyped digit breaks the link silently. After clustering, persist each
-cluster's GID list to a scratch file (e.g. `/tmp/<cluster>_gids.json`) and
-emit the `<li><a href="...">name</a></li>` HTML from that file in one shot
-using whichever tool fits (jq, python, etc.). Reusing the same per-cluster
-GID file in step 6 also keeps the metadata extraction cheap.
+cluster's GID list to a scratch file inside `$scratch_dir` (e.g.
+`"$scratch_dir/<cluster>_gids.json"`) and emit the
+`<li><a href="...">name</a></li>` HTML from that file in one shot using
+whichever tool fits (jq, python, etc.). Reusing the same per-cluster GID
+file in step 6 also keeps the metadata extraction cheap. Keeping these
+files inside `$scratch_dir` (rather than bare `/tmp/`) means the step 9
+cleanup catches them automatically and concurrent runs cannot collide.
 
 ### 6. Top 3 deep dive (per platform feedback bucket)
 
@@ -522,11 +525,14 @@ newlines.
 
 If you do need a file (e.g. the report is large enough that holding the
 full HTML in tool-argument context is awkward), use the `Write` tool
-directly - real newlines in your input become real newlines on disk. Avoid
-quoted bash heredocs (`cat << 'EOF'`); they preserve `\n` as the literal
-two-character escape sequence, which Asana renders as visible `\n`. Avoid
-unquoted heredocs too (`cat << EOF`) - they trigger shell expansion on `$`
-and backticks inside the report.
+directly and put it inside `$scratch_dir` (e.g.
+`"$scratch_dir/report.html"`) so the step 9 cleanup catches it and
+concurrent runs cannot collide on a shared `/tmp/report.html` path. Real
+newlines in your input become real newlines on disk. Avoid quoted bash
+heredocs (`cat << 'EOF'`); they preserve `\n` as the literal two-character
+escape sequence, which Asana renders as visible `\n`. Avoid unquoted
+heredocs too (`cat << EOF`) - they trigger shell expansion on `$` and
+backticks inside the report.
 
 **Do not insert blank lines between block-level tags.** Asana already renders
 block elements (`<h1>`, `<h2>`, `<ul>`, `<ol>`, `<pre>`, `<blockquote>`) with
@@ -579,20 +585,20 @@ in Asana.
 ### 9. Clean up scratch files
 
 Run this regardless of whether the report was written to Asana or rendered
-inline. The scratch directory from step 2 and step 5's per-cluster GID lists
-(e.g. `/tmp/<cluster>_gids.json`) contain Asana data and must be removed
-before the run ends. If you also wrote the report to a file in step 8.4
-(only needed for unusually large reports), include that path too:
+inline. The scratch directory from step 2 contains Asana data and must be
+removed before the run ends. As long as step 5's per-cluster GID lists and
+the optional step 8.4 report file were written inside `$scratch_dir` (as
+those steps direct), a single `rm -rf` covers everything:
 
 ```
 rm -rf "$scratch_dir"
-rm -f /tmp/*_gids.json /tmp/report.html  # report.html only if you wrote one
 ```
 
-Adjust the patterns to whatever filenames you actually used outside
-`$scratch_dir`. The MCP server's own tool-result spillover under
-`~/.claude/projects/.../tool-results/` is managed by the harness and should not
-be touched.
+Do not use bare `/tmp/*_gids.json` or `/tmp/report.html` globs - they would
+match files belonging to other concurrent runs or unrelated work. The MCP
+server's own tool-result spillover under
+`~/.claude/projects/.../tool-results/` is managed by the harness and should
+not be touched.
 
 If the run aborts partway through (cap hit, sensitive data halt, user
 declined the overwrite), still run the cleanup before reporting back.
@@ -606,17 +612,19 @@ declined the overwrite), still run the cleanup before reporting back.
   title. Treat these as PII and replace with "App Store reviewer" in link
   labels, even though they are public on the App Store.
 - Do **not** persist Asana data beyond the session.
-  - **Allowed (ephemeral, in-session):** scratch files under `/tmp/` used for
-    jq/python pipelines (the bulk-search response routinely exceeds the
-    inline tool-result cap, so a scratch file is the practical primitive),
-    and the MCP server's own tool-result spillover written under
+  - **Allowed (ephemeral, in-session):** scratch files inside the per-run
+    `$scratch_dir` (created via `mktemp -d` in step 2) used for jq/python
+    pipelines - the bulk-search response routinely exceeds the inline
+    tool-result cap, so a scratch file is the practical primitive. Also
+    allowed: the MCP server's own tool-result spillover written under
     `~/.claude/projects/<project>/<session>/tool-results/`.
-  - **Not allowed:** committing Asana data to the repo, writing it under
-    `.claude/` (outside the auto-managed cache), saving it to memory,
+  - **Not allowed:** writing Asana data to bare `/tmp/` paths (use
+    `$scratch_dir` so concurrent runs cannot collide and step 9 cleanup
+    catches everything), committing Asana data to the repo, writing it
+    under `.claude/` (outside the auto-managed cache), saving it to memory,
     pasting it into other Asana tasks beyond the report destination, or
     including it in any chat output beyond the report itself.
-  - **Always** clean up the `/tmp/` scratch files at the end of the run -
-    see step 9.
+  - **Always** clean up `$scratch_dir` at the end of the run - see step 9.
 - Web searches and external API calls after accessing Asana are blocked by
   the session-level lethal-trifecta hook, not by this skill. If you hit a
   block, that's the hook doing its job - do not retry. See
@@ -678,10 +686,16 @@ declined the overwrite), still run the cleanup before reporting back.
   slim-default for the heavy projects, the deep dive runs against a per-cluster
   sample, not the full population. Make the sample size explicit so the reader
   knows the limit.
-- **Writing the report HTML to `/tmp/report.html` then reading it back to pass
-  to `asana_update_task`.** Pass the HTML directly as `html_notes` in the same
+- **Writing the report HTML to a file then reading it back to pass to
+  `asana_update_task`.** Pass the HTML directly as `html_notes` in the same
   tool call - real newlines round-trip through the MCP layer fine. The file
-  roundtrip is only needed for unusually large reports. See step 8.4.
+  roundtrip is only needed for unusually large reports, and even then the
+  file goes inside `$scratch_dir`, never bare `/tmp/`. See step 8.4.
+- **Cleaning up with bare `/tmp/*_gids.json` or `/tmp/report.html` globs.**
+  Those patterns match files belonging to other concurrent runs or
+  unrelated work. Per-cluster GID files (step 5) and the optional report
+  file (step 8.4) both live inside `$scratch_dir`, so a single
+  `rm -rf "$scratch_dir"` is the only cleanup needed. See step 9.
 - **Enumerating every task in a cluster's link list.** Cap at 5-10 representative
   tasks by recency. The full list belongs in Asana's project filter, not the
   snapshot. See step 5.

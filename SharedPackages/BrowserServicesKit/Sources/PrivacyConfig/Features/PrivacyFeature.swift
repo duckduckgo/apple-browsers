@@ -724,7 +724,7 @@ public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .adBlockingExtension }
 
     case featureEnabled
-    case featureRollout
+    case featureEnabledByDefault
 }
 
 public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {

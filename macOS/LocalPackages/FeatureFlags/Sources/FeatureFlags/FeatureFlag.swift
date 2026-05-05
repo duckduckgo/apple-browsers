@@ -69,7 +69,7 @@ public enum FeatureFlag: String, CaseIterable {
     case adBlockingExtension
 
     /// Ad Blocking Extension public rollout subfeature
-    case adBlockingExtensionRollout
+    case adBlockingExtensionEnabledByDefault
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213538183403577
     case forceDarkModeOnWebsites
@@ -433,8 +433,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension)), category: .webExtensions)
         case .adBlockingExtension:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.featureEnabled)), category: .webExtensions)
-        case .adBlockingExtensionRollout:
-            Config(source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.featureRollout)), category: .webExtensions)
+        case .adBlockingExtensionEnabledByDefault:
+            Config(source: .remoteReleasable(.subfeature(AdBlockingExtensionSubfeature.featureEnabledByDefault)), category: .webExtensions)
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout)), category: .webExtensions)
         case .syncSeamlessAccountSwitching:

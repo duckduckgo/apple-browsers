@@ -117,12 +117,11 @@ final class UTIModelStore {
     /// `updateSelectedReasoningMode` so the live state matches the stored state exactly.
     func applyPersistedSelection(modelID: String?, reasoningMode: AIChatReasoningMode?) {
         preferences.selectedModelId = modelID
-        if let modelID {
-            if let shortName = models.first(where: { $0.id == modelID })?.shortName {
-                preferences.selectedModelShortName = shortName
-            }
-        } else {
-            preferences.selectedModelShortName = nil
+        // Always assign — including nil when the model isn't (yet) in `models` —
+        // otherwise the previous tab's cached short name lingers in preferences
+        // until handleModelsUpdated() corrects it.
+        preferences.selectedModelShortName = modelID.flatMap { id in
+            models.first(where: { $0.id == id })?.shortName
         }
         preferences.selectedReasoningMode = reasoningMode
     }

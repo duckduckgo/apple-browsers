@@ -64,7 +64,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
         pixelHandler.fire(.searchResults(.shown),
                           source: .duckAICustomProductPage,
-                          flow: .duckAIExperiment,
+                          flow: .duckAI,
                           variant: .duckAISearch)
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)

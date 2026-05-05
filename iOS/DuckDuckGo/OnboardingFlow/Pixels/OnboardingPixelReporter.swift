@@ -384,7 +384,6 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
         sharedPixelHandler.fire(.searchExperience(.clicked(.searchOnly)),
                                 source: sharedPixelsStorage.onboardingSource,
                                 flow: sharedPixelsStorage.onboardingFlow)
-        sharedPixelsStorage.onboardingVariant = .search
     }
 
     func measureDuckAIQueryExperimentSelectionImpression() {

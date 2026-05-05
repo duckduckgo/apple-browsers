@@ -52,12 +52,11 @@ public enum OnboardingSourcePixelParameter: String {
 /// Pixel parameter for the type of onboarding flow the user started.
 public enum OnboardingFlowTypePixelParameter: String {
     case `default` = "default"
-    case duckAIExperiment = "duckai_experiment"
+    case duckAI = "duckai"
 }
 
 /// Pixel parameter for the variant of the onboarding flow the user enters after a branching step during onboarding.
 public enum OnboardingVariantPixelParameter: String {
-    case search = "search"
     case duckAISearch = "search_plus_duckai-search"
     case duckAIChat = "search_plus_duckai-chat"
 }

@@ -338,7 +338,7 @@ class MockContextualOnboardingState: ContextualOnboardingStateUpdater, Contextua
 
 }
 
-private class MockOnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
+final class MockOnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     var eventsReceived: [OnboardingSharedPixelEvent] = []
 
     func fire(_ event: OnboardingSharedPixelEvent,

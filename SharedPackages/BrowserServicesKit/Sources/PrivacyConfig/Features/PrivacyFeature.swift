@@ -804,4 +804,3 @@ public enum TabSwitcherTrackerCountSubfeature: String, PrivacySubfeature {
 
     case featureEnabled
 }
-

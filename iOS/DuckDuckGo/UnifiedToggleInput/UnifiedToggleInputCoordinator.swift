@@ -745,6 +745,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
         resetToolsSelection()
+        clearStoreEntryAfterSubmission()
         showCollapsed()
         userScript.submitPrompt(text, images: nil, modelId: configuration.modelId, reasoningEffort: configuration.reasoningEffort)
     }

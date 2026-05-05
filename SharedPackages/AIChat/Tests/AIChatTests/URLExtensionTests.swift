@@ -327,6 +327,55 @@ final class URLExtensionTests: XCTestCase {
         XCTAssertEqual(url.duckAIChatID, "abc123")
     }
 
+    // MARK: - DuckDuckGo Homepage Tests
+
+    func testIsDuckDuckGoHomepageBareRoot() {
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/")!.isDuckDuckGoHomepage)
+        XCTAssertTrue(URL(string: "https://duckduckgo.com")!.isDuckDuckGoHomepage)
+    }
+
+    func testIsDuckDuckGoHomepageWithNonSearchQueryParams() {
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/?atb=v1-1")!.isDuckDuckGoHomepage)
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/?ia=web")!.isDuckDuckGoHomepage)
+    }
+
+    func testIsDuckDuckGoHomepageRejectsSERP() {
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?q=test")!.isDuckDuckGoHomepage)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?ia=web&q=test&origin=funnel_home_website__tagline")!.isDuckDuckGoHomepage)
+    }
+
+    func testIsDuckDuckGoHomepageRejectsSubPages() {
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/settings")!.isDuckDuckGoHomepage)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/about")!.isDuckDuckGoHomepage)
+    }
+
+    func testIsDuckDuckGoHomepageRejectsNonDDGAndSubdomains() {
+        XCTAssertFalse(URL(string: "https://example.com/")!.isDuckDuckGoHomepage)
+        XCTAssertFalse(URL(string: "https://help.duckduckgo.com/")!.isDuckDuckGoHomepage) // Different subdomain
+        XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckDuckGoHomepage)
+    }
+
+    // MARK: - AIChatTabMetadata.shouldExcludeFromTabPicker
+
+    func testShouldExcludeFromTabPickerCoversAllThreeRules() {
+        // Homepage — excluded
+        XCTAssertTrue(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duckduckgo.com/?ia=web")!))
+        // about:blank — excluded
+        XCTAssertTrue(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "about:blank")!))
+        // Duck.ai — excluded
+        XCTAssertTrue(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duck.ai/")!))
+        XCTAssertTrue(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duckduckgo.com/?ia=chat")!))
+    }
+
+    func testShouldExcludeFromTabPickerKeepsAttachableURLs() {
+        // SERP — must remain attachable
+        XCTAssertFalse(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duckduckgo.com/?q=test")!))
+        // Regular site — attachable
+        XCTAssertFalse(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://example.com/article")!))
+        // DDG sub-page — attachable (not the bare homepage)
+        XCTAssertFalse(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duckduckgo.com/settings")!))
+    }
+
 }
 
 extension URL {

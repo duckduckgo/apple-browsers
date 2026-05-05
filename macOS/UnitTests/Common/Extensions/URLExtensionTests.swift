@@ -990,28 +990,6 @@ extension URLExtensionTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("DuckDuckGo homepage URL detection works correctly", .timeLimit(.minutes(1)))
-    func duckDuckGoHomepageURLDetectionWorksCorrectly() {
-        // Homepage variants — should be detected
-        #expect(URL.duckDuckGo.isDuckDuckGoHomepage == true)
-        #expect(URL(string: "https://duckduckgo.com")!.isDuckDuckGoHomepage == true) // no trailing slash
-        #expect(URL(string: "https://duckduckgo.com/?atb=v1-1")!.isDuckDuckGoHomepage == true) // tracking param only
-        #expect(URL(string: "https://duckduckgo.com/?ia=web")!.isDuckDuckGoHomepage == true) // mode param, no q
-
-        // SERP — must NOT be classified as homepage
-        #expect(URL(string: "https://duckduckgo.com/?q=test")!.isDuckDuckGoHomepage == false)
-        #expect(URL(string: "https://duckduckgo.com/?ia=web&q=test&origin=funnel_home_website__tagline")!.isDuckDuckGoHomepage == false)
-
-        // DDG sub-pages — must NOT be classified as homepage
-        #expect(URL.aboutDuckDuckGo.isDuckDuckGoHomepage == false) // /about
-        #expect(URL(string: "https://duckduckgo.com/settings")!.isDuckDuckGoHomepage == false)
-
-        // Non-DDG URLs
-        #expect(URL(string: "https://example.com/")!.isDuckDuckGoHomepage == false)
-        #expect(URL(string: "https://help.duckduckgo.com/")!.isDuckDuckGoHomepage == false) // Different subdomain
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test("Email protection URL detection works correctly", .timeLimit(.minutes(1)))
     func emailProtectionURLDetectionWorksCorrectly() {
         #expect(URL.duckDuckGoEmail.isEmailProtection == true)

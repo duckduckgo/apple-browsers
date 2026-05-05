@@ -77,6 +77,14 @@ extension URL {
         return false
     }
 
+    /// Returns `true` for the bare DuckDuckGo homepage, including variants that carry only
+    /// non-search query parameters (e.g. `?ia=web`, `?atb=…`). Returns `false` for SERP URLs
+    /// (which require a `q=` parameter) and for sub-pages like `/settings` or `/about`.
+    var isDuckDuckGoHomepage: Bool {
+        guard host == DuckDuckGo.host, path.isEmpty || path == "/" else { return false }
+        return queryItems?.contains { $0.name == DuckDuckGo.bangQueryName } != true
+    }
+
     /// Returns `true` if the URL points to Duck AI voice mode (`?mode=voice`).
     public var isDuckAIVoiceMode: Bool {
         guard isDuckAIURL else { return false }

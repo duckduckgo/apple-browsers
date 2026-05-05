@@ -710,13 +710,6 @@ extension URL {
         return false
     }
 
-    /// True for the bare DuckDuckGo homepage, including variants that carry only non-search
-    /// query parameters (e.g. `?ia=web`, `?atb=…`). Returns false for SERP URLs (which require a
-    /// `q=` parameter — see `isDuckDuckGoSearch`) and for sub-pages like `/settings` or `/about`.
-    var isDuckDuckGoHomepage: Bool {
-        isDuckDuckGo && (path.isEmpty || path == "/") && !isDuckDuckGoSearch
-    }
-
     var isEmailProtection: Bool {
         self.isChild(of: .duckDuckGoEmailLogin) || self == .duckDuckGoEmail
     }

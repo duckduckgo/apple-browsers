@@ -133,7 +133,8 @@
                 "type": "string",
                 "description": "Context name for the flow",
                 "enum": ["funnel_appsettings_macos", "funnel_agent_macos", "funnel_systemsettings_multiple", "funnel_others_multiple"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_wide_vpn_ip_leak_check": {

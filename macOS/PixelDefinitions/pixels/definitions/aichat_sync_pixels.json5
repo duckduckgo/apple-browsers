@@ -13,7 +13,8 @@
                 "description": "The reason for the error",
                 "type": "string",
                 "enum": ["sync off", "token unavailable", "invalid response", "unexpected status code", "empty response", "internal error"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_aichat_sync_internal_encryption-error": {
@@ -68,20 +69,20 @@
         "owners": ["amddg44", "bwaresiak"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_terms_accepted_duplicate_sync_off": {
         "description": "Fired when terms and conditions acceptance is received again while sync is off",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_terms_accepted_duplicate_sync_on": {
         "description": "Fired when terms and conditions acceptance is received again while sync is on",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

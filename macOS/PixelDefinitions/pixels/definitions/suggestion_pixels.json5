@@ -13,7 +13,8 @@
                 "enum": ["ntp_search_box", "address_bar"]
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     },
     "m_mac_autocomplete_click_website": {
@@ -29,7 +30,8 @@
                 "enum": ["ntp_search_box", "address_bar"]
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     },
     "m_mac_autocomplete_click_history": {
@@ -45,7 +47,8 @@
                 "enum": ["ntp_search_box", "address_bar"]
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     },
     "m_mac_autocomplete_click_bookmark": {
@@ -61,7 +64,8 @@
                 "enum": ["ntp_search_box", "address_bar"]
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     },
     "m_mac_autocomplete_click_favorite": {
@@ -77,7 +81,8 @@
                 "enum": ["ntp_search_box", "address_bar"]
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     },
     "m_mac_autocomplete_click_opentab": {
@@ -93,7 +98,8 @@
                 "enum": ["ntp_search_box", "address_bar"]
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     },
     "m_mac_suggestion_submitted_mouse": {
@@ -109,7 +115,8 @@
                 "description": "Category of the selected suggestion (e.g., website, bookmark, history, tab, phrase, internal-page)",
                 "type": "string",
                 "enum": ["website", "bookmark", "history", "tab", "phrase", "internal-page"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_suggestion_submitted_keyboard": {
@@ -125,7 +132,8 @@
                 "description": "Category of the selected suggestion (e.g., website, bookmark, history, tab, phrase, internal-page)",
                 "type": "string",
                 "enum": ["website", "bookmark", "history", "tab", "phrase", "internal-page"]
-            }
+            },
+            "channel"
         ]
     }
 }

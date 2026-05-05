@@ -24,7 +24,8 @@
                 "key": "minutesSinceSidebarHidden",
                 "description": "Number of minutes since sidebar was last hidden. Omitted if sidebar is opened for the first time on a given tab",
                 "type": "integer"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_aichat_translate_text": {
@@ -60,21 +61,21 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_history_delete_successful": {
         "description": "Fired when Duck.ai chat history is deleted successfully",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_history_delete_failed": {
         "description": "Fired when Duck.ai chat history fails to be deleted",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_start_new_conversation": {
         "description": "Fired when user submits their first prompt in a new Duck.ai conversation",
@@ -100,7 +101,8 @@
                 "key": "width",
                 "description": "The final sidebar width in points",
                 "type": "integer"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_aichat_models_fetch_failed": {
@@ -108,21 +110,21 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_sidebar_detached": {
         "description": "Fired when user detaches the AI Chat sidebar into a floating window",
         "owners": ["jaceklyp"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_sidebar_attached": {
         "description": "Fired when user re-docks the floating AI Chat window via the attach button",
         "owners": ["jaceklyp"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_sidebar_floating_closed": {
         "description": "Fired when user closes the floating AI Chat window via the close button",
@@ -143,7 +145,7 @@
         "owners": ["jaceklyp"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_sidebar_closed": {
         "description": "Fired when the AI Chat sidebar is closed",
@@ -158,7 +160,8 @@
                 "description": "What triggered the sidebar to close",
                 "type": "string",
                 "enum": ["address-bar-button", "sidebar-close-button", "context-menu", "tabbar-button"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_aichat_is_enabled": {
@@ -174,7 +177,8 @@
                 "description": "Whether AI Chat features are currently enabled",
                 "type": "string",
                 "enum": ["0", "1"]
-            }
+            },
+            "channel"
         ]
     }
 }

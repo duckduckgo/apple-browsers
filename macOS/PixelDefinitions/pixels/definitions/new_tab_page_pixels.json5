@@ -19,7 +19,7 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_new-tab-page_aichat_recent_chat_selected_keyboard": {
         "description": "Fires when the user opens a non-pinned recent AI chat from the New Tab Page omnibar by pressing enter on the keyboard.",
@@ -33,14 +33,14 @@
         "owners": ["tomasstrba"],
         "triggers": ["search_ddg"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_new-tab-page_prompt_submitted": {
         "description": "Fires when a user submits a chat prompt via the New Tab Page AI chat box. Helps track interaction with DuckAI.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_new-tab-page_omnibar_mode_changed": {
         "description": "Fires when a user switches between search and DuckAI mode in the omnibar. Used to understand mode preference.",
@@ -55,7 +55,8 @@
                 "enum": ["search", "duck_ai"]
             },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "channel"
         ]
     },
     "m_mac_new-tab-page_omnibar_hidden": {
@@ -63,14 +64,14 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_new-tab-page_omnibar_shown": {
         "description": "Fires when the user reveals the omnibar on New Tab Page. Indicates visibility preference.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_new-tab-page_customizer_hidden": {
         "description": "Fires when the user hides the New Tab Page Customizer UI.",
@@ -112,7 +113,8 @@
                 "key": "loadingTime",
                 "type": "number",
                 "description": "Loading time of the new tab page in milliseconds"
-            }
+            },
+            "channel"
         ]
     },
     // https://app.asana.com/1/137249556945/project/1209825025475019/task/1212347087296991?focus=true
@@ -128,14 +130,14 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "m_mac_new-tab-page_next-steps_duckplayer_shown": {
         "description": "Fires when the DuckPlayer Next Steps card is shown on the New Tab Page. Used to understand onboarding engagement.",
         "owners": ["rachelmcr"],
         "triggers": ["new_tab"],
         "suffixes": [],
-        "parameters": []
+        "parameters": ["channel"]
     },
     "m_mac_new-tab-page_next-steps_emailProtection_clicked": {
         "description": "Fires when a user clicks on the Email Protection Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
@@ -240,7 +242,7 @@
         "owners": ["rachelmcr"],
         "triggers": ["new_tab"],
         "suffixes": [],
-        "parameters": []
+        "parameters": ["channel"]
     },
     "m_mac_new-tab-page_next-steps_personalizeBrowser_clicked": {
         "description": "Fires when a user clicks on the Personalize Browser Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
@@ -275,13 +277,13 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "m_mac_new-tab-page_next-steps_sync_shown": {
         "description": "Fires when the Sync Next Steps card is shown on the New Tab Page. Used to understand onboarding engagement.",
         "owners": ["rachelmcr"],
         "triggers": ["new_tab"],
         "suffixes": [],
-        "parameters": []
+        "parameters": ["channel"]
     }
 }

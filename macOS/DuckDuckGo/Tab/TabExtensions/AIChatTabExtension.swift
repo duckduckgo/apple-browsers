@@ -242,6 +242,11 @@ extension AIChatTabExtension: NavigationResponder {
             return .next
         }
 
+        // Downloads must stay in the sidebar webview: a redirect drops the download intent and blob: URLs are unresolvable elsewhere.
+        if navigationAction.shouldDownload {
+            return .next
+        }
+
         // Allow-list: also let certain hosts navigate inside the sidebar (e.g., duck.ai)
         if navigationAction.url.isStandaloneDuckAIURL {
             return .next

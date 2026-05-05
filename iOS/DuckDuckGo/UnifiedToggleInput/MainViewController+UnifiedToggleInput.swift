@@ -45,12 +45,23 @@ extension MainViewController {
     func setUpUnifiedToggleInputIfNeeded() {
         guard unifiedToggleInputFeature.isAvailable else { return }
 
+        let aiChatPreferences = AIChatPreferencesPersistor()
+        let stateStore = UnifiedInputStateStore(
+            preferences: aiChatPreferences,
+            toggleModeStorage: toggleModeStorage
+        )
+        stateStore.observeTabsModel(tabManager.normalTabsModel)
+        stateStore.observeTabsModel(tabManager.fireModeTabsModel)
+        self.unifiedInputStateStore = stateStore
+
         let coordinator = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
             isFireTab: isCurrentTabFireTab(),
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            toggleModeStorage: toggleModeStorage
+            preferences: aiChatPreferences,
+            toggleModeStorage: toggleModeStorage,
+            stateStore: stateStore
         )
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
@@ -87,6 +98,8 @@ extension MainViewController {
               let coordinator = unifiedToggleInputCoordinator else {
             return
         }
+
+        coordinator.activateForTab(tab.tabModel.uid)
 
         let action = refreshAction(for: tab, coordinator: coordinator)
 
@@ -592,7 +605,7 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
             return .allowDefault
         }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
-        let inputMode = tabManager.currentTabsModel.currentTab?.preferredTextEntryMode ?? .search
+        let inputMode = tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode ?? .search
         coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: inputMode, cardPosition: position)
         return .intercept
     }
@@ -603,7 +616,7 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
 extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
-        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
+        tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode = mode
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?) {

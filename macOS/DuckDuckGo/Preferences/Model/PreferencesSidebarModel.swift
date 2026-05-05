@@ -417,17 +417,24 @@ final class PreferencesSidebarModel: ObservableObject {
                     let entitlementStatus = await subscriptionManager.getAllEntitlementStatus()
                     let subscriptionFeatures = try await subscriptionManager.currentSubscriptionFeatures(forceRefresh: true)
 
-                    updatedState = PreferencesSidebarSubscriptionState(
-                        hasSubscription: true,
-                        shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
-                        isNetworkProtectionRemovalEnabled: entitlementStatus.networkProtection,
-                        isPersonalInformationRemovalEnabled: entitlementStatus.dataBrokerProtection,
-                        isIdentityTheftRestorationEnabled: entitlementStatus.identityTheftRestoration || entitlementStatus.identityTheftRestorationGlobal,
-                        isPaidAIChatEnabled: entitlementStatus.paidAIChat,
-                        isNetworkProtectionRemovalAvailable: subscriptionFeatures.contains(.networkProtection),
-                        isPersonalInformationRemovalAvailable: subscriptionFeatures.contains(.dataBrokerProtection),
-                        isIdentityTheftRestorationAvailable: subscriptionFeatures.contains(.identityTheftRestoration) || subscriptionFeatures.contains(.identityTheftRestorationGlobal),
-                        isPaidAIChatAvailable: featureFlagger.isFeatureOn(.paidAIChat) && subscriptionFeatures.contains(.paidAIChat))
+                    // Re-check after the async fetch: forceRefresh: true may have discovered no
+                    // subscription on the backend, cleared the cache, and returned [] without
+                    // throwing. isSubscriptionPresent() now reflects the post-fetch cache state.
+                    if subscriptionManager.isSubscriptionPresent() {
+                        updatedState = PreferencesSidebarSubscriptionState(
+                            hasSubscription: true,
+                            shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
+                            isNetworkProtectionRemovalEnabled: entitlementStatus.networkProtection,
+                            isPersonalInformationRemovalEnabled: entitlementStatus.dataBrokerProtection,
+                            isIdentityTheftRestorationEnabled: entitlementStatus.identityTheftRestoration || entitlementStatus.identityTheftRestorationGlobal,
+                            isPaidAIChatEnabled: entitlementStatus.paidAIChat,
+                            isNetworkProtectionRemovalAvailable: subscriptionFeatures.contains(.networkProtection),
+                            isPersonalInformationRemovalAvailable: subscriptionFeatures.contains(.dataBrokerProtection),
+                            isIdentityTheftRestorationAvailable: subscriptionFeatures.contains(.identityTheftRestoration) || subscriptionFeatures.contains(.identityTheftRestorationGlobal),
+                            isPaidAIChatAvailable: featureFlagger.isFeatureOn(.paidAIChat) && subscriptionFeatures.contains(.paidAIChat))
+                    } else {
+                        updatedState = PreferencesSidebarSubscriptionState(shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase)
+                    }
                 } catch SubscriptionManagerError.noTokenAvailable {
                     // Token gone — treat as signed out
                     updatedState = PreferencesSidebarSubscriptionState(shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase)

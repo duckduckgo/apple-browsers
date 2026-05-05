@@ -97,7 +97,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 fireModePromotionEligibility: fireModePromotionEligibility)
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
-                                            narrowLayoutInLandscape: narrowLayoutInLandscape,                                            
+                                            narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,
                                             favoritesViewModel: self.favoritesModel))

@@ -564,6 +564,9 @@ extension AutoconsentUserScript {
 
     func firePixel(pixel: AutoconsentPixel) {
         var additionalParams: [String: String] = [:]
+        if let enabled = consentHeuristicEnabled {
+            additionalParams["consentHeuristicEnabled"] = enabled ? "1" : "0"
+        }
 
         // Add fromExtension=0 when web extensions are available but autoconsent extension is not
         if webExtensionAvailability?.isAvailable == true &&

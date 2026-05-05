@@ -62,6 +62,7 @@ private struct Header: View {
 
             HStack(spacing: Metrics.badgeSpacing) {
                 BadgeView(text: UserText.settingsItemNewBadge)
+                    .background(Color(baseColor: .yellow60))
                     .clipShape(Capsule())
 
                 Text(UserText.newAddressBarPickerTitle)
@@ -83,43 +84,34 @@ private struct PickerCard: View {
     @Environment(\.onboardingTheme) private var onboardingTheme
 
     var body: some View {
-        VStack(spacing: Metrics.padding) {
-            Text(UserText.newAddressBarPickerRefreshHeadline)
-                .daxTitle2()
-                .foregroundColor(.primary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+        OnboardingBubbleView(tailPosition: nil) {
+            VStack(spacing: Metrics.spacing) {
+                Text(UserText.newAddressBarPickerRefreshHeadline)
+                    .daxTitle2()
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            RebrandedOnboardingView.OnboardingSearchExperiencePicker(isDuckAISelected: $viewModel.isDuckAISelected)
+                RebrandedOnboardingView.OnboardingSearchExperiencePicker(isDuckAISelected: $viewModel.isDuckAISelected)
 
-            Text(UserText.newAddressBarPickerRefreshFooter)
-                .daxFootnoteRegular()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+                Text(UserText.newAddressBarPickerRefreshFooter)
+                    .daxFootnoteRegular()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            Button {
-                viewModel.confirm()
-            } label: {
-                Text(UserText.newAddressBarPickerConfirm)
+                Button {
+                    viewModel.confirm()
+                } label: {
+                    Text(UserText.newAddressBarPickerConfirm)
+                }
+                .buttonStyle(onboardingTheme.primaryButtonStyle.style)
             }
-            .buttonStyle(onboardingTheme.primaryButtonStyle.style)
         }
-        .padding(Metrics.padding)
-        .background(
-            RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                .fill(Color(designSystemColor: .surface))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                .strokeBorder(Color(designSystemColor: .accent).opacity(Metrics.borderOpacity), lineWidth: 1)
-        )
     }
 
     private enum Metrics {
-        static let padding: CGFloat = 20
-        static let cornerRadius: CGFloat = 16
-        static let borderOpacity: CGFloat = 0.3
+        static let spacing: CGFloat = 20
     }
 }
 

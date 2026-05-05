@@ -219,7 +219,7 @@ final class UnifiedToggleInputViewController: UIViewController {
         isTopBarPosition = config.isTopBarPosition
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
-        setExpanded(config.isExpanded, animated: animated)
+        applyCardLayout(config.cardLayout, animated: animated)
     }
 
     func applyToolsPresentation(
@@ -232,8 +232,8 @@ final class UnifiedToggleInputViewController: UIViewController {
         self.toolsMenu = toolsMenu
     }
 
-    func setExpanded(_ expanded: Bool, animated: Bool) {
-        inputBarView.setExpanded(expanded, animated: animated)
+    func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool) {
+        inputBarView.applyCardLayout(layout, animated: animated)
     }
 
     func prepareForOmnibarEditingShow() {
@@ -301,6 +301,12 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func refreshFireMode(fireMode: Bool) {
         inputBarView.refreshFireMode(fireMode: fireMode)
+    }
+
+    // MARK: - Page-Context Chip
+
+    func bindPageContextChip(to viewModel: UnifiedToggleInputPageContextChipViewModel) {
+        inputBarView.bindPageContextChip(to: viewModel)
     }
 
     // MARK: - Lifecycle

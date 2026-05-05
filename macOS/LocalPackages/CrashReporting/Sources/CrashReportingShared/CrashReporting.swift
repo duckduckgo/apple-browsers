@@ -35,7 +35,7 @@ public protocol SparkleCrashReportingFactory {
     static func instantiate(internalUserDecider: InternalUserDecider,
                             keyValueStore: any ThrowingKeyValueStoring,
                             crashReportSender: CrashReportSending,
-                            crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
+                            crashSenderPixelEvents: EventMapping<CrashReportSenderEvent>?,
                             fireCrashPixel: @escaping (_ bundleID: String?, _ appVersion: String?, _ failedToReadCrashVersion: Bool) -> Void,
                             fireFailedToReadContentsPixel: @escaping () -> Void,
                             promptForConsent: @escaping (CrashReportPresenting) async -> Bool) -> any CrashReporting
@@ -46,7 +46,7 @@ public protocol AppStoreCrashReportingFactory {
     static func instantiate(internalUserDecider: InternalUserDecider,
                             featureFlagger: FeatureFlagger,
                             crashReportSender: CrashReportSending,
-                            crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
+                            crashSenderPixelEvents: EventMapping<CrashReportSenderEvent>?,
                             fireCrashPixel: @escaping (_ parameters: [CrashReportPixelParameter: String]) -> Void,
                             promptForConsent: @escaping (_ crashPayload: Data) async -> Bool) -> any CrashReporting
 }

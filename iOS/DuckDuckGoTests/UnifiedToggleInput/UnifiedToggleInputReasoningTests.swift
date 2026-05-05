@@ -32,7 +32,7 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockPreferences = MockAIChatReasoningPreferences()
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: true, preferences: mockPreferences)
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true, preferences: mockPreferences)
         mockDelegate = MockUnifiedToggleInputReasoningDelegate()
         sut.delegate = mockDelegate
     }
@@ -275,6 +275,7 @@ private final class MockAIChatReasoningPreferences: AIChatPreferencesPersisting 
     var selectedModelShortName: String?
     var selectedReasoningEffort: String?
     var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }

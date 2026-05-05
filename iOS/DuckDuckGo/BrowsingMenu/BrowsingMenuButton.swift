@@ -19,23 +19,32 @@
 
 import UIKit
 
-extension BrowsingMenuButton: NibLoading {}
-
 class BrowsingMenuButton: UIView {
 
-    @IBOutlet weak var image: UIImageView!
-    @IBOutlet weak var label: UILabel!
-    @IBOutlet weak var highlight: UIView!
+    let image = UIImageView()
+    let label = UILabel()
+    let highlight = UIView()
     
     private var action: () -> Void = {}
     
-    static func loadFromXib() -> BrowsingMenuButton {
-        return BrowsingMenuButton.load(nibName: "BrowsingMenuButton")
+    static func make() -> BrowsingMenuButton {
+        return BrowsingMenuButton()
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupViews()
+        setupConstraints()
+        configureAppearance()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        
+    private func configureAppearance() {
+        isAccessibilityElement = true
+        accessibilityTraits.insert(.button)
         highlight.layer.cornerRadius = 6
         highlight.isHidden = true
     }
@@ -97,4 +106,54 @@ class BrowsingMenuButton: UIView {
         return true
     }
 
+    private func setupViews() {
+        backgroundColor = .systemBackground
+        insetsLayoutMarginsFromSafeArea = false
+
+        highlight.translatesAutoresizingMaskIntoConstraints = false
+        highlight.backgroundColor = .systemBackground
+        addSubview(highlight)
+
+        image.translatesAutoresizingMaskIntoConstraints = false
+        image.contentMode = .scaleAspectFit
+        addSubview(image)
+
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.numberOfLines = 0
+        label.lineBreakMode = .byTruncatingTail
+        label.minimumScaleFactor = 0.9
+        label.adjustsFontSizeToFitWidth = true
+        label.attributedText = Self.makeLabelTemplate()
+        addSubview(label)
+    }
+
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            highlight.topAnchor.constraint(equalTo: topAnchor, constant: 3),
+            highlight.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 3),
+            trailingAnchor.constraint(equalTo: highlight.trailingAnchor, constant: 3),
+            bottomAnchor.constraint(equalTo: highlight.bottomAnchor, constant: 3),
+
+            image.topAnchor.constraint(equalTo: topAnchor, constant: 20),
+            image.centerXAnchor.constraint(equalTo: centerXAnchor),
+            image.widthAnchor.constraint(equalToConstant: 24),
+            image.heightAnchor.constraint(equalToConstant: 24),
+
+            label.topAnchor.constraint(equalTo: image.bottomAnchor, constant: 6),
+            label.centerXAnchor.constraint(equalTo: centerXAnchor),
+            bottomAnchor.constraint(equalTo: label.bottomAnchor, constant: 20),
+            label.leadingAnchor.constraint(greaterThanOrEqualTo: highlight.leadingAnchor, constant: 3),
+            highlight.trailingAnchor.constraint(greaterThanOrEqualTo: label.trailingAnchor, constant: 3)
+        ])
+    }
+
+    private static func makeLabelTemplate() -> NSAttributedString {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        paragraphStyle.lineBreakMode = .byTruncatingTail
+
+        return NSAttributedString(string: " ",
+                                  attributes: [.font: UIFont.systemFont(ofSize: 14),
+                                               .paragraphStyle: paragraphStyle])
+    }
 }

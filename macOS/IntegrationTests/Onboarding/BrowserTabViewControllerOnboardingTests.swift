@@ -333,7 +333,10 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         withExtendedLifetime(cancellable) {}
     }
 
-    func testWhenNavigationCompletedAndWindowDidBecomeActiveCorrectDialogCapturedInFactory() throws {
+    func testWhenWindowDidBecomeActiveAndDisplayedDialogMatchesExpected_NoRePresentation() throws {
+        // When the displayed dialog still matches what the provider reports as the last dialog
+        // for this tab, windowDidBecomeKey must NOT re-present it — re-presenting recreates the
+        // NSHostingController and restarts the typewriter animation.
         dialogProvider.state = .ongoing
         dialogProvider.dialog = .tryFireButton
         tab.navigateFromOnboarding(to: .duckDuckGo)
@@ -345,7 +348,26 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         factory.capturedType = nil
         viewController.windowDidBecomeKey()
 
+        XCTAssertNil(factory.capturedType)
+    }
+
+    func testWhenWindowDidBecomeActiveAndExpectedDialogChanged_StaleDialogReplaced() throws {
+        // When state advances in another window while this one is backgrounded, the displayed
+        // dialog goes stale. windowDidBecomeKey must replace it with the now-expected dialog.
+        dialogProvider.state = .ongoing
+        dialogProvider.dialog = .tryFireButton
+        tab.navigateFromOnboarding(to: .duckDuckGo)
+
+        wait(for: [expectation], timeout: 3.0)
         XCTAssertEqual(factory.capturedType, .tryFireButton)
+
+        // Simulate state advancing in another window: lastDialog now reports .highFive.
+        factory.capturedType = nil
+        dialogProvider.lastDialog = .highFive
+
+        viewController.windowDidBecomeKey()
+
+        XCTAssertEqual(factory.capturedType, .highFive)
     }
 
     func testWhenDialogIsDismissedViewHighlightsAreDismissed() throws {

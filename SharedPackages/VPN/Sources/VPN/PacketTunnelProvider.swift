@@ -804,6 +804,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
             Logger.networkProtection.error("🔴 Failed to start tunnel \(error.localizedDescription, privacy: .public)")
 
+            await subscriptionAccessErrorHandler(error)
+
             if startupOptions.startupMethod == .automaticOnDemand {
                 // We add a delay when the VPN is started by
                 // on-demand and there's an error, to avoid frenetic ON/OFF

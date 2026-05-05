@@ -20,12 +20,25 @@ import Foundation
 
 public enum CCFRequestData: Encodable {
     case solveCaptcha(CaptchaToken)
-    case userData(ProfileQuery, ExtractedProfile?)
+    case userData(ProfileQuery, ExtractedProfile?, FetchedEmail?, ExtractedEmailData)
 }
 
 public struct CaptchaToken: Encodable, Sendable {
     let token: String
 }
+
+public struct FetchedEmail: Encodable, Sendable {
+    let email: String
+
+    public init(email: String) {
+        self.email = email
+    }
+}
+
+/// Keyed bag of values extracted from an email by a `getEmailData` action — verification codes,
+/// tokens, links, etc. Forwarded to C-S-S as `data.emailData` so downstream actions can address
+/// individual values by name via `dataSource: "emailData"`.
+public typealias ExtractedEmailData = [String: String]
 
 struct InitParams: Encodable {
     let profileData: ProfileQuery
@@ -35,6 +48,8 @@ struct InitParams: Encodable {
 private enum UserDataCodingKeys: String, CodingKey {
     case userProfile
     case extractedProfile
+    case fetchedEmail
+    case emailData
 }
 
 struct ActionRequest: Encodable {
@@ -52,11 +67,17 @@ struct ActionRequest: Encodable {
         switch data {
         case .solveCaptcha(let captchaToken):
             try container.encode(captchaToken, forKey: .data)
-        case .userData(let profileQuery, let extractedProfile):
+        case .userData(let profileQuery, let extractedProfile, let fetchedEmail, let emailData):
             var userDataContainer = container.nestedContainer(keyedBy: UserDataCodingKeys.self, forKey: .data)
             try userDataContainer.encode(profileQuery, forKey: .userProfile)
             if let extractedProfile = extractedProfile {
                 try userDataContainer.encode(extractedProfile, forKey: .extractedProfile)
+            }
+            if let fetchedEmail = fetchedEmail {
+                try userDataContainer.encode(fetchedEmail, forKey: .fetchedEmail)
+            }
+            if !emailData.isEmpty {
+                try userDataContainer.encode(emailData, forKey: .emailData)
             }
         default:
             assertionFailure("Data not found. Please add the mission data to the encoding list.")

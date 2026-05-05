@@ -132,6 +132,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
         if mode == AIChatNativePrompt.imageGenerationMode {
             PixelKit.fire(AIChatPixel.aiChatNtpImageGenerationSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        } else if mode == AIChatNativePrompt.voiceMode {
+            PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNtp, frequency: .dailyAndStandard, includeAppVersionParameter: true)
         } else if toolChoice?.contains(AIChatRAGTool.webSearch.rawValue) == true {
             PixelKit.fire(AIChatPixel.aiChatNtpWebSearchSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
@@ -145,6 +147,18 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         // Check for keyboard modifiers opening on a new tab
         if isCommandPressed() {
             behavior = .newTab(selected: isShiftPressed())
+        }
+
+        // Voice handoff: focus an existing voice tab in the same window if one is active,
+        // otherwise open a fresh tab via `.mode(voiceMode)`. We must NOT fall through to
+        // `.query(chat)` + `setData(nativePrompt)` below — the existing voice tab keeps its
+        // in-progress state, and pushing a stale prompt would override the user's next real
+        // submission (matches the Windows-browser `WillActivateExistingVoiceTab` guard).
+        if mode == AIChatNativePrompt.voiceMode {
+            let sourceCollection = windowControllersManager.lastKeyMainWindowController?
+                .mainViewController.tabCollectionViewModel
+            tabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: behavior)
+            return
         }
 
         tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)

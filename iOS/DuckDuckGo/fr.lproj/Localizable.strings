@@ -1275,6 +1275,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Importer des signets dans DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Ouvrez Chrome, puis accédez au Gestionnaire de mots de passe et suivez les étapes ci-dessous :";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Paramètres** > **Exporter les données**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Appuie sur **Continuer**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Sélectionnez **DuckDuckGo** comme destination";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Importer depuis Chrome";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Exportation terminée ?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Vous devez aller dans l'application Mots de passe, puis suivre les étapes pour importer.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Touche **···** > **Exporter les données dans une autre application**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Appuie sur **Tout sélectionner** > **Continuer**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Sélectionnez **DuckDuckGo** comme destination";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Importer depuis Mots de passe";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "D’abord, exportez vos mots de passe et favoris depuis Safari, puis revenez ici pour importer le fichier.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Exporter depuis Safari";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Importer depuis Safari";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Importation du fichier exporté…";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Aucune donnée compatible n'a été trouvée dans le fichier zip. Veuillez consulter les instructions d'exportation de Safari et réessayer.";
 
@@ -1284,6 +1329,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Le fichier %@ n'a pas pu être lu. Peut-être y a-t-il un problème avec les données du fichier.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "J'ai compris";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Le fichier %@ n'a pas pu être lu. Essayez de sélectionner un autre fichier ou une autre méthode d’importation.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Le fichier est peut-être endommagé";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Aucune donnée compatible n'a été trouvée dans le fichier zip. Veuillez consulter les instructions d'exportation et réessayer.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Aucune donnée n'a été trouvée";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Le fichier sélectionné n'est pas pris en charge. Veuillez sélectionner un autre fichier et réessayer.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Fichier non pris en charge";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1358,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Importer vers DuckDuckGo";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Sélectionnez **Exporter**, puis sur l'écran suivant, sélectionnez **Signets** et **Enregistrer dans les téléchargements**.";
@@ -1303,7 +1372,7 @@
 "data.import.passwords.instructions.chrome.step1" = "Dans Chrome, allez dans **Gestionnaire de mots de passe Google** puis dans **Paramètres**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Sélectionnez **Exporter les mots de passe**, puis **Enregistrer dans les fichiers** et enregistrez le fichier dans un dossier dont vous vous souviendrez.";
+"data.import.passwords.instructions.chrome.step2" = "Sélectionnez **Exporter les données**, puis **···** et ensuite **Télécharger au format CSV** et enregistrez le fichier dans un dossier dont vous vous souviendrez.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Comment exporter des mots de passe";
@@ -1331,6 +1400,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Importer des mots de passe sur DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Ouvrir les paramètres pour exporter";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "N'oubliez pas d'appuyer sur\n« Exporter vers les fichiers »";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Application Mots de passe";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Importer depuis";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Synchroniser depuis";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo sur un autre appareil";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Signets";
@@ -1367,6 +1460,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Mots de passe";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Vous souhaitez également importer vos favoris Safari ?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Continuer";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Pas maintenant";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Vous souhaitez également importer vos mots de passe ?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Le mois dernier";
@@ -4274,6 +4379,9 @@
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Code copié";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "L'appareil a bien été synchronisé !";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup activé";

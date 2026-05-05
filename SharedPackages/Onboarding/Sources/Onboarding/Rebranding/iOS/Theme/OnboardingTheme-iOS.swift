@@ -51,6 +51,8 @@ public extension OnboardingTheme {
             optionsListBorderColor: Color(singleUseColor: .rebranding(.accentPrimary)),
             optionsListIconColor: Color(singleUseColor: .rebranding(.accentPrimary)),
             optionsListTextColor: Color(singleUseColor: .rebranding(.textLink)),
+            optionsListHoverColor: Color(singleUseColor: .rebranding(.accentPrimary)).opacity(0.1),
+            optionsListPressedColor: Color(singleUseColor: .rebranding(.accentPrimary)).opacity(0.2),
             primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
             primaryButtonPressedColor: Color(singleUseColor: .rebranding(.buttonsPrimaryPressed)),
             primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText)),

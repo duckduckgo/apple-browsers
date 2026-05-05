@@ -162,6 +162,7 @@ jobs:
           -skipPackagePluginValidation -skipMacroValidation \
           ENABLE_TESTABILITY=true \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           "-only-testing:DBPE2ETests" \
           -test-iterations 3 \
           -retry-tests-on-failure \

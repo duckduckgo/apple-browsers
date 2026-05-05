@@ -429,6 +429,79 @@ class TabTests: XCTestCase {
         XCTAssertNil(decodedTab?.contextualChatURL)
     }
 
+    // MARK: - Per-Tab Model Selection Persistence
+
+    func testWhenTabWithSelectedModelEncodedThenDecodesSuccessfully() {
+        let tabToEncode = Tab(
+            link: link(),
+            fireTab: false,
+            unifiedInputState: UnifiedInputTabState(
+                selectedModelID: "claude-opus-4-6",
+                selectedReasoningMode: .extendedReasoning,
+                selectedTool: .webSearch
+            )
+        )
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        XCTAssertEqual(decodedTab?.unifiedInputState.selectedModelID, "claude-opus-4-6")
+        XCTAssertEqual(decodedTab?.unifiedInputState.selectedReasoningMode, .extendedReasoning)
+        XCTAssertEqual(decodedTab?.unifiedInputState.selectedTool, .webSearch)
+    }
+
+    func testWhenTabWithNilSelectedModelEncodedThenDecodesAsNil() {
+        let tabToEncode = Tab(link: link(), fireTab: false)
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        XCTAssertNil(decodedTab?.unifiedInputState.selectedModelID)
+        XCTAssertNil(decodedTab?.unifiedInputState.selectedReasoningMode)
+        XCTAssertNil(decodedTab?.unifiedInputState.selectedTool)
+    }
+
+    func testWhenTabEncodedBeforeSelectedModelPropertiesAddedThenDecodesWithNil() {
+        let tab = Tab(coder: CoderStub(properties: ["link": link(), "viewed": false]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.unifiedInputState.selectedModelID)
+        XCTAssertNil(tab?.unifiedInputState.selectedReasoningMode)
+        XCTAssertNil(tab?.unifiedInputState.selectedTool)
+    }
+
+    func testWhenTabHasInvalidReasoningModeRawValueThenDecodesAsNil() {
+        let tab = Tab(coder: CoderStub(properties: [
+            "link": link(),
+            "viewed": false,
+            "selectedReasoningMode": "not-a-real-mode"
+        ]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.unifiedInputState.selectedReasoningMode)
+    }
+
+    func testWhenTabHasInvalidSelectedToolRawValueThenDecodesAsNil() {
+        let tab = Tab(coder: CoderStub(properties: [
+            "link": link(),
+            "viewed": false,
+            "selectedTool": "not-a-real-tool"
+        ]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.unifiedInputState.selectedTool)
+    }
+
     private func link() -> Link {
         return Link(title: "title", url: URL(string: "http://example.com")!)
     }

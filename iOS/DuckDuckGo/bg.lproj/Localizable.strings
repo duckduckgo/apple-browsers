@@ -1275,6 +1275,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Импортиране на отметки в DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Отворете Chrome, след това влезте в Password Manager и следвайте стъпките по-долу:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Настройки** > **Експортиране на данни**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Натиснете бутона **Продължаване**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Изберете **DuckDuckGo** като дестинация";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Импортиране от Chrome";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Приключихте ли с експортирането?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Трябва да отворите приложението Passwords и след това да следвате стъпките за импортиране.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Натиснете **···** > **Експортиране на данни в друго приложение**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Натиснете **Избор на всички** > **Продължаване**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Изберете **DuckDuckGo** като дестинация";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Импортиране от Passwords";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Първо експортирайте паролите и отметките от Safari, след това се върнете тук, за да качите файла.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Експортиране от Safari";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Импортиране от Safari";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Качване на експортиран файл...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "В zip файла не са открити поддържани данни. Вижте инструкциите за експортиране на Safari и опитайте отново.";
 
@@ -1284,6 +1329,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Файлът %@ не може да бъде прочетен. Възможно е да има проблем с данните във файла.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Разбрах";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Файлът %@ не може да бъде прочетен. Опитайте да качите друг файл или опитайте друг начин на импортиране.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Файлът може да е повреден";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "В zip файла не са открити поддържани данни. Вижте инструкциите за експортиране и опитайте отново.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Не са открити данни";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Избраният файл не се поддържа. Изберете друг файл и опитайте отново.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Файлът не се поддържа";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1358,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Прехвърляне в DuckDuckGo";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Изберете **Export** (Експортиране), а на следващия екран изберете **Bookmarks** (Отметки) и **Save to Downloads** (Запазване в изтеглени файлове).";
@@ -1303,7 +1372,7 @@
 "data.import.passwords.instructions.chrome.step1" = "В Chrome отворете **Google Password Manager** (Управление на пароли в Google) и след това изберете **Settings** (Настройки).";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Изберете **Export passwords** (Експортиране на пароли), след това **Save to Files** (Запазване във файлове) и запазете файла в папка, която можете да запомните.";
+"data.import.passwords.instructions.chrome.step2" = "Изберете **Експортиране на данни**, след това **···** и накрая **Изтегляне в CSV** и запазете файла в папка, която можете да запомните.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Как се експортират пароли";
@@ -1331,6 +1400,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Импортиране на пароли в DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Отваряне на настройките за експортиране";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Не забравяйте да изберете\n „Експортиране във файлове“";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Приложение Passwords";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Импортиране от";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Синхронизиране от";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo на друго устройство";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Отметки";
@@ -1367,6 +1460,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Пароли";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Искате ли да прехвърлите и отметките от Safari?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Продължи";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Не сега";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Искате да прехвърлите и паролите?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Миналия месец";
@@ -4274,6 +4379,9 @@
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Кодът е копиран";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Устройството е синхронизирано успешно!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Функцията Sync & Backup е активирана";

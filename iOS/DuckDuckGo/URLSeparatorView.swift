@@ -24,6 +24,11 @@ final class URLSeparatorView: UIView {
 
     private let lineView = UIView()
 
+    var lineColor: UIColor? {
+        get { lineView.backgroundColor }
+        set { lineView.backgroundColor = newValue }
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
 

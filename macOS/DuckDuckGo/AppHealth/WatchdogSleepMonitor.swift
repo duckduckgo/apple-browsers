@@ -38,17 +38,13 @@ final class WatchdogSleepMonitor {
     private func subscribeToSleepNotifications() {
         NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.willSleepNotification)
             .sink { [watchdog] _ in
-                Task {
-                    await watchdog.pause()
-                }
+                watchdog.pause()
             }
             .store(in: &cancellables)
 
         NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification)
             .sink { [watchdog] _ in
-                Task {
-                    await watchdog.resume()
-                }
+                watchdog.resume()
             }
             .store(in: &cancellables)
     }

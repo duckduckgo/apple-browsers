@@ -1275,6 +1275,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "ブックマークをDuckDuckGoにインポート";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Chromeを開いてパスワードマネージャーに移動し、以下の手順に沿ってお進みください：";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**設定** > **データのエクスポート**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "**続行する**をクリックします";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "**DuckDuckGo**を目的地として選択します";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Chromeからのインポート";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "エクスポートは完了しましたか？";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "パスワードアプリにアクセスし、手順に沿ってインポートする必要があります。";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "**···** > **データを別のアプリにエクスポートする**をタップする";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "**すべて選択** > **続ける**をタップする";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "**DuckDuckGo**を目的地として選択します";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "パスワードをインポート";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "まず、Safariからパスワードとブックマークをエクスポートし、ここに戻ってファイルをアップロードしてください。";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Safariからエクスポートします";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Safariからインポートします";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "エクスポート済みファイルをアップロード...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "zipファイル内にサポートされているデータは見つかりませんでした。Safariのエクスポート手順を確認して、もう一度お試しください。";
 
@@ -1284,6 +1329,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "%@ファイルを読み取れませんでした。ファイル内のデータに問題があるかもしれません。";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "了解";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "%@ファイルを読み取れませんでした。別のファイルをアップロードするか、別のインポート方法を試してみてください。";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "ファイルが破損している可能性があります";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "zipファイル内にサポートされているデータは見つかりませんでした。エクスポート手順を確認して、もう一度お試しください。";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "データが見つかりません";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "選択したファイルはサポートされていません。別のファイルを選択して、もう一度お試しください。";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "サポートされていないファイル";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1358,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "DuckDuckGoに移行する";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "**エクスポート** を選択し、次の画面で**ブックマーク**と**ダウンロードに保存**を選択します。";
@@ -1303,7 +1372,7 @@
 "data.import.passwords.instructions.chrome.step1" = "Chromeで、**Google パスワード マネージャー**に移動し、**設定**を選択します。";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "**パスワードをエクスポート**を選択し、次に**ファイルに保存**を選択して、覚えやすいフォルダにファイルを保存します。";
+"data.import.passwords.instructions.chrome.step2" = "**データをエクスポート**を選択し、次に**···**、**CSVにダウンロード**を選択して、ファイルを覚えやすいフォルダーに保存してください。";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "パスワードをエクスポートする方法";
@@ -1331,6 +1400,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "DuckDuckGoにパスワードをインポート";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "設定を開いてエクスポートする";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "「ファイルに書き出し」\nを忘れずにタップします。";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "パスワードアプリ";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "インポート元";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "同期元";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "別のデバイスでのDuckDuckGo";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "ブックマーク";
@@ -1367,6 +1460,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "パスワード";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Safariのブックマークも移行しますか？";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "続ける";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "後で";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "パスワードも持参しますか？";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "過去1か月間";
@@ -4274,6 +4379,9 @@
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "コードがコピーされました";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "デバイスが正常に同期されました！";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backupが有効になりました";

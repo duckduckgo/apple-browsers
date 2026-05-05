@@ -89,6 +89,13 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         }
     }
 
+    var isAIChatShortcutAvailable: Bool = false {
+        didSet {
+            guard isAIChatShortcutAvailable != oldValue else { return }
+            updateButtonState()
+        }
+    }
+
     // MARK: - SwitchBarHandling — Publishers
 
     var currentTextPublisher: AnyPublisher<String, Never> {
@@ -143,9 +150,13 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     // MARK: - Initialization
 
-    init(isVoiceSearchEnabled: Bool, isToggleEnabled: Bool = true, isFireTab: Bool = false) {
+    init(isVoiceSearchEnabled: Bool,
+         isToggleEnabled: Bool = true,
+         isAIChatShortcutAvailable: Bool = false,
+         isFireTab: Bool = false) {
         self.isVoiceSearchEnabled = isVoiceSearchEnabled
         self.isToggleEnabled = isToggleEnabled
+        self.isAIChatShortcutAvailable = isAIChatShortcutAvailable
         self.isFireTab = isFireTab
         updateButtonState()
     }
@@ -211,10 +222,14 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
             nextButtonState = .stopGeneratingAndSearchGoTo
         } else if isGenerating && !isExpanded && currentToggleState == .aiChat {
             nextButtonState = .stopGeneratingOnly
+        } else if !currentText.isEmpty && !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
+            nextButtonState = .clearAndAIChatShortcut
         } else if !currentText.isEmpty {
             nextButtonState = .clearOnly
         } else if !isToggleEnabled && currentToggleState == .aiChat && !isExpanded {
             nextButtonState = voiceAvailable ? .voiceAndSearchGoTo : .searchGoToOnly
+        } else if !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
+            nextButtonState = voiceAvailable ? .voiceAndAIChatShortcut : .aiChatShortcutOnly
         } else if voiceAvailable {
             nextButtonState = .voiceOnly
         } else {

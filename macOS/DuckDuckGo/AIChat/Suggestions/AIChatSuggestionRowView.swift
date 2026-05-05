@@ -190,9 +190,22 @@ final class AIChatSuggestionRowView: NSView {
     private func configure(with suggestion: AIChatSuggestion) {
         titleLabel.stringValue = suggestion.title
 
-        let icon = suggestion.isPinned
-            ? DesignSystemImages.Glyphs.Size16.pin
-            : DesignSystemImages.Glyphs.Size16.chat
+        // Pinned chats override the kind-based icon. For non-pinned chats, the icon reflects
+        // the chat's kind — voice and image chats get their own glyphs (derived from the
+        // persisted model on the Duck.ai stored record), everything else uses the chat bubble.
+        let icon: NSImage
+        if suggestion.isPinned {
+            icon = DesignSystemImages.Glyphs.Size16.pin
+        } else {
+            switch suggestion.kind {
+            case .voice:
+                icon = DesignSystemImages.Glyphs.Size16.voice
+            case .image:
+                icon = DesignSystemImages.Glyphs.Size16.image
+            case .text:
+                icon = DesignSystemImages.Glyphs.Size16.chat
+            }
+        }
         iconImageView.image = icon
         iconImageView.contentTintColor = Constants.iconColor
     }

@@ -371,27 +371,6 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
 
 private extension SuggestionResult {
     static let empty = SuggestionResult(topHits: [], duckduckgoSuggestions: [], localSuggestions: [])
-
-    /// Returns a copy containing only URL-based suggestions (websites, bookmarks, history).
-    /// Excludes search phrases, open tabs, and AI chat suggestions.
-    func filteringToURLsOnly() -> SuggestionResult {
-        SuggestionResult(
-            topHits: topHits.filter(\.isURLSuggestion),
-            duckduckgoSuggestions: duckduckgoSuggestions.filter(\.isURLSuggestion),
-            localSuggestions: localSuggestions.filter(\.isURLSuggestion)
-        )
-    }
-}
-
-private extension Suggestion {
-    var isURLSuggestion: Bool {
-        switch self {
-        case .website, .bookmark, .historyEntry, .openTab:
-            return true
-        case .phrase, .internalPage, .unknown, .askAIChat:
-            return false
-        }
-    }
 }
 
 extension HistoryEntry: HistorySuggestion {

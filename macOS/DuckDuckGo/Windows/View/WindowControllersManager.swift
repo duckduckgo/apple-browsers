@@ -125,6 +125,11 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     /// `TabsPreferences` reference is needed to compute `shouldSwitchToNewTabWhenOpened`.
     weak var tabsPreferences: TabsPreferences?
 
+    /// Tracks which tabs currently host an active Duck.ai voice session, so voice entry points
+    /// can focus an existing tab instead of opening a new one. Lazy so the tracker can capture
+    /// `self` (the `WindowControllersManager` is its source of truth for tab membership).
+    private(set) lazy var voiceSessionTracker: VoiceSessionTracker = VoiceSessionTracker(windowControllersManager: self)
+
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let internalUserDecider: InternalUserDecider

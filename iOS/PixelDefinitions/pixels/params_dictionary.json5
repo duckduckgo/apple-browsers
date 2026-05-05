@@ -312,6 +312,12 @@
         "type": "boolean",
         "description": "Whether the user is eligible for a free trial"
     },
+    "locale": {
+        "key": "locale",
+        "type": "string",
+        "description": "User locale",
+        "examples": ["en-US", "hu-HU"]
+    },
     "browsingMode": {
         "key": "browsing_mode",
         "type": "string",

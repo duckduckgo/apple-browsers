@@ -272,6 +272,7 @@ class AutofillLoginListViewModel: ObservableObject {
             accountsToSuggest = fetchSuggestedAccounts()
         }
         self.sections = makeSections(with: filteredAccounts)
+        self.showBreakageReporter = shouldShowBreakageReporter()
     }
 
     /// - returns: True if the query is present within the domain, false otherwise.
@@ -473,6 +474,16 @@ class AutofillLoginListViewModel: ObservableObject {
         })
     }
 
+    private func hasSuggestedAccountMatchingCurrentTab(url: URL) -> Bool {
+        accountsToSuggest.contains { account in
+            autofillDomainNameUrlMatcher.isMatchingForAutofill(
+                currentSite: url.absoluteString,
+                savedSite: account.domain ?? "",
+                tld: tld
+            )
+        }
+    }
+
     private func makeSections(with accounts: [SecureVaultModels.WebsiteAccount]) -> [AutofillLoginListSectionType] {
         var newSections = [AutofillLoginListSectionType]()
 
@@ -597,7 +608,7 @@ class AutofillLoginListViewModel: ObservableObject {
 
     func shouldShowBreakageReporter() -> Bool {
         guard let currentTabUrl = currentTabUrl,
-              !accountsToSuggest.isEmpty,
+              hasSuggestedAccountMatchingCurrentTab(url: currentTabUrl),
               privacyConfig.isEnabled(featureKey: .autofillBreakageReporter),
               let identifier = currentTabUrl.privacySafeDomainIdentifier,
               !privacyConfig.isInExceptionList(domain: currentTabUrl.host, forFeature: .autofillBreakageReporter) else {

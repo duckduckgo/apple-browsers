@@ -334,11 +334,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "Sinhronizēt citu ierīci";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Ne tagad";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Vai sinhronizēt datus ar citu ierīci?";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Ielādē ikonas no vietnēm, kurām esi pievienojis grāmatzīmi. Ikonu lejupielādes ir atklātas tavam tīklam.";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Grāmatzīmes";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Izmanto vienas un tās pašas izlases grāmatzīmes gan mobilajā ierīcē, gan galddatorā.";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Savieno...";
@@ -363,6 +372,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Saglabā savas grāmatzīmes un automātiskās aizpildes datus un sinhronizē tos starp ierīcēm, izmantojot pilnīgu šifrēšanu.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Izmanto šo kodu, lai atjaunotu datus, ja esi zaudējis piekļuvi šai ierīcei. Sync & Backup datus nevar atgūt pēc 18 mēnešu neaktivitātes. [Uzzināt vairāk](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo lietotne";

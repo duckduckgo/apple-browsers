@@ -64,24 +64,7 @@ public class DataBrokerProtectionAgentManagerProvider {
 
         let ipcServer = DefaultDataBrokerProtectionIPCServer(machServiceName: Bundle.main.bundleIdentifier!)
 
-        let features = ContentScopeFeatureToggles(emailProtection: false,
-                                                  emailProtectionIncontextSignup: false,
-                                                  credentialsAutofill: false,
-                                                  identitiesAutofill: false,
-                                                  creditCardsAutofill: false,
-                                                  credentialsSaving: false,
-                                                  passwordGeneration: false,
-                                                  inlineIconCredentials: false,
-                                                  thirdPartyCredentialsProvider: false,
-                                                  unknownUsernameCategorization: false,
-                                                  partialFormSaves: false,
-                                                  passwordVariantCategorization: false,
-                                                  inputFocusApi: false,
-                                                  autocompleteAttributeSupport: false)
-        let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
-                                                            sessionKey: UUID().uuidString,
-                                                            messageSecret: UUID().uuidString,
-                                                            featureToggles: features)
+        let contentScopeProperties = ContentScopeProperties.contentScopePropertiesForDBP()
 
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
@@ -578,5 +561,29 @@ extension DataBrokerProtectionAgentManager: EmailConfirmationDataDelegate {
 extension DataBrokerProtectionAgentManager: DBPWideEventsDelegate {
     public func sweepWideEvents() {
         wideEventSweeper?.sweep()
+    }
+}
+
+public extension ContentScopeProperties {
+    // Used to make sure debug tools and actual operations use the same properties
+    static func contentScopePropertiesForDBP() -> ContentScopeProperties {
+        let features = ContentScopeFeatureToggles(emailProtection: false,
+                                                  emailProtectionIncontextSignup: false,
+                                                  credentialsAutofill: false,
+                                                  identitiesAutofill: false,
+                                                  creditCardsAutofill: false,
+                                                  credentialsSaving: false,
+                                                  passwordGeneration: false,
+                                                  inlineIconCredentials: false,
+                                                  thirdPartyCredentialsProvider: false,
+                                                  unknownUsernameCategorization: false,
+                                                  partialFormSaves: false,
+                                                  passwordVariantCategorization: false,
+                                                  inputFocusApi: false,
+                                                  autocompleteAttributeSupport: false)
+        return ContentScopeProperties(gpcEnabled: false,
+                                      sessionKey: UUID().uuidString,
+                                      messageSecret: UUID().uuidString,
+                                      featureToggles: features)
     }
 }

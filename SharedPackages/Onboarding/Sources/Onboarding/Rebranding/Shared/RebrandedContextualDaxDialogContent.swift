@@ -284,10 +284,13 @@ private extension OnboardingRebranding {
         }
 
         private func revealStaticMessageAndFinish() {
-            withAnimation(.easeIn(duration: theme.contextualOnboardingMetrics.contentFadeInDuration)) {
+            let duration = theme.contextualOnboardingMetrics.contentFadeInDuration
+            withAnimation(.easeIn(duration: duration)) {
                 showStaticMessage = true
             }
-            onTypingFinished()
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                onTypingFinished()
+            }
         }
         #else
         @ViewBuilder

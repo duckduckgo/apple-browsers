@@ -33,6 +33,7 @@ struct RebrandedBrowsersComparisonModel {
             case blockTrackers
             case blockCookies
             case blockAds
+            case blockYouTubeAds
             case eraseData
 
             var title: String {
@@ -47,6 +48,8 @@ struct RebrandedBrowsersComparisonModel {
                     return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.cookiePopups
                 case .blockAds:
                     return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.creepyAds
+                case .blockYouTubeAds:
+                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.duckplayer
                 case .eraseData:
                     return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.eraseBrowsingData
                 }
@@ -64,6 +67,8 @@ struct RebrandedBrowsersComparisonModel {
                     return OnboardingRebrandingImages.Comparison.blockCookiesIcon
                 case .blockAds:
                     return OnboardingRebrandingImages.Comparison.blockAdsIcon
+                case .blockYouTubeAds:
+                    return OnboardingRebrandingImages.Comparison.blockYouTubeAdsIcon
                 case .eraseData:
                     return OnboardingRebrandingImages.Comparison.eraseDataIcon
                 }
@@ -95,6 +100,7 @@ struct RebrandedBrowsersComparisonModel {
             Feature(type: .blockTrackers, safariAvailability: .partial, ddgAvailability: .available),
             Feature(type: .blockCookies, safariAvailability: .unavailable, ddgAvailability: .available),
             Feature(type: .blockAds, safariAvailability: .unavailable, ddgAvailability: .available),
+            Feature(type: .blockYouTubeAds, safariAvailability: .unavailable, ddgAvailability: .available),
         ]
     }
 }

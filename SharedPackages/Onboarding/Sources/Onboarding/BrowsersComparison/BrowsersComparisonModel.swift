@@ -37,7 +37,8 @@ public struct BrowsersComparisonModel {
             .privateAIChat,
             .blockThirdPartyTrackers,
             .blockCookiePopups,
-            .blockCreepyAds
+            .blockCreepyAds,
+            .duckplayer
         ]
 #elseif os(macOS)
         return [
@@ -97,7 +98,6 @@ public struct BrowsersComparisonModel {
                 case .safari:
                     availability = .unavailable
                 }
-            #if os(macOS)
             case .duckplayer:
                 switch browser {
                 case .ddg:
@@ -105,7 +105,6 @@ public struct BrowsersComparisonModel {
                 case .safari:
                     availability = .unavailable
                 }
-            #endif
             }
 
             return PrivacyFeature.BrowserSupport(browser: browser, availability: availability)
@@ -171,9 +170,7 @@ extension BrowsersComparisonModel.PrivacyFeature {
         case blockCreepyAds
         case privateAIChat
         case eraseBrowsingData
-        #if os(macOS)
         case duckplayer
-        #endif
 
         var title: String {
             switch self {
@@ -189,10 +186,8 @@ extension BrowsersComparisonModel.PrivacyFeature {
                 UserText.BrowsersComparison.Features.privateAIChat
             case .eraseBrowsingData:
                 UserText.BrowsersComparison.Features.eraseBrowsingData
-            #if os(macOS)
             case .duckplayer:
                 UserText.BrowsersComparison.Features.duckplayer
-            #endif
             }
         }
 
@@ -210,10 +205,8 @@ extension BrowsersComparisonModel.PrivacyFeature {
                 DesignSystemImages.Glyphs.Size24.chat
             case .eraseBrowsingData:
                 DesignSystemImages.Color.Size24.fire
-            #if os(macOS)
             case .duckplayer:
                 DesignSystemImages.Color.Size24.videoPlayer
-            #endif
             }
         }
     }

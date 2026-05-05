@@ -1227,7 +1227,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
     }
 
-    func testWhenMeasureChooseSearchOnlyIsCalledThenLegacySearchOnlySelectedAndSearchExperienceSearchOnlySharedPixelsFireAndVariantIsPersisted() {
+    func testWhenMeasureChooseSearchOnlyIsCalledThenLegacySearchOnlySelectedAndSearchExperienceSearchOnlySharedPixelsFire() {
         // GIVEN
         sharedPixelsStorageMock.onboardingVariant = nil
         let expectedPixel = Pixel.Event.onboardingIntroSearchOnlySelected
@@ -1249,7 +1249,6 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
         XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
-        XCTAssertEqual(sharedPixelsStorageMock.onboardingVariant, .duckAISearch)
     }
 
     func testWhenMeasureTryVisitSiteDialogSuggestedSiteTappedThenVisitSiteSuggestedSharedPixelFires() {

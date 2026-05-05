@@ -63,6 +63,7 @@ struct SheetViewState {
     let isExpandButtonEnabled: Bool
     let shouldShowNewChatButton: Bool
     let chipState: ChipState
+    let quickActions: [AIChatContextualQuickAction]
 
     enum ContentMode {
         case nativeInput
@@ -100,7 +101,8 @@ final class AIChatContextualChatSessionState {
         content: .nativeInput,
         isExpandButtonEnabled: true,
         shouldShowNewChatButton: false,
-        chipState: .placeholder
+        chipState: .placeholder,
+        quickActions: [.summarize]
     )
 
     let effects = PassthroughSubject<SheetEffect, Never>()
@@ -155,6 +157,13 @@ final class AIChatContextualChatSessionState {
     /// Whether context is available for display
     var hasContext: Bool {
         latestContext != nil
+    }
+
+    /// User-attached context (nil if opted out / never attached). Unlike `latestContext`,
+    /// this respects X-tap downgrades — `latestContext` keeps the last collected payload regardless.
+    var intendedAttachedContext: AIChatPageContext? {
+        if case .attached(let context) = chipState { return context }
+        return nil
     }
 
     /// Whether automatic context collection is enabled
@@ -429,6 +438,16 @@ private extension AIChatContextualChatSessionState {
         }
     }
 
+    private func resolveQuickActions() -> [AIChatContextualQuickAction] {
+        guard featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements) else {
+            return [.summarize]
+        }
+        switch chipState {
+        case .placeholder: return [.askAboutPage]
+        case .attached: return [.summarizePage]
+        }
+    }
+
     func rebuildViewState() {
         let content: SheetViewState.ContentMode
         switch frontendState {
@@ -442,7 +461,8 @@ private extension AIChatContextualChatSessionState {
             content: content,
             isExpandButtonEnabled: frontendState == .noChat || contextualChatURL != nil,
             shouldShowNewChatButton: frontendState != .noChat,
-            chipState: chipState
+            chipState: chipState,
+            quickActions: resolveQuickActions()
         )
     }
 

@@ -20,8 +20,6 @@ import PixelKit
 
 /**
  * This enum keeps pixels related to permissions management.
- *
- * These pixels are only fired when the newPermissionView feature flag is enabled.
  */
 enum PermissionPixel: PixelKitEvent {
 
@@ -133,6 +131,8 @@ extension PermissionType {
             return "notification"
         case .externalScheme:
             return "external_scheme"
+        case .autoplayPolicy:
+            return "autoplay_policy"
         }
     }
 }

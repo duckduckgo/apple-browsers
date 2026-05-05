@@ -64,7 +64,8 @@ class MainViewFactory {
                                     appSettings: AppSettings,
                                     daxEasterEggLogoStore: DaxEasterEggLogoStoring = DaxEasterEggLogoStore(),
                                     daxEasterEggPresenter: DaxEasterEggPresenting? = nil,
-                                    mobileCustomization: MobileCustomization) -> MainViewCoordinator {
+                                    mobileCustomization: MobileCustomization,
+                                    duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) -> MainViewCoordinator {
 
         let presenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
@@ -75,7 +76,8 @@ class MainViewFactory {
                                                       suggestionTrayDependencies: suggestionTrayDependencies,
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: presenter,
-                                                      mobileCustomization: mobileCustomization)
+                                                      mobileCustomization: mobileCustomization,
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let factory = MainViewFactory(parentController: parentController,
                                       omnibarDependencies: omnibarDependencies,
@@ -207,7 +209,7 @@ extension MainViewFactory {
         }
 
         override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-            if let result = super.hitTest(point, with: event) {
+            if let result = super.hitTest(point, with: event), result != self {
                 return result
             }
             guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
@@ -312,7 +314,12 @@ extension MainViewFactory {
         superview.addSubview(coordinator.topSlideContainer)
     }
 
-    final class UnifiedToggleInputContainer: UIView {}
+    final class UnifiedToggleInputContainer: UIView {
+        override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+            let result = super.hitTest(point, with: event)
+            return result == self ? nil : result
+        }
+    }
     private func createUnifiedToggleInputContainer() {
         coordinator.unifiedToggleInputContainer = UnifiedToggleInputContainer()
         coordinator.unifiedToggleInputContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -359,14 +366,18 @@ extension MainViewFactory {
             coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
         }
         coordinator.constraints.navigationBarContainerBottom = container.constrainView(toolbar, by: .bottom, to: .top)
-        coordinator.constraints.navigationBarContainerHeight = container.constrainAttribute(.height, to: coordinator.omniBar.barView.expectedHeight, relatedBy: .equal)
+        let barHeight = coordinator.omniBar.barView.expectedHeight
+        coordinator.constraints.navigationBarContainerHeight = container.constrainAttribute(.height, to: barHeight, relatedBy: .equal)
+        coordinator.constraints.navigationBarContainerMinHeight = container.constrainAttribute(.height, to: barHeight, relatedBy: .greaterThanOrEqual)
+        coordinator.constraints.navigationBarCollectionViewSafeAreaBottom =
+            navigationBarCollectionView.bottomAnchor.constraint(lessThanOrEqualTo: superview.safeAreaLayoutGuide.bottomAnchor)
 
         NSLayoutConstraint.activate([
             coordinator.constraints.navigationBarContainerTop,
             container.constrainView(superview, by: .leading),
             container.constrainView(superview, by: .trailing),
             coordinator.constraints.navigationBarContainerHeight,
-            navigationBarCollectionView.constrainAttribute(.height, to: coordinator.omniBar.barView.expectedHeight),
+            navigationBarCollectionView.constrainAttribute(.height, to: barHeight),
             navigationBarCollectionView.constrainView(container, by: .top),
             navigationBarCollectionView.constrainView(container, by: .leading),
             navigationBarCollectionView.constrainView(container, by: .trailing),
@@ -435,10 +446,11 @@ extension MainViewFactory {
 
         let toolbar = coordinator.toolbar!
         coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
+        coordinator.constraints.toolbarHeightConstraint = toolbar.constrainAttribute(.height, to: 49)
         NSLayoutConstraint.activate([
             toolbar.constrainView(superview, by: .width, constant: toolbarWidthMod),
             toolbar.constrainView(superview, by: .centerX),
-            toolbar.constrainAttribute(.height, to: 49),
+            coordinator.constraints.toolbarHeightConstraint,
             coordinator.constraints.toolbarBottom,
         ])
     }
@@ -481,12 +493,12 @@ extension MainViewFactory {
 
     private func constrainUnifiedInputContentContainer() {
         let container = coordinator.unifiedInputContentContainer!
-        let contentContainer = coordinator.contentContainer!
+        let toolbar = coordinator.toolbar!
         NSLayoutConstraint.activate([
-            container.constrainView(contentContainer, by: .width),
-            container.constrainView(contentContainer, by: .height),
-            container.constrainView(contentContainer, by: .centerX),
-            container.constrainView(contentContainer, by: .centerY),
+            container.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor),
+            container.bottomAnchor.constraint(equalTo: toolbar.topAnchor),
+            container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
         ])
     }
 

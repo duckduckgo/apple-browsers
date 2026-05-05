@@ -87,14 +87,11 @@ struct Foreground: ForegroundHandling {
             privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
             isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
         )
-        let idleReturnEvaluator = IdleReturnEvaluator(
-            featureFlagger: appDependencies.featureFlagger,
-            privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
-            idleReturnEligibilityManager: idleReturnEligibilityManager
-        )
+        let idleReturnEvaluator = IdleReturnEvaluator(eligibilityManager: idleReturnEligibilityManager)
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
+            userActivityHandler: appDependencies.mainCoordinator,
             keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller),
             launchSourceService: appDependencies.launchSourceManager,
             idleReturnEvaluator: idleReturnEvaluator,
@@ -129,7 +126,9 @@ struct Foreground: ForegroundHandling {
             /// Handle **WebView related logic** here that could be affected by `AutoClear` feature.
             /// This is called when the **app is ready to handle web navigations** after all browser data has been cleared.
             onWebViewReadyForInteractions: {
-                /* ... */
+                if #available(iOS 18.4, *) {
+                    appDependencies.mainCoordinator.loadWebExtensionsIfPending()
+                }
             },
             /// Handle **UI related logic** here that could be affected by Authentication screen or `AutoClear` feature
             /// This is called when the **app is ready to handle user interactions** after data clear and authentication are complete.
@@ -179,6 +178,8 @@ struct Foreground: ForegroundHandling {
             launchActionHandler.handleLaunchAction(.openURL(url))
         case .handleShortcutItem(let shortcutItem):
             launchActionHandler.handleLaunchAction(.handleShortcutItem(shortcutItem))
+        case .handleUserActivity(let userActivity):
+            launchActionHandler.handleLaunchAction(.handleUserActivity(userActivity))
         }
     }
 

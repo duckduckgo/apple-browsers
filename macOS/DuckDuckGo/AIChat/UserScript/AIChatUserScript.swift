@@ -140,6 +140,10 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.openAIChatLink
         case .getAIChatPageContext:
             return handler.getAIChatPageContext
+        case .getAIChatOpenTabs:
+            return handler.getAIChatOpenTabs
+        case .getAIChatTabContent:
+            return handler.getAIChatTabContent
         case .reportMetric:
             return handler.reportMetric
         case .togglePageContextTelemetry:
@@ -166,6 +170,10 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.sendToSyncSettings
         case .setAIChatHistoryEnabled:
             return handler.setAIChatHistoryEnabled
+        case .voiceSessionStarted:
+            return handler.voiceSessionStarted
+        case .voiceSessionEnded:
+            return handler.voiceSessionEnded
         default:
             return nil
         }

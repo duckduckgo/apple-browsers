@@ -150,7 +150,7 @@ public enum SubscriptionRegion: CaseIterable {
             return Set(["USA"])
         case .restOfWorld:
             return Set(["CAN", "GBR", "AUT", "DEU", "NLD", "POL", "SWE",
-                        "BEL", "BGR", "HRV ", "CYP", "CZE", "DNK", "EST", "FIN", "FRA", "GRC", "HUN", "IRL", "ITA", "LVA", "LTU", "LUX", "MLT", "PRT",
+                        "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA", "GRC", "HUN", "IRL", "ITA", "LVA", "LTU", "LUX", "MLT", "PRT",
                         "ROU", "SVK", "SVN", "ESP"])
         }
     }

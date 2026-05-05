@@ -57,6 +57,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var bookmarksButton: UIButton! { bookmarksButtonView }
     var aiChatButton: UIButton! { searchAreaView.aiChatButton }
     var menuButton: UIButton! { menuButtonView }
+    var fireButton: UIButton! { fireButtonView }
     var refreshButton: UIButton! { searchAreaView.reloadButton }
     var customizableButton: UIButton! { searchAreaView.customizableButton }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
@@ -68,6 +69,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private var largeSizeSpacingConstraint: NSLayoutConstraint?
     private var textAreaTopPaddingConstraint: NSLayoutConstraint?
     private var textAreaBottomPaddingConstraint: NSLayoutConstraint?
+    private var stackViewLeadingConstraint: NSLayoutConstraint?
+    private var stackViewTrailingConstraint: NSLayoutConstraint?
 
     let fieldContainerLayoutGuide = UILayoutGuide()
 
@@ -84,8 +87,21 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     var isBookmarksButtonHidden: Bool {
-        get { bookmarksButtonView.isHidden }
-        set { bookmarksButtonView.isHidden = newValue }
+        get { bookmarksButtonView.isHidden && leadingBookmarksButtonView.isHidden }
+        set {
+            bookmarksButtonView.isHidden = newValue
+            leadingBookmarksButtonView.isHidden = newValue
+        }
+    }
+
+    func setBookmarksPosition(leading: Bool, hidden: Bool) {
+        leadingBookmarksButtonView.isHidden = leading ? hidden : true
+        bookmarksButtonView.isHidden = leading ? true : hidden
+    }
+
+    var isPasswordsButtonHidden: Bool {
+        get { passwordsButtonView.isHidden }
+        set { passwordsButtonView.isHidden = newValue }
     }
 
     var isMenuButtonHidden: Bool {
@@ -96,6 +112,16 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var isSettingsButtonHidden: Bool {
         get { settingsButtonView.isHidden }
         set { settingsButtonView.isHidden = newValue }
+    }
+
+    var isFireButtonHidden: Bool {
+        get { fireButtonView.isHidden }
+        set { fireButtonView.isHidden = newValue }
+    }
+
+    var isTabSwitcherButtonHidden: Bool {
+        get { tabSwitcherContainerView.isHidden }
+        set { tabSwitcherContainerView.isHidden = newValue }
     }
 
     // Universal elements
@@ -180,15 +206,59 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
     }
 
-    var isUsingCompactLayout: Bool = false {
-        didSet {
-            leadingButtonsContainer.isHidden = isUsingCompactLayout
-            trailingButtonsContainer.isHidden = isUsingCompactLayout
-            bookmarksButtonView.isHidden = isUsingCompactLayout
+    /// When true, `safeAreaInsets` returns `.zero` because the parent container
+    /// (e.g. `OmniBarCell`) already accounts for safe area via its own layout guide constraints.
+    /// This prevents the system-calculated insets from shifting during horizontal scrolling.
+    var safeAreaManagedByContainer = false
 
-            readableSearchAreaWidthConstraint?.isActive = !isUsingCompactLayout
-            largeSizeSpacingConstraint?.isActive = !isUsingCompactLayout
+    override var safeAreaInsets: UIEdgeInsets {
+        safeAreaManagedByContainer ? .zero : super.safeAreaInsets
+    }
+
+    private(set) var layoutMode: OmniBarLayoutMode = .compact
+
+    func setLayoutMode(_ newMode: OmniBarLayoutMode, animated: Bool = false) {
+        guard layoutMode != newMode else { return }
+
+        if animated {
+            layoutIfNeeded()
+            let entering = newMode == .compact
+            if entering {
+                UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.85, initialSpringVelocity: 0, options: []) {
+                    self.leadingButtonsContainer.alpha = 0
+                    self.trailingButtonsContainer.alpha = 0
+                    self.applyLayoutMode(newMode)
+                    self.layoutIfNeeded()
+                }
+            } else {
+                leadingButtonsContainer.alpha = 0
+                trailingButtonsContainer.alpha = 0
+                UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.85, initialSpringVelocity: 0, options: []) {
+                    self.leadingButtonsContainer.alpha = 1
+                    self.trailingButtonsContainer.alpha = 1
+                    self.applyLayoutMode(newMode)
+                    self.layoutIfNeeded()
+                }
+            }
+        } else {
+            applyLayoutMode(newMode)
         }
+    }
+
+    private func applyLayoutMode(_ newMode: OmniBarLayoutMode) {
+        layoutMode = newMode
+        let showButtons = newMode != .compact
+        leadingButtonsContainer.isHidden = !showButtons
+        trailingButtonsContainer.isHidden = !showButtons
+        readableSearchAreaWidthConstraint?.isActive = showButtons && newMode == .expandedPad
+        largeSizeSpacingConstraint?.isActive = showButtons
+
+        let isExpandedPhone = newMode == .expandedPhone
+        leadingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : 0
+        trailingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : 0
+        stackView.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeSpacing : Metrics.expandedPadSizeSpacing
+        stackViewLeadingConstraint?.constant = isExpandedPhone ? Metrics.expandedPhoneSizeMargins.leading : Metrics.textAreaHorizontalPadding
+        stackViewTrailingConstraint?.constant = isExpandedPhone ? -Metrics.expandedPhoneSizeMargins.trailing : -Metrics.textAreaHorizontalPadding
     }
 
     var isUsingSmallTopSpacing: Bool = false {
@@ -220,14 +290,17 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var onMenuButtonLongPressed: (() -> Void)?
     var onTrackersViewPressed: (() -> Void)?
     var onSettingsButtonPressed: (() -> Void)?
+    var onSettingsButtonLongPressed: (() -> Void)?
     var onCancelPressed: (() -> Void)?
     var onRefreshPressed: (() -> Void)?
     var onCustomizableButtonPressed: (() -> Void)?
     var onBackPressed: (() -> Void)?
     var onForwardPressed: (() -> Void)?
     var onBookmarksPressed: (() -> Void)?
+    var onPasswordsPressed: (() -> Void)?
     var onAIChatPressed: (() -> Void)?
     var onDismissPressed: (() -> Void)?
+    var onFirePressed: (() -> Void)?
     var onSearchModePressed: (() -> Void)?
     var onAIChatModePressed: (() -> Void)?
     
@@ -256,10 +329,15 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     let settingsButtonView = BrowserChromeButton()
     let bookmarksButtonView = BrowserChromeButton()
+    /// Needed because UIStackView doesn't support reparenting — one in leading, one in trailing.
+    let leadingBookmarksButtonView = BrowserChromeButton()
+    let passwordsButtonView = BrowserChromeButton()
     let menuButtonView = BrowserChromeButton()
     let forwardButtonView = BrowserChromeButton()
     let backButtonView = BrowserChromeButton()
     let externalRefreshButtonView = BrowserChromeButton()
+    let fireButtonView = BrowserChromeButton()
+    let tabSwitcherContainerView = UIView()
 
     private let aiChatLeftButton = BrowserChromeButton()
     private var aiChatBrandingView: AIChatFullModeOmniBrandingView?
@@ -278,6 +356,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }()
 
     var onAIChatSendPressed: (() -> Void)?
+    var isAIVoiceChatEnabled: Bool = false
 
     let aiChatTextView: UITextView = {
         let textView = UITextView()
@@ -315,8 +394,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private let omniBarProgressView = OmniBarProgressView()
     var progressView: ProgressView? { omniBarProgressView.progressView }
 
-    private let leadingButtonsContainer = UIStackView()
-    private let trailingButtonsContainer = UIStackView()
+    private(set) var leadingButtonsContainer = UIStackView()
+    private(set) var trailingButtonsContainer = UIStackView()
 
     private let searchAreaView = DefaultOmniBarSearchView()
     private let searchAreaContainerView = CompositeShadowView.defaultShadowView()
@@ -363,6 +442,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         leadingButtonsContainer.addArrangedSubview(backButtonView)
         leadingButtonsContainer.addArrangedSubview(forwardButtonView)
         leadingButtonsContainer.addArrangedSubview(externalRefreshButtonView)
+        leadingButtonsContainer.addArrangedSubview(leadingBookmarksButtonView)
+        leadingButtonsContainer.addArrangedSubview(passwordsButtonView)
 
         searchAreaAlignmentView.addSubview(searchAreaStackView)
 
@@ -371,6 +452,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaContainerView.addSubview(searchAreaView)
         searchAreaContainerView.addSubview(omniBarProgressView)
 
+        trailingButtonsContainer.addArrangedSubview(fireButtonView)
+        trailingButtonsContainer.addArrangedSubview(tabSwitcherContainerView)
         trailingButtonsContainer.addArrangedSubview(bookmarksButtonView)
         trailingButtonsContainer.addArrangedSubview(menuButtonView)
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)
@@ -417,9 +500,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         stackView.translatesAutoresizingMaskIntoConstraints = false
         searchAreaStackView.translatesAutoresizingMaskIntoConstraints = false
 
+        let leadingConstraint = stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding)
+        let trailingConstraint = stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding)
+        stackViewLeadingConstraint = leadingConstraint
+        stackViewTrailingConstraint = trailingConstraint
+
         NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
-            stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding),
+            leadingConstraint,
+            trailingConstraint,
             textAreaTopPaddingConstraint,
             textAreaBottomPaddingConstraint,
 
@@ -429,7 +517,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             searchAreaView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
 
             searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            readableSearchAreaWidth,
 
             activeOutlineView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: -Metrics.activeBorderWidth),
             activeOutlineView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: Metrics.activeBorderWidth),
@@ -458,6 +545,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         DefaultOmniBarView.activateItemSizeConstraints(for: forwardButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: externalRefreshButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: bookmarksButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: leadingBookmarksButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: passwordsButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: fireButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: menuButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: settingsButtonView)
 
@@ -478,7 +568,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 brandingView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
                 brandingView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
                 brandingView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor),
-                searchAreaContainerView.widthAnchor.constraint(equalTo: searchAreaAlignmentView.widthAnchor)
+                searchAreaContainerView.widthAnchor.constraint(equalTo: searchAreaAlignmentView.widthAnchor).withPriority(.defaultHigh)
             ]
         }
 
@@ -500,7 +590,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaContainerView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
         searchAreaContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
 
-        searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
+        searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
         searchAreaContainerView.layer.cornerCurve = .continuous
 
@@ -520,9 +610,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         stackView.axis = .horizontal
         stackView.alignment = .fill
         stackView.distribution = .fill
-        stackView.spacing = Metrics.expandedSizeSpacing
+        stackView.spacing = Metrics.expandedPadSizeSpacing
 
-        searchAreaStackView.spacing = Metrics.expandedSizeSpacing
+        searchAreaStackView.spacing = Metrics.expandedPadSizeSpacing
 
         trailingButtonsContainer.isHidden = true
 
@@ -540,11 +630,26 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         bookmarksButtonView.setImage(DesignSystemImages.Glyphs.Size24.bookmarks)
         DefaultOmniBarView.setUpCommonProperties(for: bookmarksButtonView)
 
+        leadingBookmarksButtonView.setImage(DesignSystemImages.Glyphs.Size24.bookmarks)
+        DefaultOmniBarView.setUpCommonProperties(for: leadingBookmarksButtonView)
+
+        passwordsButtonView.setImage(DesignSystemImages.Glyphs.Size24.key)
+        DefaultOmniBarView.setUpCommonProperties(for: passwordsButtonView)
+        passwordsButtonView.isHidden = true
+
         menuButtonView.setImage(DesignSystemImages.Glyphs.Size24.menuHamburger)
         DefaultOmniBarView.setUpCommonProperties(for: menuButtonView)
 
         settingsButtonView.setImage(DesignSystemImages.Glyphs.Size24.settings)
         DefaultOmniBarView.setUpCommonProperties(for: settingsButtonView)
+
+        fireButtonView.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
+        DefaultOmniBarView.setUpCommonProperties(for: fireButtonView)
+        fireButtonView.isHidden = true
+
+        tabSwitcherContainerView.translatesAutoresizingMaskIntoConstraints = false
+        tabSwitcherContainerView.isHidden = true
+        DefaultOmniBarView.activateItemSizeConstraints(for: tabSwitcherContainerView)
         
         refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reloadSmall, for: .normal)
 
@@ -572,8 +677,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         backButtonView.addTarget(self, action: #selector(backButtonTap), for: .touchUpInside)
         settingsButtonView.addTarget(self, action: #selector(settingsButtonTap), for: .touchUpInside)
         bookmarksButtonView.addTarget(self, action: #selector(bookmarksButtonTap), for: .touchUpInside)
+        leadingBookmarksButtonView.addTarget(self, action: #selector(bookmarksButtonTap), for: .touchUpInside)
+        passwordsButtonView.addTarget(self, action: #selector(passwordsButtonTap), for: .touchUpInside)
         menuButtonView.addTarget(self, action: #selector(menuButtonTap), for: .touchUpInside)
         externalRefreshButtonView.addTarget(self, action: #selector(reloadButtonTap), for: .touchUpInside)
+        fireButtonView.addTarget(self, action: #selector(fireButtonTap), for: .touchUpInside)
         searchAreaView.modeToggleView.onSearchTapped = { [weak self] in
             self?.onSearchModePressed?()
         }
@@ -587,6 +695,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(searchAreaPressed)))
 
         menuButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(menuButtonLongPress)))
+        settingsButtonView.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(settingsButtonLongPress)))
 
         aiChatLeftButton.addTarget(self, action: #selector(aiChatLeftButtonTap), for: .touchUpInside)
         aiChatSendButton.addTarget(self, action: #selector(aiChatSendButtonTap), for: .primaryActionTriggered)
@@ -594,12 +703,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func updateFireModeAppearance() {
         if fireMode {
-            searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeBackground)
+            searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeCardBackground)
             activeOutlineView.layer.borderColor = UIColor(singleUseColor: .fireModeAccent).cgColor
         } else {
-            searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
+            searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
             activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
         }
+        let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
+        searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
         progressView?.updateFireModeAppearance(fireMode: fireMode)
     }
 
@@ -628,6 +739,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         bookmarksButtonView.accessibilityLabel = "Bookmarks"
         bookmarksButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Bookmarks"
         bookmarksButtonView.accessibilityTraits = .button
+
+        leadingBookmarksButtonView.accessibilityLabel = "Bookmarks"
+        leadingBookmarksButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.BookmarksLeading"
+        leadingBookmarksButtonView.accessibilityTraits = .button
+
+        passwordsButtonView.accessibilityLabel = "Passwords"
+        passwordsButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Passwords"
+        passwordsButtonView.accessibilityTraits = .button
 
         menuButtonView.accessibilityLabel = "Browsing Menu"
         menuButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.BrowsingMenu"
@@ -757,15 +876,25 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         onSettingsButtonPressed?()
     }
 
+    @objc private func settingsButtonLongPress(_ sender: UILongPressGestureRecognizer) {
+        guard sender.state == .began else { return }
+        onSettingsButtonLongPressed?()
+    }
+
     @objc private func bookmarksButtonTap() {
         onBookmarksPressed?()
+    }
+
+    @objc private func passwordsButtonTap() {
+        onPasswordsPressed?()
     }
 
     @objc private func menuButtonTap() {
         onMenuButtonPressed?()
     }
 
-    @objc private func menuButtonLongPress() {
+    @objc private func menuButtonLongPress(_ sender: UILongPressGestureRecognizer) {
+        guard sender.state == .began else { return }
         onMenuButtonLongPressed?()
     }
 
@@ -817,6 +946,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         onAIChatBrandingPressed?()
     }
 
+    @objc private func fireButtonTap() {
+        onFirePressed?()
+    }
+
     private struct Metrics {
         static let itemSize: CGFloat = 44
         static let height: CGFloat = 60
@@ -841,12 +974,21 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         static let sendButtonSize: CGFloat = 40.0
         static let expansionAnimationDuration: TimeInterval = 0.25
 
-        static let expandedSizeSpacing: CGFloat = 24.0
-        static let expandedSizeMargins = NSDirectionalEdgeInsets(
+        static let expandedPadSizeSpacing: CGFloat = 24.0
+        static let expandedPadSizeMargins = NSDirectionalEdgeInsets(
             top: 0,
-            leading: expandedSizeSpacing,
+            leading: expandedPadSizeSpacing,
             bottom: 0,
-            trailing: expandedSizeSpacing
+            trailing: expandedPadSizeSpacing
+        )
+
+        static let expandedPhoneSizeSpacing: CGFloat = 16.0
+        static let expandedPhoneSizeButtonSpacing: CGFloat = 10.0
+        static let expandedPhoneSizeMargins = NSDirectionalEdgeInsets(
+            top: 0,
+            leading: 4,
+            bottom: 0,
+            trailing: 4
         )
     }
 
@@ -881,6 +1023,23 @@ extension DefaultOmniBarView {
 
     func moveSeparatorToBottom() {
         // no-op
+    }
+
+    func configureForSwipeTemplate(mode: OmniBarLayoutMode, tabCount: Int) {
+        setLayoutMode(mode, animated: false)
+        tabSwitcherContainerView.subviews.forEach { $0.removeFromSuperview() }
+        if mode != .compact {
+            let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
+            button.translatesAutoresizingMaskIntoConstraints = false
+            tabSwitcherContainerView.addSubview(button)
+            NSLayoutConstraint.activate([
+                button.centerXAnchor.constraint(equalTo: tabSwitcherContainerView.centerXAnchor),
+                button.centerYAnchor.constraint(equalTo: tabSwitcherContainerView.centerYAnchor),
+                button.widthAnchor.constraint(equalToConstant: 34),
+                button.heightAnchor.constraint(equalToConstant: 44),
+            ])
+            button.tabCount = tabCount
+        }
     }
 
     func hideButtons() {
@@ -1022,6 +1181,9 @@ extension DefaultOmniBarView {
             applyExpansionConstraints()
             applyExpansionClipping()
             layoutIfNeeded()
+            if isSearchAreaExpanded, !aiChatTextView.isFirstResponder {
+                aiChatTextView.becomeFirstResponder()
+            }
             return
         }
 
@@ -1091,11 +1253,19 @@ extension DefaultOmniBarView {
     }
 
     func updateAIChatSendButton(hasText: Bool) {
+        let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
         if hasText {
-            aiChatSendButton.backgroundColor = UIColor(designSystemColor: .accent)
+            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+            aiChatSendButton.backgroundColor = accentColor
+            aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
+            aiChatSendButton.isEnabled = true
+        } else if isAIVoiceChatEnabled {
+            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.voice, for: .normal)
+            aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
         } else {
+            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
             aiChatSendButton.backgroundColor = .clear
             aiChatSendButton.tintColor = UIColor(designSystemColor: .icons)
             aiChatSendButton.isEnabled = false

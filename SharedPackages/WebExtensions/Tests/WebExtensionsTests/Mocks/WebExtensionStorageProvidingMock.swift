@@ -70,6 +70,27 @@ final class WebExtensionStorageProvidingMock: WebExtensionStorageProviding {
         return identifierFolder.appendingPathComponent(sourceURL.lastPathComponent)
     }
 
+    var extractExtensionCalled = false
+    var extractExtensionSourceURL: URL?
+    var extractExtensionIdentifier: String?
+    var mockExtractResult: URL?
+    var mockExtractError: Error?
+    func extractExtension(from sourceURL: URL, identifier: String) throws -> URL {
+        extractExtensionCalled = true
+        extractExtensionSourceURL = sourceURL
+        extractExtensionIdentifier = identifier
+
+        if let error = mockExtractError {
+            throw error
+        }
+
+        if let result = mockExtractResult {
+            return result
+        }
+
+        return extensionsDirectory.appendingPathComponent(identifier)
+    }
+
     var removeExtensionCalled = false
     var removeExtensionIdentifier: String?
     var mockRemoveError: Error?

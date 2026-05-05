@@ -98,10 +98,12 @@ final class ScriptSourceProviderTests: XCTestCase {
             fireproofDomains: MockFireproofDomains(domains: []),
             fireCoordinator: fireCoordinator,
             autoconsentManagement: AutoconsentManagement(),
-            newTabPageActionsManager: nil,
             syncServiceProvider: { nil },
             syncErrorHandler: SyncErrorHandler(),
-            webExtensionAvailability: nil
+            webExtensionAvailability: nil,
+            dockCustomization: DockCustomizerMock(),
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: MockKeyValueStore()),
+            installDateProvider: { Date() }
         )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

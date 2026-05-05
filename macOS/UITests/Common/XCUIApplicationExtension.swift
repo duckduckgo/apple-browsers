@@ -137,6 +137,11 @@ extension XCUIApplication {
         value(forKey: "bundleID") as? String
     }
 
+    var isSandboxed: Bool {
+        // Naive bundleID-based check
+        bundleID?.starts(with: "com.duckduckgo.mobile.ios") == true
+    }
+
     /// Enforces single a single window by:
     ///  1. First, closing all windows
     ///  2. Opening a new window
@@ -244,8 +249,10 @@ extension XCUIApplication {
 
     /// Activates the address bar if needed and returns its current value
     /// - Returns: The current value of the address bar as a string
-    func addressBarValueActivatingIfNeeded() -> String? {
-        activateAddressBar()
+    func addressBarValueActivatingIfNeeded(shouldActivate: Bool = true) -> String? {
+        if shouldActivate {
+            activateAddressBar()
+        }
         return addressBar.value as? String
     }
 
@@ -343,6 +350,7 @@ extension XCUIApplication {
                 scheme + naked + "/",
                 scheme + "www." + naked,
                 scheme + "www." + naked + "/",
+                url.absoluteString,
             ]), timeout: UITests.Timeouts.navigation),
             "Tab did not change URL to \(url.absoluteString) in a reasonable timeframe (current URL: \(tab.url ?? "<nil>"))."
         )

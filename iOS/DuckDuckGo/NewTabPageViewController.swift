@@ -22,7 +22,9 @@ import DDGSync
 import Bookmarks
 import BrowserServicesKit
 import Core
+import Onboarding
 import RemoteMessaging
+import Subscription
 
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
@@ -46,6 +48,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let associatedTab: Tab
 
     private var hostingController: UIHostingController<AnyView>?
+    private var isShowingDuckAICompletionDialog = false
+    private var isBorderSuppressedForChromeLayout = false
 
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
@@ -66,7 +70,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
+         fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
          appSettings: AppSettings,
+         faviconsCache: FavoritesFaviconCaching,
+         subscriptionManager: any SubscriptionManager,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
          appWidthObserver: AppWidthObserver = .shared) {
@@ -81,12 +88,14 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
         favoritesModel = FavoritesViewModel(isFocussedState: isFocussedState,
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
-                                            faviconLoader: faviconLoader)
+                                            faviconLoader: faviconLoader,
+                                            faviconsCache: faviconsCache)
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
                                                 messageActionHandler: remoteMessagingActionHandler,
                                                 imageLoader: remoteMessagingImageLoader,
-                                                pixelReporter: remoteMessagingPixelReporter)
+                                                pixelReporter: remoteMessagingPixelReporter,
+                                                fireModePromotionEligibility: fireModePromotionEligibility)
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
@@ -96,6 +105,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             favoritesViewModel: self.favoritesModel))
 
         assignFavoriteModelActions()
+        messagesModel.onTryFireModeRequested = { [weak self] in
+            guard let self else { return }
+            self.delegate?.newTabPageDidRequestTryFireMode(self)
+        }
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
@@ -109,6 +122,11 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         } else {
             newTabPageViewModel.onEscapeHatchTap = nil
         }
+        updateBorderView()
+    }
+
+    func setChromeLayoutContext(isBorderSuppressed: Bool) {
+        isBorderSuppressedForChromeLayout = isBorderSuppressed
         updateBorderView()
     }
 
@@ -142,6 +160,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         }
     }
 
+    func setSectionTitle(_ title: String?) {
+        newTabPageViewModel.sectionTitle = title
+    }
+
     func setFavoritesEditable(_ editable: Bool) {
         newTabPageViewModel.canEditFavorites = editable
         favoritesModel.canEditFavorites = editable
@@ -156,9 +178,14 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func updateBorderView() {
+        if !favoritesModel.isEmpty, isViewLoaded {
+            borderView.insertSelf(into: view)
+        }
+
+        let shouldShowBorder = !favoritesModel.isEmpty && !isBorderSuppressedForChromeLayout
         let hasEscapeHatch = newTabPageViewModel.escapeHatch != nil
-        borderView.isTopVisible = !hasEscapeHatch && appSettings.currentAddressBarPosition == .top
-        borderView.isBottomVisible = !appWidthObserver.isLargeWidth
+        borderView.isTopVisible = shouldShowBorder && !hasEscapeHatch && appSettings.currentAddressBarPosition == .top
+        borderView.isBottomVisible = shouldShowBorder && !appWidthObserver.isLargeWidth
     }
 
     func registerForNotifications() {
@@ -230,6 +257,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func dismiss() {
+        notifyDuckAICompletionDismissedIfNeeded()
         delegate = nil
         chromeDelegate = nil
         removeFromParent()
@@ -244,6 +272,13 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         presentNextDaxDialog()
         // Show Keyboard when showing the first Dax tip
         chromeDelegate?.omniBar.beginEditing(animated: true)
+    }
+
+    func showDuckAIOnboardingCompletionWithActiveAddressBar(message: String) {
+        chromeDelegate?.omniBar.beginEditing(animated: true)
+        DispatchQueue.main.async { [weak self] in
+            self?.showDuckAIOnboardingCompletionDialog(message: message)
+        }
     }
 
     // MARK: - Onboarding
@@ -271,6 +306,67 @@ extension NewTabPageViewController: HomeScreenTransitionSource {
 }
 
 extension NewTabPageViewController {
+
+    func showDuckAIOnboardingCompletionDialog(message: String) {
+        dismissHostingController(didFinishNTPOnboarding: false)
+        // Completion dialog should not hide NTP background state.
+        newTabPageViewModel.finishOnboarding()
+
+        let presentedHostViewController = parent?.presentedViewController ?? parent
+        guard let editingController = presentedHostViewController as? OmniBarEditingStateViewController else {
+            isShowingDuckAICompletionDialog = false
+            return
+        }
+
+        isShowingDuckAICompletionDialog = true
+        editingController.setLogoHidden(true)
+
+        let onDismiss = { [weak self, weak editingController] in
+            guard let self else { return }
+            let finishDismissal = {
+                editingController?.setLogoHidden(false)
+                self.daxDialogsManager.dismiss()
+                self.dismissHostingController(didFinishNTPOnboarding: true)
+                ViewHighlighter.hideAll()
+            }
+
+            guard let hostingView = self.hostingController?.view else {
+                finishDismissal()
+                return
+            }
+            hostingView.isUserInteractionEnabled = false
+            UIView.animate(withDuration: 0.2, animations: {
+                hostingView.alpha = 0
+            }, completion: { _ in
+                finishDismissal()
+            })
+        }
+
+        let root = newTabDialogFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
+        let hostingController = UIHostingController(rootView: root)
+        self.hostingController = hostingController
+        hostingController.view.backgroundColor = .clear
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        editingController.addChild(hostingController)
+        let container = editingController.contentStackContainerView
+        container.addSubview(hostingController.view)
+        NSLayoutConstraint.activate([
+            // Keep the completion content pinned to the top; in bottom-bar mode it gets cropped from the bottom
+            // as the bar moves up with the keyboard.
+            editingController.isUsingTopBarPositionForLayout ?
+                hostingController.view.topAnchor.constraint(equalTo: editingController.contentStackTopAnchor,
+                                                            constant: editingController.addressBarToToggleSpacing) :
+                hostingController.view.topAnchor.constraint(equalTo: container.topAnchor),
+            editingController.isUsingTopBarPositionForLayout ?
+                hostingController.view.heightAnchor.constraint(equalTo: container.heightAnchor) :
+                hostingController.view.bottomAnchor.constraint(equalTo: editingController.contentStackBottomAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+        ])
+        hostingController.didMove(toParent: editingController)
+        container.bringSubviewToFront(editingController.switchBarVC.view)
+    }
 
     func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
         dismissHostingController(didFinishNTPOnboarding: false)
@@ -334,11 +430,28 @@ extension NewTabPageViewController {
     }
 
     private func dismissHostingController(didFinishNTPOnboarding: Bool) {
+        let didDismissDuckAICompletionDialog = isShowingDuckAICompletionDialog
         hostingController?.willMove(toParent: nil)
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
+        isShowingDuckAICompletionDialog = false
+        if didDismissDuckAICompletionDialog {
+            delegate?.newTabPageDidDismissDuckAIExperimentCompletion(self)
+        }
         if didFinishNTPOnboarding {
             self.newTabPageViewModel.finishOnboarding()
         }
+    }
+
+    func dismissDuckAICompletionDialogIfNeededOnEditingEnd() {
+        guard isShowingDuckAICompletionDialog else { return }
+        daxDialogsManager.dismiss()
+        dismissHostingController(didFinishNTPOnboarding: true)
+    }
+
+    private func notifyDuckAICompletionDismissedIfNeeded() {
+        guard isShowingDuckAICompletionDialog else { return }
+        isShowingDuckAICompletionDialog = false
+        delegate?.newTabPageDidDismissDuckAIExperimentCompletion(self)
     }
 }

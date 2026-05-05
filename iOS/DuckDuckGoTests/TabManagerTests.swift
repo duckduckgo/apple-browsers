@@ -29,6 +29,11 @@ import Combine
 @MainActor
 final class TabManagerTests: XCTestCase {
 
+    override func tearDown() {
+        UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
+        super.tearDown()
+    }
+
     func testWhenClosingOnlyOpenTabThenASingleEmptyTabIsAdded() async throws {
 
         let tabsModel = TabsModel(desktop: false)
@@ -132,28 +137,21 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(viewModel.tab.uid, tab.uid)
     }
 
-    func testWhenFireModeFlagIsDisabledThenCurrentBrowsingModeRevertsToNormal() throws {
+    func testWhenFireModeResolvedAtLaunchThenMidSessionFlagChangeDoesNotAffectBrowsingMode() throws {
         let tabsModel = TabsModel(desktop: false)
         let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.fireMode]
         let manager = try makeManager(tabsModel, featureFlagger: flagger)
 
-        // Fire mode enabled
-        flagger.enabledFeatureFlags = [.fireMode]
-        
-        // Default value is normal
-        XCTAssertEqual(manager.currentBrowsingMode, .normal)
-        
-        // Setting mode with flag enabled
-        manager.setBrowsingMode(.fire)
-
-        // Mode updated
+        manager.setBrowsingMode(.fire, source: .tabSelection)
         XCTAssertEqual(manager.currentBrowsingMode, .fire)
 
-        // Disabling fire mode
+        // Simulate the feature flag source changing mid-session;
+        // the resolved value in UserDefaults should remain unchanged.
         flagger.enabledFeatureFlags = []
-        
-        // Mode reverts back to normal
-        XCTAssertEqual(manager.currentBrowsingMode, .normal)
+
+        XCTAssertEqual(manager.currentBrowsingMode, .fire,
+                       "Browsing mode should remain .fire because the capability was resolved at launch")
     }
 
     // MARK: - Fire Mode Zero Tabs
@@ -167,7 +165,7 @@ final class TabManagerTests: XCTestCase {
         let flagger = MockFeatureFlagger()
         flagger.enabledFeatureFlags = [.fireMode]
         let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
-        manager.setBrowsingMode(.fire)
+        manager.setBrowsingMode(.fire, source: .tabSelection)
 
         XCTAssertEqual(manager.currentTabsModel.count, 2)
 
@@ -183,7 +181,7 @@ final class TabManagerTests: XCTestCase {
         let flagger = MockFeatureFlagger()
         flagger.enabledFeatureFlags = [.fireMode]
         let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
-        manager.setBrowsingMode(.fire)
+        manager.setBrowsingMode(.fire, source: .tabSelection)
 
         XCTAssertEqual(manager.currentTabsModel.count, 0)
         XCTAssertNil(manager.current(createIfNeeded: false))
@@ -196,7 +194,7 @@ final class TabManagerTests: XCTestCase {
         let flagger = MockFeatureFlagger()
         flagger.enabledFeatureFlags = [.fireMode]
         let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
-        manager.setBrowsingMode(.fire)
+        manager.setBrowsingMode(.fire, source: .tabSelection)
 
         XCTAssertEqual(manager.currentTabsModel.count, 1)
 
@@ -213,7 +211,7 @@ final class TabManagerTests: XCTestCase {
         let flagger = MockFeatureFlagger()
         flagger.enabledFeatureFlags = [.fireMode]
         let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
-        manager.setBrowsingMode(.fire)
+        manager.setBrowsingMode(.fire, source: .tabSelection)
 
         let newTab = Tab(fireTab: true)
         manager.replace(tab: oldTab, withNewTab: newTab)
@@ -222,25 +220,50 @@ final class TabManagerTests: XCTestCase {
         XCTAssertTrue(manager.currentTabsModel.tabs[0] === newTab)
     }
 
-    func testWhenFireModeRemoveAllDoesNotAffectNormalMode() throws {
-        let fireModel = TabsModel(tabs: [
-            Tab(link: Link(title: "fire", url: URL(string: "https://fire.com")!), fireTab: true)
-        ], desktop: false, mode: .fire)
-        let normalModel = TabsModel(tabs: [
-            Tab(link: Link(title: "normal", url: URL(string: "https://normal.com")!))
-        ], desktop: false)
-        let flagger = MockFeatureFlagger()
-        flagger.enabledFeatureFlags = [.fireMode]
-        let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: flagger)
-        manager.setBrowsingMode(.fire)
+    // MARK: - removeAll(browsingMode:) Isolation
 
-        manager.removeAll()
+    func testWhenRemoveAllWithFireMode() throws {
+        let normalTab = Tab(link: Link(title: "normal", url: URL(string: "https://normal.com")!))
+        let fireTab = Tab(link: Link(title: "fire", url: URL(string: "https://fire.com")!), fireTab: true)
+        let normalModel = TabsModel(tabs: [normalTab], desktop: false)
+        let fireModel = TabsModel(tabs: [fireTab], desktop: false, mode: .fire)
+        let mockPreviews = MockTabPreviewsSource()
 
-        XCTAssertEqual(manager.currentTabsModel.count, 0)
+        let manager = try makeManager(normalModel, fireModel: fireModel, previewsSource: mockPreviews)
 
-        manager.setBrowsingMode(.normal)
-        XCTAssertEqual(manager.currentTabsModel.count, 1)
-        XCTAssertEqual(manager.currentTabsModel.tabs[0].link?.url.absoluteString, "https://normal.com")
+        manager.removeAll(browsingMode: .fire)
+
+        // Previews preserved
+        XCTAssertEqual(mockPreviews.removePreviewsWithIdNotInCalls.count, 1)
+        let preservedIDs = mockPreviews.removePreviewsWithIdNotInCalls.first
+        XCTAssertEqual(preservedIDs, Set([normalTab.uid]))
+        
+        // Normal tabs untouched
+        XCTAssertEqual(fireModel.count, 0)
+        XCTAssertEqual(normalModel.count, 1)
+        XCTAssertEqual(normalModel.tabs.first?.link?.url.absoluteString, "https://normal.com")
+    }
+
+    func testWhenRemoveAllWithNilPreserveNothing() throws {
+        let normalTab = Tab(link: Link(title: "normal", url: URL(string: "https://normal.com")!))
+        let fireTab = Tab(link: Link(title: "fire", url: URL(string: "https://fire.com")!), fireTab: true)
+        let normalModel = TabsModel(tabs: [normalTab], desktop: false)
+        let fireModel = TabsModel(tabs: [fireTab], desktop: false, mode: .fire)
+        let mockPreviews = MockTabPreviewsSource()
+
+        let manager = try makeManager(normalModel, fireModel: fireModel, previewsSource: mockPreviews)
+
+        manager.removeAll(browsingMode: nil)
+
+        // Previews removed
+        XCTAssertEqual(mockPreviews.removePreviewsWithIdNotInCalls.count, 1)
+        let preservedIDs = mockPreviews.removePreviewsWithIdNotInCalls.first
+        XCTAssertTrue(preservedIDs?.isEmpty ?? false)
+        
+        // All tabs removed
+        XCTAssertEqual(fireModel.count, 0)
+        XCTAssertEqual(normalModel.count, 1)
+        XCTAssertNil(normalModel.tabs.first?.link?.url.absoluteString)
     }
 
     func makeManager(_ model: TabsModel,
@@ -249,6 +272,7 @@ final class TabManagerTests: XCTestCase {
                      historyManager: MockHistoryManager = MockHistoryManager(),
                      featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
                      launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager()) throws -> TabManager {
+        FireModeCapability.resolve(using: featureFlagger)
         let tabsPersistence = TabsModelPersistence(normalStore: MockKeyValueFileStore(),
                                                    fireStore: MockKeyValueFileStore(),
                                                    legacyStore: MockKeyValueStore())
@@ -274,6 +298,7 @@ final class TabManagerTests: XCTestCase {
                           autoconsentManagementProvider: MockAutoconsentManagementProvider(),
                           websiteDataManager: MockWebsiteDataManager(),
                           fireproofing: MockFireproofing(),
+                          favicons: Favicons(),
                           maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
                           maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                           featureDiscovery: MockFeatureDiscovery(),

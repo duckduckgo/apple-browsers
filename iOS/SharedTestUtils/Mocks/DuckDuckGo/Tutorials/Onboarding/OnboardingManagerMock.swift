@@ -24,5 +24,5 @@ import Core
 final class OnboardingManagerMock: OnboardingStepsProvider {
     private(set) var didCallSettingsURLPath = false
 
-    var onboardingSteps: [DuckDuckGo.OnboardingIntroStep] = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+    var onboardingSteps: [DuckDuckGo.OnboardingIntroStep] = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
 }

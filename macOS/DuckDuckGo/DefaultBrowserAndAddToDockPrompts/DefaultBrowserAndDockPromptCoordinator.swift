@@ -161,7 +161,6 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     private let dockCustomization: DockCustomization
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let pixelFiring: PixelFiring?
-    private let isSparkleBuild: Bool
     private let isOnboardingCompleted: () -> Bool
     private let dateProvider: () -> Date
     private let notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting?
@@ -173,9 +172,8 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting?,
         featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger,
         isOnboardingCompleted: @escaping () -> Bool,
-        dockCustomization: DockCustomization = DockCustomizer(),
+        dockCustomization: DockCustomization,
         defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
-        applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
         pixelFiring: PixelFiring? = PixelKit.shared,
         dateProvider: @escaping () -> Date = Date.init
     ) {
@@ -184,7 +182,6 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         self.isOnboardingCompleted = isOnboardingCompleted
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider
-        self.isSparkleBuild = applicationBuildType.isSparkleBuild
         self.pixelFiring = pixelFiring
         self.dateProvider = dateProvider
         self.notificationPresenter = notificationPresenter
@@ -217,7 +214,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         let isDefaultBrowser = defaultBrowserProvider.isDefault
         let isAddedToDock = dockCustomization.isAddedToDock
 
-        if isSparkleBuild {
+        if dockCustomization.supportsAddingToDock {
             if isDefaultBrowser && isAddedToDock {
                 return nil
             } else if isDefaultBrowser && !isAddedToDock {

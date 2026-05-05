@@ -41,6 +41,7 @@ final class AIChatViewControllerManager {
     // MARK: - Public Properties
 
     weak var delegate: AIChatViewControllerManagerDelegate?
+    var isFireModeProvider: (() -> Bool)?
 
     // MARK: - Private Properties
 
@@ -65,6 +66,7 @@ final class AIChatViewControllerManager {
     private var productSurfaceTelemetry: ProductSurfaceTelemetry
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let statisticsLoader: StatisticsLoader
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     // MARK: - Initialization
 
@@ -79,7 +81,8 @@ final class AIChatViewControllerManager {
          subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler(),
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
-         statisticsLoader: StatisticsLoader = .shared) {
+         statisticsLoader: StatisticsLoader = .shared,
+         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -93,6 +96,7 @@ final class AIChatViewControllerManager {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.freeTrialConversionService = freeTrialConversionService
         self.statisticsLoader = statisticsLoader
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
     }
 
     // MARK: - Public Methods
@@ -109,15 +113,20 @@ final class AIChatViewControllerManager {
     ///   - query: Optional initial query to send to AI Chat
     ///   - payload: Optional payload data for AI Chat
     ///   - autoSend: Whether to automatically send the query
+    ///   - flowType: Optional onboarding flow type to hand off to Duck.ai.
     ///   - tools: Optional RAG tools available in AI Chat
     ///   - viewController: View controller to present the modal on
     @MainActor
     func openAIChat(_ query: String? = nil,
                     payload: Any? = nil,
                     autoSend: Bool = false,
+                    flowType: AIChatOnboardingFlowType = .default,
                     tools: [AIChatRAGTool]? = nil,
+                    modelId: String? = nil,
+                    reasoningEffort: AIChatReasoningEffort? = nil,
                     on viewController: UIViewController) {
-        open(query, payload: payload, autoSend: autoSend, tools: tools,
+        open(query, payload: payload, autoSend: autoSend, flowType: flowType, tools: tools,
+             modelId: modelId, reasoningEffort: reasoningEffort,
              presentationMode: .modal, viewController: viewController)
     }
 
@@ -127,6 +136,7 @@ final class AIChatViewControllerManager {
     ///   - query: Optional initial query to send to AI Chat
     ///   - payload: Optional payload data for AI Chat
     ///   - autoSend: Whether to automatically send the query
+    ///   - flowType: Optional onboarding flow type to hand off to Duck.ai.
     ///   - tools: Optional RAG tools available in AI Chat
     ///   - containerView: View to embed AI Chat into
     ///   - parentViewController: Parent view controller for managing the child
@@ -135,13 +145,23 @@ final class AIChatViewControllerManager {
     func openAIChatInContainer(_ query: String? = nil,
                                payload: Any? = nil,
                                autoSend: Bool = false,
+                               flowType: AIChatOnboardingFlowType = .default,
                                tools: [AIChatRAGTool]? = nil,
+                               modelId: String? = nil,
+                               reasoningEffort: AIChatReasoningEffort? = nil,
                                in containerView: UIView,
                                parentViewController: UIViewController,
                                completion: (() -> Void)? = nil) {
-        open(query, payload: payload, autoSend: autoSend, tools: tools,
+        open(query, payload: payload, autoSend: autoSend, flowType: flowType, tools: tools,
+             modelId: modelId, reasoningEffort: reasoningEffort,
              presentationMode: .container, containerView: containerView,
              viewController: parentViewController, completion: completion)
+    }
+
+    /// Opens AI Chat in voice mode.
+    @MainActor
+    func openAIChatVoiceMode(on viewController: UIViewController) {
+        open(presentationMode: .modal, viewController: viewController, voiceMode: true)
     }
 
     // MARK: - Private Setup Methods
@@ -152,6 +172,7 @@ final class AIChatViewControllerManager {
     ///   - query: Optional initial query
     ///   - payload: Optional payload data
     ///   - autoSend: Whether to auto-send query
+    ///   - flowType: Optional onboarding flow type to hand off to Duck.ai.
     ///   - tools: Optional RAG tools
     ///   - presentationMode: `.modal` (fires pixels) or `.container` (no pixels)
     ///   - containerView: Required for `.container` mode
@@ -161,11 +182,15 @@ final class AIChatViewControllerManager {
     private func open(_ query: String? = nil,
                       payload: Any? = nil,
                       autoSend: Bool = false,
+                      flowType: AIChatOnboardingFlowType = .default,
                       tools: [AIChatRAGTool]? = nil,
+                      modelId: String? = nil,
+                      reasoningEffort: AIChatReasoningEffort? = nil,
                       presentationMode: AIChatPresentationMode,
                       containerView: UIView? = nil,
                       viewController: UIViewController? = nil,
-                      completion: (() -> Void)? = nil) {
+                      completion: (() -> Void)? = nil,
+                      voiceMode: Bool = false) {
 
         productSurfaceTelemetry.duckAIUsed()
 
@@ -186,14 +211,36 @@ final class AIChatViewControllerManager {
             subscriptionAIChatStateHandler.reset()
             Task {
                 await cleanUpSession()
-                self.performSetup(query, payload: payload, autoSend: autoSend, tools: tools,
-                                  presentationMode: presentationMode, containerView: containerView,
-                                  viewController: viewController, completion: completion)
+                self.performSetup(
+                    query,
+                    payload: payload,
+                    autoSend: autoSend,
+                    flowType: flowType,
+                    tools: tools,
+                    modelId: modelId,
+                    reasoningEffort: reasoningEffort,
+                    presentationMode: presentationMode,
+                    containerView: containerView,
+                    viewController: viewController,
+                    completion: completion,
+                    voiceMode: voiceMode
+                )
             }
         } else {
-            performSetup(query, payload: payload, autoSend: autoSend, tools: tools,
-                         presentationMode: presentationMode, containerView: containerView,
-                         viewController: viewController, completion: completion)
+            performSetup(
+                query,
+                payload: payload,
+                autoSend: autoSend,
+                flowType: flowType,
+                tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
+                presentationMode: presentationMode,
+                containerView: containerView,
+                viewController: viewController,
+                completion: completion,
+                voiceMode: voiceMode
+            )
         }
     }
 
@@ -202,21 +249,43 @@ final class AIChatViewControllerManager {
     private func performSetup(_ query: String?,
                               payload: Any?,
                               autoSend: Bool,
+                              flowType: AIChatOnboardingFlowType = .default,
                               tools: [AIChatRAGTool]?,
+                              modelId: String?,
+                              reasoningEffort: AIChatReasoningEffort?,
                               presentationMode: AIChatPresentationMode,
                               containerView: UIView?,
                               viewController: UIViewController?,
-                              completion: (() -> Void)?) {
+                              completion: (() -> Void)?,
+                              voiceMode: Bool = false) {
         switch presentationMode {
         case .modal:
             guard let viewController = viewController else { return }
-            setupAndPresentAIChat(query, payload: payload, autoSend: autoSend,
-                                  tools: tools, on: viewController)
+            setupAndPresentAIChat(
+                query,
+                payload: payload,
+                autoSend: autoSend,
+                flowType: flowType,
+                tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
+                on: viewController,
+                voiceMode: voiceMode
+            )
         case .container:
             guard let containerView = containerView, let viewController = viewController else { return }
-            setupAndAddToContainer(query, payload: payload, autoSend: autoSend,
-                                   tools: tools, in: containerView,
-                                   parentViewController: viewController, completion: completion)
+            setupAndAddToContainer(
+                query,
+                payload: payload,
+                autoSend: autoSend,
+                flowType: flowType,
+                tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
+                in: containerView,
+                parentViewController: viewController,
+                completion: completion
+            )
         }
     }
 
@@ -228,14 +297,24 @@ final class AIChatViewControllerManager {
     private func setupAndPresentAIChat(_ query: String?,
                                        payload: Any?,
                                        autoSend: Bool,
+                                       flowType: AIChatOnboardingFlowType = .default,
                                        tools: [AIChatRAGTool]?,
-                                       on viewController: UIViewController) {
+                                       modelId: String?,
+                                       reasoningEffort: AIChatReasoningEffort?,
+                                       on viewController: UIViewController,
+                                       voiceMode: Bool = false) {
         let aiChatViewController = createAIChatViewController(presentationMode: .modal)
-        setupChatViewController(aiChatViewController, query: query,
-                                payload: payload,
-                                autoSend: autoSend,
-                                tools: tools)
-
+        setupChatViewController(
+            aiChatViewController,
+            query: query,
+            payload: payload,
+            autoSend: autoSend,
+            flowType: flowType,
+            tools: tools,
+            modelId: modelId,
+            reasoningEffort: reasoningEffort,
+            voiceMode: voiceMode
+        )
         let roundedPageSheet = RoundedPageSheetContainerViewController(
             contentViewController: aiChatViewController,
             allowedOrientation: .portrait
@@ -252,15 +331,24 @@ final class AIChatViewControllerManager {
     private func setupAndAddToContainer(_ query: String?,
                                         payload: Any?,
                                         autoSend: Bool,
+                                        flowType: AIChatOnboardingFlowType = .default,
                                         tools: [AIChatRAGTool]?,
+                                        modelId: String?,
+                                        reasoningEffort: AIChatReasoningEffort?,
                                         in containerView: UIView,
                                         parentViewController: UIViewController,
                                         completion: (() -> Void)? = nil) {
         let aiChatViewController = createAIChatViewController(presentationMode: .container)
-        setupChatViewController(aiChatViewController, query: query,
-                                payload: payload,
-                                autoSend: autoSend,
-                                tools: tools)
+        setupChatViewController(
+            aiChatViewController,
+            query: query,
+            payload: payload,
+            autoSend: autoSend,
+            flowType: flowType,
+            tools: tools,
+            modelId: modelId,
+            reasoningEffort: reasoningEffort
+        )
 
         parentViewController.addChild(aiChatViewController)
         containerView.addSubview(aiChatViewController.view)
@@ -334,7 +422,8 @@ final class AIChatViewControllerManager {
 
     @MainActor
     private func createWebViewConfiguration() -> WKWebViewConfiguration {
-        let configuration = WKWebViewConfiguration.persistent()
+        let fireMode = isFireModeProvider?() ?? false
+        let configuration = WKWebViewConfiguration.persistent(fireMode: fireMode)
         let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
                                                           privacyConfigurationManager: privacyConfigurationManager)
         userContentController.delegate = self
@@ -347,11 +436,25 @@ final class AIChatViewControllerManager {
                                          query: String?,
                                          payload: Any?,
                                          autoSend: Bool,
-                                         tools: [AIChatRAGTool]?) {
+                                         flowType: AIChatOnboardingFlowType = .default,
+                                         tools: [AIChatRAGTool]?,
+                                         modelId: String?,
+                                         reasoningEffort: AIChatReasoningEffort?,
+                                         voiceMode: Bool = false) {
+        if voiceMode {
+            aiChatViewController.loadVoiceMode()
+            return
+        }
+
         if let query = query {
-            aiChatViewController.loadQuery(query,
-                                           autoSend: autoSend,
-                                           tools: tools)
+            aiChatViewController.loadQuery(
+                query,
+                autoSend: autoSend,
+                flowType: flowType,
+                tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort
+            )
         }
 
         if let payload = payload as? AIChatPayload {
@@ -395,6 +498,12 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
         }
 
         aiChatUserScript = userScripts.aiChatUserScript
+        aiChatUserScript?.setFireModeProvider(isFireModeProvider)
+        userScripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = { [weak self] in
+            guard let self else { return .notFireMode }
+            return .resolve(isFireMode: self.isFireModeProvider?() == true,
+                            handler: self.duckAiFireModeStorageHandler)
+        }
         aiChatUserScript?.delegate = self
         aiChatUserScript?.setPayloadHandler(payloadHandler)
         aiChatUserScript?.webView = chatViewController?.webView

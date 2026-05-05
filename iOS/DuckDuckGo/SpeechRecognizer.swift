@@ -42,8 +42,11 @@ final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
     override init() {
         operationQueue = OperationQueue()
         operationQueue.qualityOfService = .userInteractive
-        
+#if targetEnvironment(simulator)
+        speechRecognizer = nil
+#else
         speechRecognizer = SFSpeechRecognizer()
+#endif
         speechRecognizer?.queue = operationQueue
         
         super.init()

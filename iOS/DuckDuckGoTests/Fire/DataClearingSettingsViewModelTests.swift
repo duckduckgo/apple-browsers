@@ -23,8 +23,7 @@ import XCTest
 import AIChat
 
 final class MockDataClearingCapability: DataClearingCapable {
-    var isEnhancedDataClearingEnabled: Bool = false
-    var isBurnSingleTabEnabled: Bool = false
+    var isFireButtonRefinementsEnabled: Bool = false
 }
 
 @MainActor
@@ -53,7 +52,6 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
     // MARK: - Properties
 
     private var mockAppSettings: AppSettingsMock!
-    private var mockDataClearingCapability: MockDataClearingCapability!
     private var mockAIChatSettings: MockAIChatSettingsProvider!
     private var mockFireproofing: GranularFireConfirmationViewModelTests.TestFireproofing!
     private var mockDelegate: MockDelegate!
@@ -63,7 +61,6 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockAppSettings = AppSettingsMock()
-        mockDataClearingCapability = MockDataClearingCapability()
         mockAIChatSettings = MockAIChatSettingsProvider()
         mockFireproofing = GranularFireConfirmationViewModelTests.TestFireproofing()
         mockDelegate = MockDelegate()
@@ -71,7 +68,6 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     override func tearDown() {
         mockAppSettings = nil
-        mockDataClearingCapability = nil
         mockAIChatSettings = nil
         mockFireproofing = nil
         mockDelegate = nil
@@ -83,35 +79,10 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
     private func makeViewModel() -> DataClearingSettingsViewModel {
         DataClearingSettingsViewModel(
             appSettings: mockAppSettings,
-            dataClearingCapability: mockDataClearingCapability,
             aiChatSettings: mockAIChatSettings,
             fireproofing: mockFireproofing,
             delegate: mockDelegate
         )
-    }
-
-    // MARK: - Feature Flag Tests
-
-    func testWhenEnhancedDataClearingSettingsFlagIsOnThenNewUIEnabledIsTrue() {
-        // Given
-        mockDataClearingCapability.isEnhancedDataClearingEnabled = true
-
-        // When
-        let viewModel = makeViewModel()
-
-        // Then
-        XCTAssertTrue(viewModel.newUIEnabled)
-    }
-
-    func testWhenEnhancedDataClearingSettingsFlagIsOffThenNewUIEnabledIsFalse() {
-        // Given
-        mockDataClearingCapability.isEnhancedDataClearingEnabled = false
-
-        // When
-        let viewModel = makeViewModel()
-
-        // Then
-        XCTAssertFalse(viewModel.newUIEnabled)
     }
 
     // MARK: - AI Chat Toggle Visibility Tests
@@ -142,7 +113,6 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenNoFireproofedSitesThenSubtitleShowsZeroCount() {
         // Given
-        mockDataClearingCapability.isEnhancedDataClearingEnabled = true
         mockFireproofing.fireproofedDomains = []
 
         // When
@@ -154,7 +124,6 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenFireproofedSitesExistThenSubtitleShowsCount() {
         // Given
-        mockDataClearingCapability.isEnhancedDataClearingEnabled = true
         mockFireproofing.fireproofedDomains = ["example.com"]
 
         // When
@@ -162,18 +131,6 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(viewModel.fireproofedSitesSubtitle, "1 site excluded from clearing")
-    }
-
-    func testWhenNewUIDisabledThenSubtitleIsNil() {
-        // Given
-        mockDataClearingCapability.isEnhancedDataClearingEnabled = false
-        mockFireproofing.fireproofedDomains = ["example.com"]
-
-        // When
-        let viewModel = makeViewModel()
-
-        // Then
-        XCTAssertNil(viewModel.fireproofedSitesSubtitle)
     }
 
     // MARK: - Auto Clear Accessibility Label Tests

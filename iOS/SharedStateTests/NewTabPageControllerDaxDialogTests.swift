@@ -27,6 +27,8 @@ import Persistence
 import BrowserServicesKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
+import SubscriptionTestingUtilities
+
 @testable import Configuration
 
 private class MockURLBasedDebugCommands: URLBasedDebugCommands {
@@ -61,6 +63,8 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
             appSettings: AppSettingsMock(),
+            faviconsCache: Favicons(),
+            subscriptionManager: SubscriptionManagerMock(),
             internalUserCommands: MockURLBasedDebugCommands()
         )
 
@@ -151,6 +155,10 @@ class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
         self.homeDialog = homeDialog
         self.onDismiss = onCompletion
         return EmptyView()
+    }
+
+    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
+        AnyView(EmptyView())
     }
 }
 

@@ -16,8 +16,6 @@ tags:
         "autoclear-ui-test": true
         isRunningUITests: true
         ff.browsingMenuSheetEnabledByDefault: "true"
-        ff.burnSingleTab: "true"
-        ff.enhancedDataClearingSettings: "true"
 
 # Enable autoclear
 

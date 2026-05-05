@@ -38,8 +38,8 @@ final class TabCollectionViewModelTests: XCTestCase {
     func testWhenTabViewModelIsCalledThenAppropriateTabViewModelIsReturned() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
 
-        XCTAssertEqual(tabCollectionViewModel.tabViewModel(at: 0)?.tab,
-                       tabCollectionViewModel.tabCollection.tabs[0])
+        XCTAssertEqual(tabCollectionViewModel.tabs[0],
+                       tabCollectionViewModel.tabViewModel(at: 0).map { .loaded($0.tab) })
     }
 
     @MainActor
@@ -57,7 +57,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection())
 
         XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1)
-        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs[0].content, .newtab)
+        XCTAssertEqual(tabCollectionViewModel.tabs[0].content, .newtab)
     }
 
     // MARK: - Select
@@ -337,6 +337,71 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssert(tab === tabCollectionViewModel.tabViewModel(at: 2)?.tab)
     }
 
+    // Regression tests for APPLE-MACOS-BD7: setting `selectionIndex` from inside
+    // `insert`/`append` publishes `selectedTabViewModel`, which can synchronously
+    // re-enter and call `reloadItems` on the collection view. The delegate must
+    // be notified before that publication so the collection view's item count
+    // stays in sync with the data source.
+    @MainActor
+    func testWhenInsertWithSelected_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let delegate = TabCollectionViewModelDelegateMock()
+        tabCollectionViewModel.delegate = delegate
+
+        var didInsertCalledWhenSelectionPublished: Bool?
+        let cancellable = tabCollectionViewModel.$selectionIndex
+            .dropFirst()
+            .first()
+            .sink { _ in
+                didInsertCalledWhenSelectionPublished = delegate.didInsertCalled
+            }
+
+        tabCollectionViewModel.insert(Tab(), at: .unpinned(0), selected: true)
+
+        XCTAssertEqual(didInsertCalledWhenSelectionPublished, true)
+        cancellable.cancel()
+    }
+
+    @MainActor
+    func testWhenAppendWithSelected_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let delegate = TabCollectionViewModelDelegateMock()
+        tabCollectionViewModel.delegate = delegate
+
+        var didAppendCalledWhenSelectionPublished: Bool?
+        let cancellable = tabCollectionViewModel.$selectionIndex
+            .dropFirst()
+            .first()
+            .sink { _ in
+                didAppendCalledWhenSelectionPublished = delegate.didAppendCalled
+            }
+
+        tabCollectionViewModel.append(tab: Tab(), selected: true)
+
+        XCTAssertEqual(didAppendCalledWhenSelectionPublished, true)
+        cancellable.cancel()
+    }
+
+    @MainActor
+    func testWhenAppendTabsWithSelectLast_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let delegate = TabCollectionViewModelDelegateMock()
+        tabCollectionViewModel.delegate = delegate
+
+        var didMultipleChangesCalledWhenSelectionPublished: Bool?
+        let cancellable = tabCollectionViewModel.$selectionIndex
+            .dropFirst()
+            .first()
+            .sink { _ in
+                didMultipleChangesCalledWhenSelectionPublished = delegate.didMultipleChangesCalled
+            }
+
+        tabCollectionViewModel.append(tabs: [.loaded(Tab()), .loaded(Tab())], andSelect: true)
+
+        XCTAssertEqual(didMultipleChangesCalledWhenSelectionPublished, true)
+        cancellable.cancel()
+    }
+
     // MARK: - Insert or Append
 
     @MainActor
@@ -386,25 +451,25 @@ final class TabCollectionViewModelTests: XCTestCase {
     @MainActor
     func testWhenSelectedTabIsRemovedThenNextItemWithLowerIndexIsSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let firstTab = tabCollectionViewModel.tabCollection.tabs[0]
+        let firstTab = tabCollectionViewModel.tabs[0]
 
         tabCollectionViewModel.appendNewTab()
         tabCollectionViewModel.remove(at: .unpinned(1))
 
-        XCTAssertEqual(firstTab, tabCollectionViewModel.selectedTabViewModel?.tab)
+        XCTAssertEqual(firstTab, tabCollectionViewModel.selectedTabViewModel.map { .loaded($0.tab) })
     }
 
     @MainActor
     func testWhenAllOtherTabsAreRemovedThenRemainedIsAlsoSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let firstTab = tabCollectionViewModel.tabCollection.tabs[0]
+        let firstTab = tabCollectionViewModel.tabs[0]
 
         tabCollectionViewModel.appendNewTab()
         tabCollectionViewModel.appendNewTab()
 
         tabCollectionViewModel.removeAllTabs(except: 0)
 
-        XCTAssertEqual(firstTab, tabCollectionViewModel.selectedTabViewModel?.tab)
+        XCTAssertEqual(firstTab, tabCollectionViewModel.selectedTabViewModel.map { .loaded($0.tab) })
     }
 
     @MainActor
@@ -504,7 +569,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     @MainActor
     func testWhenChildTabIsInsertedAndRemovedAndThereIsAChildTabClose_ThenChildTabIsSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let parentTab = tabCollectionViewModel.tabCollection.tabs[0]
+        guard case .loaded(let parentTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
         let childTab1 = Tab(parentTab: parentTab)
         tabCollectionViewModel.append(tab: childTab1, selected: false)
         let childTab2 = Tab(parentTab: parentTab)
@@ -518,7 +583,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     @MainActor
     func testWhenChildTabOnLeftHasTheSameParentAndTabOnRightDont_ThenTabOnLeftIsSelectedAfterRemoval() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let parentTab = tabCollectionViewModel.tabCollection.tabs[0]
+        guard case .loaded(let parentTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
         let childTab1 = Tab(parentTab: parentTab)
         tabCollectionViewModel.append(tab: childTab1, selected: false)
         let childTab2 = Tab(parentTab: parentTab)
@@ -587,7 +652,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         _ = tabCollectionViewModel.removeSelected()
 
-        XCTAssertFalse(tabCollectionViewModel.tabCollection.tabs.contains(selectedTab!))
+        XCTAssertFalse(tabCollectionViewModel.tabCollection.contains(tab: selectedTab!))
     }
 
     // MARK: - Duplicate
@@ -780,23 +845,13 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertEqual(sut.pinnedTabs.count, 1)
         XCTAssertEqual(sut.tabViewModels.count, 6)
         XCTAssertEqual(sut.pinnedTabs.first, pinnedTab)
-        XCTAssertNil(sut.tabViewModels[pinnedTab])
+        XCTAssertNil(sut.tabViewModels[pinnedTab.uuid])
 
         // WHEN
         let result = sut.canBookmarkAllOpenTabs()
 
         // THEN
         XCTAssertTrue(result)
-    }
-
-    @MainActor
-    func testWhenPreloaderIsSet_thenInsertOrAppendNewTabUsesPreloadedTab() {
-        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
-        let preloader = MockNewTabPageTabPreloader()
-        viewModel.newTabPageTabPreloader = preloader
-        viewModel.insertOrAppendNewTab()
-        XCTAssertTrue(preloader.didCallNewTab)
-        XCTAssertIdentical(preloader.tabToReturn, viewModel.tabCollection.tabs.last!)
     }
 
     // MARK: - Popup behavior
@@ -810,7 +865,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         vm.appendNewTab(with: .newtab, selected: true)
 
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
         XCTAssertEqual(windowControllersManager.openCalls, [])
         XCTAssertEqual(windowControllersManager.openTabCalls, [])
@@ -839,7 +894,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         vm.appendNewTab(with: .settings(pane: .about), selected: false)
 
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
         XCTAssertEqual(windowControllersManager.openCalls, [])
         XCTAssertEqual(windowControllersManager.openTabCalls, [])
@@ -872,7 +927,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         vm.append(tab: newTab, selected: true)
 
         // Then: The tab should be opened in a new window and not added to popup
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
 
         // Verify correct window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
@@ -909,7 +964,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         vm.append(tab: newTab, selected: true)
 
         // Then: The tab should be opened after the parent tab and not added to popup
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
 
         // Verify correct window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
@@ -935,7 +990,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         vm.append(tab: newTab, selected: true)
 
         // Then: The tab should be opened after the parent tab and not added to popup
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
 
         // Verify correct window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
@@ -975,7 +1030,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         vm.append(tabs: tabs, andSelect: true)
 
         // Then: The tabs should be opened after the parent tab and not added to popup
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
 
         // Verify correct window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
@@ -1007,7 +1062,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         vm.append(tabs: tabs, andSelect: true)
 
         // Then: The tabs should be opened in appropriate locations and not added to popup
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
 
         // Verify window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
@@ -1033,7 +1088,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         vm.duplicateTab(at: .unpinned(0))
 
         // Then: The tab should be opened in the correct location and not added to popup
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
 
         // Verify window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
@@ -1058,7 +1113,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         vm.insertNewTab(after: parentTab, with: .url(.duckDuckGoEmail, credential: nil, source: .ui), selected: true)
 
         // Then: The tab should be opened in the correct location and not added to popup
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
 
         // Verify window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
@@ -1092,7 +1147,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         vm.insert(newTab, at: .unpinned(1), selected: true)
 
         // Then: The tab should be opened in the correct location and not added to popup
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
 
         // Verify window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
@@ -1117,7 +1172,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         vm.insert(newTab, after: parentTab, selected: true)
 
         // Then: The tab should be opened in the correct location and not added to popup
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
 
         // Verify window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
@@ -1142,7 +1197,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         vm.insert(newTab, selected: true)
 
         // Then: The tab should be opened in a new window and not added to popup
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
 
         // Verify window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
@@ -1178,7 +1233,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         vm.insert(newTab, selected: true)
 
         // Then: The tab should be opened in a new window and not added to popup
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
 
         // Verify window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
@@ -1214,7 +1269,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         vm.insertOrAppendNewTab()
 
         // Then: The tab should be opened in the correct location and not added to popup
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
 
         // Verify window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
@@ -1257,7 +1312,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         vm.append(tabs: tabs, andSelect: true)
 
         // Then: The tabs should be opened in appropriate locations and not added to popup
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
 
         // Verify window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
@@ -1309,7 +1364,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         vm.insertOrAppend(tab: newTab, selected: true)
 
         // Then: The tab should be opened in the correct location and not added to popup
-        XCTAssertEqual(vm.tabCollection.tabs, [initialTab], "Original tab should remain unchanged")
+        XCTAssertEqual(vm.tabCollection.loadedTabs, [initialTab], "Original tab should remain unchanged")
 
         // Verify window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
@@ -1318,6 +1373,55 @@ final class TabCollectionViewModelTests: XCTestCase {
             .init(tab: newTab, parentTab: parentTab, selected: true)
         ])
         XCTAssertEqual(windowControllersManager.openWindowCalls, [])
+    }
+
+    // MARK: - Unloaded Tab Materialization
+
+    @MainActor
+    func testSelectingUnloadedTabMaterializesIt() {
+        let loadedTab = Tab(content: .newtab)
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .unloaded(unloaded)])
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+        let delegate = TabCollectionViewModelDelegateMock()
+        vm.delegate = delegate
+
+        vm.select(at: .unpinned(1))
+
+        if case .loaded = vm.tabs[1] {} else { XCTFail("Unloaded tab should be materialized after selection") }
+        XCTAssertNotNil(vm.tabViewModel(at: 1), "TabViewModel should exist for materialized tab")
+    }
+
+    @MainActor
+    func testInitMaterializesSelectedUnloadedTabPreservingIdentity() {
+        let unloaded = UnloadedTab(
+            uuid: "test-uuid",
+            content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+            title: "DuckDuckGo"
+        )
+        let tabCollection = TabCollection(tabs: [.unloaded(unloaded)])
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+
+        guard case .loaded(let materializedTab) = vm.tabs[0] else { return XCTFail("Init should materialize the selected unloaded tab") }
+        XCTAssertEqual(materializedTab.uuid, "test-uuid")
+        XCTAssertEqual(materializedTab.url, .duckDuckGo)
+    }
+
+    @MainActor
+    func testInitMaterializesNonZeroSelectedUnloadedTab() {
+        let loadedTab = Tab(content: .newtab)
+        let unloaded = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let tabCollection = TabCollection(tabs: [.loaded(loadedTab), .unloaded(unloaded)])
+
+        let vm = TabCollectionViewModel(
+            tabCollection: tabCollection,
+            selectionIndex: .unpinned(1),
+            pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock()
+        )
+
+        if case .loaded = vm.tabs[1] {} else { XCTFail("Init should materialize the selected unloaded tab at index 1") }
+        XCTAssertNotNil(vm.tabViewModel(at: 1))
+        XCTAssertEqual(vm.selectionIndex, .unpinned(1))
     }
 }
 

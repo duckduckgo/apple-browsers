@@ -56,6 +56,8 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public let executionConfig: BrokerJobExecutionConfig
     public let featureFlagger: DBPFeatureFlagging
     public let applicationNameForUserAgent: String?
+    public var fetchedEmail: String?
+    public var emailData: ExtractedEmailData = [:]
 
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,
@@ -114,6 +116,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                         try await initialize(handler: webViewHandler, isFakeBroker: context.dataBroker.isFakeBroker, showWebView: showWebView)
                     } catch {
                         failed(with: error)
+                        return
                     }
 
                     do {

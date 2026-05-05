@@ -40,6 +40,26 @@ final class AIChatContextualQuickActionTests: XCTestCase {
         XCTAssertEqual(AIChatContextualQuickAction.summarize.prompt, "Summarize This Page")
     }
 
+    func testSummarizePagePromptIsExpectedValue() {
+        XCTAssertEqual(AIChatContextualQuickAction.summarizePage.prompt, "Summarize This Page")
+    }
+
+    func testSummarizePageHasIcon() {
+        XCTAssertNotNil(AIChatContextualQuickAction.summarizePage.icon)
+    }
+
+    func testAskAboutPagePromptIsEmpty() {
+        XCTAssertTrue(AIChatContextualQuickAction.askAboutPage.prompt.isEmpty)
+    }
+
+    func testAskAboutPageHasIcon() {
+        XCTAssertNotNil(AIChatContextualQuickAction.askAboutPage.icon)
+    }
+
+    func testAskAboutPageTitleIsNotEmpty() {
+        XCTAssertFalse(AIChatContextualQuickAction.askAboutPage.title.isEmpty)
+    }
+
     // MARK: - Icon Tests
 
     func testSummarizeHasIcon() {

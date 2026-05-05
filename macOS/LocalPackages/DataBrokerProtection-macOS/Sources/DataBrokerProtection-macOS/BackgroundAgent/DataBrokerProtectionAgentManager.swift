@@ -64,24 +64,7 @@ public class DataBrokerProtectionAgentManagerProvider {
 
         let ipcServer = DefaultDataBrokerProtectionIPCServer(machServiceName: Bundle.main.bundleIdentifier!)
 
-        let features = ContentScopeFeatureToggles(emailProtection: false,
-                                                  emailProtectionIncontextSignup: false,
-                                                  credentialsAutofill: false,
-                                                  identitiesAutofill: false,
-                                                  creditCardsAutofill: false,
-                                                  credentialsSaving: false,
-                                                  passwordGeneration: false,
-                                                  inlineIconCredentials: false,
-                                                  thirdPartyCredentialsProvider: false,
-                                                  unknownUsernameCategorization: false,
-                                                  partialFormSaves: false,
-                                                  passwordVariantCategorization: false,
-                                                  inputFocusApi: false,
-                                                  autocompleteAttributeSupport: false)
-        let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
-                                                            sessionKey: UUID().uuidString,
-                                                            messageSecret: UUID().uuidString,
-                                                            featureToggles: features)
+        let contentScopeProperties = ContentScopeProperties.contentScopePropertiesForDBP()
 
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
@@ -317,7 +300,7 @@ extension DataBrokerProtectionAgentManager {
         let database = jobDependencies.database
         let engagementPixels = DataBrokerProtectionEngagementPixels(database: database, handler: sharedPixelsHandler, repository: engagementPixelRepository)
         let eventPixels = DataBrokerProtectionEventPixels(database: database, repository: eventPixelRepository, handler: sharedPixelsHandler)
-        let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: sharedPixelsHandler, featureFlagger: jobDependencies.featureFlagger, repository: statsPixelRepository)
+        let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: sharedPixelsHandler, repository: statsPixelRepository)
 
         // This will fire the DAU/WAU/MAU pixels,
         engagementPixels.fireEngagementPixel(isAuthenticated: isAuthenticated)
@@ -405,7 +388,7 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
         }
     }
 
-    public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging) {
+    public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging, identifier: CompletedJobIdentifier?) {
         // Figure out if we've just finished initial scans, and send the appropriate pixel if necessary
 
         let database = jobDependencies.database
@@ -532,10 +515,10 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
     }
 
     public func runAllOptOuts(showWebView: Bool) {
-        queueManager.execute(.startOptOutOperations(showWebView: showWebView,
-                                                    jobDependencies: jobDependencies,
-                                                    errorHandler: nil,
-                                                    completion: nil))
+        queueManager.startImmediateOptOutOperationsIfPermitted(showWebView: showWebView,
+                                                               jobDependencies: jobDependencies,
+                                                               errorHandler: nil,
+                                                               completion: nil)
     }
 
     public func runEmailConfirmationOperations(showWebView: Bool) async {
@@ -578,5 +561,29 @@ extension DataBrokerProtectionAgentManager: EmailConfirmationDataDelegate {
 extension DataBrokerProtectionAgentManager: DBPWideEventsDelegate {
     public func sweepWideEvents() {
         wideEventSweeper?.sweep()
+    }
+}
+
+public extension ContentScopeProperties {
+    // Used to make sure debug tools and actual operations use the same properties
+    static func contentScopePropertiesForDBP() -> ContentScopeProperties {
+        let features = ContentScopeFeatureToggles(emailProtection: false,
+                                                  emailProtectionIncontextSignup: false,
+                                                  credentialsAutofill: false,
+                                                  identitiesAutofill: false,
+                                                  creditCardsAutofill: false,
+                                                  credentialsSaving: false,
+                                                  passwordGeneration: false,
+                                                  inlineIconCredentials: false,
+                                                  thirdPartyCredentialsProvider: false,
+                                                  unknownUsernameCategorization: false,
+                                                  partialFormSaves: false,
+                                                  passwordVariantCategorization: false,
+                                                  inputFocusApi: false,
+                                                  autocompleteAttributeSupport: false)
+        return ContentScopeProperties(gpcEnabled: false,
+                                      sessionKey: UUID().uuidString,
+                                      messageSecret: UUID().uuidString,
+                                      featureToggles: features)
     }
 }

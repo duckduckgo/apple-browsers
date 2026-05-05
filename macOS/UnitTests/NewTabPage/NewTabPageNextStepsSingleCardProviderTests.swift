@@ -291,7 +291,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
                 expectation.fulfill()
             }
 
-        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: nil)
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: NSWindow())
 
         wait(for: [expectation], timeout: 1.0)
         cancellable.cancel()
@@ -936,7 +936,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
                 expectation.fulfill()
             }
 
-        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: nil)
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: NSWindow())
         wait(for: [expectation], timeout: 1.0)
         cancellable.cancel()
 

@@ -72,7 +72,8 @@ final class MemoryPressureReporterTests: XCTestCase {
             syncEnabled: nil,
             usedAllocationMB: nil,
             wcTotalMemoryMB: nil,
-            uptimeMinutes: 0
+            uptimeMinutes: 0,
+            totalMemoryBytes: 0
         )
 
         // When
@@ -93,7 +94,8 @@ final class MemoryPressureReporterTests: XCTestCase {
             syncEnabled: true,
             usedAllocationMB: 512,
             wcTotalMemoryMB: 4096,
-            uptimeMinutes: 120
+            uptimeMinutes: 120,
+            totalMemoryBytes: 0
         )
 
         // When
@@ -124,7 +126,8 @@ final class MemoryPressureReporterTests: XCTestCase {
             syncEnabled: nil,
             usedAllocationMB: nil,
             wcTotalMemoryMB: nil,
-            uptimeMinutes: 5
+            uptimeMinutes: 5,
+            totalMemoryBytes: 0
         )
 
         // When

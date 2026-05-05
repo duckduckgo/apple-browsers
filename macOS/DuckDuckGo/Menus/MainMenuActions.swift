@@ -207,7 +207,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func addToDock(_ sender: Any?) {
-        DockCustomizer().addToDock()
+        guard dockCustomization.addToDock() else { return }
         PixelKit.fire(GeneralPixel.userAddedToDockFromMainMenu)
     }
 
@@ -230,7 +230,7 @@ extension AppDelegate {
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
             if self.internalUserDecider.isInternalUser {
-                Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
+                self.quickFeedbackService.openFeedbackPopup(from: NSApp.mainWindow)
             } else {
                 Application.appDelegate.openRequestANewFeature(nil)
             }
@@ -268,7 +268,7 @@ extension AppDelegate {
     @MainActor
     @objc func openReportABrowserProblem(_ sender: Any?) {
         guard !self.internalUserDecider.isInternalUser else {
-            Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
+            quickFeedbackService.openFeedbackPopup(from: NSApp.mainWindow)
             return
         }
 
@@ -279,8 +279,7 @@ extension AppDelegate {
     static func openReportABrowserProblem(_ sender: Any?, category: ProblemCategory? = nil, subcategory: SubCategory? = nil) {
         var window: NSWindow?
 
-        // Check if we can report broken site (same logic as openReportBrokenSite)
-        let canReportBrokenSite = Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
+        let canReportBrokenSite = Application.appDelegate.windowControllersManager.selectedTab?.canReportBrokenSite ?? false
 
         let formView = ReportProblemFormFlowView(
             canReportBrokenSite: canReportBrokenSite,
@@ -334,7 +333,7 @@ extension AppDelegate {
     @MainActor
     @objc func openRequestANewFeature(_ sender: Any?) {
         guard !self.internalUserDecider.isInternalUser else {
-            Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
+            quickFeedbackService.openFeedbackPopup(from: NSApp.mainWindow)
             return
         }
 
@@ -520,6 +519,14 @@ extension AppDelegate {
 
     // MARK: - Debug
 
+    @objc func debugClearWebViewCache(_ sender: Any?) {
+        WKWebsiteDataStore.default().removeData(
+            ofTypes: [WKWebsiteDataTypeDiskCache,
+                      WKWebsiteDataTypeMemoryCache,
+                      WKWebsiteDataTypeOfflineWebApplicationCache],
+            modifiedSince: .distantPast) { }
+    }
+
     @MainActor
     @objc func skipOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
@@ -627,6 +634,14 @@ extension AppDelegate {
 
     @objc func crashOnCxxException(_ sender: Any?) {
         throwTestCppException()
+    }
+
+    @objc func crashOnCoreDataException(_ sender: Any?) {
+        DispatchQueue.main.async {
+            NSException(name: NSExceptionName("_NSCoreDataException"),
+                        reason: "Simulated _NSCoreDataException from Debug menu",
+                        userInfo: nil).raise()
+        }
     }
 
     @MainActor @objc func simulateMemoryPressureCritical(_ sender: Any?) {
@@ -806,7 +821,7 @@ extension AppDelegate {
     }
 
     @objc func resetAddToDockFeatureNotification(_ sender: Any?) {
-        Application.appDelegate.dockCustomization?.resetData()
+        dockCustomization.resetData()
     }
 
     @objc func resetLaunchDateToToday(_ sender: Any?) {
@@ -815,6 +830,10 @@ extension AppDelegate {
 
     @objc func setLaunchDayAWeekInThePast(_ sender: Any?) {
         UserDefaults.standard.set(Date.weekAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
+    }
+
+    @objc func setLaunchDay10DaysInThePast(_ sender: Any?) {
+        UserDefaults.standard.set(Date.daysAgo(10), forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
     }
 
     @objc func setLaunchDayAMonthInThePast(_ sender: Any?) {
@@ -1386,7 +1405,7 @@ extension MainViewController {
     }
 
     @objc func bookmarkAllOpenTabs(_ sender: Any) {
-        let websitesInfo = tabCollectionViewModel.tabs.compactMap(WebsiteInfo.init)
+        let websitesInfo = tabCollectionViewModel.tabCollection.tabs.compactMap(WebsiteInfo.init)
         BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo, bookmarkManager: bookmarkManager).show()
     }
 
@@ -1506,6 +1525,12 @@ extension MainViewController {
         WindowsManager.openNewWindow(with: tab)
     }
 
+    @objc func newTabNextToActive(_ sender: Any?) {
+        guard let (tab, _) = getActiveTabAndIndex() else { return }
+
+        tabCollectionViewModel.insertNewTab(after: tab, with: .newtab, selected: true)
+    }
+
     @objc func duplicateTab(_ sender: Any?) {
         guard let (_, index) = getActiveTabAndIndex() else { return }
 
@@ -1567,12 +1592,32 @@ extension MainViewController {
 
     // MARK: - Debug
 
+    private static let debugTabURLs: [URL] = [
+        .duckDuckGo,
+        URL(string: "https://www.apple.com")!,
+        URL(string: "https://www.microsoft.com")!,
+        URL(string: "https://www.google.com")!,
+        URL(string: "https://www.nasa.gov")!,
+        URL(string: "https://github.com/")!,
+    ]
+
     @objc func addDebugTabs(_ sender: AnyObject) {
         let numberOfTabs = sender.representedObject as? Int ?? 1
-        (1...numberOfTabs).forEach { _ in
-            let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui))
-            tabCollectionViewModel.append(tab: tab)
+        let urls = Self.debugTabURLs
+        (0..<numberOfTabs).forEach { i in
+            let url = urls[i % urls.count]
+            let unloaded = UnloadedTab(content: .url(url, credential: nil, source: .ui),
+                                         title: url.host ?? url.absoluteString,
+                                         burnerMode: tabCollectionViewModel.burnerMode)
+            tabCollectionViewModel.tabCollection.append(tab: .unloaded(unloaded))
         }
+        // Notify the delegate so the collection view reloads before we select
+        tabCollectionViewModel.delegate?.tabCollectionViewModelDidMultipleChanges(tabCollectionViewModel)
+        let lastIndex = tabCollectionViewModel.tabs.count - 1
+        tabCollectionViewModel.select(at: .unpinned(lastIndex))
+
+        // Trigger background materialization of unloaded tabs
+        tabCollectionViewModel.setUpLazyLoadingIfNeeded(force: true)
     }
 
     @objc func debugShiftCardImpression(_ sender: Any?) {
@@ -1603,19 +1648,10 @@ extension MainViewController {
     }
 
     @objc func toggleWatchdog(_ sender: Any?) {
-        Task {
-            if NSApp.delegateTyped.watchdog.isRunning {
-                await NSApp.delegateTyped.watchdog.stop()
-            } else {
-                await NSApp.delegateTyped.watchdog.start()
-            }
-        }
-    }
-
-    @objc func toggleWatchdogCrash(_ sender: Any?) {
-        Task {
-            let crashOnTimeout = await NSApp.delegateTyped.watchdog.crashOnTimeout
-            await NSApp.delegateTyped.watchdog.setCrashOnTimeout(!crashOnTimeout)
+        if NSApp.delegateTyped.watchdog.isRunning {
+            NSApp.delegateTyped.watchdog.stop()
+        } else {
+            NSApp.delegateTyped.watchdog.start()
         }
     }
 
@@ -1898,7 +1934,7 @@ extension AppDelegate: NSMenuItemValidation {
             return areTherePasswords
 
         case #selector(AppDelegate.openReportBrokenSite(_:)):
-            return Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
+            return Application.appDelegate.windowControllersManager.selectedTab?.canReportBrokenSite ?? false
 
         default:
             return true

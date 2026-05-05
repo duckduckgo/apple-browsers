@@ -80,18 +80,39 @@ public final class SuggestionsReader: SuggestionsReading {
 
     private let featureFlagger: FeatureFlagger
     private let privacyConfig: PrivacyConfigurationManaging
+    private let nativeStorageHandler: DuckAiNativeStorageHandling?
+    private let localReader: LocalSuggestionsReader?
+    private let featureFlagProvider: AIChatFeatureFlagProviding?
 
     // MARK: - Initialization
 
-    public init(featureFlagger: FeatureFlagger, privacyConfig: PrivacyConfigurationManaging) {
+    /// Creates a suggestions reader that can fetch from native local storage or a headless webview.
+    /// When `nativeStorageHandler` and `featureFlagProvider` are provided and the feature flag is enabled,
+    /// suggestions are read directly from the local database. Otherwise the webview path is used.
+    public init(
+        featureFlagger: FeatureFlagger,
+        privacyConfig: PrivacyConfigurationManaging,
+        nativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+        featureFlagProvider: AIChatFeatureFlagProviding? = nil
+    ) {
         self.featureFlagger = featureFlagger
         self.privacyConfig = privacyConfig
+        self.nativeStorageHandler = nativeStorageHandler
+        self.localReader = nativeStorageHandler.map { LocalSuggestionsReader(storageHandler: $0) }
+        self.featureFlagProvider = featureFlagProvider
     }
 
     // MARK: - Public API
 
     @MainActor
     public func fetchSuggestions(query: String?, maxChats: Int) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
+        // Use local storage when the flag is enabled, the handler is available, and migration is done
+        if let featureFlagProvider, featureFlagProvider.isNativeDataAccessEnabled(),
+           let nativeStorageHandler, (try? nativeStorageHandler.isMigrationDone()) == true,
+           let localReader {
+            return await localReader.fetchSuggestions(query: query, maxChats: maxChats)
+        }
+
         // Prevent re-entrant setup
         if isSettingUp {
             return .failure(ReaderError.webViewNotInitialized)
@@ -116,22 +137,19 @@ public final class SuggestionsReader: SuggestionsReading {
             return .failure(ReaderError.scriptNotInitialized)
         }
 
-        // Fetch from all domains and return the result with the most recent chat
-        return await fetchFromAllDomains(query: query, maxChats: maxChats, script: script)
+        // Fetch suggestions from duck.ai
+        return await fetchSuggestionsFromDuckAi(query: query, maxChats: maxChats, script: script)
     }
 
     /// One week in seconds
     private static let oneWeekInterval: TimeInterval = 7 * 24 * 60 * 60
 
     @MainActor
-    private func fetchFromAllDomains(
+    private func fetchSuggestionsFromDuckAi(
         query: String?,
         maxChats: Int,
         script: AIChatSuggestionsUserScript
     ) async -> Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error> {
-        var results: [(pinned: [AIChatSuggestion], recent: [AIChatSuggestion])] = []
-        var lastError: Error?
-
         // When query is empty, only show chats from the last week
         let since: Int64?
         if query == nil || query?.isEmpty == true {
@@ -141,80 +159,29 @@ public final class SuggestionsReader: SuggestionsReading {
             since = nil
         }
 
-        for domain in URL.aiChatDomains {
-            // Navigate to domain
-            let navigationResult = await navigateToSite(domain)
-            if case .failure(let error) = navigationResult {
-                Logger.aiChat.debug("SuggestionsReader: Navigation to \(domain) failed: \(error.localizedDescription)")
-                lastError = error
-                continue
-            }
-
-            // Fetch suggestions from this domain
-            let fetchResult = await withCheckedContinuation { continuation in
-                // Resume any previous continuation to avoid leaking a suspended caller
-                self.fetchContinuation?.resume(returning: .failure(ReaderError.operationSuperseded))
-                self.fetchContinuation = continuation
-                script.fetchChats(query: query, maxChats: maxChats, since: since)
-            }
-
-            switch fetchResult {
-            case .success(let suggestions):
-                results.append(suggestions)
-            case .failure(let error):
-                Logger.aiChat.debug("SuggestionsReader: Fetch from \(domain) failed: \(error.localizedDescription)")
-                lastError = error
-            }
-        }
-
-        if let bestResult = Self.findMostRecentResult(from: results) {
-            return .success(bestResult)
-        } else if let error = lastError {
+        // Only read suggestions from duck.ai — duckduckgo.com data was migrated
+        let domain = URL.duckAi
+        let navigationResult = await navigateToSite(domain)
+        if case .failure(let error) = navigationResult {
+            Logger.aiChat.debug("SuggestionsReader: Navigation to \(domain) failed: \(error.localizedDescription)")
             return .failure(error)
-        } else {
-            return .failure(ReaderError.webViewNotInitialized)
-        }
-    }
-
-    // MARK: - Result Comparison
-
-    /// Finds the result with the most recent chat timestamp from multiple domain results.
-    /// - Parameter results: Array of suggestion results from different domains
-    /// - Returns: The result containing the most recently edited chat, or nil if no results
-    nonisolated static func findMostRecentResult(
-        from results: [(pinned: [AIChatSuggestion], recent: [AIChatSuggestion])]
-    ) -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])? {
-        guard !results.isEmpty else { return nil }
-
-        var bestResult: (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])?
-        var bestMostRecentDate: Date?
-
-        for suggestions in results {
-            let mostRecentDate = mostRecentTimestamp(from: suggestions)
-
-            if let currentMostRecent = mostRecentDate {
-                if bestMostRecentDate == nil || currentMostRecent > bestMostRecentDate! {
-                    bestResult = suggestions
-                    bestMostRecentDate = currentMostRecent
-                }
-            } else if bestResult == nil {
-                // No timestamps but no result yet, use this one
-                bestResult = suggestions
-            }
         }
 
-        return bestResult
-    }
+        // Fetch suggestions
+        let fetchResult = await withCheckedContinuation { continuation in
+            // Resume any previous continuation to avoid leaking a suspended caller
+            self.fetchContinuation?.resume(returning: .failure(ReaderError.operationSuperseded))
+            self.fetchContinuation = continuation
+            script.fetchChats(query: query, maxChats: maxChats, since: since)
+        }
 
-    /// Finds the most recent timestamp from a suggestions result.
-    /// - Parameter suggestions: Tuple of pinned and recent suggestions
-    /// - Returns: The most recent date from all suggestions, or nil if none have timestamps
-    nonisolated static func mostRecentTimestamp(
-        from suggestions: (pinned: [AIChatSuggestion], recent: [AIChatSuggestion])
-    ) -> Date? {
-        let mostRecentFromPinned = suggestions.pinned.compactMap(\.timestamp).max()
-        let mostRecentFromRecent = suggestions.recent.compactMap(\.timestamp).max()
-        return [mostRecentFromPinned, mostRecentFromRecent].compactMap { $0 }.max()
+        switch fetchResult {
+        case .success(let suggestions):
+            return .success(suggestions)
+        case .failure(let error):
+            Logger.aiChat.debug("SuggestionsReader: Fetch from \(domain) failed: \(error.localizedDescription)")
+            return .failure(error)
+        }
     }
 
     @MainActor

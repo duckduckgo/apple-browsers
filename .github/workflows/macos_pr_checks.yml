@@ -78,11 +78,11 @@ jobs:
     steps:
     - name: Check out the code
       if: github.event_name == 'pull_request' || github.event_name == 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Check out the code
       if: github.event_name != 'pull_request' && github.event_name != 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: ${{ inputs.branch || github.ref_name }}
 
@@ -107,11 +107,11 @@ jobs:
     steps:
     - name: Check out the code
       if: github.event_name == 'pull_request' || github.event_name == 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Check out the code
       if: github.event_name != 'pull_request' && github.event_name != 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: ${{ inputs.branch || github.ref_name }}
 
@@ -155,9 +155,9 @@ jobs:
             flavor: Non-Sandbox
           - cache-key: sandbox-
             flavor: Sandbox
-          - runs-on: macos-15
+          - runs-on: macos-26
             flavor: Non-Sandbox
-          - runs-on: macos-15-xlarge
+          - runs-on: macos-26-xlarge
             flavor: Sandbox
 
     runs-on: ${{ matrix.runs-on }}
@@ -181,13 +181,13 @@ jobs:
 
     - name: Check out the code
       if: github.event_name == 'pull_request' || github.event_name == 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
     - name: Check out the code
       if: github.event_name != 'pull_request' && github.event_name != 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
         ref: ${{ inputs.branch || github.ref_name }}
@@ -249,6 +249,14 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
+    - name: Restore Xcode Compilation Cache
+      uses: actions/cache/restore@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-${{ matrix.flavor }}
+        restore-keys: |
+          xcode-compilation-cache-${{ matrix.flavor }}-
+
     - name: Build and run unit tests
       id: run-unit-tests
       run: |
@@ -265,8 +273,13 @@ jobs:
           -maximum-test-execution-time-allowance 120 \
           ENABLE_TESTABILITY=true \
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           "-skip-testing:${{ matrix.integration-tests-target }}" \
+          -test-iterations 3 \
+          -retry-tests-on-failure \
           | tee ${{ matrix.flavor }}-unittests-xcodebuild.log \
+          | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
           | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-unittests.xml \
           || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-unittests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-unittests.xcresult && exit 1; }
 
@@ -283,11 +296,33 @@ jobs:
           -maximum-test-execution-time-allowance 120 \
           ENABLE_TESTABILITY=true \
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           "-only-testing:${{ matrix.integration-tests-target }}" \
+          -test-iterations 3 \
           -retry-tests-on-failure \
           | tee ${{ matrix.flavor }}-integrationtests-xcodebuild.log \
+          | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
           | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-integrationtests.xml \
           || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-integrationtests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-integrationtests.xcresult && exit 1; }
+
+    - name: Compute Compilation Cache hash
+      if: github.ref == 'refs/heads/main'
+      id: compilation-cache-hash
+      run: |
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-${{ matrix.flavor }}-${{ steps.compilation-cache-hash.outputs.hash }}
 
     - name: Check private API usage
       id: private-api
@@ -315,12 +350,36 @@ jobs:
           fi
         fi
 
+    - name: Process unit test results
+      if: always()
+      uses: ./.github/actions/process-test-results
+      with:
+        working-directory: macOS
+        junit-path: ${{ matrix.flavor }}-unittests.xml
+        log-path: ${{ matrix.flavor }}-unittests-xcodebuild.log
+        xcresult-glob: ${{ matrix.flavor }}-unittests.xcresult
+        title: macOS ${{ matrix.flavor }} Unit Tests
+        test-outcome: ${{ steps.run-unit-tests.outcome }}
+
+    - name: Process integration test results
+      if: always()
+      uses: ./.github/actions/process-test-results
+      with:
+        working-directory: macOS
+        junit-path: ${{ matrix.flavor }}-integrationtests.xml
+        log-path: ${{ matrix.flavor }}-integrationtests-xcodebuild.log
+        xcresult-glob: ${{ matrix.flavor }}-integrationtests.xcresult
+        title: macOS ${{ matrix.flavor }} Integration Tests
+        test-outcome: ${{ steps.run-integration-tests.outcome }}
+
     - name: Upload JUnit XML as artifact
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: macos-${{ matrix.flavor }}-unittests.xml
-        path: macOS/${{ matrix.flavor }}*.xml
+        path: |
+          macOS/${{ matrix.flavor }}*.xml
+          macOS/${{ matrix.flavor }}*-crash-details.json
         retention-days: 7
 
     - name: Publish unit tests report
@@ -329,7 +388,8 @@ jobs:
       with:
         check_name: "Test Report: ${{ matrix.flavor }}"
         report_paths: 'macOS/${{ matrix.flavor }}*.xml'
-        check_retries: true
+        check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+        job_summary: 'false'
 
     - name: Update Asana with failed unit tests
       if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')
@@ -457,7 +517,7 @@ jobs:
           ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
@@ -517,6 +577,14 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
+    - name: Restore Xcode Compilation Cache
+      uses: actions/cache/restore@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-release
+        restore-keys: |
+          xcode-compilation-cache-release-
+
     - name: Build the app
       run: |
         export OS_ACTIVITY_MODE=debug
@@ -525,8 +593,28 @@ jobs:
           -derivedDataPath "DerivedData" \
           -configuration "Release" \
           -skipPackagePluginValidation -skipMacroValidation \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           | tee release-xcodebuild.log \
           | xcbeautify
+
+    - name: Compute Compilation Cache hash
+      if: github.ref == 'refs/heads/main'
+      id: compilation-cache-hash
+      run: |
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v4
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-release-${{ steps.compilation-cache-hash.outputs.hash }}
 
     - name: Report job duration
       continue-on-error: true
@@ -566,7 +654,7 @@ jobs:
       run:
         working-directory: .
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 18
@@ -606,7 +694,7 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Allows scripts to diff against the base branch
 
@@ -614,6 +702,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Verify locale list
+        run: python3 scripts/translation-pr-checks/verify_locale_list.py --platform macOS
 
       - name: Verify string extraction to strings files
         env:
@@ -635,6 +726,31 @@ jobs:
       - name: Check translations
         run: python3 scripts/translation-pr-checks/check_new_string_translations.py --platform macOS
 
+      - name: Check for orphaned translations
+        id: orphaned-translations
+        run: |
+          output=$(python3 scripts/translation-pr-checks/check_deleted_string_translations.py --platform macOS 2>&1)
+          echo "$output"
+          if echo "$output" | grep -q "Deleted strings with orphaned translations found"; then
+            echo "has_orphans=true" >> "$GITHUB_OUTPUT"
+            # Escape newlines for GitHub Actions output
+            EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+            echo "message<<$EOF" >> "$GITHUB_OUTPUT"
+            echo "$output" >> "$GITHUB_OUTPUT"
+            echo "$EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment on PR with orphaned translations
+        if: steps.orphaned-translations.outputs.has_orphans == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ORPHAN_MESSAGE: ${{ steps.orphaned-translations.outputs.message }}
+        run: |
+          body=$(printf '## ⚠️ Orphaned Translations Detected\n\n%s\n\n> This is an automated warning. The PR will not be blocked.' "$ORPHAN_MESSAGE")
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "$body"
+
   create-asana-task:
     name: Create Asana Task
     needs: [bats, tests, release-build, verify-npm-bundles, private-api]
@@ -645,7 +761,7 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Create Asana Task
         uses: ./.github/actions/asana-failed-pr-checks
         with:
@@ -666,7 +782,7 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Close Asana Task
         uses: ./.github/actions/asana-failed-pr-checks
         with:

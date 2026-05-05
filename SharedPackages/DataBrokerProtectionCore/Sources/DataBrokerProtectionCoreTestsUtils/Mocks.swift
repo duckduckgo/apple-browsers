@@ -439,6 +439,19 @@ public final class EmailServiceMock: EmailServiceProtocol {
 public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDataServiceProvider {
 
     public var shouldThrow: Bool = false
+    public private(set) var getEmailAndSaveCallCount: Int = 0
+    public private(set) var getEmailCallCount: Int = 0
+    public private(set) var lastExtractedProfileIdPassed: Int64?
+
+    public var getEmailDataReturnValue: ExtractedEmailData = [:]
+    /// Set to a non-nil `EmailError` to have `getEmailData` throw that specific error regardless
+    /// of `shouldThrow`. Lets tests exercise timeout / backend-error branches independently.
+    public var getEmailDataThrowError: EmailError?
+    public private(set) var getEmailDataCallCount: Int = 0
+    public private(set) var lastGetEmailDataEmail: String?
+    public private(set) var lastGetEmailDataPollingInterval: TimeInterval?
+    public private(set) var lastGetEmailDataTotalTimeout: TimeInterval?
+    public private(set) var lastGetEmailDataExtract: [String]?
 
     public init() {}
 
@@ -447,6 +460,16 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
                                                     profileQueryId: Int64?,
                                                     extractedProfileId: Int64?,
                                                     attemptId: UUID) async throws -> EmailData {
+        getEmailAndSaveCallCount += 1
+        lastExtractedProfileIdPassed = extractedProfileId
+        if shouldThrow {
+            throw DataBrokerProtectionError.emailError(nil)
+        }
+        return EmailData(pattern: nil, emailAddress: "test@duck.com")
+    }
+
+    public func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData {
+        getEmailCallCount += 1
         if shouldThrow {
             throw DataBrokerProtectionError.emailError(nil)
         }
@@ -470,8 +493,39 @@ public final class MockEmailConfirmationDataServiceProvider: EmailConfirmationDa
         }
     }
 
+    public func getEmailData(email: String,
+                             attemptId: UUID,
+                             pollingInterval: TimeInterval,
+                             totalTimeout: TimeInterval,
+                             extract: [String],
+                             shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData {
+        getEmailDataCallCount += 1
+        lastGetEmailDataEmail = email
+        lastGetEmailDataPollingInterval = pollingInterval
+        lastGetEmailDataTotalTimeout = totalTimeout
+        lastGetEmailDataExtract = extract
+
+        if let error = getEmailDataThrowError {
+            throw error
+        }
+        if shouldThrow {
+            throw EmailError.cantFindEmail
+        }
+        return getEmailDataReturnValue
+    }
+
     public func reset() {
         shouldThrow = false
+        getEmailAndSaveCallCount = 0
+        getEmailCallCount = 0
+        lastExtractedProfileIdPassed = nil
+        getEmailDataReturnValue = [:]
+        getEmailDataThrowError = nil
+        getEmailDataCallCount = 0
+        lastGetEmailDataEmail = nil
+        lastGetEmailDataPollingInterval = nil
+        lastGetEmailDataTotalTimeout = nil
+        lastGetEmailDataExtract = nil
     }
 }
 
@@ -985,6 +1039,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     }
 
     public var wasSaveProfileCalled = false
+    public var saveProfileCallCount = 0
     public var wasFetchProfileCalled = false
     public var wasDeleteProfileDataCalled = false
     public var wasSaveOptOutOperationCalled = false
@@ -1072,6 +1127,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     public func save(_ profile: DataBrokerProtectionProfile) throws {
         wasSaveProfileCalled = true
+        saveProfileCallCount += 1
         switch saveResult {
         case .success:
             return
@@ -1333,6 +1389,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     public func clear() {
         wasSaveProfileCalled = false
+        saveProfileCallCount = 0
         wasFetchProfileCalled = false
         wasSaveOptOutOperationCalled = false
         wasBrokerProfileQueryDataCalled = false
@@ -1738,11 +1795,19 @@ public final class MockJobQueueManager: JobQueueManaging {
 
     public var debugRunningStatusString: String { return "" }
 
+    public private(set) var didCallStartImmediateScanOperationsIfPermitted = false
+    public private(set) var didCallStartImmediateOptOutOperationsIfPermitted = false
+    public private(set) var didCallStartScheduledAllOperationsIfPermitted = false
+    public private(set) var didCallStartScheduledScanOperationsIfPermitted = false
+    public private(set) var didCallStop = false
+
     public var startImmediateScanOperationsIfPermittedCompletionError: DataBrokerProtectionJobsErrorCollection?
+    public var startImmediateOptOutOperationsIfPermittedCompletionError: DataBrokerProtectionJobsErrorCollection?
     public var startScheduledAllOperationsIfPermittedCompletionError: DataBrokerProtectionJobsErrorCollection?
     public var startScheduledScanOperationsIfPermittedCompletionError: DataBrokerProtectionJobsErrorCollection?
 
     public var startImmediateScanOperationsIfPermittedCalledCompletion: (() -> Void)?
+    public var startImmediateOptOutOperationsIfPermittedCalledCompletion: (() -> Void)?
     public var startScheduledAllOperationsIfPermittedCalledCompletion: (() -> Void)?
     public var startScheduledScanOperationsIfPermittedCalledCompletion: (() -> Void)?
 
@@ -1751,33 +1816,61 @@ public final class MockJobQueueManager: JobQueueManaging {
     }
 
     public func startImmediateScanOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+        didCallStartImmediateScanOperationsIfPermitted = true
         errorHandler?(startImmediateScanOperationsIfPermittedCompletionError)
         completion?()
         startImmediateScanOperationsIfPermittedCalledCompletion?()
     }
 
+    public func startImmediateOptOutOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+        didCallStartImmediateOptOutOperationsIfPermitted = true
+        errorHandler?(startImmediateOptOutOperationsIfPermittedCompletionError)
+        completion?()
+        startImmediateOptOutOperationsIfPermittedCalledCompletion?()
+    }
+
     public func startScheduledAllOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+        didCallStartScheduledAllOperationsIfPermitted = true
         errorHandler?(startScheduledAllOperationsIfPermittedCompletionError)
         completion?()
         startScheduledAllOperationsIfPermittedCalledCompletion?()
     }
 
     public func startScheduledScanOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+        didCallStartScheduledScanOperationsIfPermitted = true
         errorHandler?(startScheduledScanOperationsIfPermittedCompletionError)
         completion?()
         startScheduledScanOperationsIfPermittedCalledCompletion?()
     }
 
-    public func execute(_ command: DataBrokerProtectionQueueManagerDebugCommand) {
-    }
-
     public func stop() {
+        didCallStop = true
     }
 
     public func stopScheduledOperationsOnly() {
     }
 
     public func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding) {
+    }
+
+    public func reset() {
+        didCallStartImmediateScanOperationsIfPermitted = false
+        didCallStartImmediateOptOutOperationsIfPermitted = false
+        didCallStartScheduledAllOperationsIfPermitted = false
+        didCallStartScheduledScanOperationsIfPermitted = false
+        didCallStop = false
+
+        startImmediateScanOperationsIfPermittedCompletionError = nil
+        startImmediateOptOutOperationsIfPermittedCompletionError = nil
+        startScheduledAllOperationsIfPermittedCompletionError = nil
+        startScheduledScanOperationsIfPermittedCompletionError = nil
+
+        startImmediateScanOperationsIfPermittedCalledCompletion = nil
+        startImmediateOptOutOperationsIfPermittedCalledCompletion = nil
+        startScheduledAllOperationsIfPermittedCalledCompletion = nil
+        startScheduledScanOperationsIfPermittedCalledCompletion = nil
+
+        delegate = nil
     }
 }
 
@@ -1873,7 +1966,7 @@ public final class MockBrokerProfileJob: BrokerProfileJob, @unchecked Sendable {
             statusReportingDelegate?.dataBrokerOperationDidError(DataBrokerProtectionError.noActionFound,
                                                                  withBrokerURL: nil,
                                                                  version: nil,
-                                                                 stepType: nil,
+                                                                 identifier: nil,
                                                                  dataBrokerParent: nil,
                                                                  isFreeScan: nil)
         }
@@ -1923,44 +2016,51 @@ public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJob
     public func dataBrokerOperationDidError(_ error: any Error,
                                             withBrokerURL brokerURL: String?,
                                             version: String?,
-                                            stepType: StepType?,
+                                            identifier: CompletedJobIdentifier?,
                                             dataBrokerParent: String?,
                                             isFreeScan: Bool?) {
         dataBrokerOperationDidErrorCalled = true
         operationErrors.append(error)
     }
 
-    public func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?, version: String?, dataBrokerParent: String?) {
+    public func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?,
+                                                           version: String?,
+                                                           dataBrokerParent: String?,
+                                                           identifier: CompletedJobIdentifier) {
 
     }
 }
 
-public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
+public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     public let isRemoteBrokerDeliveryFeatureOn: Bool
     public let isEmailConfirmationDecouplingFeatureOn: Bool
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
     public let isForegroundRunningWhenDashboardOpenFeatureOn: Bool
-    public let isClickActionDelayReductionOptimizationOn: Bool
+    public let isContinuedProcessingFeatureOn: Bool
     public let isWebViewUserAgentOn: Bool
+    public let isFreemiumPIREnabled: Bool
 
     public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
                 isEmailConfirmationDecouplingFeatureOn: Bool = false,
                 isForegroundRunningOnAppActiveFeatureOn: Bool = true,
                 isForegroundRunningWhenDashboardOpenFeatureOn: Bool = true,
-                isClickActionDelayReductionOptimizationOn: Bool = false,
-                isWebViewUserAgentOn: Bool = false) {
+                isContinuedProcessingFeatureOn: Bool = true,
+                isWebViewUserAgentOn: Bool = false,
+                isFreemiumPIREnabled: Bool = false) {
         self.isRemoteBrokerDeliveryFeatureOn = isRemoteBrokerDeliveryFeatureOn
         self.isEmailConfirmationDecouplingFeatureOn = isEmailConfirmationDecouplingFeatureOn
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isForegroundRunningWhenDashboardOpenFeatureOn = isForegroundRunningWhenDashboardOpenFeatureOn
-        self.isClickActionDelayReductionOptimizationOn = isClickActionDelayReductionOptimizationOn
+        self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isWebViewUserAgentOn = isWebViewUserAgentOn
+        self.isFreemiumPIREnabled = isFreemiumPIREnabled
     }
 }
 
 public final class MockOperationEventsHandler: EventMapping<JobEvent> {
 
     public var profileSavedFired = false
+    public var profileSavedFireCount = 0
     public var firstScanCompletedFired = false
     public var firstScanCompletedAndMatchesFoundFired = false
     public var firstProfileRemovedFired = false
@@ -1980,6 +2080,7 @@ public final class MockOperationEventsHandler: EventMapping<JobEvent> {
         switch event {
         case .profileSaved:
             profileSavedFired = true
+            profileSavedFireCount += 1
         case .firstScanCompleted:
             firstScanCompletedFired = true
         case .firstScanCompletedAndMatchesFound:
@@ -1993,6 +2094,7 @@ public final class MockOperationEventsHandler: EventMapping<JobEvent> {
 
     public func reset() {
         profileSavedFired = false
+        profileSavedFireCount = 0
         firstScanCompletedFired = false
         firstScanCompletedAndMatchesFoundFired = false
         firstProfileRemovedFired = false

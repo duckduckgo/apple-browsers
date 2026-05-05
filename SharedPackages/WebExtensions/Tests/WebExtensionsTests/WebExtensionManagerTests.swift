@@ -89,7 +89,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testWhenExtensionIsInstalled_ThenStorageProviderIsCalled() async throws {
         let manager = makeManager()
-        let sourceURL = URL(fileURLWithPath: "/source/extension.zip")
+        let sourceURL = try createTestWebExtension()
 
         try await manager.installExtension(from: sourceURL)
 
@@ -100,7 +100,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testWhenExtensionIsInstalled_ThenExtensionIsStored() async throws {
         let manager = makeManager()
-        let sourceURL = URL(fileURLWithPath: "/source/extension.zip")
+        let sourceURL = try createTestWebExtension()
 
         try await manager.installExtension(from: sourceURL)
 
@@ -112,7 +112,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testWhenExtensionIsInstalled_ThenLoaderIsCalled() async throws {
         let manager = makeManager()
-        let sourceURL = URL(fileURLWithPath: "/source/extension.zip")
+        let sourceURL = try createTestWebExtension()
 
         try await manager.installExtension(from: sourceURL)
 
@@ -122,7 +122,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testWhenExtensionIsInstalled_ThenLifecycleDelegateDidUpdateIsCalled() async throws {
         let manager = makeManager()
-        let sourceURL = URL(fileURLWithPath: "/source/extension.zip")
+        let sourceURL = try createTestWebExtension()
 
         try await manager.installExtension(from: sourceURL)
 
@@ -130,9 +130,9 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenInstallFails_ThenStorageIsCleanedUp() async {
+    func testWhenInstallFails_ThenStorageIsCleanedUp() async throws {
         let manager = makeManager()
-        let sourceURL = URL(fileURLWithPath: "/source/extension.zip")
+        let sourceURL = try createTestWebExtension()
         webExtensionLoadingMock.mockError = NSError(domain: "test", code: 1)
 
         do {
@@ -351,8 +351,7 @@ final class WebExtensionManagerTests: XCTestCase {
 
         let manager = makeManagerWithRealLoader()
 
-        let sourceURL = URL(fileURLWithPath: "/source/extension.zip")
-        try await manager.installExtension(from: sourceURL)
+        try await manager.installExtension(from: extensionURL)
 
         let context = manager.contexts.first
         XCTAssertNotNil(context)
@@ -369,8 +368,7 @@ final class WebExtensionManagerTests: XCTestCase {
 
         let manager = makeManagerWithRealLoader()
 
-        let sourceURL = URL(fileURLWithPath: "/source/extension.zip")
-        try await manager.installExtension(from: sourceURL)
+        try await manager.installExtension(from: extensionURL)
 
         let context = manager.contexts.first
         XCTAssertNotNil(context)

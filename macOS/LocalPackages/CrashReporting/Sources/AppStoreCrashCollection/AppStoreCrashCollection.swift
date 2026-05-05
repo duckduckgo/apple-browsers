@@ -29,7 +29,7 @@ extension CrashReportingFactory: AppStoreCrashReportingFactory {
     public static func instantiate(internalUserDecider: InternalUserDecider,
                                    featureFlagger: FeatureFlagger,
                                    crashReportSender: CrashReportSending,
-                                   crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
+                                   crashSenderPixelEvents: EventMapping<CrashReportSenderEvent>?,
                                    fireCrashPixel: @escaping (_ parameters: [CrashReportPixelParameter: String]) -> Void,
                                    promptForConsent: @escaping (_ crashPayload: Data) async -> Bool) -> any CrashReporting {
         return AppStoreCrashCollection(internalUserDecider: internalUserDecider,
@@ -63,11 +63,10 @@ public final class AppStoreCrashCollection: CrashReporting {
     }
 
     public func start() async {
-        let sortKeys = !featureFlagger.isFeatureOn(.crashCollectionDisableKeysSorting)
         let isCallStackLimitingEnabled = featureFlagger.isFeatureOn(.crashCollectionLimitCallStackTreeDepth)
         let callStackDepthLimit: Int? = isCallStackLimitingEnabled ? 250 : nil
 
-        crashCollection.startAttachingCrashLogMessages(callStackDepthLimit: callStackDepthLimit, sortKeys: sortKeys) { [weak self] pixelParameters, payloads, completion in
+        crashCollection.startAttachingCrashLogMessages(callStackDepthLimit: callStackDepthLimit) { [weak self] pixelParameters, payloads, completion in
             guard let self else { return }
 
             pixelParameters.forEach { parameters in

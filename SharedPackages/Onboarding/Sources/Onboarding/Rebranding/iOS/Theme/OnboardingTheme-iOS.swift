@@ -51,6 +51,8 @@ public extension OnboardingTheme {
             optionsListBorderColor: Color(singleUseColor: .rebranding(.accentPrimary)),
             optionsListIconColor: Color(singleUseColor: .rebranding(.accentPrimary)),
             optionsListTextColor: Color(singleUseColor: .rebranding(.textLink)),
+            optionsListHoverColor: Color(singleUseColor: .rebranding(.accentPrimary)).opacity(0.1),
+            optionsListPressedColor: Color(singleUseColor: .rebranding(.accentPrimary)).opacity(0.2),
             primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
             primaryButtonPressedColor: Color(singleUseColor: .rebranding(.buttonsPrimaryPressed)),
             primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText)),
@@ -81,7 +83,7 @@ public extension OnboardingTheme {
             borderWidth: 1,
             borderInset: 0.5,
             iconSize: CGSize(width: 16, height: 16),
-            itemMaxHeight: 40
+            itemMinHeight: 44
         )
 
         let linearOnboardingMetrics = LinearOnboardingMetrics(
@@ -110,7 +112,7 @@ public extension OnboardingTheme {
             contextualOnboardingMetrics: ContextualOnboardingMetrics(
                 containerPadding: containerPadding,
                 contentSpacing: 20,
-                titleBodyVerticalSpacingVerticalLayout: 28,
+                titleBodyVerticalSpacingVerticalLayout: 14,
                 titleBodyVerticalSpacingHorizontalLayout: 10,
                 titleBodyInset: contextualTitleBodyContentInsets,
                 contextualTitleTextAlignment: .leading,

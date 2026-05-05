@@ -30,9 +30,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     let isUsingExpandedBottomBarHeight: Bool = false
     /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
     let isUsingFadeOutAnimation: Bool = false
+    let shouldDisableAutocorrectOnEmpty: Bool = true
     let isCurrentTextValidURL: Bool = false
     let modeParameters: [String: String] = [:]
-    var isFireTab: Bool = false // TODO: - Handle injecting and updating this. And customizing the new tinput view for fire tabs.
+    var isFireTab: Bool
 
     // MARK: - SwitchBarHandling — Dynamic State
 
@@ -40,21 +41,59 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published private(set) var currentToggleState: TextEntryMode = .aiChat
     @Published private(set) var buttonState: SwitchBarButtonState = .noButtons
     @Published private(set) var hasUserInteractedWithText: Bool = false
+    @Published var hasSubmittedPrompt: Bool = false
+
+    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> {
+        $hasSubmittedPrompt.eraseToAnyPublisher()
+    }
 
     var isGenerating: Bool = false {
-        didSet { updateButtonState() }
+        didSet {
+            guard isGenerating != oldValue else { return }
+            updateButtonState()
+        }
     }
 
     var isExpanded: Bool = false {
-        didSet { updateButtonState() }
+        didSet {
+            guard isExpanded != oldValue else { return }
+            updateButtonState()
+        }
     }
 
     var isVoiceSearchEnabled: Bool {
-        didSet { updateButtonState() }
+        didSet {
+            guard isVoiceSearchEnabled != oldValue else { return }
+            updateButtonState()
+        }
+    }
+
+    var isAIVoiceChatEnabled: Bool = false {
+        didSet {
+            guard isAIVoiceChatEnabled != oldValue else { return }
+            updateButtonState()
+        }
+    }
+
+    var hidesVoiceButton: Bool = false {
+        didSet {
+            guard hidesVoiceButton != oldValue else { return }
+            updateButtonState()
+        }
     }
 
     var isToggleEnabled: Bool {
-        didSet { updateButtonState() }
+        didSet {
+            guard isToggleEnabled != oldValue else { return }
+            updateButtonState()
+        }
+    }
+
+    var isAIChatShortcutAvailable: Bool = false {
+        didSet {
+            guard isAIChatShortcutAvailable != oldValue else { return }
+            updateButtonState()
+        }
     }
 
     // MARK: - SwitchBarHandling — Publishers
@@ -104,17 +143,28 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         stopGeneratingButtonTappedSubject.eraseToAnyPublisher()
     }
 
+    private let customizeResponsesButtonTappedSubject = PassthroughSubject<Void, Never>()
+    var customizeResponsesButtonTappedPublisher: AnyPublisher<Void, Never> {
+        customizeResponsesButtonTappedSubject.eraseToAnyPublisher()
+    }
+
     // MARK: - Initialization
 
-    init(isVoiceSearchEnabled: Bool, isToggleEnabled: Bool = true) {
+    init(isVoiceSearchEnabled: Bool,
+         isToggleEnabled: Bool = true,
+         isAIChatShortcutAvailable: Bool = false,
+         isFireTab: Bool = false) {
         self.isVoiceSearchEnabled = isVoiceSearchEnabled
         self.isToggleEnabled = isToggleEnabled
+        self.isAIChatShortcutAvailable = isAIChatShortcutAvailable
+        self.isFireTab = isFireTab
         updateButtonState()
     }
 
     // MARK: - SwitchBarHandling — Methods
 
     func updateCurrentText(_ text: String) {
+        guard currentText != text else { return }
         currentText = text
         updateButtonState()
     }
@@ -126,6 +176,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     func setToggleState(_ state: TextEntryMode) {
+        guard currentToggleState != state else { return }
         currentToggleState = state
         updateButtonState()
     }
@@ -139,6 +190,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     func markUserInteraction() {
+        guard !hasUserInteractedWithText else { return }
         hasUserInteractedWithText = true
     }
 
@@ -154,23 +206,37 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         stopGeneratingButtonTappedSubject.send()
     }
 
+    func customizeResponsesButtonTapped() {
+        customizeResponsesButtonTappedSubject.send()
+    }
+
     func updateBarPosition(isTop: Bool) {}
 
     // MARK: - Private
 
     private func updateButtonState() {
+        let voiceAvailable = !hidesVoiceButton && isVoiceSearchEnabled && !(isAIVoiceChatEnabled && currentToggleState == .aiChat)
+        let nextButtonState: SwitchBarButtonState
+
         if isGenerating && !isExpanded && currentToggleState == .aiChat && !isToggleEnabled {
-            buttonState = .stopGeneratingAndSearchGoTo
+            nextButtonState = .stopGeneratingAndSearchGoTo
         } else if isGenerating && !isExpanded && currentToggleState == .aiChat {
-            buttonState = .stopGeneratingOnly
+            nextButtonState = .stopGeneratingOnly
+        } else if !currentText.isEmpty && !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
+            nextButtonState = .clearAndAIChatShortcut
         } else if !currentText.isEmpty {
-            buttonState = .clearOnly
-        } else if !isToggleEnabled && currentToggleState == .aiChat {
-            buttonState = isVoiceSearchEnabled ? .voiceAndSearchGoTo : .searchGoToOnly
-        } else if isVoiceSearchEnabled {
-            buttonState = .voiceOnly
+            nextButtonState = .clearOnly
+        } else if !isToggleEnabled && currentToggleState == .aiChat && !isExpanded {
+            nextButtonState = voiceAvailable ? .voiceAndSearchGoTo : .searchGoToOnly
+        } else if !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
+            nextButtonState = voiceAvailable ? .voiceAndAIChatShortcut : .aiChatShortcutOnly
+        } else if voiceAvailable {
+            nextButtonState = .voiceOnly
         } else {
-            buttonState = .noButtons
+            nextButtonState = .noButtons
         }
+
+        guard buttonState != nextButtonState else { return }
+        buttonState = nextButtonState
     }
 }

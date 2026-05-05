@@ -49,6 +49,7 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
 
     var createAccountAndStartSyncingCalled = false
     var capturedOptionModel: SyncSettingsViewModel?
+    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool = false
 
     func waitForInvocation() {
         let expectation = expectation(description: "Inv")
@@ -180,9 +181,18 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 
-   func createAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
+    func createAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
         createAccountAndStartSyncingCalled = true
         capturedOptionModel = optionsViewModel
+    }
+
+    func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+    }
+
+    func simplifiedConfirmAndDisableSync() async -> Bool {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+        return true
     }
 
     func showRecoveryCodeEntry() {
@@ -279,8 +289,6 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     func shareLink(for url: URL, with message: String, from rect: CGRect) {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
-
-
 }
 
 // MARK: An idea... can be made more public if works out

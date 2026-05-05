@@ -39,6 +39,12 @@ protocol FreemiumDBPFeature {
     /// A boolean indicating if the Freemium DBP feature is available, considering privacy config, auth status, and storefront.
     var isAvailable: Bool { get }
 
+    /// Whether the feature flag is enabled in privacy config (synchronous, no async dependencies).
+    var isFeatureFlagEnabled: Bool { get }
+
+    /// Availability ignoring only purchase capability — feature flag, auth, and storefront still apply.
+    var isAvailableIgnoringPurchaseCapability: Bool { get }
+
     /// Publishes updates to `isAvailable` when dependencies like privacy config or subscription status change.
     var isAvailablePublisher: AnyPublisher<Bool, Never> { get }
 
@@ -61,6 +67,16 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     /// This property aggregates all eligibility criteria.
     var isAvailable: Bool {
         isEligible
+    }
+
+    /// Checks if the feature flag is enabled in privacy config, with support for a debug override.
+    /// Synchronous — no async dependencies (unlike `isAvailable` which depends on product availability).
+    var isFeatureFlagEnabled: Bool {
+        featureFlagOverride ?? privacyConfigurationManager.freemiumIsEnabled
+    }
+
+    var isAvailableIgnoringPurchaseCapability: Bool {
+        isFeatureFlagEnabled && isNotACurrentUser && isUSAAppStorefront
     }
 
     /// Publishes `true` when feature availability changes.
@@ -182,14 +198,6 @@ private extension DefaultFreemiumDBPFeature {
     /// Determines overall eligibility by combining feature flag, auth status, storefront, and purchase capability.
     var isEligible: Bool {
         isFeatureFlagEnabled && isNotACurrentUser && isUSAAppStorefront && canPurchaseSubscription
-    }
-
-    /// Checks if the feature flag is enabled in privacy config, with support for a debug override.
-    var isFeatureFlagEnabled: Bool {
-        if let featureFlagOverride {
-            return featureFlagOverride
-        }
-        return privacyConfigurationManager.freemiumIsEnabled
     }
 
     /// Checks if the user is not a subscriber. Freemium is only for non-subscribed users.

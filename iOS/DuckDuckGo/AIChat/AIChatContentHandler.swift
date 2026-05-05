@@ -79,9 +79,12 @@ protocol AIChatContentHandling: AnyObject {
     /// Sets the initial payload data for the AIChat session.
     func setPayload(payload: Any?)
 
-    /// Builds a query URL with optional prompt, auto-submit, and RAG tools.
-    func buildQueryURL(query: String?, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL
-    
+    /// Builds a query URL with optional prompt, auto-submit, onboarding flow and RAG tools.
+    func buildQueryURL(query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?) -> URL
+
+    /// Builds a URL for voice mode (appends `?mode=voice`).
+    func buildVoiceModeURL() -> URL
+
     /// Submits a prompt to the AI Chat with optional page context.
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
 
@@ -113,7 +116,7 @@ extension AIChatContentHandlingDelegate {
 }
 
 final class AIChatContentHandler: AIChatContentHandling {
-    
+
     // MARK: - Dependencies
     private let aiChatSettings: AIChatSettingsProvider
     private var payloadHandler: AIChatPayloadHandler
@@ -164,8 +167,8 @@ final class AIChatContentHandler: AIChatContentHandling {
         payloadHandler.setData(payload)
     }
     
-    /// Builds a query URL with optional prompt, auto-submit, and RAG tools.
-    func buildQueryURL(query: String?, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL {
+    /// Builds a query URL with optional prompt, auto-submit, onboarding flow and RAG tools.
+    func buildQueryURL(query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?) -> URL {
         guard let query, var components = URLComponents(url: aiChatSettings.aiChatURL, resolvingAgainstBaseURL: false) else {
             return aiChatSettings.aiChatURL
         }
@@ -182,6 +185,13 @@ final class AIChatContentHandler: AIChatContentHandling {
             queryItems.append(URLQueryItem(name: AIChatURLParameters.autoSubmitPromptQueryName, value: AIChatURLParameters.autoSubmitPromptQueryValue))
         }
 
+        if let flowValue = flowType.flowQueryValue {
+            queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
+            queryItems.append(URLQueryItem(name: AIChatURLParameters.flowQueryName, value: flowValue))
+        } else {
+            queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
+        }
+
         if let tools = tools, !tools.isEmpty {
             queryItems.removeAll { $0.name == AIChatURLParameters.toolChoiceName }
             for tool in tools {
@@ -193,6 +203,10 @@ final class AIChatContentHandler: AIChatContentHandling {
         return components.url ?? aiChatSettings.aiChatURL
     }
     
+    func buildVoiceModeURL() -> URL {
+        AIChatURLParameters.voiceModeURL(from: aiChatSettings.aiChatURL)
+    }
+
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         if let context = pageContext {
             Logger.aiChat.debug("[PageContext] Prompt submitted with context - title: \(context.title.prefix(50))")

@@ -28,6 +28,7 @@ private struct VideoPlayerFramePreferenceKey: PreferenceKey {
 
 struct AddToDockTutorialView: View {
     private static let videoSize = CGSize(width: 898.0, height: 680.0)
+    private static let referenceCornerRadius: CGFloat = 105 // Used to dynamically round the corners on the Add to Dock demo
     private static let videoURL = Bundle.main.url(forResource: "add-to-dock-demo", withExtension: "mp4")!
 
     private let title: String
@@ -102,8 +103,10 @@ struct AddToDockTutorialView: View {
     private var videoPlayer: some View {
         // Calculate the height of the video based on the width it takes maintaining its aspect ratio
         let heightRatio = videoPlayerWidth * (Self.videoSize.height / Self.videoSize.width)
+        let scale = videoPlayerWidth / Self.videoSize.width
         return PlayerView(coordinator: videoPlayerModel)
             .frame(width: videoPlayerWidth, height: heightRatio)
+            .clipShape(BottomRoundedCorners(radius: Self.referenceCornerRadius * scale))
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
                 videoPlayerModel.pause()
 
@@ -113,6 +116,14 @@ struct AddToDockTutorialView: View {
             }
     }
 
+}
+
+private struct BottomRoundedCorners: Shape {
+    var radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        Path(UIBezierPath(roundedRect: rect, byRoundingCorners: [.bottomLeft, .bottomRight], cornerRadii: CGSize(width: radius, height: radius)).cgPath)
+    }
 }
 
 // MARK: - Preview

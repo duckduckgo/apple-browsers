@@ -57,13 +57,15 @@ extension SpecialPagesUserScript {
     private func buildOnboardingActionsManager() -> OnboardingActionsManaging {
         return OnboardingActionsManager(
             navigationDelegate: Application.appDelegate.windowControllersManager,
-            dockCustomization: DockCustomizer(),
+            dockCustomization: Application.appDelegate.dockCustomization,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: NSApp.delegateTyped.appearancePreferences,
             startupPreferences: NSApp.delegateTyped.startupPreferences,
             bookmarkManager: NSApp.delegateTyped.bookmarkManager,
             pinningManager: NSApp.delegateTyped.pinningManager,
-            featureFlagger: NSApp.delegateTyped.featureFlagger
+            featureFlagger: NSApp.delegateTyped.featureFlagger,
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: NSApp.delegateTyped.keyValueStore),
+            installDateProvider: { AppDelegate.firstLaunchDate }
         )
     }
 }

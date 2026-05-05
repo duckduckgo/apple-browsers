@@ -25,6 +25,20 @@ import Core
 final class TabsModelProviderTests: XCTestCase {
 
     private let exampleLink = Link(title: nil, url: URL(string: "https://example.com")!)
+    private var featureFlagger: MockFeatureFlagger!
+
+    override func setUp() {
+        super.setUp()
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.fireMode]
+        FireModeCapability.resolve(using: featureFlagger)
+    }
+
+    override func tearDown() {
+        UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
+        featureFlagger = nil
+        super.tearDown()
+    }
 
     // MARK: - Aggregate Count
     
@@ -82,6 +96,62 @@ final class TabsModelProviderTests: XCTestCase {
         XCTAssertEqual(sut.aggregateTabsModel.count, normalModel.count + fireModel.count)
     }
 
+    // MARK: - Clear Tabs
+
+    func testWhenClearTabsForNormalThenOnlyNormalTabsAreCleared() {
+        let normalModel = TabsModel(tabs: [
+            Tab(link: exampleLink),
+            Tab(link: exampleLink)
+        ], desktop: false)
+        let fireModel = TabsModel(tabs: [
+            Tab(link: exampleLink, fireTab: true)
+        ], desktop: false, mode: .fire)
+
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
+
+        sut.clearTabs(for: .normal)
+
+        XCTAssertEqual(sut.normalTabsModel.count, 1, "Normal model should have auto-inserted empty tab")
+        XCTAssertNil(sut.normalTabsModel.tabs.first?.link, "Remaining normal tab should be empty (auto-inserted)")
+        XCTAssertEqual(sut.fireModeTabsModel.count, 1, "Fire model should be untouched")
+    }
+
+    func testWhenClearTabsForFireThenOnlyFireTabsAreCleared() {
+        let normalModel = TabsModel(tabs: [
+            Tab(link: exampleLink)
+        ], desktop: false)
+        let fireModel = TabsModel(tabs: [
+            Tab(link: exampleLink, fireTab: true),
+            Tab(link: exampleLink, fireTab: true)
+        ], desktop: false, mode: .fire)
+
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
+
+        sut.clearTabs(for: .fire)
+
+        XCTAssertEqual(sut.normalTabsModel.count, 1, "Normal model should be untouched")
+        XCTAssertEqual(sut.normalTabsModel.tabs.first?.link?.url.absoluteString, "https://example.com")
+        XCTAssertEqual(sut.fireModeTabsModel.count, 0, "Fire model should be empty")
+    }
+
+    func testWhenClearTabsForNilThenBothModelsAreCleared() {
+        let normalModel = TabsModel(tabs: [
+            Tab(link: exampleLink),
+            Tab(link: exampleLink)
+        ], desktop: false)
+        let fireModel = TabsModel(tabs: [
+            Tab(link: exampleLink, fireTab: true)
+        ], desktop: false, mode: .fire)
+
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
+
+        sut.clearTabs(for: nil)
+
+        XCTAssertEqual(sut.normalTabsModel.count, 1, "Normal model should have auto-inserted empty tab")
+        XCTAssertNil(sut.normalTabsModel.tabs.first?.link, "Remaining normal tab should be empty")
+        XCTAssertEqual(sut.fireModeTabsModel.count, 0, "Fire model should be empty")
+    }
+
     // MARK: - Save
 
     func testWhenSaveCalledThenPersistenceReceivesBothModels() {
@@ -96,6 +166,25 @@ final class TabsModelProviderTests: XCTestCase {
         XCTAssertEqual(persistence.savedModels.count, 2)
         XCTAssertTrue(persistence.savedModels.contains { $0.key == .normal && $0.model === normalModel })
         XCTAssertTrue(persistence.savedModels.contains { $0.key == .fire && $0.model === fireModel })
+    }
+
+    // MARK: - Fire Mode Disabled
+
+    func testWhenFireModeDisabledThenAggregateCountEqualsNormalModelOnly() {
+        featureFlagger.enabledFeatureFlags = []
+        FireModeCapability.resolve(using: featureFlagger)
+
+        let normalModel = TabsModel(tabs: [
+            Tab(link: exampleLink),
+        ], desktop: false)
+        let fireModel = TabsModel(tabs: [
+            Tab(link: exampleLink, fireTab: true),
+            Tab(link: exampleLink, fireTab: true)
+        ], desktop: false, mode: .fire)
+
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
+
+        XCTAssertEqual(sut.aggregateTabsModel.count, 1, "Aggregate should only reflect normal tabs when fire mode is disabled")
     }
 
     // MARK: - Helpers

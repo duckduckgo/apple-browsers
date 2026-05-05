@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import UserNotifications
+import AIChat
 
 protocol Onboarding: UIViewController {
     
@@ -27,54 +28,10 @@ protocol Onboarding: UIViewController {
     
 }
 
-protocol OnboardingContent {
-    
-    var subtitle: String? { get }
-    var canContinue: Bool { get }
-    var delegate: OnboardingContentDelegate? { get set }
-
-    func onContinuePressed(navigationHandler: @escaping () -> Void)
-    func onSkipPressed(navigationHandler: @escaping () -> Void)
-}
-
 protocol OnboardingDelegate: NSObjectProtocol {
-    
+
     func onboardingCompleted(controller: UIViewController)
-    
-}
+    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType)
+    func searchFromOnboarding(for query: String)
 
-protocol OnboardingContentDelegate: NSObjectProtocol {
-    
-    func setContinueEnabled(_ enabled: Bool)
-    
-}
-
-class OnboardingContentViewController: UIViewController, OnboardingContent {
-
-    var canContinue: Bool = true
-    weak var delegate: OnboardingContentDelegate?
-    
-    var header: String {
-        return UserText.onboardingWelcomeHeader
-    }
-    
-    var subtitle: String? {
-        return title
-    }
-    
-    var continueButtonTitle: String {
-        return UserText.onboardingContinue
-    }
-    var skipButtonTitle: String {
-        return UserText.onboardingSkip
-    }
-    
-    func onContinuePressed(navigationHandler: @escaping () -> Void) {
-        navigationHandler()
-    }
-    
-    func onSkipPressed(navigationHandler: @escaping () -> Void) {
-        navigationHandler()
-    }
-    
 }

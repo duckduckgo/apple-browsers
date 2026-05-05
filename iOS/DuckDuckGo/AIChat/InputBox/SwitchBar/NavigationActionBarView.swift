@@ -37,11 +37,6 @@ final class NavigationActionBarView: UIView {
         static let padding: CGFloat = 16
         static let buttonSpacing: CGFloat = 12
         static let cornerRadius: CGFloat = 8
-        
-        static let shadowRadius1: CGFloat = 6
-        static let shadowOffset1Y: CGFloat = 2
-        static let shadowRadius2: CGFloat = 16
-        static let shadowOffset2Y: CGFloat = 16
     }
     
     // MARK: - Properties
@@ -241,7 +236,7 @@ final class NavigationActionBarView: UIView {
     }
     
     @objc private func searchTapped() {
-        viewModel.onSearchTapped()
+        viewModel.searchButtonTapped()
     }
 
     // MARK: - UI Updates
@@ -292,6 +287,21 @@ final class NavigationActionBarView: UIView {
         let isValidURL = viewModel.isCurrentTextValidURL
         let isSearchMode = viewModel.isSearchMode
         let isUsingFadeOutAnimation = viewModel.isUsingFadeOutAnimation
+        let isVoiceMode = viewModel.shouldShowVoiceModeButton
+
+        if isVoiceMode {
+            searchButton.isShadowHidden = !isFloating
+            searchButton.setIcon(DesignSystemImages.Glyphs.Size24.voice)
+            let backgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+            let pressedBackgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccentTertiary) : UIColor(designSystemColor: .accentTertiary)
+            searchButton.setColors(foreground: UIColor(designSystemColor: .accentContentPrimary),
+                                   background: backgroundColor,
+                                   pressedForeground: UIColor(designSystemColor: .accentContentPrimary),
+                                   pressedBackground: pressedBackgroundColor)
+            searchButton.isEnabled = true
+            searchButton.alpha = 1.0
+            return
+        }
 
         let icon: UIImage? = {
             if isSearchMode && !isValidURL {
@@ -328,8 +338,9 @@ final class NavigationActionBarView: UIView {
     private func updateButtonVisibility() {
         let hasText = viewModel.hasText
         let isUsingFadeOutAnimation = viewModel.isUsingFadeOutAnimation
+        let isVoiceMode = viewModel.shouldShowVoiceModeButton
 
-        let shouldShowMicButton = viewModel.shouldShowMicButton
+        let shouldShowMicButton = viewModel.shouldShowMicButton && !isVoiceMode
         microphoneButton.isHidden = !shouldShowMicButton
         microphoneButton.alpha = shouldShowMicButton ? 1.0 : 0.0
 
@@ -338,7 +349,9 @@ final class NavigationActionBarView: UIView {
         newLineButton.alpha = shouldShowNewLineButton ? 1.0 : 0.0
 
         let shouldShowSearchButton: Bool
-        if isUsingFadeOutAnimation {
+        if isVoiceMode {
+            shouldShowSearchButton = true
+        } else if isUsingFadeOutAnimation {
             if viewModel.isSearchMode && !isFloating {
                 shouldShowSearchButton = false
             } else if viewModel.isSearchMode && viewModel.isTopBarPosition {
@@ -351,8 +364,12 @@ final class NavigationActionBarView: UIView {
         }
         searchButton.isHidden = !shouldShowSearchButton
 
-        let useInactiveStyle = isUsingFadeOutAnimation && !hasText
-        searchButton.alpha = shouldShowSearchButton ? (hasText ? 1.0 : (useInactiveStyle ? 1.0 : 0.5)) : 0.0
+        if isVoiceMode {
+            searchButton.alpha = 1.0
+        } else {
+            let useInactiveStyle = isUsingFadeOutAnimation && !hasText
+            searchButton.alpha = shouldShowSearchButton ? (hasText ? 1.0 : (useInactiveStyle ? 1.0 : 0.5)) : 0.0
+        }
     }
 
     // MARK: - Touch Handling
@@ -374,123 +391,6 @@ final class NavigationActionBarView: UIView {
         
         // Otherwise, pass through the touch
         return nil
-    }
-}
-
-// MARK: - CircularButton
-
-private class CircularButton: UIButton {
-
-    enum Constants {
-        static let hitSize: CGFloat = 44.0
-    }
-
-    private let secondShadowLayer = CALayer()
-    private var definedBackgroundColor: UIColor?
-    private var definedForegroundColor: UIColor?
-    private var definedPressedBackgroundColor: UIColor?
-    private var definedPressedForegroundColor: UIColor?
-
-    var isShadowHidden: Bool = false {
-        didSet {
-            updateShadowVisibility()
-        }
-    }
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupButton()
-    }
-    
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupButton()
-    }
-    
-    private func setupButton() {
-        layer.cornerRadius = NavigationActionBarView.Constants.buttonSize / 2
-        layer.masksToBounds = false
-        
-        layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
-        layer.shadowOpacity = 1.0
-        layer.shadowOffset = CGSize(width: 0, height: NavigationActionBarView.Constants.shadowOffset1Y)
-        layer.shadowRadius = NavigationActionBarView.Constants.shadowRadius1
-        
-        secondShadowLayer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
-        secondShadowLayer.shadowOpacity = 1.0
-        secondShadowLayer.shadowOffset = CGSize(width: 0, height: NavigationActionBarView.Constants.shadowOffset2Y)
-        secondShadowLayer.shadowRadius = NavigationActionBarView.Constants.shadowRadius2
-        secondShadowLayer.masksToBounds = false
-        layer.insertSublayer(secondShadowLayer, at: 0)
-        
-        imageView?.contentMode = .scaleAspectFit
-        adjustsImageWhenHighlighted = false
-
-        updateShadowVisibility()
-    }
-
-    private func updateShadowVisibility() {
-        if isShadowHidden {
-            layer.shadowOpacity = 0.0
-            secondShadowLayer.shadowOpacity = 0.0
-        } else {
-            layer.shadowOpacity = 1.0
-            secondShadowLayer.shadowOpacity = 1.0
-        }
-    }
-
-    override var isHighlighted: Bool {
-        didSet {
-            UIView.animate(withDuration: 0.15) {
-                if self.isHighlighted {
-                    self.backgroundColor = self.definedPressedBackgroundColor ?? self.definedBackgroundColor?.withAlphaComponent(0.8)
-                    self.imageView?.tintColor = self.definedPressedForegroundColor ?? self.definedForegroundColor
-                } else {
-                    self.backgroundColor = self.definedBackgroundColor
-                    self.imageView?.tintColor = self.definedForegroundColor
-                }
-            }
-        }
-    }
-
-    func setIcon(_ image: UIImage?) {
-        setImage(image, for: .normal)
-        imageView?.tintColor = UIColor(designSystemColor: .textPrimary)
-    }
-    
-    func setColors(foreground: UIColor, background: UIColor, pressedForeground: UIColor? = nil, pressedBackground: UIColor? = nil) {
-        definedForegroundColor = foreground
-        definedBackgroundColor = background
-        definedPressedForegroundColor = pressedForeground
-        definedPressedBackgroundColor = pressedBackground
-        
-        backgroundColor = background
-        imageView?.tintColor = foreground
-        setTitleColor(foreground, for: .normal)
-    }
-    
-    override func layoutSubviews() {
-        super.layoutSubviews()
-
-        layer.cornerRadius = min(bounds.width, bounds.height) / 2
-        secondShadowLayer.frame = bounds
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
-            secondShadowLayer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
-        }
-    }
-
-    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        assert(Constants.hitSize >= frame.height)
-        let offset = (frame.height - Constants.hitSize) / 2
-        let rect = CGRect(x: offset, y: offset, width: Constants.hitSize, height: Constants.hitSize)
-        guard rect.contains(point) else { return nil }
-        return self
     }
 }
 

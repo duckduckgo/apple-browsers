@@ -132,6 +132,10 @@ final class AIChatSettings: AIChatSettingsProvider {
                             && isAIChatEnabled && featureFlagger.isFeatureOn(.experimentalAddressBar)
     }
 
+    var isAIChatSearchInputUserSettingsDisabledByUser: Bool {
+        keyValueStore.bool(.showAIChatExperimentalSearchInputKey) == false
+    }
+
     var isChatSuggestionsEnabled: Bool {
         keyValueStore.bool(.showChatSuggestionsKey, defaultValue: .showChatSuggestionsDefaultValue)
             && isAIChatEnabled
@@ -139,6 +143,18 @@ final class AIChatSettings: AIChatSettingsProvider {
 
     var isAutomaticContextAttachmentEnabled: Bool {
         keyValueStore.bool(.isAIChatAutomaticContextAttachmentEnabledKey, defaultValue: featureFlagger.isFeatureOn(.aiChatAutoAttachContextByDefault))
+    }
+
+    var defaultOmnibarMode: DefaultOmnibarMode {
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition) else {
+            return .search
+        }
+
+        guard let rawValue = keyValueStore.object(forKey: .defaultOmnibarModeKey) as? String,
+              let mode = DefaultOmnibarMode(rawValue: rawValue) else {
+            return .search
+        }
+        return mode
     }
 
     func enableAIChat(enable: Bool) {
@@ -192,6 +208,13 @@ final class AIChatSettings: AIChatSettingsProvider {
         }
     }
 
+    /// Removes the user's selection for the AI Chat experimental search input toggle,
+    /// returning it to its un-set state (subsequent reads fall back to the default).
+    func resetAIChatSearchInputUserSettings() {
+        keyValueStore.removeObject(forKey: .showAIChatExperimentalSearchInputKey)
+        triggerSettingsChangedNotification()
+    }
+
     func enableAIChatVoiceSearchUserSettings(enable: Bool) {
         keyValueStore.set(enable, forKey: .showAIChatVoiceSearchKey)
         triggerSettingsChangedNotification()
@@ -234,7 +257,18 @@ final class AIChatSettings: AIChatSettingsProvider {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAutoContextDisabled)
         }
     }
-    
+
+    func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode) {
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition) else {
+            return
+        }
+
+        keyValueStore.set(mode.rawValue, forKey: .defaultOmnibarModeKey)
+        triggerSettingsChangedNotification()
+        DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDefaultTogglePositionChanged,
+                                      withAdditionalParameters: ["value": mode.rawValue])
+    }
+
     /// Process the settings view funnels step
     func processSettingsViewedFunnelStep() {
         if !isAIChatSearchInputUserSettingsEnabled {
@@ -274,6 +308,7 @@ private extension String {
     static let showAIChatExperimentalSearchInputKey = "aichat.settings.showAIChatExperimentalSearchInput"
     static let showChatSuggestionsKey = "aichat.settings.showChatSuggestions"
     static let isAIChatAutomaticContextAttachmentEnabledKey = "aichat.settings.isAIChatAutomaticContextAttachmentEnabled"
+    static let defaultOmnibarModeKey = "aichat.settings.defaultOmnibarMode"
 }
 
 enum LegacyAiChatUserDefaultsKeys {
@@ -284,6 +319,7 @@ enum LegacyAiChatUserDefaultsKeys {
     static let showAIChatVoiceSearchKey: String = .showAIChatVoiceSearchKey
     static let showAIChatTabSwitcherKey: String = .showAIChatTabSwitcherKey
     static let showAIChatExperimentalSearchInputKey: String = .showAIChatExperimentalSearchInputKey
+    static let defaultOmnibarModeKey: String = .defaultOmnibarModeKey
 
 }
 
@@ -311,4 +347,21 @@ private extension KeyValueStoring {
         return (object(forKey: key) as? Bool) ?? defaultValue
     }
 
+    func bool(_ key: String) -> Bool? {
+        return object(forKey: key) as? Bool
+    }
+}
+
+extension DefaultOmnibarMode {
+
+    func resolvedTextEntryMode(lastUsedModeProvider: () -> TextEntryMode?) -> TextEntryMode {
+        switch self {
+        case .search:
+            return .search
+        case .duckAI:
+            return .aiChat
+        case .lastUsed:
+            return lastUsedModeProvider() ?? .search
+        }
+    }
 }

@@ -85,7 +85,7 @@ final class WebExtensionManagerHandlerRegistrationTests: XCTestCase {
     @MainActor
     func testWhenExtensionIsInstalled_ThenHandlersAreRegistered() async throws {
         let manager = makeManager()
-        let sourceURL = URL(fileURLWithPath: "/source/extension.zip")
+        let sourceURL = try createTestWebExtension()
 
         try await manager.installExtension(from: sourceURL)
 
@@ -97,13 +97,39 @@ final class WebExtensionManagerHandlerRegistrationTests: XCTestCase {
     @MainActor
     func testWhenExtensionIsLoaded_ThenHandlersAreRegisteredBeforeLoad() async throws {
         let manager = makeManager()
-        let sourceURL = URL(fileURLWithPath: "/source/extension.zip")
+        let sourceURL = try createTestWebExtension()
 
         try await manager.installExtension(from: sourceURL)
 
         XCTAssertTrue(handlerProvider.makeHandlersCalled)
         XCTAssertTrue(messageRouter.registerHandlerCalled)
         XCTAssertTrue(webExtensionLoadingMock.loadWebExtensionCalled)
+    }
+
+    // MARK: - Test Helpers
+
+    private func createTestWebExtension() throws -> URL {
+        let tempDir = FileManager.default.temporaryDirectory
+        let extensionDir = tempDir.appendingPathComponent("TestExtension-\(UUID().uuidString)")
+
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "Test Extension",
+            "version": "1.0.0",
+            "description": "Minimal test extension for unit tests"
+        }
+        """
+
+        try FileManager.default.createDirectory(at: extensionDir, withIntermediateDirectories: true)
+        try manifest.write(to: extensionDir.appendingPathComponent("manifest.json"),
+                          atomically: true, encoding: .utf8)
+
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: extensionDir)
+        }
+
+        return extensionDir
     }
 
     @MainActor

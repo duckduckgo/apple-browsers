@@ -26,31 +26,40 @@ struct FeatureFlagsMenuView: View {
     @ObservedObject var viewModel: FeatureFlagsSettingViewModel = FeatureFlagsSettingViewModel()
 
     var body: some View {
-        if viewModel.isInternalUser {
-            List {
+        List {
+            internalUserSection()
+            if viewModel.isInternalUser {
                 featureFlagsSection()
                 experimentsSection()
                 resetAllOverridesSection()
             }
-            .searchable(text: $viewModel.searchText, prompt: "Filter")
-            .navigationTitle(Text(verbatim: "Feature Flags"))
-        } else {
-            internalUserMessage()
         }
+        .searchable(text: $viewModel.searchText, prompt: "Filter")
+        .navigationTitle(Text(verbatim: "Feature Flags"))
     }
 
-    // MARK: - Internal User Message Section
-    private func internalUserMessage() -> some View {
-        VStack {
-            Text(verbatim: "Set internal user state first")
-                .foregroundColor(.red)
-            Spacer()
+    // MARK: - Internal User Section
+    private func internalUserSection() -> some View {
+        Section {
+            Toggle(isOn: $viewModel.isInternalUser) {
+                Label {
+                    Text(verbatim: "Internal User")
+                } icon: {
+                    Image(systemName: "flask")
+                }
+            }
         }
     }
 
     // MARK: - Feature Flags Section
     private func featureFlagsSection() -> some View {
         Section(header: Text(verbatim: "Feature Flags")) {
+            Picker("", selection: $viewModel.stateFilter) {
+                ForEach(FeatureFlagsSettingViewModel.StateFilter.allCases, id: \.self) { filter in
+                    Text(verbatim: filter.rawValue).tag(filter)
+                }
+            }
+            .pickerStyle(.segmented)
             ForEach(viewModel.filteredFeatureFlags, id: \.self) { flag in
                 featureFlagRow(flag: flag)
             }

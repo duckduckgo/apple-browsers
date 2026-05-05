@@ -39,10 +39,15 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let layoutManager = NSLayoutManager()
     private let textContainer = NSTextContainer()
     private let textView: FocusableTextView
-    private let placeholderLabel = NSTextField(labelWithString: "")
+    private let placeholderLabel = ClickThroughLabel(labelWithString: "")
     private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
     private var cancellables = Set<AnyCancellable>()
+    /// When true, the text view is being updated programmatically (text or selection) and any
+    /// resulting `textViewDidChangeSelection` callback must not overwrite the persisted caret
+    /// position — otherwise e.g. a tab-switch cleanup that clears `currentText` would also wipe
+    /// the saved selection with `(0, 0)` before we get a chance to restore it.
+    private var isUpdatingProgrammatically = false
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
@@ -51,6 +56,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         didSet { wireTabCycle() }
     }
     var heightDidChange: ((CGFloat) -> Void)?
+    /// Fires when the prompt text view becomes first responder.
+    /// Used by the orchestrating layer to re-focus into duck.ai mode when the user clicks the prompt while unfocused.
+    var onTextViewDidBecomeFirstResponder: (() -> Void)?
 
     init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging) {
         self.omnibarController = omnibarController
@@ -88,6 +96,15 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
         scrollView.documentView = textView
         textView.navigationDelegate = self
+        textView.registerForImageDrop()
+        textView.onDidBecomeFirstResponder = { [weak self] in
+            self?.onTextViewDidBecomeFirstResponder?()
+        }
+    }
+
+    /// Whether the prompt editor is currently the window's first responder.
+    var isTextViewFirstResponder: Bool {
+        view.window?.firstResponder === textView
     }
 
     override func viewWillAppear() {
@@ -155,6 +172,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         placeholderLabel.drawsBackground = false
         placeholderLabel.isEditable = false
         placeholderLabel.isSelectable = false
+        placeholderLabel.hitTestForwardingTarget = textView
         containerView.addSubview(placeholderLabel)
 
         NSLayoutConstraint.activate([
@@ -219,21 +237,41 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             .sink { [weak self] newText in
                 guard let self = self else { return }
                 if self.textView.string != newText {
+                    self.isUpdatingProgrammatically = true
                     self.textView.string = newText
                     if self.view.window?.firstResponder == self.textView {
                         let textLength = newText.count
                         self.textView.selectedRange = NSRange(location: textLength, length: 0)
                     }
+                    self.isUpdatingProgrammatically = false
                     /// Update panel height when text changes programmatically (e.g., from paste)
                     self.updatePanelHeight()
                 }
                 self.updatePlaceholderVisibility()
             }
             .store(in: &cancellables)
+
+        Publishers.CombineLatest(
+            omnibarController.$activeToolMode,
+            omnibarController.$hasImageAttachments
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] toolMode, hasAttachments in
+            switch toolMode {
+            case .imageGeneration where hasAttachments:
+                self?.placeholderLabel.stringValue = UserText.aiChatImageGenWithAttachmentPlaceholder
+            case .imageGeneration:
+                self?.placeholderLabel.stringValue = UserText.aiChatImageGenPlaceholder
+            default:
+                self?.placeholderLabel.stringValue = UserText.aiChatOmnibarPlaceholder
+            }
+        }
+        .store(in: &cancellables)
     }
 
     @objc func textDidChange(_ notification: Notification) {
         omnibarController.updateText(textView.string)
+        omnibarController.updateSelection(textView.selectedRange)
         let currentScrollPosition = scrollView.documentVisibleRect.origin
         updatePanelHeight()
         updatePlaceholderVisibility()
@@ -242,6 +280,15 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             guard let self = self else { return }
             self.textView.scroll(currentScrollPosition)
         }
+    }
+
+    func textViewDidChangeSelection(_ notification: Notification) {
+        /// Persist the caret / selection to the current tab's shared state so the same position is
+        /// restored when the panel is re-activated (tab switch, refocus, etc.).
+        /// Skip programmatic updates — otherwise clearing `textView.string` via the `$currentText`
+        /// sink (triggered by cleanup on tab switch) would overwrite the saved selection with `(0, 0)`.
+        guard !isUpdatingProgrammatically else { return }
+        omnibarController.updateSelection(textView.selectedRange)
     }
 
     private func updatePlaceholderVisibility() {
@@ -282,6 +329,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 return true
             }
 
+            // Voice handoff requires an explicit click on the voice button. Enter on an empty
+            // input must not implicitly start a voice session — it stays a no-op via `submit()`,
+            // mirroring the legacy disabled-submit behavior.
             omnibarController.submit()
             return true
         } else if commandSelector == #selector(NSResponder.insertTab(_:)) {
@@ -318,7 +368,52 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     func focusTextViewWithCursorAtEnd() {
         focusTextView()
-        let textLength = textView.string.count
+        moveCursorToEnd()
+    }
+
+    /// Focuses the text view and restores the caret to the position persisted for the current tab,
+    /// falling back to the end of the prompt when no position has been saved yet or when the saved
+    /// location is past the current text length.
+    func focusTextViewRestoringCursorPosition() {
+        focusTextView()
+        isUpdatingProgrammatically = true
+        defer { isUpdatingProgrammatically = false }
+        /// `saved.location` is a UTF-16 offset (it came from an `NSRange`), so compare it against the
+        /// UTF-16 length of the string rather than `String.count` (grapheme-cluster count). For prompts
+        /// containing emoji or other non-BMP characters the two differ and valid saved positions would
+        /// otherwise fail the bounds check and fall through to `moveCursorToEnd`.
+        let utf16Length = (textView.string as NSString).length
+        if let saved = omnibarController.currentSelectionRange,
+           saved.location <= utf16Length {
+            let clampedLength = min(saved.length, max(0, utf16Length - saved.location))
+            textView.selectedRange = NSRange(location: saved.location, length: clampedLength)
+        } else {
+            moveCursorToEnd()
+        }
+    }
+
+    /// Forces the text view's string to match `omnibarController.currentText` synchronously.
+    /// The normal `$currentText` → `textView.string` path is async (receive(on: .main)), so typing in search
+    /// mode and immediately toggling to Duck.ai can show the prompt filling in after the panel is already visible.
+    /// Call this at activation to snap the text in place without the visible fill-in.
+    func syncTextViewToCurrentText() {
+        let newText = omnibarController.currentText
+        if textView.string != newText {
+            isUpdatingProgrammatically = true
+            textView.string = newText
+            isUpdatingProgrammatically = false
+            updatePlaceholderVisibility()
+            updatePanelHeight()
+        }
+    }
+
+    /// Moves the caret to the end of the prompt text without changing first responder.
+    /// Uses the UTF-16 length of the string, not `String.count` (grapheme-cluster count),
+    /// because `selectedRange` is an `NSRange` measured in UTF-16. For prompts containing
+    /// emoji or other non-BMP characters the two values differ and the previous version
+    /// would land the caret before the real end of the text.
+    func moveCursorToEnd() {
+        let textLength = (textView.string as NSString).length
         textView.selectedRange = NSRange(location: textLength, length: 0)
     }
 
@@ -330,8 +425,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             focusTextViewWithCursorAtEnd()
             return
         }
-        if containerVC.isImageUploadButtonAvailableForFocus {
-            containerVC.makeImageUploadButtonFirstResponder()
+        if containerVC.firstAvailableToolButtonForFocus() != nil {
+            containerVC.makeFirstAvailableToolButtonFirstResponder()
         } else if containerVC.isModelPickerButtonAvailableForFocus {
             containerVC.makeModelPickerButtonFirstResponder()
         } else {
@@ -342,16 +437,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private func wireTabCycle() {
         guard let containerVC = containerViewController else { return }
 
-        containerVC.onImageUploadButtonTabPressed = { [weak self, weak containerVC] in
-            guard let self, let containerVC else { return }
-            if containerVC.isModelPickerButtonAvailableForFocus {
-                containerVC.makeModelPickerButtonFirstResponder()
-            } else {
-                self.focusTextViewWithCursorAtEnd()
-            }
-        }
-
-        containerVC.onModelPickerButtonTabPressed = { [weak self] in
+        containerVC.onToolButtonTabPressed = { [weak self] in
             self?.focusTextViewWithCursorAtEnd()
         }
     }
@@ -387,9 +473,9 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
     func textViewDidRequestMoveToSuggestions() -> Bool {
         let viewModel = omnibarController.suggestionsViewModel
 
-        // If already at last suggestion, clear selection (cycle back to text field)
-        if let currentIndex = viewModel.selectedIndex,
-           currentIndex >= viewModel.filteredSuggestions.count - 1 {
+        // If already at last item (including the virtual "view all" row), clear selection (cycle back to text field)
+        let lastIndex = viewModel.filteredSuggestions.count - 1 + (viewModel.showViewAllChats ? 1 : 0)
+        if let currentIndex = viewModel.selectedIndex, currentIndex >= lastIndex {
             viewModel.clearSelection(keepMouseSuppressed: true)
             return true
         }
@@ -406,7 +492,15 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
         return viewModel.selectPrevious()
     }
 
+    func isSuggestionSelected() -> Bool {
+        omnibarController.suggestionsViewModel.selectedIndex != nil
+    }
+
     func textViewDidRequestSelectCurrentSuggestion() -> Bool {
+        if omnibarController.suggestionsViewModel.isViewAllChatsSelected {
+            return omnibarController.submitSelectedSuggestion()
+        }
+
         guard let suggestion = omnibarController.suggestionsViewModel.selectedSuggestion else {
             return false
         }
@@ -414,6 +508,18 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
         omnibarController.delegate?.aiChatOmnibarController(omnibarController, didSelectSuggestion: suggestion)
         return true
+    }
+
+    func textViewDidReceiveImageDrop(_ fileURLs: [URL]) -> Bool {
+        guard let containerVC = containerViewController else { return false }
+        guard omnibarController.isOmnibarToolsEnabled else { return false }
+        let canAttach = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
+        guard canAttach else { return false }
+        var accepted = false
+        for url in fileURLs where containerVC.addImageAttachmentFromDrop(url) {
+            accepted = true
+        }
+        return accepted
     }
 }
 
@@ -425,15 +531,91 @@ protocol FocusableTextViewNavigationDelegate: AnyObject {
     /// Called when user presses up arrow on the first line (when suggestions are selected)
     /// - Returns: `true` if navigation was handled, `false` otherwise
     func textViewDidRequestMoveFromSuggestions() -> Bool
+    /// Whether a suggestion is currently selected in the suggestions list.
+    func isSuggestionSelected() -> Bool
     /// Called when user presses Enter while a suggestion is selected
     /// - Returns: `true` if a suggestion was selected, `false` otherwise
     func textViewDidRequestSelectCurrentSuggestion() -> Bool
+    /// Called when the user drops image files onto the text view
+    /// - Returns: `true` if any images were accepted, `false` otherwise
+    func textViewDidReceiveImageDrop(_ fileURLs: [URL]) -> Bool
+}
+
+/// NSTextField label that forwards mouse hits to a configured target view.
+/// Used for the prompt placeholder: clicks on the placeholder area hit-test to the text view so the prompt takes focus,
+/// rather than falling through the empty scroll-view area to the address bar behind (which would switch to search mode).
+private final class ClickThroughLabel: NSTextField {
+    weak var hitTestForwardingTarget: NSView?
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return hitTestForwardingTarget ?? nil
+    }
 }
 
 /// Custom NSTextView that ensures it can always accept focus when clicked
 private final class FocusableTextView: NSTextView {
 
     weak var navigationDelegate: FocusableTextViewNavigationDelegate?
+
+    /// Fires when the text view transitions from not-first-responder to first-responder (gaining focus).
+    var onDidBecomeFirstResponder: (() -> Void)?
+
+    private var wasFirstResponder: Bool = false
+
+    override func becomeFirstResponder() -> Bool {
+        let didBecome = super.becomeFirstResponder()
+        if didBecome && !wasFirstResponder {
+            wasFirstResponder = true
+            onDidBecomeFirstResponder?()
+        }
+        return didBecome
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let didResign = super.resignFirstResponder()
+        if didResign {
+            wasFirstResponder = false
+        }
+        return didResign
+    }
+
+    private static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tiff", "tif"]
+
+    func registerForImageDrop() {
+        registerForDraggedTypes([.fileURL])
+    }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if !Self.imageFileURLs(from: sender).isEmpty {
+            return .copy
+        }
+        return super.draggingEntered(sender)
+    }
+
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if !Self.imageFileURLs(from: sender).isEmpty {
+            return .copy
+        }
+        return super.draggingUpdated(sender)
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let imageURLs = Self.imageFileURLs(from: sender)
+        if !imageURLs.isEmpty,
+           navigationDelegate?.textViewDidReceiveImageDrop(imageURLs) == true {
+            return true
+        }
+        return super.performDragOperation(sender)
+    }
+
+    private static func imageFileURLs(from draggingInfo: NSDraggingInfo) -> [URL] {
+        guard let urls = draggingInfo.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: [
+            .urlReadingFileURLsOnly: true
+        ]) as? [URL] else {
+            return []
+        }
+        return urls.filter { imageExtensions.contains($0.pathExtension.lowercased()) }
+    }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         return true
@@ -445,7 +627,13 @@ private final class FocusableTextView: NSTextView {
 
     override func mouseDown(with event: NSEvent) {
         if window?.firstResponder != self {
+            /// Refocus click: make this the first responder so the refocus flow (via `becomeFirstResponder` →
+            /// `onDidBecomeFirstResponder` callback → `focusTextViewRestoringCursorPosition`) can restore the
+            /// caret to the position saved for the current tab. Skip `super.mouseDown` so NSTextView doesn't
+            /// override our restored selection with a click-location caret; a subsequent click with the text
+            /// view already first responder positions the caret normally.
             window?.makeFirstResponder(self)
+            return
         }
         super.mouseDown(with: event)
     }
@@ -461,7 +649,8 @@ private final class FocusableTextView: NSTextView {
     }
 
     override func moveDown(_ sender: Any?) {
-        if isCursorOnLastLine() {
+        let suggestionSelected = navigationDelegate?.isSuggestionSelected() ?? false
+        if suggestionSelected || isCursorOnLastLine() {
             if navigationDelegate?.textViewDidRequestMoveToSuggestions() == true {
                 return
             }
@@ -470,9 +659,11 @@ private final class FocusableTextView: NSTextView {
     }
 
     override func moveUp(_ sender: Any?) {
-        // First check if we should navigate in suggestions
-        if navigationDelegate?.textViewDidRequestMoveFromSuggestions() == true {
-            return
+        let suggestionSelected = navigationDelegate?.isSuggestionSelected() ?? false
+        if suggestionSelected || isCursorOnFirstLine() {
+            if navigationDelegate?.textViewDidRequestMoveFromSuggestions() == true {
+                return
+            }
         }
         super.moveUp(sender)
     }
@@ -495,5 +686,20 @@ private final class FocusableTextView: NSTextView {
         layoutManager.lineFragmentRect(forGlyphAt: lastGlyphIndex, effectiveRange: &lastLineRange)
 
         return NSMaxRange(lineRange) >= NSMaxRange(lastLineRange)
+    }
+
+    /// Checks if the cursor is on the first line of the text view
+    private func isCursorOnFirstLine() -> Bool {
+        guard let layoutManager = layoutManager else {
+            return true
+        }
+
+        let selectedRange = selectedRange()
+        let glyphRange = layoutManager.glyphRange(forCharacterRange: selectedRange, actualCharacterRange: nil)
+
+        var lineRange = NSRange()
+        layoutManager.lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: &lineRange)
+
+        return lineRange.location == 0
     }
 }

@@ -19,6 +19,7 @@
 
 import Foundation
 import Combine
+import PrivacyConfig
 
 protocol TabsModelReading {
     var count: Int { get }
@@ -62,6 +63,8 @@ protocol TabsModelProviding {
     var normalTabsModel: TabsModelManaging { get }
     var fireModeTabsModel: TabsModelManaging { get }
     var aggregateTabsModel: TabsModelReading { get }
+    /// Clears tabs for the given browsing mode, or all tabs if `nil`.
+    func clearTabs(for browsingMode: BrowsingMode?)
     func save() -> Result<Void, Error>
 }
 
@@ -83,9 +86,22 @@ class TabsModelProvider: TabsModelProviding {
         self._normalTabsModel = normalTabsModel
         self._fireModeTabsModel = fireModeTabsModel
         self.persistence = persistence
-        self.aggregateTabsModel = AggregateTabsModel(normalTabsModel: normalTabsModel, fireModeTabsModel: fireModeTabsModel)
+        let capability = FireModeCapability.create()
+        self.aggregateTabsModel = capability.isFireModeEnabled ? AggregateTabsModel(normalTabsModel: normalTabsModel, fireModeTabsModel: fireModeTabsModel) : normalTabsModel
     }
     
+    func clearTabs(for browsingMode: BrowsingMode?) {
+        switch browsingMode {
+        case .normal:
+            _normalTabsModel.clearAll()
+        case .fire:
+            _fireModeTabsModel.clearAll()
+        case nil:
+            _normalTabsModel.clearAll()
+            _fireModeTabsModel.clearAll()
+        }
+    }
+
     func save() -> Result<Void, Error> {
         let normalResult = persistence.save(model: _normalTabsModel, for: .normal)
         let fireResult = persistence.save(model: _fireModeTabsModel, for: .fire)

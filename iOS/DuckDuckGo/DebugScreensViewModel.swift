@@ -41,6 +41,12 @@ class DebugScreensViewModel: ObservableObject {
         }
     }
 
+    @Published var isShakeToOpenDebugMenuEnabled = true {
+        didSet {
+            AppUserDefaults().shakeToOpenDebugMenuEnabled = isShakeToOpenDebugMenuEnabled
+        }
+    }
+
     @Published var filter = "" {
         didSet {
             refreshFilter()
@@ -51,11 +57,17 @@ class DebugScreensViewModel: ObservableObject {
     @Published var unpinnedScreens: [DebugScreen] = []
     @Published var actions: [DebugScreen] = []
     @Published var filtered: [DebugScreen] = []
+    @Published var filteredFeatureFlags: [FeatureFlag] = []
+
+    var isSearching: Bool {
+        !filter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     @UserDefaultsWrapper(key: .debugPinnedScreens, defaultValue: [])
     var pinnedTitles: [String]
 
     let dependencies: DebugScreen.Dependencies
+    private let featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
 
     var pushController: ((UIViewController) -> Void)?
 
@@ -89,6 +101,7 @@ class DebugScreensViewModel: ObservableObject {
     func refreshToggles() {
         self.isInternalUser = dependencies.internalUserDecider.isInternalUser
         self.isInspectibleWebViewsEnabled = AppUserDefaults().inspectableWebViewEnabled
+        self.isShakeToOpenDebugMenuEnabled = AppUserDefaults().shakeToOpenDebugMenuEnabled
     }
 
     func refreshFilter() {
@@ -100,12 +113,17 @@ class DebugScreensViewModel: ObservableObject {
         self.unpinnedScreens = screens.filter { !$0.isAction && !self.isPinned($0) }.sorted(by: sorter)
         self.pinnedScreens = screens.filter { self.isPinned($0) }.sorted(by: sorter)
 
-        if filter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        let trimmedFilter = filter.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedFilter.isEmpty {
             self.filtered = []
+            self.filteredFeatureFlags = []
         } else {
             self.filtered = screens.filter {
                 $0.title.lowercased().contains(filter.lowercased())
             }.sorted(by: sorter)
+            self.filteredFeatureFlags = isInternalUser ? FeatureFlag.allCases.filter {
+                $0.supportsLocalOverriding && $0.rawValue.localizedCaseInsensitiveContains(trimmedFilter)
+            }.sorted(by: { $0.rawValue < $1.rawValue }) : []
         }
     }
 
@@ -152,6 +170,24 @@ class DebugScreensViewModel: ObservableObject {
             pinnedTitles.append(screen.title)
         }
         refreshFilter()
+    }
+
+    func isFeatureFlagEnabled(_ flag: FeatureFlag) -> Bool {
+        featureFlagger.isFeatureOn(for: flag)
+    }
+
+    func toggleFeatureFlag(_ flag: FeatureFlag) {
+        featureFlagger.localOverrides?.toggleOverride(for: flag)
+        objectWillChange.send()
+    }
+
+    func resetFeatureFlagOverride(_ flag: FeatureFlag) {
+        featureFlagger.localOverrides?.clearOverride(for: flag)
+        objectWillChange.send()
+    }
+
+    func featureFlagDefaultValue(_ flag: FeatureFlag) -> Bool {
+        featureFlagger.isFeatureOn(for: flag, allowOverride: false)
     }
 
     func setCustomURL(_ url: URL?, for configuration: Configuration) {

@@ -81,3 +81,16 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
         return [timestampParameterKey: "\(timeElapsed)"]
     }
 }
+
+// MARK: - Voice Entry Point Source
+
+/// Identifies the entry point from which the user launched Duck.ai voice mode.
+enum VoiceEntryPointSource: String {
+    case ntp
+    case toolbar
+    case addressBar = "address_bar"
+    case controlCenter = "widget.controlcenter"
+    case lockscreenComplication = "widget.lockscreen.complication"
+    case quickActions = "widget.quickactions"
+    case siri
+}

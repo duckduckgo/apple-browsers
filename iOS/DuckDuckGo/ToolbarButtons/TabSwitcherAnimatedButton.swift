@@ -24,7 +24,9 @@ import Core
 protocol TabSwitcherButtonDelegate: AnyObject {
     
     func showTabSwitcher(_ button: TabSwitcherButton)
-    func launchNewTab(_ button: TabSwitcherButton)
+    func launchNewTabWithCurrentMode(_ button: TabSwitcherButton)
+    func launchNewNormalTab(_ button: TabSwitcherButton)
+    func launchNewFireTab(_ button: TabSwitcherButton)
 
 }
 
@@ -142,7 +144,7 @@ class TabSwitcherAnimatedButton: UIView, TabSwitcherButton {
         workItem?.cancel()
         let workItem = DispatchWorkItem {
             UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-            self.delegate?.launchNewTab(self)
+            self.delegate?.launchNewTabWithCurrentMode(self)
             self.workItem = nil
         }
         let longPressDelay = GestureToolbarButton.Constants.minLongPressDuration

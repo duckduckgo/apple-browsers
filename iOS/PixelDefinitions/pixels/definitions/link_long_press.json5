@@ -1,0 +1,36 @@
+{
+    "m_link-long-press_menu-shown": {
+        "description": "Fired when a link long-press preview menu is displayed",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "browsingMode"]
+    },
+
+    "m_link-long-press_new-tab": {
+        "description": "Fired when the user opens a link in a new tab via long-press menu",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "browsingMode"],
+        "expires": "2026-08-04"
+    },
+
+    "m_link-long-press_background-tab": {
+        "description": "Fired when the user opens a link in a background tab via long-press menu",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "browsingMode"],
+        "expires": "2026-08-04"
+    },
+
+    "m_link-long-press_fire-tab": {
+        "description": "Fired when the user opens a link in a Fire Tab via long-press menu (only available in normal mode)",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-08-04"
+    }
+}

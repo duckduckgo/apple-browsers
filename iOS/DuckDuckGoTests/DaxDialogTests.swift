@@ -576,7 +576,7 @@ final class DaxDialog: XCTestCase {
 
         // THEN
         XCTAssertEqual(result1?.type, .siteIsMajorTracker)
-        XCTAssertEqual(result2?.type, .fire)
+        XCTAssertEqual(result2?.type, .fire(.standard))
         XCTAssertEqual(result2, result3)
     }
 
@@ -594,7 +594,7 @@ final class DaxDialog: XCTestCase {
 
         // THEN
         XCTAssertEqual(result1?.type, .siteIsMajorTracker)
-        XCTAssertEqual(result2?.type, .fire)
+        XCTAssertEqual(result2?.type, .fire(.standard))
         XCTAssertEqual(result3?.type, .afterSearch)
     }
 
@@ -614,7 +614,7 @@ final class DaxDialog: XCTestCase {
 
         // THEN
         XCTAssertEqual(result1?.type, .siteIsMajorTracker)
-        XCTAssertEqual(result2?.type, .fire)
+        XCTAssertEqual(result2?.type, .fire(.standard))
         XCTAssertEqual(result3?.type, .afterSearch)
         XCTAssertEqual(result4?.type, .final)
     }
@@ -957,6 +957,8 @@ final class DaxDialog: XCTestCase {
         XCTAssertNotEqual(result, .subscriptionPromotion)
     }
 
+    // MARK: - Subscription Promotion Dialog Seen
+
     func testWhenSubscriptionPromotionDialogSeenIsSet_ThenSettingsValueIsUpdated() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
@@ -1143,9 +1145,9 @@ final class DaxDialog: XCTestCase {
 }
 
 final class MockOnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping {
-    
+
     var proceedButtonText = ""
-    
+
     var shouldDisplayValue: Bool = false
 
     var shouldDisplay: Bool {

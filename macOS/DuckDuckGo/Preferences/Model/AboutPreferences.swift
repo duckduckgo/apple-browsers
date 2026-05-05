@@ -35,16 +35,21 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     let supportedOSChecker: SupportedOSChecking
     private var cancellables = Set<AnyCancellable>()
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
+    private let manualUpdateRemovalHandler: ManualUpdateRemovalHandling
 
     init(internalUserDecider: InternalUserDecider,
          featureFlagger: FeatureFlagger,
+         manualUpdateRemovalHandler: ManualUpdateRemovalHandling? = nil,
          windowControllersManager: WindowControllersManagerProtocol,
          keyValueStore: ThrowingKeyValueStoring,
          supportedOSChecker: SupportedOSChecking? = nil) {
 
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
-        self.settings = keyValueStore.throwingKeyedStoring()
+        let settings: any ThrowingKeyedStoring<UpdateControllerSettings> = keyValueStore.throwingKeyedStoring()
+        self.settings = settings
+        self.manualUpdateRemovalHandler = manualUpdateRemovalHandler
+            ?? ManualUpdateRemovalHandler(settings: settings, featureFlagger: featureFlagger)
         self.appVersionModel = .init(appVersion: AppVersion(), internalUserDecider: internalUserDecider)
         self.supportedOSChecker = supportedOSChecker ?? SupportedOSChecker(featureFlagger: featureFlagger)
         internalUserDecider.isInternalUserPublisher
@@ -65,6 +70,10 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
                 self?.featureFlagOverrideToggle.toggle()
             }
             .store(in: &cancellables)
+    }
+
+    var shouldHideManualUpdateOption: Bool {
+        manualUpdateRemovalHandler.shouldHideManualUpdateOption
     }
 
     var shouldShowUpdateStatus: Bool {

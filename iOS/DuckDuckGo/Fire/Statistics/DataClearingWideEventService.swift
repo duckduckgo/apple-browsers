@@ -181,6 +181,8 @@ private extension FireRequest {
             return .autoClearOnLaunch
         case .autoClearOnForeground:
             return .autoClearOnForeground
+        case .fireModeAutoClear:
+            return .fireModeAutoClear
         }
     }
 
@@ -191,6 +193,10 @@ private extension FireRequest {
             return .tab
         case .all:
             return .all
+        case .fireMode:
+            return .fireMode
+        case .normalMode:
+            return .normalMode
         }
     }
 
@@ -210,20 +216,5 @@ private extension FireRequest {
         case .autoClear:
             return .autoClear
         }
-    }
-}
-
-/// Custom error type for data clearing actions that don't propagate actual errors
-/// but contain assertions, logs, or precondition failures.
-///
-/// Use this error type for Pattern B actions (Assert/Log Only) to surface error
-/// conditions to wide event tracking without modifying the original assertion/log statements.
-public struct DataClearingWideEventError: Error {
-    /// Human-readable description of the error condition.
-    /// Typically contains the text from assert(), assertFailure(), or Logger.error() calls.
-    public let description: String
-
-    public init(description: String) {
-        self.description = description
     }
 }

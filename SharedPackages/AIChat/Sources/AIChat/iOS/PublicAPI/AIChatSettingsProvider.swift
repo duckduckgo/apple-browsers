@@ -19,6 +19,16 @@
 #if os(iOS)
 import Foundation
 
+/// Defines how the omnibar toggle position is determined on app launch.
+public enum DefaultOmnibarMode: String, CaseIterable {
+    /// Always start in Search mode.
+    case search
+    /// Always start in Duck.ai mode.
+    case duckAI
+    /// Restore the last used toggle position.
+    case lastUsed
+}
+
 public protocol AIChatSettingsProvider {
     /// The URL used to open AI Chat in the `AIChatViewController`.
     var aiChatURL: URL { get }
@@ -34,6 +44,9 @@ public protocol AIChatSettingsProvider {
 
     /// The user settings state for the AI Chat Search Input
     var isAIChatSearchInputUserSettingsEnabled: Bool { get }
+
+    /// Indicates if AI Chat Search Input was explicitly disabled by the user
+    var isAIChatSearchInputUserSettingsDisabledByUser: Bool { get }
 
     /// The user settings state for the AI Chat browsing menu icon.
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool { get }
@@ -73,6 +86,12 @@ public protocol AIChatSettingsProvider {
 
     /// Updates the user settings state for chat suggestions
     func enableChatSuggestions(enable: Bool)
+
+    /// The user's preferred default omnibar toggle mode.
+    var defaultOmnibarMode: DefaultOmnibarMode { get }
+
+    /// Updates the user's preferred default omnibar toggle mode.
+    func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode)
 
 }
 #endif

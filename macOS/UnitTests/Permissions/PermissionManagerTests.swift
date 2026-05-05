@@ -23,20 +23,17 @@ import XCTest
 
 final class PermissionManagerTests: XCTestCase {
     var store: PermissionStoreMock!
-    var featureFlagger: MockFeatureFlagger!
     lazy var manager: PermissionManager! = {
-        PermissionManager(store: store, featureFlagger: featureFlagger)
+        PermissionManager(store: store)
     }()
 
     override func setUp() {
         store = PermissionStoreMock()
-        featureFlagger = MockFeatureFlagger()
     }
 
     override func tearDown() {
         manager = nil
         store = nil
-        featureFlagger = nil
     }
 
     func testWhenPermissionManagerInitializedThenPermissionsAreLoaded() {
@@ -267,6 +264,43 @@ extension PermissionManagerTests {
 
         let result = manager.permission(forDomain: "notifications.example.com", permissionType: .notification)
         XCTAssertEqual(result, .ask, "Notification permission should be cleared after burn")
+    }
+}
+
+// MARK: - PermissionType Round-Trip Tests
+
+extension PermissionManagerTests {
+
+    func testAutoplayPolicyRawValueRoundTrip() {
+        XCTAssertEqual(PermissionType.autoplayPolicy.rawValue, "autoplay_policy")
+        XCTAssertEqual(PermissionType(rawValue: "autoplay_policy"), .autoplayPolicy)
+    }
+
+    func testAutoplayPolicyPermissionCanBeStoredAndRetrieved() {
+        store.permissions = []
+
+        manager.setPermission(.allow, forDomain: "example.com", permissionType: .autoplayPolicy)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
+        XCTAssertEqual(result, .allow)
+    }
+
+    func testAutoplayPolicyPermissionCanBeSetToDeny() {
+        store.permissions = []
+
+        manager.setPermission(.deny, forDomain: "example.com", permissionType: .autoplayPolicy)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
+        XCTAssertEqual(result, .deny)
+    }
+
+    func testAutoplayPolicyPermissionCanBeSetToAsk() {
+        store.permissions = []
+
+        manager.setPermission(.ask, forDomain: "example.com", permissionType: .autoplayPolicy)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
+        XCTAssertEqual(result, .ask)
     }
 }
 

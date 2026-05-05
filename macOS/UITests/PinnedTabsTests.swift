@@ -90,7 +90,10 @@ class PinnedTabsTests: UITestCase {
         assertCurrentPageCanBeUnpinned()
     }
 
-    func testReleaseNotesCannotBePinned() {
+    func testReleaseNotesCannotBePinned() throws {
+        if app.isSandboxed {
+            throw XCTSkip("This test is only valid for non-App Store builds")
+        }
         app.openHelp()
         app.openReleaseNotes()
         assertCurrentPageCannotBePinned()

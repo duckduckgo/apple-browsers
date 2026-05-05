@@ -104,33 +104,41 @@ public extension OnboardingTheme.ContextualOnboardingMetrics {
         public let borderInset: CGFloat
         /// Rendered size of the leading icon in a row.
         public let iconSize: CGSize
-        /// Maximum height for a single option list row.
-        public let itemMaxHeight: CGFloat
+        /// Minimum height for a single option list row.
+        public let itemMinHeight: CGFloat
         /// Maximum width for a single option list row.
         public let itemMaxWidth: CGFloat?
         /// Vertical spacing between adjacent option list rows.
         public let interItemSpacing: CGFloat?
         /// Horizontal spacing between icon and text within a row.
         public let innerContentHorizontalSpacing: CGFloat?
+        /// Vertical padding inside each option list row.
+        public let verticalPadding: CGFloat
+        /// Horizontal padding inside each option list row.
+        public let horizontalPadding: CGFloat
 
         public init(
             cornerRadius: CGFloat,
             borderWidth: CGFloat,
             borderInset: CGFloat,
             iconSize: CGSize,
-            itemMaxHeight: CGFloat,
+            itemMinHeight: CGFloat,
             itemMaxWidth: CGFloat? = .infinity,
             interItemSpacing: CGFloat? = nil,
-            innerContentHorizontalSpacing: CGFloat? = nil
+            innerContentHorizontalSpacing: CGFloat? = nil,
+            verticalPadding: CGFloat = 12,
+            horizontalPadding: CGFloat = 16
         ) {
             self.cornerRadius = cornerRadius
             self.borderWidth = borderWidth
             self.borderInset = borderInset
             self.iconSize = iconSize
-            self.itemMaxHeight = itemMaxHeight
+            self.itemMinHeight = itemMinHeight
             self.itemMaxWidth = itemMaxWidth
             self.interItemSpacing = interItemSpacing
             self.innerContentHorizontalSpacing = innerContentHorizontalSpacing
+            self.verticalPadding = verticalPadding
+            self.horizontalPadding = horizontalPadding
         }
     }
 

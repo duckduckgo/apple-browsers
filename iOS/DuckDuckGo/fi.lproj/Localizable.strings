@@ -94,6 +94,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Duck.ai";
 
+/* Open Duck.ai Voice mode action */
+"action.title.duckai.voice" = "Duck.ai-äänitila";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Muokkaa kirjanmerkkiä";
 
@@ -106,12 +109,14 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Välilehdet ja tiedot tyhjennetty";
 
-/* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Tyhjennä välilehdet, tiedot ja Duck.ai-keskustelut";
-
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Avaa taustalla";
 
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Uusi Fire-välilehti";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Avaa Fire-välilehdessä";
 /* Create New Tab action */
 "action.title.newTabAction" = "Uusi välilehti";
 
@@ -201,6 +206,39 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Tekoälyominaisuudet";
+
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+"aichat.attachment.option.choose.photo" = "Valitse kuva";
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Ota kuva";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Analyyttisiä tehtäviä varten";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Laajennettu päättely";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Vastaa nopeasti";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Nopea";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Monimutkaisia tehtäviä varten";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Perustelut";
+
+/* Title for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.title" = "Mukauta vastauksia";
+
+/* Subtitle for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.subtitle" = "Löydä ajankohtaiset tiedot";
+
+/* Title for the web search tool in the unified input tools menu */
+"aichat.toolbar.tools.websearch.title" = "Verkkohaku";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Olemassa olevia kirjanmerkkejä ei kopioida.";
@@ -345,12 +383,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Hae DuckDuckGo:sta";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Hakuehdotuksiin sisältyvät nyt myös viimeksi käymäsi sivustot. Voit poistaa tämän käytöstä asetuksissa tai tyhjentää sivustotiedot milloin tahansa 🔥 Fire Buttonilla.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Sama tietoja,\nparempia hakuehdotuksia!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Vaihda välilehteen";
@@ -862,6 +894,9 @@
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Ei kiitos";
 
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Ei nyt";
+
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Tallenna salasanasi turvallisesti laitteeseen DuckDuckGon salasanojen ja automaattisen täytön avulla.";
 
@@ -927,6 +962,15 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Päivitetäänkö käyttäjätunnus?";
+
+/* Settings option for allowing all media to autoplay */
+"autoplay.mode.allowAll" = "Salli ääni ja video";
+
+/* Settings option for blocking all media autoplay */
+"autoplay.mode.blockAll" = "Estä ääni ja video";
+
+/* Settings option for blocking audio autoplay while allowing muted video */
+"autoplay.mode.blockAudio" = "Estä ääni";
 
 /* No comment provided by engineer. */
 "Available Products" = "Saatavilla olevat tuotteet";
@@ -1079,10 +1123,13 @@
 "Confirm" = "Vahvista";
 
 /* No comment provided by engineer. */
-"Contextual Onboarding" = "Kontekstuaalinen perehdytys";
-
-/* No comment provided by engineer. */
 "Contextual Session Timer" = "Contextual Session Timer";
+
+/* Button to confirm deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.button" = "Poista keskustelu";
+
+/* Title for the confirmation dialog when deleting a contextual AI chat */
+"contextual.chat.delete.confirmation.title" = "Poistetaanko tämä keskustelu?";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Ohita";
@@ -1165,6 +1212,9 @@
 /* Title for a button that triggers an unknown search query for the user. */
 "contextual.onboarding.try-search.surprise-me-title" = "Yllätä minut!";
 
+/* Fourth paragraph of the Control Center Duck.ai Widget Education screen */
+"control.center.duckai.widget.education.paragraph" = "Etsi luettelosta **DuckDuckGo** ja lisää se sitten napauttamalla **Duck.ai Voice**";
+
 /* Fourth paragraph of the Control Center VPN Widget Education screen */
 "control.center.vpn.widget.education.paragraph" = "Etsi luettelosta **DuckDuckGo** ja lisää se sitten napauttamalla **VPN-valvonta**.";
 
@@ -1225,6 +1275,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Tuo kirjanmerkit DuckDuckGohon";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Avaa Chrome, siirry sitten Salasananhallintaan ja seuraa alla olevia ohjeita:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Asetukset** > **Vie tiedot**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Paina **Jatka**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Valitse kohteeksi **DuckDuckGo**";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Tuo Chromesta";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Onko vienti valmis?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Sinun on avattava Salasanat-sovellus ja seurattava tuontiohjeita.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Napauta **···** > **Vie tiedot toiseen sovellukseen**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Napauta **Valitse kaikki** > **Jatka**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Valitse kohteeksi **DuckDuckGo**";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Tuo Salasanoista";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Vie ensin salasanasi ja kirjanmerkkisi Safarista ja palaa sitten tänne lataamaan tiedosto.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Vie Safarista";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Tuo Safarista";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Lataa viety tiedosto...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Zip-tiedostosta ei löytynyt tuettuja tietoja. Tarkista Safarin vientiohjeet ja yritä uudelleen.";
 
@@ -1234,6 +1329,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Tiedostoa %@ ei voitu lukea. Tiedostossa olevissa tiedoissa voi olla ongelma.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Selvä";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Tiedostoa %@ ei voitu lukea. Kokeile ladata toinen tiedosto tai toista tuontitapaa.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Tiedosto voi olla vioittunut";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Zip-tiedostosta ei löytynyt tuettuja tietoja. Tarkista vientiohjeet ja yritä uudelleen.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Tietoja ei löytynyt";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Valittua tiedostoa ei tueta. Valitse toinen tiedosto ja yritä uudelleen.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Tiedostoa ei tueta";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1242,6 +1358,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Tuo DuckDuckGo'hon";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Valitse **Vie** ja valitse seuraavassa näytössä **Kirjanmerkit** ja **Tallenna latauksiin**.";
@@ -1253,7 +1372,7 @@
 "data.import.passwords.instructions.chrome.step1" = "Siirry Chromessa kohtaan **Google Password Manager** ja sitten **Asetukset**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Valitse **Vie salasanat** ja sitten **Tallenna tiedostoihin**. Tallenna lopuksi tiedosto kansioon, jonka muistat.";
+"data.import.passwords.instructions.chrome.step2" = "Valitse **Vie tiedot**, sitten **···** ja lopuksi **Lataa CSV-tiedostona** ja tallenna tiedosto kansioon, jonka muistat.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Näin viet salasanat";
@@ -1281,6 +1400,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Tuo salasanat DuckDuckGohon";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Avaa asetukset ja vie";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Muista napauttaa\n \"Vie tiedostoihin\"";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Salasanat-sovellus";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Tuo kohteesta";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Synkronoi kohteesta";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo toisella laitteella";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Kirjanmerkit";
@@ -1317,6 +1460,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Salasanat";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Haluatko tuoda kirjanmerkkisi myös Safarista?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Jatka";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Ei nyt";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Haluatko tuoda myös salasanasi?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Viime kuukausi";
@@ -1447,19 +1602,29 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "YouTuben viimeaikaiset muutokset ovat vaikuttaneet Duck Playerin toimintaan. Pyrimme korjaamaan nämä ongelmat. Kiitos ymmärryksestä.";
 
+/* Fourth paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.fourthParagraph" = "Napauta widgetiä muokataksesi sitä ja aseta sitten **Duck.ai** ja **Duck.ai Voice** pikavalinnoiksi";
+
+/* Third paragraph of the Duck.ai widget education screen */
+"duckai.addWidget.settings.thirdParagraph" = "Etsi ja valitse **DuckDuckGo**, pyyhkäise sitten kohtaan **Mukautetut pikavalinnat** ja valitse **Lisää widget**";
+
 /* Menu option to attach current page content to Duck.ai chat */
 "duckai.attach.page.content" = "Liitä sivun sisältö";
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Lähetetty viestisi mukana Duck.ai:lle";
 
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Viimeaikaiset keskustelut";
 
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Viimeaikaiset keskustelut";
 
-/* Title for the Duck.ai contextual onboarding screen */
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Näytä kaikki keskustelut";
 
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+/* Navigation bar title for Duck.ai Control Center education screen */
+"duckai.control.center.education.navBar.title" = "Lisää Duck.ai-äänipikavalinta valvontakeskukseesi";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo-tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Tietojasi ei käytetä tekoälyn kouluttamiseen.";
@@ -1467,8 +1632,20 @@
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Liitä sivun sisältö";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Kysy sivusta";
+
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Yhteenveto tästä sivusta";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Yhteenveto sivusta";
+
+/* AI Chat settings row for adding Duck.ai to Control Center */
+"duckai.settings.add.control-center.widget" = "Lisää Duck.ai valvontakeskukseen";
+
+/* AI Chat settings row for adding the Duck.ai widget to home screen */
+"duckai.settings.add.widget" = "Lisää Duck.ai-widget aloitusnäyttöön";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Näytä Duck.ai-painikkeet ja -linkit DuckDuckGo-hakutuloksissa.";
@@ -1481,6 +1658,9 @@
 
 /* Title for section that groups shortcuts related to browser */
 "duckai.settings.browserShortcuts.section.title" = "Selaimen pikakuvakkeet";
+
+/* AI Chat settings row for learning how to talk with Duck.ai via Siri */
+"duckai.settings.control.with.siri" = "Keskustele Duck.ai:n kanssa Sirin kautta";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Osoitekenttä";
@@ -1499,6 +1679,30 @@
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
+
+/* Section header for Duck.ai shortcuts in AI Chat settings */
+"duckai.shortcuts.section.header" = "Pikavalinnat";
+
+/* Description for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.description" = "Siri-pikakomentojen avulla voit aloittaa Duck.ai-äänikeskustelun nopeasti äänikomennolla, kuten \"Siri, aloita DuckDuckGo-äänikeskustelu\". Se on nopea ja kätevä tapa keskustella Duck.ai:n kanssa ilman käsiä.";
+
+/* Duck.ai Siri education screen example command 1 */
+"duckai.siri.education.screen.example1" = "Siri, aloita DuckDuckGo-äänikeskustelu.";
+
+/* Duck.ai Siri education screen example command 2 */
+"duckai.siri.education.screen.example2" = "Siri, keskustele DuckDuckGo:n kanssa.";
+
+/* Duck.ai Siri education screen example command 3 */
+"duckai.siri.education.screen.example3" = "Siri, aloita äänikeskustelu DuckDuckGo:n kanssa.";
+
+/* Title for the Duck.ai Siri education screen */
+"duckai.siri.education.screen.title" = "Keskustele Duck.ai:n kanssa Sirin avulla!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+"duckai.welcome.message" = "Kaikki keskustelut ovat %@ yksityisiä";
+
+/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
+"duckai.welcome.private.word" = "yksityisiä";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo iOS:lle";
@@ -1572,14 +1776,26 @@
 /* Button text to resume video in Duck Player */
 "duckplayer.resume.in.duck.player" = "Jatka Duck Playerissa";
 
+/* Toggle to always open videos in Duck Player */
+"duckplayer.settings.always-open-toggle" = "Avaa aina YouTube-videot Duck Playerissa";
+
 /* Footer text explaining the auto-play toggle in Duck Player settings */
 "duckplayer.settings.autoplay.footer" = "Duck Playerissa avatut videot toistetaan automaattisesti. Poista tämä käytöstä, jos haluat toistaa Duck Playerissa avatut videot manuaalisesti.";
 
-/* Label for the auto-play toggle in Duck Player settings */
-"duckplayer.settings.autoplay.label" = "Toista videot automaattisesti";
+/* Label for the autoplay toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Automaattisesti toistettavat videot";
+
+/* Footer text for Enable Duck Player toggle */
+"duckplayer.settings.enable-footer" = "Avaa videot teatteritilassa, jolloin katsomasi sisältö ei vaikuta YouTube-syötteeseesi.";
+
+/* Toggle to enable Duck Player */
+"duckplayer.settings.enable-toggle" = "Ota Duck Player käyttöön";
 
 /* Label for the experimental section in Duck Player settings */
 "duckplayer.settings.experimental.label" = "Kokeellinen";
+
+/* Explanation footer for Duck Player settings */
+"duckplayer.settings.explanation" = "Duck Playerin avulla voit katsella YouTubea ilman kohdennettuja mainoksia, eikä katsomasi sisältö vaikuta suosituksiisi.";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo tarjoaa kaikki Privacy Essentials ominaisuudet, joita tarvitset suojautuaksesi selatessasi verkkoa.";
@@ -1763,6 +1979,20 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Tapahtui tuntematon virhe";
+
+/* Accessibility hint for the escape hatch card */
+"escapeHatch.accessibility.hint" = "Siirtyy tälle välilehdelle";
+
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "Viimeksi käytetty Fire-välilehti";
+/* Accessibility label for escape hatch card; %@ is the tab title */
+"escapeHatch.returnTo.accessibility.label" = "Palaa välilehdelle %@";
+
+/* Label shown on the escape hatch card above the tab title */
+"escapeHatch.returnTo.label" = "Palaa kohtaan…";
+
+/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
+"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Palaa kohtaan %1$@, %2$@";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2064,8 +2294,52 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Valitse, mitä poistetaan";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Kirjaudu sivustolle eri tilillä";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Selaa tallentamatta paikallista historiaa";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Vianmääritys verkkosivustoille";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire-välilehdet on eristetty muista selaintiedoista. Niiden tiedot poltetaan, kun suljet ne kaikki. Ne antavat sinulle saman seurantasuojan kuin muutkin välilehdet.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Uusi Fire-välilehti";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire-välilehdet";
+
+/* Badge label on the Fire Mode promotion entry in the browsing menu */
+"fire.mode.menu.promotion.badge" = "Uusi";
+
+/* Description for the Fire Mode promotion card shown on the new tab page */
+"fire.mode.ntp.promotion.description" = "Uutta! Selaa tallentamatta paikallista historiaa tai kirjaudu sivustoille käyttämällä eri tiliä.";
+
+/* Dismiss button on the Fire Mode promotion card on the new tab page */
+"fire.mode.ntp.promotion.dismiss" = "Ei nyt";
+
+/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
+"fire.mode.ntp.promotion.primary.action" = "Kokeile Fire-välilehtiä";
+
+/* Title for promotion element for pushing users to try fire mode. */
+"fire.mode.promotion.title" = "Kokeile Fire-välilehtiä";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Kokeile Fire-välilehtiä selataksesi ilman paikallisen historian tallentamista.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Uutta: Fire-välilehdet";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire-välilehti";
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Ilmavirta";
+
+/* The name of the legacy fire animation in the App Settings. This can be translated and it's not a brand or product name. Refer To 'fireButtonAnimation.fireRising.name' for translation */
+"fireButtonAnimation.fireRising.legacy.name" = "Inferno-klassikko";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.fireRising.name" = "Tulimyrsky";
@@ -2125,7 +2399,10 @@
 "import.passwords.promo.title" = "Tuo salasanasi DuckDuckGohon";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Kysy yksityisesti";
+"input.field.placeholder.duckai" = "Kysy mitä tahansa yksityisesti";
+
+/* Placeholder text for the duck.ai input field when a chat is already active */
+"input.field.placeholder.duckai.followup" = "Esitä jatkokysymys...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Asenna laajennus";
@@ -2180,6 +2457,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Hae tai anna osoite";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Uusi Fire-välilehti";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Uusi välilehti";
@@ -2346,6 +2626,18 @@
 /* The body of the notification when Privacy Pro subscription expired */
 "network.protection.entitlement.expired.notification.body" = "VPN katkaistu vanhentuneen tilauksen takia. Tilaa DuckDuckGo, jotta voit yhdistää VPN:n uudelleen.";
 
+/* Error shown when VPN cannot authenticate the user */
+"network.protection.error.authentication.failed" = "Todentaminen ei onnistu. Tarkista, että tilauksesi on aktiivinen, ja yritä uudelleen.";
+
+/* Error shown when VPN fails to connect to a server */
+"network.protection.error.connection.failed" = "VPN-palvelimeen ei saada yhteyttä. Yritä myöhemmin uudelleen.";
+
+/* Error shown when the user's subscription has expired */
+"network.protection.error.subscription.expired" = "Tilauksesi on päättynyt. Tilaa uudelleen, jotta voit muodostaa yhteyden VPN-palvelimeen.";
+
+/* Generic fallback error message for VPN failures. ** markers indicate bold text and should be preserved in translations. */
+"network.protection.error.unknown" = "Tapahtui odottamaton virhe. Yritä uudelleen. Jos ongelma jatkuu, vieritä **Tietoja**-kohtaan ja avaa **Usein kysytyt kysymykset ja tuki**, niin saat apua.";
+
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN ei onnistunut muodostamaan yhteyttä. Yritä myöhemmin uudelleen.";
 
@@ -2442,11 +2734,8 @@
 /* Custom DNS label shown in NetworkProtection's status view. */
 "network.protection.status.view.custom.dns" = "DNS-palvelin";
 
-/* Generic connection failed error message shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.message" = "Yritä myöhemmin uudelleen.";
-
-/* Generic connection failed error title shown in NetworkProtection's status view. */
-"network.protection.status.view.error.connection.failed.title" = "Yhteyden muodostaminen epäonnistui.";
+/* Connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "Yhteyden muodostaminen epäonnistui";
 
 /* IP Address label shown in NetworkProtection's status view. */
 "network.protection.status.view.ip.address" = "IP-osoite";
@@ -2587,6 +2876,9 @@
 "No Logs" = "Ei lokitietoja";
 
 /* No comment provided by engineer. */
+"No matches for \"%@\"" = "Ei osumia haulle \"%@\"";
+
+/* No comment provided by engineer. */
 "No messages" = "Ei viestejä";
 
 /* No comment provided by engineer. */
@@ -2612,6 +2904,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
+"omnibar.notification.youtube-ad-block-on" = "YouTube-mainosten esto käytössä";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Selvä";
@@ -2667,8 +2962,8 @@
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Ohita";
 
-/* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Hei!\n\nOletko valmis käyttämään nopeampaa selainta, joka pitää sinut suojattuna?";
+/* The title of the onboarding dialog popup. */
+"onboarding.highlights.intro.title" = "Hei!\n\nOletko valmis nopeampaan selaimeen, joka suojaa sinua ja antaa sinun päättää, milloin ja miten käytät tekoälyä?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Seuraava";
@@ -2682,10 +2977,16 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Asetukset > Tekoälyominaisuudet.";
 
-/* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Haluatko helpon pääsyn yksityiseen tekoälychattiin?";
+/* Title for the search and Duck.ai option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchAndDuckAI" = "Vaihda haun ja\nDuck.ai:n välillä";
 
-/* Button to continue the onboarding process */
+/* Title for the search-only option in onboarding picker. */
+"onboarding.highlights.searchExperience.searchOnly" = "Vain haku";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Haluatko helpon pääsyn yksityiseen tekoälykeskusteluun osoiterivillä?";
+
+/* Button to continue the onboarding process. */
 "onboarding.intro.cta" = "Aloitetaan!";
 
 /* Button to skip the onboarding process */
@@ -2703,6 +3004,21 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ai niin, melkein unohdin...";
 
+/* The title of the delayed subscription promotion dialog shown to users who skipped onboarding */
+"onboarding.privacypro.promo.title.delayed" = "Tiesitkö?";
+
+/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.message" = "Yksityinen. Nopea. Vähemmän mainoksia.";
+
+/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
+"onboarding.rebranding.first-search-done.title" = "Tämä on DuckDuckGo Search!";
+
+/* The message of the onboarding dialog popup */
+"onboarding.rebranding.intro.message" = "Oletko valmis nopeampaan selaimeen, joka suojaa sinua ja antaa sinun päättää, milloin ja miten käytät tekoälyä?";
+
+/* The title of the onboarding intro */
+"onboarding.rebranding.intro.title" = "Hei!";
+
 /* Body copy for the returning-user restore prompt */
 "onboarding.restore.prompt.body" = "Haluatko palauttaa kirjanmerkit, salasanat ja muita tietoja edellisestä DuckDuckGo-synkronoinnistasi?";
 
@@ -2715,15 +3031,6 @@
 /* Title for the returning-user restore prompt */
 "onboarding.restore.prompt.title" = "Jatketaan siitä, mihin jäit";
 
-/* After the user performs their first search using the browser, this dialog message explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.message" = "Yksityinen. Nopea. Vähemmän mainoksia.";
-/* After the user performs their first search using the browser, this dialog title explains the advantages of using DuckDuckGo */
-"onboarding.rebranding.first-search-done.title" = "Tämä on DuckDuckGo Search!";
-/* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Oletko valmis käyttämään nopeampaa selainta, joka pitää sinut suojattuna?";
-/* The title of the onboarding intro */
-"onboarding.rebranding.intro.title" = "Hei!";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Aloita selailu";
 
@@ -2735,6 +3042,9 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Selvä! Ohitan muut vinkit.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.rebranding.tryItFree" = "Kokeile maksutta!";
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Kokeile ilmaiseksi!";
@@ -3013,9 +3323,6 @@
 "prompt.x-safari-https.try-open.title" = "Tämä sivusto haluaa avata Safarin.";
 
 /* No comment provided by engineer. */
-"REBRANDED" = "UUDELLEENBRÄNDÄTTY";
-
-/* No comment provided by engineer. */
 "Recent Processing Logs" = "Viimeaikaiset käsittelylokit";
 
 /* No comment provided by engineer. */
@@ -3045,6 +3352,8 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Skannataan...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Poistetaanko Fire-välilehdet ja niiden tiedot?";
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Poistetaanko välilehdet ja sivuston tiedot?";
 
@@ -3129,6 +3438,9 @@
 /* Settings screen cell text for add widget to the home screen */
 "settings.add.widget" = "Lisää widget aloitusnäyttöön";
 
+/* Title for the Duck.ai widget education screen */
+"settings.add.widget.duckai" = "Lisää Duck.ai-pikavalintoja aloitusnäyttöön";
+
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Lisää DuckDuckGo VPN -widget aloitusnäyttöön.";
 
@@ -3141,11 +3453,35 @@
 /* Settings screen cell title for toggling tracker blocking animation in address bar */
 "settings.address.trackers.animation" = "Näytä osoitekentässä";
 
-/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_and_duckai" = "Haku ja Duck.ai";
+/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
+"settings.afterInactivity.footer.format" = "Valitse, mitä näet, kun palaat %@ käyttämättömyyden jälkeen.";
 
-/* Title for the 'Search Only' option in the AI experimental picker */
-"settings.ai.experimental.picker.search_only" = "Vain haku";
+/* Idle interval 1 hour for settings footer */
+"settings.afterInactivity.idle.interval.hour" = "1 tunti";
+
+/* Idle interval in hours for settings footer (plural) */
+"settings.afterInactivity.idle.interval.hours" = "%d tuntia";
+
+/* Idle interval 1 minute for settings footer */
+"settings.afterInactivity.idle.interval.minute" = "1 minuutti";
+
+/* Idle interval in minutes for settings footer (plural) */
+"settings.afterInactivity.idle.interval.minutes" = "%d minuuttia";
+
+/* Idle interval 1 second for settings footer */
+"settings.afterInactivity.idle.interval.second" = "1 sekunti";
+
+/* Idle interval in seconds for settings footer (plural) */
+"settings.afterInactivity.idle.interval.seconds" = "%d sekuntia";
+
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.label" = "Toimettomuuden jälkeen";
+
+/* Option: show last used tab when returning after inactivity */
+"settings.afterInactivity.option.lastUsedTab" = "Viimeksi käytetty välilehti";
+
+/* Option: show New Tab when returning after inactivity */
+"settings.afterInactivity.option.newTab" = "Uusi välilehti";
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Kokeile uutta vaihtoehtoa vaihtaa haun ja Duck.ai:n välillä osoitekentällä.";
@@ -3189,9 +3525,6 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Osoitepalkin sijainti";
 
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Kokeellinen selainvalikko";
-
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Avaa linkit liittyvissä sovelluksissa";
 
@@ -3212,12 +3545,6 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Tyhjennä";
-
-/* Autoclear action option to clear tabs and data */
-"settings.autoclear.tabs.and.data" = "Tyhjennä välilehdet ja tiedot";
-
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Tyhjennä välilehdet, tiedot ja Duck.ai-keskustelut";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Sulje kaikki avoimet välilehdet";
@@ -3279,20 +3606,23 @@
 /* Settings screen cell text for automatic data deletion option */
 "settings.automatically.delete.data" = "Poista tiedot automaattisesti";
 
+/* Settings label for the autoplay settings screen */
+"settings.autoplay" = "Automaattinen toisto";
+
+/* Link text in the autoplay settings footer that navigates to Duck Player settings */
+"settings.autoplay.duck.player.link" = "Duck Player -asetukset";
+
+/* Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings */
+"settings.autoplay.footer" = "Automaattisen toiston asetukset koskevat vain uusia avattuja välilehtiä. Muutoksia ei voida ottaa käyttöön aiemmilla välilehdillä, ellei sovellusta käynnistetä uudelleen. Voit hallita automaattista toistoa Duck Playerissa kohdassa ";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Selainpalaute";
 
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button poistaa myös Duck.ai-historian, mukaan lukien kiinnitetyt keskustelut.";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history.title" = "Tyhjennä Duck.ai-keskustelut";
-
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Poista selaustiedot";
-
-/* Settings screen cell text for Automatically Clearing Data */
-"settings.clear.data" = "Tyhjennä tiedot automaattisesti";
 
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Viimeistele asennuksesi";
@@ -3312,12 +3642,6 @@
 /* Settings title for the customize section */
 "settings.customize" = "Mukauta";
 
-/* Clear data button explanation */
-"settings.data.clear.forget.all.duck.ai.footnote" = "Tyhjentää kaikki välilehdet, Duck.ai-keskustelut ja tiedot sivustoilta, joita et ole tehnyt palonkestäviksi Fireproof-ominaisuudella.";
-
-/* Clear data button explanation */
-"settings.data.clear.forget.all.footnote" = "Tyhjentää kaikki välilehdet ja tiedot sivustoilta, joita et ole tehnyt palonkestäviksi Fireproof-ominaisuudella.";
-
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datan tyhjentäminen";
 
@@ -3326,6 +3650,21 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Oletusselain";
+
+/* Option to always default the omnibar toggle to Duck.ai */
+"settings.default.omnibar.mode.duckai" = "Duck.ai";
+
+/* Footer text explaining the toggle position setting in AI Features settings */
+"settings.default.omnibar.mode.footer" = "Oletusarvoinen vaihtopainikkeen asento uusilla välilehdillä.";
+
+/* Label for the default omnibar toggle position picker in AI Features settings */
+"settings.default.omnibar.mode.header" = "Vaihtopainikkeen asento";
+
+/* Option to remember the last used omnibar toggle position */
+"settings.default.omnibar.mode.last.used" = "Viimeksi käytetty";
+
+/* Option to always default the omnibar toggle to Search */
+"settings.default.omnibar.mode.search" = "[Haku]";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Poista Duck.ai-keskustelut";
@@ -3372,9 +3711,6 @@
 /* Settings screen cell text for fire button animation */
 "settings.firebutton" = "Liekki-painikkeen animaatio";
 
-/* Settings screen cell text for Fireproof Sites */
-"settings.fireproof.sites" = "Tee sivustoista palonkestäviä";
-
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproof-sivustot";
 
@@ -3416,6 +3752,9 @@
 
 /* Label of a button managing email protection account */
 "settings.manage.account" = "Tilin hallinta";
+
+/* Header for the media section in general settings */
+"settings.media.section" = "Media";
 
 /* Settings title for the 'More' section */
 "settings.more" = "Lisää DuckDuckGolta";
@@ -3744,11 +4083,11 @@
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Tilaussopimukset";
 
-/* Subscription Removal confirmation message */
-"subscription.cancel.message" = "Tilauksesi on poistettu tältä laitteelta.";
-
 /* Button to cancel a pending downgrade of the subscription */
 "subscription.cancel.downgrade.button" = "Peruuta tason alennus";
+
+/* Subscription Removal confirmation message */
+"subscription.cancel.message" = "Tilauksesi on poistettu tältä laitteelta.";
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Sopimuksesi alenee tasolle %1$@ alkaen %2$@.";
@@ -3970,7 +4309,7 @@
 "sync.delete.all.confirm.action" = "Poista palvelimen tiedot";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Kaikkien laitteiden yhteys katkaistaan, ja synkronoidut tietosi poistetaan palvelimelta.";
+"sync.delete.all.confirm.message" = "Varmuuskopiosi poistetaan palvelimelta. Kaikkien laitteiden synkronointi katkaistaan, mutta mitään ei poisteta mistään laitteesta.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Poista palvelimen tiedot?";
@@ -4038,6 +4377,30 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Poistetaanko laite?";
 
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Koodi kopioitu";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Laite synkronoitu onnistuneesti!";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Synkronointi ja varmuuskopiointi käytössä";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Palautuskoodi kopioitu";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Synkronointia ja varmuuskopiointia ei voitu ottaa käyttöön";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Kytke pois päältä";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Tämä ei vaikuta tämän laitteen kirjanmerkkeihisi ja salasanoihisi.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Poistetaanko synkronointi ja varmuuskopiointi käytöstä?";
+
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Poista";
 
@@ -4056,15 +4419,36 @@
 /* Data syncing unavailable warning message */
 "sync.warning.data.syncing.disabled.upgrade.required" = "Sync & Backup ei valitettavasti ole käytettävissä tässä sovellusversiossa. Päivitä DuckDuckGo uusimpaan versioon jatkaaksesi.";
 
+/* Accessibility label for the close button on a tab cell */
+"tab.cell.closeButton.accessibility" = "Sulje välilehti";
+
+/* Accessibility label for the unread indicator on a tab cell */
+"tab.cell.unread.accessibility" = "Lukematon välilehti";
+
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Sulje Fire-välilehti";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Sulje välilehti";
 /* Accessibility label on remove button */
 "tab.close.home" = "Sulje koti-välilehti";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "Sulje \"%1$@\" osoitteessa %2$@";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire-välilehti";
+
+/* New tab title */
+"tab.new.title" = "Uusi välilehti";
 /* Accessibility label on tab cell */
 "tab.open.home" = "Avaa koti-välilehti";
 
+/* Accessibility label on tab cell */
+"tab.open.new" = "Avaa uusi välilehti";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Avaa Fire-välilehti";
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Avaa \"%1$@\" osoitteessa %2$@";
 
@@ -4479,6 +4863,15 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Hanki DuckDuckGo Windowsille!";
 
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo poistaa videomainokset YouTubesta, joten voit katsoa videoita keskeytyksettä.";
+
+/* Settings screen title for YouTube Ad Blocking */
+"youtube.ad.blocking.title" = "YouTube-mainosten esto";
+
+/* Toggle label for enabling/disabling YouTube ad blocking */
+"youtube.ad.blocking.toggle" = "Estä mainokset YouTubessa";
+
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Kirjanmerkit";
 
@@ -4494,44 +4887,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
-/* Accessibility hint for the escape hatch card */
-"escapeHatch.accessibility.hint" = "Siirtyy tälle välilehdelle";
-
-/* Accessibility label for escape hatch card; %@ is the tab title */
-"escapeHatch.returnTo.accessibility.label" = "Palaa välilehdelle %@";
-
-/* Label shown on the escape hatch card above the tab title */
-"escapeHatch.returnTo.label" = "Palaa kohtaan…";
-
-/* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
-"escapeHatch.returnTo.withSubtitle.accessibility.label" = "Palaa kohtaan %1$@, %2$@";
-
-/* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Valitse, mitä näet, kun palaat %@ käyttämättömyyden jälkeen.";
-
-/* Idle interval 1 hour for settings footer */
-"settings.afterInactivity.idle.interval.hour" = "1 tunti";
-
-/* Idle interval in hours for settings footer (plural) */
-"settings.afterInactivity.idle.interval.hours" = "%d tuntia";
-
-/* Idle interval 1 minute for settings footer */
-"settings.afterInactivity.idle.interval.minute" = "1 minuutti";
-
-/* Idle interval in minutes for settings footer (plural) */
-"settings.afterInactivity.idle.interval.minutes" = "%d minuuttia";
-
-/* Idle interval 1 second for settings footer */
-"settings.afterInactivity.idle.interval.second" = "1 sekunti";
-
-/* Idle interval in seconds for settings footer (plural) */
-"settings.afterInactivity.idle.interval.seconds" = "%d sekuntia";
-
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Toimettomuuden jälkeen";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Viimeksi käytetty välilehti";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Uusi välilehti";

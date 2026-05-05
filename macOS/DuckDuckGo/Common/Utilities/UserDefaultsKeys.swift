@@ -86,7 +86,14 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
 
     case forceDarkModeOnWebsites = "forceDarkModeOnWebsites"
 
-    // MARK: - Add more app-wide keys here as they are migrated from UserDefaultsWrapper
+    // MARK: - YouTube Ad Blocking
+
+    case youTubeAdBlockingEnabled = "preferences_youtube-ad-blocking_enabled"
+
+    // MARK: - Quick Feedback Tip
+
+    case feedbackTipLastShown = "feedbackTipLastShown"
+    case feedbackTipButtonClicked = "feedbackTipButtonClicked"
 
 }
 

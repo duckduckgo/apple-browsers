@@ -9,25 +9,13 @@ on:
 
   workflow_call:
     secrets:
-      APPLE_API_KEY_BASE64:
-        required: true
-      APPLE_API_KEY_ID:
-        required: true
-      APPLE_API_KEY_ISSUER:
-        required: true
       ASANA_ACCESS_TOKEN:
         required: true
       AWS_ACCESS_KEY_ID_RELEASE_S3:
         required: true
       AWS_SECRET_ACCESS_KEY_RELEASE_S3:
         required: true
-      MATCH_PASSWORD:
-        required: true
       MM_WEBHOOK_URL:
-        required: true
-      SSH_PRIVATE_KEY_FASTLANE_MATCH:
-        required: true
-      SSH_PRIVATE_KEY_DUCKSANS_FONT:
         required: true
 
 jobs:
@@ -45,7 +33,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Fetch Build Variants
         id: get-build-variants
@@ -65,7 +53,7 @@ jobs:
     steps:
 
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           sparse-checkout: |
             .github
@@ -126,7 +114,7 @@ jobs:
     steps:
       - name: Check out the code
         if: ${{ env.success || env.failure }} # Don't execute when cancelled
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           sparse-checkout: |
             .github

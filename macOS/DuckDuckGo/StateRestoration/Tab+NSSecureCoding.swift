@@ -19,79 +19,50 @@
 import Foundation
 
 extension Tab: NSSecureCoding {
-    // MARK: - Coding
-
-    private enum NSSecureCodingKeys {
-        static let uuid = "uuid"
-        static let url = "url"
-        static let videoID = "videoID"
-        static let videoTimestamp = "videoTimestamp"
-        static let title = "title"
-        static let sessionStateData = "ssdata" // Used for session restoration on macOS 10.15 – 11
-        static let interactionStateData = "interactionStateData" // Used for session restoration on macOS 12+
-        static let favicon = "icon"
-        static let tabType = "tabType"
-        static let preferencePane = "preferencePane"
-        static let historyPane = "historyPane"
-        static let lastSelectedAt = "lastSelectedAt"
-    }
 
     static var supportsSecureCoding: Bool { true }
 
     @MainActor
     convenience init?(coder decoder: NSCoder) {
-        let uuid: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.uuid)
-        let url: URL? = decoder.decodeIfPresent(at: NSSecureCodingKeys.url)
-        let videoID: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.videoID)
-        let videoTimestamp: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.videoTimestamp)
-        let preferencePane = decoder.decodeIfPresent(at: NSSecureCodingKeys.preferencePane)
-            .flatMap(PreferencePaneIdentifier.init(rawValue:))
-        let historyPane = decoder.decodeIfPresent(at: NSSecureCodingKeys.historyPane)
-            .flatMap(HistoryPaneIdentifier.init(rawValue:))
+        guard let data = TabRestorationData(coder: decoder) else { return nil }
 
-        guard let tabTypeRawValue: Int = decoder.decodeIfPresent(at: NSSecureCodingKeys.tabType),
-              let tabType = TabContent.ContentType(rawValue: tabTypeRawValue),
-              let content = TabContent(type: tabType, url: url, videoID: videoID, timestamp: videoTimestamp, preferencePane: preferencePane, historyPane: historyPane)
-        else { return nil }
-
-        let interactionStateData: Data? = decoder.decodeIfPresent(at: NSSecureCodingKeys.interactionStateData) ?? decoder.decodeIfPresent(at: NSSecureCodingKeys.sessionStateData)
-
-        self.init(uuid: uuid,
-                  content: content,
-                  title: decoder.decodeIfPresent(at: NSSecureCodingKeys.title),
-                  favicon: decoder.decodeIfPresent(at: NSSecureCodingKeys.favicon),
-                  interactionStateData: interactionStateData,
+        self.init(uuid: data.uuid,
+                  content: data.content,
+                  title: data.title,
+                  favicon: data.favicon,
+                  interactionStateData: data.interactionStateData,
                   shouldLoadInBackground: false,
-                  lastSelectedAt: decoder.decodeIfPresent(at: NSSecureCodingKeys.lastSelectedAt))
+                  lastSelectedAt: data.lastSelectedAt)
 
         _=self.awakeAfter(using: decoder)
     }
 
     func encode(with coder: NSCoder) {
         guard webView.configuration.websiteDataStore.isPersistent == true else { return }
+        makeRestorationData().encode(with: coder)
+    }
 
-        coder.encode(uuid, forKey: NSSecureCodingKeys.uuid)
-        content.urlForWebView.map(coder.encode(forKey: NSSecureCodingKeys.url))
-        title.map(coder.encode(forKey: NSSecureCodingKeys.title))
-        favicon.map(coder.encode(forKey: NSSecureCodingKeys.favicon))
+    func makeRestorationData() -> TabRestorationData {
+        let restorableContent: Tab.TabContent = {
+            guard case .url(let url, let credential, _) = content else { return content }
+            return .url(url, credential: credential, source: .pendingStateRestoration)
+        }()
 
-        getActualInteractionStateData().map(coder.encode(forKey: NSSecureCodingKeys.interactionStateData))
-
-        coder.encode(content.type.rawValue, forKey: NSSecureCodingKeys.tabType)
-        lastSelectedAt.map(coder.encode(forKey: NSSecureCodingKeys.lastSelectedAt))
-
-        if let pane = content.preferencePane {
-            coder.encode(pane.rawValue, forKey: NSSecureCodingKeys.preferencePane)
-        } else if let pane = content.historyPane {
-            coder.encode(pane.rawValue, forKey: NSSecureCodingKeys.historyPane)
-        }
-
-        self.encodeExtensions(with: coder)
+        return TabRestorationData(
+            uuid: uuid,
+            content: restorableContent,
+            title: title,
+            favicon: favicon,
+            interactionStateData: getActualInteractionStateData(),
+            lastSelectedAt: lastSelectedAt,
+            localHistoryIDs: localHistory.compactMap(\.identifier),
+            tabSnapshotIdentifier: tabSnapshotIdentifier?.uuidString
+        )
     }
 
 }
 
-private extension Tab.TabContent {
+extension Tab.TabContent {
 
     enum ContentType: Int, CaseIterable {
         case url = 0

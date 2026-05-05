@@ -17,12 +17,13 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import VPN
-import TipKit
-import Networking
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import Networking
+import SwiftUI
+import TipKit
+import UIComponents
+import VPN
 
 struct NetworkProtectionStatusView: View {
 
@@ -372,6 +373,7 @@ struct NetworkProtectionStatusView: View {
                 .removeGroupedListStyleInsets()
                 .tipCornerRadius(0)
                 .tipBackground(Color(designSystemColor: .surface))
+                .tint(Color.init(designSystemColor: .accent))
                 .onAppear {
                     tipsModel.handleSnoozeTipShown()
                 }
@@ -400,6 +402,7 @@ struct NetworkProtectionStatusView: View {
                 .removeGroupedListStyleInsets()
                 .tipCornerRadius(0)
                 .tipBackground(Color(designSystemColor: .surface))
+                .tint(Color.init(designSystemColor: .accent))
                 .onAppear {
                     tipsModel.handleWidgetTipShown()
                 }
@@ -448,9 +451,15 @@ private struct NetworkProtectionErrorView: View {
                     .daxBodyBold()
                     .foregroundColor(.primary)
             }
-            Text(message)
-                .daxBodyRegular()
-                .foregroundColor(.primary)
+            if let attributedMessage = try? AttributedString(markdown: message) {
+                Text(attributedMessage)
+                    .daxBodyRegular()
+                    .foregroundColor(.primary)
+            } else {
+                Text(message)
+                    .daxBodyRegular()
+                    .foregroundColor(.primary)
+            }
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }

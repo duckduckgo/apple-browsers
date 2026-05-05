@@ -195,6 +195,128 @@ final class AIChatModelsServiceTests: XCTestCase {
         XCTAssertTrue(response.models[1].supportsImageUpload)
     }
 
+    func testWhenSupportedFileTypesArePresent_ThenTheyDecode() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "gpt-4o",
+                    "name": "GPT-4o",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": true,
+                    "supportedFileTypes": ["application/pdf"],
+                    "supportedTools": [],
+                    "accessTier": ["free"]
+                }
+            ]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models.first?.supportedFileTypes, ["application/pdf"])
+    }
+
+    func testWhenAttachmentLimitsArePresent_ThenTheyDecode() throws {
+        let json = """
+        {
+            "models": [],
+            "attachmentLimits": {
+                "free": {
+                    "files": {
+                        "maxPerConversation": 3,
+                        "maxFileSizeMB": 5,
+                        "maxTotalFileSizeBytes": 5242880,
+                        "maxPagesPerFile": 8
+                    },
+                    "images": {
+                        "maxPerTurn": 3,
+                        "maxPerConversation": 5,
+                        "maxInputCharsWithAttachments": 4500
+                    }
+                },
+                "plus": {
+                    "files": {
+                        "maxPerConversation": 5,
+                        "maxFileSizeMB": 25,
+                        "maxTotalFileSizeBytes": 26214400,
+                        "maxPagesPerFile": 35
+                    },
+                    "images": {
+                        "maxPerTurn": 3,
+                        "maxPerConversation": 10,
+                        "maxInputCharsWithAttachments": 4500
+                    }
+                },
+                "pro": {
+                    "files": {
+                        "maxPerConversation": 5,
+                        "maxFileSizeMB": 25,
+                        "maxTotalFileSizeBytes": 26214400,
+                        "maxPagesPerFile": 50
+                    },
+                    "images": {
+                        "maxPerTurn": 3,
+                        "maxPerConversation": 10,
+                        "maxInputCharsWithAttachments": 4500
+                    }
+                }
+            }
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.attachmentLimits?.free.files.maxPerConversation, 3)
+        XCTAssertEqual(response.attachmentLimits?.plus.images.maxPerConversation, 10)
+        XCTAssertEqual(response.attachmentLimits?.limits(for: .free).images.maxPerTurn, 3)
+        XCTAssertEqual(response.attachmentLimits?.limits(for: .plus).files.maxPagesPerFile, 35)
+        XCTAssertEqual(response.attachmentLimits?.limits(for: .pro).files.maxPagesPerFile, 50)
+        XCTAssertEqual(response.attachmentLimits?.limits(for: .internal).files.maxPagesPerFile, 50)
+    }
+
+    func testWhenAttachmentLimitsAreMalformed_ThenModelsStillDecode() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "gpt-4o",
+                    "name": "GPT-4o",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": true,
+                    "supportedTools": [],
+                    "accessTier": ["free"]
+                }
+            ],
+            "attachmentLimits": {
+                "free": {
+                    "files": {
+                        "maxPerConversation": 3,
+                        "maxFileSizeMB": 5,
+                        "maxTotalFileSizeBytes": 5242880,
+                        "maxPagesPerFile": 8
+                    },
+                    "images": {
+                        "maxPerTurn": 3,
+                        "maxPerConversation": 5,
+                        "maxInputCharsWithAttachments": 4500
+                    }
+                }
+            }
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models.first?.id, "gpt-4o")
+        XCTAssertNil(response.attachmentLimits)
+    }
+
     // MARK: - AIChatModel Mapping Tests
 
     func testWhenRemoteModelIsMapped_ThenFieldsAreCorrect() {
@@ -218,6 +340,25 @@ final class AIChatModelsServiceTests: XCTestCase {
         XCTAssertEqual(model.name, "GPT-4o mini")
         XCTAssertTrue(model.entityHasAccess)
         XCTAssertFalse(model.supportsImageUpload)
+    }
+
+    func testWhenRemoteModelIncludesFileSupport_ThenMappedModelSupportsFileUpload() {
+        let remoteModel = AIChatRemoteModel(
+            id: "gpt-4o",
+            name: "GPT-4o",
+            modelShortName: "GPT-4o",
+            provider: "openai",
+            entityHasAccess: true,
+            supportsImageUpload: true,
+            supportedFileTypes: ["application/pdf"],
+            supportedTools: [],
+            accessTier: ["free"]
+        )
+
+        let model = AIChatModel(remoteModel: remoteModel, userTier: .free)
+
+        XCTAssertTrue(model.supportsFileUpload)
+        XCTAssertEqual(model.supportedFileTypes, ["application/pdf"])
     }
 
     func testWhenReasoningEffortIsProvided_ThenItIsDecodedAndMapped() throws {

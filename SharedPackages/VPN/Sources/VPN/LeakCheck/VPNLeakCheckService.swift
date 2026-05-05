@@ -184,8 +184,9 @@ public actor VPNLeakCheckService {
             return
         }
         // `.reassert` and `.rekey` both signal a tunnel path change (failure recovery /
-        // reconfiguration in the first case, server reselection in the second), so they bypass
-        // cooldown and always run — we want to validate the new path immediately.
+        // reconfiguration in the first case, server reselection in the second). They bypass
+        // cooldown so the new path always gets validated once the debounce window elapses,
+        // even if a recent check just completed.
         if !bypassCooldown,
            trigger != .reassert,
            trigger != .rekey,

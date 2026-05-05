@@ -181,6 +181,7 @@ struct SettingsSubscriptionView: View {
                         .foregroundColor(Color(designSystemColor: .accent))
                         .padding(.leading, 32.0)
                 }, action: {
+                    Pixel.fire(pixel: .freemiumPIRSettingsEntryPointClicked)
                     isShowingDBP = true
                 }, isButton: true)
                 .background(

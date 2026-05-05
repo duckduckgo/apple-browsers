@@ -133,6 +133,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var floatingSubmitViewController: UnifiedToggleInputFloatingSubmitViewController
     weak var delegate: UnifiedToggleInputDelegate?
 
+    private(set) var host: UnifiedToggleInputHost
     private(set) var isToggleEnabled: Bool
     private(set) var displayState: UnifiedToggleInputDisplayState = .hidden
     private(set) var textState: InputTextState = .empty
@@ -206,6 +207,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Initialization
 
     init(
+        host: UnifiedToggleInputHost,
         isToggleEnabled: Bool,
         isFireTab: Bool = false,
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
@@ -214,6 +216,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
     ) {
+        self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.toggleModeStorage = toggleModeStorage
         self.modelStore = UTIModelStore(
@@ -248,6 +251,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         if let cachedLabel = modelStore.preferences.selectedModelShortName {
             viewController.modelName = cachedLabel
+        }
+
+        // Contextual chat boots in expanded form; no collapsed/inactive states are reachable.
+        // The chat is already post-submit by the time the contextual UTI installs, so
+        // `hasSubmittedPrompt` should reflect that — drives follow-up placeholder + model chip hide.
+        if host == .contextualChat {
+            displayState = .aiTab(.expanded)
+            hasSubmittedPrompt = true
+            syncHasSubmittedPromptToHandler()
+            updateModelChipVisibility()
         }
     }
 
@@ -284,6 +297,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - AI Tab State
 
     func showCollapsed() {
+        // Contextual chat has no AI tab collapsed mode; the host always renders expanded.
+        if host == .contextualChat { return }
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .aiTab(.collapsed)
@@ -363,7 +378,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
 
-        viewController.setExpanded(false, animated: false)
+        viewController.applyCardLayout(.collapsed, animated: false)
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
         applyToolbarPresentation()
@@ -743,7 +758,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         return UTIRenderState(
             isInputVisible: isInputVisible,
             isContentVisible: isContentVisible,
-            isExpanded: isExpanded,
+            cardLayout: cardLayout(forIsExpanded: isExpanded),
             cardPosition: cardPosition,
             usesOmnibarMargins: cardPosition == .top && isOmnibarSession,
             isToolbarSubmitHidden: cardPosition == .top && isOmnibarSession,
@@ -753,6 +768,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             contentInputMode: inputMode,
             inputMode: inputMode
         )
+    }
+
+    /// Decides which card components are visible right now, based on host + display state +
+    /// toggle setting + input mode. Centralised here so the view layer just renders.
+    private func cardLayout(forIsExpanded isExpanded: Bool) -> UnifiedToggleInputCardLayout {
+        guard isExpanded else { return .collapsed }
+        switch host {
+        case .contextualChat:
+            return .expanded(showsToggle: false, showsToolbar: true)
+        case .omnibar:
+            let showsToggle = isToggleEnabled
+            let showsToolbar = isToggleEnabled && inputMode == .aiChat
+            return .expanded(showsToggle: showsToggle, showsToolbar: showsToolbar)
+        }
     }
 
     // MARK: - Models
@@ -863,14 +892,27 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentPolicy.isConversationImageLimitReached
     }
 
+    /// Optional override for the view controller used to present pickers (camera/photo library).
+    /// Hosts that embed the UTI inside another presented stack (e.g. the contextual chat half-sheet)
+    /// must set this so the picker presents from the correct level.
+    weak var attachmentPresentingViewController: UIViewController?
+
     func presentAttachmentOptions() {
         let remaining = remainingImagesForPicker
         guard remaining > 0 else { return }
-        guard let scene = viewController.view.window?.windowScene,
-              let root = scene.keyWindow?.rootViewController else { return }
+        let presenter: UIViewController?
+        if let injected = attachmentPresentingViewController {
+            presenter = injected
+        } else if let scene = viewController.view.window?.windowScene,
+                  let root = scene.keyWindow?.rootViewController {
+            presenter = root
+        } else {
+            presenter = nil
+        }
+        guard let presenter else { return }
         attachmentPresenter.presentAttachmentOptions(
             from: viewController.attachButtonView,
-            presenter: root,
+            presenter: presenter,
             remaining: remaining
         )
     }
@@ -1014,7 +1056,8 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func updateModelChipVisibility() {
-        viewController.isModelChipHidden = hasSubmittedPrompt
+        // Contextual chat picks the model upstream (in the half-sheet); the model chip is permanently hidden here.
+        viewController.isModelChipHidden = host == .contextualChat || hasSubmittedPrompt
         updateReasoningPicker()
     }
 

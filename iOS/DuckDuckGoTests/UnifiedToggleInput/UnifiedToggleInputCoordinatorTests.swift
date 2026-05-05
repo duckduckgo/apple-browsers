@@ -37,6 +37,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         mockPreferences = MockAIChatPreferences()
         mockToggleModeStorage = MockToggleModeStorage()
         sut = UnifiedToggleInputCoordinator(
+            host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
             toggleModeStorage: mockToggleModeStorage
@@ -1210,7 +1211,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_chipLabel_shownFromCacheBeforeFetch() {
         mockPreferences.selectedModelShortName = "Cached Model"
-        let coordinator = UnifiedToggleInputCoordinator(isToggleEnabled: true, preferences: mockPreferences)
+        let coordinator = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true, preferences: mockPreferences)
 
         XCTAssertEqual(coordinator.viewController.modelName, "Cached Model")
         XCTAssertNil(coordinator.viewController.modelPickerMenu)

@@ -46,6 +46,7 @@ extension MainViewController {
         guard unifiedToggleInputFeature.isAvailable else { return }
 
         let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
             isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
             isFireTab: isCurrentTabFireTab(),
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,

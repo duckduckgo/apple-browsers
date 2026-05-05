@@ -112,6 +112,20 @@ final class UTIModelStore {
         preferences.selectedReasoningMode = mode
     }
 
+    /// Used by per-tab restoration to mirror a tab's stored selection into preferences,
+    /// including nil values. Bypasses the validity checks of `updateSelectedModel`/
+    /// `updateSelectedReasoningMode` so the live state matches the stored state exactly.
+    func applyPersistedSelection(modelID: String?, reasoningMode: AIChatReasoningMode?) {
+        preferences.selectedModelId = modelID
+        // Always assign — including nil when the model isn't (yet) in `models` —
+        // otherwise the previous tab's cached short name lingers in preferences
+        // until handleModelsUpdated() corrects it.
+        preferences.selectedModelShortName = modelID.flatMap { id in
+            models.first(where: { $0.id == id })?.shortName
+        }
+        preferences.selectedReasoningMode = reasoningMode
+    }
+
     static func resolveModels(from remoteModels: [AIChatRemoteModel], userTier: AIChatUserTier) -> [AIChatModel] {
         remoteModels.map { remote in
             if remote.accessTier.isEmpty {

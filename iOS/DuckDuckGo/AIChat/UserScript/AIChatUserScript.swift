@@ -100,6 +100,14 @@ final class AIChatUserScript: NSObject, Subfeature {
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
     private var inputBoxCancellables = Set<AnyCancellable>()
+    /// Returns the page context currently attached to the chat session, queried at submit time
+    /// and inlined into the `submitPrompt` payload so the FE always sees it. Set by the host that
+    /// owns the attachment state (e.g. `AIChatContextualUTIHost`).
+    var attachedPageContextProvider: (() -> AIChatPageContextData?)?
+
+    /// Fires after a prompt is submitted via the multi-modal `submitPrompt(...)` path (used by
+    /// the native UTI). Set by the host so the chip can flip to its post-submit silent state.
+    var onPromptSubmitted: (() -> Void)?
 
     var inputBoxHandler: AIChatInputBoxHandling? {
         didSet { subscribeToInputBoxEvents() }
@@ -290,9 +298,11 @@ final class AIChatUserScript: NSObject, Subfeature {
             toolChoice: tools?.map(\.rawValue),
             images: images,
             modelId: modelId,
+            pageContext: attachedPageContextProvider?(),
             reasoningEffort: reasoningEffort
         )
         push(.submitPrompt(promptPayload))
+        onPromptSubmitted?()
     }
 
     /// Submits a start chat action to the web content, initiating a new AI Chat conversation.

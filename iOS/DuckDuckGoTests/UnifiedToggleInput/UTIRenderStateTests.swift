@@ -27,7 +27,7 @@ final class UTIRenderStateTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: true)
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true)
     }
 
     override func tearDown() {
@@ -224,13 +224,13 @@ final class UTIRenderStateTests: XCTestCase {
     func test_inlineDismiss_activeWhenToggleDisabledAtTop() {
         // With the toggle setting off, the inline X now lives in the field row alongside the
         // mic / Duck.ai shortcut; the floating X is no longer used for this state.
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: false)
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: false)
         sut.activateFromOmnibar(cardPosition: .top)
         XCTAssertTrue(sut.computeRenderState().isInlineDismissActive)
     }
 
     func test_floatingDismiss_hiddenAtTopWhenToggleDisabled() {
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: false)
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: false)
         sut.activateFromOmnibar(cardPosition: .top)
         XCTAssertFalse(sut.computeRenderState().isFloatingDismissVisible)
     }
@@ -252,5 +252,21 @@ final class UTIRenderStateTests: XCTestCase {
 
     func test_floatingDismiss_hiddenWhenContentHidden() {
         XCTAssertFalse(sut.computeRenderState().isFloatingDismissVisible)
+    }
+
+    // MARK: - Host-Driven Render Flags
+
+    func test_omnibarHost_renderState_showsToggle() {
+        sut.activateFromOmnibar()
+        let state = sut.computeRenderState()
+        XCTAssertTrue(state.cardLayout.showsToggle)
+    }
+
+    func test_contextualChatHost_renderState_hidesToggle_showsToolbar() {
+        sut = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false)
+        sut.showExpanded()
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.cardLayout.showsToggle)
+        XCTAssertTrue(state.cardLayout.showsToolbar)
     }
 }

@@ -298,7 +298,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection)
 
         // WHEN
-        sut.appIconPickerContinueAction()
+        sut.selectAddressBarPositionAction()
 
         // THEN
         XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseSearchExperienceDialog, step: .init(currentStep: 5, totalSteps: 5))))

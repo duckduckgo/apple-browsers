@@ -191,7 +191,7 @@ struct OnboardingFlowEvaluatorTests {
 
     // MARK: - Case Sensitivity Tests
 
-    @Test("Returns default flow when scheme has uppercase letters")
+    @Test("Returns DuckAI flow when scheme has uppercase letters")
     func uppercaseSchemeReturnsDefaultFlow() {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator()
@@ -201,7 +201,7 @@ struct OnboardingFlowEvaluatorTests {
         let result = evaluator.evaluateOnboardingFlow(from: url)
 
         // THEN
-        #expect(result == .default)
+        #expect(result == .duckAI)
     }
 
     // MARK: - Edge Cases

@@ -26,11 +26,11 @@ struct CustomProductPageEvaluatorTests {
 
     // MARK: - Valid CPP URL Tests
 
-    @Test("Returns duckAI for valid CPP URL with duckAI identifier")
-    func validCPPURLWithDuckAIIdentifierReturnsDuckAI() throws {
+    @Test("Returns duckAI for valid CPP URL with duckAI identifier", arguments: ["ddgCPP", "DDGCPP"])
+    func validCPPURLWithDuckAIIdentifierReturnsDuckAI(urlScheme: String) throws {
         // GIVEN
         let evaluator = AppStoreCustomProductPageEvaluator(customProductPageScheme: "ddgCPP")
-        let url = try #require(URL(string: "ddgCPP://duckAI"))
+        let url = try #require(URL(string: "\(urlScheme)://duckAI"))
 
         // WHEN
         let result = evaluator.evaluateCustomProductPage(from: url)
@@ -71,7 +71,6 @@ struct CustomProductPageEvaluatorTests {
         "Returns nil when URL scheme does not match CPP scheme",
         arguments: [
             "ddgOpen",
-            "DDGCPP",
             "https",
         ]
     )

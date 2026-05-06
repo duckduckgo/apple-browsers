@@ -92,7 +92,6 @@ final class OnboardingIntroViewModel: ObservableObject {
     /// Set to true when the view controller is tapped
     @Published var isSkipped = false
 
-    let copy: Copy
     var onCompletingOnboardingIntro: (() -> Void)?
     var onOpenAIChatFromOnboarding: ((String?, Bool) -> Void)?
     var onSearchFromOnboarding: ((String) -> Void)?
@@ -171,7 +170,6 @@ final class OnboardingIntroViewModel: ObservableObject {
 
         introSteps = onboardingManager.onboardingSteps
         currentIntroStep = currentOnboardingStep
-        copy = .default
         restorePendingOnboardingStepIfNeeded()
     }
 

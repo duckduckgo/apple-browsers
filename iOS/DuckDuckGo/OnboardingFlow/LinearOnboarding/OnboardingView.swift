@@ -184,7 +184,7 @@ struct OnboardingView: View {
             .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
         case .skipTutorial, .default:
             IntroDialogContent(
-                title: model.copy.introTitle,
+                title: UserText.Onboarding.Intro.title,
                 skipOnboardingView: skipOnboardingView,
                 animateText: $model.introState.animateIntroText,
                 showCTA: $model.introState.showIntroButton,
@@ -204,7 +204,7 @@ struct OnboardingView: View {
 
     private var browsersComparisonView: some View {
         BrowsersComparisonContent(
-            title: model.copy.browserComparisonTitle,
+            title: UserText.Onboarding.BrowsersComparison.title,
             animateText: $model.browserComparisonState.animateComparisonText,
             showContent: $model.browserComparisonState.showComparisonButton,
             isSkipped: $model.isSkipped,

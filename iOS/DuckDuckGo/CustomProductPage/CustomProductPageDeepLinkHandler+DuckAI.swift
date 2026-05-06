@@ -41,8 +41,6 @@ struct DuckAIDestinationHandler: CustomProductPageDestinationHandling {
     }
 
     func handle(url: URL, on presenter: AppStoreCustomProductPagePresenter) {
-        // Fire new pixels to
-
         aiChatDeepLinkHandler.handleDeepLink(url, on: presenter)
     }
 }

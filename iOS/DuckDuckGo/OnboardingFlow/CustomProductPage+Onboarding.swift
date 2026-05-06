@@ -37,7 +37,7 @@ extension AppStoreCustomProductPageEvaluator: OnboardingFlowEvaluating {
         }
 
         guard let cpp = evaluateCustomProductPage(from: url) else {
-            Logger.onboarding.debug("Unupported Custom Product Page URL. Default to standard onboarding")
+            Logger.onboarding.debug("Unsupported Custom Product Page URL. Default to standard onboarding")
             return .default
         }
 

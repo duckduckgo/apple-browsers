@@ -4783,10 +4783,9 @@ extension MainViewController: TabDelegate {
             }
         }
 
-        if currentTab == tab {
-            refreshControls()
-            themeColorManager.updateThemeColor()
-        }
+        guard currentTab == tab else { return }
+        refreshControls()
+        themeColorManager.updateThemeColor()
         _ = tabManager.save()
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
         // note: model in swipeTabsCoordinator doesn't need to be updated here

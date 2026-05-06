@@ -1260,10 +1260,19 @@ class MainViewController: UIViewController {
         }
 
         if isAnyAITabUTIState, let currentTab {
-            // The web view is anchored to the input bar's top (.unifiedToggleInput mode),
-            // so it never extends behind the input — no bottom inset is needed.
-            if currentTab.webView.scrollView.contentInset.bottom != 0 {
-                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: 0, right: 0)
+            // Expanded extends the content container behind the input + keyboard so the web view's
+            // frame stays stable through the keyboard animation (changing it mid-animation stutters
+            // the WKWebView out-of-process renderer). The bottom inset compensates for the obscured
+            // area: input bar + keyboard intersection minus the toolbar the content container stops
+            // short of. Collapsed anchors the content container to the input top, so no inset.
+            let inset: CGFloat
+            if coordinator?.isAITabExpanded == true {
+                inset = keyboardHeight > 0 ? containerHeight : baseInputHeight
+            } else {
+                inset = 0
+            }
+            if currentTab.webView.scrollView.contentInset.bottom != inset {
+                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
             }
         } else if appSettings.currentAddressBarPosition.isBottom, let currentTab {
             let inset = intersection.height > 0 ? omniBarHeight : 0

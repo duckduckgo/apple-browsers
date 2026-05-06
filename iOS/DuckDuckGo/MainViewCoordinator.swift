@@ -481,6 +481,14 @@ class MainViewCoordinator {
         setContentContainerBottomAnchorMode(.unifiedToggleInput)
     }
 
+    /// Anchors the content container to the toolbar top so the web view extends behind the
+    /// expanding input + keyboard. Keeping the web view's frame stable through the keyboard
+    /// animation avoids the WKWebView out-of-process renderer stutter that a shrinking frame
+    /// would cause; bottom inset compensates for the obscured area instead.
+    func extendContentContainerBehindInput() {
+        setContentContainerBottomAnchorMode(.toolbar)
+    }
+
     private func setContentContainerBottomAnchorMode(_ mode: ContentContainerBottomAnchorMode) {
         constraints.contentContainerBottomToToolbarTop.isActive = mode == .toolbar
         constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = mode == .unifiedToggleInput

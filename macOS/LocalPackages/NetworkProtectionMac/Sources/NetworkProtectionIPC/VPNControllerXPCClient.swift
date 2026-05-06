@@ -249,6 +249,24 @@ extension VPNControllerXPCClient: XPCServerInterface {
         }, xpcReplyErrorHandler: completion)
     }
 
+    public func refreshSystemState(completion: @escaping (Error?) -> Void) {
+        xpc.execute(call: { server in
+            server.refreshSystemState(completion: self.onComplete(completion))
+        }, xpcReplyErrorHandler: self.onComplete(completion))
+    }
+
+    public func refreshSystemState() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            refreshSystemState { error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            }
+        }
+    }
+
     public func command(_ command: VPNCommand) async throws {
         guard let payload = try? JSONEncoder().encode(command) else {
             return

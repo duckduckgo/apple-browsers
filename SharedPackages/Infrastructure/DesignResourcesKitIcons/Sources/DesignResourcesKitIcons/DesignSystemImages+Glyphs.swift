@@ -510,6 +510,7 @@ public extension DesignSystemImages {
             public static var shareApple: DesignSystemImage { .init(resource: .shareApple24) }
             public static var shortcut: DesignSystemImage { .init(resource: .shortcut24) }
             public static var sortAccending: DesignSystemImage { .init(resource: .sortAccending24) }
+            public static var stopSquare: DesignSystemImage { .init(resource: .stopSquare24) }
             public static var subItem: DesignSystemImage { .init(resource: .subItem24) }
             public static var searchFind: DesignSystemImage { .init(resource: .searchFind24) }
             public static var searchFindGoTo: DesignSystemImage { .init(resource: .searchFindGoTo24) }

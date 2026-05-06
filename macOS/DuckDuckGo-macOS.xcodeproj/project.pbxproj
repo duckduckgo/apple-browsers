@@ -469,6 +469,8 @@
 		31FBF2322CDD130900626C17 /* AIChatUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FBF2302CDD12FE00626C17 /* AIChatUserScriptTests.swift */; };
 		31FC23512DB7A86F00900574 /* AddressBarMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */; };
 		31FC23522DB7A86F00900574 /* AddressBarMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */; };
+		361AA0332FABC42100641161 /* MainViewController+LogViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361AA0322FABC42000641161 /* MainViewController+LogViewer.swift */; };
+		361AA0342FABC42100641161 /* MainViewController+LogViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361AA0322FABC42000641161 /* MainViewController+LogViewer.swift */; };
 		3646AC402F88EC880093AEA7 /* PromoServiceFactory+SubscriptionPromo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3646AC3F2F88EC880093AEA7 /* PromoServiceFactory+SubscriptionPromo.swift */; };
 		3646AC412F88EC880093AEA7 /* PromoServiceFactory+SubscriptionPromo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3646AC3F2F88EC880093AEA7 /* PromoServiceFactory+SubscriptionPromo.swift */; };
 		3646AC472F88F0050093AEA7 /* FireWindowSubscriptionPromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3646AC462F88F0050093AEA7 /* FireWindowSubscriptionPromoDelegateTests.swift */; };
@@ -4943,6 +4945,7 @@
 		31FBF2302CDD12FE00626C17 /* AIChatUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptTests.swift; sourceTree = "<group>"; };
 		31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarMenuButton.swift; sourceTree = "<group>"; };
 		336B39E22726B4B700C417D3 /* LocalUnprotectedDomains.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalUnprotectedDomains.swift; sourceTree = "<group>"; };
+		361AA0322FABC42000641161 /* MainViewController+LogViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+LogViewer.swift"; sourceTree = "<group>"; };
 		361EABC017D9923C4758C171 /* DarkReaderFeatureSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarkReaderFeatureSettings.swift; sourceTree = "<group>"; };
 		3646AC3F2F88EC880093AEA7 /* PromoServiceFactory+SubscriptionPromo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+SubscriptionPromo.swift"; sourceTree = "<group>"; };
 		3646AC462F88F0050093AEA7 /* FireWindowSubscriptionPromoDelegateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowSubscriptionPromoDelegateTests.swift; sourceTree = "<group>"; };
@@ -13012,6 +13015,7 @@
 		F1A2E11E2DCB9FB00086F538 /* LogExporter */ = {
 			isa = PBXGroup;
 			children = (
+				361AA0322FABC42000641161 /* MainViewController+LogViewer.swift */,
 				F1A2E11D2DCB9FB00086F538 /* LogExporter.swift */,
 				F17E63312DCCD8310072B3BC /* LogExporterView.swift */,
 				F17E63342DCCDB150072B3BC /* MainViewController+LogExporter.swift */,
@@ -14730,6 +14734,7 @@
 				31BFDB6A2ECA420E00ADFABD /* AIChatOmnibarContainerViewController.swift in Sources */,
 				BB3A50B42EE063E700BD4BDD /* HomePageContinueSetUpModelPersistor.swift in Sources */,
 				37EE56282D5F197300D53C7C /* ZoomPopover.swift in Sources */,
+				361AA0342FABC42100641161 /* MainViewController+LogViewer.swift in Sources */,
 				37EE56292D5F197300D53C7C /* ZoomPopoverViewController.swift in Sources */,
 				84A74E232EF58EB4006A5B61 /* UserDefaultsKeys.swift in Sources */,
 				7BDBAD142CBFF633000379B7 /* TipKitAppEventHandling.swift in Sources */,
@@ -16981,6 +16986,7 @@
 				B684590825C9027900DC17B6 /* AppStateChangedPublisher.swift in Sources */,
 				BB7C38452F322455008D6FEC /* FreeTrialPixelHandler.swift in Sources */,
 				4B92928F26670D1700AD2C21 /* BookmarkTableCellView.swift in Sources */,
+				361AA0332FABC42100641161 /* MainViewController+LogViewer.swift in Sources */,
 				4B9292CF2667123700AD2C21 /* BookmarkManagementSidebarViewController.swift in Sources */,
 				4B39AAF627D9B2C700A73FD5 /* NSStackViewExtension.swift in Sources */,
 				BBE948D12D6FD11200FAC581 /* DefaultBrowserAndDockPromptStoring.swift in Sources */,

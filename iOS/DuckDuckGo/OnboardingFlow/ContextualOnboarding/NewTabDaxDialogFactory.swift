@@ -107,7 +107,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setTryAnonymousSearchMessageSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTrySearchUnique)
-            self?.onboardingPixelReporter.measureSharedOnboardingScreenImpression(.search(.shown))
+            self?.onboardingPixelReporter.measureScreenImpression(.search(.shown))
         }
     }
 
@@ -134,7 +134,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
-            self?.onboardingPixelReporter.measureSharedOnboardingScreenImpression(.visitSite(.shown))
+            self?.onboardingPixelReporter.measureScreenImpression(.visitSite(.shown))
         }
     }
 
@@ -172,7 +172,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
-            self?.onboardingPixelReporter.measureSharedOnboardingScreenImpression(.end(.shown))
+            self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
         }
     }
 

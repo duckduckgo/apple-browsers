@@ -127,7 +127,7 @@ private extension RebrandedContextualDaxDialogFactory {
                 delegate?.didAcknowledgeContextualOnboardingSearch()
                 self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
                 self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
-                self?.contextualOnboardingPixelReporter.measureSharedOnboardingScreenImpression(.visitSite(.shown))
+                self?.contextualOnboardingPixelReporter.measureScreenImpression(.visitSite(.shown))
             }
         } else {
             { [weak delegate, weak self] in
@@ -156,7 +156,7 @@ private extension RebrandedContextualDaxDialogFactory {
         .applyAnimatedContextualOnboardingBackground(backgroundType: .tryASearchCompleted)
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: afterSearchPixelEvent)
-            self?.contextualOnboardingPixelReporter.measureSharedOnboardingScreenImpression(.searchResults(.shown))
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.searchResults(.shown))
         }
     }
 
@@ -190,7 +190,7 @@ private extension RebrandedContextualDaxDialogFactory {
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
-            self?.contextualOnboardingPixelReporter.measureSharedOnboardingScreenImpression(.visitSite(.shown))
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.visitSite(.shown))
         }
     }
 
@@ -236,7 +236,7 @@ private extension RebrandedContextualDaxDialogFactory {
                         onSizeUpdate()
                         delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
                         self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)
-                        self?.contextualOnboardingPixelReporter.measureSharedOnboardingScreenImpression(.fireButton(.shown))
+                        self?.contextualOnboardingPixelReporter.measureScreenImpression(.fireButton(.shown))
                     }
                 },
                 onManualDismiss: onManualDismiss
@@ -248,7 +248,7 @@ private extension RebrandedContextualDaxDialogFactory {
         }
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: spec.pixelName)
-            self?.contextualOnboardingPixelReporter.measureSharedOnboardingScreenImpression(.trackersBlocked(.shown))
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.trackersBlocked(.shown))
         }
     }
 
@@ -280,7 +280,7 @@ private extension RebrandedContextualDaxDialogFactory {
         .applyAnimatedContextualOnboardingBackground(backgroundType: backgroundType)
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
-            self?.contextualOnboardingPixelReporter.measureSharedOnboardingScreenImpression(.fireButton(.shown))
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.fireButton(.shown))
         }
     }
 
@@ -316,7 +316,7 @@ private extension RebrandedContextualDaxDialogFactory {
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setFinalOnboardingDialogSeen()
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
-            self?.contextualOnboardingPixelReporter.measureSharedOnboardingScreenImpression(.end(.shown))
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.end(.shown))
         }
     }
 

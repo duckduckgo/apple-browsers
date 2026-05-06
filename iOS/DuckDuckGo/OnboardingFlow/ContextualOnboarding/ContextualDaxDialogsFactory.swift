@@ -151,7 +151,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                 delegate?.didAcknowledgeContextualOnboardingSearch()
                 self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
                 self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
-                self?.contextualOnboardingPixelReporter.measureSharedOnboardingScreenImpression(.visitSite(.shown))
+                self?.contextualOnboardingPixelReporter.measureScreenImpression(.visitSite(.shown))
             }
         } else {
             { [weak delegate, weak self] in
@@ -178,7 +178,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         )
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: afterSearchPixelEvent)
-            self?.contextualOnboardingPixelReporter.measureSharedOnboardingScreenImpression(.searchResults(.shown))
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.searchResults(.shown))
         }
     }
 
@@ -205,7 +205,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
-            self?.contextualOnboardingPixelReporter.measureSharedOnboardingScreenImpression(.visitSite(.shown))
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.visitSite(.shown))
         }
     }
 
@@ -244,7 +244,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                     onSizeUpdate()
                     delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
                     self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)
-                    self?.contextualOnboardingPixelReporter.measureSharedOnboardingScreenImpression(.fireButton(.shown))
+                    self?.contextualOnboardingPixelReporter.measureScreenImpression(.fireButton(.shown))
                 }
             },
             onManualDismiss: onManualDismiss
@@ -254,7 +254,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         }
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: spec.pixelName)
-            self?.contextualOnboardingPixelReporter.measureSharedOnboardingScreenImpression(.trackersBlocked(.shown))
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.trackersBlocked(.shown))
         }
     }
 
@@ -273,7 +273,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         return OnboardingFireDialog(title: title, message: message, onManualDismiss: onManualDismiss)
             .onFirstAppear { [weak self] in
                 self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
-                self?.contextualOnboardingPixelReporter.measureSharedOnboardingScreenImpression(.fireButton(.shown))
+                self?.contextualOnboardingPixelReporter.measureScreenImpression(.fireButton(.shown))
             }
     }
 
@@ -301,7 +301,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setFinalOnboardingDialogSeen()
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
-            self?.contextualOnboardingPixelReporter.measureSharedOnboardingScreenImpression(.end(.shown))
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(.end(.shown))
         }
     }
 

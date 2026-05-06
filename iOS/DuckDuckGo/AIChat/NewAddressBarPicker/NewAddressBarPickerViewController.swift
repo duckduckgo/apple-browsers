@@ -25,9 +25,12 @@ import Core
 final class NewAddressBarPickerViewController: UIViewController {
     
     private let aiChatSettings: AIChatSettingsProvider
-    
-    init(aiChatSettings: AIChatSettingsProvider) {
+    weak var omniBarFocuser: OmniBarFocuser?
+
+    init(aiChatSettings: AIChatSettingsProvider,
+         omniBarFocuser: OmniBarFocuser? = nil) {
         self.aiChatSettings = aiChatSettings
+        self.omniBarFocuser = omniBarFocuser
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -65,8 +68,13 @@ final class NewAddressBarPickerViewController: UIViewController {
     }
 
     private func buildContentView() -> NewAddressBarPickerRefreshContentView {
-        let viewModel = NewAddressBarPickerViewModel(aiChatSettings: aiChatSettings) { [weak self] in
-            self?.dismiss(animated: true)
+        let viewModel = NewAddressBarPickerViewModel(aiChatSettings: aiChatSettings) { [weak self] isDuckAISelected in
+            guard let self else { return }
+            let omniBarFocuser = self.omniBarFocuser
+            self.dismiss(animated: true) {
+                guard isDuckAISelected else { return }
+                omniBarFocuser?.focusOmniBar()
+            }
         }
 
         return NewAddressBarPickerRefreshContentView(viewModel: viewModel)

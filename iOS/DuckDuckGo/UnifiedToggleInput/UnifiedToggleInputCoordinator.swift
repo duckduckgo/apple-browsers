@@ -424,9 +424,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         setInitialInputMode(.aiChat)
         isInputVisibleForKeyboard = true
 
-        let renderState = computeRenderState()
-
-        viewController.apply(renderState.viewConfig, animated: false)
+        // Pose deferred to the intent handler so the morph animates in sync with the keyboard.
         applyToolbarPresentation()
         viewController.deactivateInput()
         intentSubject.send(.showCollapsed)

@@ -84,11 +84,24 @@ private extension MainViewController {
             viewCoordinator.setNavBarContainerBottomToKeyboard()
         }
         viewCoordinator.suggestionTrayContainer.isHidden = true
-        if let coordinator = unifiedToggleInputCoordinator {
-            updateUnifiedInputContentVisibility(for: coordinator)
-        } else {
+        guard let coordinator = unifiedToggleInputCoordinator else {
             viewCoordinator.hideUnifiedInputContent()
+            return
         }
+
+        let renderState = coordinator.computeRenderState()
+        let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
+        UIView.animate(
+            withDuration: duration,
+            delay: 0,
+            options: .curveEaseInOut,
+            animations: { [weak self] in
+                guard let self else { return }
+                coordinator.viewController.apply(renderState.viewConfig, animated: false)
+                self.updateUnifiedInputContentVisibility(for: coordinator, renderState: renderState)
+                self.viewCoordinator.superview.layoutIfNeeded()
+            }
+        )
     }
 
     func handleShowExpandedIntent() {

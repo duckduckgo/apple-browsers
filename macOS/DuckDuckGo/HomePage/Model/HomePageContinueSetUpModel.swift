@@ -25,6 +25,7 @@ import NewTabPage
 import PixelKit
 import PrivacyConfig
 import Subscription
+import WebExtensions
 
 extension HomePage.Models {
 
@@ -53,6 +54,7 @@ extension HomePage.Models {
         private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
         private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
         private let cardActionsHandler: NewTabPageNextStepsCardsActionHandling
+        private let adBlockingAvailability: AdBlockingAvailabilityProviding
         @UserDefaultsWrapper(key: .homePageShowAllFeatures, defaultValue: false)
         var shouldShowAllFeatures: Bool {
             didSet {
@@ -92,7 +94,8 @@ extension HomePage.Models {
              subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
              persistor: HomePageContinueSetUpModelPersisting,
              pixelHandler: NewTabPageNextStepsCardsPixelHandling,
-             cardActionsHandler: NewTabPageNextStepsCardsActionHandling) {
+             cardActionsHandler: NewTabPageNextStepsCardsActionHandling,
+             adBlockingAvailability: AdBlockingAvailabilityProviding) {
 
             self.defaultBrowserProvider = defaultBrowserProvider
             self.dockCustomizer = dockCustomizer
@@ -103,6 +106,7 @@ extension HomePage.Models {
             self.pixelHandler = pixelHandler
             self.cardActionsHandler = cardActionsHandler
             self.persistor = persistor
+            self.adBlockingAvailability = adBlockingAvailability
 
             shouldShowAllFeaturesPublisher = shouldShowAllFeaturesSubject.removeDuplicates().eraseToAnyPublisher()
 
@@ -239,7 +243,6 @@ extension HomePage.Models {
         }
 
         private var availableFeatures: [FeatureType] {
-            // TODO: gate `.youtubeAdBlocking` on `AdBlockingAvailabilityProviding.isFeatureAvailable` so the card is omitted when the WebExtension feature flag is off.
             if dockCustomizer.supportsAddingToDock {
                 return [.duckplayer, .youtubeAdBlocking, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
             } else {
@@ -280,8 +283,7 @@ extension HomePage.Models {
         }
 
         private var shouldYouTubeAdBlockingCardBeVisible: Bool {
-            // TODO: also require `adBlockingAvailability.isFeatureAvailable && !adBlockingAvailability.isEnabledByUser` once `AdBlockingAvailabilityProviding` is injected — currently the card shows whenever the user hasn't dismissed it, regardless of feature availability or opt-in state.
-            persistor.shouldShowYouTubeAdBlockingSetting
+            persistor.shouldShowYouTubeAdBlockingSetting && adBlockingAvailability.isEnabled
         }
     }
 

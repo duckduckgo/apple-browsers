@@ -27,6 +27,7 @@ import PrivacyConfig
 import PrivacyConfigTestsUtils
 import XCTest
 import SubscriptionTestingUtilities
+import WebExtensions
 @testable import DuckDuckGo_Privacy_Browser
 
 final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
@@ -959,6 +960,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         legacyPersistor: MockHomePageContinueSetUpModelPersisting? = nil,
         legacySubscriptionCardPersistor: MockHomePageSubscriptionCardPersisting? = nil,
         featureFlagger: MockFeatureFlagger? = nil,
+        adBlockingAvailability: MockAdBlockingAvailability? = nil,
         isFirstSession: Bool? = nil,
         isAppStoreBuild: Bool? = nil
     ) -> NewTabPageNextStepsSingleCardProvider {
@@ -1034,6 +1036,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         let testLegacyPersistor = legacyPersistor ?? self.legacyPersistor!
         let testLegacySubscriptionCardPersistor = legacySubscriptionCardPersistor ?? self.legacySubscriptionCardPersistor!
         let testFeatureFlagger = featureFlagger ?? self.featureFlagger!
+        let testAdBlockingAvailability = adBlockingAvailability ?? MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
         let testApplicationBuildType: MockApplicationBuildType = {
             let buildType = MockApplicationBuildType()
             if let isAppStoreBuild {
@@ -1061,6 +1064,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             duckPlayerPreferences: testDuckPlayerPreferences,
             subscriptionCardVisibilityManager: testSubscriptionCardVisibilityManager,
             syncService: testSyncService,
+            adBlockingAvailability: testAdBlockingAvailability,
             applicationBuildType: testApplicationBuildType,
             scheduler: .immediate
         )

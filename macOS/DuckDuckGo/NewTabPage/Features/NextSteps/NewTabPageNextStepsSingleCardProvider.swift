@@ -24,6 +24,7 @@ import DDGSync
 import Foundation
 import NewTabPage
 import PrivacyConfig
+import WebExtensions
 
 extension NewTabPageDataModel {
     /// Levels assigned to Next Steps cards to control their display order.
@@ -52,6 +53,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
     private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
     private let syncService: DDGSyncing?
+    private let adBlockingAvailability: AdBlockingAvailabilityProviding
     private let isAppStoreBuild: Bool
 
     private let scheduler: AnySchedulerOf<DispatchQueue>
@@ -178,6 +180,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
          duckPlayerPreferences: DuckPlayerPreferencesPersistor,
          subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
          syncService: DDGSyncing?,
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
          applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
          scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
         self.cardActionHandler = cardActionHandler
@@ -194,6 +197,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         self.duckPlayerPreferences = duckPlayerPreferences
         self.subscriptionCardVisibilityManager = subscriptionCardVisibilityManager
         self.syncService = syncService
+        self.adBlockingAvailability = adBlockingAvailability
         self.isAppStoreBuild = applicationBuildType.isAppStoreBuild
         self.scheduler = scheduler
         self.shouldUseAdvancedCardOrdering = featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering)
@@ -328,8 +332,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .sync:
             return syncService?.featureFlags.contains(.all) == true && syncService?.authState == .inactive
         case .youtubeAdBlocking:
-            // TODO: gate on `AdBlockingAvailabilityProviding.isFeatureAvailable && !isEnabledByUser` once injected — mirror the legacy widget's visibility rule so the card is hidden when the WE feature flag is off or the user has already opted in.
-            return true
+            return adBlockingAvailability.isEnabled
         }
     }
 

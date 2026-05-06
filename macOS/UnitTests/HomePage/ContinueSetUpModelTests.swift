@@ -23,6 +23,7 @@ import NewTabPage
 import PixelKit
 import PrivacyConfigTestsUtils
 import SubscriptionTestingUtilities
+import WebExtensions
 
 @testable import Subscription
 @testable import DuckDuckGo_Privacy_Browser
@@ -69,7 +70,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
         )
     }
 
@@ -119,7 +121,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
         )
 
         XCTAssertFalse(vm.isMoreOrLessButtonNeeded)
@@ -137,7 +140,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, expectedMatrix)
@@ -304,7 +308,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, [[]])
@@ -321,7 +326,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
         )
         vm.shouldShowAllFeatures = true
         let expectedMatrix = expectedFeatureMatrixWithout(types: [])
@@ -505,7 +511,8 @@ extension HomePage.Models.ContinueSetUpModel {
         dockCustomizer: DockCustomization = DockCustomizerMock(),
         subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging = MockHomePageSubscriptionCardVisibilityManaging(),
         pixelHandler: NewTabPageNextStepsCardsPixelHandling = MockNewTabPageNextStepsCardsPixelHandler(),
-        cardActionsHandler: NewTabPageNextStepsCardsActionHandling = MockNewTabPageNextStepsCardsActionHandler()
+        cardActionsHandler: NewTabPageNextStepsCardsActionHandling = MockNewTabPageNextStepsCardsActionHandler(),
+        adBlockingAvailability: AdBlockingAvailabilityProviding = MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
     ) -> HomePage.Models.ContinueSetUpModel {
         HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: defaultBrowserProvider,
@@ -516,7 +523,8 @@ extension HomePage.Models.ContinueSetUpModel {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: persistor,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            adBlockingAvailability: adBlockingAvailability
         )
     }
 }

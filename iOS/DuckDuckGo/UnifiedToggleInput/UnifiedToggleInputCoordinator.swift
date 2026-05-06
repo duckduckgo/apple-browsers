@@ -655,6 +655,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         switch (displayState, isInputVisible) {
         case (.omnibar(.active), false) where isAwaitingTopOmnibarKeyboardPresentation:
             return
+        case (.omnibar(.active), false) where viewController.isInputFirstResponder:
+            // A hardware keyboard is connected (or the keyboard frame went off-screen)
+            // while the user is still actively editing. Treat the input as in-use and
+            // skip the dismissal — otherwise the bar collapses on every keystroke.
+            cancelTopOmnibarKeyboardPresentationFallback()
         case (.omnibar(.active), false):
             cancelTopOmnibarKeyboardPresentationFallback()
             transitionOmnibarToInactive()

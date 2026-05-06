@@ -138,7 +138,10 @@ struct Launching: LaunchingHandling {
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             fireModeStorageController: fireModeStorageController)
 
-        let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
+        let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,
+                                    contentBlocking: contentBlockingService.common,
+                                    freemiumPIRDebugSettings: freemiumPIRDebugSettings)
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
         let statisticsService = StatisticsService()
@@ -162,7 +165,8 @@ struct Launching: LaunchingHandling {
         let freemiumPIREligibilityChecker = DefaultFreemiumPIREligibilityChecker(
             featureFlagger: featureFlagger,
             runPrerequisitesDelegate: dbpService.dbpIOSPublicInterface,
-            subscriptionAuthenticationStateProvider: AppDependencyProvider.shared.subscriptionManager
+            subscriptionAuthenticationStateProvider: AppDependencyProvider.shared.subscriptionManager,
+            freemiumPIRDebugSettings: freemiumPIRDebugSettings
         )
 
         let remoteMessagingImageLoader = RemoteMessagingImageLoader(
@@ -273,6 +277,8 @@ struct Launching: LaunchingHandling {
                                               launchSourceManager: launchSourceManager,
                                               winBackOfferService: winBackOfferService,
                                               freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+                                              freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+                                              freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
                                               modalPromptCoordinationService: modalPromptCoordinationService,
                                               mobileCustomization: mobileCustomization,
                                               productSurfaceTelemetry: productSurfaceTelemetry,

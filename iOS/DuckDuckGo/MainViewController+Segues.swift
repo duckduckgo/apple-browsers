@@ -439,6 +439,8 @@ extension MainViewController {
                                                             productSurfaceTelemetry: productSurfaceTelemetry,
                                                             webExtensionManager: webExtensionManager,
                                                             syncAutoRestoreHandler: syncAutoRestoreHandler,
+                                                            freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+                                                            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
@@ -543,6 +545,8 @@ extension MainViewController {
             databaseDelegate: self.dbpIOSPublicInterface,
             debuggingDelegate: self.dbpIOSPublicInterface,
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
+            freemiumPIRDebugSettings: self.freemiumPIRDebugSettings,
+            freemiumDBPUserStateManager: self.freemiumDBPUserStateManager,
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,

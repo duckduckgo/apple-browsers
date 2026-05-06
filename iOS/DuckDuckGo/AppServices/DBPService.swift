@@ -32,7 +32,9 @@ final class DBPService: NSObject {
         return dbpIOSManager
     }
 
-    init(appDependencies: DependencyProvider, contentBlocking: ContentBlocking) {
+    init(appDependencies: DependencyProvider,
+         contentBlocking: ContentBlocking,
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
         guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
             self.dbpIOSManager = nil
             self.freemiumDBPUserStateManager = DisabledFreemiumDBPUserStateManager()
@@ -44,7 +46,8 @@ final class DBPService: NSObject {
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             runTypeProvider: appDependencies.dbpSettings)
         let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
-        let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
+        let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies,
+                                               freemiumPIRDebugSettings: freemiumPIRDebugSettings)
 
         if let pixelKit = PixelKit.shared {
             let notificationPixelHandler = DataBrokerProtectionNotificationPixelHandler(pixelKit: pixelKit)
@@ -118,6 +121,7 @@ final class DBPService: NSObject {
 final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     
     private let appDependencies: DependencyProvider
+    private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
 
     var isRemoteBrokerDeliveryFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
@@ -144,10 +148,13 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     }
 
     var isFreemiumPIREnabled: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpFreemiumPIR)
+        freemiumPIRDebugSettings.isEligibilityForced
+            || appDependencies.featureFlagger.isFeatureOn(.dbpFreemiumPIR)
     }
 
-    init(appDependencies: DependencyProvider) {
+    init(appDependencies: DependencyProvider,
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
         self.appDependencies = appDependencies
+        self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
     }
 }

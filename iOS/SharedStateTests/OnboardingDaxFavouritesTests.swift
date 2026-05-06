@@ -80,6 +80,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         let syncAutoRestoreHandler = MockSyncAutoRestoreHandler()
         let featureFlagger = MockFeatureFlagger()
         let aiChatSettings = MockAIChatSettingsProvider()
+        let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: keyValueStore)
         let fireproofing = MockFireproofing()
         let textZoomCoordinatorProvider = MockTextZoomCoordinatorProvider()
         let subscriptionDataReporter = MockSubscriptionDataReporter()
@@ -191,8 +192,10 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
                 featureFlagger: featureFlagger,
                 runPrerequisitesDelegate: nil,
-                subscriptionAuthenticationStateProvider: SubscriptionManagerMock()
+                subscriptionAuthenticationStateProvider: SubscriptionManagerMock(),
+                freemiumPIRDebugSettings: freemiumPIRDebugSettings
             ),
+            freemiumPIRDebugSettings: freemiumPIRDebugSettings,
             launchSourceManager: LaunchSourceManager(),
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()),

@@ -59,6 +59,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             faviconStoring: MockFaviconStore(),
             tld: TLD()
         )
+        let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: keyValueStore)
         
         let remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: db,
@@ -76,7 +77,8 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
                 featureFlagger: MockFeatureFlagger(),
                 runPrerequisitesDelegate: nil,
-                subscriptionAuthenticationStateProvider: SubscriptionManagerMock()
+                subscriptionAuthenticationStateProvider: SubscriptionManagerMock(),
+                freemiumPIRDebugSettings: freemiumPIRDebugSettings
             ),
             freemiumDBPUserStateManager: DisabledFreemiumDBPUserStateManager()
         )

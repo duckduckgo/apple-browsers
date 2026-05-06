@@ -703,7 +703,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             freemiumDBPUserStateManager.resetAllState()
             debuggingDelegate?.resetAllNotificationStatesForDebug()
             tableView.reloadSections(IndexSet(integer: Sections.freemiumPIR.rawValue), with: .none)
-            presentAlert(message: "Freemium PIR state reset. PIR database data was not deleted.")
+            presentAlert(message: "Freemium PIR state and all PIR notification state reset. PIR database data was not deleted.")
         }
     }
     

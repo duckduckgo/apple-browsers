@@ -472,12 +472,11 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     private func setupHideBrowserChromeTimer() {
         hideBrowserChromeTimer?.invalidate()
 
-        weak var weakHostView = hostView
-        hideBrowserChromeTimer = Timer.scheduledTimer(withTimeInterval: Constants.landscapeUIAutohideDelay, repeats: false) { _ in
+        hideBrowserChromeTimer = Timer.scheduledTimer(withTimeInterval: Constants.landscapeUIAutohideDelay, repeats: false) { [weak hostView] _ in
             DispatchQueue.main.async {
                 let orientation = UIDevice.current.orientation
                 if orientation.isLandscape {
-                    weakHostView?.hideChrome()
+                    hostView?.hideChrome()
                 }
             }
         }

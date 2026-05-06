@@ -436,7 +436,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         }
 
         // 3: Configure wide event and start the flow
-        let experiment = subscriptionSelection.experiment?.name
         let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
 
         let data = SubscriptionPurchaseWideEventData(

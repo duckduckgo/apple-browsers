@@ -25,10 +25,10 @@ import Core
 final class NewAddressBarPickerViewController: UIViewController {
     
     private let aiChatSettings: AIChatSettingsProvider
-    weak var omniBarFocuser: OmniBarFocuser?
+    weak var omniBarFocuser: OmniBarFocuserProvider?
 
     init(aiChatSettings: AIChatSettingsProvider,
-         omniBarFocuser: OmniBarFocuser? = nil) {
+         omniBarFocuser: OmniBarFocuserProvider? = nil) {
         self.aiChatSettings = aiChatSettings
         self.omniBarFocuser = omniBarFocuser
         super.init(nibName: nil, bundle: nil)

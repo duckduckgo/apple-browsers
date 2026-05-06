@@ -20,12 +20,17 @@
 import Foundation
 
 @MainActor
-final class OmniBarFocuser {
+protocol OmniBarFocuser: AnyObject {
+    func beginSearch()
+}
 
-    weak var omniBar: (any OmniBar)?
+@MainActor
+final class OmniBarFocuserProvider {
+
+    weak var focuser: (any OmniBarFocuser)?
 
     func focusOmniBar() {
-        omniBar?.beginEditing(animated: true)
+        focuser?.beginSearch()
     }
 
 }

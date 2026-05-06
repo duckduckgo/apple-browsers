@@ -208,7 +208,7 @@ struct Launching: LaunchingHandling {
         let subscriptionPromoPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoCoordinator)
 
         // Initialise modal prompts coordination
-        let omniBarFocuser = OmniBarFocuser()
+        let omniBarFocuser = OmniBarFocuserProvider()
         let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
             dependency: .init(
                 launchSourceManager: launchSourceManager,
@@ -277,7 +277,7 @@ struct Launching: LaunchingHandling {
         systemSettingsPiPTutorialService.setPresenter(mainCoordinator)
         syncService.presenter = mainCoordinator.controller
         remoteMessagingService.messageNavigator = DefaultMessageNavigator(delegate: mainCoordinator.controller)
-        omniBarFocuser.omniBar = mainCoordinator.controller.omniBar
+        omniBarFocuser.focuser = mainCoordinator.controller
 
         let notificationServiceManager = NotificationServiceManager(mainCoordinator: mainCoordinator)
 

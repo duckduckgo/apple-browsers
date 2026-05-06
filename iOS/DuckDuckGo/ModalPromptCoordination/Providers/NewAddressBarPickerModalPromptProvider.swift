@@ -26,14 +26,14 @@ final class NewAddressBarPickerModalPromptProvider: ModalPromptProvider {
     private let store: NewAddressBarPickerStorageWriting
     private let aiChatSettings: AIChatSettingsProvider
     private let isIPad: Bool
-    private let omniBarFocuser: OmniBarFocuser
+    private let omniBarFocuser: OmniBarFocuserProvider
 
     init(
         validator: NewAddressBarPickerDisplayValidating,
         store: NewAddressBarPickerStorage,
         aiChatSettings: AIChatSettingsProvider,
         isIPad: Bool,
-        omniBarFocuser: OmniBarFocuser
+        omniBarFocuser: OmniBarFocuserProvider
     ) {
         self.validator = validator
         self.store = store

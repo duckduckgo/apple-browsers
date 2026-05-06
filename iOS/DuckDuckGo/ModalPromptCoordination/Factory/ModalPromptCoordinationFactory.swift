@@ -121,7 +121,7 @@ extension ModalPromptCoordinationFactory {
         let subscriptionPromoPresenter: SubscriptionPromoPresenting
         let subscriptionPromoCoordinator: SubscriptionPromoCoordinating
         let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
-        let omniBarFocuser: OmniBarFocuser
+        let omniBarFocuser: OmniBarFocuserProvider
     }
 
 }

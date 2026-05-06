@@ -2361,6 +2361,54 @@
         }
       }
     },
+    "aichat.attach-menu.image-or-file" : {
+      "comment" : "Top-level item in the AI chat omnibar attach menu that opens the image and file picker",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Attach Image or File"
+          }
+        }
+      }
+    },
+    "aichat.attach-menu.no-open-tabs" : {
+      "comment" : "Placeholder shown inside the AI chat omnibar attach menu when the user has no open browser tabs to choose from",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No open tabs"
+          }
+        }
+      }
+    },
+    "aichat.attach-menu.page-content" : {
+      "comment" : "Top-level item in the AI chat omnibar attach menu that opens the open-tabs submenu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Attach Page Content"
+          }
+        }
+      }
+    },
+    "aichat.attach-menu.recent-tabs-header" : {
+      "comment" : "Section header inside the AI chat omnibar attach menu listing the user's currently open browser tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Recent Tabs"
+          }
+        }
+      }
+    },
     "aichat.attachments.limit-error" : {
       "comment" : "Error message shown when the user tries to attach more than 3 images in AI chat",
       "extractionState" : "extracted_with_value",

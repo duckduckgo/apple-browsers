@@ -451,6 +451,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
     }
 
+    /// The attach button is now multi-purpose: it triggers either the legacy image-and-file
+    /// picker (when only image upload is available) or a menu with both options (when the tab
+    /// picker is also enabled). It needs to be visible when *any* attach mode is available.
+    private var shouldShowAttachButton: Bool {
+        shouldShowImageUpload || omnibarController.isOmnibarTabPickerEnabled
+    }
+
     private var shouldShowAttachments: Bool {
         shouldShowImageUpload
     }
@@ -465,8 +472,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         toolsButton.isHidden = !shouldShowToolsButton
         imageGenActiveButton.isHidden = !shouldShowToolsButton || !omnibarController.isImageGenerationMode
         webSearchActiveButton.isHidden = !shouldShowWebSearchChip
-        imageUploadButton.isHidden = !shouldShowAttachments || !shouldShowImageUpload
-        imageUploadButton.isEnabled = !attachmentsContainerView.isFull
+        imageUploadButton.isHidden = !shouldShowAttachButton
+        // Disable only when we'd be entering the legacy direct-file-picker path AND images are at
+        // cap. With the tab picker enabled the button always opens the menu (which conditionally
+        // omits the image item itself when full), so the outer button stays interactive.
+        imageUploadButton.isEnabled = omnibarController.isOmnibarTabPickerEnabled || !attachmentsContainerView.isFull
         modelPickerButton.isHidden = !shouldShowModelPicker
         toolsButton.label = omnibarController.activeToolMode != nil ? nil : UserText.aiChatToolsButtonLabel
 
@@ -583,7 +593,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         imageUploadButton.translatesAutoresizingMaskIntoConstraints = false
         imageUploadButton.target = self
-        imageUploadButton.action = #selector(imageUploadButtonClicked)
+        imageUploadButton.action = #selector(attachButtonClicked)
         imageUploadButton.image = DesignSystemImages.Glyphs.Size16.attach
         imageUploadButton.toolTip = UserText.aiChatImageUploadButtonTooltip
         imageUploadButton.setAccessibilityLabel(UserText.aiChatImageUploadButtonTooltip)
@@ -1020,7 +1030,22 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.toggleWebSearchMode()
     }
 
-    @objc private func imageUploadButtonClicked() {
+    /// Routes the attach-button click. When the omnibar tab picker is enabled, opens a menu
+    /// (Attach Image or File / Attach Page Content). Otherwise behaves as before — opens the
+    /// image-and-file picker directly. Keeps the legacy file-picker path 1-to-1 for users with
+    /// the new flag off.
+    @objc private func attachButtonClicked() {
+        if omnibarController.isOmnibarTabPickerEnabled {
+            let menu = buildAttachMenu()
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: -5), in: imageUploadButton)
+        } else {
+            presentImageFilePicker()
+        }
+    }
+
+    /// Opens the image-and-file picker. Pulled out of the legacy `imageUploadButtonClicked` so
+    /// both the legacy direct-click path and the new "Attach Image or File" menu item can share it.
+    private func presentImageFilePicker() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
@@ -1035,6 +1060,81 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 self.addImageAttachment(from: url)
             }
         }
+    }
+
+    /// Top-level attach menu: "Attach Image or File" (when image upload is supported by the
+    /// current model) and "Attach Page Content" (with the tabs submenu). The image item is
+    /// omitted when the model doesn't support image upload, because the omnibar attach button is
+    /// also visible in that case (purely for tab attachment), and showing a non-functional item
+    /// would be confusing.
+    private func buildAttachMenu() -> NSMenu {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+
+        if shouldShowImageUpload && !attachmentsContainerView.isFull {
+            let imageItem = NSMenuItem(
+                title: UserText.aiChatAttachMenuImageOrFile,
+                action: #selector(attachMenuImageOrFileClicked),
+                keyEquivalent: ""
+            )
+            imageItem.target = self
+            imageItem.image = DesignSystemImages.Glyphs.Size16.folder
+            menu.addItem(imageItem)
+        }
+
+        let pageItem = NSMenuItem(
+            title: UserText.aiChatAttachMenuPageContent,
+            action: nil,
+            keyEquivalent: ""
+        )
+        pageItem.image = DesignSystemImages.Glyphs.Size16.pageContentAttach
+        pageItem.submenu = buildAttachTabsSubmenu()
+        menu.addItem(pageItem)
+
+        return menu
+    }
+
+    /// Builds the "Attach Page Content" submenu. When the user has open URL tabs, the submenu
+    /// starts with a "Recent Tabs" section header followed by a custom-view row per tab — each
+    /// row stays-open-on-click via `AIChatTabPickerMenuRowView` so the user can multi-toggle
+    /// without dismissing the menu. When there are no tabs to show, the submenu drops the header
+    /// and shows only a disabled "No open tabs" placeholder.
+    private func buildAttachTabsSubmenu() -> NSMenu {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+
+        let attachedIds = Set(omnibarController.activeTabAttachments.map(\.id))
+        let candidates = omnibarController.openTabsForOmnibarPicker()
+
+        guard !candidates.isEmpty else {
+            let empty = NSMenuItem(title: UserText.aiChatAttachMenuNoOpenTabs, action: nil, keyEquivalent: "")
+            empty.isEnabled = false
+            menu.addItem(empty)
+            return menu
+        }
+
+        let header = NSMenuItem(title: UserText.aiChatAttachMenuRecentTabsHeader, action: nil, keyEquivalent: "")
+        header.isEnabled = false
+        menu.addItem(header)
+
+        for candidate in candidates {
+            let item = NSMenuItem()
+            let row = AIChatTabPickerMenuRowView(
+                attachment: candidate,
+                isAttached: attachedIds.contains(candidate.id),
+                onToggle: { [weak omnibarController] in
+                    omnibarController?.toggleTabAttachment(candidate)
+                }
+            )
+            item.view = row
+            menu.addItem(item)
+        }
+
+        return menu
+    }
+
+    @objc private func attachMenuImageOrFileClicked() {
+        presentImageFilePicker()
     }
 
     private func allowedContentTypes(for formats: [String]) -> [UTType] {

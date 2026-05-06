@@ -563,6 +563,23 @@ final class AIChatOmnibarController {
         persistTabAttachmentsToActiveTab(current)
     }
 
+    /// Returns the open browser tabs (pinned + regular) in this controller's window as candidate
+    /// attachments, with native `NSImage` favicons resolved from the favicon manager. Used by the
+    /// omnibar attach menu to populate the "Attach Page Content" submenu. Non-URL tabs (settings,
+    /// new-tab page, etc.) are filtered out.
+    func openTabsForOmnibarPicker() -> [AIChatTabAttachment] {
+        let pinnedTabs = tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []
+        let regularTabs = tabCollectionViewModel.tabCollection.tabs
+        let allTabs = pinnedTabs + regularTabs
+        let faviconManager = NSApp.delegateTyped.faviconManager
+        return allTabs.compactMap { tab in
+            guard case .url(let url, _, _) = tab.content else { return nil }
+            let title = tab.title ?? url.host ?? ""
+            let favicon = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image
+            return AIChatTabAttachment(id: tab.uuid, title: title, url: url, favicon: favicon)
+        }
+    }
+
     func cleanup() {
         isCleaningUp = true
         defer { isCleaningUp = false }

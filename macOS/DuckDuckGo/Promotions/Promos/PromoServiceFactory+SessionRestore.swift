@@ -24,12 +24,10 @@ extension PromoServiceFactory {
         let delegate = SessionRestorePromoDelegate(coordinator: coordinator)
         return Promo(
             id: "session-restore",
-            triggers: [], // External promo; visibility driven by coordinator
             initiated: .app,
             promoType: PromoType(.semiModal),
             context: .global,
-            coexistingPromoIDs: [], // Coexistence between external promos is handled externally
-            respectsGlobalCooldown: false,
+            coexistingPromoIDs: [],
             setsGlobalCooldown: false,
             delegate: delegate
         )

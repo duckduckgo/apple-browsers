@@ -55,6 +55,9 @@ struct Promo {
     /// Delegate should be set by feature module when their dependencies are ready.
     var delegate: (any AnyPromoDelegate)?
 
+    /// Init for an internal promo. Use this for most promos.
+    ///
+    /// Internal promo visibility is managed by `PromoService` based on triggers and eligibility.
     init(id: String,
          triggers: Set<PromoTrigger>,
          initiated: PromoInitiated,
@@ -63,7 +66,7 @@ struct Promo {
          coexistingPromoIDs: Set<String> = [],
          respectsGlobalCooldown: Bool = true,
          setsGlobalCooldown: Bool = true,
-         delegate: (any AnyPromoDelegate)? = nil) {
+         delegate: PromoDelegate? = nil) {
         self.id = id
         self.triggers = triggers
         self.initiated = initiated
@@ -71,6 +74,29 @@ struct Promo {
         self.context = context
         self.coexistingPromoIDs = coexistingPromoIDs
         self.respectsGlobalCooldown = respectsGlobalCooldown
+        self.setsGlobalCooldown = setsGlobalCooldown
+        self.delegate = delegate
+    }
+
+    /// Init for an external promo, whose visibility is controlled outside PromoService.
+    ///
+    /// Use when another system (e.g. Remote Messaging Framework) decides when to show or hide the promo.
+    /// `PromoService` observes the promo's visibility and uses it to manage internal promos.
+    /// Use sparingly; most promos should conform to `PromoDelegate` instead.
+    init(id: String,
+         initiated: PromoInitiated,
+         promoType: PromoType,
+         context: PromoContext,
+         coexistingPromoIDs: Set<String> = [],
+         setsGlobalCooldown: Bool = true,
+         delegate: ExternalPromoDelegate? = nil) {
+        self.id = id
+        self.triggers = [] // External promos show themselves without PromoService triggers
+        self.initiated = initiated
+        self.promoType = promoType
+        self.context = context
+        self.coexistingPromoIDs = coexistingPromoIDs
+        self.respectsGlobalCooldown = false // External promos define when they will show; they don't respect PromoService cooldowns
         self.setsGlobalCooldown = setsGlobalCooldown
         self.delegate = delegate
     }
@@ -83,7 +109,7 @@ struct Promo {
 /// system (e.g. Remote Messaging Framework); PromoService only observes their visibility.
 protocol AnyPromoDelegate: AnyObject { }
 
-/// Delegate for promos that PromoService controls. Use this for most promos.
+/// Delegate for promos that PromoService controls.
 ///
 /// PromoService evaluates triggers, checks eligibility, and calls `show()` / `hide()` to manage
 /// visibility. The delegate provides eligibility state and implements the UI for showing and hiding.
@@ -119,10 +145,8 @@ extension PromoDelegate {
 
 /// Delegate for promos whose visibility is controlled outside PromoService.
 ///
-/// Use when another system (e.g. Remote Messaging Framework) decides when to show or hide the promo.
 /// PromoService subscribes to `isVisiblePublisher` to observe visibility, record history, and apply
-/// global cooldowns—it never calls `show()` or `hide()`. Use sparingly; most promos should conform
-/// to `PromoDelegate` instead.
+/// global cooldowns—it never calls `show()` or `hide()`.
 protocol ExternalPromoDelegate: AnyPromoDelegate {
     /// Current visibility state. Use isVisiblePublisher to observe changes.
     var isVisible: Bool { get }

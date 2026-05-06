@@ -74,7 +74,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         var isAnimating = true
     }
 
-    @Published private(set) var state: OnboardingView.ViewState = .landing {
+    @Published private(set) var state: OnboardingView.ViewState {
         didSet {
             measureScreenImpression()
         }
@@ -110,6 +110,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let restorePromptHandler: OnboardingRestorePromptHandling
     private let tutorialSettings: TutorialSettings
     private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
+    private let contentProvider: OnboardingIntroContentProviding
 
     private var pendingOnboardingIntroActions: (() -> Void)?
 
@@ -122,6 +123,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         let defaultBrowserInfoStore = DefaultBrowserInfoStore()
         let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
         let onboardingSearchExperienceProvider = OnboardingSearchExperience()
+        let featureFlagger = AppDependencyProvider.shared.featureFlagger
+        let tutorialSettings = DefaultTutorialSettings()
         self.init(
             defaultBrowserManager: DefaultBrowserManager(defaultBrowserInfoStore: defaultBrowserInfoStore,
                                                          defaultBrowserEventMapper: defaultBrowserEventMapper, defaultBrowserChecker: SystemCheckDefaultBrowserService(application: UIApplication.shared)),
@@ -133,9 +136,13 @@ final class OnboardingIntroViewModel: ObservableObject {
             onboardingSearchExperienceProvider: onboardingSearchExperienceProvider,
             appIconProvider: { AppIconManager.shared.appIcon },
             addressBarPositionProvider: { AppUserDefaults().currentAddressBarPosition },
-            featureFlagger: AppDependencyProvider.shared.featureFlagger,
+            featureFlagger: featureFlagger,
             restorePromptHandler: restorePromptHandler,
-            tutorialSettings: DefaultTutorialSettings(),
+            tutorialSettings: tutorialSettings,
+            contentProvider: OnboardingIntroContentProvider(
+                flowType: onboardingManager.currentOnboardingFlow,
+                featureFlagger: featureFlagger
+            ),
             onboardingResumeStepStore: onboardingResumeStepStore
         )
     }
@@ -150,9 +157,10 @@ final class OnboardingIntroViewModel: ObservableObject {
         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider,
         appIconProvider: @escaping () -> AppIcon,
         addressBarPositionProvider: @escaping () -> AddressBarPosition,
-        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+        featureFlagger: FeatureFlagger,
         restorePromptHandler: OnboardingRestorePromptHandling,
-        tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
+        tutorialSettings: TutorialSettings,
+        contentProvider: OnboardingIntroContentProviding,
         onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil
     ) {
         self.defaultBrowserManager = defaultBrowserManager
@@ -166,9 +174,11 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.featureFlagger = featureFlagger
         self.restorePromptHandler = restorePromptHandler
         self.tutorialSettings = tutorialSettings
+        self.contentProvider = contentProvider
         self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
 
         introSteps = onboardingManager.onboardingSteps
+        state = .landing(contentProvider.landingContent)
         currentIntroStep = currentOnboardingStep
         restorePendingOnboardingStepIfNeeded()
     }

@@ -36,6 +36,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
     private var tutorialSettingsMock: MockTutorialSettings!
     private var appIconProvider: (() -> AppIcon)!
     private var addressBarPositionProvider: (() -> AddressBarPosition)!
+    private var contentProviderMock: MockOnboardingIntroContentProvider!
 
     override func setUp() {
         super.setUp()
@@ -45,6 +46,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         onboardingManagerMock = OnboardingManagerMock()
         systemSettingsPiPTutorialManager = MockSystemSettingsPiPTutorialManager()
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
+        contentProviderMock = MockOnboardingIntroContentProvider()
         appIconProvider = { .defaultAppIcon }
         addressBarPositionProvider = { .top }
     }
@@ -58,6 +60,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         tutorialSettingsMock = nil
         appIconProvider = nil
         addressBarPositionProvider = nil
+        contentProviderMock = nil
         super.tearDown()
     }
 
@@ -72,13 +75,13 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         let result = sut.state
 
         // THEN
-        XCTAssertEqual(result, .landing)
+        XCTAssertEqual(result, .landing(.mock))
     }
 
     func testWhenOnAppearIsCalledThenViewStateChangesToStartOnboardingDialog() {
         // GIVEN
         let sut = makeSUT()
-        XCTAssertEqual(sut.state, .landing)
+        XCTAssertEqual(sut.state, .landing(.mock))
 
         // WHEN
         sut.onAppear()
@@ -112,7 +115,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         let result = sut.state
 
         // THEN
-        XCTAssertEqual(result, .landing)
+        XCTAssertEqual(result, .landing(.mock))
     }
 
     func testWhenRestoreActionProvided_PerformRestoreInvokesAction_AndDefersContextualDaxDialogsDismissal() {
@@ -220,7 +223,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let currentStep = try XCTUnwrap(onboardingManagerMock.onboardingSteps.first)
         let sut = makeSUT(currentOnboardingStep: currentStep)
-        XCTAssertEqual(sut.state, .landing)
+        XCTAssertEqual(sut.state, .landing(.mock))
 
         // WHEN
         sut.onAppear()
@@ -234,7 +237,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
         let currentStep = try XCTUnwrap(onboardingManagerMock.onboardingSteps.first)
         let sut = makeSUT(currentOnboardingStep: currentStep)
-        XCTAssertEqual(sut.state, .landing)
+        XCTAssertEqual(sut.state, .landing(.mock))
 
         // WHEN
         sut.onAppear()
@@ -364,7 +367,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         let result = sut.state
 
         // THEN
-        XCTAssertEqual(result, .landing)
+        XCTAssertEqual(result, .landing(.mock))
     }
 
     func testWhenOnAppearIsCalled_AndIsNewUser_AndAndIsIpadFlow_ThenViewStateChangesToStartOnboardingDialogAndProgressIsHidden() throws {
@@ -372,7 +375,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false)
         let currentStep = try XCTUnwrap(onboardingManagerMock.onboardingSteps.first)
         let sut = makeSUT(currentOnboardingStep: currentStep)
-        XCTAssertEqual(sut.state, .landing)
+        XCTAssertEqual(sut.state, .landing(.mock))
 
         // WHEN
         sut.onAppear()
@@ -386,7 +389,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: true)
         let currentStep = try XCTUnwrap(onboardingManagerMock.onboardingSteps.first)
         let sut = makeSUT(currentOnboardingStep: currentStep)
-        XCTAssertEqual(sut.state, .landing)
+        XCTAssertEqual(sut.state, .landing(.mock))
 
         // WHEN
         sut.onAppear()
@@ -431,7 +434,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false)
         let sut = makeSUT()
-        XCTAssertEqual(sut.state, .landing)
+        XCTAssertEqual(sut.state, .landing(.mock))
 
         // WHEN
         sut.startOnboardingAction()
@@ -681,30 +684,6 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureStartOnboardingCTAAction)
-    }
-
-    // MARK: - Copy
-
-    func testIntroTitleIsCorrect() {
-        // GIVEN
-        let sut = makeSUT()
-
-        // WHEN
-        let result = sut.copy.introTitle
-
-        // THEN
-        XCTAssertEqual(result, UserText.Onboarding.Intro.title)
-    }
-
-    func testBrowserComparisonTitleIsCorrect() {
-        // GIVEN
-        let sut = makeSUT()
-
-        // WHEN
-        let result = sut.copy.browserComparisonTitle
-
-        // THEN
-        XCTAssertEqual(result, UserText.Onboarding.BrowsersComparison.title)
     }
 
     // MARK: - Pixel Add To Dock
@@ -1210,6 +1189,7 @@ extension OnboardingIntroViewModelTests {
             featureFlagger: featureFlagger,
             restorePromptHandler: restorePromptHandler,
             tutorialSettings: tutorialSettingsMock,
+            contentProvider: contentProviderMock,
             onboardingResumeStepStore: (resumeStepStore ?? MockKeyValueStore()).keyedStoring()
         )
     }

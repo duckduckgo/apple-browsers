@@ -213,11 +213,10 @@ extension OnboardingRebranding {
         var body: some View {
             ZStack(alignment: .topTrailing) {
                 switch model.state {
-                case .landing:
+                case let .landing(content):
                     onboardingTheme.colorPalette.background
                         .ignoresSafeArea()
-
-                    landingView
+                    landingView(content: content)
                         .transition(reduceMotion ? .identity : AnyTransition.slideLeftAndFade.animation(.easeOut(duration: 1.0)))
                 case let .onboarding(viewState):
                     onboardingTheme.colorPalette.background
@@ -324,8 +323,8 @@ extension OnboardingRebranding {
             .opacity(isExperimentExitTransitionActive && isExperimentSearchStep ? 0 : 1)
         }
 
-        private var landingView: some View {
-            LandingView(animationNamespace: animationNamespace) { [reduceMotion] in
+        private func landingView(content: OnboardingLandingContent) -> some View {
+            LandingView(content: content, animationNamespace: animationNamespace) { [reduceMotion] in
                 if reduceMotion {
                     model.onAppear()
                 } else {

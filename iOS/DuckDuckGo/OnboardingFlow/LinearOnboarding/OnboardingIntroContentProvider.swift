@@ -31,11 +31,11 @@ struct OnboardingLandingContent: Equatable {
 
 // MARK: - Provider
 
-protocol LinearOnboardingContentProviding {
+protocol OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent { get }
 }
 
-struct LinearOnboardingContentProvider: LinearOnboardingContentProviding {
+struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
     private let flowType: OnboardingFlowType
     private let featureFlagger: FeatureFlagger
 
@@ -47,7 +47,7 @@ struct LinearOnboardingContentProvider: LinearOnboardingContentProviding {
 
 // MARK: - Content Provider + Landing (Welcome to DuckDuckGo!)
 
-extension LinearOnboardingContentProvider {
+extension OnboardingIntroContentProvider {
 
     var landingContent: OnboardingLandingContent {
         OnboardingLandingContent(

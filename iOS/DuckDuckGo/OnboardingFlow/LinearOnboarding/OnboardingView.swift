@@ -311,7 +311,7 @@ struct OnboardingView: View {
 extension OnboardingView {
 
     enum ViewState: Equatable {
-        case landing
+        case landing(OnboardingLandingContent)
         case onboarding(Intro)
 
         var intro: Intro? {
@@ -414,6 +414,8 @@ struct OnboardingView_Previews: PreviewProvider {
     }
 
     class MockOnboardingManager: OnboardingManaging {
+        let currentOnboardingFlow: OnboardingFlowType = .default
+
         let onboardingSteps: [OnboardingIntroStep] = [.introDialog(isReturningUser: true), .browserComparison, .addToDockPromo, .appIconSelection, .addressBarPositionSelection, .searchExperienceSelection]
 
         let userHasSeenAddToDockPromoDuringOnboarding: Bool = false

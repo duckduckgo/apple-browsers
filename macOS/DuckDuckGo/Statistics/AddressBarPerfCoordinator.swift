@@ -124,8 +124,8 @@ final class AddressBarPerfCoordinator {
     }
 
     private func scheduleEmit(_ snapshot: (char: [Int], suggest: [Int])) {
-        cancelPendingEmit()
         guard !snapshot.char.isEmpty || !snapshot.suggest.isEmpty else { return }
+        cancelPendingEmit()
 
         let firer = pixelFirer
         let work = DispatchWorkItem {

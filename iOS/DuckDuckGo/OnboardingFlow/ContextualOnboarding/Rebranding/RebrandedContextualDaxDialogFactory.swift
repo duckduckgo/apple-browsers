@@ -227,12 +227,12 @@ private extension RebrandedContextualDaxDialogFactory {
                 shouldFollowUp: shouldFollowUpToFireDialog,
                 message: attributedMessage,
                 blockedTrackersCTAAction: { [weak self, weak delegate] in
+                    self?.contextualOnboardingPixelReporter.measureTrackersDialogGotItAction()
+
                     // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
                     if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
-                        self?.contextualOnboardingPixelReporter.measureTrackersDialogGotItAction()
                         delegate?.didTapDismissContextualOnboardingAction()
                     } else {
-                        self?.contextualOnboardingPixelReporter.measureTrackersDialogGotItAction()
                         onSizeUpdate()
                         delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
                         self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)

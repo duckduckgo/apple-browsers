@@ -24,7 +24,7 @@ extension PromoServiceFactory {
     @MainActor
     static func remoteMessageNewTabPage(model: ActiveRemoteMessageModel) -> Promo {
         let delegate = RemoteMessagePromoDelegate(activeRemoteMessageModel: model, surface: .newTabPage)
-        return Promo(
+        return ExternalPromo(
             id: "remote-message-ntp",
             initiated: .app,
             promoType: PromoType(.remoteMessage),
@@ -38,7 +38,7 @@ extension PromoServiceFactory {
     @MainActor
     static func remoteMessageTabBar(model: ActiveRemoteMessageModel) -> Promo {
         let delegate = RemoteMessagePromoDelegate(activeRemoteMessageModel: model, surface: .tabBar)
-        return Promo(
+        return ExternalPromo(
             id: "remote-message-tabbar",
             initiated: .app,
             promoType: PromoType(.remoteMessage),

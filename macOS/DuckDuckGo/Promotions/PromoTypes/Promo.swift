@@ -20,44 +20,57 @@ import Combine
 import Foundation
 
 /// Static metadata for a promo. Priority is defined by array order when passed to PromoService.
-struct Promo {
+protocol Promo {
     /// Unique identifier
-    let id: String
+    var id: String { get }
 
     /// Which trigger(s) this promo responds to
-    let triggers: Set<PromoTrigger>
+    var triggers: Set<PromoTrigger> { get }
 
     /// How this promo was initiated and its cooldown
-    let initiated: PromoInitiated
+    var initiated: PromoInitiated { get }
 
     /// Display metadata (severity, timeout)
-    let promoType: PromoType
+    var promoType: PromoType { get }
 
     /// Where this promo appears
-    let context: PromoContext
+    var context: PromoContext { get }
 
     /// IDs of promos that can be visible simultaneously with this one.
     /// Promos can appear together when all visible promos that would conflict
     /// are in this set and this promo is in all of theirs (mutual coexistence).
     /// This should be used only in very rare cases that are pre-validated (e.g. with a PFR).
     /// Default: empty (no coexistence exceptions).
-    let coexistingPromoIDs: Set<String>
+    var coexistingPromoIDs: Set<String> { get }
 
     /// When false, this promo can show even if the global cooldown for its PromoInitiated type hasn't elapsed.
     /// Default: true.
-    let respectsGlobalCooldown: Bool
+    var respectsGlobalCooldown: Bool { get }
 
     /// When false, dismissing this promo does not count toward the global cooldown for its PromoInitiated type.
     /// Default: true.
-    let setsGlobalCooldown: Bool
+    var setsGlobalCooldown: Bool { get }
 
     /// Provides dynamic promo behavior (eligibility, show, hide).
     /// Delegate should be set by feature module when their dependencies are ready.
+    var delegate: (any AnyPromoDelegate)? { get set }
+}
+
+/// Static metadata for an internal promo. Use this for most promos.
+///
+/// Internal promo visibility is managed by `PromoService` based on triggers and eligibility.
+struct InternalPromo: Promo {
+    let id: String
+    let triggers: Set<PromoTrigger>
+    let initiated: PromoInitiated
+    let promoType: PromoType
+    let context: PromoContext
+    let coexistingPromoIDs: Set<String>
+    let respectsGlobalCooldown: Bool
+    let setsGlobalCooldown: Bool
+
     var delegate: (any AnyPromoDelegate)?
 
-    /// Init for an internal promo. Use this for most promos.
-    ///
-    /// Internal promo visibility is managed by `PromoService` based on triggers and eligibility.
     init(id: String,
          triggers: Set<PromoTrigger>,
          initiated: PromoInitiated,
@@ -77,12 +90,29 @@ struct Promo {
         self.setsGlobalCooldown = setsGlobalCooldown
         self.delegate = delegate
     }
+}
 
-    /// Init for an external promo, whose visibility is controlled outside PromoService.
-    ///
-    /// Use when another system (e.g. Remote Messaging Framework) decides when to show or hide the promo.
-    /// `PromoService` observes the promo's visibility and uses it to manage internal promos.
-    /// Use sparingly; most promos should conform to `PromoDelegate` instead.
+/// Static metadata for an external promo, whose visibility is controlled outside PromoService.
+///
+/// Use when another system (e.g. Remote Messaging Framework) decides when to show or hide the promo.
+/// `PromoService` observes the promo's visibility and uses it to manage internal promos.
+/// Use sparingly; most promos should use `InternalPromo` instead.
+struct ExternalPromo: Promo {
+    let id: String
+    let initiated: PromoInitiated
+    let promoType: PromoType
+    let context: PromoContext
+    let coexistingPromoIDs: Set<String>
+    let setsGlobalCooldown: Bool
+
+    /// External promos show themselves without PromoService triggers
+    let triggers: Set<PromoTrigger> = []
+
+    /// External promos control when they will show; they don't respect PromoService cooldowns
+    let respectsGlobalCooldown: Bool = false
+
+    var delegate: (any AnyPromoDelegate)?
+
     init(id: String,
          initiated: PromoInitiated,
          promoType: PromoType,
@@ -91,12 +121,10 @@ struct Promo {
          setsGlobalCooldown: Bool = true,
          delegate: ExternalPromoDelegate? = nil) {
         self.id = id
-        self.triggers = [] // External promos show themselves without PromoService triggers
         self.initiated = initiated
         self.promoType = promoType
         self.context = context
         self.coexistingPromoIDs = coexistingPromoIDs
-        self.respectsGlobalCooldown = false // External promos define when they will show; they don't respect PromoService cooldowns
         self.setsGlobalCooldown = setsGlobalCooldown
         self.delegate = delegate
     }

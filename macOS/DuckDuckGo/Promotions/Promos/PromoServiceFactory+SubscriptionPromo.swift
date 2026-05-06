@@ -21,7 +21,7 @@ import Foundation
 extension PromoServiceFactory {
 
     static func subscriptionPromo(delegate: FireWindowSubscriptionPromoDelegate) -> Promo {
-        Promo(
+        ExternalPromo(
             id: "subscription-promo-fire-window",
             initiated: .app,
             promoType: PromoType(.banner),

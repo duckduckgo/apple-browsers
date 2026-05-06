@@ -160,27 +160,14 @@ class TabsModelPersistence: TabsModelPersisting {
     }
 
     public func save(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
-        // Hop the heavy NSCoding encode + disk write off the main thread. We reference the live
-        // model: subsequent main-thread mutations after this point are intentionally not captured
-        // (they will be picked up by the next save()). Lifecycle force-flush callers should drain
-        // the queue via `flush()` before the app suspends to guarantee durability.
+        // Take a deep-copy on the caller's thread so `NSKeyedArchiver` iterates a frozen graph,
+        // safe to encode on any queue. Disk write hops to the persist queue. See
+        // `TabsModel.archivalSnapshot` for the race fix this builds on (PR #4828).
         let targetStore = store(for: key)
-        persistQueue.async {
-            _ = self.encodeAndWrite(model: model, into: targetStore)
-        }
-        return .success(())
-    }
-
-    /// Encodes the model and writes it to the given store, returning the real outcome and reporting
-    /// failures via daily pixel + log. Always invoked from the persistence's serial queue.
-    @discardableResult
-    private func encodeAndWrite(model: TabsModel, into targetStore: ThrowingKeyValueStoring) -> Result<Void, Error> {
+        let snapshot = model.archivalSnapshot()
+        let data: Data
         do {
-            // Deep-copy to freeze mutable state before archiving (race-safe off-main encode).
-            let snapshot = model.archivalSnapshot()
-            let data = try NSKeyedArchiver.archivedData(withRootObject: snapshot, requiringSecureCoding: false)
-            try targetStore.set(data, forKey: Constants.storageKey)
-            return .success(())
+            data = try NSKeyedArchiver.archivedData(withRootObject: snapshot, requiringSecureCoding: false)
         } catch {
             DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
                                          pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
@@ -188,21 +175,52 @@ class TabsModelPersistence: TabsModelPersisting {
             Logger.general.error("Something went wrong archiving TabsModel: \(error.localizedDescription, privacy: .public)")
             return .failure(error)
         }
+        persistQueue.async {
+            _ = self.write(data: data, into: targetStore)
+        }
+        return .success(())
     }
 
-    /// Blocks until any pending async save has finished writing.
+    /// Writes the pre-encoded data to the given store, returning the real outcome and reporting
+    /// failures via daily pixel + log. Always invoked from the persistence's serial queue.
+    @discardableResult
+    private func write(data: Data, into targetStore: ThrowingKeyValueStoring) -> Result<Void, Error> {
+        do {
+            try targetStore.set(data, forKey: Constants.storageKey)
+            return .success(())
+        } catch {
+            DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
+            Logger.general.error("Something went wrong writing TabsModel: \(error.localizedDescription, privacy: .public)")
+            return .failure(error)
+        }
+    }
+
+    /// Blocks until any pending async write has finished.
     public func flush() {
         persistQueue.sync { }
     }
 
-    /// Synchronously persists the model: drains any queued async saves first, then encodes + writes
-    /// inline on the serial queue, returning the actual outcome. Use this when the caller needs the
-    /// real `Result` (e.g. data-clearing telemetry) rather than the always-success placeholder
-    /// returned by the debounced/async path.
+    /// Synchronously persists the model: encodes inline on the caller's thread (so the encode is
+    /// race-free relative to main-thread mutations, since callers invoke this from main), then
+    /// drains any queued async writes and writes the freshly encoded data on the serial queue.
+    /// Returns the actual outcome. Use when the caller needs the real `Result` (e.g. data-clearing
+    /// telemetry) rather than the always-success placeholder returned by the debounced/async path.
     public func saveSynchronously(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
         let targetStore = store(for: key)
+        let data: Data
+        do {
+            data = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: false)
+        } catch {
+            DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                                         error: error)
+            Logger.general.error("Something went wrong archiving TabsModel: \(error.localizedDescription, privacy: .public)")
+            return .failure(error)
+        }
         return persistQueue.sync {
-            self.encodeAndWrite(model: model, into: targetStore)
+            self.write(data: data, into: targetStore)
         }
     }
 

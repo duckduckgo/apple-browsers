@@ -477,8 +477,8 @@ extension OnboardingRebranding {
                 browsersComparisonView
             case let .addToDockPromoDialog(content):
                 addToDockPromoView(content: content)
-            case .chooseAppIconDialog:
-                appIconPickerView
+            case let .chooseAppIconDialog(content):
+                appIconPickerView(content: content)
             case .chooseAddressBarPositionDialog:
                 addressBarPositionView
             case .chooseSearchExperienceDialog:
@@ -572,8 +572,9 @@ extension OnboardingRebranding {
             )
         }
 
-        private var appIconPickerView: some View {
+        private func appIconPickerView(content: OnboardingAppIconColorContent) -> some View {
             AppIconPickerContent(
+                content: content,
                 isVisible: $showBubbleContent,
                 action: {
                     animateContentTransition {

@@ -379,4 +379,54 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @Suite("App Icon Color Content")
+    struct AppIconColorContent {
+
+        @Test(
+            "Check app icon title is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAppIconTitle(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.appIconColorContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.AppIconSelection.title)
+        }
+
+        @Test(
+            "Check app icon message is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAppIconMessage(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.appIconColorContent
+
+            // THEN
+            #expect(result.message == UserText.Onboarding.AppIconSelection.message)
+        }
+
+        @Test(
+            "Check app icon primary CTA is next",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAppIconPrimaryCTA(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.appIconColorContent
+
+            // THEN
+            #expect(result.primaryCTA == UserText.Onboarding.AppIconSelection.cta)
+        }
+
+    }
+
 }

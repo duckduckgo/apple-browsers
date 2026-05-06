@@ -347,7 +347,7 @@ extension OnboardingView.ViewState.Intro {
         case startOnboardingDialog(content: OnboardingIntroStepContent, type: IntroDialogType)
         case browsersComparisonDialog
         case addToDockPromoDialog(content: OnboardingAddToDockContent)
-        case chooseAppIconDialog
+        case chooseAppIconDialog(content: OnboardingAppIconColorContent)
         case chooseAddressBarPositionDialog
         case chooseSearchExperienceDialog
         case duckAIQueryExperimentDialog(defaultMode: DuckAIQueryExperimentMode)

@@ -312,7 +312,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.addToDockContinueAction(isShowingAddToDockTutorial: false)
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAppIconDialog, step: .init(currentStep: 3, totalSteps: 5))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAppIconDialog(content: .mock), step: .init(currentStep: 3, totalSteps: 5))))
     }
 
     func testWhenAppIconPickerContinueActionIsCalledAndIsIphoneFlowThenViewStateChangesToChooseAddressBarPositionDialogAndProgressIs4Of5() {
@@ -452,7 +452,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.setDefaultBrowserAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAppIconDialog, step: .init(currentStep: 2, totalSteps: 2))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAppIconDialog(content: .mock), step: .init(currentStep: 2, totalSteps: 2))))
     }
 
     func testWhenCancelSetDefaultBrowserActionIsCalledAndIsIpadFlowThenViewStateChangesToChooseAppIconDialogAndProgressIs2Of3() {
@@ -465,7 +465,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureSetDefaultBrowserSkipped)
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAppIconDialog, step: .init(currentStep: 2, totalSteps: 2))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAppIconDialog(content: .mock), step: .init(currentStep: 2, totalSteps: 2))))
     }
 
     func testWhenAppIconPickerContinueActionIsCalledAndIsIphoneFlowThenOnCompletingOnboardingIntroIsCalled() {

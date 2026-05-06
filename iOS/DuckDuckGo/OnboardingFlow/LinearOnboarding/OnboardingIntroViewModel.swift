@@ -342,7 +342,7 @@ private extension OnboardingIntroViewModel {
         case .addToDockPromo:
             OnboardingView.ViewState.onboarding(.init(type: .addToDockPromoDialog(content: contentProvider.addToDockContent), step: stepInfo()))
         case .appIconSelection:
-            OnboardingView.ViewState.onboarding(.init(type: .chooseAppIconDialog, step: stepInfo()))
+            OnboardingView.ViewState.onboarding(.init(type: .chooseAppIconDialog(content: contentProvider.appIconColorContent), step: stepInfo()))
         case .addressBarPositionSelection:
             OnboardingView.ViewState.onboarding(.init(type: .chooseAddressBarPositionDialog, step: stepInfo()))
         case .searchExperienceSelection:

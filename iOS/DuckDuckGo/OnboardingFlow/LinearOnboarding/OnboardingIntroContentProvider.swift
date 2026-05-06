@@ -27,6 +27,7 @@ protocol OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent { get }
     var introStepContent: OnboardingIntroStepContent { get }
     var addToDockContent: OnboardingAddToDockContent { get }
+    var appIconColorContent: OnboardingAppIconColorContent { get }
 }
 
 struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
@@ -142,6 +143,26 @@ extension OnboardingIntroContentProvider {
             primaryCTA: UserText.AddToDockOnboarding.Buttons.tutorial,
             secondaryCTA: UserText.AddToDockOnboarding.Buttons.skip,
             tutorialStepContent: tutorial
+        )
+    }
+
+}
+
+// MARK: - Content Provider + App Icon Color (Which color looks best on me?)
+
+struct OnboardingAppIconColorContent: Equatable {
+    let title: String
+    let message: String
+    let primaryCTA: String
+}
+
+extension OnboardingIntroContentProvider {
+
+    var appIconColorContent: OnboardingAppIconColorContent {
+        OnboardingAppIconColorContent(
+            title: UserText.Onboarding.AppIconSelection.title,
+            message: UserText.Onboarding.AppIconSelection.message,
+            primaryCTA: UserText.Onboarding.AppIconSelection.cta
         )
     }
 

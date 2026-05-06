@@ -25,16 +25,17 @@ import DesignResourcesKitIcons
 final class AIChatImageAttachmentThumbnailView: NSView {
 
     private enum Constants {
-        static let thumbnailSize: CGFloat = 50
+        static let thumbnailSize: CGFloat = 56
         static let cornerRadius: CGFloat = 12
-        static let borderWidth: CGFloat = 2
         static let removeButtonSize: CGFloat = 20
         static let removeButtonInset: CGFloat = 4
-        /// How far the remove button extends beyond the thumbnail edge.
-        static let removeButtonOverflow: CGFloat = 8
-        static let shadowRadius: CGFloat = 4
-        static let shadowOpacity: Float = 0.3
-        static let shadowOffset = CGSize(width: 0, height: -2)
+        /// How far the remove button extends beyond the thumbnail edge. Calibrated so that
+        /// the total view height (`thumbnailSize + removeButtonOverflow`) matches the tab-card
+        /// total height — both kinds of attachments line up vertically in the carousel.
+        static let removeButtonOverflow: CGFloat = 6
+        static let shadowRadius: CGFloat = 3
+        static let shadowOpacity: Float = 0.15
+        static let shadowOffset = CGSize(width: 0, height: -1)
 
         // Remove button colors (defined in Assets.xcassets)
         static let removeButtonBackgroundColorName = "AIChatRemoveButtonBackgroundColor"
@@ -52,7 +53,6 @@ final class AIChatImageAttachmentThumbnailView: NSView {
         view.wantsLayer = true
         view.layer?.masksToBounds = true
         view.layer?.cornerRadius = Constants.cornerRadius
-        view.layer?.borderWidth = Constants.borderWidth
         return view
     }()
 
@@ -225,11 +225,12 @@ final class AIChatImageAttachmentThumbnailView: NSView {
 
     private func updateAppearance() {
         NSAppearance.withAppAppearance {
-            let surfaceColor = NSColor(designSystemColor: .surfacePrimary)
+            // Match the tab-card style: surface secondary background, no border, shadow.
+            let surfaceColor = NSColor(designSystemColor: .surfaceSecondary)
             let removeButtonBackgroundColor = NSColor(named: Constants.removeButtonBackgroundColorName) ?? .white
             let removeButtonIconColor = NSColor(named: Constants.removeButtonIconColorName) ?? .black
 
-            imageContainerView.layer?.borderColor = surfaceColor.cgColor
+            imageContainerView.layer?.backgroundColor = surfaceColor.cgColor
             shadowBackingView.layer?.backgroundColor = surfaceColor.cgColor
             removeButton.layer?.backgroundColor = removeButtonBackgroundColor.cgColor
             removeButton.layer?.borderColor = removeButtonBackgroundColor.cgColor

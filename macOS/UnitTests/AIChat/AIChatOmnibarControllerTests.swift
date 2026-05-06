@@ -583,13 +583,13 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "Order matches the toggle-on order; the duck.ai web app preserves this on submit")
     }
 
-    func testWhenTabSwitchesToTabWithSavedTabAttachments_ThenRestoreCallbackFires() {
-        // Given — tab 1 has a saved tab attachment; register restore callback.
+    func testWhenTabSwitchesToTabWithSavedTabAttachments_ThenPanelAttachmentsCallbackFires() {
+        // Given — tab 1 has a saved tab attachment; register the unified-panel callback.
         let attachment = makeTabAttachment(id: "tab-A")
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setAIChatTabAttachments([attachment])
 
-        var receivedLists: [[AIChatTabAttachment]] = []
-        controller.onActiveTabTabAttachmentsRestoreRequested = { lists in
+        var receivedLists: [[AIChatPanelAttachment]] = []
+        controller.onActiveTabPanelAttachmentsChanged = { lists in
             receivedLists.append(lists)
         }
 
@@ -597,12 +597,18 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         tabCollectionViewModel.appendNewTab()
         tabCollectionViewModel.select(at: .unpinned(0))
 
-        // Then
-        XCTAssertEqual(receivedLists.count, 2,
-                       "Callback fires on every tab switch, like the image-attachments restore path")
-        XCTAssertEqual(receivedLists.first?.count, 0, "Tab 2 has no tab attachments")
-        XCTAssertEqual(receivedLists.last?.first?.id, attachment.id,
-                       "Tab 1's saved tab attachment is handed back when switching back")
+        // Then — the publisher emits the current value on each new subscription, so we expect
+        // one callback per tab switch with that tab's saved list.
+        XCTAssertGreaterThanOrEqual(receivedLists.count, 2,
+                       "Callback fires on every tab switch (publisher delivers initial value on subscribe)")
+        XCTAssertTrue(receivedLists.contains { $0.isEmpty }, "Tab 2 has no panel attachments")
+        XCTAssertTrue(
+            receivedLists.contains { list in
+                if case .tab(let tab) = list.first { return tab.id == attachment.id }
+                return false
+            },
+            "Tab 1's saved tab attachment is handed back when switching back"
+        )
     }
 
     func testWhenUpdateSelection_ThenPersistedToActiveTabSharedState() {

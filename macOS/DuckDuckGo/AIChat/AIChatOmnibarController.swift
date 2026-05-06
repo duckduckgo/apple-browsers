@@ -100,10 +100,16 @@ final class AIChatOmnibarController {
     /// Provides the current tab attachments (Attach Page Content) from the container VC.
     var tabAttachmentsProvider: (() -> [AIChatTabAttachment])?
 
-    /// Called on tab switch so the container VC can reinstall the tab attachments persisted for the incoming tab.
-    /// Owned by the container VC (where the tab carousel views live); the controller just delivers the list pulled
-    /// from the incoming tab's `AddressBarSharedTextState`.
-    var onActiveTabTabAttachmentsRestoreRequested: (([AIChatTabAttachment]) -> Void)?
+    /// Fires whenever the active tab's unified panel attachment list changes — either because
+    /// the user switched tabs (new shared state with its own list) or because they added /
+    /// removed an attachment in the current tab. The container VC subscribes to this single
+    /// callback to drive the unified carousel; the publisher takes care of both
+    /// "restore on tab switch" and "react to mutations" in one channel.
+    var onActiveTabPanelAttachmentsChanged: (([AIChatPanelAttachment]) -> Void)?
+
+    /// Cancellable for the active tab's `$aiChatPanelAttachments` subscription. Re-subscribed
+    /// every time the selected tab changes.
+    private var panelAttachmentsCancellable: AnyCancellable?
 
     /// View model for managing chat suggestions. Always initialized, but only populated when feature flag is enabled.
     let suggestionsViewModel: AIChatSuggestionsViewModel
@@ -550,9 +556,16 @@ final class AIChatOmnibarController {
         sharedTextState?.aiChatTabAttachments ?? []
     }
 
+    /// The unified, insertion-ordered attachments list for the current tab — both image
+    /// uploads and page-content tabs interleaved in the order the user attached them.
+    var activePanelAttachments: [AIChatPanelAttachment] {
+        sharedTextState?.aiChatPanelAttachments ?? []
+    }
+
     /// Toggles whether a tab is attached to the current tab's prompt:
     /// adds the attachment if absent, removes it if already present (matched by `id`).
-    /// Persists the resulting list to shared state so it survives tab switches.
+    /// Persists the resulting list to shared state — the unified-attachments publisher then
+    /// fires `onActiveTabPanelAttachmentsChanged`, which drives the carousel.
     func toggleTabAttachment(_ attachment: AIChatTabAttachment) {
         var current = activeTabAttachments
         if let index = current.firstIndex(where: { $0.id == attachment.id }) {
@@ -561,6 +574,25 @@ final class AIChatOmnibarController {
             current.append(attachment)
         }
         persistTabAttachmentsToActiveTab(current)
+    }
+
+    /// Removes a tab attachment from the active tab's prompt, identified by `id`. No-op if not
+    /// currently attached.
+    func removeTabAttachmentFromActiveTab(id: String) {
+        var current = activeTabAttachments
+        guard current.contains(where: { $0.id == id }) else { return }
+        current.removeAll { $0.id == id }
+        persistTabAttachmentsToActiveTab(current)
+    }
+
+    /// Removes an image attachment from the active tab, identified by `id`. No-op if not
+    /// currently attached.
+    func removeImageAttachmentFromActiveTab(id: UUID) {
+        guard let sharedTextState else { return }
+        var current = sharedTextState.aiChatAttachments
+        guard current.contains(where: { $0.id == id }) else { return }
+        current.removeAll { $0.id == id }
+        sharedTextState.setAIChatAttachments(current)
     }
 
     /// Returns the open browser tabs (pinned + regular) in this controller's window as candidate
@@ -662,10 +694,23 @@ final class AIChatOmnibarController {
                 self.activeToolMode = sharedState?.aiChatToolMode
                 self.isUpdatingFromSharedState = false
 
-                /// Tell the container VC to reinstall this tab's attachments. The container owns the actual views
-                /// and resize tasks, so restoration has to happen there; shared state is just the storage.
+                /// Tell the container VC to reinstall this tab's image attachments — the resize-task
+                /// state lives in the container VC and has to be re-seeded on tab switch. (The
+                /// carousel itself re-renders via the unified panel-attachments publisher below.)
                 self.onActiveTabAttachmentsRestoreRequested?(sharedState?.aiChatAttachments ?? [])
-                self.onActiveTabTabAttachmentsRestoreRequested?(sharedState?.aiChatTabAttachments ?? [])
+
+                // Re-subscribe to the new tab's unified attachments publisher. `@Published`
+                // emits the current value on subscription, so this also fires the initial
+                // "restore" with the incoming tab's saved list — no separate restore call needed.
+                self.panelAttachmentsCancellable = sharedState?.$aiChatPanelAttachments
+                    .sink { [weak self] panelAttachments in
+                        self?.onActiveTabPanelAttachmentsChanged?(panelAttachments)
+                    }
+                if sharedState == nil {
+                    // No active tab → empty carousel. (`@Published` on a nil source can't deliver
+                    // the empty initial value for us, so synthesize it.)
+                    self.onActiveTabPanelAttachmentsChanged?([])
+                }
             }
             .store(in: &cancellables)
     }

@@ -172,10 +172,14 @@ final class AIChatTabPickerMenuRowView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         if isHovering {
-            // System-wide selection background, accent-aware in macOS 11+. Replaces the deprecated
-            // `selectedMenuItemColor` and matches what AppKit menus and source lists use.
+            // Match macOS Big-Sur-and-later menu selection: a rounded rectangle inset slightly
+            // from the menu's edges, not the full-bleed fill the row used to draw. The horizontal
+            // inset and corner radius are calibrated to look like the system selection on
+            // sibling menu items in the same `NSMenu`.
+            let selectionInset: CGFloat = 5
+            let selectionRect = bounds.insetBy(dx: selectionInset, dy: 0)
             NSColor.selectedContentBackgroundColor.setFill()
-            dirtyRect.fill()
+            NSBezierPath(roundedRect: selectionRect, xRadius: 5, yRadius: 5).fill()
         }
     }
 

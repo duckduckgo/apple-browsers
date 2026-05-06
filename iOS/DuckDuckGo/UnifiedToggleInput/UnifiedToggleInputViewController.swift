@@ -156,7 +156,7 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isModelChipHidden = newValue }
     }
 
-    var selectedTool: AIChatRAGTool? {
+    var selectedTool: AIChatToolMode? {
         get { inputBarView.selectedTool }
         set { inputBarView.selectedTool = newValue }
     }
@@ -223,7 +223,7 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func applyToolsPresentation(
         isToolsButtonHidden: Bool,
-        selectedTool: AIChatRAGTool?,
+        selectedTool: AIChatToolMode?,
         toolsMenu: UIMenu?
     ) {
         self.isToolsButtonHidden = isToolsButtonHidden

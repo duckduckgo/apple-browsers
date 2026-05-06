@@ -776,7 +776,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var persistedReasoningMode: AIChatReasoningMode? { modelStore.selectedReasoningMode }
     var selectedModel: AIChatModel? { modelStore.selectedModel }
     var selectedModelSupportsImageUpload: Bool { modelStore.selectedModelSupportsImageUpload }
-    var selectedTool: AIChatRAGTool? { toolsController.selectedTool }
+    var selectedTool: AIChatToolMode? { toolsController.selectedTool }
 
     func fetchModels() {
         modelStore.fetchModels()
@@ -803,7 +803,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateReasoningPicker()
     }
 
-    func selectTool(_ tool: AIChatRAGTool) {
+    func selectTool(_ tool: AIChatToolMode) {
         toolsController.select(tool, for: modelStore)
         refreshToolsPresentation()
     }
@@ -1091,8 +1091,10 @@ private extension UnifiedToggleInputCoordinator {
         switch identifier {
         case .webSearch:
             toolsController.toggleSelection(for: .webSearch, modelStore: modelStore)
-            refreshToolsPresentation()
+        case .imageGeneration:
+            toolsController.toggleSelection(for: .imageGeneration, modelStore: modelStore)
         }
+        refreshToolsPresentation()
     }
 
     func updateImageButtonEnabledState() {

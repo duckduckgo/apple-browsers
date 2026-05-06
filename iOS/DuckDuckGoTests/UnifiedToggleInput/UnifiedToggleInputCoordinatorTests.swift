@@ -963,6 +963,85 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertNil(sut.viewController.selectedTool)
     }
 
+    // MARK: - Image Generation Tool
+
+    func test_toolsMenu_containsImageGenerationAction() {
+        sut.showExpanded()
+
+        let actionTitles = toolsMenuActions().map(\.title)
+
+        XCTAssertTrue(actionTitles.contains(UserText.aiChatToolbarImageGenerationToolTitle))
+    }
+
+    func test_toolsMenu_imageGenerationActionIsAlwaysEnabled_regardlessOfModelSupportedTools() {
+        // Image generation is model-independent on mobile; the FE handles per-model permission gating.
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [])]
+
+        sut.showExpanded()
+
+        let imageGenAction = toolsMenuActions().first { $0.title == UserText.aiChatToolbarImageGenerationToolTitle }
+
+        XCTAssertEqual(imageGenAction?.attributes, [])
+    }
+
+    func test_selectTool_imageGeneration_setsSelectedTool_regardlessOfModelSupport() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.selectTool(.imageGeneration)
+
+        XCTAssertEqual(sut.selectedTool, .imageGeneration)
+        XCTAssertEqual(sut.viewController.selectedTool, .imageGeneration)
+    }
+
+    func test_toolsController_toggleSelection_togglesOffSelectedImageGenerationTool() {
+        let toolsController = UTIToolsController()
+        toolsController.select(.imageGeneration, for: sut.modelStore)
+
+        toolsController.toggleSelection(for: .imageGeneration, modelStore: sut.modelStore)
+
+        XCTAssertNil(toolsController.selectedTool)
+    }
+
+    func test_toolsController_selectingImageGeneration_replacesPreviousWebSearchSelection() {
+        let toolsController = UTIToolsController()
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+        toolsController.select(.webSearch, for: sut.modelStore)
+        XCTAssertEqual(toolsController.selectedTool, .webSearch)
+
+        toolsController.select(.imageGeneration, for: sut.modelStore)
+
+        XCTAssertEqual(toolsController.selectedTool, .imageGeneration)
+    }
+
+    func test_updateSelectedModel_doesNotClearImageGenerationSelection() {
+        // Image generation isn't gated on the selected text model; switching shouldn't clear it.
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [
+            makeModel(id: "gpt-5", access: true, supportedTools: []),
+            makeModel(id: "claude", access: true, supportedTools: [])
+        ]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.selectTool(.imageGeneration)
+
+        sut.updateSelectedModel("claude")
+
+        XCTAssertEqual(sut.selectedTool, .imageGeneration)
+    }
+
+    func test_submitAIChat_imageGenerationSelected_doesNotForwardToolChoice() {
+        // Image generation is sent via the payload `mode` field (Phase 2), not via toolChoice.
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.selectTool(.imageGeneration)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "draw a cat", mode: .aiChat)
+
+        XCTAssertNil(mockDelegate.submittedTools)
+    }
+
     // MARK: - Model Selection: persistedModelId
 
     func test_persistedModelId_returnsPreferencesValue() {

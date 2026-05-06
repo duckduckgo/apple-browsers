@@ -83,7 +83,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateModelChipConfiguration() }
     }
 
-    var selectedTool: AIChatRAGTool? {
+    var selectedTool: AIChatToolMode? {
         didSet { updateChipVisibility() }
     }
 
@@ -209,7 +209,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     }()
 
     private lazy var selectedToolIconView: UIImageView = {
-        let imageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.globe)
+        let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.tintColor = UIColor(designSystemColor: .textPrimary)
         imageView.contentMode = .scaleAspectFit
@@ -392,7 +392,8 @@ private extension UnifiedToggleInputToolbarView {
     private func updateChipVisibility() {
         modelChipButton.isHidden = modelChipExplicitlyHidden
         selectedToolChipView.isHidden = (selectedTool == nil)
-        selectedToolChipView.accessibilityLabel = selectedTool == .webSearch ? UserText.aiChatToolbarWebSearchToolTitle : nil
+        selectedToolIconView.image = selectedTool?.toolbarChipIcon
+        selectedToolChipView.accessibilityLabel = selectedTool?.toolbarChipAccessibilityLabel
     }
 
     func updateSubmitButtonState() {
@@ -428,4 +429,25 @@ private extension UnifiedToggleInputToolbarView {
         }
     }
     @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
+}
+
+private extension AIChatToolMode {
+
+    var toolbarChipIcon: DesignSystemImage {
+        switch self {
+        case .webSearch:
+            return DesignSystemImages.Glyphs.Size24.globe
+        case .imageGeneration:
+            return DesignSystemImages.Glyphs.Size24.images
+        }
+    }
+
+    var toolbarChipAccessibilityLabel: String {
+        switch self {
+        case .webSearch:
+            return UserText.aiChatToolbarWebSearchToolTitle
+        case .imageGeneration:
+            return UserText.aiChatToolbarImageGenerationToolTitle
+        }
+    }
 }

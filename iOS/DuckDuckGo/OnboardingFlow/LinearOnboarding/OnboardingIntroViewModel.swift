@@ -111,14 +111,12 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let restorePromptHandler: OnboardingRestorePromptHandling
     private let tutorialSettings: TutorialSettings
     private let duckAIOnboardingResumeStepStore: any KeyedStoring<DuckAIOnboardingStoringKeys>
-    private let onboardingSharedPixelsStorage: any KeyedStoring<OnboardingSharedPixelsKeys>
 
     convenience init(pixelReporter: LinearOnboardingPixelReporting,
                      systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
                      daxDialogsManager: ContextualDaxDialogDisabling,
                      restorePromptHandler: OnboardingRestorePromptHandling,
-                     duckAIOnboardingResumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil,
-                     onboardingSharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil) {
+                     duckAIOnboardingResumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil) {
         let onboardingManager = OnboardingManager()
         let defaultBrowserInfoStore = DefaultBrowserInfoStore()
         let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
@@ -137,8 +135,7 @@ final class OnboardingIntroViewModel: ObservableObject {
             featureFlagger: AppDependencyProvider.shared.featureFlagger,
             restorePromptHandler: restorePromptHandler,
             tutorialSettings: DefaultTutorialSettings(),
-            duckAIOnboardingResumeStepStore: duckAIOnboardingResumeStepStore,
-            onboardingSharedPixelsStorage: onboardingSharedPixelsStorage
+            duckAIOnboardingResumeStepStore: duckAIOnboardingResumeStepStore
         )
     }
 
@@ -155,8 +152,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         restorePromptHandler: OnboardingRestorePromptHandling,
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
-        duckAIOnboardingResumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil,
-        onboardingSharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil
+        duckAIOnboardingResumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil
     ) {
         self.defaultBrowserManager = defaultBrowserManager
         self.contextualDaxDialogs = contextualDaxDialogs
@@ -170,14 +166,11 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.restorePromptHandler = restorePromptHandler
         self.tutorialSettings = tutorialSettings
         self.duckAIOnboardingResumeStepStore = if let duckAIOnboardingResumeStepStore { duckAIOnboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
-        self.onboardingSharedPixelsStorage = if let onboardingSharedPixelsStorage { onboardingSharedPixelsStorage } else { UserDefaults.app.keyedStoring() }
 
         introSteps = onboardingManager.onboardingSteps
         currentIntroStep = currentOnboardingStep
         copy = .default
         restorePendingOnboardingStepIfNeeded()
-        persistOnboardingSourceIfNeeded()
-        persistOnboardingFlowType()
     }
 
     func onAppear() {
@@ -394,21 +387,6 @@ private extension OnboardingIntroViewModel {
             duckAIOnboardingResumeStepStore.resumeStep = .duckAIQueryExperimentSelection
         default:
             break
-        }
-    }
-
-    func persistOnboardingSourceIfNeeded() {
-        guard onboardingSharedPixelsStorage.onboardingSource.isNil else { return }
-        onboardingSharedPixelsStorage.onboardingSource = .default
-    }
-
-    func persistOnboardingFlowType() {
-        let experimentCohort = resolveDuckAIQueryExperimentCohortID()
-        switch experimentCohort {
-        case .treatmentA, .treatmentB:
-            onboardingSharedPixelsStorage.onboardingFlow = .duckAIExperiment
-        case .control, .none:
-            onboardingSharedPixelsStorage.onboardingFlow = .default
         }
     }
 

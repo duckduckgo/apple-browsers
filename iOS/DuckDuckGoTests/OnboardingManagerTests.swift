@@ -17,6 +17,9 @@
 //  limitations under the License.
 //
 
+import Onboarding
+import Persistence
+import PersistenceTestingUtils
 import Testing
 import class UIKit.UIDevice
 @testable import Core
@@ -237,6 +240,45 @@ struct OnboardingManagerTests {
             #expect(result == expectedResult)
         }
 
+    }
+
+    struct OnboardingSharedPixelContext {
+
+        @Test("Check default onboarding source and flow parameters are persisted if needed")
+        func checkSharedOnboardingPixelParametersPersistedIfNeeded() throws {
+            // GIVEN
+            let mockStore = InMemoryKeyValueStore()
+            let sharedPixelStorage: any KeyedStoring<OnboardingSharedPixelsKeys> = mockStore.keyedStoring()
+            try #require(sharedPixelStorage.onboardingSource == nil)
+            try #require(sharedPixelStorage.onboardingFlow == nil)
+
+            // WHEN
+            _ = OnboardingManager(sharedPixelsStorage: sharedPixelStorage)
+
+            // THEN
+            #expect(sharedPixelStorage.onboardingSource == .default)
+            #expect(sharedPixelStorage.onboardingFlow == .default)
+        }
+
+        @Test("Check default onboarding source and flow parameters are not persisted if already set")
+        func checkSharedOnboardingPixelParametersNotPersistedIfAlreadySet() throws {
+            // GIVEN
+            let expectedSource = OnboardingPixelParameter.Source.duckAICustomProductPage
+            let expectedFlow = OnboardingPixelParameter.Flow.duckAI
+            let mockStore = InMemoryKeyValueStore()
+            let sharedPixelStorage: any KeyedStoring<OnboardingSharedPixelsKeys> = mockStore.keyedStoring()
+            sharedPixelStorage.onboardingSource = expectedSource
+            sharedPixelStorage.onboardingFlow = expectedFlow
+            try #require(sharedPixelStorage.onboardingSource == expectedSource)
+            try #require(sharedPixelStorage.onboardingFlow == expectedFlow)
+
+            // WHEN
+            _ = OnboardingManager(sharedPixelsStorage: sharedPixelStorage)
+
+            // THEN
+            #expect(sharedPixelStorage.onboardingSource == expectedSource)
+            #expect(sharedPixelStorage.onboardingFlow == expectedFlow)
+        }
     }
 
 }

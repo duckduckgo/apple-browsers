@@ -20,6 +20,7 @@
 import AVKit
 import BrowserServicesKit
 import Core
+import Persistence
 import PrivacyConfig
 
 enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertible {
@@ -46,6 +47,7 @@ final class OnboardingManager {
     private let featureFlagger: FeatureFlagger
     private let variantManager: VariantManager
     private let isIphone: Bool
+    private let sharedPixelsStorage: any KeyedStoring<OnboardingSharedPixelsKeys>
 
     private let iPhoneFlowWithoutSearchExperience: [OnboardingIntroStep] = [
         .browserComparison,
@@ -84,12 +86,16 @@ final class OnboardingManager {
         appDefaults: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         variantManager: VariantManager = DefaultVariantManager(),
-        isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone
+        isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone,
+        sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil
     ) {
         self.appDefaults = appDefaults
         self.featureFlagger = featureFlagger
         self.variantManager = variantManager
         self.isIphone = isIphone
+        self.sharedPixelsStorage = if let sharedPixelsStorage { sharedPixelsStorage } else { UserDefaults.app.keyedStoring() }
+
+        persistOnboardingSourceAndFlowIfNeeded()
     }
 
     func newUserSteps(isIphone: Bool) -> [OnboardingIntroStep] {
@@ -116,6 +122,17 @@ final class OnboardingManager {
 
     private func iPadFlow() -> [OnboardingIntroStep] {
         return iPadFlowWithoutSearchExperience
+    }
+
+    // This will be set when the onboarding flow type is configured, after that support is merged
+    // See: https://github.com/duckduckgo/apple-browsers/pull/4604
+    private func persistOnboardingSourceAndFlowIfNeeded() {
+        if sharedPixelsStorage.onboardingSource.isNil {
+            sharedPixelsStorage.onboardingSource = .default
+        }
+        if sharedPixelsStorage.onboardingFlow.isNil {
+            sharedPixelsStorage.onboardingFlow = .default
+        }
     }
 }
 

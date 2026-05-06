@@ -18,7 +18,6 @@
 //
 
 import Core
-import Persistence
 import PersistenceTestingUtils
 import PrivacyConfig
 import SetDefaultBrowserTestSupport
@@ -37,7 +36,6 @@ final class OnboardingIntroViewModelTests: XCTestCase {
     private var tutorialSettingsMock: MockTutorialSettings!
     private var appIconProvider: (() -> AppIcon)!
     private var addressBarPositionProvider: (() -> AddressBarPosition)!
-    private var sharedPixelsStorageMock: (any KeyedStoring<OnboardingSharedPixelsKeys>)!
 
     override func setUp() {
         super.setUp()
@@ -49,8 +47,6 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         appIconProvider = { .defaultAppIcon }
         addressBarPositionProvider = { .top }
-        let mockStore = InMemoryKeyValueStore()
-        sharedPixelsStorageMock = mockStore.keyedStoring()
     }
 
     override func tearDown() {
@@ -62,7 +58,6 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         tutorialSettingsMock = nil
         appIconProvider = nil
         addressBarPositionProvider = nil
-        sharedPixelsStorageMock = nil
         super.tearDown()
     }
 
@@ -1030,53 +1025,6 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureDuckAIQueryExperimentSelectionImpression)
     }
 
-    func testWhenInitializedAndOnboardingSourceIsNilThenDefaultSourceIsPersisted() {
-        // GIVEN
-        XCTAssertNil(sharedPixelsStorageMock.onboardingSource)
-
-        // WHEN
-        _ = makeSUT()
-
-        // THEN
-        XCTAssertEqual(sharedPixelsStorageMock.onboardingSource, .default)
-    }
-
-    func testWhenInitializedAndCohortIsControlThenDefaultOnboardingFlowTypeIsPersisted() {
-        // GIVEN
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.control
-
-        // WHEN
-        _ = makeSUT(featureFlagger: featureFlagger)
-
-        // THEN
-        XCTAssertEqual(sharedPixelsStorageMock.onboardingFlow, .default)
-    }
-
-    func testWhenInitializedAndCohortIsTreatmentAThenDuckAIExperimentOnboardingFlowTypeIsPersisted() {
-        // GIVEN
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentA
-
-        // WHEN
-        _ = makeSUT(featureFlagger: featureFlagger)
-
-        // THEN
-        XCTAssertEqual(sharedPixelsStorageMock.onboardingFlow, .duckAIExperiment)
-    }
-
-    func testWhenInitializedAndCohortIsTreatmentBThenDuckAIExperimentOnboardingFlowTypeIsPersisted() {
-        // GIVEN
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIQueryExperiment])
-        featureFlagger.cohortToReturn = FeatureFlag.DuckAIQueryExperimentCohort.treatmentB
-
-        // WHEN
-        _ = makeSUT(featureFlagger: featureFlagger)
-
-        // THEN
-        XCTAssertEqual(sharedPixelsStorageMock.onboardingFlow, .duckAIExperiment)
-    }
-
 }
 
 extension OnboardingIntroViewModelTests {
@@ -1100,8 +1048,7 @@ extension OnboardingIntroViewModelTests {
             featureFlagger: featureFlagger,
             restorePromptHandler: restorePromptHandler,
             tutorialSettings: tutorialSettingsMock,
-            duckAIOnboardingResumeStepStore: MockKeyValueStore().keyedStoring(),
-            onboardingSharedPixelsStorage: sharedPixelsStorageMock
+            duckAIOnboardingResumeStepStore: MockKeyValueStore().keyedStoring()
         )
     }
 }

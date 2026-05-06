@@ -429,4 +429,124 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @Suite("Address Bar Position Content")
+    struct AddressBarPositionContent {
+
+        @Test(
+            "Check address bar title is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAddressBarTitle(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.addressBarPositionContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.AddressBarPosition.title)
+        }
+
+        @Test(
+            "Check address bar default indicator is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAddressBarDefaultIndicator(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.addressBarPositionContent
+
+            // THEN
+            #expect(result.defaultIndicator == UserText.Onboarding.AddressBarPosition.defaultOption)
+        }
+
+        @Test(
+            "Check address bar primary CTA is next",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAddressBarPrimaryCTA(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.addressBarPositionContent
+
+            // THEN
+            #expect(result.primaryCTA == UserText.Onboarding.AddressBarPosition.cta)
+        }
+
+        @Suite("Top Option")
+        struct TopOption {
+
+            @Test(
+                "Check top option title is correct",
+                arguments: [.default, .duckAI] as [OnboardingFlowType]
+            )
+            func checkTopOptionTitle(flow: OnboardingFlowType) {
+                // GIVEN
+                let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+                // WHEN
+                let result = sut.addressBarPositionContent.topOption
+
+                // THEN
+                #expect(result.title == UserText.Onboarding.AddressBarPosition.topTitle)
+            }
+
+            @Test(
+                "Check top option message is correct",
+                arguments: [.default, .duckAI] as [OnboardingFlowType]
+            )
+            func checkTopOptionMessage(flow: OnboardingFlowType) {
+                // GIVEN
+                let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+                // WHEN
+                let result = sut.addressBarPositionContent.topOption
+
+                // THEN
+                #expect(result.message == UserText.Onboarding.AddressBarPosition.topMessage)
+            }
+
+        }
+
+        @Suite("Bottom Option")
+        struct BottomOption {
+
+            @Test(
+                "Check bottom option title is correct",
+                arguments: [.default, .duckAI] as [OnboardingFlowType]
+            )
+            func checkBottomOptionTitle(flow: OnboardingFlowType) {
+                // GIVEN
+                let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+                // WHEN
+                let result = sut.addressBarPositionContent.bottomOption
+
+                // THEN
+                #expect(result.title == UserText.Onboarding.AddressBarPosition.bottomTitle)
+            }
+
+            @Test(
+                "Check bottom option message is correct",
+                arguments: [.default, .duckAI] as [OnboardingFlowType]
+            )
+            func checkBottomOptionMessage(flow: OnboardingFlowType) {
+                // GIVEN
+                let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+                // WHEN
+                let result = sut.addressBarPositionContent.bottomOption
+
+                // THEN
+                #expect(result.message == UserText.Onboarding.AddressBarPosition.bottomMessage)
+            }
+
+        }
+
+    }
+
 }

@@ -28,6 +28,7 @@ protocol OnboardingIntroContentProviding {
     var introStepContent: OnboardingIntroStepContent { get }
     var addToDockContent: OnboardingAddToDockContent { get }
     var appIconColorContent: OnboardingAppIconColorContent { get }
+    var addressBarPositionContent: OnboardingAddressBarPositionContent { get }
 }
 
 struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
@@ -163,6 +164,41 @@ extension OnboardingIntroContentProvider {
             title: UserText.Onboarding.AppIconSelection.title,
             message: UserText.Onboarding.AppIconSelection.message,
             primaryCTA: UserText.Onboarding.AppIconSelection.cta
+        )
+    }
+
+}
+
+// MARK: - Content Provider + Address Bar Position (Where should I put your address bar?)
+
+struct OnboardingAddressBarPositionContent: Equatable {
+    struct OptionContent: Equatable {
+        let title: String
+        let message: String
+    }
+
+    let title: String
+    let topOption: OptionContent
+    let bottomOption: OptionContent
+    let defaultIndicator: String
+    let primaryCTA: String
+}
+
+extension OnboardingIntroContentProvider {
+
+    var addressBarPositionContent: OnboardingAddressBarPositionContent {
+        OnboardingAddressBarPositionContent(
+            title: UserText.Onboarding.AddressBarPosition.title,
+            topOption: .init(
+                title: UserText.Onboarding.AddressBarPosition.topTitle,
+                message: UserText.Onboarding.AddressBarPosition.topMessage
+            ),
+            bottomOption: .init(
+                title: UserText.Onboarding.AddressBarPosition.bottomTitle,
+                message: UserText.Onboarding.AddressBarPosition.bottomMessage
+            ),
+            defaultIndicator: UserText.Onboarding.AddressBarPosition.defaultOption,
+            primaryCTA: UserText.Onboarding.AddressBarPosition.cta
         )
     }
 

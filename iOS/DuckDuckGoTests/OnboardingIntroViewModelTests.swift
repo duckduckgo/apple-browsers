@@ -324,7 +324,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.appIconPickerContinueAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAddressBarPositionDialog, step: .init(currentStep: 4, totalSteps: 5))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAddressBarPositionDialog(content: .mock), step: .init(currentStep: 4, totalSteps: 5))))
     }
 
     func testWhenSelectAddressBarPositionActionIsCalledAndIsIphoneFlowThenViewStateChangesToChooseSearchExperienceDialogAndProgressIs5Of5() {

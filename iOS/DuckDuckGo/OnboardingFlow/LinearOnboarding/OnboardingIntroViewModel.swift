@@ -344,7 +344,7 @@ private extension OnboardingIntroViewModel {
         case .appIconSelection:
             OnboardingView.ViewState.onboarding(.init(type: .chooseAppIconDialog(content: contentProvider.appIconColorContent), step: stepInfo()))
         case .addressBarPositionSelection:
-            OnboardingView.ViewState.onboarding(.init(type: .chooseAddressBarPositionDialog, step: stepInfo()))
+            OnboardingView.ViewState.onboarding(.init(type: .chooseAddressBarPositionDialog(content: contentProvider.addressBarPositionContent), step: stepInfo()))
         case .searchExperienceSelection:
             OnboardingView.ViewState.onboarding(.init(type: .chooseSearchExperienceDialog, step: stepInfo()))
         case .duckAIQuerySelection:

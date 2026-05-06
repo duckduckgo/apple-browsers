@@ -25,6 +25,7 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var introStepContent: OnboardingIntroStepContent = .mock
     var addToDockContent: OnboardingAddToDockContent = .mock
     var appIconColorContent: OnboardingAppIconColorContent = .mock
+    var addressBarPositionContent: OnboardingAddressBarPositionContent = .mock
 }
 
 // MARK: - Helpers
@@ -76,5 +77,15 @@ extension OnboardingAppIconColorContent {
         title: "App Icon Title",
         message: "App Icon Message",
         primaryCTA: "App Icon Primary"
+    )
+}
+
+extension OnboardingAddressBarPositionContent {
+    static let mock = OnboardingAddressBarPositionContent(
+        title: "Address Bar Title",
+        topOption: .init(title: "Top Title", message: "Top Message"),
+        bottomOption: .init(title: "Bottom Title", message: "Bottom Message"),
+        defaultIndicator: "(default)",
+        primaryCTA: "Address Bar Primary"
     )
 }

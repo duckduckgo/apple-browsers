@@ -479,8 +479,8 @@ extension OnboardingRebranding {
                 addToDockPromoView(content: content)
             case let .chooseAppIconDialog(content):
                 appIconPickerView(content: content)
-            case .chooseAddressBarPositionDialog:
-                addressBarPositionView
+            case let .chooseAddressBarPositionDialog(content):
+                addressBarPositionView(content: content)
             case .chooseSearchExperienceDialog:
                 searchExperienceSelectionView
             case .duckAIQueryExperimentDialog(let defaultMode):
@@ -584,8 +584,9 @@ extension OnboardingRebranding {
             )
         }
 
-        private var addressBarPositionView: some View {
+        private func addressBarPositionView(content: OnboardingAddressBarPositionContent) -> some View {
             AddressBarPositionContent(
+                content: content,
                 isVisible: $showBubbleContent,
                 action: {
                     animateContentTransition {

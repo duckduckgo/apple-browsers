@@ -22,10 +22,35 @@ import Foundation
 
 class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent = .mock
+    var introStepContent: OnboardingIntroStepContent = .mock
 }
 
 // MARK: - Helpers
 
 extension OnboardingLandingContent {
-    static let mock = OnboardingLandingContent(title: "Landing", shouldShowDuckAIAnimation: false)
+    static let mock = OnboardingLandingContent(
+        title: "Landing",
+        shouldShowDuckAIAnimation: false
+    )
+}
+
+extension OnboardingIntroStepContent {
+    static let mock = OnboardingIntroStepContent(
+        title: "Intro Title",
+        message: "Intro Message",
+        primaryCTA: "Intro Primary",
+        secondaryCTA: "Intro Secondary",
+        restorePromptStepContent: .init(
+            title: "Restore Title",
+            message: "Restore Message",
+            primaryCTA: "Restore Primary",
+            secondaryCTA: "Restore Secondary"
+        ),
+        skipFlowStepContent: .init(
+            title: "Skip Title",
+            message: "Skip Message",
+            primaryCTA: "Skip Primary",
+            secondaryCTA: "Skip Secondary"
+        )
+    )
 }

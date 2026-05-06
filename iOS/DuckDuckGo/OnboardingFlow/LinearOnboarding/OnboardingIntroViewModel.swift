@@ -328,7 +328,15 @@ private extension OnboardingIntroViewModel {
 
         let viewState = switch introStep {
         case .introDialog(let isReturningUser):
-            OnboardingView.ViewState.onboarding(.init(type: .startOnboardingDialog(type: introDialogType(isReturningUser: isReturningUser)), step: .hidden))
+            OnboardingView.ViewState.onboarding(
+                OnboardingView.ViewState.Intro(
+                    type: .startOnboardingDialog(
+                        content: contentProvider.introStepContent,
+                        type: introDialogType(isReturningUser: isReturningUser)
+                    ),
+                    step: .hidden
+                )
+            )
         case .browserComparison:
             OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog, step: stepInfo()))
         case .addToDockPromo:
@@ -428,7 +436,7 @@ private extension OnboardingIntroViewModel {
     func measureScreenImpression() {
         guard let intro = state.intro else { return }
         switch intro.type {
-        case .startOnboardingDialog(let dialogType):
+        case .startOnboardingDialog(_, let dialogType):
             pixelReporter.measureOnboardingIntroImpression()
             measureAutoRestorePromptImpressionIfNeeded(dialogType: dialogType)
         case .browsersComparisonDialog:

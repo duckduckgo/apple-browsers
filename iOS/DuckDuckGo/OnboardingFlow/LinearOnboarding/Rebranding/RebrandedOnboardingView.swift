@@ -324,7 +324,10 @@ extension OnboardingRebranding {
         }
 
         private func landingView(content: OnboardingLandingContent) -> some View {
-            LandingView(content: content, animationNamespace: animationNamespace) { [reduceMotion] in
+            LandingView(
+                content: content,
+                animationNamespace: animationNamespace
+            ) { [reduceMotion] in
                 if reduceMotion {
                     model.onAppear()
                 } else {
@@ -336,12 +339,13 @@ extension OnboardingRebranding {
         }
 
         @ViewBuilder
-        private func introView(dialogType: ViewState.Intro.IntroDialogType) -> some View {
+        private func introView(content: OnboardingIntroStepContent, dialogType: ViewState.Intro.IntroDialogType) -> some View {
             let skipOnboardingView: AnyView? = if dialogType == .default {
                 nil
             } else {
                 AnyView(
                     SkipOnboardingContent(
+                        content: content.skipFlowStepContent,
                         isVisible: $showBubbleContent,
                         startBrowsingAction: model.confirmSkipOnboardingAction,
                         resumeOnboardingAction: {
@@ -356,6 +360,7 @@ extension OnboardingRebranding {
             switch dialogType {
             case .restoreData:
                 RestorePromptDialogContent(
+                    content: content.restorePromptStepContent,
                     skipOnboardingView: skipOnboardingView,
                     isVisible: $showBubbleContent,
                     restoreAction: {
@@ -374,8 +379,7 @@ extension OnboardingRebranding {
                 )
             case .skipTutorial, .default:
                 IntroDialogContent(
-                    title: UserText.Onboarding.Rebranding.Intro.title,
-                    message: UserText.Onboarding.Rebranding.Intro.message,
+                    content: content,
                     skipOnboardingView: skipOnboardingView,
                     isVisible: $showBubbleContent,
                     continueAction: {
@@ -467,8 +471,8 @@ extension OnboardingRebranding {
         @ViewBuilder
         private func bubbleBackedDialogContent(for type: ViewState.Intro.IntroType) -> some View {
             switch type {
-            case .startOnboardingDialog(let dialogType):
-                introView(dialogType: dialogType)
+            case let .startOnboardingDialog(content, dialogType):
+                introView(content: content, dialogType: dialogType)
             case .browsersComparisonDialog:
                 browsersComparisonView
             case .addToDockPromoDialog:

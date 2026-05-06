@@ -21,18 +21,11 @@ import Foundation
 import Onboarding
 import PrivacyConfig
 
-// MARK: - Onboarding Step Content
-
-struct OnboardingLandingContent: Equatable {
-    let title: String
-    let shouldShowDuckAIAnimation: Bool
-}
-
-
 // MARK: - Provider
 
 protocol OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent { get }
+    var introStepContent: OnboardingIntroStepContent { get }
 }
 
 struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
@@ -47,12 +40,71 @@ struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
 
 // MARK: - Content Provider + Landing (Welcome to DuckDuckGo!)
 
+struct OnboardingLandingContent: Equatable {
+    let title: String
+    let shouldShowDuckAIAnimation: Bool
+}
+
 extension OnboardingIntroContentProvider {
 
     var landingContent: OnboardingLandingContent {
         OnboardingLandingContent(
             title: UserText.onboardingWelcomeHeader,
             shouldShowDuckAIAnimation: flowType == .duckAI
+        )
+    }
+
+}
+
+// MARK: - Content Provider + Intro (Ready to...)
+
+struct OnboardingIntroStepContent: Equatable {
+    struct RestorePromptStepContent: Equatable {
+        let title: String
+        let message: String
+        let primaryCTA: String
+        let secondaryCTA: String
+    }
+
+    struct SkipFlowStepContent: Equatable {
+        let title: String
+        let message: String
+        let primaryCTA: String
+        let secondaryCTA: String
+    }
+
+    let title: String
+    let message: String
+    let primaryCTA: String
+    let secondaryCTA: String
+    let restorePromptStepContent: RestorePromptStepContent
+    let skipFlowStepContent: SkipFlowStepContent
+}
+
+extension OnboardingIntroContentProvider {
+
+    var introStepContent: OnboardingIntroStepContent {
+        let skipOnboardingContent = OnboardingIntroStepContent.SkipFlowStepContent(
+            title: UserText.Onboarding.Skip.title,
+            message:  UserText.Onboarding.Skip.message,
+            primaryCTA: UserText.Onboarding.Skip.confirmSkipOnboardingCTA,
+            secondaryCTA: UserText.Onboarding.Skip.resumeOnboardingCTA
+        )
+
+        let restoreOnboardingContent = OnboardingIntroStepContent.RestorePromptStepContent(
+            title: UserText.Onboarding.RestorePrompt.title,
+            message: UserText.Onboarding.RestorePrompt.body,
+            primaryCTA: UserText.Onboarding.RestorePrompt.restoreCTA,
+            secondaryCTA: UserText.Onboarding.RestorePrompt.skipCTA
+        )
+
+        return OnboardingIntroStepContent(
+            title: UserText.Onboarding.Rebranding.Intro.title,
+            message: UserText.Onboarding.Rebranding.Intro.message,
+            primaryCTA: UserText.Onboarding.Intro.continueCTA,
+            secondaryCTA: UserText.Onboarding.Intro.skipCTA,
+            restorePromptStepContent: restoreOnboardingContent,
+            skipFlowStepContent: skipOnboardingContent
         )
     }
 

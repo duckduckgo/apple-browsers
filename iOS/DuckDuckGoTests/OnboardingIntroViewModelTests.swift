@@ -87,7 +87,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .default), step: .hidden)))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(content: .mock, type: .default), step: .hidden)))
     }
 
     func testWhenSetDefaultBrowserActionIsCalled_ThenAskPiPManagerToPlayPipForSetDefault_AndMakeNextViewState() {
@@ -181,7 +181,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .restoreData), step: .hidden)))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(content: .mock, type: .restoreData), step: .hidden)))
     }
 
     func testWhenReturningUserAndRestorePromptEligibilityIsFalseThenDoesNotShowRestorePrompt() {
@@ -198,7 +198,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .skipTutorial), step: .hidden)))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(content: .mock, type: .skipTutorial), step: .hidden)))
     }
 
     func testWhenUserIsNotReturningAndRestorePromptEligibilityIsTrueThenDoesNotShowRestorePrompt() {
@@ -215,7 +215,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .default), step: .hidden)))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(content: .mock, type: .default), step: .hidden)))
     }
 
     func testWhenOnAppearIsCalled_AndIsNewUser_AndAndIsIphoneFlow_ThenViewStateChangesToStartOnboardingDialogAndProgressIsHidden() throws {
@@ -229,7 +229,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .default), step: .hidden)))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(content: .mock, type: .default), step: .hidden)))
     }
 
     func testWhenOnAppearIsCalled_AndIsReturningUser_AndAndIsIphoneFlow_ThenViewStateChangesToStartOnboardingDialogAndProgressIsHidden() throws {
@@ -243,7 +243,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .skipTutorial), step: .hidden)))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(content: .mock, type: .skipTutorial), step: .hidden)))
     }
 
     func testWhenStartOnboardingActionResumingTrueIsCalled_AndIsIphoneFlow_ThenViewStateChangesToBrowsersComparisonDialogAndProgressIs1of5() throws {
@@ -381,7 +381,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .default), step: .hidden)))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(content: .mock, type: .default), step: .hidden)))
     }
 
     func testWhenOnAppearIsCalled_AndIsReturningUser_AndAndIsIpadFlow_ThenViewStateChangesToStartOnboardingDialogAndProgressIsHidden() throws {
@@ -395,7 +395,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .skipTutorial), step: .hidden)))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(content: .mock, type: .skipTutorial), step: .hidden)))
     }
 
     func testWhenStartOnboardingActionResumingTrueIsCalled_AndIsIpadFlow_ThenViewStateChangesToBrowsersComparisonDialogAndProgressIs2of4() throws {

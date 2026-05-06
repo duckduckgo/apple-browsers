@@ -25,6 +25,7 @@ import History
 import BrowserServicesKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
+import DataBrokerProtection_iOS
 @testable import Configuration
 import Core
 import SubscriptionTestingUtilities

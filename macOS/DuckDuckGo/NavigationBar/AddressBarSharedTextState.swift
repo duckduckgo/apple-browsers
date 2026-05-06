@@ -58,6 +58,11 @@ final class AddressBarSharedTextState: ObservableObject {
     /// Persists across tab switches so the user doesn't lose a prepared prompt's attachments when bouncing between tabs.
     @Published private(set) var aiChatAttachments: [AIChatImageAttachment] = []
 
+    /// The duck.ai tab attachments (Attach Page Content) for this tab.
+    /// Persists across tab switches alongside the prompt text and image attachments so the user
+    /// can keep curating the prompt when bouncing between browser tabs.
+    @Published private(set) var aiChatTabAttachments: [AIChatTabAttachment] = []
+
     /// Resets the shared state to initial values.
     /// - Parameter clearingDuckAIState: Pass `false` from tab-switch restore paths. Tab switches must not
     ///   wipe per-tab duck.ai state — that includes the prompt text, selection, interaction flag, mode,
@@ -78,6 +83,9 @@ final class AddressBarSharedTextState: ObservableObject {
         }
         if !aiChatAttachments.isEmpty {
             aiChatAttachments = []
+        }
+        if !aiChatTabAttachments.isEmpty {
+            aiChatTabAttachments = []
         }
     }
 
@@ -103,6 +111,14 @@ final class AddressBarSharedTextState: ObservableObject {
             && zip(attachments, aiChatAttachments).allSatisfy { $0.id == $1.id && $0.image === $1.image }
         guard !unchanged else { return }
         aiChatAttachments = attachments
+    }
+
+    /// Replaces the duck.ai tab attachment list for this tab. Skips the write when the list is
+    /// element-wise equal to the current one to avoid spurious publisher emissions during the
+    /// tab-switch restore path (which echoes the current list back through the same setter).
+    func setAIChatTabAttachments(_ attachments: [AIChatTabAttachment]) {
+        guard attachments != aiChatTabAttachments else { return }
+        aiChatTabAttachments = attachments
     }
 
     func resetUserInteraction() {

@@ -97,6 +97,14 @@ final class AIChatOmnibarController {
     /// Waits for all attachment resizing to complete before proceeding.
     var waitForAttachmentsReady: (() async -> Void)?
 
+    /// Provides the current tab attachments (Attach Page Content) from the container VC.
+    var tabAttachmentsProvider: (() -> [AIChatTabAttachment])?
+
+    /// Called on tab switch so the container VC can reinstall the tab attachments persisted for the incoming tab.
+    /// Owned by the container VC (where the tab carousel views live); the controller just delivers the list pulled
+    /// from the incoming tab's `AddressBarSharedTextState`.
+    var onActiveTabTabAttachmentsRestoreRequested: (([AIChatTabAttachment]) -> Void)?
+
     /// View model for managing chat suggestions. Always initialized, but only populated when feature flag is enabled.
     let suggestionsViewModel: AIChatSuggestionsViewModel
 
@@ -531,6 +539,30 @@ final class AIChatOmnibarController {
         sharedTextState?.setAIChatAttachments(attachments)
     }
 
+    /// Persists the Duck.ai tab attachments (Attach Page Content) for the current tab so they survive tab switches.
+    /// Called by the container VC whenever the tab attachment list changes (toggle from menu, removal from carousel).
+    func persistTabAttachmentsToActiveTab(_ attachments: [AIChatTabAttachment]) {
+        sharedTextState?.setAIChatTabAttachments(attachments)
+    }
+
+    /// The tab attachments persisted for the current tab, or an empty list if none / no shared state.
+    var activeTabAttachments: [AIChatTabAttachment] {
+        sharedTextState?.aiChatTabAttachments ?? []
+    }
+
+    /// Toggles whether a tab is attached to the current tab's prompt:
+    /// adds the attachment if absent, removes it if already present (matched by `id`).
+    /// Persists the resulting list to shared state so it survives tab switches.
+    func toggleTabAttachment(_ attachment: AIChatTabAttachment) {
+        var current = activeTabAttachments
+        if let index = current.firstIndex(where: { $0.id == attachment.id }) {
+            current.remove(at: index)
+        } else {
+            current.append(attachment)
+        }
+        persistTabAttachmentsToActiveTab(current)
+    }
+
     func cleanup() {
         isCleaningUp = true
         defer { isCleaningUp = false }
@@ -616,6 +648,7 @@ final class AIChatOmnibarController {
                 /// Tell the container VC to reinstall this tab's attachments. The container owns the actual views
                 /// and resize tasks, so restoration has to happen there; shared state is just the storage.
                 self.onActiveTabAttachmentsRestoreRequested?(sharedState?.aiChatAttachments ?? [])
+                self.onActiveTabTabAttachmentsRestoreRequested?(sharedState?.aiChatTabAttachments ?? [])
             }
             .store(in: &cancellables)
     }

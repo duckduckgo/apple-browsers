@@ -530,6 +530,81 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "Switch back to tab 1 — its saved attachment is handed back")
     }
 
+    // MARK: - Tab Attachments (Attach Page Content)
+
+    func testWhenPersistTabAttachmentsToActiveTab_ThenSharedStateUpdated() {
+        // Given
+        let attachment = makeTabAttachment()
+
+        // When
+        controller.persistTabAttachmentsToActiveTab([attachment])
+
+        // Then
+        let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+        XCTAssertEqual(sharedState?.aiChatTabAttachments.count, 1)
+        XCTAssertEqual(sharedState?.aiChatTabAttachments.first?.id, attachment.id)
+    }
+
+    func testWhenToggleTabAttachmentForUnattachedTab_ThenItIsAdded() {
+        // Given — no attachments yet
+        let attachment = makeTabAttachment(id: "tab-1")
+
+        // When
+        controller.toggleTabAttachment(attachment)
+
+        // Then
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), ["tab-1"])
+        let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+        XCTAssertEqual(sharedState?.aiChatTabAttachments.map(\.id), ["tab-1"],
+                       "Toggle-on must persist to the active tab's shared state")
+    }
+
+    func testWhenToggleTabAttachmentForAttachedTab_ThenItIsRemoved() {
+        // Given — attachment is already attached
+        let attachment = makeTabAttachment(id: "tab-1")
+        controller.toggleTabAttachment(attachment)
+        XCTAssertEqual(controller.activeTabAttachments.count, 1)
+
+        // When — toggle the same id again
+        controller.toggleTabAttachment(attachment)
+
+        // Then
+        XCTAssertTrue(controller.activeTabAttachments.isEmpty)
+        let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+        XCTAssertTrue(sharedState?.aiChatTabAttachments.isEmpty ?? false)
+    }
+
+    func testWhenToggleTabAttachmentMultipleDistinctIds_ThenAllAdded() {
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-1"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-2"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-3"))
+
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), ["tab-1", "tab-2", "tab-3"],
+                       "Order matches the toggle-on order; the duck.ai web app preserves this on submit")
+    }
+
+    func testWhenTabSwitchesToTabWithSavedTabAttachments_ThenRestoreCallbackFires() {
+        // Given — tab 1 has a saved tab attachment; register restore callback.
+        let attachment = makeTabAttachment(id: "tab-A")
+        tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setAIChatTabAttachments([attachment])
+
+        var receivedLists: [[AIChatTabAttachment]] = []
+        controller.onActiveTabTabAttachmentsRestoreRequested = { lists in
+            receivedLists.append(lists)
+        }
+
+        // When — switch to fresh tab 2 and back to tab 1
+        tabCollectionViewModel.appendNewTab()
+        tabCollectionViewModel.select(at: .unpinned(0))
+
+        // Then
+        XCTAssertEqual(receivedLists.count, 2,
+                       "Callback fires on every tab switch, like the image-attachments restore path")
+        XCTAssertEqual(receivedLists.first?.count, 0, "Tab 2 has no tab attachments")
+        XCTAssertEqual(receivedLists.last?.first?.id, attachment.id,
+                       "Tab 1's saved tab attachment is handed back when switching back")
+    }
+
     func testWhenUpdateSelection_ThenPersistedToActiveTabSharedState() {
         // Given
         controller.updateText("hello world")
@@ -1158,6 +1233,15 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     private func makeAttachment(id: UUID = UUID()) -> AIChatImageAttachment {
         AIChatImageAttachment(id: id, image: NSImage(), fileName: "\(id.uuidString).png", fileURL: nil, skipResize: true)
+    }
+
+    private func makeTabAttachment(id: String = UUID().uuidString) -> AIChatTabAttachment {
+        AIChatTabAttachment(
+            id: id,
+            title: "Example",
+            url: URL(string: "https://example.com")!,
+            favicon: nil
+        )
     }
 }
 

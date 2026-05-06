@@ -473,6 +473,61 @@ final class AddressBarSharedTextStateTests: XCTestCase {
         XCTAssertEqual(received.first?.count, 2)
     }
 
+    // MARK: - AI Chat Tab Attachments Tests
+
+    func testWhenInitialized_ThenAIChatTabAttachmentsIsEmpty() {
+        XCTAssertTrue(sut.aiChatTabAttachments.isEmpty)
+    }
+
+    func testWhenSetAIChatTabAttachments_ThenStored() {
+        let attachment = makeTabAttachment()
+        sut.setAIChatTabAttachments([attachment])
+
+        XCTAssertEqual(sut.aiChatTabAttachments.count, 1)
+        XCTAssertEqual(sut.aiChatTabAttachments.first?.id, attachment.id)
+    }
+
+    func testWhenSetAIChatTabAttachmentsWithSameContent_ThenPublisherDoesNotReemit() {
+        let attachment = makeTabAttachment()
+        sut.setAIChatTabAttachments([attachment])
+
+        let expectation = expectation(description: "Publisher does not emit when tab attachments are unchanged")
+        expectation.isInverted = true
+
+        sut.$aiChatTabAttachments
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        // Re-submit the same list — the tab-switch restore path replays the current list, and the
+        // idempotency guard stops that from churning subscribers.
+        sut.setAIChatTabAttachments([attachment])
+
+        wait(for: [expectation], timeout: 0.2)
+    }
+
+    func testWhenSetAIChatTabAttachmentsWithDifferentList_ThenPublisherReemits() {
+        let first = makeTabAttachment()
+        sut.setAIChatTabAttachments([first])
+
+        let expectation = expectation(description: "Publisher emits when tab attachment list changes")
+        var received: [[AIChatTabAttachment]] = []
+
+        sut.$aiChatTabAttachments
+            .dropFirst()
+            .sink { attachments in
+                received.append(attachments)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        let second = makeTabAttachment()
+        sut.setAIChatTabAttachments([first, second])
+
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(received.first?.count, 2)
+    }
+
     // MARK: - Selection Range Tests
 
     func testWhenInitialized_ThenSelectionRangeIsZero() {
@@ -508,6 +563,7 @@ final class AddressBarSharedTextStateTests: XCTestCase {
         sut.setDuckAIMode(true)
         sut.setAIChatToolMode(.imageGeneration)
         sut.setAIChatAttachments([makeAttachment()])
+        sut.setAIChatTabAttachments([makeTabAttachment()])
 
         sut.reset(clearingDuckAIState: true)
 
@@ -517,6 +573,7 @@ final class AddressBarSharedTextStateTests: XCTestCase {
         XCTAssertFalse(sut.isInDuckAIMode)
         XCTAssertNil(sut.aiChatToolMode)
         XCTAssertTrue(sut.aiChatAttachments.isEmpty)
+        XCTAssertTrue(sut.aiChatTabAttachments.isEmpty)
     }
 
     func testWhenResetWithClearingDuckAIStateFalse_ThenAllDuckAIStatePreserved() {
@@ -530,6 +587,8 @@ final class AddressBarSharedTextStateTests: XCTestCase {
         sut.setAIChatToolMode(.webSearch)
         let attachment = makeAttachment()
         sut.setAIChatAttachments([attachment])
+        let tabAttachment = makeTabAttachment()
+        sut.setAIChatTabAttachments([tabAttachment])
 
         sut.reset(clearingDuckAIState: false)
 
@@ -540,6 +599,8 @@ final class AddressBarSharedTextStateTests: XCTestCase {
         XCTAssertEqual(sut.aiChatToolMode, .webSearch, "Tool mode should survive a tab-switch reset")
         XCTAssertEqual(sut.aiChatAttachments.count, 1, "Attachments should survive a tab-switch reset")
         XCTAssertEqual(sut.aiChatAttachments.first?.id, attachment.id)
+        XCTAssertEqual(sut.aiChatTabAttachments.count, 1, "Tab attachments should survive a tab-switch reset")
+        XCTAssertEqual(sut.aiChatTabAttachments.first?.id, tabAttachment.id)
     }
 
     func testWhenResetWithoutParameter_ThenBehavesAsClearingDuckAIStateTrue() {
@@ -558,6 +619,15 @@ final class AddressBarSharedTextStateTests: XCTestCase {
 
     private func makeAttachment(id: UUID = UUID()) -> AIChatImageAttachment {
         AIChatImageAttachment(id: id, image: NSImage(), fileName: "\(id.uuidString).png", fileURL: nil, skipResize: true)
+    }
+
+    private func makeTabAttachment(id: String = UUID().uuidString) -> AIChatTabAttachment {
+        AIChatTabAttachment(
+            id: id,
+            title: "Example",
+            url: URL(string: "https://example.com")!,
+            favicon: nil
+        )
     }
 
     // MARK: - Thread Safety Tests

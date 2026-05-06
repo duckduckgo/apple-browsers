@@ -619,7 +619,9 @@ extension MainCoordinator: URLHandling {
     private func handleAppDeepLink(url: URL, application: UIApplication = UIApplication.shared) -> Bool {
         controller.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
 
-        if url != AppDeepLinkSchemes.openVPN.url
+        fireMediumWidgetPixelIfNeeded(url: url)
+
+        if url.scheme != AppDeepLinkSchemes.openVPN.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIVoiceChat.url.scheme {
             controller.clearNavigationStack()
@@ -650,6 +652,8 @@ extension MainCoordinator: URLHandling {
             AIChatDeepLinkHandler().handleDeepLink(url, on: controller)
         case .openAIVoiceChat:
             AIChatDeepLinkHandler().handleDeepLink(url, on: controller, voiceMode: true)
+        case .openBookmarks:
+            controller.segueToBookmarks()
         default:
             if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
                 controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
@@ -674,6 +678,20 @@ extension MainCoordinator: URLHandling {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.controller.launchAutofillLogins(openSearch: true, source: source)
         }
+    }
+
+    private func fireMediumWidgetPixelIfNeeded(url: URL) {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let queryItems = components.queryItems,
+              queryItems.first(where: { $0.name == WidgetSourceType.sourceKey })?.value
+                  == WidgetSourceType.quickActionsMedium.rawValue,
+              let shortcut = queryItems.first(where: { $0.name == WidgetSourceType.shortcutKey })?.value
+        else { return }
+
+        DailyPixel.fireDailyAndCount(
+            pixel: .widgetMediumLaunch,
+            withAdditionalParameters: [PixelParameters.shortcut: shortcut]
+        )
     }
 
     func handleAIChatAppIconShortuct() {

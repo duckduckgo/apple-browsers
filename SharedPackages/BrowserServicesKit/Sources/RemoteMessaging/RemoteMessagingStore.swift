@@ -251,6 +251,17 @@ extension RemoteMessagingStore {
                     continue
                 }
 
+                if let dismissAfterDays = remoteMessage.dismissAfterDaysShown,
+                   dismissAfterDays > 0,
+                   let firstShown = remoteMessageManagedObject.firstShownDate,
+                   let daysSinceFirstShown = Calendar.current.dateComponents([.day], from: firstShown, to: Date()).day,
+                   daysSinceFirstShown >= dismissAfterDays {
+                    remoteMessageManagedObject.status = NSNumber(value: RemoteMessageStatus.dismissed.rawValue)
+                    self.invalidateRemoteMessagingConfigs(in: context)
+                    try? context.save()
+                    continue
+                }
+
                 scheduledRemoteMessage = RemoteMessageModel(
                     id: id,
                     surfaces: remoteMessageManagedObject.surfaces.flatMap { RemoteMessageSurfaceType(rawValue: $0.int16Value) } ?? .newTabPage,
@@ -381,6 +392,9 @@ extension RemoteMessagingStore {
                         return
                     }
                     message.shown = shown
+                    if shown && message.firstShownDate == nil {
+                        message.firstShownDate = Date()
+                    }
                     try context.save()
                 } catch {
                     errorEvents?.fire(.updateMessageShownFailed, error: error)

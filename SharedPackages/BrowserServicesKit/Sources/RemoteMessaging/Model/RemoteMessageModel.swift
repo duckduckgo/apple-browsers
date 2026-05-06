@@ -27,14 +27,23 @@ public struct RemoteMessageModel: Equatable, Codable {
     public let matchingRules: [Int]
     public let exclusionRules: [Int]
     public let isMetricsEnabled: Bool
+    /// If set, the message will be automatically dismissed after being shown for this many days.
+    public let dismissAfterDaysShown: Int?
 
-    public init(id: String, surfaces: RemoteMessageSurfaceType, content: RemoteMessageModelType?, matchingRules: [Int], exclusionRules: [Int], isMetricsEnabled: Bool) {
+    public init(id: String,
+                surfaces: RemoteMessageSurfaceType,
+                content: RemoteMessageModelType?,
+                matchingRules: [Int],
+                exclusionRules: [Int],
+                isMetricsEnabled: Bool,
+                dismissAfterDaysShown: Int? = nil) {
         self.id = id
         self.surfaces = surfaces
         self.content = content
         self.matchingRules = matchingRules
         self.exclusionRules = exclusionRules
         self.isMetricsEnabled = isMetricsEnabled
+        self.dismissAfterDaysShown = dismissAfterDaysShown
     }
 
     enum CodingKeys: CodingKey {
@@ -44,6 +53,7 @@ public struct RemoteMessageModel: Equatable, Codable {
         case matchingRules
         case exclusionRules
         case isMetricsEnabled
+        case dismissAfterDaysShown
     }
 
     public init(from decoder: Decoder) throws {
@@ -54,6 +64,7 @@ public struct RemoteMessageModel: Equatable, Codable {
         self.matchingRules = try container.decode([Int].self, forKey: .matchingRules)
         self.exclusionRules = try container.decode([Int].self, forKey: .exclusionRules)
         self.isMetricsEnabled = try container.decodeIfPresent(Bool.self, forKey: .isMetricsEnabled) ?? true
+        self.dismissAfterDaysShown = try container.decodeIfPresent(Int.self, forKey: .dismissAfterDaysShown)
     }
 
     mutating func localizeContent(translation: RemoteMessageResponse.JsonContentTranslation) {

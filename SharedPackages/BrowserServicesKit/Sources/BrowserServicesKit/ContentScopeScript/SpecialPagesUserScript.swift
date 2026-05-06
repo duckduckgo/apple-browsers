@@ -24,7 +24,7 @@ import UserScript
 import Common
 
 public final class SpecialPagesUserScript: NSObject, UserScript, UserScriptMessaging {
-    public var source: String = ""
+    nonisolated public let source: String = ""
 
     public static let context = "specialPages"
 

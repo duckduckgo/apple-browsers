@@ -50,8 +50,8 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         static let isCosmetic = "com.duckduckgo.autoconsent.is-cosmetic"
     }
 
-    var injectionTime: WKUserScriptInjectionTime { .atDocumentStart }
-    var forMainFrameOnly: Bool { false }
+    nonisolated var injectionTime: WKUserScriptInjectionTime { .atDocumentStart }
+    nonisolated var forMainFrameOnly: Bool { false }
 
     weak var selfTestWebView: WKWebView?
     var selfTestFrameInfo: WKFrameInfo?
@@ -62,8 +62,8 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     /// This gets set when the script is injected via didInstallContentRuleLists calls.
     var management: AutoconsentManaging?
 
-    public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
-    let source: String
+    nonisolated public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
+    nonisolated let source: String
     private let config: PrivacyConfiguration
     private let ignoreNonHTTPURLs: Bool
     private let webExtensionAvailability: WebExtensionAvailabilityProviding?

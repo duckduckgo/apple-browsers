@@ -27,7 +27,7 @@ import PersistenceTestingUtils
 @Suite("Modal Prompt Coordination - New Address Bar Picker Modal Prompt Provider")
 final class NewAddressBarPickerModalPromptProviderTests {
 
-    static let isOS26: Bool = {
+    nonisolated static let isOS26: Bool = {
         if #available(iOS 26.0, *) {
             return true
         } else {

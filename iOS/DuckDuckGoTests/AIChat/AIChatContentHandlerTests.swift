@@ -27,6 +27,7 @@ import Subscription
 @testable import DuckDuckGo
 @testable import Core
 
+@MainActor
 final class AIChatContentHandlerTests: XCTestCase {
 
     var handler: AIChatContentHandler!

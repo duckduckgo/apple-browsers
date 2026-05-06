@@ -28,19 +28,19 @@ import os.log
 
 /// The user script that will be the broker for all subscription features
 public final class SubscriptionPagesUserScript: NSObject, UserScript, UserScriptMessaging {
-    public var source: String = ""
+    nonisolated public let source: String = ""
     public static let context = "subscriptionPages"
 
     // special pages messaging cannot be isolated as we'll want regular page-scripts to be able to communicate
     public let broker = UserScriptMessageBroker(context: SubscriptionPagesUserScript.context, requiresRunInPageContentWorld: false )
 
-    public let messageNames: [String] = [
+    nonisolated public let messageNames: [String] = [
         SubscriptionPagesUserScript.context
     ]
 
-    public let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
-    public let forMainFrameOnly = true
-    public let requiresRunInPageContentWorld = true
+    nonisolated public let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+    nonisolated public let forMainFrameOnly = true
+    nonisolated public let requiresRunInPageContentWorld = true
 }
 
 extension SubscriptionPagesUserScript: WKScriptMessageHandlerWithReply {

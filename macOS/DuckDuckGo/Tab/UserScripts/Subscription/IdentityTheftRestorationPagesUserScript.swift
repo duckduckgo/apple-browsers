@@ -28,20 +28,20 @@ import UserScript
 /// The user script that will be the broker for all subscription features
 ///
 public final class IdentityTheftRestorationPagesUserScript: NSObject, UserScript, UserScriptMessaging {
-    public var source: String = ""
+    nonisolated public let source: String = ""
 
     public static let context = "identityTheftRestorationPages"
 
     // special pages messaging cannot be isolated as we'll want regular page-scripts to be able to communicate
     public let broker = UserScriptMessageBroker(context: IdentityTheftRestorationPagesUserScript.context, requiresRunInPageContentWorld: true )
 
-    public let messageNames: [String] = [
+    nonisolated public let messageNames: [String] = [
         IdentityTheftRestorationPagesUserScript.context
     ]
 
-    public let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
-    public let forMainFrameOnly = true
-    public let requiresRunInPageContentWorld = true
+    nonisolated public let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+    nonisolated public let forMainFrameOnly = true
+    nonisolated public let requiresRunInPageContentWorld = true
 }
 
 extension IdentityTheftRestorationPagesUserScript: WKScriptMessageHandlerWithReply {

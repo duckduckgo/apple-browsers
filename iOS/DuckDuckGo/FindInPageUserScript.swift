@@ -24,25 +24,28 @@ import FindInPageIOSJSSupport
 
 public class FindInPageUserScript: NSObject, UserScript {
 
-    public lazy var source: String = {
+    nonisolated public let source: String
+
+    nonisolated public let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+
+    nonisolated public let forMainFrameOnly: Bool = false
+
+    nonisolated public let messageNames: [String] = ["findInPageHandler"]
+
+    var findInPage: FindInPage?
+
+    public override init() {
         do {
-            return try Self.loadJS("findinpage", from: FindInPageIOSJSSupport.bundle)
+            source = try Self.loadJS("findinpage", from: FindInPageIOSJSSupport.bundle)
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
             }
             fatalError("Failed to load JS for FindInPageUserScript: \(error.localizedDescription)")
         }
-    }()
-    
-    public var injectionTime: WKUserScriptInjectionTime = .atDocumentStart
-    
-    public var forMainFrameOnly: Bool = false
-    
-    public var messageNames: [String] = ["findInPageHandler"]
-    
-    var findInPage: FindInPage?
-    
+        super.init()
+    }
+
     public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let dict = message.body as? [String: Any] else { return }
         let currentResult = dict["currentResult"] as? Int

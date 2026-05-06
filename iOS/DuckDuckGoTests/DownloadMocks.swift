@@ -52,17 +52,20 @@ class MockDownloadSession: DownloadSession {
 
 extension WKNavigationResponse {
 
-    private static var isSwizzled = false
-    private static let originalDealloc = { class_getInstanceMethod(WKNavigationResponse.self, NSSelectorFromString("dealloc"))! }()
-    private static let swizzledDealloc = { class_getInstanceMethod(WKNavigationResponse.self, #selector(swizzled_dealloc))! }()
+    // ObjC-runtime swizzle helpers. Opted out of WKNavigationResponse's @MainActor
+    // isolation because deinit-based cleanup (e.g. Swift Testing teardown) runs off-main.
+    // Safety: callers are test-only and run serially.
+    nonisolated(unsafe) private static var isSwizzled = false
+    nonisolated private static let originalDealloc = { class_getInstanceMethod(WKNavigationResponse.self, NSSelectorFromString("dealloc"))! }()
+    nonisolated private static let swizzledDealloc = { class_getInstanceMethod(WKNavigationResponse.self, #selector(swizzled_dealloc))! }()
 
-    static func swizzleDealloc() {
+    nonisolated static func swizzleDealloc() {
         guard !self.isSwizzled else { return }
         self.isSwizzled = true
         method_exchangeImplementations(originalDealloc, swizzledDealloc)
     }
 
-    static func restoreDealloc() {
+    nonisolated static func restoreDealloc() {
         guard self.isSwizzled else { return }
         self.isSwizzled = false
         method_exchangeImplementations(originalDealloc, swizzledDealloc)

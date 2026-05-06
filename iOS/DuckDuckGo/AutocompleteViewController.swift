@@ -224,26 +224,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private func requestSuggestions(query: String) {
         model.selection = nil
 
-        loader = SuggestionLoader(shouldLoadSuggestionsForUserInput: { [weak self] phrase in
-            // We want to always load suggestions, except for when the user has typed a URL that looks "complete".
-            // We define this as a URL with a path equal to a single slash (root URL).
-            // Skip suggestions when all of the following are true:
-            // * input can be converted to a URL
-            // * input starts with http[s]
-            // * converted URL is root (no path)
-            // * the user typed the trailing "/"
-            guard let self,
-                  let url = URL(trimmedAddressBarString: phrase, useUnifiedLogic: isUsingUnifiedPrediction),
-                  url.isValid(usingUnifiedLogic: self.isUsingUnifiedPrediction)
-            else {
-                return true
-            }
-
-            if let scheme = url.scheme, scheme.description.hasPrefix("http"), url.isRoot, phrase.last == "/" {
-                return false
-            }
-            return true
-        }, isUrlIgnored: { _ in false })
+        loader = Self.makeSuggestionLoader(isUsingUnifiedPrediction: isUsingUnifiedPrediction)
 
         loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
             guard let self, error == nil else { return }
@@ -258,6 +239,27 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             self.presentationDelegate?.autocompleteDidReloadResults(self)
         }
 
+    }
+
+    nonisolated private static func makeSuggestionLoader(isUsingUnifiedPrediction: Bool) -> SuggestionLoader {
+        SuggestionLoader(shouldLoadSuggestionsForUserInput: { phrase in
+            // We want to always load suggestions, except for when the user has typed a URL that looks "complete".
+            // We define this as a URL with a path equal to a single slash (root URL).
+            // Skip suggestions when all of the following are true:
+            // * input can be converted to a URL
+            // * input starts with http[s]
+            // * converted URL is root (no path)
+            // * the user typed the trailing "/"
+            guard let url = URL(trimmedAddressBarString: phrase, useUnifiedLogic: isUsingUnifiedPrediction),
+                  url.isValid(usingUnifiedLogic: isUsingUnifiedPrediction)
+            else {
+                return true
+            }
+            if let scheme = url.scheme, scheme.description.hasPrefix("http"), url.isRoot, phrase.last == "/" {
+                return false
+            }
+            return true
+        }, isUrlIgnored: { _ in false })
     }
 
     private func updateHeight() {

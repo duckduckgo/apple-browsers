@@ -23,6 +23,7 @@ import Combine
 
 public protocol SyncManagementViewModelDelegate: AnyObject {
 
+    @MainActor
     func authenticateUser() async throws
     func showAutoRestoreReady(for continuation: SyncSettingsViewModel.PreservedAccountContinuation)
     func isPreservedAccountPromptNeeded() -> Bool

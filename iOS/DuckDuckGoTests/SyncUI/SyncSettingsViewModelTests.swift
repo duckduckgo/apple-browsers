@@ -590,6 +590,7 @@ final class SyncSettingsViewModelTests: XCTestCase {
     }
 }
 
+@MainActor
 private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDelegate {
 
     var authenticateUserCallCount = 0

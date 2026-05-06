@@ -32,6 +32,7 @@ protocol AIChatUserScriptDelegate: AnyObject {
     /// - Parameters:
     ///   - userScript: The user script that received the message
     ///   - message: The type of message received
+    @MainActor
     func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScriptMessages)
 
     /// Called when the user script receives a message related to metrics
@@ -172,7 +173,10 @@ final class AIChatUserScript: NSObject, Subfeature {
             return nil
         }
 
-        delegate?.aiChatUserScript(self, didReceiveMessage: message)
+        // WKScriptMessageHandler callbacks (which drive Subfeature.handler) are delivered on the main thread by WebKit.
+        MainActor.assumeIsolated {
+            delegate?.aiChatUserScript(self, didReceiveMessage: message)
+        }
 
         switch message {
         case .responseState:

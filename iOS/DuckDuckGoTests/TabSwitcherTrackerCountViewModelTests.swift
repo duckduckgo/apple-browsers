@@ -24,6 +24,7 @@ import XCTest
 @MainActor
 final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
 
+    @MainActor
     final class MockPrivacyStats: PrivacyStatsProviding {
         var total: Int64 = 0
         var recordCalls: [String] = []

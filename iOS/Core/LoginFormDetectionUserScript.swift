@@ -28,9 +28,19 @@ public protocol LoginFormDetectionDelegate: NSObjectProtocol {
 
 public class LoginFormDetectionUserScript: NSObject, UserScript {
 
-    public lazy var source: String = {
+    nonisolated public let source: String
+
+    nonisolated public let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+
+    nonisolated public let forMainFrameOnly: Bool = false
+
+    nonisolated public let messageNames: [String] = [ "loginFormDetected" ]
+
+    public weak var delegate: LoginFormDetectionDelegate?
+
+    public override init() {
         do {
-            return try Self.loadJS("login-form-detection", from: Bundle.core, withReplacements: [
+            source = try Self.loadJS("login-form-detection", from: Bundle.core, withReplacements: [
                 "$IS_DEBUG$": isDebugBuild ? "true" : "false"
             ])
         } catch {
@@ -39,15 +49,8 @@ public class LoginFormDetectionUserScript: NSObject, UserScript {
             }
             fatalError("Failed to load JS for LoginFormDetectionUserScript: \(error)")
         }
-    }()
-
-    public var injectionTime: WKUserScriptInjectionTime = .atDocumentStart
-
-    public var forMainFrameOnly: Bool = false
-
-    public var messageNames: [String] = [ "loginFormDetected" ]
-
-    public weak var delegate: LoginFormDetectionDelegate?
+        super.init()
+    }
 
     public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         delegate?.loginFormDetectionUserScriptDetectedLoginForm(self)

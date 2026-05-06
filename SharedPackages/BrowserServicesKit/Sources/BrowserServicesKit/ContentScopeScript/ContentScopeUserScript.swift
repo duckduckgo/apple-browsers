@@ -321,7 +321,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
         return result
     }
 
-    public let source: String
+    nonisolated public let source: String
     public let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
     public let forMainFrameOnly: Bool = false
     public var requiresRunInPageContentWorld: Bool { !self.scriptContext.isIsolated }

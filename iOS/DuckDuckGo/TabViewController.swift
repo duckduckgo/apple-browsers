@@ -2405,13 +2405,7 @@ extension TabViewController: WKNavigationDelegate {
 
                     let shouldSkipSearchAtbForDuckAI = url.isDuckAIURL
                     if !shouldSkipSearchAtbForDuckAI {
-                        let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
-                                                                            application: UIApplication.shared)
-                        StatisticsLoader.shared.refreshSearchRetentionAtb {
-                            DispatchQueue.main.async {
-                                backgroundAssertion.release()
-                            }
-                        }
+                        Self.refreshSearchRetentionAtb()
                     }
                     subscriptionDataReporter.saveSearchCount()
                 }
@@ -2446,6 +2440,20 @@ extension TabViewController: WKNavigationDelegate {
             await MainActor.run(body: completion)
         }
         return true
+    }
+
+    nonisolated private static func makeFireModeProvider(isFireTab: Bool) -> (() -> Bool) {
+        return { isFireTab }
+    }
+
+    nonisolated private static func refreshSearchRetentionAtb() {
+        let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
+                                                            application: UIApplication.shared)
+        StatisticsLoader.shared.refreshSearchRetentionAtb {
+            DispatchQueue.main.async {
+                backgroundAssertion.release()
+            }
+        }
     }
 
     private func decidePolicyFor(navigationAction: WKNavigationAction, completion: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -3256,7 +3264,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
         
-        userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.tabModel.fireTab ?? false }
+        userScripts.aiChatUserScript.setFireModeProvider(Self.makeFireModeProvider(isFireTab: tabModel.fireTab))
         userScripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = { [weak self] in
             guard let self else { return .notFireMode }
             return .resolve(isFireMode: self.tabModel.fireTab,

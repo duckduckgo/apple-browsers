@@ -20,6 +20,7 @@
 import Foundation
 @testable import DuckDuckGo
 
+@MainActor
 public final class MockAIChatContentHandlingDelegate: AIChatContentHandlingDelegate {
     public var didReceiveOpenSettingsRequestCallCount = 0
     public var didReceiveCloseChatRequestCallCount = 0

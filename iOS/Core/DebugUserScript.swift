@@ -31,15 +31,13 @@ public class DebugUserScript: NSObject, UserScript {
 
     }
 
-    public lazy var source: String = {
-        return ""
-    }()
+    nonisolated public let source: String = ""
 
-    public var injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+    nonisolated public let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
 
-    public var forMainFrameOnly: Bool = false
+    nonisolated public let forMainFrameOnly: Bool = false
 
-    public var messageNames: [String] = [ MessageNames.signpost, MessageNames.log ]
+    nonisolated public let messageNames: [String] = [ MessageNames.signpost, MessageNames.log ]
 
     public weak var instrumentation: TabInstrumentation?
 

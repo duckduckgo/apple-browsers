@@ -21,21 +21,24 @@ import WebKit
 import UserScript
 
 public class FullScreenVideoUserScript: NSObject, UserScript {
-    public var source: String {
+    nonisolated public let source: String
+
+    nonisolated public let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+    nonisolated public let forMainFrameOnly: Bool = false
+    nonisolated public let messageNames: [String] = []
+    nonisolated public var requiresRunInPageContentWorld: Bool { true }
+
+    public override init() {
         do {
-            return try Self.loadJS("fullscreenvideo", from: Bundle.core)
+            source = try Self.loadJS("fullscreenvideo", from: Bundle.core)
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
             }
             fatalError("Failed to load JS for FullScreenVideoUserScript: \(error)")
         }
+        super.init()
     }
-
-    public var injectionTime: WKUserScriptInjectionTime = .atDocumentStart
-    public var forMainFrameOnly: Bool = false
-    public var messageNames: [String] = []
-    public var requiresRunInPageContentWorld: Bool { true }
 
     public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {}
 }

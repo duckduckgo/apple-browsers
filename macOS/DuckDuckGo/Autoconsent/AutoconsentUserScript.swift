@@ -42,8 +42,8 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
 
     static let newSitePopupHiddenNotification = Notification.Name("newSitePopupHidden")
 
-    var injectionTime: WKUserScriptInjectionTime { .atDocumentStart }
-    var forMainFrameOnly: Bool { false }
+    nonisolated var injectionTime: WKUserScriptInjectionTime { .atDocumentStart }
+    nonisolated var forMainFrameOnly: Bool { false }
 
     private weak var selfTestWebView: WKWebView?
     private var selfTestFrameInfo: WKFrameInfo?
@@ -54,8 +54,8 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private let featureFlagger: FeatureFlagger
     private let webExtensionAvailability: WebExtensionAvailabilityProviding?
 
-    public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
-    let source: String
+    nonisolated public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
+    nonisolated let source: String
     private let config: PrivacyConfiguration
     weak var delegate: AutoconsentUserScriptDelegate?
 

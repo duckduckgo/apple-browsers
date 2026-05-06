@@ -51,6 +51,7 @@ extension AIChatUserScriptProviding {
 extension AIChatUserScript: AIChatUserScriptProviding { }
 
 /// Delegate for AIChatContentHandling navigation and UI actions.
+@MainActor
 protocol AIChatContentHandlingDelegate: AnyObject {
     /// Called when the content handler receives a request to open AIChat settings.
     func aiChatContentHandlerDidReceiveOpenSettingsRequest(_ handler: AIChatContentHandling)
@@ -271,7 +272,9 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
         if metric.metricName == .userDidSubmitPrompt
             || metric.metricName == .userDidSubmitFirstPrompt {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
-            delegate?.aiChatContentHandlerDidReceivePromptSubmission(self)
+            DispatchQueue.main.async { [self] in
+                delegate?.aiChatContentHandlerDidReceivePromptSubmission(self)
+            }
 
             if let tier = metric.modelTier, case .plus = tier {
                 freeTrialConversionService.markDuckAIActivated()

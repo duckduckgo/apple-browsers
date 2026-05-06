@@ -46,8 +46,8 @@ final class UIInteractionManager {
     /// 6. Signals when the entire app is ready for user interactions
     ///
     func start(launchAction: LaunchAction,
-               onWebViewReadyForInteractions: @escaping () -> Void,
-               onAppReadyForInteractions: @escaping () -> Void) {
+               onWebViewReadyForInteractions: @MainActor @escaping () -> Void,
+               onAppReadyForInteractions: @MainActor @escaping () -> Void) {
         Task { @MainActor in
             await withTaskGroup(of: Void.self) { group in
                 group.addTask {
@@ -62,7 +62,7 @@ final class UIInteractionManager {
                     case .standardLaunch:
                         break // Do nothing here for standardLaunch
                     }
-                    onWebViewReadyForInteractions()
+                    await onWebViewReadyForInteractions()
                 }
                 await group.waitForAll()
                 // Handle keyboard launch after data clearing and auth to avoid interfering with the auth screen

@@ -37,6 +37,8 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -236,6 +238,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.applyCardLayout(layout, animated: animated)
     }
 
+    func setAITabCollapsedAccessoriesVisible(_ visible: Bool) {
+        inputBarView.setAITabCollapsedAccessoriesVisible(visible)
+    }
+
     func prepareForOmnibarEditingShow() {
         inputBarView.prepareForOmnibarEditingShow()
     }
@@ -369,5 +375,13 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidClearSelectedTool(self)
+    }
+
+    func unifiedToggleInputViewDidTapFire(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidTapFire(self)
+    }
+
+    func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidTapVoice(self)
     }
 }

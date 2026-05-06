@@ -18,7 +18,10 @@
 //
 
 import DesignResourcesKit
+import os
 import UIKit
+
+private let addressBarLogger = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "AddressBar")
 
 class MainViewCoordinator {
 
@@ -140,7 +143,13 @@ class MainViewCoordinator {
     }
 
     func moveAddressBarToPosition(_ position: AddressBarPosition) {
-        guard position != addressBarPosition else { return }
+        let topActive = constraints.navigationBarContainerTop?.isActive ?? false
+        let bottomActive = constraints.navigationBarContainerBottom?.isActive ?? false
+        addressBarLogger.debug("moveAddressBarToPosition(\(String(describing: position), privacy: .public)) cache=\(String(describing: self.addressBarPosition), privacy: .public) physTop=\(topActive, privacy: .public) physBottom=\(bottomActive, privacy: .public)")
+        guard position != addressBarPosition else {
+            addressBarLogger.debug("  → early return (cache already matches)")
+            return
+        }
         hideTopSlideContainer()
 
         switch position {
@@ -196,6 +205,7 @@ class MainViewCoordinator {
     // MARK: - AI Tab Native Input Layout
 
     func showUnifiedToggleInput() {
+        addressBarLogger.debug("showUnifiedToggleInput() — forcing physical address bar to bottom; cache=\(String(describing: self.addressBarPosition), privacy: .public)")
         setAddressBarTopActive(false)
         setAddressBarBottomActive(true)
         setNavBarContainerBottomToToolbar()
@@ -257,6 +267,7 @@ class MainViewCoordinator {
 
 
     func hideUnifiedToggleInput() {
+        addressBarLogger.debug("hideUnifiedToggleInput() — cache=\(String(describing: self.addressBarPosition), privacy: .public) — restoringTop=\(self.addressBarPosition == .top, privacy: .public)")
         unifiedToggleInputContainer.isHidden = true
         unifiedToggleInputContainer.backgroundColor = .clear
         setNavBarContainerBottomToToolbar()
@@ -447,7 +458,9 @@ class MainViewCoordinator {
         case .omnibarEditing, .aiTabSearchChromeHidden:
             UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:
-            UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            // Match the AI chat header's `.surfaceTertiary` background so the safe-area inset
+            // above it doesn't show as a different colour band.
+            UIColor(designSystemColor: .surfaceTertiary)
         }
     }
 

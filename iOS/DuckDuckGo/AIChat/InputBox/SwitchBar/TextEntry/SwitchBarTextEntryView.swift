@@ -114,6 +114,16 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
+    /// Opt-in centred placeholder for the AI-tab collapsed footer only. Driven by the parent
+    /// `UnifiedToggleInputView`; off by default so the regular omnibar / contextual surfaces
+    /// keep leading alignment. Even when on, a visible trailing button (e.g. stop-generating)
+    /// flips alignment back to leading so the placeholder doesn't sit lopsided under the icon.
+    var shouldCenterIdlePlaceholder: Bool = false {
+        didSet {
+            updatePlaceholderAlignment()
+        }
+    }
+
     var isUsingIncreasedButtonPadding: Bool = false {
         didSet {
             updateButtonsPadding()
@@ -252,7 +262,12 @@ class SwitchBarTextEntryView: UIView {
             textView.bottomAnchor.constraint(equalTo: bottomAnchor),
             textView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset),
+            // Universal centerY — `textView` height grows with content via
+            // `updateTextViewHeight`, so when the textView is empty the placeholder visually
+            // sits where typed text will appear (single-line tall textView ⇒ centerY ≈ top).
+            // For the AI-tab collapsed pill (taller fixed-height container) this also keeps
+            // the placeholder optically centred in the pill rather than riding too high.
+            placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor),
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
             placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
 
@@ -325,10 +340,19 @@ class SwitchBarTextEntryView: UIView {
                 UIView.performWithoutAnimation {
                     self.currentButtonState = newButtonState
                     self.adjustTextViewContentInset()
+                    self.updatePlaceholderAlignment()
                     self.layoutIfNeeded()
                 }
             }
         }
+    }
+
+    /// Driven entirely by the parent's opt-in flag plus the trailing-button state. Vertical
+    /// position is handled by the placeholder's centerY anchor in `setup`, so we only adjust
+    /// horizontal alignment here.
+    private func updatePlaceholderAlignment() {
+        let centered = shouldCenterIdlePlaceholder && !currentButtonState.showsAnyButton
+        placeholderLabel.textAlignment = centered ? .center : .natural
     }
 
     private func adjustTextViewContentInset() {
@@ -585,7 +609,8 @@ class SwitchBarTextEntryView: UIView {
     }
 
     /// Stable design-token color, immune to transient `textColor` changes from color crossfades.
-    var defaultPlaceholderColor: UIColor { UIColor(designSystemColor: .textSecondary) }
+    /// `.textTertiary` matches the spec ("Text/Placeholder, Labels/Tertiary, System/System Text Tertiary").
+    var defaultPlaceholderColor: UIColor { UIColor(designSystemColor: .textTertiary) }
 
     // Two transient overlays composite directly over the parent background (the original label is
     // cleared) so a low-alpha source/target color isn't stacked atop the destination color, which

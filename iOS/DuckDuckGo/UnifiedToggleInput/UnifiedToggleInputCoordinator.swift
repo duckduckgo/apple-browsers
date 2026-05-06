@@ -19,10 +19,13 @@
 
 import AIChat
 import Combine
+import os
 import Subscription
 import UIKit
 
 // MARK: - State Types
+
+private let utiLifecycleLogger = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "UTILifecycle")
 
 enum InputTextState {
     case empty
@@ -299,6 +302,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func showCollapsed() {
         // Contextual chat has no AI tab collapsed mode; the host always renders expanded.
         if host == .contextualChat { return }
+        utiLifecycleLogger.debug("showCollapsed() prevState=\(String(describing: self.displayState), privacy: .public) host=\(String(describing: self.host), privacy: .public)")
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .aiTab(.collapsed)
@@ -314,6 +318,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat) {
+        utiLifecycleLogger.debug("showExpanded(inputMode=\(String(describing: inputMode), privacy: .public)) prevState=\(String(describing: self.displayState), privacy: .public) host=\(String(describing: self.host), privacy: .public)")
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .aiTab(.expanded)
@@ -348,6 +353,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func hide() {
+        let stack = Thread.callStackSymbols.dropFirst(5).prefix(15).joined(separator: "\n")
+        utiLifecycleLogger.debug("hide() prevState=\(String(describing: self.displayState), privacy: .public) host=\(String(describing: self.host), privacy: .public) stack=\(stack, privacy: .public)")
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .hidden
@@ -378,7 +385,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
 
-        viewController.applyCardLayout(.collapsed, animated: false)
+        viewController.applyCardLayout(.omnibar, animated: false)
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
         applyToolbarPresentation()
@@ -773,7 +780,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// Decides which card components are visible right now, based on host + display state +
     /// toggle setting + input mode. Centralised here so the view layer just renders.
     private func cardLayout(forIsExpanded isExpanded: Bool) -> UnifiedToggleInputCardLayout {
-        guard isExpanded else { return .collapsed }
+        guard isExpanded else {
+            // `.collapsed` is the AI-tab footer pose (48pt capsule with fire/voice flank);
+            // `.omnibar` is the slim 44pt pill that mimics the regular omnibar's text field.
+            return isAITabState ? .collapsed : .omnibar
+        }
         switch host {
         case .contextualChat:
             return .expanded(showsToggle: false, showsToolbar: true)
@@ -1036,6 +1047,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController) {
         delegate?.unifiedToggleInputDidRequestAIChat()
+    }
+
+    func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController) {
+        delegate?.unifiedToggleInputDidRequestFire()
+    }
+
+    func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController) {
+        delegate?.unifiedToggleInputDidRequestDuckAIVoiceMode()
     }
 }
 

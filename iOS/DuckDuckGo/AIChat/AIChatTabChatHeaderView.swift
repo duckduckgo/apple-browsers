@@ -22,133 +22,186 @@ import DesignResourcesKitIcons
 import UIKit
 
 protocol AIChatTabChatHeaderViewDelegate: AnyObject {
-    func aiChatTabChatHeaderDidTapSettings()
+    func aiChatTabChatHeaderDidTapChatList()
     func aiChatTabChatHeaderDidTapNewChat()
     func aiChatTabChatHeaderDidTapUpgrade()
+    func aiChatTabChatHeaderDidTapAppMenu()
+    func aiChatTabChatHeaderDidTapBack()
 }
 
 final class AIChatTabChatHeaderView: UIView {
 
     private enum Constants {
         static let headerHeight: CGFloat = 60
-        static let buttonSize: CGFloat = 44
+        static let buttonSize: CGFloat = 48
         static let horizontalPadding: CGFloat = 16
-        static let upgradeArrowSize: CGFloat = 12
-        static let titleSpacing: CGFloat = 4
-        static let titleKerning: CGFloat = -0.23
-        static let iconSize: CGFloat = 16
+        static let buttonSpacing: CGFloat = 12
+        static let titleEdgeSpacing: CGFloat = 12
+        static let titleHorizontalPadding: CGFloat = 12
+        static let titleVerticalPadding: CGFloat = 2
+        static let chevronSize: CGFloat = 12
+        static let chevronSpacing: CGFloat = 4
+        static let pillInnerHorizontalPadding: CGFloat = 6
+        static let pillInnerIconSpacing: CGFloat = 20
+        static let pillButtonSize: CGFloat = 36
     }
 
     weak var delegate: AIChatTabChatHeaderViewDelegate?
 
     private var isSubscriptionActive: Bool = false
 
-    private lazy var settingsButton: UIButton = makeIconButton(
-        image: DesignSystemImages.Glyphs.Size24.list,
-        accessibilityLabel: "Chat settings",
-        action: #selector(settingsTapped)
+    private lazy var backButton: UIButton = makeIconButton(
+        image: DesignSystemImages.Glyphs.Size24.arrowLeft,
+        accessibilityLabel: UserText.keyCommandBrowserBack,
+        action: #selector(backTapped)
+    )
+
+    private lazy var chatListButton: UIButton = makeIconButton(
+        image: DesignSystemImages.Glyphs.Size24.chats,
+        accessibilityLabel: "Recent chats",
+        action: #selector(chatListTapped),
+        includeChrome: false
     )
 
     private lazy var newChatButton: UIButton = makeIconButton(
         image: DesignSystemImages.Glyphs.Size24.compose,
         accessibilityLabel: "New chat",
-        action: #selector(newChatTapped)
+        action: #selector(newChatTapped),
+        includeChrome: false
     )
 
-    private lazy var titleContainer: UIView = {
-        let container = UIView()
-        container.translatesAutoresizingMaskIntoConstraints = false
-        container.isUserInteractionEnabled = true
-        let tap = UITapGestureRecognizer(target: self, action: #selector(upgradeTapped))
-        container.addGestureRecognizer(tap)
-        return container
+    private lazy var appMenuButton: UIButton = makeIconButton(
+        image: DesignSystemImages.Glyphs.Size24.menuHamburger,
+        accessibilityLabel: UserText.menuButtonHint,
+        action: #selector(appMenuTapped),
+        includeChrome: false
+    )
+
+    private lazy var leftPairPill: UIView = makePillContainer()
+    private lazy var rightPairPill: UIView = makePillContainer()
+
+    private lazy var leftPairStack: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [chatListButton, newChatButton])
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = Constants.pillInnerIconSpacing
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
     }()
 
-    private lazy var freeIconView: UIImageView = {
-        let imageView = UIImageView(image: DesignSystemImages.Color.Size16.aiChat)
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.contentMode = .scaleAspectFit
-        return imageView
+    private lazy var rightPairStack: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [tabSwitcherButton, appMenuButton])
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = Constants.pillInnerIconSpacing
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
+    let tabSwitcherButton: TabSwitcherStaticButton = {
+        let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.tintColor = UIColor(designSystemColor: .icons)
+        // The default `tabSwitcherDefault()` config uses `UIButton.Configuration.gray()` which
+        // paints an always-visible gray pill behind the inner `TabSwitcherStaticView`. Inside
+        // our grouped glass pill we want a transparent button so it matches the other plain icons.
+        button.automaticallyUpdatesConfiguration = false
+        button.configurationUpdateHandler = nil
+        button.configuration = .plain()
+        return button
+    }()
+
+    private lazy var titleContainer: HighlightableContainerView = {
+        let container = HighlightableContainerView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.directionalLayoutMargins = NSDirectionalEdgeInsets(top: Constants.titleVerticalPadding,
+                                                                     leading: Constants.titleHorizontalPadding,
+                                                                     bottom: Constants.titleVerticalPadding,
+                                                                     trailing: Constants.titleHorizontalPadding)
+        container.addTarget(self, action: #selector(upgradeTapped), for: .touchUpInside)
+        return container
     }()
 
     private lazy var freePlanLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.attributedText = makeTitleAttributedString(
-            text: UserText.aiChatHeaderFreePlan,
-            font: .daxHeadline(),
-            color: UIColor(designSystemColor: .textPrimary)
-        )
+        label.text = UserText.aiChatHeaderFreePlan
+        label.font = AIChatTabChatHeaderView.makeTitlePrimaryFont()
+        label.textColor = UIColor(designSystemColor: .textPrimary)
+        label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
         return label
     }()
 
-    private lazy var separatorDot: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.attributedText = makeTitleAttributedString(
-            text: "\u{2022}",
-            font: .daxHeadline(),
-            color: UIColor(designSystemColor: .textTertiary)
-        )
-        label.adjustsFontForContentSizeCategory = true
-        return label
+    private lazy var freeChevronView: UIImageView = {
+        let imageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.chevronDownSmall)
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.tintColor = UIColor(designSystemColor: .textPrimary)
+        imageView.contentMode = .scaleAspectFit
+        return imageView
     }()
 
     private lazy var upgradeLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.attributedText = makeTitleAttributedString(
-            text: UserText.aiChatHeaderUpgrade,
-            font: .daxHeadline(),
-            color: UIColor(designSystemColor: .accent)
-        )
+        label.text = UserText.aiChatHeaderUpgrade
+        label.font = .daxCaption1()
+        label.textColor = UIColor(designSystemColor: .textSecondary)
+        label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
         return label
-    }()
-
-    private lazy var upgradeArrow: UIImageView = {
-        let image = DesignSystemImages.Glyphs.Size12.arrowUp
-        let imageView = UIImageView(image: image)
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.tintColor = UIColor(designSystemColor: .accent)
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-
-    private lazy var paidIconView: UIImageView = {
-        let imageView = UIImageView(image: DesignSystemImages.Color.Size16.aiChat)
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.contentMode = .scaleAspectFit
-        return imageView
     }()
 
     private lazy var paidTitleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.attributedText = makeTitleAttributedString(
-            text: UserText.aiChatHeaderPaidTitle,
-            font: .daxHeadline(),
-            color: UIColor(designSystemColor: .textPrimary)
-        )
+        label.text = UserText.aiChatHeaderPaidTitle
+        label.font = AIChatTabChatHeaderView.makeTitlePrimaryFont()
+        label.textColor = UIColor(designSystemColor: .textPrimary)
         label.textAlignment = .center
         label.adjustsFontForContentSizeCategory = true
         return label
     }()
 
     private lazy var freeTitleStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [freeIconView, freePlanLabel, separatorDot, upgradeLabel, upgradeArrow])
+        let stack = UIStackView(arrangedSubviews: [freePlanLabel, upgradeLabel])
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 0
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.isUserInteractionEnabled = false
+        return stack
+    }()
+
+    private lazy var paidTitleStack: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [paidTitleLabel])
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 0
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.isUserInteractionEnabled = false
+        return stack
+    }()
+
+    private static func makeTitlePrimaryFont() -> UIFont {
+        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .subheadline)
+            .addingAttributes([.traits: [UIFontDescriptor.TraitKey.weight: UIFont.Weight.bold]])
+        return UIFont(descriptor: descriptor, size: descriptor.pointSize)
+    }
+
+    private lazy var leftStack: UIStackView = {
+        let stack = UIStackView()
         stack.axis = .horizontal
-        stack.spacing = Constants.titleSpacing
+        stack.spacing = Constants.buttonSpacing
         stack.alignment = .center
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
 
-    private lazy var paidTitleStack: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [paidIconView, paidTitleLabel])
+    private lazy var rightStack: UIStackView = {
+        let stack = UIStackView()
         stack.axis = .horizontal
-        stack.spacing = Constants.titleSpacing
+        stack.spacing = Constants.buttonSpacing
         stack.alignment = .center
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
@@ -176,51 +229,100 @@ final class AIChatTabChatHeaderView: UIView {
         paidTitleStack.isHidden = !isSubscriptionActive
     }
 
+    func setBackAvailable(_ available: Bool) {
+        backButton.isHidden = !available
+        newChatButton.isHidden = available
+    }
+
+    private lazy var bottomSeparator: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(designSystemColor: .lines)
+        return view
+    }()
+
     private func setupUI() {
-        backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-        addSubview(settingsButton)
-        addSubview(newChatButton)
+        backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
+        addSubview(leftStack)
+        addSubview(rightStack)
         addSubview(titleContainer)
+        addSubview(bottomSeparator)
+
+        leftStack.addArrangedSubview(backButton)
+        leftStack.addArrangedSubview(leftPairPill)
+        pillContentSuperview(for: leftPairPill).addSubview(leftPairStack)
+        backButton.isHidden = true
+        rightStack.addArrangedSubview(rightPairPill)
+        pillContentSuperview(for: rightPairPill).addSubview(rightPairStack)
+
+        for control in [chatListButton, newChatButton, tabSwitcherButton, appMenuButton] as [UIControl] {
+            control.addGestureRecognizer(StrictBoundsTouchObserver())
+        }
 
         titleContainer.addSubview(freeTitleStack)
         titleContainer.addSubview(paidTitleStack)
+        titleContainer.addSubview(freeChevronView)
 
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: Constants.headerHeight),
 
-            settingsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
-            settingsButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            settingsButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            settingsButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            leftStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
+            leftStack.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            newChatButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
-            newChatButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            newChatButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            newChatButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            rightStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
+            rightStack.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             titleContainer.centerXAnchor.constraint(equalTo: centerXAnchor),
             titleContainer.centerYAnchor.constraint(equalTo: centerYAnchor),
-            titleContainer.leadingAnchor.constraint(greaterThanOrEqualTo: settingsButton.trailingAnchor, constant: 8),
-            titleContainer.trailingAnchor.constraint(lessThanOrEqualTo: newChatButton.leadingAnchor, constant: -8),
+            titleContainer.leadingAnchor.constraint(greaterThanOrEqualTo: leftStack.trailingAnchor, constant: Constants.titleEdgeSpacing),
+            titleContainer.trailingAnchor.constraint(lessThanOrEqualTo: rightStack.leadingAnchor, constant: -Constants.titleEdgeSpacing),
 
-            freeTitleStack.topAnchor.constraint(equalTo: titleContainer.topAnchor),
-            freeTitleStack.leadingAnchor.constraint(equalTo: titleContainer.leadingAnchor),
-            freeTitleStack.trailingAnchor.constraint(equalTo: titleContainer.trailingAnchor),
-            freeTitleStack.bottomAnchor.constraint(equalTo: titleContainer.bottomAnchor),
+            backButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            backButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
-            paidTitleStack.topAnchor.constraint(equalTo: titleContainer.topAnchor),
-            paidTitleStack.leadingAnchor.constraint(equalTo: titleContainer.leadingAnchor),
-            paidTitleStack.trailingAnchor.constraint(equalTo: titleContainer.trailingAnchor),
-            paidTitleStack.bottomAnchor.constraint(equalTo: titleContainer.bottomAnchor),
+            chatListButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            chatListButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
 
-            upgradeArrow.widthAnchor.constraint(equalToConstant: Constants.upgradeArrowSize),
-            upgradeArrow.heightAnchor.constraint(equalToConstant: Constants.upgradeArrowSize),
+            newChatButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            newChatButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
 
-            freeIconView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
-            freeIconView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+            appMenuButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            appMenuButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
 
-            paidIconView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
-            paidIconView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+            tabSwitcherButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            tabSwitcherButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+
+            leftPairPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            leftPairStack.leadingAnchor.constraint(equalTo: leftPairPill.leadingAnchor, constant: Constants.pillInnerHorizontalPadding),
+            leftPairStack.trailingAnchor.constraint(equalTo: leftPairPill.trailingAnchor, constant: -Constants.pillInnerHorizontalPadding),
+            leftPairStack.topAnchor.constraint(equalTo: leftPairPill.topAnchor),
+            leftPairStack.bottomAnchor.constraint(equalTo: leftPairPill.bottomAnchor),
+
+            rightPairPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            rightPairStack.leadingAnchor.constraint(equalTo: rightPairPill.leadingAnchor, constant: Constants.pillInnerHorizontalPadding),
+            rightPairStack.trailingAnchor.constraint(equalTo: rightPairPill.trailingAnchor, constant: -Constants.pillInnerHorizontalPadding),
+            rightPairStack.topAnchor.constraint(equalTo: rightPairPill.topAnchor),
+            rightPairStack.bottomAnchor.constraint(equalTo: rightPairPill.bottomAnchor),
+
+            freeTitleStack.topAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.topAnchor),
+            freeTitleStack.leadingAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.leadingAnchor),
+            freeTitleStack.trailingAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.trailingAnchor),
+            freeTitleStack.bottomAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.bottomAnchor),
+
+            paidTitleStack.topAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.topAnchor),
+            paidTitleStack.leadingAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.leadingAnchor),
+            paidTitleStack.trailingAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.trailingAnchor),
+            paidTitleStack.bottomAnchor.constraint(equalTo: titleContainer.layoutMarginsGuide.bottomAnchor),
+
+            freeChevronView.leadingAnchor.constraint(equalTo: freePlanLabel.trailingAnchor, constant: Constants.chevronSpacing),
+            freeChevronView.centerYAnchor.constraint(equalTo: freePlanLabel.centerYAnchor),
+            freeChevronView.widthAnchor.constraint(equalToConstant: Constants.chevronSize),
+            freeChevronView.heightAnchor.constraint(equalToConstant: Constants.chevronSize),
+
+            bottomSeparator.leadingAnchor.constraint(equalTo: leadingAnchor),
+            bottomSeparator.trailingAnchor.constraint(equalTo: trailingAnchor),
+            bottomSeparator.bottomAnchor.constraint(equalTo: bottomAnchor),
+            bottomSeparator.heightAnchor.constraint(equalToConstant: 1.0 / UIScreen.main.scale),
         ])
 
         upgradeLabel.accessibilityCustomActions = [
@@ -234,20 +336,26 @@ final class AIChatTabChatHeaderView: UIView {
         updateButtonShadows()
     }
 
-    private func makeIconButton(image: DesignSystemImage, accessibilityLabel: String, action: Selector) -> UIButton {
+    private func makeIconButton(image: DesignSystemImage, accessibilityLabel: String, action: Selector, includeChrome: Bool = true) -> UIButton {
         let button: UIButton
-        if #available(iOS 26, *) {
+        if includeChrome, #available(iOS 26, *) {
             var config = UIButton.Configuration.glass()
             config.image = image
             config.cornerStyle = .capsule
             button = UIButton(configuration: config)
-        } else {
+        } else if includeChrome {
             button = makeIconButtonLegacy(image: image)
+        } else {
+            button = UIButton(type: .system)
+            button.setImage(image, for: .normal)
         }
         button.translatesAutoresizingMaskIntoConstraints = false
         button.tintColor = UIColor(designSystemColor: .icons)
         button.accessibilityLabel = accessibilityLabel
         button.addTarget(self, action: action, for: .touchUpInside)
+        if includeChrome {
+            applyGlassChromeShadow(to: button)
+        }
         return button
     }
 
@@ -259,41 +367,103 @@ final class AIChatTabChatHeaderView: UIView {
         return button
     }
 
+    private func pillContentSuperview(for pill: UIView) -> UIView {
+        if #available(iOS 26, *),
+           let effectView = pill.subviews.first(where: { $0 is UIVisualEffectView }) as? UIVisualEffectView {
+            return effectView.contentView
+        }
+        return pill
+    }
+
+    private func makePillContainer() -> UIView {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.layer.cornerRadius = Constants.buttonSize / 2
+        if #available(iOS 26, *) {
+            let effectView = makeGlassPillEffectView()
+            view.addSubview(effectView)
+            NSLayoutConstraint.activate([
+                effectView.topAnchor.constraint(equalTo: view.topAnchor),
+                effectView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                effectView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                effectView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            ])
+        } else {
+            view.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
+        }
+        applyGlassChromeShadow(to: view)
+        return view
+    }
+
+    @available(iOS 26, *)
+    private func makeGlassPillEffectView() -> UIVisualEffectView {
+        let effect = UIGlassEffect(style: .clear)
+        effect.isInteractive = true
+
+        let effectView = UIVisualEffectView(effect: effect)
+        effectView.translatesAutoresizingMaskIntoConstraints = false
+        effectView.layer.cornerRadius = Constants.buttonSize / 2
+        effectView.clipsToBounds = true
+        return effectView
+    }
+
     private func updateButtonShadows() {
-        if #available(iOS 26, *) { return }
-        let isDark = traitCollection.userInterfaceStyle == .dark
-        for button in [settingsButton, newChatButton] {
-            if isDark {
-                button.layer.shadowColor = UIColor.white.cgColor
-                button.layer.shadowOpacity = 0.35
-                button.layer.shadowRadius = 8
-                button.layer.shadowOffset = .zero
-                button.layer.borderWidth = 0.5
-                button.layer.borderColor = UIColor.white.withAlphaComponent(0.25).cgColor
-            } else {
-                button.layer.shadowColor = UIColor.black.cgColor
-                button.layer.shadowOpacity = 0.09
-                button.layer.shadowRadius = 6
-                button.layer.shadowOffset = CGSize(width: 0, height: 5)
-                button.layer.borderWidth = 0
-                button.layer.borderColor = nil
-            }
+        let chromedViews: [UIView] = [backButton, leftPairPill, rightPairPill]
+        for view in chromedViews {
+            applyGlassChromeShadow(to: view)
         }
     }
 
-    private func makeTitleAttributedString(text: String, font: UIFont, color: UIColor) -> NSAttributedString {
-        return NSAttributedString(string: text, attributes: [
-            .font: font,
-            .foregroundColor: color,
-            .kern: Constants.titleKerning,
-        ])
+    private func applyGlassChromeShadow(to view: UIView) {
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOpacity = 0.16
+        view.layer.shadowOffset = CGSize(width: 0, height: 8)
+        view.layer.shadowRadius = 16
+        view.layer.borderWidth = 0
+        view.layer.borderColor = nil
+        view.clipsToBounds = false
     }
 
-    @objc private func settingsTapped() { delegate?.aiChatTabChatHeaderDidTapSettings() }
+    @objc private func backTapped() { delegate?.aiChatTabChatHeaderDidTapBack() }
+    @objc private func chatListTapped() { delegate?.aiChatTabChatHeaderDidTapChatList() }
     @objc private func newChatTapped() { delegate?.aiChatTabChatHeaderDidTapNewChat() }
+    @objc private func appMenuTapped() { delegate?.aiChatTabChatHeaderDidTapAppMenu() }
     @objc private func upgradeTapped() {
         if !isSubscriptionActive {
             delegate?.aiChatTabChatHeaderDidTapUpgrade()
+        }
+    }
+}
+
+/// Plain container that fades alpha while highlighted to give buttons-without-chrome a tactile press state.
+private final class HighlightableContainerView: UIControl {
+    override var isHighlighted: Bool {
+        didSet {
+            UIView.animate(withDuration: 0.1) {
+                self.alpha = self.isHighlighted ? 0.5 : 1.0
+            }
+        }
+    }
+}
+
+/// Cancels its host UIControl's tracking the moment the touch leaves the control's visible
+/// bounds. UIControl's default tracking tolerates ~70pt of slack — fine for an isolated
+/// button, but inside our shared glass pill it lets the originally-tapped icon fire when the
+/// finger is released over a sibling icon. The flags below keep the recognizer purely
+/// observational so the control's own taps, long-press and menus still flow normally.
+private final class StrictBoundsTouchObserver: UIGestureRecognizer {
+    override init(target: Any?, action: Selector?) {
+        super.init(target: target, action: action)
+        delaysTouchesBegan = false
+        delaysTouchesEnded = false
+        cancelsTouchesInView = false
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesMoved(touches, with: event)
+        guard let control = view as? UIControl, let touch = touches.first else { return }
+        if !control.bounds.contains(touch.location(in: control)) {
+            control.cancelTracking(with: event)
         }
     }
 }

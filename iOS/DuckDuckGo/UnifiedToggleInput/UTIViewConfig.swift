@@ -23,7 +23,13 @@ import Foundation
 /// previous boolean soup (`isExpanded` + `showToggle` + `alwaysShowToolbar`) with a single value
 /// callers compose explicitly.
 enum UnifiedToggleInputCardLayout: Equatable {
-    /// Single-line bar; toggle row and toolbar both hidden.
+    /// Single-line bar shaped to mimic the regular omnibar — 44pt tall, 16pt corner radius,
+    /// leading-aligned placeholder. Used while the UTI is docked alongside / dismissing back
+    /// to the real omnibar so the snap between the two reads as one continuous pill.
+    case omnibar
+    /// Single-line AI-tab footer pill — 48pt capsule. Fire / voice accessories may flank it
+    /// depending on context, but they're optional; the layout is the same with or without.
+    /// Toggle row and toolbar both hidden.
     case collapsed
     /// Multi-line card. Each component independently visible.
     case expanded(showsToggle: Bool, showsToolbar: Bool)

@@ -74,6 +74,15 @@ private extension MainViewController {
             viewCoordinator.stopContentContainerBehindInput()
         }
         viewCoordinator.showUnifiedToggleInput()
+        // Hidden toolbar still claims layout below `toolbar.topAnchor`, leaving the UTI floating
+        // ~83pt above the home indicator. Anchor to the keyboard layout guide (with a safe-area
+        // floor) so the collapsed pill sits just above the home indicator, matching Figma and
+        // mirroring the expanded path below.
+        if let coordinator = unifiedToggleInputCoordinator,
+           coordinator.isAITabState,
+           coordinator.cardPosition == .bottom {
+            viewCoordinator.setNavBarContainerBottomToKeyboard()
+        }
         viewCoordinator.suggestionTrayContainer.isHidden = true
         if let coordinator = unifiedToggleInputCoordinator {
             updateUnifiedInputContentVisibility(for: coordinator)

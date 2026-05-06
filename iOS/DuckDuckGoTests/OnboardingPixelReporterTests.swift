@@ -1269,14 +1269,14 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
 private final class MockOnboardingSharedPixelHandling: OnboardingSharedPixelHandling {
     private(set) var eventsFired: [OnboardingSharedPixelEvent] = []
-    private(set) var receivedSource: OnboardingSourcePixelParameter?
-    private(set) var receivedFlow: OnboardingFlowTypePixelParameter?
-    private(set) var receivedVariant: OnboardingVariantPixelParameter?
+    private(set) var receivedSource: OnboardingPixelParameter.Source?
+    private(set) var receivedFlow: OnboardingPixelParameter.Flow?
+    private(set) var receivedVariant: OnboardingPixelParameter.Variant?
 
     func fire(_ event: OnboardingSharedPixelEvent,
-              source: OnboardingSourcePixelParameter?,
-              flow: OnboardingFlowTypePixelParameter?,
-              variant: OnboardingVariantPixelParameter?) {
+              source: OnboardingPixelParameter.Source?,
+              flow: OnboardingPixelParameter.Flow?,
+              variant: OnboardingPixelParameter.Variant?) {
         eventsFired.append(event)
         receivedSource = source
         receivedFlow = flow

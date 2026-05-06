@@ -148,10 +148,19 @@ extension MainViewController {
             webViewBackgroundColor = rootBackgroundColor
         case .aiTabChatChromeHidden:
             statusBackgroundPresentation = .aiTabChatChromeHidden
-            rootBackgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-            navigationBarContainerColor = rootBackgroundColor
             inputContentContainerColor = .clear
-            webViewBackgroundColor = rootBackgroundColor
+            // Only paint the chrome around the input with the contextual sheet tone while the
+            // input is engaged (first responder). In the idle/collapsed state we keep the chrome
+            // transparent so the chat surface beneath shows through unchanged.
+            if unifiedToggleInputCoordinator?.isInputEditing == true {
+                rootBackgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+                navigationBarContainerColor = rootBackgroundColor
+                webViewBackgroundColor = rootBackgroundColor
+            } else {
+                rootBackgroundColor = ThemeManager.shared.currentTheme.mainViewBackgroundColor
+                navigationBarContainerColor = .clear
+                webViewBackgroundColor = .clear
+            }
         }
 
         viewCoordinator.setStatusBackgroundPresentation(statusBackgroundPresentation)

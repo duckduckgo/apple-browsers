@@ -499,6 +499,93 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertTrue(pixelHandler.fireSubscriptionCardDismissedPixelCalled)
         XCTAssertEqual(pixelHandler.fireNextStepsCardDismissedPixelCalledWith, .subscription)
     }
+
+    // MARK: - YouTube Ad Blocking visibility
+
+    @MainActor func testWhenYTAdBlockingFeatureUnavailableThenYTAdBlockingCardIsNotVisible() {
+        let mock = MockAdBlockingAvailability(isFeatureAvailable: false, isEnabledByUser: true)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
+
+        vm.shouldShowAllFeatures = true
+
+        XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.youtubeAdBlocking))
+    }
+
+    @MainActor func testWhenYTAdBlockingUserNotOptedInThenYTAdBlockingCardIsNotVisible() {
+        let mock = MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: false)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
+
+        vm.shouldShowAllFeatures = true
+
+        XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.youtubeAdBlocking))
+    }
+
+    @MainActor func testWhenYTAdBlockingFullyEnabledThenYTAdBlockingCardIsVisible() {
+        let mock = MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
+
+        vm.shouldShowAllFeatures = true
+
+        XCTAssertTrue(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.youtubeAdBlocking))
+    }
+
+    // MARK: - YouTube Ad Blocking ↔ Duck Player mutual exclusion
+
+    @MainActor func testWhenYTAdBlockingEligibleThenDuckPlayerCardIsHidden() {
+        let mock = MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
+        duckPlayerPreferences.duckPlayerModeBool = nil
+        duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
+        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
+
+        vm.shouldShowAllFeatures = true
+
+        let visibleFeatures = vm.visibleFeaturesMatrix.flatMap { $0 }
+        XCTAssertTrue(visibleFeatures.contains(.youtubeAdBlocking))
+        XCTAssertFalse(visibleFeatures.contains(.duckplayer))
+    }
+
+    @MainActor func testWhenYTAdBlockingNotEligibleThenDuckPlayerCardIsVisible() {
+        let mock = MockAdBlockingAvailability(isFeatureAvailable: false, isEnabledByUser: true)
+        duckPlayerPreferences.duckPlayerModeBool = nil
+        duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
+        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
+
+        vm.shouldShowAllFeatures = true
+
+        let visibleFeatures = vm.visibleFeaturesMatrix.flatMap { $0 }
+        XCTAssertFalse(visibleFeatures.contains(.youtubeAdBlocking))
+        XCTAssertTrue(visibleFeatures.contains(.duckplayer))
+    }
+
+    @MainActor func testWhenYTAdBlockingDismissedThenDuckPlayerCardBecomesVisible() {
+        let mock = MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
+        duckPlayerPreferences.duckPlayerModeBool = nil
+        duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
+        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting, adBlockingAvailability: mock)
+
+        vm.shouldShowAllFeatures = true
+        XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.duckplayer))
+
+        vm.removeItem(for: .youtubeAdBlocking)
+
+        let visibleFeatures = vm.visibleFeaturesMatrix.flatMap { $0 }
+        XCTAssertFalse(visibleFeatures.contains(.youtubeAdBlocking))
+        XCTAssertTrue(visibleFeatures.contains(.duckplayer))
+    }
+
+    // MARK: - YouTube Ad Blocking action handling & dismissal
+
+    @MainActor func testWhenAskedToPerformActionForYTAdBlockingThenItHandlesCardAction() {
+        vm.performAction(for: .youtubeAdBlocking)
+
+        XCTAssertEqual(cardActionsHandler.cardActionsPerformed, [.youtubeAdBlocking])
+    }
+
+    @MainActor func testWhenDismissingYTAdBlockingCardThenItFiresPixel() {
+        vm.removeItem(for: .youtubeAdBlocking)
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardDismissedPixelCalledWith, .youtubeAdBlocking)
+    }
 }
 
 extension HomePage.Models.ContinueSetUpModel {

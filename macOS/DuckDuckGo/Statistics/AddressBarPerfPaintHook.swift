@@ -26,9 +26,6 @@ import Darwin
 /// The callback receives the upcoming frame's output time as `TimeInterval` (host-clock
 /// seconds, directly comparable to `CACurrentMediaTime()`).
 ///
-/// `CVDisplayLink` is required (not `CADisplayLink`) because the deployment target is below
-/// `CADisplayLink`'s macOS 14 minimum. The class is deprecated as of macOS 15 but functional.
-///
 /// The hook recreates its underlying display link when the window moves to a different screen,
 /// so a single instance keeps measuring correctly across multi-display setups.
 final class AddressBarPerfPaintHook {

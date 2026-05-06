@@ -32,6 +32,21 @@ protocol TabsModelPersisting {
     func save(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error>
     func clear(for key: TabsModelStorageKey)
     func clearAll()
+    /// Blocks the caller until any in-flight asynchronous save has finished writing to disk.
+    /// Conformers that perform synchronous writes can leave the default no-op.
+    func flush()
+    /// Synchronously persists the model and returns the real outcome (the async `save(model:for:)`
+    /// path may return `.success` immediately and report errors only via telemetry).
+    func saveSynchronously(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error>
+}
+
+extension TabsModelPersisting {
+    func flush() {}
+    /// Default implementation: defer to `save(model:for:)` for conformers whose `save` is already
+    /// synchronous (e.g. test mocks).
+    func saveSynchronously(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
+        save(model: model, for: key)
+    }
 }
 
 enum TabsPersistenceError: Error {
@@ -51,6 +66,11 @@ class TabsModelPersistence: TabsModelPersisting {
     private let normalStore: ThrowingKeyValueStoring
     private let fireStore: ThrowingKeyValueStoring
     private let legacyStore: KeyValueStoring
+
+    /// Serial queue used to encode + write tabs models off the main thread. All writes for both
+    /// stores funnel through this queue, so a `flush()` from any thread is guaranteed to wait for
+    /// any in-flight encode to finish.
+    private let persistQueue = DispatchQueue(label: "com.duckduckgo.tabsmodel.persist", qos: .utility)
 
     convenience init() throws {
 
@@ -140,11 +160,26 @@ class TabsModelPersistence: TabsModelPersisting {
     }
 
     public func save(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
+        // Hop the heavy NSCoding encode + disk write off the main thread. We reference the live
+        // model: subsequent main-thread mutations after this point are intentionally not captured
+        // (they will be picked up by the next save()). Lifecycle force-flush callers should drain
+        // the queue via `flush()` before the app suspends to guarantee durability.
+        let targetStore = store(for: key)
+        persistQueue.async {
+            _ = self.encodeAndWrite(model: model, into: targetStore)
+        }
+        return .success(())
+    }
+
+    /// Encodes the model and writes it to the given store, returning the real outcome and reporting
+    /// failures via daily pixel + log. Always invoked from the persistence's serial queue.
+    @discardableResult
+    private func encodeAndWrite(model: TabsModel, into targetStore: ThrowingKeyValueStoring) -> Result<Void, Error> {
         do {
-            // Deep-copy to freeze mutable state before archiving
+            // Deep-copy to freeze mutable state before archiving (race-safe off-main encode).
             let snapshot = model.archivalSnapshot()
             let data = try NSKeyedArchiver.archivedData(withRootObject: snapshot, requiringSecureCoding: false)
-            try store(for: key).set(data, forKey: Constants.storageKey)
+            try targetStore.set(data, forKey: Constants.storageKey)
             return .success(())
         } catch {
             DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
@@ -152,6 +187,22 @@ class TabsModelPersistence: TabsModelPersisting {
                                          error: error)
             Logger.general.error("Something went wrong archiving TabsModel: \(error.localizedDescription, privacy: .public)")
             return .failure(error)
+        }
+    }
+
+    /// Blocks until any pending async save has finished writing.
+    public func flush() {
+        persistQueue.sync { }
+    }
+
+    /// Synchronously persists the model: drains any queued async saves first, then encodes + writes
+    /// inline on the serial queue, returning the actual outcome. Use this when the caller needs the
+    /// real `Result` (e.g. data-clearing telemetry) rather than the always-success placeholder
+    /// returned by the debounced/async path.
+    public func saveSynchronously(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {
+        let targetStore = store(for: key)
+        return persistQueue.sync {
+            self.encodeAndWrite(model: model, into: targetStore)
         }
     }
 

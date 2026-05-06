@@ -163,6 +163,17 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
+    // MARK: - Save debouncing
+    //
+    // `save()` is hot during active tab switching (~26-35 calls/min), and the underlying NSCoding
+    // encode at iPad 200-tab scale costs ~30 ms avg / 47 ms max on the main thread. We coalesce
+    // calls into a short idle window so the encode runs at most once per window, and we hand the
+    // encode + write off the main thread inside `TabsModelPersistence`. Lifecycle transitions
+    // (resign-active, terminate, memory warning) must force-flush so we never lose state if the
+    // app is suspended between debounce arming and the actual write landing.
+    private static let saveDebounceInterval: DispatchTimeInterval = .milliseconds(300)
+    private var pendingSaveWorkItem: DispatchWorkItem?
+
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
     weak var fireModeDelegate: TabManagerFireModeDelegate?
@@ -625,9 +636,61 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
     }
 
+    /// Schedules a debounced save. The actual encode + disk write happens on a background serial
+    /// queue inside `TabsModelPersistence`; this method coalesces bursts of calls so we encode at
+    /// most once per debounce window. The returned `Result` reflects only the dispatch step (it
+    /// does not wait for the write) so callers must not rely on synchronous persistence; for
+    /// callers that need the write to land before proceeding, use `flushPendingSave()`.
     @MainActor
+    @discardableResult
     func save() -> Result<Void, Error> {
-        return tabsModelProvider.save()
+        scheduleDebouncedSave()
+        return .success(())
+    }
+
+    /// Cancels any pending debounced save, performs the save synchronously (which enqueues the
+    /// encode on the persistence layer's serial queue), and blocks until that queue drains.
+    /// Use at lifecycle boundaries (resign-active, terminate, memory warning) and from any caller
+    /// that genuinely needs the persisted state to be on disk before returning (e.g. data
+    /// clearing flows). Returns the synchronous `Result` from the underlying save.
+    @discardableResult
+    func flushPendingSave() -> Result<Void, Error> {
+        cancelPendingSave()
+        return tabsModelProvider.flushPendingSave()
+    }
+
+    private func scheduleDebouncedSave() {
+        // Debouncer state is accessed only on the main queue to avoid cross-thread mutation of
+        // `pendingSaveWorkItem`. Callers may invoke `save()` from any thread; we always hop here.
+        let perform = { [weak self] in
+            guard let self else { return }
+            self.pendingSaveWorkItem?.cancel()
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                self.pendingSaveWorkItem = nil
+                _ = self.tabsModelProvider.save()
+            }
+            self.pendingSaveWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.saveDebounceInterval, execute: workItem)
+        }
+        if Thread.isMainThread {
+            perform()
+        } else {
+            DispatchQueue.main.async(execute: perform)
+        }
+    }
+
+    private func cancelPendingSave() {
+        let perform = { [weak self] in
+            guard let self else { return }
+            self.pendingSaveWorkItem?.cancel()
+            self.pendingSaveWorkItem = nil
+        }
+        if Thread.isMainThread {
+            perform()
+        } else {
+            DispatchQueue.main.sync(execute: perform)
+        }
     }
 
     /// Prepares all tabs for upcoming data clearing, skipping the current tab
@@ -771,7 +834,8 @@ extension TabManager {
 
         let interactionResult = interactionStateSource?.removeAll(excluding: tabsData.tabsToPreserve)
         removeTabHistory(for: Array(tabsData.tabIDsToDelete))
-        let saveResult = save()
+        // Data-clearing must land on disk before returning; debounced save is not sufficient here.
+        let saveResult = flushPendingSave()
 
         if case .failure(let error) = previewsResult {
             return .failure(error)
@@ -819,11 +883,42 @@ extension TabManager {
                                                selector: #selector(onApplicationBecameActive),
                                                name: UIApplication.didBecomeActiveNotification,
                                                object: nil)
+        // Force-flush at lifecycle boundaries so a debounced save can never be lost if the app is
+        // suspended between schedule and write. `willResignActive` covers backgrounding and the
+        // pre-suspension transition; `willTerminate` is best-effort. `didReceiveMemoryWarning`
+        // protects against an unloading scenario that bypasses the standard lifecycle.
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onApplicationWillResignActive),
+                                               name: UIApplication.willResignActiveNotification,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onApplicationWillTerminate),
+                                               name: UIApplication.willTerminateNotification,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onMemoryWarning),
+                                               name: UIApplication.didReceiveMemoryWarningNotification,
+                                               object: nil)
     }
 
     @objc
     private func onApplicationBecameActive(_ notification: NSNotification) {
         assertTabPreviewCount()
+    }
+
+    @objc
+    private func onApplicationWillResignActive(_ notification: NSNotification) {
+        flushPendingSave()
+    }
+
+    @objc
+    private func onApplicationWillTerminate(_ notification: NSNotification) {
+        flushPendingSave()
+    }
+
+    @objc
+    private func onMemoryWarning(_ notification: NSNotification) {
+        flushPendingSave()
     }
 
     private func assertTabPreviewCount() {

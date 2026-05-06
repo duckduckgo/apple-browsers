@@ -704,6 +704,7 @@ class MainViewController: UIViewController {
         // Needs to be called here because sometimes the frames are not the expected size during didLoad
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
+        restorePendingDuckAIAnswerStepIfNeeded()
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
@@ -889,8 +890,6 @@ class MainViewController: UIViewController {
         segueToDaxOnboarding { [weak self] in
             self?.startupOnboardingCover.detach()
         }
-
-        restorePendingDuckAIAnswerStepIfNeeded()
     }
 
     func presentSyncRecoveryPromptIfNeeded() {

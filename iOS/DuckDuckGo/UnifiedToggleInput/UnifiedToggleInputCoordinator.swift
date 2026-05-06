@@ -435,6 +435,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState = .aiTab(.expanded)
         setInitialInputMode(inputMode)
         isInputVisibleForKeyboard = true
+        viewController.handler.resetInteractionState()
 
         let renderState = computeRenderState()
 

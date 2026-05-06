@@ -984,6 +984,13 @@ class MainViewController: UIViewController {
               let coordinator = unifiedToggleInputCoordinator,
               coordinator.shouldCollapseOnKeyboardDismiss,
               currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true else { return }
+        // With a hardware keyboard connected, iOS fires keyboardWillHide even though the
+        // text field is still the first responder. Treat that as "still editing" and skip
+        // the collapse — otherwise the expanded bar collapses on every focus, making it
+        // impossible to type.
+        if coordinator.viewController.isInputFirstResponder {
+            return
+        }
         coordinator.showCollapsed()
     }
 
@@ -1259,17 +1266,18 @@ class MainViewController: UIViewController {
             self.viewCoordinator.constraints.navigationBarContainerHeight.constant = newHeight
         }
 
-        if appSettings.currentAddressBarPosition.isBottom, let currentTab {
+        if isAnyAITabUTIState, let currentTab {
+            // The web view is anchored to the input bar's top (.unifiedToggleInput mode),
+            // so it never extends behind the input — no bottom inset is needed.
+            if currentTab.webView.scrollView.contentInset.bottom != 0 {
+                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: 0, right: 0)
+            }
+        } else if appSettings.currentAddressBarPosition.isBottom, let currentTab {
             let inset = intersection.height > 0 ? omniBarHeight : 0
             currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
 
             let bottomOffset = intersection.height > 0 ? containerHeight - omniBarHeight : 0
             currentTab.borderView.bottomOffset = -bottomOffset
-        } else if isAnyAITabUTIState, let currentTab {
-            let inset = keyboardHeight > 0 ? baseInputHeight : 0
-            if currentTab.webView.scrollView.contentInset.bottom != inset {
-                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
-            }
         }
 
         if appSettings.currentAddressBarPosition.isBottom,

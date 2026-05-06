@@ -493,6 +493,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.handler.hidesVoiceButton = false
         isInputVisibleForKeyboard = true
         hasSubmittedPrompt = false
+        viewController.handler.resetInteractionState()
         resetToolsSelection()
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()

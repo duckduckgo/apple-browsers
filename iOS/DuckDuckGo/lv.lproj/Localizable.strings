@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "Mākslīgā intelekta funkcijas";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Izvēlēties fotoattēlu";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Uzņemt fotoattēlu";
@@ -2847,6 +2846,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Ne tagad";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "MI funkcijas ir privātas un nav obligātas.\nTu vari veikt izmaiņas sadaļā Iestatījumi > MI funkcijas.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Vai vēlies ērti piekļūt privātai mākslīgā intelekta tērzēšanai adreses joslā?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Meklēšana & Duck.ai";

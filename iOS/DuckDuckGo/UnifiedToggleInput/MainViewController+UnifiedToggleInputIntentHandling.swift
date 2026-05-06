@@ -71,7 +71,7 @@ private extension MainViewController {
     func handleShowCollapsedIntent() {
         if unifiedToggleInputCoordinator?.isAITabState == true {
             applyUnifiedInputChromeBackground(.aiTabChatChromeHidden)
-            viewCoordinator.stopContentContainerBehindInput()
+            viewCoordinator.anchorContentContainerToInputTop()
         }
         viewCoordinator.showUnifiedToggleInput()
         // Hidden toolbar still claims layout below `toolbar.topAnchor`, leaving the UTI floating
@@ -123,7 +123,7 @@ private extension MainViewController {
             viewCoordinator.setNavBarContainerBottomToKeyboard()
         }
         applyUnifiedInputChromeBackground(aiTabChromeBackgroundState(for: renderState))
-        viewCoordinator.extendContentContainerBehindInput()
+        viewCoordinator.anchorContentContainerToInputTop()
     }
 
     func handleShowOmnibarEditingIntent(height: CGFloat, pendingHeight: CGFloat?) {

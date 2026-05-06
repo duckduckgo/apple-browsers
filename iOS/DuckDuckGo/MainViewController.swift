@@ -339,6 +339,7 @@ class MainViewController: UIViewController {
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
     lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
+    var unifiedInputStateStore: UnifiedInputStateStore?
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
 
@@ -983,6 +984,13 @@ class MainViewController: UIViewController {
               let coordinator = unifiedToggleInputCoordinator,
               coordinator.shouldCollapseOnKeyboardDismiss,
               currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true else { return }
+        // With a hardware keyboard connected, iOS fires keyboardWillHide even though the
+        // text field is still the first responder. Treat that as "still editing" and skip
+        // the collapse — otherwise the expanded bar collapses on every focus, making it
+        // impossible to type.
+        if coordinator.viewController.isInputFirstResponder {
+            return
+        }
         coordinator.showCollapsed()
     }
 
@@ -1258,17 +1266,18 @@ class MainViewController: UIViewController {
             self.viewCoordinator.constraints.navigationBarContainerHeight.constant = newHeight
         }
 
-        if appSettings.currentAddressBarPosition.isBottom, let currentTab {
+        if isAnyAITabUTIState, let currentTab {
+            // The web view is anchored to the input bar's top (.unifiedToggleInput mode),
+            // so it never extends behind the input — no bottom inset is needed.
+            if currentTab.webView.scrollView.contentInset.bottom != 0 {
+                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: 0, right: 0)
+            }
+        } else if appSettings.currentAddressBarPosition.isBottom, let currentTab {
             let inset = intersection.height > 0 ? omniBarHeight : 0
             currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
 
             let bottomOffset = intersection.height > 0 ? containerHeight - omniBarHeight : 0
             currentTab.borderView.bottomOffset = -bottomOffset
-        } else if isAnyAITabUTIState, let currentTab {
-            let inset = keyboardHeight > 0 ? baseInputHeight : 0
-            if currentTab.webView.scrollView.contentInset.bottom != inset {
-                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
-            }
         }
 
         if appSettings.currentAddressBarPosition.isBottom,
@@ -1886,7 +1895,8 @@ class MainViewController: UIViewController {
                       tools: [AIChatRAGTool]? = nil,
                       modelId: String? = nil,
                       reasoningEffort: AIChatReasoningEffort? = nil,
-                      images: [AIChatNativePrompt.NativePromptImage]? = nil) {
+                      images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                      files: [AIChatNativePrompt.NativePromptFile]? = nil) {
         guard let currentTab else {
             assertionFailure("load called with no current tab")
             return
@@ -1904,7 +1914,8 @@ class MainViewController: UIViewController {
                 tools: tools,
                 modelId: modelId,
                 reasoningEffort: reasoningEffort,
-                images: images
+                images: images,
+                files: files
             )
         }
     }
@@ -2082,7 +2093,7 @@ class MainViewController: UIViewController {
     }
 
     private func displayedTextEntryMode(for tab: Tab) -> TextEntryMode {
-        tab.preferredTextEntryMode.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+        tab.unifiedInputState.preferredTextEntryMode.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
     }
 
     func refreshOmniBar() {
@@ -2097,6 +2108,12 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             if let tabModel = tabManager.currentTabsModel.currentTab {
                 viewCoordinator.omniBar.setSelectedTextEntryMode(displayedTextEntryMode(for: tabModel))
+                // Only activate from the model when there's no TabViewController to drive
+                // refreshUnifiedToggleInput(for:) below — otherwise it would fire activateForTab
+                // a second time for the same uid, causing redundant attachment teardown.
+                if currentTab == nil {
+                    unifiedToggleInputCoordinator?.activateForTab(tabModel.uid)
+                }
             }
             updateBrowsingMenuHeaderDataSource()
             if let tab = currentTab {
@@ -3144,6 +3161,7 @@ class MainViewController: UIViewController {
                     modelId: String? = nil,
                     reasoningEffort: AIChatReasoningEffort? = nil,
                     images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                    files: [AIChatNativePrompt.NativePromptFile]? = nil,
                     fromDeepLink: Bool = false) {
 
         if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
@@ -3156,6 +3174,7 @@ class MainViewController: UIViewController {
                 modelId: modelId,
                 reasoningEffort: reasoningEffort,
                 images: images,
+                files: files,
                 fromDeepLink: fromDeepLink
             )
         } else {
@@ -3167,6 +3186,8 @@ class MainViewController: UIViewController {
                 tools: tools,
                 modelId: modelId,
                 reasoningEffort: reasoningEffort,
+                images: images,
+                files: files,
                 on: self
             )
         }
@@ -3232,6 +3253,7 @@ class MainViewController: UIViewController {
                                  modelId: String? = nil,
                                  reasoningEffort: AIChatReasoningEffort? = nil,
                                  images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                                 files: [AIChatNativePrompt.NativePromptFile]? = nil,
                                  fromDeepLink: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
@@ -3244,7 +3266,7 @@ class MainViewController: UIViewController {
             return
         }
 
-        load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images)
+        load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
     }
     
     /// Executes the closure if the current tab is an AI tab
@@ -4335,7 +4357,7 @@ extension MainViewController: OmniBarDelegate {
 
     /// Shared commit logic for all toggle paths (iPad, iPhone editing state, unified toggle input).
     func commitToggleMode(_ mode: TextEntryMode) {
-        tabManager.currentTabsModel.currentTab?.preferredTextEntryMode = mode
+        tabManager.currentTabsModel.currentTab?.unifiedInputState.preferredTextEntryMode = mode
         toggleModeStorage.save(mode)
     }
     

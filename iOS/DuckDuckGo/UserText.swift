@@ -2050,7 +2050,7 @@ public struct UserText {
     public static let aiChatToolbarCustomizeResponsesMenuTitle = NSLocalizedString("aichat.toolbar.tools.customizeResponses.title", value: "Customize Responses", comment: "Title for the customize responses action in the unified input tools menu")
     public static let aiChatToolbarToolsButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.tools.button.accessibility.label", value: "Tools", comment: "Accessibility label for the tools button in the unified input toolbar")
     public static let aiChatToolbarClearSelectedToolAccessibilityLabel = NotLocalizedString("aichat.toolbar.tools.clear.button.accessibility.label", value: "Clear selected tool", comment: "Accessibility label for the button that clears the selected Duck.ai tool in unified input")
-    public static let aiChatToolbarAttachButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.attach.button.accessibility.label", value: "Attach image", comment: "Accessibility label for the image/attach button in the Duck.ai native input toolbar")
+    public static let aiChatToolbarAttachButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.attach.button.accessibility.label", value: "Attach", comment: "Accessibility label for the attachment button in the Duck.ai native input toolbar")
     public static let aiChatToolbarSubmitButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.submit.button.accessibility.label", value: "Submit", comment: "Accessibility label for the submit button in the Duck.ai native input toolbar")
     public static let aiChatToolbarStopGeneratingButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.stop.button.accessibility.label", value: "Stop generating", comment: "Accessibility label for the stop generating button in the Duck.ai native input toolbar")
     public static let aiChatToolbarWebSearchToolTitle = NSLocalizedString("aichat.toolbar.tools.websearch.title", value: "Web Search", comment: "Title for the web search tool in the unified input tools menu")
@@ -2062,6 +2062,63 @@ public struct UserText {
     public static let aiChatReasoningModeReasoningSubtitle = NSLocalizedString("aichat.reasoning.reasoning.subtitle", value: "For complex tasks", comment: "Subtitle for the reasoning mode in the Duck.ai reasoning picker")
     public static let aiChatReasoningModeExtendedTitle = NSLocalizedString("aichat.reasoning.extended.title", value: "Extended Reasoning", comment: "Title for the extended reasoning mode in the Duck.ai reasoning picker")
     public static let aiChatReasoningModeExtendedSubtitle = NSLocalizedString("aichat.reasoning.extended.subtitle", value: "For analytical tasks", comment: "Subtitle for the extended reasoning mode in the Duck.ai reasoning picker")
+    public static let aiChatAttachmentOptionAttachPhoto = NSLocalizedString("aichat.attachment.option.attach.photo", value: "Attach Photo", comment: "Top-level attachment menu option to attach a photo to an AI chat message")
+    public static let aiChatAttachmentOptionAttachFile = NSLocalizedString("aichat.attachment.option.attach.file", value: "Attach File", comment: "Top-level attachment menu option to attach a file to an AI chat message")
+    public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take Photo", comment: "Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message")
+    public static func aiChatAttachmentFileTooLarge(maxFileSizeMB: Int) -> String {
+        let message = NSLocalizedString("aichat.attachment.file.too.large", value: "This file is too large. The maximum file size is %d MB.", comment: "Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes.")
+        return message.format(arguments: maxFileSizeMB)
+    }
+
+    public static func aiChatAttachmentFilesExceedTotalSizeLimit(maxTotalFileSizeMB: Int) -> String {
+        let message = NSLocalizedString("aichat.attachment.file.exceeds.conversation.limit", value: "The attached files exceed the total size limit of %d MB.", comment: "Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes.")
+        return message.format(arguments: maxTotalFileSizeMB)
+    }
+
+    public static func aiChatAttachmentFileTooManyPages(maxPagesPerFile: Int) -> String {
+        let message = NSLocalizedString("aichat.attachment.file.too.many.pages", value: "One of the files attached has more pages than we support. Please upload files with %d pages or fewer.", comment: "Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count.")
+        return message.format(arguments: maxPagesPerFile)
+    }
+
+    public static let aiChatAttachmentFileEncrypted = NSLocalizedString("aichat.attachment.file.encrypted", value: "We can't read the files attached because at least one of them is encrypted.", comment: "Error message displayed when one or more attached files are encrypted and cannot be read")
+    public static let aiChatAttachmentFileUnreadable = NSLocalizedString("aichat.attachment.file.unreadable", value: "We can't read one of the files attached. Please check that it isn't corrupted and try again.", comment: "Error message displayed when one or more attached files cannot be read")
+    public static let aiChatAttachmentUnavailable = NSLocalizedString("aichat.attachment.unavailable", value: "Attachments are temporarily unavailable. Please try again later.", comment: "Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable")
+    public static func aiChatAttachmentUnsupportedFileType(acceptedFileType: String) -> String {
+        let message = NSLocalizedString("aichat.attachment.unsupported.file.type.single", value: "This file type is not supported, please attach a %@.", comment: "Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF.")
+        return message.format(arguments: acceptedFileType)
+    }
+
+    public static func aiChatAttachmentUnsupportedFileType(acceptedFileTypes: [String]) -> String {
+        guard let lastAcceptedFileType = acceptedFileTypes.last else {
+            return aiChatAttachmentUnsupportedFileType
+        }
+
+        guard acceptedFileTypes.count > 1 else {
+            return aiChatAttachmentUnsupportedFileType(acceptedFileType: lastAcceptedFileType)
+        }
+
+        let leadingAcceptedFileTypes = acceptedFileTypes.dropLast().joined(separator: ", ")
+        let message = NSLocalizedString("aichat.attachment.unsupported.file.type.multiple", value: "This file type is not supported, please attach a %@ or %@.", comment: "Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF.")
+        return message.format(arguments: leadingAcceptedFileTypes, lastAcceptedFileType)
+    }
+
+    public static let aiChatAttachmentUnsupportedFileType = NSLocalizedString("aichat.attachment.unsupported.file.type", value: "This file type is not supported.", comment: "Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types")
+    public static func aiChatAttachmentImageCountLimit(maxImagesPerConversation: Int) -> String {
+        let message = NSLocalizedString("aichat.attachment.image.count.limit", value: "You can only attach %d images per conversation.", comment: "Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images.")
+        return message.format(arguments: maxImagesPerConversation)
+    }
+
+    public static func aiChatAttachmentImageTurnLimit(maxImagesPerTurn: Int) -> String {
+        let message = NSLocalizedString("aichat.attachment.image.turn.limit", value: "You can only attach %d images at a time.", comment: "Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message.")
+        return message.format(arguments: maxImagesPerTurn)
+    }
+
+    public static func aiChatAttachmentFileCountLimit(maxFilesPerConversation: Int) -> String {
+        let message = NSLocalizedString("aichat.attachment.file.count.limit", value: "You can only attach %d files per conversation.", comment: "Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files.")
+        return message.format(arguments: maxFilesPerConversation)
+    }
+
+    public static let aiChatAttachmentPromptTooLong = NSLocalizedString("aichat.attachment.prompt.too.long", value: "That message is too long to send with attachments.", comment: "Alert message shown when an AI chat message exceeds the allowed length while attachments are included")
 
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")
@@ -2073,9 +2130,6 @@ public struct UserText {
     public static let settingsAIChatExperimentalMainSwitch = NotLocalizedString("settings.aichat.native.experimental", value: "Experimental Duck.ai", comment: "")
     public static let settingsAIChatExperimentalSection = NotLocalizedString("settings.aichat.experimental.section.title", value: "Experimental Duck.ai (internal only) ", comment: "")
     public static let settingsAIChatExperimentalTransition = NotLocalizedString("settings.aichat.native.experimental.transition", value: "Experimental switcher bar transition", comment: "")
-    
-    public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take a Photo", comment: "Action sheet option to take a photo using the device camera for attaching to an AI chat message")
-    public static let aiChatAttachmentOptionChoosePhoto = NSLocalizedString("aichat.attachment.option.choose.photo", value: "Choose Photo", comment: "Action sheet option to choose a photo from the photo library for attaching to an AI chat message")
 
     public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Duck.ai", comment: "Settings screen cell text for enabling AI chat")
 
@@ -2206,6 +2260,10 @@ public struct UserText {
     public static let newAddressBarPickerConfirm = NSLocalizedString("new.address.bar.picker.confirm", value: "Confirm", comment: "Confirm button for the new address bar picker")
     public static let newAddressBarPickerNotNow = NSLocalizedString("new.address.bar.picker.not.now", value: "Not Now", comment: "Not now button for the new address bar picker")
     public static let newAddressBarPickerFooter = NSLocalizedString("new.address.bar.picker.footer", value: "Adjust in Settings > AI Features", comment: "Footer text for the new address bar picker")
+
+    // MARK: - New Address Bar Picker Refresh
+    public static let newAddressBarPickerRefreshHeadline = NSLocalizedString("new.address.bar.picker.refresh.headline", value: "Want easy access to private\nAI chat in the address bar?", comment: "Headline for the refreshed Duck.ai Toggle Prompt")
+    public static let newAddressBarPickerRefreshFooter = NSLocalizedString("new.address.bar.picker.refresh.footer", value: "AI features are private and optional.\nYou can make changes in Settings > AI Features.", comment: "Footer for the refreshed Duck.ai Toggle Prompt")
 
     // MARK: - Default Omnibar Mode Setting
     public static let settingsDefaultOmnibarModeHeader = NSLocalizedString("settings.default.omnibar.mode.header", value: "Toggle Position", comment: "Label for the default omnibar toggle position picker in AI Features settings")

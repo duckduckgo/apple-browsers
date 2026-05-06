@@ -33,6 +33,7 @@ public enum RemoteMessageResponse {
         let translations: [String: JsonContentTranslation]?
         let matchingRules, exclusionRules: [Int]?
         let metrics: JsonMetrics?
+        let dismissAfterDaysShown: Int?
 
         static func == (lhs: JsonRemoteMessage, rhs: JsonRemoteMessage) -> Bool {
             return lhs.id == rhs.id

@@ -570,6 +570,153 @@ class RemoteMessagingStoreTests: XCTestCase {
         XCTAssertNil(result)
     }
 
+    // MARK: - Auto-Dismiss Tests
+
+    func testWhenMessageExceedsDismissAfterDaysShownThenItIsNotReturned() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "auto-dismiss-1"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.firstShownDate = Calendar.current.date(byAdding: .day, value: -3, to: Date())
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"auto-dismiss-1","exclusionRules":[],"matchingRules":[],"dismissAfterDaysShown":2}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+        XCTAssertNil(result)
+    }
+
+    func testWhenMessageIsWithinDismissAfterDaysShownThenItIsReturned() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "auto-dismiss-2"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.firstShownDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"auto-dismiss-2","exclusionRules":[],"matchingRules":[],"dismissAfterDaysShown":3}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.id, "auto-dismiss-2")
+    }
+
+    func testWhenMessageHasNoDismissAfterDaysShownThenItIsAlwaysReturned() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "no-auto-dismiss"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.firstShownDate = Calendar.current.date(byAdding: .day, value: -100, to: Date())
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"no-auto-dismiss","exclusionRules":[],"matchingRules":[]}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+        XCTAssertNotNil(result)
+    }
+
+    func testWhenMessageExceedsDismissThresholdThenStatusIsSetToDismissed() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "auto-dismiss-status"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.firstShownDate = Calendar.current.date(byAdding: .day, value: -5, to: Date())
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"auto-dismiss-status","exclusionRules":[],"matchingRules":[],"dismissAfterDaysShown":2}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        _ = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+
+        let dismissedIDs = store.fetchDismissedRemoteMessageIDs()
+        XCTAssertTrue(dismissedIDs.contains("auto-dismiss-status"))
+    }
+
+    func testWhenMessageHasNilFirstShownDateThenItIsReturned() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "nil-first-shown"
+            message.status = NSNumber(value: 0)
+            message.shown = false
+            message.firstShownDate = nil
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"nil-first-shown","exclusionRules":[],"matchingRules":[],"dismissAfterDaysShown":1}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+        XCTAssertNotNil(result)
+    }
+
+    func testWhenUpdateRemoteMessageAsShownThenFirstShownDateIsRecorded() async throws {
+        let remoteMessage = try await saveProcessedResultFetchRemoteMessage()
+        await store.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
+
+        let context = store.context
+        context.performAndWait {
+            let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "id == %@", remoteMessage.id)
+            guard let result = try? context.fetch(fetchRequest).first else {
+                XCTFail("Message not found")
+                return
+            }
+            XCTAssertNotNil(result.firstShownDate)
+        }
+    }
+
+    func testWhenUpdateRemoteMessageAsShownTwiceThenFirstShownDateIsNotOverwritten() async throws {
+        let remoteMessage = try await saveProcessedResultFetchRemoteMessage()
+        await store.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
+
+        let pastDate = Calendar.current.date(byAdding: .day, value: -10, to: Date())!
+        let context = store.context
+        try context.performAndWait {
+            let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "id == %@", remoteMessage.id)
+            guard let result = try? context.fetch(fetchRequest).first else {
+                XCTFail("Message not found")
+                return
+            }
+            result.firstShownDate = pastDate
+            try context.save()
+        }
+
+        await store.updateRemoteMessage(withID: remoteMessage.id, asShown: false)
+        await store.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
+
+        context.performAndWait {
+            let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "id == %@", remoteMessage.id)
+            guard let result = try? context.fetch(fetchRequest).first else {
+                XCTFail("Message not found")
+                return
+            }
+            XCTAssertEqual(result.firstShownDate, pastDate)
+        }
+    }
+
 }
 
 // MARK: - Helpers

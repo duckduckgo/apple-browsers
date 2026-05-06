@@ -37,6 +37,7 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         @State private var shouldStartTyping = false
         @State private var showContent = false
@@ -70,7 +71,13 @@ extension OnboardingRebranding.OnboardingView {
                 title: {
                     TypingText(UserText.Onboarding.AppIconSelection.title,
                                startAnimating: $shouldStartTyping,
-                               onTypingFinished: { withAnimation { showContent = true } })
+                               onTypingFinished: { [reduceMotion] in
+                                   if reduceMotion {
+                                       showContent = true
+                                   } else {
+                                       withAnimation { showContent = true }
+                                   }
+                               })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
                         .multilineTextAlignment(.center)

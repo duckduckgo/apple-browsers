@@ -24,6 +24,7 @@ extension OnboardingRebranding.OnboardingView {
 
     struct AddToDockTutorialView: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock-tutorial", withExtension: "mp4")
 
@@ -76,8 +77,12 @@ extension OnboardingRebranding.OnboardingView {
                 ),
                 showContent: $showContent,
                 title: {
-                    TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: {
-                        withAnimation { showContent = true }
+                    TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
                     })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)

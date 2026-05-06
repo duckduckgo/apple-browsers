@@ -118,6 +118,11 @@ extension OnboardingRebranding.OnboardingView {
             // Exit animations (fade out logo and text)
             static let exitFadeDuration: TimeInterval = 0.3
 
+            /// Time the landing screen stays visible before transitioning to the next page when
+            /// Reduce Motion is enabled. Mirrors how long the user typically sees the final state
+            /// of the standard entrance + exit sequence, so the screen doesn't flash by.
+            static let reduceMotionHoldDuration: TimeInterval = 3.0
+
             // Lottie playback parameters
             static let logoLottieFPS: Double = 30
             static let logoLottieTotalFrames: Double = 60
@@ -160,6 +165,7 @@ extension OnboardingRebranding.OnboardingView {
 
         @Environment(\.horizontalSizeClass) private var horizontalSizeClass
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         let animationNamespace: Namespace.ID
         var onAnimationComplete: () -> Void
@@ -197,11 +203,14 @@ extension OnboardingRebranding.OnboardingView {
             let textScale = isSmallScreen ? Metrics.textScaleSmallScreen : 1.0
 
             return VStack(alignment: .center, spacing: Metrics.welcomeBottomPadding) {
-                // Logo Lottie (internal animation plays the Dax entrance; no opacity fade)
+                // Logo Lottie (internal animation plays the Dax entrance; no opacity fade).
+                // Reduce Motion: freeze at the last frame so Dax appears settled.
                 Lottie.LottieView {
                     try await DotLottieFile.asset(named: Assets.logoLottieFileName)
                 }
-                    .playing(loopMode: .playOnce)
+                    .playbackMode(reduceMotion
+                                  ? .paused(at: .progress(1.0))
+                                  : .playing(.fromProgress(0, toProgress: 1.0, loopMode: .playOnce)))
                     .resizable()
                     .matchedGeometryEffect(id: OnboardingView.daxGeometryEffectID, in: animationNamespace)
                     .frame(width: Metrics.logoSize, height: Metrics.logoSize)
@@ -229,14 +238,20 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         private var backgroundView: some View {
-            Lottie.LottieView {
-                try await DotLottieFile.asset(named: backgroundLottieAssetName)
-            }
-                .playbackMode(.playing(.fromProgress(
+            // Reduce Motion: freeze the illustration at its last frame so it appears
+            // fully drawn rather than animating from the start.
+            let playback: LottiePlaybackMode = reduceMotion
+                ? .paused(at: .progress(1.0))
+                : .playing(.fromProgress(
                     LandingAnimationTiming.illustrationLottieStartFrame / LandingAnimationTiming.illustrationLottieTotalFrames,
                     toProgress: 1.0,
                     loopMode: .playOnce
-                )))
+                ))
+
+            return Lottie.LottieView {
+                try await DotLottieFile.asset(named: backgroundLottieAssetName)
+            }
+                .playbackMode(playback)
                 .resizable()
                 .id(backgroundLottieAssetName)
                 .clipped()
@@ -250,6 +265,22 @@ extension OnboardingRebranding.OnboardingView {
         // MARK: - Animation Sequencing
 
         private func animateEntrance() {
+            // Reduced motion: snap to the entrance end-state immediately, hold the landing
+            // page in its final, fully-visible state for `reduceMotionHoldDuration` seconds so
+            // the user actually sees it, then notify the parent to advance the flow. We skip
+            // the exit fade — Reduce Motion users opt out of fades.
+            guard !reduceMotion else {
+                groupScale = 1.0
+                groupOffsetY = 0
+                logo = LandingAnimationStates.logoEnd
+                textOffset = .zero
+                text = LandingAnimationStates.textEnd
+                DispatchQueue.main.asyncAfter(deadline: .now() + LandingAnimationTiming.reduceMotionHoldDuration) {
+                    onAnimationComplete()
+                }
+                return
+            }
+
             // Group (CTRL_Logo): scale + offset
             withAnimation(LandingAnimationTiming.groupScaleAnimation) {
                 groupScale = 1.0

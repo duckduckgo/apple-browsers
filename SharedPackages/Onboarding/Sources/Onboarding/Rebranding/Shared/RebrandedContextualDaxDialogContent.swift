@@ -28,6 +28,7 @@ extension OnboardingRebranding {
 
     public struct ContextualDaxDialogContent<Content: View>: View {
         @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var theme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         private let orientation: ContextualDaxDialogOrientation
         private let title: NSAttributedString?
@@ -150,8 +151,12 @@ extension OnboardingRebranding {
         }
 
         private func animateContentIn() {
-            withAnimation(.easeIn(duration: theme.contentFadeInDuration).delay(0.1)) {
+            if reduceMotion {
                 shouldShowContent = true
+            } else {
+                withAnimation(.easeIn(duration: theme.contentFadeInDuration).delay(0.1)) {
+                    shouldShowContent = true
+                }
             }
         }
     }
@@ -214,6 +219,7 @@ private extension OnboardingRebranding {
 
     struct TypingTitleMessageStack: View {
         @Environment(\.onboardingTheme) private var theme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         let title: NSAttributedString?
         let message: NSAttributedString
@@ -284,6 +290,11 @@ private extension OnboardingRebranding {
         }
 
         private func revealStaticMessageAndFinish() {
+            guard !reduceMotion else {
+                showStaticMessage = true
+                onTypingFinished()
+                return
+            }
             let duration = theme.contextualOnboardingMetrics.contentFadeInDuration
             withAnimation(.easeIn(duration: duration)) {
                 showStaticMessage = true

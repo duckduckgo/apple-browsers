@@ -73,6 +73,7 @@ extension OnboardingRebranding {
         @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.horizontalSizeClass) private var hSizeClass
         @Environment(\.onboardingTheme) private var theme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         let shouldFollowUp: Bool
         let message: AttributedString
@@ -106,11 +107,15 @@ extension OnboardingRebranding {
                 orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
                 message: message
             ) {
-                Button {
+                Button { [reduceMotion] in
                     blockedTrackersCTAAction()
                     if shouldFollowUp {
-                        withAnimation {
+                        if reduceMotion {
                             showNextScreen = true
+                        } else {
+                            withAnimation {
+                                showNextScreen = true
+                            }
                         }
                     }
                 } label: {

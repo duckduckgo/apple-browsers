@@ -39,6 +39,7 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         @Binding var isVisible: Bool
         @State private var shouldStartTyping = false
@@ -63,8 +64,12 @@ extension OnboardingRebranding.OnboardingView {
         // the comparison table has its own animated row reveal that needs `showContent`.
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: {
-                    withAnimation { showContent = true }
+                TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                    if reduceMotion {
+                        showContent = true
+                    } else {
+                        withAnimation { showContent = true }
+                    }
                 })
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                     .font(onboardingTheme.typography.title)
@@ -86,7 +91,7 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
                 .opacity(showContent ? 1 : 0)
-                .animation(.easeIn(duration: 0.25), value: showContent)
+                .animation(reduceMotion ? nil : .easeIn(duration: 0.25), value: showContent)
             }
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }

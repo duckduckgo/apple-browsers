@@ -82,6 +82,7 @@ extension OnboardingView {
 
         // MARK: Dependencies
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
         private let onModeConfirmed: (DuckAIQueryExperimentMode) -> Void
         private let openAIChatAction: (String?, Bool) -> Void
         private let openSearchAction: (String) -> Void
@@ -182,9 +183,14 @@ extension OnboardingView {
                         .padding(.vertical, Metrics.pickerVerticalPadding)
                         .frame(width: Metrics.pickerWidth, height: Metrics.pickerContainerHeight)
                         // Drive content mode (Search vs Duck.ai) from user picker selection.
-                        .onChange(of: pickerViewModel.selectedItem) { selectedItem in
-                            SwiftUI.withAnimation(.easeInOut(duration: Metrics.pickerSelectionAnimationDuration)) {
-                                selectedMode = selectedItem == Self.pickerItems[1] ? .duckAI : .search
+                        .onChange(of: pickerViewModel.selectedItem) { [reduceMotion] selectedItem in
+                            let newMode: DuckAIQueryExperimentMode = selectedItem == Self.pickerItems[1] ? .duckAI : .search
+                            if reduceMotion {
+                                selectedMode = newMode
+                            } else {
+                                SwiftUI.withAnimation(.easeInOut(duration: Metrics.pickerSelectionAnimationDuration)) {
+                                    selectedMode = newMode
+                                }
                             }
                         }
                         // Keep picker model + visual progress in sync for programmatic/default mode changes.
@@ -236,8 +242,8 @@ extension OnboardingView {
                 }
             }
             // Fade out this content while transitioning to the selected destination.
-            .animation(.easeInOut(duration: Metrics.contentFadeAnimationDuration), value: isTransitioningOut)
-            .animation(.easeInOut(duration: Metrics.contentFadeAnimationDuration), value: showInteractiveControls)
+            .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: isTransitioningOut)
+            .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: showInteractiveControls)
         }
 
         // MARK: Style
@@ -269,6 +275,17 @@ extension OnboardingView {
         private func handleTitleAnimationFinished() {
             guard !hasStartedEntranceSequence else { return }
             hasStartedEntranceSequence = true
+
+            // Reduce Motion: collapse the entrance choreography. Show the controls and
+            // suggestions immediately and request keyboard focus without the staggered
+            // delays — Reduce Motion users get the page in its final state at once.
+            if reduceMotion {
+                guard !isTransitioningOut else { return }
+                showInteractiveControls = true
+                requestInputFocus()
+                startSuggestionSequenceIfNeeded()
+                return
+            }
 
             DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.controlsRevealDelayAfterTitleAnimation) {
                 guard hasStartedEntranceSequence, !isTransitioningOut else { return }
@@ -351,7 +368,7 @@ extension OnboardingView {
             )
             .cornerRadius(Metrics.queryFieldCornerRadius)
             .frame(maxWidth: .infinity)
-            .animation(.easeInOut(duration: Metrics.contentFadeAnimationDuration), value: selectedMode)
+            .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: selectedMode)
         }
 
         private var suggestionChips: some View {
@@ -409,9 +426,7 @@ extension OnboardingView {
             dismissKeyboard()
             startExitTransitionAction()
 
-            withAnimation(.easeOut(duration: Metrics.contentFadeAnimationDuration)) {
-                isTransitioningOut = true
-            } completion: {
+            let completion = {
                 if selectedMode == .duckAI {
                     openAIChatAction(prompt, autoSend)
                     onModeConfirmed(.duckAI)
@@ -421,12 +436,31 @@ extension OnboardingView {
                     isTransitioningOut = false
                 }
             }
+
+            if reduceMotion {
+                isTransitioningOut = true
+                completion()
+            } else {
+                withAnimation(.easeOut(duration: Metrics.contentFadeAnimationDuration)) {
+                    isTransitioningOut = true
+                } completion: {
+                    completion()
+                }
+            }
         }
 
         // MARK: Suggestion Sequencing
         private func startSuggestionSequenceIfNeeded() {
             guard !suggestionSequenceStarted, showInteractiveControls else { return }
             suggestionSequenceStarted = true
+            // Reduce Motion: skip the artificial delay and the staggered spring reveal.
+            // Show all suggestions at once, immediately, so the page is presented in
+            // its final state with no entrance choreography.
+            guard !reduceMotion else {
+                guard !isTransitioningOut else { return }
+                visibleSuggestionCount = Metrics.maxSuggestionCount
+                return
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.suggestionInitialRevealDelay) {
                 guard suggestionSequenceStarted, showInteractiveControls, !isTransitioningOut else { return }
                 startSuggestionRevealSequence()
@@ -696,6 +730,7 @@ private enum OnboardingSuggestionsChipsMetrics {
 
 private struct OnboardingSuggestionChips: View {
     @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var contextualOnboardingMetrics
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let viewModel: OnboardingDuckAIExperimentSuggestionsViewModel
     let isDuckAIMode: Bool
@@ -709,7 +744,10 @@ private struct OnboardingSuggestionChips: View {
     }
 
     private var suggestionTransition: AnyTransition {
-        .asymmetric(
+        if reduceMotion {
+            return .identity
+        }
+        return .asymmetric(
             insertion: .scale(scale: OnboardingSuggestionsChipsMetrics.suggestionTransitionScale, anchor: .top).combined(with: .opacity),
             removal: .opacity
         )

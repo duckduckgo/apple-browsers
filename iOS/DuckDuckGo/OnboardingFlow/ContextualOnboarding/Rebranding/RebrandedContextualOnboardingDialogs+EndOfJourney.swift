@@ -115,6 +115,7 @@ extension OnboardingRebranding {
 private struct ScreenBottomDaxOverlay: View {
     let animation: DaxAnimation
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var keyboard = KeyboardResponder()
 
     private static let screenBottomPadding: CGFloat = 60
@@ -156,14 +157,24 @@ private struct ScreenBottomDaxOverlay: View {
                 return localKeyboardTop - Self.keyboardTopPadding - animation.size.height / 2
             }()
 
+            // Reduce Motion: freeze at the intended final frame
+            // (`twoStagesAnimation` when set, otherwise the last frame).
+            let mode: LottiePlaybackMode = {
+                if reduceMotion {
+                    let finalProgress = animation.twoStagesAnimation.map { AnimationProgressTime($0) } ?? 1.0
+                    return .paused(at: .progress(finalProgress))
+                }
+                return .playing(.toProgress(1, loopMode: .playOnce))
+            }()
+
             Lottie.LottieView {
                 try await DotLottieFile.asset(named: animation.animationName)
             }
-            .playbackMode(.playing(.toProgress(1, loopMode: .playOnce)))
+            .playbackMode(mode)
             .resizable()
             .frame(width: animation.size.width, height: animation.size.height)
             .position(x: xCenter, y: yCenter)
-            .animation(Self.keyboardFollowAnimation, value: keyboard.keyboardFrame)
+            .animation(reduceMotion ? nil : Self.keyboardFollowAnimation, value: keyboard.keyboardFrame)
         }
         .allowsHitTesting(false)
     }

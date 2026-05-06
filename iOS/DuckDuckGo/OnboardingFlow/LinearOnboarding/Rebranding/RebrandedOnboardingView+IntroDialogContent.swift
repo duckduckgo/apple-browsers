@@ -75,6 +75,7 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         private let title: String
         private let message: String
@@ -130,8 +131,12 @@ extension OnboardingRebranding.OnboardingView {
                 ),
                 showContent: $showContent,
                 title: {
-                    TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: {
-                        withAnimation { showContent = true }
+                    TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
                     })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
@@ -174,6 +179,14 @@ extension OnboardingRebranding.OnboardingView {
         private func showSkipOnboardingDialog() {
             isVisible = false
             skipAction()
+
+            // Reduced motion: skip the hide → resize → show choreography. Set the final state
+            // immediately so the transition is instantaneous.
+            guard !reduceMotion else {
+                showSkipOnboarding = true
+                isVisible = true
+                return
+            }
 
             if #available(iOS 17.0, *) {
                 withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {

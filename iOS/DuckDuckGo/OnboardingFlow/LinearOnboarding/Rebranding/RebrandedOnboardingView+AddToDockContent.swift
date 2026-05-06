@@ -36,6 +36,7 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         @State private var showAddToDockTutorial = false
         @State private var shouldStartTypingTitle = false
@@ -87,8 +88,12 @@ extension OnboardingRebranding.OnboardingView {
                 title: {
                     TypingText(UserText.AddToDockOnboarding.Promo.title,
                                startAnimating: $shouldStartTypingTitle,
-                               onTypingFinished: {
-                                   withAnimation { showContent = true }
+                               onTypingFinished: { [reduceMotion] in
+                                   if reduceMotion {
+                                       showContent = true
+                                   } else {
+                                       withAnimation { showContent = true }
+                                   }
                                })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
@@ -116,6 +121,13 @@ extension OnboardingRebranding.OnboardingView {
         private func showTutorial() {
             isVisible = false
             showTutorialAction()
+
+            // Reduced motion: jump to the final tutorial state, no hide → resize → show.
+            guard !reduceMotion else {
+                showAddToDockTutorial = true
+                isVisible = true
+                return
+            }
 
             if #available(iOS 17.0, *) {
                 withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {

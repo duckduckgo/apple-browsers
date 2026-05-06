@@ -117,6 +117,8 @@ extension OnboardingRebranding.OnboardingView {
             let actionsSpacing: CGFloat // Extra top padding above actions
         }
 
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
         private let metrics: Metrics
         private let message: AnyView?
         private let content: AnyView?
@@ -159,7 +161,7 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
                 .opacity(showContent.wrappedValue ? 1 : 0)
-                .animation(.easeIn(duration: 0.25), value: showContent.wrappedValue)
+                .animation(reduceMotion ? nil : .easeIn(duration: 0.25), value: showContent.wrappedValue)
             }
         }
 
@@ -178,6 +180,12 @@ extension OnboardingRebranding {
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.horizontalSizeClass) private var horizontalSizeClass
         @Environment(\.verticalSizeClass) private var verticalSizeClass
+        /// `true` when the user has enabled "Reduce Motion" in iOS Settings → Accessibility →
+        /// Motion. When set, the rebranded onboarding skips entrance/exit transitions, fades,
+        /// and bubble-resize choreography, jumping straight to final state. Text typing is
+        /// already gated inside `TypingText` / `AnimatableTypingText`. Lottie playback is *not*
+        /// gated here — those assets are swapped/frozen at the design layer.
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
         /// Drives Dax-animation sizing for the intro dialog so accessibility text sizes don't
         /// cause the inflated bubble to overlap Dax's head.
         @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -228,7 +236,7 @@ extension OnboardingRebranding {
                         .ignoresSafeArea()
 
                     landingView
-                        .transition(AnyTransition.slideLeftAndFade.animation(.easeOut(duration: 1.0)))
+                        .transition(reduceMotion ? .identity : AnyTransition.slideLeftAndFade.animation(.easeOut(duration: 1.0)))
                 case let .onboarding(viewState):
                     onboardingTheme.colorPalette.background
                         .ignoresSafeArea()
@@ -251,7 +259,7 @@ extension OnboardingRebranding {
 
                     onboardingDialogView(state: viewState)
                         .transition( // Scale content from 0.1 to 1.0 and fade in when appearing for the first time
-                            .scale.combined(with: .opacity)
+                            reduceMotion ? .identity : .scale.combined(with: .opacity)
                         )
 #if DEBUG || ALPHA
                         .overlay(alignment: .bottom) {
@@ -322,7 +330,7 @@ extension OnboardingRebranding {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .center) {
                         bubbleBackedDialogView(state: state, configuration: configuration)
-                            .animation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration), value: state.type)
+                            .animation(reduceMotion ? nil : .easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration), value: state.type)
                             .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth, alignment: .center)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .frame(width: geometry.size.width, alignment: .center)
@@ -348,9 +356,11 @@ extension OnboardingRebranding {
         }
 
         private var landingView: some View {
-            LandingView(animationNamespace: animationNamespace) {
-                withAnimation {
+            LandingView(animationNamespace: animationNamespace) { [reduceMotion] in
+                if reduceMotion {
                     model.onAppear()
+                } else {
+                    withAnimation { model.onAppear() }
                 }
             }
             .ignoresSafeArea(edges: .bottom)
@@ -694,9 +704,11 @@ extension OnboardingRebranding {
             // don't trigger an unnecessary daxExitDuration delay.
             let currentDax: DaxAnimation? = action != nil ? currentDaxAnimation : nil
             let daxExitDuration = currentDax?.effectiveExitDuration ?? OnboardingBubbleAnimationMetrics.daxExitDuration
-            let hasAnyDaxExit = currentDax?.hasSlideExit == true
+            let hasAnyDaxExit = !reduceMotion && (
+                currentDax?.hasSlideExit == true
                 || currentDax?.hasFadeExit == true
                 || currentDax?.hasTwoStagesExit == true
+            )
 
             if action == nil {
                 // Initial appearance — pin the overlay to the current step and reset Dax.
@@ -706,8 +718,9 @@ extension OnboardingRebranding {
             }
 
             // All exit animations (slide, fade, or both) start simultaneously with the page
-            // transition — no pre-transition delay is added.
-            let actionDelay: TimeInterval = action != nil ? OnboardingBubbleAnimationMetrics.contentFadeOutDelay : 0
+            // transition — no pre-transition delay is added. Reduced motion collapses every
+            // delay to zero so the new step appears immediately.
+            let actionDelay: TimeInterval = (action != nil && !reduceMotion) ? OnboardingBubbleAnimationMetrics.contentFadeOutDelay : 0
 
             if let action {
                 DispatchQueue.main.asyncAfter(deadline: .now() + actionDelay) {
@@ -736,16 +749,25 @@ extension OnboardingRebranding {
                 }
             }
 
-            // Show new content after the bubble has finished resizing.
-            let showDelay = actionDelay + OnboardingBubbleAnimationMetrics.contentFadeInDelay
+            // Show new content after the bubble has finished resizing. Reduced motion: reveal
+            // immediately without the implicit `withAnimation` fade.
+            let showDelay = reduceMotion ? 0 : (actionDelay + OnboardingBubbleAnimationMetrics.contentFadeInDelay)
             DispatchQueue.main.asyncAfter(deadline: .now() + showDelay) {
-                withAnimation { showBubbleContent = true }
+                if reduceMotion {
+                    showBubbleContent = true
+                } else {
+                    withAnimation { showBubbleContent = true }
+                }
             }
         }
 
         private func beginExperimentExitTransition() {
-            withAnimation(.easeInOut(duration: 0.18)) {
+            if reduceMotion {
                 isExperimentExitTransitionActive = true
+            } else {
+                withAnimation(.easeInOut(duration: 0.18)) {
+                    isExperimentExitTransitionActive = true
+                }
             }
         }
 

@@ -27,6 +27,7 @@ extension OnboardingRebranding.OnboardingView {
     struct AddressBarPositionContent: View {
 
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         @State private var shouldStartTyping = false
         @State private var showContent = false
@@ -42,8 +43,12 @@ extension OnboardingRebranding.OnboardingView {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
                 TypingText(UserText.Onboarding.AddressBarPosition.title,
                            startAnimating: $shouldStartTyping,
-                           onTypingFinished: {
-                               withAnimation { showContent = true }
+                           onTypingFinished: { [reduceMotion] in
+                               if reduceMotion {
+                                   showContent = true
+                               } else {
+                                   withAnimation { showContent = true }
+                               }
                            })
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                     .font(onboardingTheme.typography.title)
@@ -58,7 +63,7 @@ extension OnboardingRebranding.OnboardingView {
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
                 .opacity(showContent ? 1 : 0)
-                .animation(.easeIn(duration: 0.25), value: showContent)
+                .animation(reduceMotion ? nil : .easeIn(duration: 0.25), value: showContent)
             }
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }

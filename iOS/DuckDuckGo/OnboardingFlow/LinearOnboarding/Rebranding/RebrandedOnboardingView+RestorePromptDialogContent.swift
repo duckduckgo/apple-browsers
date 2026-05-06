@@ -26,6 +26,7 @@ extension OnboardingRebranding.OnboardingView {
     /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-42055
     struct RestorePromptDialogContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         private typealias Copy = UserText.Onboarding.RestorePrompt
 
@@ -74,8 +75,12 @@ extension OnboardingRebranding.OnboardingView {
                 ),
                 showContent: $showContent,
                 title: {
-                    TypingText(Copy.title, startAnimating: $shouldStartTyping, onTypingFinished: {
-                        withAnimation { showContent = true }
+                    TypingText(Copy.title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
                     })
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                     .font(onboardingTheme.typography.title)
@@ -105,6 +110,13 @@ extension OnboardingRebranding.OnboardingView {
         private func showSkipOnboardingDialog() {
             isVisible = false
             skipAction()
+
+            // Reduced motion: jump straight to the final state, no hide → resize → show.
+            guard !reduceMotion else {
+                showSkipOnboarding = true
+                isVisible = true
+                return
+            }
 
             if #available(iOS 17.0, *) {
                 withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {

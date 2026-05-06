@@ -27,6 +27,7 @@ extension OnboardingRebranding.OnboardingView {
     struct SkipOnboardingContent: View {
         private static let fireButtonCopy = "Fire Button"
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         @State private var shouldStartTyping = false
         @State private var showContent = false
@@ -65,8 +66,12 @@ extension OnboardingRebranding.OnboardingView {
                 ),
                 showContent: $showContent,
                 title: {
-                    TypingText(UserText.Onboarding.Skip.title, startAnimating: $shouldStartTyping, onTypingFinished: {
-                        withAnimation { showContent = true }
+                    TypingText(UserText.Onboarding.Skip.title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
                     })
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                     .multilineTextAlignment(.center)

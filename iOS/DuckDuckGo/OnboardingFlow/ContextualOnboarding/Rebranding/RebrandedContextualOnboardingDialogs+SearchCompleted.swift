@@ -30,6 +30,7 @@ extension OnboardingRebranding {
         @Environment(\.horizontalSizeClass) private var hSizeClass
         @Environment(\.onboardingTheme) private var theme
         @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         @State private var showNextScreen: Bool = false
 
@@ -73,11 +74,15 @@ extension OnboardingRebranding {
                 title: UserText.Onboarding.ContextualOnboarding.Rebranding.onboardingFirstSearchDoneTitle,
                 message: UserText.Onboarding.ContextualOnboarding.Rebranding.onboardingFirstSearchDoneMessage
             ) {
-                Button {
+                Button { [reduceMotion] in
                     gotItAction()
-                    withAnimation {
-                        if shouldFollowUp {
+                    if shouldFollowUp {
+                        if reduceMotion {
                             showNextScreen = true
+                        } else {
+                            withAnimation {
+                                showNextScreen = true
+                            }
                         }
                     }
                 } label: {

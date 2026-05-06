@@ -31,6 +31,8 @@ struct ScrollableOnboardingBackground: View {
 
     let viewState: OnboardingView.ViewState.Intro
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @State private var previousViewState: OnboardingView.ViewState.Intro?
     @State private var exitingTransitionProgress: CGFloat = 1.0  // 0.0 = start, 1.0 = end
     @State private var enteringTransitionProgress: CGFloat = 1.0  // 0.0 = start, 1.0 = end
@@ -62,10 +64,18 @@ struct ScrollableOnboardingBackground: View {
             }
             .frame(width: proxy.size.width, alignment: .bottomLeading)
         }
-        .onChange(of: viewState) { newState in
+        .onChange(of: viewState) { [reduceMotion] newState in
             // Only animate if the background actually changes
             guard let previous = previousViewState,
                   previous.type.backgroundImage != newState.type.backgroundImage else { return }
+
+            guard !reduceMotion else {
+                // Skip transition entirely: jump to final state.
+                exitingTransitionProgress = 1.0
+                enteringTransitionProgress = 1.0
+                previousViewState = newState
+                return
+            }
 
             // Reset progress for new transition
             exitingTransitionProgress = 0.0
@@ -98,8 +108,14 @@ struct ScrollableOnboardingBackground: View {
                 }
             }
         }
-        .onAppear {
+        .onAppear { [reduceMotion] in
             previousViewState = viewState
+
+            guard !reduceMotion else {
+                enteringTransitionProgress = 1.0
+                return
+            }
+
             enteringTransitionProgress = 0.0  // Start off-screen to the right
 
             // Animate sliding in from right
@@ -137,10 +153,15 @@ struct ScrollableOnboardingBackground: View {
     }
 
     private var embeddedDaxAnimation: some View {
-        Lottie.LottieView {
+        // Reduce Motion: freeze the Lottie loop at its final frame instead of playing.
+        let mode: LottiePlaybackMode = reduceMotion
+            ? .paused(at: .progress(1.0))
+            : .playing(.fromProgress(0, toProgress: 1.0, loopMode: .loop))
+
+        return Lottie.LottieView {
             try await DotLottieFile.asset(named: EmbeddedDaxMetrics.animationName)
         }
-        .playbackMode(.playing(.fromProgress(0, toProgress: 1.0, loopMode: .loop)))
+        .playbackMode(mode)
         .resizable()
         .id(EmbeddedDaxMetrics.animationName)
         .frame(width: EmbeddedDaxMetrics.size.width, height: EmbeddedDaxMetrics.size.height)

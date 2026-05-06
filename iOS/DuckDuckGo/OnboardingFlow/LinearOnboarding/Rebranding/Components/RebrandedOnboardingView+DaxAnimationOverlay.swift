@@ -141,6 +141,18 @@ struct DaxAnimationOverlay: View {
     /// Set to `true` to trigger the slide-out exit animation (requires `animation.exitOffset`).
     let isExiting: Bool
 
+    /// Skip native SwiftUI entrance/exit animations (slide-in offset, fade) when reduced motion
+    /// is on, and freeze Lottie at the animation's "intended final frame" so the playback never
+    /// moves. The intended final frame is `twoStagesAnimation` (when set, e.g. 0.5 for animations
+    /// where the entrance settles at the midpoint and the exit plays from there to 1.0); for all
+    /// other animations — including looping idle ones — it's the last frame (progress 1.0).
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Frozen progress used when Reduce Motion is enabled.
+    private var reducedMotionFinalProgress: AnimationProgressTime {
+        animation.twoStagesAnimation.map { AnimationProgressTime($0) } ?? 1.0
+    }
+
     /// Current displacement from `finalCenter`. Zero means the view is at its design position.
     /// Seeded from `entranceOffset` so the very first render is already off-screen — no jump.
     @State private var positionOffset: CGPoint
@@ -161,12 +173,18 @@ struct DaxAnimationOverlay: View {
 
     /// Lottie playback mode derived from the current state.
     ///
+    /// - **Reduce Motion**: paused at the intended final frame (`twoStagesAnimation` when set,
+    ///   otherwise `1.0`). The frame is frozen on entrance and stays frozen on exit — the parent
+    ///   handles the visual departure (fade / slide / step transition).
     /// - **Standard** (`twoStagesAnimation == nil`): `playForward` controls direction.
     /// - **Two-stage** (`twoStagesAnimation != nil`): entrance plays 0 → midpoint;
     ///   exit (`isExiting == true`) plays midpoint → 1.0.
     private var lottiePlaybackMode: LottiePlaybackMode {
         guard started else {
             return .paused
+        }
+        if reduceMotion {
+            return .paused(at: .progress(reducedMotionFinalProgress))
         }
         if let midPoint = animation.twoStagesAnimation {
             return isExiting
@@ -205,14 +223,18 @@ struct DaxAnimationOverlay: View {
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .onAppear {
-            let begin = {
+            let begin = { [reduceMotion] in
                 started = true
                 if animation.entranceOffset != nil {
-                    withAnimation(.easeOut(duration: OnboardingBubbleAnimationMetrics.daxEntranceDuration)) {
+                    if reduceMotion {
                         positionOffset = .zero
+                    } else {
+                        withAnimation(.easeOut(duration: OnboardingBubbleAnimationMetrics.daxEntranceDuration)) {
+                            positionOffset = .zero
+                        }
                     }
                 }
-                if let fadeDuration = animation.fadeInTime {
+                if let fadeDuration = animation.fadeInTime, !reduceMotion {
                     withAnimation(.easeIn(duration: fadeDuration)) {
                         opacity = 1
                     }
@@ -220,23 +242,32 @@ struct DaxAnimationOverlay: View {
                     opacity = 1
                 }
             }
-            if animation.startDelay > 0 {
+            // Reduced motion: skip the start delay entirely so Dax shows immediately.
+            if animation.startDelay > 0 && !reduceMotion {
                 DispatchQueue.main.asyncAfter(deadline: .now() + animation.startDelay, execute: begin)
             } else {
                 begin()
             }
         }
-        .onChange(of: isExiting) { exiting in
+        .onChange(of: isExiting) { [reduceMotion] exiting in
             guard exiting else { return }
             let duration = animation.effectiveExitDuration
             if let offset = animation.exitOffset {
-                withAnimation(.easeIn(duration: duration)) {
+                if reduceMotion {
                     positionOffset = offset
+                } else {
+                    withAnimation(.easeIn(duration: duration)) {
+                        positionOffset = offset
+                    }
                 }
             }
             if animation.fadeOut {
-                withAnimation(.easeIn(duration: duration)) {
+                if reduceMotion {
                     opacity = 0
+                } else {
+                    withAnimation(.easeIn(duration: duration)) {
+                        opacity = 0
+                    }
                 }
             }
         }

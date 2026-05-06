@@ -32,7 +32,7 @@ We're always open to contributions from the community! There are different appro
 
 ### Style Guide
 
-We care about clean code. Refer to our [style guide](styleguide/STYLEGUIDE.md).
+We care about clean code. Refer to our [style guide](iOS/styleguide/STYLEGUIDE.md).
 
 ### Commit Messages
 

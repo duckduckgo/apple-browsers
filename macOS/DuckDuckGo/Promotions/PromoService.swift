@@ -410,8 +410,24 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             record.lastShown = currentDate
             historyStore.save(record)
             notifyRecordChanged(for: promoId, record: record)
+            // External visibility is not gated by checkRules; retract conflicting internal promos shown earlier.
+            hideInternalPromosConflictingWithCurrentVisibility()
         } else if externalVisiblePromoIds.remove(promoId) != nil {
             applyResult(delegate.resultWhenHidden, toRecordFor: promoId)
+        }
+    }
+
+    /// Retracts visible internal promos that would fail `checkRules` now that an external promo may be visible.
+    private func hideInternalPromosConflictingWithCurrentVisibility() {
+        dispatchPrecondition(condition: .onQueue(stateQueue))
+        let visiblePromos = Array(activeSessions.keys)
+        for promoID in visiblePromos {
+            guard activeSessions[promoID] != nil,
+                  let promo = promos.first(where: { $0.id == promoID }),
+                  promo.delegate is PromoDelegate else { continue }
+            if !checkRules(for: promo) {
+                recordResultAndCleanup(promoId: promoID, result: .noChange)
+            }
         }
     }
 

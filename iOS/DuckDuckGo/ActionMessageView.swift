@@ -36,6 +36,7 @@ protocol ActionMessagePresenting {
 class ActionMessageView: UIView, ActionMessagePresenting {
 
     enum PresentationLocation {
+        case top
         case withBottomBar(andAddressBarBottom: Bool)
         case withoutBottomBar
     }
@@ -65,16 +66,11 @@ class ActionMessageView: UIView, ActionMessagePresenting {
         static var windowBottomPaddingWithoutBottomBar: CGFloat {
             return 0
         }
-        
-    }
-    
-    private static func bottomPadding(for location: PresentationLocation) -> CGFloat {
-        switch location {
-        case .withBottomBar(let isAddressBarBottom):
-            return isAddressBarBottom ? Constants.windowBottomPaddingWithAddressBar : Constants.windowBottomPaddingWithBottomBar
-        case .withoutBottomBar:
-            return Constants.windowBottomPaddingWithoutBottomBar
+
+        static var windowTopPadding: CGFloat {
+            return 12
         }
+        
     }
     
     @IBOutlet weak var message: UILabel!
@@ -173,8 +169,7 @@ class ActionMessageView: UIView, ActionMessagePresenting {
         messageView.onDidDismiss = onDidDismiss
         
         window.addSubview(messageView)
-        window.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: messageView.bottomAnchor,
-                                                           constant: bottomPadding(for: presentationLocation)).isActive = true
+        pin(messageView, to: window, presentationLocation: presentationLocation)
         
         let messageViewWidth = window.frame.width <= Constants.maxWidth ? window.frame.width - Constants.minimumHorizontalPadding : Constants.maxWidth
         messageView.widthAnchor.constraint(equalToConstant: messageViewWidth).isActive = true
@@ -219,5 +214,25 @@ class ActionMessageView: UIView, ActionMessagePresenting {
     @IBAction func onButtonTap() {
         action()
         dismissAndFadeOut()
+    }
+}
+
+private extension ActionMessageView {
+
+    static func pin(_ messageView: ActionMessageView,
+                    to window: UIWindow,
+                    presentationLocation: PresentationLocation) {
+        switch presentationLocation {
+        case .top:
+            messageView.topAnchor.constraint(equalTo: window.safeAreaLayoutGuide.topAnchor,
+                                             constant: Constants.windowTopPadding).isActive = true
+        case .withBottomBar(let isAddressBarBottom):
+            let bottomPadding = isAddressBarBottom ? Constants.windowBottomPaddingWithAddressBar : Constants.windowBottomPaddingWithBottomBar
+            window.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: messageView.bottomAnchor,
+                                                               constant: bottomPadding).isActive = true
+        case .withoutBottomBar:
+            window.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: messageView.bottomAnchor,
+                                                               constant: Constants.windowBottomPaddingWithoutBottomBar).isActive = true
+        }
     }
 }

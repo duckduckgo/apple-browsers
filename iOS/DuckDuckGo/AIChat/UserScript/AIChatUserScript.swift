@@ -287,16 +287,17 @@ final class AIChatUserScript: NSObject, Subfeature {
         push(.submitPrompt(promptPayload))
     }
 
-    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
-        submitPrompt(prompt, images: images, modelId: modelId, tools: nil, reasoningEffort: reasoningEffort)
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
+        submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: nil, reasoningEffort: reasoningEffort)
     }
 
-    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort? = nil) {
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort? = nil) {
         let promptPayload = AIChatNativePrompt.queryPrompt(
             prompt,
             autoSubmit: true,
             toolChoice: tools?.map(\.rawValue),
             images: images,
+            files: files,
             modelId: modelId,
             pageContext: attachedPageContextProvider?(),
             reasoningEffort: reasoningEffort

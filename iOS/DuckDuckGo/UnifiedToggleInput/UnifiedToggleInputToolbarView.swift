@@ -43,7 +43,6 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Callbacks
 
-    var onAttachTapped: (() -> Void)?
     var onSelectedToolClearTapped: (() -> Void)?
     var onSubmitTapped: (() -> Void)?
     var onVoiceTapped: (() -> Void)?
@@ -115,6 +114,14 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
+    var attachmentMenu: UIMenu? {
+        get { imageButton.menu }
+        set {
+            imageButton.menu = newValue
+            imageButton.showsMenuAsPrimaryAction = (newValue != nil)
+        }
+    }
+
     var isModelChipHidden: Bool {
         get { modelChipExplicitlyHidden }
         set {
@@ -156,7 +163,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     private(set) lazy var imageButton: UIButton = makeToolButton(
         image: DesignSystemImages.Glyphs.Size24.attach,
         accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
-        action: #selector(attachTapped)
+        action: nil
     )
 
     private lazy var reasoningButton: UIButton = {
@@ -422,7 +429,6 @@ private extension UnifiedToggleInputToolbarView {
         }
     }
 
-    @objc private func attachTapped() { onAttachTapped?() }
     @objc private func selectedToolClearTapped() { onSelectedToolClearTapped?() }
     @objc private func submitTapped() {
         if isAIVoiceChatActive && !isSubmitEnabled {

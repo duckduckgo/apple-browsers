@@ -276,9 +276,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     private var lastSelectedServer: NetworkProtectionServer? {
         didSet {
+            if lastSelectedServer != oldValue {
+                bumpTunnelPathGeneration()
+            }
             lastSelectedServerInfoPublisher.send(lastSelectedServer?.serverInfo)
         }
     }
+
+    @MainActor
+    private var tunnelPathGeneration: UInt64 = 0
 
     @MainActor
     public var lastSelectedServerInfo: NetworkProtectionServerInfo? {
@@ -804,6 +810,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
             Logger.networkProtection.error("🔴 Failed to start tunnel \(error.localizedDescription, privacy: .public)")
 
+            await subscriptionAccessErrorHandler(error)
+
             if startupOptions.startupMethod == .automaticOnDemand {
                 // We add a delay when the VPN is started by
                 // on-demand and there's an error, to avoid frenetic ON/OFF
@@ -1014,6 +1022,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                                    regenerateKey: Bool = false) async throws {
 
         providerEvents.fire(.tunnelUpdateAttempt(.begin))
+        bumpTunnelPathGeneration()
 
         if reassert {
             await stopMonitors()
@@ -1264,6 +1273,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                     tunnelInterface: { [weak self] in
                         await self?.resolveTunnelInterface(fallbackInterfaceName: fallbackInterfaceName)
                     },
+                    tunnelPathGeneration: { [weak self] in
+                        guard let self else { return 0 }
+                        return await self.tunnelPathGeneration
+                    },
                     httpClient: DefaultLeakCheckHTTPClient(),
                     stunClient: DefaultLeakCheckSTUNClient(),
                     wideEvent: wideEvent
@@ -1291,6 +1304,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             return nil
         }
         return LeakCheckEgressInfo(ipAddress: ip, name: info.name)
+    }
+
+    @MainActor
+    private func bumpTunnelPathGeneration() {
+        tunnelPathGeneration &+= 1
     }
 
     // MARK: - Monitors

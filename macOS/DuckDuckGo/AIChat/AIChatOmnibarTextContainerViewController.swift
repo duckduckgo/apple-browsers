@@ -492,6 +492,10 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
         return viewModel.selectPrevious()
     }
 
+    func isSuggestionSelected() -> Bool {
+        omnibarController.suggestionsViewModel.selectedIndex != nil
+    }
+
     func textViewDidRequestSelectCurrentSuggestion() -> Bool {
         if omnibarController.suggestionsViewModel.isViewAllChatsSelected {
             return omnibarController.submitSelectedSuggestion()
@@ -527,6 +531,8 @@ protocol FocusableTextViewNavigationDelegate: AnyObject {
     /// Called when user presses up arrow on the first line (when suggestions are selected)
     /// - Returns: `true` if navigation was handled, `false` otherwise
     func textViewDidRequestMoveFromSuggestions() -> Bool
+    /// Whether a suggestion is currently selected in the suggestions list.
+    func isSuggestionSelected() -> Bool
     /// Called when user presses Enter while a suggestion is selected
     /// - Returns: `true` if a suggestion was selected, `false` otherwise
     func textViewDidRequestSelectCurrentSuggestion() -> Bool
@@ -643,7 +649,8 @@ private final class FocusableTextView: NSTextView {
     }
 
     override func moveDown(_ sender: Any?) {
-        if isCursorOnLastLine() {
+        let suggestionSelected = navigationDelegate?.isSuggestionSelected() ?? false
+        if suggestionSelected || isCursorOnLastLine() {
             if navigationDelegate?.textViewDidRequestMoveToSuggestions() == true {
                 return
             }
@@ -652,9 +659,11 @@ private final class FocusableTextView: NSTextView {
     }
 
     override func moveUp(_ sender: Any?) {
-        // First check if we should navigate in suggestions
-        if navigationDelegate?.textViewDidRequestMoveFromSuggestions() == true {
-            return
+        let suggestionSelected = navigationDelegate?.isSuggestionSelected() ?? false
+        if suggestionSelected || isCursorOnFirstLine() {
+            if navigationDelegate?.textViewDidRequestMoveFromSuggestions() == true {
+                return
+            }
         }
         super.moveUp(sender)
     }
@@ -677,5 +686,20 @@ private final class FocusableTextView: NSTextView {
         layoutManager.lineFragmentRect(forGlyphAt: lastGlyphIndex, effectiveRange: &lastLineRange)
 
         return NSMaxRange(lineRange) >= NSMaxRange(lastLineRange)
+    }
+
+    /// Checks if the cursor is on the first line of the text view
+    private func isCursorOnFirstLine() -> Bool {
+        guard let layoutManager = layoutManager else {
+            return true
+        }
+
+        let selectedRange = selectedRange()
+        let glyphRange = layoutManager.glyphRange(forCharacterRange: selectedRange, actualCharacterRange: nil)
+
+        var lineRange = NSRange()
+        layoutManager.lineFragmentRect(forGlyphAt: glyphRange.location, effectiveRange: &lineRange)
+
+        return lineRange.location == 0
     }
 }

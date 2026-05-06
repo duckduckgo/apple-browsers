@@ -24,9 +24,9 @@ import os.log
 /// Used in DEBUG and REVIEW builds to avoid sending noisy crash reports to Sentry.
 public final class DebugCrashReportSender: CrashReportSending {
 
-    public var pixelEvents: EventMapping<CrashReportSenderError>?
+    public var pixelEvents: EventMapping<CrashReportSenderEvent>?
 
-    public init(platform: CrashCollectionPlatform, pixelEvents: EventMapping<CrashReportSenderError>?) {
+    public init(platform: CrashCollectionPlatform, pixelEvents: EventMapping<CrashReportSenderEvent>?) {
         self.pixelEvents = pixelEvents
     }
 

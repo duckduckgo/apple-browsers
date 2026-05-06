@@ -341,15 +341,3 @@ private struct SuggestionListItem: View {
     }
 
 }
-
-private extension URL {
-
-    func formattedForSuggestion() -> String {
-        let string = absoluteString
-            .dropping(prefix: "https://")
-            .dropping(prefix: "http://")
-            .droppingWwwPrefix()
-        return pathComponents.isEmpty ? string : string.dropping(suffix: "/")
-    }
-
-}

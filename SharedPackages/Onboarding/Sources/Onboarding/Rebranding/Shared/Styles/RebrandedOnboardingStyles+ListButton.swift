@@ -55,6 +55,7 @@ public extension OnboardingRebranding.OnboardingStyles {
             var body: some View {
                 configuration.label
                     .font(typography.contextual.controlSmall)
+                    .lineSpacing(20 - 15)
                     .fixedSize(horizontal: false, vertical: true)
                     .multilineTextAlignment(.leading)
                     .lineLimit(nil)
@@ -86,11 +87,11 @@ public extension OnboardingRebranding.OnboardingStyles {
                 return isPressed ? colorPalette.backgroundAccent : .clear
 #else
                 if isPressed {
-                    return Color(designSystemColor: .controlsFillSecondary)
+                    return colorPalette.optionsListPressedColor
                 }
 
                 if isHovered {
-                    return Color(designSystemColor: .controlsFillPrimary)
+                    return colorPalette.optionsListHoverColor
                 }
 
                 return .clear

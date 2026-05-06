@@ -114,11 +114,9 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
-    /// Opt-in centred placeholder for the AI-tab collapsed footer only. Driven by the parent
-    /// `UnifiedToggleInputView`; off by default so the regular omnibar / contextual surfaces
-    /// keep leading alignment. Even when on, a visible trailing button (e.g. stop-generating)
-    /// flips alignment back to leading so the placeholder doesn't sit lopsided under the icon.
-    var shouldCenterIdlePlaceholder: Bool = false {
+    /// A visible trailing button (e.g. stop-generating) forces `.natural` regardless of this
+    /// value, so the placeholder doesn't sit lopsided under the icon.
+    var placeholderTextAlignment: NSTextAlignment = .natural {
         didSet {
             updatePlaceholderAlignment()
         }
@@ -347,12 +345,8 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
-    /// Driven entirely by the parent's opt-in flag plus the trailing-button state. Vertical
-    /// position is handled by the placeholder's centerY anchor in `setup`, so we only adjust
-    /// horizontal alignment here.
     private func updatePlaceholderAlignment() {
-        let centered = shouldCenterIdlePlaceholder && !currentButtonState.showsAnyButton
-        placeholderLabel.textAlignment = centered ? .center : .natural
+        placeholderLabel.textAlignment = currentButtonState.showsAnyButton ? .natural : placeholderTextAlignment
     }
 
     private func adjustTextViewContentInset() {

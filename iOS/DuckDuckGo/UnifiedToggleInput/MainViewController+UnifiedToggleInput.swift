@@ -488,16 +488,16 @@ private extension MainViewController {
 extension MainViewController {
 
     func updateUnifiedInputContentVisibility(for coordinator: UnifiedToggleInputCoordinator) {
+        updateUnifiedInputContentVisibility(for: coordinator, renderState: coordinator.computeRenderState())
+    }
+
+    func updateUnifiedInputContentVisibility(for coordinator: UnifiedToggleInputCoordinator, renderState: UTIRenderState) {
         let isOnAITab = currentTab?.isAITab == true
-        let renderState = coordinator.computeRenderState()
-        if coordinator.isAITabState {
-            coordinator.contentViewController.forceBottomBarLayout = true
-        } else {
-            coordinator.contentViewController.forceBottomBarLayout = false
-        }
+        coordinator.contentViewController.forceBottomBarLayout = coordinator.isAITabState
 
         let isAITabCollapsed = coordinator.isAITabState && !renderState.isExpanded
-        coordinator.viewController.setAITabCollapsedAccessoriesVisible(isAITabCollapsed)
+        coordinator.viewController.setAITabCollapsedFooterPoseActive(isAITabCollapsed)
+        viewCoordinator.setAITabCollapsedTopSeparatorVisible(isAITabCollapsed)
 
         applyTopChromeState(renderState: renderState, isOnAITab: isOnAITab, coordinator: coordinator)
     }

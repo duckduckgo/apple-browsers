@@ -93,18 +93,37 @@ private extension MainViewController {
 
     func handleShowExpandedIntent() {
         viewCoordinator.showUnifiedToggleInput()
-        if let coordinator = unifiedToggleInputCoordinator {
-            if coordinator.isAITabState {
-                if coordinator.cardPosition == .bottom {
-                    viewCoordinator.setNavBarContainerBottomToKeyboard()
-                }
-                let chromeBackgroundState = aiTabChromeBackgroundState(for: coordinator.computeRenderState())
-                applyUnifiedInputChromeBackground(chromeBackgroundState)
-                viewCoordinator.extendContentContainerBehindInput()
-            }
-            updateUnifiedInputContentVisibility(for: coordinator)
+        guard let coordinator = unifiedToggleInputCoordinator else {
+            adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
+            return
         }
-        adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
+
+        let renderState = coordinator.computeRenderState()
+        if coordinator.isAITabState {
+            applyAITabExpandedChrome(for: coordinator, renderState: renderState)
+        }
+
+        let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
+        UIView.animate(
+            withDuration: duration,
+            delay: 0,
+            options: .curveEaseInOut,
+            animations: { [weak self] in
+                guard let self else { return }
+                coordinator.viewController.apply(renderState.viewConfig, animated: false)
+                self.updateUnifiedInputContentVisibility(for: coordinator, renderState: renderState)
+                self.viewCoordinator.superview.layoutIfNeeded()
+            }
+        )
+        adjustUI(withKeyboardFrame: latestKeyboardFrame, in: duration, animationCurve: .curveEaseInOut)
+    }
+
+    private func applyAITabExpandedChrome(for coordinator: UnifiedToggleInputCoordinator, renderState: UTIRenderState) {
+        if coordinator.cardPosition == .bottom {
+            viewCoordinator.setNavBarContainerBottomToKeyboard()
+        }
+        applyUnifiedInputChromeBackground(aiTabChromeBackgroundState(for: renderState))
+        viewCoordinator.extendContentContainerBehindInput()
     }
 
     func handleShowOmnibarEditingIntent(height: CGFloat, pendingHeight: CGFloat?) {

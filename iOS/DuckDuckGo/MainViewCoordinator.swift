@@ -50,6 +50,7 @@ class MainViewCoordinator {
     var tabBarContainer: UIView!
     var aiChatTabChatHeaderContainer: UIView!
     var unifiedToggleInputContainer: UIView!
+    var aiTabCollapsedTopSeparator: UIView!
     var unifiedInputContentContainer: UIView!
 
     /// Owned so a subsequent show can cancel an in-flight dismiss and skip the stale completion.
@@ -269,6 +270,7 @@ class MainViewCoordinator {
     func hideUnifiedToggleInput() {
         addressBarLogger.debug("hideUnifiedToggleInput() — cache=\(String(describing: self.addressBarPosition), privacy: .public) — restoringTop=\(self.addressBarPosition == .top, privacy: .public)")
         unifiedToggleInputContainer.isHidden = true
+        setAITabCollapsedTopSeparatorVisible(false)
         unifiedToggleInputContainer.backgroundColor = .clear
         setNavBarContainerBottomToToolbar()
         if addressBarPosition == .top {
@@ -276,6 +278,14 @@ class MainViewCoordinator {
             setAddressBarTopActive(true)
         }
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
+    }
+
+    func setAITabCollapsedTopSeparatorVisible(_ visible: Bool) {
+        guard aiTabCollapsedTopSeparator.isHidden == visible else { return }
+        aiTabCollapsedTopSeparator.isHidden = !visible
+        if visible {
+            superview.bringSubviewToFront(aiTabCollapsedTopSeparator)
+        }
     }
 
     // MARK: - Omnibar Editing Layout

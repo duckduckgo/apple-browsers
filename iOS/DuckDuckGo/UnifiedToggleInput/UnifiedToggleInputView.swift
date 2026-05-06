@@ -62,6 +62,13 @@ enum UnifiedToggleInputCardPosition {
 /// Supports collapsed (single-line) and expanded (text + tools toolbar) layout states.
 final class UnifiedToggleInputView: UIView {
 
+    /// Exposed so external chrome (e.g. the top-edge separator anchored outside the animating
+    /// UTI hierarchy) can pin to the same Y this footer occupies.
+    static let aiTabCollapsedFooterHeight: CGFloat =
+        Constants.collapsedCardHeight
+        + Constants.collapsedCardTopMarginBottom
+        + Constants.collapsedCardBottomMarginBottom
+
     // MARK: - Constants
 
     private enum Constants {
@@ -116,6 +123,9 @@ final class UnifiedToggleInputView: UIView {
 
         static let allCorners: CACornerMask = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         static let aiTabCollapsedAccessorySpacing: CGFloat = 8
+        // Fire / voice fade in once the pill has finished shrinking into its flanked frame.
+        static let aiTabCollapsedAccessoryFadeDelay: TimeInterval = 0.18
+        static let aiTabCollapsedAccessoryFadeDuration: TimeInterval = 0.12
     }
 
     // MARK: - Hit Testing
@@ -339,20 +349,6 @@ final class UnifiedToggleInputView: UIView {
         delegate?.unifiedToggleInputViewDidTapVoice(self)
     }
 
-    // MARK: - Top Separator
-
-    /// Hairline along the top edge of the UTI footer, visible while the AI-tab collapsed
-    /// accessories (fire/voice) are shown so the footer mirrors the AI chat header's bottom
-    /// hairline. Hidden in the omnibar-editing context.
-    private lazy var topSeparator: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor(designSystemColor: .lines)
-        view.isUserInteractionEnabled = false
-        view.isHidden = true
-        return view
-    }()
-
     // MARK: - Shadow
 
     // Pinned to cardView via Auto Layout; CompositeShadowView forwards cornerRadius/backgroundColor to its shadow sub-layers.
@@ -560,16 +556,34 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
-    func setAITabCollapsedAccessoriesVisible(_ visible: Bool) {
-        guard aiTabCollapsedFireButton.isHidden == visible else { return }
-        aiTabCollapsedFireButton.isHidden = !visible
-        aiTabCollapsedVoiceButton.isHidden = !visible
-        topSeparator.isHidden = !visible
-        textEntryView.shouldCenterIdlePlaceholder = visible
-        cardLeadingConstraint.isActive = !visible
-        cardLeadingFlankedConstraint.isActive = visible
-        cardTrailingConstraint.isActive = !visible
-        cardTrailingFlankedConstraint.isActive = visible
+    func setAITabCollapsedFooterPoseActive(_ active: Bool) {
+        guard aiTabCollapsedFireButton.isHidden == active else { return }
+
+        if active {
+            // alpha-0 before unhide avoids a 1-frame flash on top of the still-wide pill.
+            aiTabCollapsedFireButton.alpha = 0
+            aiTabCollapsedVoiceButton.alpha = 0
+        }
+        aiTabCollapsedFireButton.isHidden = !active
+        aiTabCollapsedVoiceButton.isHidden = !active
+        textEntryView.placeholderTextAlignment = active ? .center : .natural
+
+        guard active else { return }
+        // Reset color: the omnibar dismiss crossfade leaves it on `.textSecondary`.
+        textEntryView.placeholderTextColor = textEntryView.defaultPlaceholderColor
+        UIView.animate(withDuration: Constants.aiTabCollapsedAccessoryFadeDuration,
+                       delay: Constants.aiTabCollapsedAccessoryFadeDelay,
+                       options: .curveEaseOut) {
+            self.aiTabCollapsedFireButton.alpha = 1
+            self.aiTabCollapsedVoiceButton.alpha = 1
+        }
+    }
+
+    private func setCardFlanked(_ flanked: Bool) {
+        cardLeadingConstraint.isActive = !flanked
+        cardLeadingFlankedConstraint.isActive = flanked
+        cardTrailingConstraint.isActive = !flanked
+        cardTrailingFlankedConstraint.isActive = flanked
     }
 
     func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool, updateShadow: Bool = true) {
@@ -645,6 +659,7 @@ final class UnifiedToggleInputView: UIView {
         let expandedCornerRadius = Constants.cardCornerRadiusExpanded
         let collapsedCornerRadius: CGFloat = (layout == .omnibar) ? Constants.omnibarPoseCornerRadius : Constants.cardCornerRadiusCollapsed
         let changes = {
+            self.setCardFlanked(layout == .collapsed)
             self.cardView.layer.cornerRadius = expanded ? expandedCornerRadius : collapsedCornerRadius
             self.cardTopConstraint.constant = topMargin
             self.cardLeadingConstraint.constant = hLeadingMargin
@@ -990,13 +1005,6 @@ private extension UnifiedToggleInputView {
         addSubview(cardView)
         addSubview(aiTabCollapsedFireButton)
         addSubview(aiTabCollapsedVoiceButton)
-        addSubview(topSeparator)
-        NSLayoutConstraint.activate([
-            topSeparator.leadingAnchor.constraint(equalTo: leadingAnchor),
-            topSeparator.trailingAnchor.constraint(equalTo: trailingAnchor),
-            topSeparator.topAnchor.constraint(equalTo: topAnchor),
-            topSeparator.heightAnchor.constraint(equalToConstant: 1.0 / UIScreen.main.scale),
-        ])
 
         NSLayoutConstraint.activate([
             expandedShadowView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),

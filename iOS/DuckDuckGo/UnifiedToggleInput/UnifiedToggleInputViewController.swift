@@ -238,8 +238,8 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.applyCardLayout(layout, animated: animated)
     }
 
-    func setAITabCollapsedAccessoriesVisible(_ visible: Bool) {
-        inputBarView.setAITabCollapsedAccessoriesVisible(visible)
+    func setAITabCollapsedFooterPoseActive(_ active: Bool) {
+        inputBarView.setAITabCollapsedFooterPoseActive(active)
     }
 
     func prepareForOmnibarEditingShow() {

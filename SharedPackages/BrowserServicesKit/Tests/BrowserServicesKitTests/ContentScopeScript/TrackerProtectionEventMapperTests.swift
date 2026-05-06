@@ -564,6 +564,130 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
         XCTAssertTrue(result!.isBlocked, "Non-CTL tracker must remain blocked when CTL TDS is excluded")
     }
 
+    // MARK: - Multi-TDS Loop Parity with Legacy ContentBlockerRulesUserScript
+    //
+    // These pin the documented contract of `classifyUrl`'s multi-TDS loop so any future
+    // refactor that diverges from `ContentBlockerRulesUserScript.userContentController(_:didReceive:)`
+    // fails loudly. The legacy script's behavior is the source of truth.
+
+    /// When the supplementary TDS yields a non-blocked candidate (e.g. CTL-inactive
+    /// `.allowed(reason: .ruleException)`) and the main TDS is empty for that URL, the
+    /// supplementary candidate must survive — matching legacy semantics where the main
+    /// resolver's `nil` result does not overwrite `detectedTracker`.
+    func testSupplementaryNonBlockedCandidateSurvivesWhenMainTDSReturnsNil() {
+        // Supplementary TDS contains facebook.net with default-ignore — yields a
+        // non-blocked candidate. Main TDS contains only tracker.com so it returns nil
+        // for facebook.net (mirrors splitter contract: supplementary trackers are
+        // removed from main).
+        let supplementary = makeCtlTDS()
+        let mapper = TrackerProtectionEventMapper(
+            tld: tld,
+            mainTrackerData: makeTestTDS(),
+            supplementaryTrackerData: [supplementary],
+            unprotectedSites: [],
+            tempList: [],
+            contentBlockingEnabled: true,
+            trackerAllowlist: [:])
+
+        // facebook.net/some.js does not match the CTL `sdk.js` rule, so the supplementary
+        // resolver returns a non-blocked candidate (ignore-default + no matching rule).
+        let observation = TrackerProtectionSubfeature.ResourceObservation(
+            url: "https://connect.facebook.net/some-other.js",
+            resourceType: "script",
+            potentiallyBlocked: false,
+            pageUrl: "https://example.com")
+
+        let result = mapper.classifyResource(observation)
+
+        XCTAssertNotNil(result, "Supplementary non-blocked candidate must survive when main TDS returns nil")
+        XCTAssertFalse(result!.isBlocked, "Candidate from supplementary TDS must remain non-blocked")
+        XCTAssertEqual(result?.eTLDplus1, "facebook.net",
+                       "Returned candidate must be the supplementary TDS's classification")
+    }
+
+    /// When BOTH the supplementary and main TDSes classify the same URL, the main TDS
+    /// result wins. This matches legacy `ContentBlockerRulesUserScript` line 180:
+    /// `detectedTracker = tracker` (unconditional overwrite). The splitter contract makes
+    /// this branch unreachable in practice, but we pin the semantics so the mapper and
+    /// the legacy script can never silently diverge.
+    func testMainTDSResultOverwritesSupplementaryNonBlockedCandidate() {
+        // Both TDSes recognise tracker.com. Supplementary classifies it as ignore-default
+        // (non-blocked). Main classifies it as block-default. Legacy semantics: main wins.
+        let supplementaryTracker = KnownTracker(
+            domain: "tracker.com",
+            defaultAction: .ignore,
+            owner: KnownTracker.Owner(name: "Supplementary Inc", displayName: "Supplementary", ownedBy: nil),
+            prevalence: 0.1, subdomains: nil, categories: nil, rules: nil)
+        let supplementaryTDS = TrackerData(
+            trackers: ["tracker.com": supplementaryTracker],
+            entities: ["Supplementary Inc": Entity(displayName: "Supplementary",
+                                                   domains: ["tracker.com"], prevalence: 0.1)],
+            domains: ["tracker.com": "Supplementary Inc"],
+            cnames: nil)
+
+        let mapper = TrackerProtectionEventMapper(
+            tld: tld,
+            mainTrackerData: makeTestTDS(), // tracker.com defaultAction = .block
+            supplementaryTrackerData: [supplementaryTDS],
+            unprotectedSites: [],
+            tempList: [],
+            contentBlockingEnabled: true,
+            trackerAllowlist: [:])
+
+        let observation = TrackerProtectionSubfeature.ResourceObservation(
+            url: "https://tracker.com/pixel.js",
+            resourceType: "script",
+            potentiallyBlocked: true,
+            pageUrl: "https://example.com")
+        let result = mapper.classifyResource(observation)
+
+        XCTAssertNotNil(result)
+        XCTAssertTrue(result!.isBlocked,
+                      "Main TDS result must overwrite supplementary candidate (legacy parity)")
+        XCTAssertEqual(result?.entityName, "Tracker Inc",
+                       "Returned classification must come from main TDS, not supplementary")
+    }
+
+    /// Supplementary blocked result must short-circuit the loop — main TDS is never consulted.
+    /// Mirrors legacy `ContentBlockerRulesUserScript` lines 161–164: `if tracker.isBlocked { return }`.
+    func testSupplementaryBlockedResultShortCircuitsMainTDS() {
+        // Main TDS would classify tracker.com as blocked too, but the supplementary
+        // matches first and short-circuits. We use a sentinel entity name to verify
+        // which TDS produced the result.
+        let supplementaryBlocking = KnownTracker(
+            domain: "tracker.com",
+            defaultAction: .block,
+            owner: KnownTracker.Owner(name: "Supplementary Sentinel", displayName: "Sup", ownedBy: nil),
+            prevalence: 0.1, subdomains: nil, categories: nil, rules: nil)
+        let supplementaryTDS = TrackerData(
+            trackers: ["tracker.com": supplementaryBlocking],
+            entities: ["Supplementary Sentinel": Entity(displayName: "Sup",
+                                                        domains: ["tracker.com"], prevalence: 0.1)],
+            domains: ["tracker.com": "Supplementary Sentinel"],
+            cnames: nil)
+
+        let mapper = TrackerProtectionEventMapper(
+            tld: tld,
+            mainTrackerData: makeTestTDS(),
+            supplementaryTrackerData: [supplementaryTDS],
+            unprotectedSites: [],
+            tempList: [],
+            contentBlockingEnabled: true,
+            trackerAllowlist: [:])
+
+        let observation = TrackerProtectionSubfeature.ResourceObservation(
+            url: "https://tracker.com/pixel.js",
+            resourceType: "script",
+            potentiallyBlocked: true,
+            pageUrl: "https://example.com")
+        let result = mapper.classifyResource(observation)
+
+        XCTAssertNotNil(result)
+        XCTAssertTrue(result!.isBlocked)
+        XCTAssertEqual(result?.entityName, "Sup",
+                       "Supplementary blocked result must short-circuit; main TDS must not run")
+    }
+
     // MARK: - CTL-Inactive Parity (authentic split-TDS validation)
     // Uses ClickToLoadRulesSplitter with a facebook.net CTL fixture (macOS-only).
 

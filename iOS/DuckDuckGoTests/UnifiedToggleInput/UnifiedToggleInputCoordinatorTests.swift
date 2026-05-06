@@ -1493,6 +1493,42 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertLessThanOrEqual(submitFrame.maxX, sut.bounds.maxX)
     }
 
+    func test_stopGeneratingButtonMatchesSubmitLayoutAndUsesMinimumHitTarget() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.translatesAutoresizingMaskIntoConstraints = false
+
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 280, height: 56))
+        container.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.topAnchor.constraint(equalTo: container.topAnchor),
+            sut.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            sut.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+
+        container.layoutIfNeeded()
+
+        guard let submitButton = findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut) else {
+            XCTFail("Expected to find submit button")
+            return
+        }
+
+        let submitFrame = submitButton.convert(submitButton.bounds, to: sut)
+        sut.isGenerating = true
+        container.layoutIfNeeded()
+
+        guard let stopButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.StopGenerating", in: sut) else {
+            XCTFail("Expected to find stop generating button")
+            return
+        }
+
+        let stopFrame = stopButton.convert(stopButton.bounds, to: sut)
+        XCTAssertEqual(stopFrame.width, submitFrame.width, accuracy: 0.5)
+        XCTAssertEqual(stopFrame.height, submitFrame.height, accuracy: 0.5)
+        XCTAssertEqual(stopButton.image(for: .normal)?.size, CGSize(width: 24, height: 24))
+        XCTAssertTrue(stopButton.hitTest(CGPoint(x: -1, y: stopButton.bounds.midY), with: nil) === stopButton)
+    }
+
     func test_reasoningButton_hasAccessibilityIdentifier() {
         let sut = UnifiedToggleInputToolbarView()
 

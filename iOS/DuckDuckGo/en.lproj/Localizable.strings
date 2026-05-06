@@ -4656,3 +4656,4 @@ https://duckduckgo.com/windows";
 
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "What do you want to import?";
+

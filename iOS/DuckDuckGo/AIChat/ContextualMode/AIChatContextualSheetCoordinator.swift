@@ -27,6 +27,14 @@ import PrivacyConfig
 import UIKit
 import WebKit
 
+/// Underlying-tab URL publishers the contextual chat needs.
+/// `originating` fires at didCommit (drives chip display state); `didFinish` fires when the new
+/// page is actually loaded (drives auto-attach context collection so JS sees fresh DOM).
+struct AIChatTabURLPublishers {
+    let originating: AnyPublisher<URL?, Never>
+    let didFinish: AnyPublisher<URL?, Never>
+}
+
 /// Delegate protocol for coordinating actions that require interaction with the browser.
 protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     /// Called when the user requests to load a URL externally.
@@ -71,6 +79,7 @@ final class AIChatContextualSheetCoordinator {
 
     /// Handler for page context - single source of truth.
     let pageContextHandler: AIChatPageContextHandling
+    private let tabURLPublishers: AIChatTabURLPublishers
     private var contextUpdateCancellable: AnyCancellable?
 
     /// Handles all pixel firing for contextual mode.
@@ -95,6 +104,11 @@ final class AIChatContextualSheetCoordinator {
         contextUpdateCancellable != nil
     }
 
+    /// Publishes the URL of the page that originated the contextual chat session, with replay of the last value.
+    var originatingURLPublisher: AnyPublisher<URL?, Never> {
+        tabURLPublishers.originating
+    }
+
     // MARK: - Initialization
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
@@ -104,6 +118,7 @@ final class AIChatContextualSheetCoordinator {
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
          pageContextHandler: AIChatPageContextHandling,
+         tabURLPublishers: AIChatTabURLPublishers,
          isFireTab: Bool = false,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
@@ -115,6 +130,7 @@ final class AIChatContextualSheetCoordinator {
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
         self.pageContextHandler = pageContextHandler
+        self.tabURLPublishers = tabURLPublishers
         self.isFireTab = isFireTab
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.debugSettings = debugSettings
@@ -168,6 +184,8 @@ final class AIChatContextualSheetCoordinator {
     /// Called by TabViewController when the page navigates to a new URL.
     func notifyPageChanged() async {
         guard hasActiveSheet else { return }
+        // Native UTI handles nav via the chip view-model's `originatingURLPublisher` subscription.
+        if featureFlagger.isFeatureOn(.unifiedToggleInput) { return }
         sessionState.notifyPageChanged()
 
         if sessionState.shouldAutoCollectContext {
@@ -280,10 +298,36 @@ private extension AIChatContextualSheetCoordinator {
                 }
                 return nil
             },
-            pixelHandler: pixelHandler
+            pixelHandler: pixelHandler,
+            utiHostInstaller: { [weak self] contextualChatViewController in
+                guard let self else { return nil }
+                let initialUTIAttachment = self.initialUTIAttachment
+                let host = AIChatContextualUTIHost(
+                    originatingURLPublisher: self.originatingURLPublisher,
+                    didFinishURLPublisher: self.tabURLPublishers.didFinish,
+                    initialAttachedContext: initialUTIAttachment.context,
+                    initialAttachmentDeliveryState: initialUTIAttachment.deliveryState,
+                    hasActiveChat: { [weak self] in self?.sessionState.hasActiveChat ?? false },
+                    isAutoAttachEnabled: { [weak self] in self?.sessionState.shouldAutoCollectContext ?? false },
+                    pageContextHandler: self.pageContextHandler,
+                    isFireTab: self.isFireTab
+                )
+                host.install(in: contextualChatViewController)
+                return host
+            }
         )
 
         return webVC
+    }
+
+    var initialUTIAttachment: (context: AIChatPageContext?, deliveryState: PageContextAttachmentDeliveryState) {
+        if let context = sessionState.intendedAttachedContext {
+            return (context, .delivered)
+        }
+        if sessionState.hasActiveChat, let context = sessionState.latestContext {
+            return (context, .pendingSubmit)
+        }
+        return (nil, .delivered)
     }
     
     /// Starts the session timer after the sheet is dismissed.
@@ -377,6 +421,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
 
     func aiChatContextualSheetViewControllerDidRequestRemoveChip(_ viewController: AIChatContextualSheetViewController) {
         sessionState.downgradeToPlaceholder()
+        pageContextHandler.clearAttachedContext()
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didUpdateContextualChatURL url: URL?) {

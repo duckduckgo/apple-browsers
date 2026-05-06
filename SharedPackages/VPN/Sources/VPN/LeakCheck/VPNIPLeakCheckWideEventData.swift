@@ -26,7 +26,7 @@ public final class VPNIPLeakCheckWideEventData: WideEventData {
         featureName: "vpn-ip-leak-check",
         mobileMetaType: "ios-vpn-ip-leak-check",
         desktopMetaType: "macos-vpn-ip-leak-check",
-        version: "1.0.0"
+        version: "1.0.1"
     )
 
     public var globalData: WideEventGlobalData
@@ -103,5 +103,9 @@ public final class VPNIPLeakCheckWideEventData: WideEventData {
         if let code = result.errorCode { params["\(prefix).error_code"] = code }
         if let domain = result.underlyingDomain { params["\(prefix).underlying_domain"] = domain }
         if let code = result.underlyingCode { params["\(prefix).underlying_code"] = code }
+        if let matched = result.octet1Matched { params["\(prefix).leak_octet1_matched"] = matched }
+        if let matched = result.octet2Matched { params["\(prefix).leak_octet2_matched"] = matched }
+        if let matched = result.octet3Matched { params["\(prefix).leak_octet3_matched"] = matched }
+        if let matched = result.octet4Matched { params["\(prefix).leak_octet4_matched"] = matched }
     }
 }

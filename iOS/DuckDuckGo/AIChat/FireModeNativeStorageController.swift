@@ -204,4 +204,6 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
     func isMigrationDone() throws -> Bool { try inner.isMigrationDone() }
     func isMigrationDone(key: String) throws -> Bool { try inner.isMigrationDone(key: key) }
     func markMigrationDone(key: String) throws { try inner.markMigrationDone(key: key) }
+
+    var setupSucceeded: Bool? { inner.setupSucceeded }
 }

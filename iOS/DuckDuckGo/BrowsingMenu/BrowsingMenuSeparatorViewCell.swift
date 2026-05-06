@@ -21,13 +21,42 @@ import UIKit
 
 class BrowsingMenuSeparatorViewCell: UITableViewCell {
 
-    @IBOutlet weak var separator: UIView!
-    @IBOutlet weak var separatorHeight: NSLayoutConstraint!
+    let separator = UIView()
+    private var separatorHeight: NSLayoutConstraint!
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        setupViews()
+        setupConstraints()
+        configure()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        
+    private func configure() {
         separatorHeight.constant = 1.0 / UIScreen.main.scale
         contentView.backgroundColor = .clear
+    }
+
+    private func setupViews() {
+        selectionStyle = .none
+        accessibilityElementsHidden = true
+        textLabel?.accessibilityElementsHidden = true
+
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(separator)
+    }
+
+    private func setupConstraints() {
+        separatorHeight = separator.heightAnchor.constraint(equalToConstant: 1)
+
+        NSLayoutConstraint.activate([
+            separator.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+            contentView.trailingAnchor.constraint(equalTo: separator.trailingAnchor, constant: 24),
+            separator.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            separatorHeight
+        ])
     }
 }

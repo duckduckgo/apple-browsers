@@ -43,6 +43,7 @@ protocol NetworkProtectionIPCClient {
 
     func start(completion: @escaping (Error?) -> Void)
     func stop(completion: @escaping (Error?) -> Void)
+    func refreshSystemState() async throws
     func command(_ command: VPNCommand) async throws
 }
 
@@ -160,6 +161,10 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
 
         /// Since the favicon doesn't have a publisher we force refreshing here
         activeSitePublisher.refreshActiveSiteInfo()
+
+        Task { [ipcClient] in
+            try? await ipcClient.refreshSystemState()
+        }
 
         let popover: NSPopover = {
             let vpnAppState = VPNAppState(defaults: .netP)

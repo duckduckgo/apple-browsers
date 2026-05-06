@@ -292,6 +292,21 @@ class TabViewController: UIViewController {
         return manager
     }()
 
+    private let urlSubject = CurrentValueSubject<URL?, Never>(nil)
+    var urlPublisher: AnyPublisher<URL?, Never> {
+        urlSubject.eraseToAnyPublisher()
+    }
+
+    /// Emits the URL of the underlying tab each time a navigation finishes loading. Unlike
+    /// `urlPublisher` (which fires at didCommit, before the new DOM is ready), this is the
+    /// reliable signal for "the new page's content is available to query." Replays the last
+    /// finished URL on subscribe so late subscribers (e.g. a contextual chat opened after
+    /// the page already loaded) still see the current page.
+    private let didFinishURLSubject = CurrentValueSubject<URL?, Never>(nil)
+    var didFinishURLPublisher: AnyPublisher<URL?, Never> {
+        didFinishURLSubject.eraseToAnyPublisher()
+    }
+
     public var url: URL? {
         willSet {
             if newValue != url {
@@ -303,6 +318,7 @@ class TabViewController: UIViewController {
             delegate?.tabLoadingStateDidChange(tab: self)
             checkLoginDetectionAfterNavigation()
             updateTrackerAnimationDomainState(for: url)
+            urlSubject.send(url)
         }
     }
     
@@ -567,6 +583,7 @@ class TabViewController: UIViewController {
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
             pageContextHandler: pageContextHandler,
+            tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler
         )
@@ -1862,6 +1879,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
+        didFinishURLSubject.send(webView.url)
         onTextZoomChange()
         adClickAttributionDetection.onDidFinishNavigation(url: webView.url)
         adClickExternalOpenDetector.finishNavigation()

@@ -228,6 +228,13 @@ extension TunnelControllerIPCService: XPCServerInterface {
         }
     }
 
+    func refreshSystemState(completion: @escaping (Error?) -> Void) {
+        Task { @MainActor in
+            await tunnelController.refreshSystemState()
+            completion(nil)
+        }
+    }
+
     func resetAll(uninstallSystemExtension: Bool) async {
         try? await networkExtensionController.deactivateSystemExtension()
     }

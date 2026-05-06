@@ -31,6 +31,7 @@ public struct AIChatModel {
     public let shortName: String
     public let provider: ModelProvider
     public let supportsImageUpload: Bool
+    public let supportedFileTypes: [String]
     /// Image formats supported by this model (e.g. ["png", "webp"]). Empty when image upload is not supported.
     public let supportedImageFormats: [String]
     /// Tools supported by this model for prompt-time augmentation.
@@ -51,12 +52,17 @@ public struct AIChatModel {
         case unknown
     }
 
+    public var supportsFileUpload: Bool {
+        !supportedFileTypes.isEmpty
+    }
+
     public init(
         id: String,
         name: String,
         shortName: String? = nil,
         provider: ModelProvider,
         supportsImageUpload: Bool,
+        supportedFileTypes: [String] = [],
         supportedImageFormats: [String] = [],
         supportedTools: [AIChatRAGTool] = [],
         entityHasAccess: Bool,
@@ -68,6 +74,7 @@ public struct AIChatModel {
         self.shortName = shortName ?? name
         self.provider = provider
         self.supportsImageUpload = supportsImageUpload
+        self.supportedFileTypes = supportedFileTypes
         self.supportedImageFormats = supportedImageFormats
         self.supportedTools = supportedTools
         self.entityHasAccess = entityHasAccess

@@ -87,22 +87,15 @@ private struct Header: View {
         VStack(spacing: Metrics.spacing) {
             Image(uiImage: DesignSystemImages.Color.Size32.duckDuckAI)
 
-            HStack(spacing: Metrics.badgeSpacing) {
-                BadgeView(text: UserText.settingsItemNewBadge)
-                    .background(Color(baseColor: .yellow60))
-                    .clipShape(Capsule())
-
-                Text(UserText.newAddressBarPickerTitle)
-                    .textCase(.uppercase)
-                    .daxFootnoteSemibold()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-            }
+            Text(UserText.newAddressBarPickerTitle)
+                .textCase(.uppercase)
+                .daxFootnoteSemibold()
+                .foregroundColor(Color(designSystemColor: .textSecondary))
         }
     }
 
     private enum Metrics {
         static let spacing: CGFloat = 12
-        static let badgeSpacing: CGFloat = 8
     }
 }
 

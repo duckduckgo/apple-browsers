@@ -68,16 +68,23 @@ final class NewAddressBarPickerViewController: UIViewController {
     }
 
     private func buildContentView() -> NewAddressBarPickerRefreshContentView {
-        let viewModel = NewAddressBarPickerViewModel(aiChatSettings: aiChatSettings) { [weak self] isDuckAISelected in
-            guard let self else { return }
-            let omniBarFocuser = self.omniBarFocuser
-            self.dismiss(animated: true) {
-                guard isDuckAISelected else { return }
-                omniBarFocuser?.focusOmniBar()
-            }
+        let viewModel = NewAddressBarPickerViewModel(aiChatSettings: aiChatSettings) { [weak self] isToggleEnabled in
+            self?.dismissAndFocusOmnibarIfNeeded(isToggleEnabled: isToggleEnabled)
         }
 
         return NewAddressBarPickerRefreshContentView(viewModel: viewModel)
+    }
+
+    private func dismissAndFocusOmnibarIfNeeded(animated: Bool = true, isToggleEnabled: Bool) {
+        let omniBarFocuser = self.omniBarFocuser
+
+        dismiss(animated: animated) {
+            guard isToggleEnabled, let omniBarFocuser else {
+                return
+            }
+
+            omniBarFocuser.focusOmniBar()
+        }
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {

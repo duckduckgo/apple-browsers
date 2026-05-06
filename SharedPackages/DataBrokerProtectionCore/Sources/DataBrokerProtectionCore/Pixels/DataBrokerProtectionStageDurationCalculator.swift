@@ -228,7 +228,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     }
 
     func fireOptOutEmailGetData() {
-        let duration = durationSinceLastStage()
+        let duration = (durationSinceLastStage() / 10.0).rounded() * 10.0
         handler.fire(.optOutEmailGetData(dataBroker: dataBrokerURL,
                                          attemptId: attemptId,
                                          duration: duration,

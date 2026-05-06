@@ -148,6 +148,12 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Description of the Ad Blocking feature in settings */
+"ad.blocking.description" = "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking";
+
+/* Section header for YouTube-specific ad blocking settings */
+"ad.blocking.youtube.section.header" = "YouTube";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Bottom";
 
@@ -4594,8 +4600,8 @@ https://duckduckgo.com/windows";
 /* Explanation text for YouTube Ad Blocking feature */
 "youtube.ad.blocking.explanation" = "DuckDuckGo removes video ads on YouTube, so you can watch videos without interruption.";
 
-/* Settings screen title for YouTube Ad Blocking */
-"youtube.ad.blocking.title" = "YouTube Ad Blocking";
+/* Settings screen title for Ad Blocking */
+"youtube.ad.blocking.title" = "Ad Blocking";
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Block ads on YouTube";

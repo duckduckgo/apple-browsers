@@ -264,4 +264,119 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @Suite("Add to Dock Content")
+    struct AddToDockContent {
+
+        @Test(
+            "Check add to dock title is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAddToDockTitle(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.addToDockContent
+
+            // THEN
+            #expect(result.title == UserText.AddToDockOnboarding.Promo.title)
+        }
+
+        @Test(
+            "Check add to dock message is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAddToDockMessage(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.addToDockContent
+
+            // THEN
+            #expect(result.message == UserText.AddToDockOnboarding.Promo.introMessage)
+        }
+
+        @Test(
+            "Check add to dock primary CTA is show tutorial",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAddToDockPrimaryCTA(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.addToDockContent
+
+            // THEN
+            #expect(result.primaryCTA == UserText.AddToDockOnboarding.Buttons.tutorial)
+        }
+
+        @Test(
+            "Check add to dock secondary CTA is skip",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAddToDockSecondaryCTA(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.addToDockContent
+
+            // THEN
+            #expect(result.secondaryCTA == UserText.AddToDockOnboarding.Buttons.skip)
+        }
+
+        @Suite("Tutorial")
+        struct Tutorial {
+
+            @Test(
+                "Check tutorial title is correct",
+                arguments: [.default, .duckAI] as [OnboardingFlowType]
+            )
+            func checkTutorialTitle(flow: OnboardingFlowType) {
+                // GIVEN
+                let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+                // WHEN
+                let result = sut.addToDockContent.tutorialStepContent
+
+                // THEN
+                #expect(result.title == UserText.AddToDockOnboarding.Tutorial.title)
+            }
+
+            @Test(
+                "Check tutorial message is correct",
+                arguments: [.default, .duckAI] as [OnboardingFlowType]
+            )
+            func checkTutorialMessage(flow: OnboardingFlowType) {
+                // GIVEN
+                let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+                // WHEN
+                let result = sut.addToDockContent.tutorialStepContent
+
+                // THEN
+                #expect(result.message == UserText.AddToDockOnboarding.Tutorial.message)
+            }
+
+            @Test(
+                "Check tutorial primary CTA is got it",
+                arguments: [.default, .duckAI] as [OnboardingFlowType]
+            )
+            func checkTutorialPrimaryCTA(flow: OnboardingFlowType) {
+                // GIVEN
+                let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+                // WHEN
+                let result = sut.addToDockContent.tutorialStepContent
+
+                // THEN
+                #expect(result.primaryCTA == UserText.AddToDockOnboarding.Buttons.gotIt)
+            }
+
+        }
+
+    }
+
 }

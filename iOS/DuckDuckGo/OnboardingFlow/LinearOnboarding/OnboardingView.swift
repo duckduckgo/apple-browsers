@@ -346,7 +346,7 @@ extension OnboardingView.ViewState.Intro {
     enum IntroType: Equatable {
         case startOnboardingDialog(content: OnboardingIntroStepContent, type: IntroDialogType)
         case browsersComparisonDialog
-        case addToDockPromoDialog
+        case addToDockPromoDialog(content: OnboardingAddToDockContent)
         case chooseAppIconDialog
         case chooseAddressBarPositionDialog
         case chooseSearchExperienceDialog

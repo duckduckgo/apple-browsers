@@ -475,8 +475,8 @@ extension OnboardingRebranding {
                 introView(content: content, dialogType: dialogType)
             case .browsersComparisonDialog:
                 browsersComparisonView
-            case .addToDockPromoDialog:
-                addToDockPromoView
+            case let .addToDockPromoDialog(content):
+                addToDockPromoView(content: content)
             case .chooseAppIconDialog:
                 appIconPickerView
             case .chooseAddressBarPositionDialog:
@@ -546,8 +546,9 @@ extension OnboardingRebranding {
             }
         }
 
-        private var addToDockPromoView: some View {
+        private func addToDockPromoView(content: OnboardingAddToDockContent) -> some View {
             AddToDockPromoContent(
+                content: content,
                 isVisible: $showBubbleContent,
                 showTutorialAction: {
                     // The child view manages its own hide/show sequence for the promo -> tutorial switch.

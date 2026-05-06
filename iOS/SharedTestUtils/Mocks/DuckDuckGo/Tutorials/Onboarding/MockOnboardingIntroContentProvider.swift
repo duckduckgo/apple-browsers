@@ -23,6 +23,7 @@ import Foundation
 class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent = .mock
     var introStepContent: OnboardingIntroStepContent = .mock
+    var addToDockContent: OnboardingAddToDockContent = .mock
 }
 
 // MARK: - Helpers
@@ -51,6 +52,20 @@ extension OnboardingIntroStepContent {
             message: "Skip Message",
             primaryCTA: "Skip Primary",
             secondaryCTA: "Skip Secondary"
+        )
+    )
+}
+
+extension OnboardingAddToDockContent {
+    static let mock = OnboardingAddToDockContent(
+        title: "Add to Dock Title",
+        message: "Add to Dock Message",
+        primaryCTA: "Add to Dock Primary",
+        secondaryCTA: "Add to Dock Secondary",
+        tutorialStepContent: .init(
+            title: "Tutorial Title",
+            message: "Tutorial Message",
+            primaryCTA: "Tutorial Primary"
         )
     )
 }

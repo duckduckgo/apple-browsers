@@ -26,6 +26,7 @@ import PrivacyConfig
 protocol OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent { get }
     var introStepContent: OnboardingIntroStepContent { get }
+    var addToDockContent: OnboardingAddToDockContent { get }
 }
 
 struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
@@ -105,6 +106,42 @@ extension OnboardingIntroContentProvider {
             secondaryCTA: UserText.Onboarding.Intro.skipCTA,
             restorePromptStepContent: restoreOnboardingContent,
             skipFlowStepContent: skipOnboardingContent
+        )
+    }
+
+}
+
+// MARK: - Content Provider + Add to Dock (Add me to your Dock!)
+
+struct OnboardingAddToDockContent: Equatable {
+    struct TutorialStepContent: Equatable {
+        let title: String
+        let message: String
+        let primaryCTA: String
+    }
+
+    let title: String
+    let message: String
+    let primaryCTA: String
+    let secondaryCTA: String
+    let tutorialStepContent: TutorialStepContent
+}
+
+extension OnboardingIntroContentProvider {
+
+    var addToDockContent: OnboardingAddToDockContent {
+        let tutorial = OnboardingAddToDockContent.TutorialStepContent(
+            title: UserText.AddToDockOnboarding.Tutorial.title,
+            message: UserText.AddToDockOnboarding.Tutorial.message,
+            primaryCTA: UserText.AddToDockOnboarding.Buttons.gotIt
+        )
+
+        return OnboardingAddToDockContent(
+            title: UserText.AddToDockOnboarding.Promo.title,
+            message: UserText.AddToDockOnboarding.Promo.introMessage,
+            primaryCTA: UserText.AddToDockOnboarding.Buttons.tutorial,
+            secondaryCTA: UserText.AddToDockOnboarding.Buttons.skip,
+            tutorialStepContent: tutorial
         )
     }
 

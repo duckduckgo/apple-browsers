@@ -2153,6 +2153,20 @@
 		7B3A16442D4B7A9C00D4C869 /* AppInfoRetriever in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3A16432D4B7A9C00D4C869 /* AppInfoRetriever */; };
 		7B430EA12A71411A00BAC4A1 /* NetworkProtectionSimulateFailureMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B430EA02A71411A00BAC4A1 /* NetworkProtectionSimulateFailureMenu.swift */; };
 		7B430EA22A71411A00BAC4A1 /* NetworkProtectionSimulateFailureMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B430EA02A71411A00BAC4A1 /* NetworkProtectionSimulateFailureMenu.swift */; };
+		7B4658462FABD3D900CCB375 /* AddressBarPerfRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658452FABD3D900CCB375 /* AddressBarPerfRecorder.swift */; };
+		7B4658472FABD3D900CCB375 /* AddressBarPerfBucketing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658442FABD3D900CCB375 /* AddressBarPerfBucketing.swift */; };
+		7B4658482FABD3D900CCB375 /* AddressBarPerfRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658452FABD3D900CCB375 /* AddressBarPerfRecorder.swift */; };
+		7B4658492FABD3D900CCB375 /* AddressBarPerfBucketing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658442FABD3D900CCB375 /* AddressBarPerfBucketing.swift */; };
+		7B46584C2FABD3FB00CCB375 /* AddressBarPerfBucketingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B46584A2FABD3FB00CCB375 /* AddressBarPerfBucketingTests.swift */; };
+		7B46584D2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B46584B2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift */; };
+		7B46584E2FABD3FB00CCB375 /* AddressBarPerfBucketingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B46584A2FABD3FB00CCB375 /* AddressBarPerfBucketingTests.swift */; };
+		7B46584F2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B46584B2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift */; };
+		7B4658522FABD52200CCB375 /* AddressBarPerfPaintHook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658502FABD52200CCB375 /* AddressBarPerfPaintHook.swift */; };
+		7B4658532FABD52200CCB375 /* AddressBarPerfPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658512FABD52200CCB375 /* AddressBarPerfPixel.swift */; };
+		7B4658542FABD52200CCB375 /* AddressBarPerfPaintHook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658502FABD52200CCB375 /* AddressBarPerfPaintHook.swift */; };
+		7B4658552FABD52200CCB375 /* AddressBarPerfPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658512FABD52200CCB375 /* AddressBarPerfPixel.swift */; };
+		7B4658572FABD72100CCB375 /* AddressBarPerfCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658562FABD72100CCB375 /* AddressBarPerfCoordinator.swift */; };
+		7B4658582FABD72100CCB375 /* AddressBarPerfCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658562FABD72100CCB375 /* AddressBarPerfCoordinator.swift */; };
 		7B4C5CF52BE51D640007A164 /* VPNUninstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4C5CF42BE51D640007A164 /* VPNUninstallerTests.swift */; };
 		7B4C5CF62BE51D640007A164 /* VPNUninstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4C5CF42BE51D640007A164 /* VPNUninstallerTests.swift */; };
 		7B4CE8E726F02135009134B1 /* TabBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4CE8E626F02134009134B1 /* TabBarTests.swift */; };
@@ -5608,6 +5622,13 @@
 		7B3618C12ADE75C8000D6154 /* NetworkProtectionNavBarPopoverManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionNavBarPopoverManager.swift; sourceTree = "<group>"; };
 		7B3A16402D4B798000D4C869 /* AppInfoRetriever */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AppInfoRetriever; sourceTree = "<group>"; };
 		7B430EA02A71411A00BAC4A1 /* NetworkProtectionSimulateFailureMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionSimulateFailureMenu.swift; sourceTree = "<group>"; };
+		7B4658442FABD3D900CCB375 /* AddressBarPerfBucketing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPerfBucketing.swift; sourceTree = "<group>"; };
+		7B4658452FABD3D900CCB375 /* AddressBarPerfRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPerfRecorder.swift; sourceTree = "<group>"; };
+		7B46584A2FABD3FB00CCB375 /* AddressBarPerfBucketingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPerfBucketingTests.swift; sourceTree = "<group>"; };
+		7B46584B2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPerfRecorderTests.swift; sourceTree = "<group>"; };
+		7B4658502FABD52200CCB375 /* AddressBarPerfPaintHook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPerfPaintHook.swift; sourceTree = "<group>"; };
+		7B4658512FABD52200CCB375 /* AddressBarPerfPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPerfPixel.swift; sourceTree = "<group>"; };
+		7B4658562FABD72100CCB375 /* AddressBarPerfCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPerfCoordinator.swift; sourceTree = "<group>"; };
 		7B4C5CF42BE51D640007A164 /* VPNUninstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUninstallerTests.swift; sourceTree = "<group>"; };
 		7B4CE8DA26F02108009134B1 /* UI Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "UI Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B4CE8E626F02134009134B1 /* TabBarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarTests.swift; sourceTree = "<group>"; };
@@ -12038,6 +12059,11 @@
 		B6A9E44E26142AF90067D1B9 /* Statistics */ = {
 			isa = PBXGroup;
 			children = (
+				7B4658442FABD3D900CCB375 /* AddressBarPerfBucketing.swift */,
+				7B4658562FABD72100CCB375 /* AddressBarPerfCoordinator.swift */,
+				7B4658502FABD52200CCB375 /* AddressBarPerfPaintHook.swift */,
+				7B4658512FABD52200CCB375 /* AddressBarPerfPixel.swift */,
+				7B4658452FABD3D900CCB375 /* AddressBarPerfRecorder.swift */,
 				7B7821BB2E84440A00E0359A /* ErrorPagePixel.swift */,
 				7BA930AD2E0DA5B800723574 /* NavigationEngagementPixel.swift */,
 				37ADC3ED2DF031830001CA03 /* MoreOptionsMenuPixel.swift */,
@@ -12154,6 +12180,8 @@
 			isa = PBXGroup;
 			children = (
 				B69B50402726C3F400758A2B /* ATB */,
+				7B46584A2FABD3FB00CCB375 /* AddressBarPerfBucketingTests.swift */,
+				7B46584B2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift */,
 				B6DA441D2616C84600DD1EC2 /* PixelStoreMock.swift */,
 				4B117F7C276C0CB5002F3D8C /* LocalStatisticsStoreTests.swift */,
 				B610F2E327A8F37A00FCEBE9 /* CBRCompileTimeReporterTests.swift */,
@@ -15071,6 +15099,7 @@
 				3706FB23293F65D500E42796 /* DownloadsCellView.swift in Sources */,
 				3706FB25293F65D500E42796 /* PublishedAfter.swift in Sources */,
 				CC82ABBA2F520E4D00AD9807 /* PromoTrigger.swift in Sources */,
+				7B4658572FABD72100CCB375 /* AddressBarPerfCoordinator.swift in Sources */,
 				EEBF15C32E4CE72E0053D15B /* BookmarksEmptyStateView.swift in Sources */,
 				37A0BA212D747A9300130447 /* WindowControllersManager+URLOpening.swift in Sources */,
 				9FBB0C062CBD223D0006B6A6 /* ViewHighlighter.swift in Sources */,
@@ -15418,6 +15447,8 @@
 				3706FBB7293F65D500E42796 /* FirePopoverViewController.swift in Sources */,
 				3706FBB8293F65D500E42796 /* SavePaymentMethodPopover.swift in Sources */,
 				B6CC266D2BAD9CD800F53F8D /* FileProgressPresenter.swift in Sources */,
+				7B4658542FABD52200CCB375 /* AddressBarPerfPaintHook.swift in Sources */,
+				7B4658552FABD52200CCB375 /* AddressBarPerfPixel.swift in Sources */,
 				3706FBB9293F65D500E42796 /* FindInPageViewController.swift in Sources */,
 				3706FBBA293F65D500E42796 /* Cryptography.swift in Sources */,
 				3706FBBC293F65D500E42796 /* NSViewExtension.swift in Sources */,
@@ -15734,6 +15765,8 @@
 				4B4D60C12A0C848E00BCD287 /* NetworkProtectionControllerErrorStore.swift in Sources */,
 				7B7821BC2E84440A00E0359A /* ErrorPagePixel.swift in Sources */,
 				3706FC3E293F65D500E42796 /* VariantManager.swift in Sources */,
+				7B4658482FABD3D900CCB375 /* AddressBarPerfRecorder.swift in Sources */,
+				7B4658492FABD3D900CCB375 /* AddressBarPerfBucketing.swift in Sources */,
 				3706FC3F293F65D500E42796 /* ApplicationDockMenu.swift in Sources */,
 				4B9DB03C2A983B24000927DB /* InvitedToWaitlistView.swift in Sources */,
 				3706FC40293F65D500E42796 /* SaveIdentityViewController.swift in Sources */,
@@ -16154,6 +16187,8 @@
 				567A23CE2C80CF3D0010F66C /* SpecialErrorPageUserScriptTests.swift in Sources */,
 				9F39106A2B68D87B00CB5112 /* ProgressExtensionTests.swift in Sources */,
 				B5F31F4C2F50E2B90060E5C1 /* PerformanceMetricsReporterTests.swift in Sources */,
+				7B46584C2FABD3FB00CCB375 /* AddressBarPerfBucketingTests.swift in Sources */,
+				7B46584D2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift in Sources */,
 				C149975B2DE762B600FF8F0F /* SubscriptionPagesUseSubscriptionFeatureTests.swift in Sources */,
 				9FAD623B2BCFDB32007F3A65 /* WebsiteInfoHelpers.swift in Sources */,
 				9FB4AF542DED8C0700BE416F /* DefaultBrowserAndDockPromptPixelEventTests.swift in Sources */,
@@ -17323,6 +17358,7 @@
 				1D074B272909A433006E4AC3 /* PasswordManagerCoordinator.swift in Sources */,
 				BB32C5952DCCF77F00775E80 /* RampView.swift in Sources */,
 				4BE6547E271FCD4D008D1D63 /* PasswordManagementIdentityModel.swift in Sources */,
+				7B4658582FABD72100CCB375 /* AddressBarPerfCoordinator.swift in Sources */,
 				846F4CD12E04829D00266DB7 /* TabContent+DisplayedFavicon.swift in Sources */,
 				85C6A29625CC1FFD00EEB5F1 /* UserDefaultsWrapper.swift in Sources */,
 				B541A3542E858041004AEAAD /* ThemeColors.swift in Sources */,
@@ -17670,6 +17706,8 @@
 				1D532BE62EDC3E6D00D219FA /* PermissionCenterViewModel.swift in Sources */,
 				37A4CEBA282E992F00D75B89 /* StartupPreferences.swift in Sources */,
 				C1CE84692C887CF60068913B /* FreemiumDBPScanResultPolling.swift in Sources */,
+				7B4658522FABD52200CCB375 /* AddressBarPerfPaintHook.swift in Sources */,
+				7B4658532FABD52200CCB375 /* AddressBarPerfPixel.swift in Sources */,
 				37C9F78C2CF1C776004D73A1 /* PrivacyStatsTabExtension.swift in Sources */,
 				1EB714F02EDA30CA00B6F589 /* AutoconsentStatsPopoverPresenter.swift in Sources */,
 				0900A40D95794BC984A351AA /* AutoconsentPopupManagedEvent.swift in Sources */,
@@ -17986,6 +18024,8 @@
 				AAE99B8927088A19008B6BD9 /* FirePopover.swift in Sources */,
 				8443DC6E2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift in Sources */,
 				B53F4E932EA917AB0043B5EF /* LetterView.swift in Sources */,
+				7B4658462FABD3D900CCB375 /* AddressBarPerfRecorder.swift in Sources */,
+				7B4658472FABD3D900CCB375 /* AddressBarPerfBucketing.swift in Sources */,
 				4B0BD7B72A9FE6E500EF609D /* NetworkProtectionOnboardingMenu.swift in Sources */,
 				B69B503D2726A12500758A2B /* VariantManager.swift in Sources */,
 				AA97BF4625135DD30014931A /* ApplicationDockMenu.swift in Sources */,
@@ -18427,6 +18467,8 @@
 				AA91F83927076F1900771A0D /* PrivacyIconViewModelTests.swift in Sources */,
 				E274EFF42E1BD8B000373C41 /* NewTabPageSectionsAvailabilityProviderTests.swift in Sources */,
 				9F9C49F62BC786790099738D /* MoreOptionsMenu+BookmarksTests.swift in Sources */,
+				7B46584E2FABD3FB00CCB375 /* AddressBarPerfBucketingTests.swift in Sources */,
+				7B46584F2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift in Sources */,
 				B62EB47C25BAD3BB005745C6 /* WKWebViewPrivateMethodsAvailabilityTests.swift in Sources */,
 				EDF339172E8BFD110062E7C3 /* WatchdogEventMapperTests.swift in Sources */,
 				EDF339182E8BFD110062E7C3 /* MockWatchdogDiagnosticProvider.swift in Sources */,

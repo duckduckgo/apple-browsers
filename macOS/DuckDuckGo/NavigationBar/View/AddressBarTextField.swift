@@ -68,6 +68,10 @@ final class AddressBarTextField: NSTextField {
     private var windowFrameCancellable: AnyCancellable?
     private var sharedTextStateCancellable: AnyCancellable?
 
+    private let perfCoordinator = AddressBarPerfCoordinator()
+    private var perfTerminatorCancellables: Set<AnyCancellable> = []
+    private var perfAIModeTerminatorCancellable: AnyCancellable?
+
     weak var onboardingDelegate: OnboardingAddressBarReporting?
     weak var focusDelegate: AddressBarTextFieldFocusDelegate?
     weak var searchPreferences: SearchPreferences?
@@ -122,6 +126,22 @@ final class AddressBarTextField: NSTextField {
         currentEditor()?.selectAll(self)
     }
 
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        perfTerminatorCancellables.removeAll()
+        if let window {
+            perfCoordinator.attach(to: window)
+            NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification, object: window)
+                .sink { [weak self] _ in self?.perfCoordinator.terminateInteraction() }
+                .store(in: &perfTerminatorCancellables)
+            NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)
+                .sink { [weak self] _ in self?.perfCoordinator.terminateInteraction() }
+                .store(in: &perfTerminatorCancellables)
+        } else {
+            perfCoordinator.detach()
+        }
+    }
+
     // MARK: Observation
 
     private func subscribeToSuggestionResult() {
@@ -129,6 +149,7 @@ final class AddressBarTextField: NSTextField {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self = self else { return }
+                self.perfCoordinator.markSuggestionsUpdated()
                 if self.suggestionContainerViewModel?.suggestionContainer.result?.count ?? 0 > 0 {
                     self.showSuggestionWindow()
                 }
@@ -147,6 +168,7 @@ final class AddressBarTextField: NSTextField {
             .compactMap { $0 }
             .sink { [weak self] selectedTabViewModel in
                 guard let self else { return }
+                perfCoordinator.terminateInteraction()
                 hideSuggestionWindow()
                 /// Point sharedTextState at the incoming tab before `restoreValueIfPossible` runs. Otherwise
                 /// `updateValue`'s `sharedTextState?.reset()` would clear the OUTGOING tab's state (including the
@@ -191,9 +213,15 @@ final class AddressBarTextField: NSTextField {
     private func subscribeToSharedTextState() {
         sharedTextStateCancellable?.cancel()
         sharedTextStateCancellable = nil
+        perfAIModeTerminatorCancellable?.cancel()
+        perfAIModeTerminatorCancellable = nil
 
         guard Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
               let sharedTextState else { return }
+
+        perfAIModeTerminatorCancellable = sharedTextState.$isInDuckAIMode
+            .dropFirst()
+            .sink { [weak self] _ in self?.perfCoordinator.terminateInteraction() }
 
         sharedTextStateCancellable = sharedTextState.$text
             .receive(on: DispatchQueue.main)
@@ -543,6 +571,7 @@ final class AddressBarTextField: NSTextField {
     override func becomeFirstResponder() -> Bool {
         let result = super.becomeFirstResponder()
         if result {
+            perfCoordinator.resetForNewInteraction()
             focusDelegate?.addressBarDidFocus(self)
         }
         return result
@@ -1127,6 +1156,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
     func controlTextDidEndEditing(_ obj: Notification) {
         suggestionContainerViewModel?.clearUserStringValue()
         hideSuggestionWindow()
+        perfCoordinator.terminateInteraction()
         focusDelegate?.addressBarDidLoseFocus(self)
     }
 
@@ -1268,6 +1298,8 @@ extension AddressBarTextField: NSTextFieldDelegate {
 extension AddressBarTextField: NSTextViewDelegate {
 
     func textView(_ textView: NSTextView, userTypedString typedString: String, at insertionNsRange: NSRange, callback: () -> Void) {
+        perfCoordinator.markKeystroke()
+
         let oldValue = stringValueWithoutSuffix
         let insertionRange = Range(insertionNsRange, in: oldValue) ?? oldValue.startIndex..<oldValue.endIndex
 

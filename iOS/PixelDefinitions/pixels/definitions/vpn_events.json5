@@ -44,19 +44,7 @@
             {
                 "key": "feature.data.ext.error_description",
                 "type": "string",
-                "description": "Description of the failure when the VPN connection flow ends in error. Mix of stable case-name tokens and human-readable messages, depending on which error type surfaced.",
-                "examples": [
-                    "noAuthToken",
-                    "loadFromPreferencesFailed",
-                    "saveToPreferencesFailed",
-                    "startVPNFailed",
-                    "failedToFetchAuthToken",
-                    "configSystemPermissionsDenied",
-                    "simulateControllerFailureError",
-                    "VPN settings are missing or invalid",
-                    "VPN disconnected due to expired subscription",
-                    "Abnormal situation caused the token to be reset"
-                ]
+                "description": "Description of the failure when the VPN connection flow ends in error. Mix of stable case-name tokens and human-readable messages, depending on which error type surfaced."
             },
             {
                 "key": "meta.type",

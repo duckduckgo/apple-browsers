@@ -57,13 +57,14 @@ struct RebrandedBrowsersComparisonTable: View {
         case animated(startAnimation: Bool, staggeredDelay: TimeInterval = 0.1)
     }
 
+    let features: [RebrandedBrowsersComparisonModel.Feature]
     let availableFeatureAnimation: AvailableFeatureAnimation
 
     var body: some View {
         VStack(spacing: ComparisonTableMetrics.rowSpacing) {
             ComparisonHeader()
 
-            ForEach(Array(RebrandedBrowsersComparisonModel.features.enumerated()), id: \.element.type) { index, feature in
+            ForEach(Array(features.enumerated()), id: \.offset) { index, feature in
                 FeatureRow(feature: feature, index: index, availableFeatureAnimation: availableFeatureAnimation)
             }
         }
@@ -113,13 +114,13 @@ private struct FeatureRow: View {
 
             HStack {
                 HStack(alignment: .center, spacing: ComparisonTableMetrics.featureTextSpacing) {
-                    feature.type.icon
+                    feature.icon
                         .resizable()
                         .frame(width: 24.0, height: 24.0)
                         .aspectRatio(contentMode: .fit)
                         .frame(width: ComparisonTableMetrics.featureIconSize, height: ComparisonTableMetrics.featureIconSize)
 
-                    Text(feature.type.title)
+                    Text(feature.title)
                         .font(onboardingTheme.typography.rowDetails)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .multilineTextAlignment(.leading)

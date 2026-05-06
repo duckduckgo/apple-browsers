@@ -26,6 +26,7 @@ import PrivacyConfig
 protocol OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent { get }
     var introStepContent: OnboardingIntroStepContent { get }
+    var browserComparisonContent: OnboardingBrowserComparisonContent { get }
     var addToDockContent: OnboardingAddToDockContent { get }
     var appIconColorContent: OnboardingAppIconColorContent { get }
     var addressBarPositionContent: OnboardingAddressBarPositionContent { get }
@@ -110,6 +111,28 @@ extension OnboardingIntroContentProvider {
             secondaryCTA: UserText.Onboarding.Intro.skipCTA,
             restorePromptStepContent: restoreOnboardingContent,
             skipFlowStepContent: skipOnboardingContent
+        )
+    }
+
+}
+
+// MARK: - Content Provider + Browser Comparison (Protections activated!)
+
+struct OnboardingBrowserComparisonContent: Equatable {
+    let title: String
+    let features: [RebrandedBrowsersComparisonModel.Feature]
+    let primaryCTA: String
+    let secondaryCTA: String
+}
+
+extension OnboardingIntroContentProvider {
+
+    var browserComparisonContent: OnboardingBrowserComparisonContent {
+        OnboardingBrowserComparisonContent(
+            title: UserText.Onboarding.BrowsersComparison.title,
+            features: RebrandedBrowsersComparisonModel.defaultFeatures,
+            primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
+            secondaryCTA: UserText.onboardingSkip
         )
     }
 

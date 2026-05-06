@@ -338,7 +338,7 @@ private extension OnboardingIntroViewModel {
                 )
             )
         case .browserComparison:
-            OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog, step: stepInfo()))
+            OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog(content: contentProvider.browserComparisonContent), step: stepInfo()))
         case .addToDockPromo:
             OnboardingView.ViewState.onboarding(.init(type: .addToDockPromoDialog(content: contentProvider.addToDockContent), step: stepInfo()))
         case .appIconSelection:

@@ -256,7 +256,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.startOnboardingAction(isResumingOnboarding: true)
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog, step: .init(currentStep: 1, totalSteps: 5))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(content: .mock), step: .init(currentStep: 1, totalSteps: 5))))
     }
 
     func testWhenConfirmSkipOnboarding_andIsIphoneFlow_ThenDismissOnboardingAndDisableDaxDialogs() throws {
@@ -408,7 +408,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.startOnboardingAction(isResumingOnboarding: true)
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog, step: .init(currentStep: 1, totalSteps: 2))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(content: .mock), step: .init(currentStep: 1, totalSteps: 2))))
     }
 
     func testWhenConfirmSkipOnboarding_andIsIpadFlow_ThenDismissOnboardingAndDisableDaxDialogs() throws {
@@ -440,7 +440,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.startOnboardingAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog, step: .init(currentStep: 1, totalSteps: 2))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(content: .mock), step: .init(currentStep: 1, totalSteps: 2))))
     }
 
     func testWhenSetDefaultBrowserActionIsCalledAndIsIpadFlowThenViewStateChangesToChooseAppIconDialogAndProgressIs2Of3() {

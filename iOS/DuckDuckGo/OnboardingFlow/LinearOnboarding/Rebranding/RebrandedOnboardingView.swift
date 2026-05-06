@@ -395,10 +395,10 @@ extension OnboardingRebranding {
             }
         }
 
-        private var browsersComparisonView: some View {
+        private func browsersComparisonView(content: OnboardingBrowserComparisonContent) -> some View {
             BrowsersComparisonContent(
+                content: content,
                 isVisible: $showBubbleContent,
-                title: UserText.Onboarding.BrowsersComparison.title,
                 setAsDefaultBrowserAction: model.setDefaultBrowserAction,
                 cancelAction: {
                     animateContentTransition {
@@ -473,8 +473,8 @@ extension OnboardingRebranding {
             switch type {
             case let .startOnboardingDialog(content, dialogType):
                 introView(content: content, dialogType: dialogType)
-            case .browsersComparisonDialog:
-                browsersComparisonView
+            case let .browsersComparisonDialog(content):
+                browsersComparisonView(content: content)
             case let .addToDockPromoDialog(content):
                 addToDockPromoView(content: content)
             case let .chooseAppIconDialog(content):

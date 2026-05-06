@@ -23,6 +23,7 @@ import Foundation
 class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent = .mock
     var introStepContent: OnboardingIntroStepContent = .mock
+    var browserComparisonContent: OnboardingBrowserComparisonContent = .mock
     var addToDockContent: OnboardingAddToDockContent = .mock
     var appIconColorContent: OnboardingAppIconColorContent = .mock
     var addressBarPositionContent: OnboardingAddressBarPositionContent = .mock
@@ -57,6 +58,17 @@ extension OnboardingIntroStepContent {
             primaryCTA: "Skip Primary",
             secondaryCTA: "Skip Secondary"
         )
+    )
+}
+
+extension OnboardingBrowserComparisonContent {
+    static let mock = OnboardingBrowserComparisonContent(
+        title: "Browser Comparison Title",
+        features: [
+            .init(type: .privateSearch, safariAvailability: .unavailable, ddgAvailability: .available)
+        ],
+        primaryCTA: "Browser Comparison Primary",
+        secondaryCTA: "Browser Comparison Secondary"
     )
 }
 

@@ -264,6 +264,71 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @Suite("Browser Comparison Content")
+    struct BrowserComparisonContent {
+
+        @Test(
+            "Check browser comparison title is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkBrowserComparisonTitle(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.browserComparisonContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.BrowsersComparison.title)
+        }
+
+        @Test(
+            "Check browser comparison primary CTA is choose your browser",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkBrowserComparisonPrimaryCTA(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.browserComparisonContent
+
+            // THEN
+            #expect(result.primaryCTA == UserText.Onboarding.BrowsersComparison.cta)
+        }
+
+        @Test(
+            "Check browser comparison secondary CTA is skip",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkBrowserComparisonSecondaryCTA(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.browserComparisonContent
+
+            // THEN
+            #expect(result.secondaryCTA == UserText.onboardingSkip)
+        }
+
+        @Test(
+            "Check browser comparison features default to the model's default list",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkBrowserComparisonFeatures(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.browserComparisonContent
+
+            // THEN
+            #expect(result.features == RebrandedBrowsersComparisonModel.defaultFeatures)
+        }
+
+    }
+
     @Suite("Add to Dock Content")
     struct AddToDockContent {
 

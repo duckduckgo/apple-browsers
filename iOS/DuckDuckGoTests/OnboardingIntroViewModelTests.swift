@@ -904,7 +904,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN: no experiment step inserted → onboarding completes
         XCTAssertTrue(didComplete)
-        XCTAssertFalse(sut.state == .onboarding(.init(type: .duckAIQueryExperimentDialog(defaultMode: .duckAI), step: .hidden)))
+        XCTAssertFalse(sut.state == .onboarding(.init(type: .duckAIQueryExperimentDialog(content: .mock, defaultMode: .duckAI), step: .hidden)))
     }
 
     func testWhenCohortIsControlThenSelectingAIChatDoesNotInsertExperimentStep() {
@@ -945,7 +945,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN: treatmentA → experiment step inserted, state transitions to it with .duckAI default
         if case .onboarding(let intro) = sut.state,
-           case .duckAIQueryExperimentDialog(let mode) = intro.type {
+           case .duckAIQueryExperimentDialog(_, let mode) = intro.type {
             XCTAssertEqual(mode, .duckAI)
         } else {
             XCTFail("Expected duckAIQueryExperimentDialog state with .duckAI default mode, got \(sut.state)")
@@ -969,7 +969,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN: treatmentB → experiment step inserted, default mode is .search
         if case .onboarding(let intro) = sut.state,
-           case .duckAIQueryExperimentDialog(let mode) = intro.type {
+           case .duckAIQueryExperimentDialog(_, let mode) = intro.type {
             XCTAssertEqual(mode, .search)
         } else {
             XCTFail("Expected duckAIQueryExperimentDialog state with .search default mode, got \(sut.state)")

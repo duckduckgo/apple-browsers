@@ -348,7 +348,7 @@ private extension OnboardingIntroViewModel {
         case .searchExperienceSelection:
             OnboardingView.ViewState.onboarding(.init(type: .chooseSearchExperienceDialog(content: contentProvider.searchExperienceContent), step: stepInfo()))
         case .duckAIQuerySelection:
-            OnboardingView.ViewState.onboarding(.init(type: .duckAIQueryExperimentDialog(defaultMode: duckAIQueryExperimentDefaultMode), step: stepInfo()))
+            OnboardingView.ViewState.onboarding(.init(type: .duckAIQueryExperimentDialog(content: contentProvider.duckAIQueryExperimentContent, defaultMode: duckAIQueryExperimentDefaultMode), step: stepInfo()))
         }
 
         state = viewState

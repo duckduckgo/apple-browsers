@@ -30,6 +30,7 @@ protocol OnboardingIntroContentProviding {
     var appIconColorContent: OnboardingAppIconColorContent { get }
     var addressBarPositionContent: OnboardingAddressBarPositionContent { get }
     var searchExperienceContent: OnboardingSearchExperienceContent { get }
+    var duckAIQueryExperimentContent: OnboardingDuckAIQueryExperimentContent { get }
 }
 
 struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
@@ -220,6 +221,26 @@ extension OnboardingIntroContentProvider {
             title: UserText.Onboarding.SearchExperience.title,
             footer: AttributedString(UserText.Onboarding.SearchExperience.footerAttributed()),
             primaryCTA: UserText.Onboarding.SearchExperience.cta
+        )
+    }
+
+}
+
+// MARK: - Content Provider + Duck.ai Query Experiment (Ready to get started?)
+
+struct OnboardingDuckAIQueryExperimentContent: Equatable {
+    let title: String
+    let searchPlaceholder: String
+    let aiPlaceholder: String
+}
+
+extension OnboardingIntroContentProvider {
+
+    var duckAIQueryExperimentContent: OnboardingDuckAIQueryExperimentContent {
+        OnboardingDuckAIQueryExperimentContent(
+            title: UserText.Onboarding.DuckAIQueryExperiment.title,
+            searchPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder,
+            aiPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder
         )
     }
 

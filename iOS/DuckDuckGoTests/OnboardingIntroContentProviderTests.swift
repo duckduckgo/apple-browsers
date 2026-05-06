@@ -599,4 +599,54 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @Suite("Duck.ai Query Experiment Content")
+    struct DuckAIQueryExperimentContent {
+
+        @Test(
+            "Check duck.ai query experiment title is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkDuckAIQueryExperimentTitle(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.duckAIQueryExperimentContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.DuckAIQueryExperiment.title)
+        }
+
+        @Test(
+            "Check duck.ai query experiment search placeholder is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkDuckAIQueryExperimentSearchPlaceholder(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.duckAIQueryExperimentContent
+
+            // THEN
+            #expect(result.searchPlaceholder == UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder)
+        }
+
+        @Test(
+            "Check duck.ai query experiment AI placeholder is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkDuckAIQueryExperimentAIPlaceholder(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.duckAIQueryExperimentContent
+
+            // THEN
+            #expect(result.aiPlaceholder == UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder)
+        }
+
+    }
+
 }

@@ -27,6 +27,7 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var appIconColorContent: OnboardingAppIconColorContent = .mock
     var addressBarPositionContent: OnboardingAddressBarPositionContent = .mock
     var searchExperienceContent: OnboardingSearchExperienceContent = .mock
+    var duckAIQueryExperimentContent: OnboardingDuckAIQueryExperimentContent = .mock
 }
 
 // MARK: - Helpers
@@ -96,5 +97,13 @@ extension OnboardingSearchExperienceContent {
         title: "Search Experience Title",
         footer: AttributedString("Search Experience Footer"),
         primaryCTA: "Search Experience Primary"
+    )
+}
+
+extension OnboardingDuckAIQueryExperimentContent {
+    static let mock = OnboardingDuckAIQueryExperimentContent(
+        title: "Duck.ai Query Experiment Title",
+        searchPlaceholder: "Search Placeholder",
+        aiPlaceholder: "AI Placeholder"
     )
 }

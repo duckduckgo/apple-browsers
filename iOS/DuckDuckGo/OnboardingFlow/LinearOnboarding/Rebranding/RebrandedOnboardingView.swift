@@ -483,8 +483,8 @@ extension OnboardingRebranding {
                 addressBarPositionView(content: content)
             case let .chooseSearchExperienceDialog(content):
                 searchExperienceSelectionView(content: content)
-            case .duckAIQueryExperimentDialog(let defaultMode):
-                experimentSearchExperienceSelectionView(defaultMode: defaultMode)
+            case let .duckAIQueryExperimentDialog(content, defaultMode):
+                experimentSearchExperienceSelectionView(content: content, defaultMode: defaultMode)
             }
         }
 
@@ -643,8 +643,9 @@ extension OnboardingRebranding {
         }
 
         /// Hide → action → show sequence prevents cross-fading between steps.
-        private func experimentSearchExperienceSelectionView(defaultMode: DuckAIQueryExperimentMode) -> some View {
+        private func experimentSearchExperienceSelectionView(content: OnboardingDuckAIQueryExperimentContent, defaultMode: DuckAIQueryExperimentMode) -> some View {
             LegacyOnboardingView.DuckAIExperimentSearchContent(
+                content: content,
                 defaultMode: defaultMode,
                 visualStyle: .rebranded,
                 onModeConfirmed: model.selectDuckAIQueryExperimentAction(selection:),

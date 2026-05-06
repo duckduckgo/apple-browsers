@@ -97,7 +97,7 @@ struct OnboardingView: View {
                                 addressBarPreferenceSelectionView
                             case .chooseSearchExperienceDialog:
                                 searchExperienceSelectionView
-                            case .duckAIQueryExperimentDialog(let defaultMode):
+                            case .duckAIQueryExperimentDialog(_, let defaultMode):
                                 experimentSearchExperienceSelectionView(defaultMode: defaultMode)
                             }
                         }
@@ -350,7 +350,7 @@ extension OnboardingView.ViewState.Intro {
         case chooseAppIconDialog(content: OnboardingAppIconColorContent)
         case chooseAddressBarPositionDialog(content: OnboardingAddressBarPositionContent)
         case chooseSearchExperienceDialog(content: OnboardingSearchExperienceContent)
-        case duckAIQueryExperimentDialog(defaultMode: DuckAIQueryExperimentMode)
+        case duckAIQueryExperimentDialog(content: OnboardingDuckAIQueryExperimentContent, defaultMode: DuckAIQueryExperimentMode)
     }
 
     struct StepInfo: Equatable {
@@ -372,7 +372,7 @@ private extension OnboardingView.ViewState.Intro.IntroType {
     }
 
     var duckAIQueryExperimentDefaultMode: DuckAIQueryExperimentMode? {
-        if case .duckAIQueryExperimentDialog(let mode) = self {
+        if case .duckAIQueryExperimentDialog(_, let mode) = self {
             return mode
         }
         return nil

@@ -336,7 +336,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.selectAddressBarPositionAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseSearchExperienceDialog, step: .init(currentStep: 5, totalSteps: 5))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseSearchExperienceDialog(content: .mock), step: .init(currentStep: 5, totalSteps: 5))))
     }
 
     func testWhenSelectSearchExperienceDialogActionIsCalledAndIsIphoneFlowThenOnCompletingOnboardingIntroIsCalled() {
@@ -790,7 +790,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.selectAddressBarPositionAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseSearchExperienceDialog, step: .init(currentStep: 5, totalSteps: 5))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseSearchExperienceDialog(content: .mock), step: .init(currentStep: 5, totalSteps: 5))))
     }
 
     func testWhenSelectSearchExperienceActionIsCalledAndIsIphoneFlowWithSearchExperienceThenOnCompletingOnboardingIntroIsCalled() {
@@ -821,7 +821,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.appIconPickerContinueAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseSearchExperienceDialog, step: .init(currentStep: 3, totalSteps: 3))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseSearchExperienceDialog(content: .mock), step: .init(currentStep: 3, totalSteps: 3))))
     }
 
     func testWhenStateChangesToChooseSearchExperienceAndIsIpadFlowThenPixelReporterMeasureSearchExperienceSelectionImpression() {

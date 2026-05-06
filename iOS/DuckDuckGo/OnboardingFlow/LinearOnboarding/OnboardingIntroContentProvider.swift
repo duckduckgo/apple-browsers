@@ -29,6 +29,7 @@ protocol OnboardingIntroContentProviding {
     var addToDockContent: OnboardingAddToDockContent { get }
     var appIconColorContent: OnboardingAppIconColorContent { get }
     var addressBarPositionContent: OnboardingAddressBarPositionContent { get }
+    var searchExperienceContent: OnboardingSearchExperienceContent { get }
 }
 
 struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
@@ -199,6 +200,26 @@ extension OnboardingIntroContentProvider {
             ),
             defaultIndicator: UserText.Onboarding.AddressBarPosition.defaultOption,
             primaryCTA: UserText.Onboarding.AddressBarPosition.cta
+        )
+    }
+
+}
+
+// MARK: - Content Provider + Search Experience (Want easy access to private AI chat in the address bar?)
+
+struct OnboardingSearchExperienceContent: Equatable {
+    let title: String
+    let footer: AttributedString
+    let primaryCTA: String
+}
+
+extension OnboardingIntroContentProvider {
+
+    var searchExperienceContent: OnboardingSearchExperienceContent {
+        OnboardingSearchExperienceContent(
+            title: UserText.Onboarding.SearchExperience.title,
+            footer: AttributedString(UserText.Onboarding.SearchExperience.footerAttributed()),
+            primaryCTA: UserText.Onboarding.SearchExperience.cta
         )
     }
 

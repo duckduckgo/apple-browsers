@@ -481,8 +481,8 @@ extension OnboardingRebranding {
                 appIconPickerView(content: content)
             case let .chooseAddressBarPositionDialog(content):
                 addressBarPositionView(content: content)
-            case .chooseSearchExperienceDialog:
-                searchExperienceSelectionView
+            case let .chooseSearchExperienceDialog(content):
+                searchExperienceSelectionView(content: content)
             case .duckAIQueryExperimentDialog(let defaultMode):
                 experimentSearchExperienceSelectionView(defaultMode: defaultMode)
             }
@@ -596,8 +596,9 @@ extension OnboardingRebranding {
             )
         }
 
-        private var searchExperienceSelectionView: some View {
+        private func searchExperienceSelectionView(content: OnboardingSearchExperienceContent) -> some View {
             SearchExperienceContent(
+                content: content,
                 isVisible: $showBubbleContent,
                 action: {
                     animateContentTransition {

@@ -549,4 +549,54 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @Suite("Search Experience Content")
+    struct SearchExperienceContent {
+
+        @Test(
+            "Check search experience title is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkSearchExperienceTitle(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.searchExperienceContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.SearchExperience.title)
+        }
+
+        @Test(
+            "Check search experience footer is the attributed footer",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkSearchExperienceFooter(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.searchExperienceContent
+
+            // THEN
+            #expect(result.footer == AttributedString(UserText.Onboarding.SearchExperience.footerAttributed()))
+        }
+
+        @Test(
+            "Check search experience primary CTA is next",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkSearchExperiencePrimaryCTA(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.searchExperienceContent
+
+            // THEN
+            #expect(result.primaryCTA == UserText.Onboarding.SearchExperience.cta)
+        }
+
+    }
+
 }

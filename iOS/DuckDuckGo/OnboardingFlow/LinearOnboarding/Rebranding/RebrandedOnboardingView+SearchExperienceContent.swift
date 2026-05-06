@@ -40,34 +40,42 @@ extension OnboardingRebranding.OnboardingView {
         @State private var shouldStartTyping = false
         @State private var showContent = false
         @Binding private var isVisible: Bool
+        private let content: OnboardingSearchExperienceContent
         private let action: () -> Void
 
         @StateObject private var viewModel = OnboardingSearchExperiencePickerViewModel()
 
-        init(isVisible: Binding<Bool>, action: @escaping () -> Void) {
+        init(
+            content: OnboardingSearchExperienceContent,
+            isVisible: Binding<Bool>,
+            action: @escaping () -> Void
+        ) {
+            self.content = content
             self._isVisible = isVisible
             self.action = action
         }
 
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing) {
-                TypingText(UserText.Onboarding.SearchExperience.title,
-                           startAnimating: $shouldStartTyping,
-                           onTypingFinished: { [reduceMotion] in
-                               if reduceMotion {
-                                   showContent = true
-                               } else {
-                                   withAnimation { showContent = true }
-                               }
-                           })
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .font(onboardingTheme.typography.title)
-                    .multilineTextAlignment(.center)
+                TypingText(
+                    content.title,
+                    startAnimating: $shouldStartTyping,
+                    onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
+                    }
+                )
+                .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                .font(onboardingTheme.typography.title)
+                .multilineTextAlignment(.center)
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
                     RebrandedOnboardingView.OnboardingSearchExperiencePicker(isDuckAISelected: viewModel.isSearchAndAIChatEnabled)
 
-                    Text(AttributedString(UserText.Onboarding.SearchExperience.footerAttributed()))
+                    Text(content.footer)
                         .foregroundColor(onboardingTheme.colorPalette.textSecondary)
                         .font(onboardingTheme.typography.small)
                         .fixedSize(horizontal: false, vertical: true)
@@ -76,7 +84,7 @@ extension OnboardingRebranding.OnboardingView {
                         viewModel.confirmChoice()
                         action()
                     }) {
-                        Text(UserText.Onboarding.SearchExperience.cta)
+                        Text(content.primaryCTA)
                     }
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }

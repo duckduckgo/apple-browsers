@@ -349,7 +349,7 @@ extension OnboardingView.ViewState.Intro {
         case addToDockPromoDialog(content: OnboardingAddToDockContent)
         case chooseAppIconDialog(content: OnboardingAppIconColorContent)
         case chooseAddressBarPositionDialog(content: OnboardingAddressBarPositionContent)
-        case chooseSearchExperienceDialog
+        case chooseSearchExperienceDialog(content: OnboardingSearchExperienceContent)
         case duckAIQueryExperimentDialog(defaultMode: DuckAIQueryExperimentMode)
     }
 

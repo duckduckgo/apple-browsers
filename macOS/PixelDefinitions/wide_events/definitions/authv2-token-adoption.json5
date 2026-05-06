@@ -1,0 +1,34 @@
+{
+    "macos-authv2-token-adoption": {
+        "description": "Wide pixel sent after an AuthV2 token adoption event",
+        "owners": ["samsymons"],
+        "meta": {
+            "type": "macos-authv2-token-adoption",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "authv2-token-adoption",
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status events",
+                        "enum": ["partial_data"]
+                    },
+                    "failing_step": {
+                        "type": "string",
+                        "description": "The step at which the flow failed, when applicable",
+                        "enum": ["token_refresh"]
+                    }
+                },
+                "error": {
+                    "domain": { "type": "string", "description": "Error domain for the failure" },
+                    "code": { "type": "integer", "description": "Error code for the failure" },
+                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                }
+            }
+        }
+    }
+}

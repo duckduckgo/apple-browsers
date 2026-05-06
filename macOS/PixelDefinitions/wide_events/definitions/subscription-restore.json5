@@ -1,0 +1,60 @@
+{
+    "macos-subscription-restore": {
+        "description": "Wide pixel sent at the end of a subscription restore flow",
+        "owners": ["hanyutang-sandra"],
+        "meta": {
+            "type": "macos-subscription-restore",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "subscription-restore",
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status pixels",
+                        "enum": ["partial_data", "timeout"]
+                    },
+                    "restore_platform": {
+                        "type": "string",
+                        "description": "Platform used to complete the restore",
+                        "enum": ["apple_account", "email_address", "purchase_background_task"]
+                    },
+                    "email_address_restore_last_url": {
+                        "type": "string",
+                        "description": "The url at which the email flow, when applicable",
+                        "enum": [
+                            "activation_flow",
+                            "activation_flow_email",
+                            "activation_flow_activate_email",
+                            "activation_flow_activate_email_otp",
+                            "activation_flow_success"
+                        ]
+                    },
+                    "apple_account_restore_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "Bucketed latency for restore using apple account (in ms)",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    },
+                    "email_address_restore_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "Bucketed latency for restore using email address (in ms)",
+                        "enum": [-1, 10000, 30000, 60000, 300000, 600000, 900000]
+                    },
+                    "funnel_name": {
+                        "type": "string",
+                        "description": "The funnel that led to the restore flow",
+                        "pattern": "^funnel_"
+                    }
+                },
+                "error": {
+                    "domain": { "type": "string", "description": "Error domain for the failure" },
+                    "code": { "type": "integer", "description": "Error code for the failure" },
+                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                }
+            }
+        }
+    }
+}

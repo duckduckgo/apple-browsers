@@ -1,0 +1,130 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Wide pixel sent at the end of a subscription restore flow",
+    "$comment": "{\"owners\":[\"hanyutang-sandra\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "macos-subscription-restore" }, "version": { "const": "1.0.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the app sending the event, taken from CFBundleName. Varies across build configurations and the target (main app, VPN agent, network extension). Extend this enum when adding wide events fired from other macOS targets.",
+                    "enum": [
+                        "DuckDuckGo",
+                        "DuckDuckGo Alpha",
+                        "DuckDuckGo Review",
+                        "DuckDuckGo App Store",
+                        "DuckDuckGo VPN",
+                        "DuckDuckGo VPN Alpha",
+                        "DuckDuckGo VPN Review",
+                        "DuckDuckGo VPN App Store",
+                        "com.duckduckgo.macos.vpn.network-extension",
+                        "com.duckduckgo.macos.vpn.network-extension.debug",
+                        "com.duckduckgo.macos.vpn.network-extension.review",
+                        "com.duckduckgo.macos.vpn.network-extension.alpha",
+                        "com.duckduckgo.mobile.ios.vpn.agent.network-extension"
+                    ]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["macOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["subscription-restore"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status pixels",
+                                    "enum": ["partial_data", "timeout"]
+                                },
+                                "restore_platform": {
+                                    "type": "string",
+                                    "description": "Platform used to complete the restore",
+                                    "enum": ["apple_account", "email_address", "purchase_background_task"]
+                                },
+                                "email_address_restore_last_url": {
+                                    "type": "string",
+                                    "description": "The url at which the email flow, when applicable",
+                                    "enum": [
+                                        "activation_flow",
+                                        "activation_flow_email",
+                                        "activation_flow_activate_email",
+                                        "activation_flow_activate_email_otp",
+                                        "activation_flow_success"
+                                    ]
+                                },
+                                "apple_account_restore_latency_ms_bucketed": {
+                                    "type": "integer",
+                                    "description": "Bucketed latency for restore using apple account (in ms)",
+                                    "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                                },
+                                "email_address_restore_latency_ms_bucketed": {
+                                    "type": "integer",
+                                    "description": "Bucketed latency for restore using email address (in ms)",
+                                    "enum": [-1, 10000, 30000, 60000, 300000, 600000, 900000]
+                                },
+                                "funnel_name": {
+                                    "type": "string",
+                                    "description": "The funnel that led to the restore flow",
+                                    "pattern": "^funnel_"
+                                }
+                            }
+                        },
+                        "error": {
+                            "type": "object",
+                            "required": ["domain", "code"],
+                            "additionalProperties": false,
+                            "properties": {
+                                "domain": { "type": "string", "description": "Error domain for the failure" },
+                                "code": { "type": "integer", "description": "Error code for the failure" },
+                                "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                                "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

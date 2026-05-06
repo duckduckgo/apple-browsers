@@ -1,0 +1,71 @@
+{
+    "macos-subscription-plan-change": {
+        "description": "Wide pixel sent at the end of a subscription plan change flow (upgrade/downgrade/crossgrade)",
+        "owners": ["SabrinaTardio"],
+        "meta": {
+            "type": "macos-subscription-plan-change",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "subscription-plan-change",
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN and SUCCESS status pixels",
+                        "enum": ["partial_data", "missing_entitlements", "missing_entitlements_delayed_activation"]
+                    },
+                    "purchase_platform": {
+                        "type": "string",
+                        "description": "Platform used to complete the plan change",
+                        "enum": ["app_store", "stripe"]
+                    },
+                    "change_type": {
+                        "type": "string",
+                        "description": "Type of plan change: upgrade, downgrade, or crossgrade (monthly/yearly switch)",
+                        "enum": ["UPGRADE", "DOWNGRADE", "CROSSGRADE"]
+                    },
+                    "from_plan": {
+                        "type": "string",
+                        "description": "Current subscription product identifier before change"
+                    },
+                    "to_plan": {
+                        "type": "string",
+                        "description": "New subscription product identifier selected by user"
+                    },
+                    "subscription_identifier": {
+                        "type": "string",
+                        "description": "The new subscription product identifier, e.g. ddg.privacy.pro.monthly.renews.us"
+                    },
+                    "failing_step": {
+                        "type": "string",
+                        "description": "The step at which the flow failed, when applicable",
+                        "enum": ["ACCOUNT_PAYMENT", "ACCOUNT_ACTIVATION"]
+                    },
+                    "payment_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "Bucketed latency for the payment step (ms)",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    },
+                    "confirmation_latency_ms_bucketed": {
+                        "type": "integer",
+                        "description": "Bucketed latency for the backend confirmation step (ms)",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                    },
+                    "funnel_name": {
+                        "type": "string",
+                        "description": "The funnel that led to the plan change flow",
+                        "pattern": "^funnel_"
+                    }
+                },
+                "error": {
+                    "domain": { "type": "string", "description": "Error domain for the failure" },
+                    "code": { "type": "integer", "description": "Error code for the failure" },
+                    "underlying_domain": { "type": "string", "description": "Underlying error domain" },
+                    "underlying_code": { "type": "integer", "description": "Underlying error code" }
+                }
+            }
+        }
+    }
+}

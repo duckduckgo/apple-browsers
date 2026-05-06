@@ -10,7 +10,7 @@
             "type": "object",
             "required": ["type", "version"],
             "additionalProperties": false,
-            "properties": { "type": { "const": "ios-vpn-ip-leak-check" }, "version": { "const": "1.0.0" } }
+            "properties": { "type": { "const": "macos-vpn-ip-leak-check" }, "version": { "const": "1.0.1" } }
         },
         "app": {
             "type": "object",
@@ -19,11 +19,24 @@
             "properties": {
                 "name": {
                     "type": "string",
-                    "description": "The name of the application",
-                    "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental", "PacketTunnelProvider"]
+                    "description": "The name of the app sending the event, taken from CFBundleName. Varies across build configurations and the target (main app, VPN agent, network extension). Extend this enum when adding wide events fired from other macOS targets.",
+                    "enum": [
+                        "DuckDuckGo",
+                        "DuckDuckGo Alpha",
+                        "DuckDuckGo Review",
+                        "DuckDuckGo App Store",
+                        "DuckDuckGo VPN",
+                        "DuckDuckGo VPN Alpha",
+                        "DuckDuckGo VPN Review",
+                        "DuckDuckGo VPN App Store",
+                        "com.duckduckgo.macos.vpn.network-extension",
+                        "com.duckduckgo.macos.vpn.network-extension.debug",
+                        "com.duckduckgo.macos.vpn.network-extension.review",
+                        "com.duckduckgo.macos.vpn.network-extension.alpha",
+                        "com.duckduckgo.mobile.ios.vpn.agent.network-extension"
+                    ]
                 },
-                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
-                "form_factor": { "type": "string", "description": "The form factor of the device", "enum": ["phone", "tablet"] }
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
             }
         },
         "global": {
@@ -31,7 +44,7 @@
             "required": ["platform", "type", "sample_rate"],
             "additionalProperties": false,
             "properties": {
-                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["iOS"] },
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["macOS"] },
                 "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
                 "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
                 "is_first_daily_occurrence": {
@@ -109,6 +122,22 @@
                                                 "underlying_code": {
                                                     "type": "integer",
                                                     "description": "Underlying error code paired with underlying_domain"
+                                                },
+                                                "leak_octet1_matched": {
+                                                    "type": "boolean",
+                                                    "description": "Whether octet 1 of the observed IPv4 address matched the egress IP, present only when status is leak"
+                                                },
+                                                "leak_octet2_matched": {
+                                                    "type": "boolean",
+                                                    "description": "Whether octet 2 of the observed IPv4 address matched the egress IP, present only when status is leak"
+                                                },
+                                                "leak_octet3_matched": {
+                                                    "type": "boolean",
+                                                    "description": "Whether octet 3 of the observed IPv4 address matched the egress IP, present only when status is leak"
+                                                },
+                                                "leak_octet4_matched": {
+                                                    "type": "boolean",
+                                                    "description": "Whether octet 4 of the observed IPv4 address matched the egress IP, present only when status is leak"
                                                 }
                                             }
                                         },
@@ -133,6 +162,22 @@
                                                 "underlying_code": {
                                                     "type": "integer",
                                                     "description": "Underlying error code paired with underlying_domain"
+                                                },
+                                                "leak_octet1_matched": {
+                                                    "type": "boolean",
+                                                    "description": "Whether octet 1 of the observed IPv4 address matched the egress IP, present only when status is leak"
+                                                },
+                                                "leak_octet2_matched": {
+                                                    "type": "boolean",
+                                                    "description": "Whether octet 2 of the observed IPv4 address matched the egress IP, present only when status is leak"
+                                                },
+                                                "leak_octet3_matched": {
+                                                    "type": "boolean",
+                                                    "description": "Whether octet 3 of the observed IPv4 address matched the egress IP, present only when status is leak"
+                                                },
+                                                "leak_octet4_matched": {
+                                                    "type": "boolean",
+                                                    "description": "Whether octet 4 of the observed IPv4 address matched the egress IP, present only when status is leak"
                                                 }
                                             }
                                         },
@@ -157,6 +202,22 @@
                                                 "underlying_code": {
                                                     "type": "integer",
                                                     "description": "Underlying error code paired with underlying_domain"
+                                                },
+                                                "leak_octet1_matched": {
+                                                    "type": "boolean",
+                                                    "description": "Whether octet 1 of the observed IPv4 address matched the egress IP, present only when status is leak"
+                                                },
+                                                "leak_octet2_matched": {
+                                                    "type": "boolean",
+                                                    "description": "Whether octet 2 of the observed IPv4 address matched the egress IP, present only when status is leak"
+                                                },
+                                                "leak_octet3_matched": {
+                                                    "type": "boolean",
+                                                    "description": "Whether octet 3 of the observed IPv4 address matched the egress IP, present only when status is leak"
+                                                },
+                                                "leak_octet4_matched": {
+                                                    "type": "boolean",
+                                                    "description": "Whether octet 4 of the observed IPv4 address matched the egress IP, present only when status is leak"
                                                 }
                                             }
                                         }

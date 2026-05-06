@@ -96,6 +96,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     /// Cards sorted in default order, for standard ordering.
     private let defaultStandardCards: [NewTabPageDataModel.CardID] = [
         .duckplayer,
+        .youtubeAdBlocking,
         .emailProtection,
         .defaultApp,
         .addAppToDockMac,
@@ -115,6 +116,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         LeveledCard(cardID: .defaultApp, level: .level2),
         LeveledCard(cardID: .addAppToDockMac, level: .level2),
         LeveledCard(cardID: .duckplayer, level: .level2),
+        LeveledCard(cardID: .youtubeAdBlocking, level: .level2),
         LeveledCard(cardID: .bringStuff, level: .level2),
         LeveledCard(cardID: .subscription, level: .level2)
     ]
@@ -325,6 +327,9 @@ private extension NewTabPageNextStepsSingleCardProvider {
             return !appearancePreferences.didChangeAnyNewTabPageCustomizationSetting
         case .sync:
             return syncService?.featureFlags.contains(.all) == true && syncService?.authState == .inactive
+        case .youtubeAdBlocking:
+            // TODO: gate on `AdBlockingAvailabilityProviding.isFeatureAvailable && !isEnabledByUser` once injected — mirror the legacy widget's visibility rule so the card is hidden when the WE feature flag is off or the user has already opted in.
+            return true
         }
     }
 
@@ -343,6 +348,8 @@ private extension NewTabPageNextStepsSingleCardProvider {
             dismissedLegacySetting = !legacyPersistor.shouldShowImportSetting
         case .subscription:
             dismissedLegacySetting = !legacySubscriptionCardPersistor.shouldShowSubscriptionSetting
+        case .youtubeAdBlocking:
+            dismissedLegacySetting = !legacyPersistor.shouldShowYouTubeAdBlockingSetting
         default:
             dismissedLegacySetting = false // No legacy setting for other (new) cards
         }

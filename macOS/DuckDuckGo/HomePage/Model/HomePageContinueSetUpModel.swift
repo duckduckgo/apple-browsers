@@ -141,6 +141,8 @@ extension HomePage.Models {
             case .subscription:
                 pixelHandler.fireSubscriptionCardDismissedPixel()
                 subscriptionCardVisibilityManager.dismissSubscriptionCard()
+            case .youtubeAdBlocking:
+                persistor.shouldShowYouTubeAdBlockingSetting = false
             }
             refreshFeaturesMatrix()
         }
@@ -191,6 +193,8 @@ extension HomePage.Models {
                 return shouldEmailProtectionCardBeVisible
             case .subscription:
                 return shouldSubscriptionCardBeVisible
+            case .youtubeAdBlocking:
+                return shouldYouTubeAdBlockingCardBeVisible
             }
         }
 
@@ -235,10 +239,11 @@ extension HomePage.Models {
         }
 
         private var availableFeatures: [FeatureType] {
+            // TODO: gate `.youtubeAdBlocking` on `AdBlockingAvailabilityProviding.isFeatureAvailable` so the card is omitted when the WebExtension feature flag is off.
             if dockCustomizer.supportsAddingToDock {
-                return [.duckplayer, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
+                return [.duckplayer, .youtubeAdBlocking, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
             } else {
-                return [.duckplayer, .emailProtection, .defaultBrowser, .importBookmarksAndPasswords, .subscription]
+                return [.duckplayer, .youtubeAdBlocking, .emailProtection, .defaultBrowser, .importBookmarksAndPasswords, .subscription]
             }
         }
 
@@ -273,6 +278,11 @@ extension HomePage.Models {
         private var shouldSubscriptionCardBeVisible: Bool {
             subscriptionCardVisibilityManager.shouldShowSubscriptionCard
         }
+
+        private var shouldYouTubeAdBlockingCardBeVisible: Bool {
+            // TODO: also require `adBlockingAvailability.isFeatureAvailable && !adBlockingAvailability.isEnabledByUser` once `AdBlockingAvailabilityProviding` is injected — currently the card shows whenever the user hasn't dismissed it, regardless of feature availability or opt-in state.
+            persistor.shouldShowYouTubeAdBlockingSetting
+        }
     }
 
     // MARK: Feature Type
@@ -283,6 +293,7 @@ extension HomePage.Models {
         case dock
         case importBookmarksAndPasswords
         case subscription
+        case youtubeAdBlocking
     }
 
     enum FeaturesGridDimensions {

@@ -92,6 +92,8 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
             performPersonalizeBrowserAction()
         case .sync:
             performSyncAction(completion: refreshCardsAction)
+        case .youtubeAdBlocking:
+            performYoutubeAdBlockingAction()
         }
     }
 }
@@ -152,5 +154,13 @@ private extension NewTabPageNextStepsCardsActionHandler {
             return Logger.sync.error("DeviceSyncCoordinator is not available to perform Next Steps sync action")
         }
         syncLauncher.startDeviceSyncFlow(source: .nextStepsCard, completion: completion)
+    }
+
+    @MainActor
+    func performYoutubeAdBlockingAction() {
+        if let videoUrl = URL(string: duckPlayerURL) {
+            let tab = Tab(content: .url(videoUrl, source: .link), shouldLoadInBackground: true)
+            tabOpener.openTab(tab)
+        }
     }
 }

@@ -322,7 +322,10 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .addAppToDockMac:
             return !isAppStoreBuild && !dockCustomizer.isAddedToDock
         case .duckplayer:
-            return duckPlayerPreferences.duckPlayerModeBool == nil && !duckPlayerPreferences.youtubeOverlayAnyButtonPressed
+            // `.youtubeAdBlocking` takes precedence — hide Duck Player when YT ad-blocking is eligible.
+            return duckPlayerPreferences.duckPlayerModeBool == nil
+                && !duckPlayerPreferences.youtubeOverlayAnyButtonPressed
+                && !adBlockingAvailability.isEnabled
         case .emailProtection:
             return !emailManager.isSignedIn
         case .subscription:

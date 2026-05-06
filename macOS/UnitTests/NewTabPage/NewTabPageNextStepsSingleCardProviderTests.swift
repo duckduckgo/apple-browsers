@@ -1036,7 +1036,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         let testLegacyPersistor = legacyPersistor ?? self.legacyPersistor!
         let testLegacySubscriptionCardPersistor = legacySubscriptionCardPersistor ?? self.legacySubscriptionCardPersistor!
         let testFeatureFlagger = featureFlagger ?? self.featureFlagger!
-        let testAdBlockingAvailability = adBlockingAvailability ?? MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
+        let testAdBlockingAvailability = adBlockingAvailability ?? MockAdBlockingAvailability()
         let testApplicationBuildType: MockApplicationBuildType = {
             let buildType = MockApplicationBuildType()
             if let isAppStoreBuild {

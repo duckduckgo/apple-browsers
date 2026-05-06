@@ -71,7 +71,7 @@ final class ContinueSetUpModelTests: XCTestCase {
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
             cardActionsHandler: cardActionsHandler,
-            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
+            adBlockingAvailability: MockAdBlockingAvailability()
         )
     }
 
@@ -122,7 +122,7 @@ final class ContinueSetUpModelTests: XCTestCase {
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
             cardActionsHandler: cardActionsHandler,
-            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
+            adBlockingAvailability: MockAdBlockingAvailability()
         )
 
         XCTAssertFalse(vm.isMoreOrLessButtonNeeded)
@@ -141,7 +141,7 @@ final class ContinueSetUpModelTests: XCTestCase {
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
             cardActionsHandler: cardActionsHandler,
-            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
+            adBlockingAvailability: MockAdBlockingAvailability()
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, expectedMatrix)
@@ -309,7 +309,7 @@ final class ContinueSetUpModelTests: XCTestCase {
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
             cardActionsHandler: cardActionsHandler,
-            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
+            adBlockingAvailability: MockAdBlockingAvailability()
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, [[]])
@@ -327,7 +327,7 @@ final class ContinueSetUpModelTests: XCTestCase {
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
             cardActionsHandler: cardActionsHandler,
-            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
+            adBlockingAvailability: MockAdBlockingAvailability()
         )
         vm.shouldShowAllFeatures = true
         let expectedMatrix = expectedFeatureMatrixWithout(types: [])
@@ -512,7 +512,7 @@ extension HomePage.Models.ContinueSetUpModel {
         subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging = MockHomePageSubscriptionCardVisibilityManaging(),
         pixelHandler: NewTabPageNextStepsCardsPixelHandling = MockNewTabPageNextStepsCardsPixelHandler(),
         cardActionsHandler: NewTabPageNextStepsCardsActionHandling = MockNewTabPageNextStepsCardsActionHandler(),
-        adBlockingAvailability: AdBlockingAvailabilityProviding = MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
+        adBlockingAvailability: AdBlockingAvailabilityProviding = MockAdBlockingAvailability()
     ) -> HomePage.Models.ContinueSetUpModel {
         HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: defaultBrowserProvider,

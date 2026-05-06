@@ -45,7 +45,7 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
             persistor: MockHomePageContinueSetUpModelPersisting(),
             pixelHandler: pixelHandler,
             cardActionsHandler: MockNewTabPageNextStepsCardsActionHandler(),
-            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
+            adBlockingAvailability: MockAdBlockingAvailability()
         )
         provider = NewTabPageNextStepsCardsProvider(
             continueSetUpModel: continueSetUpModel,

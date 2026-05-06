@@ -91,7 +91,7 @@ private extension MainViewController {
                 }
                 let chromeBackgroundState = aiTabChromeBackgroundState(for: coordinator.computeRenderState())
                 applyUnifiedInputChromeBackground(chromeBackgroundState)
-                viewCoordinator.extendContentContainerBehindInput()
+                viewCoordinator.anchorContentContainerToInputTop()
             }
             updateUnifiedInputContentVisibility(for: coordinator)
         }

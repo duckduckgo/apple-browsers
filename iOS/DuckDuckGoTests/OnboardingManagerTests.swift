@@ -244,7 +244,8 @@ struct OnboardingManagerTests {
 
     struct OnboardingSharedPixelContext {
 
-        @Test("Check default onboarding source and flow parameters are persisted if needed")
+        @available(iOS 16.0, *)
+        @Test("Check default onboarding source and flow parameters are persisted if needed", .timeLimit(.minutes(1)))
         func checkSharedOnboardingPixelParametersPersistedIfNeeded() throws {
             // GIVEN
             let mockStore = InMemoryKeyValueStore()
@@ -260,7 +261,8 @@ struct OnboardingManagerTests {
             #expect(sharedPixelStorage.onboardingFlow == .default)
         }
 
-        @Test("Check default onboarding source and flow parameters are not persisted if already set")
+        @available(iOS 16.0, *)
+        @Test("Check default onboarding source and flow parameters are not persisted if already set", .timeLimit(.minutes(1)))
         func checkSharedOnboardingPixelParametersNotPersistedIfAlreadySet() throws {
             // GIVEN
             let expectedSource = OnboardingPixelParameter.Source.duckAICustomProductPage

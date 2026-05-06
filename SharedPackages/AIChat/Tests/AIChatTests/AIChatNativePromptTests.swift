@@ -298,6 +298,57 @@ struct AIChatNativePromptTests {
         #expect(queryDict["toolChoice"] == nil)
         #expect(queryDict["mode"] == nil)
         #expect(queryDict["reasoningEffort"] == nil)
+        #expect(queryDict["attachedTabIds"] == nil)
+    }
+
+    @Test
+    func encodingQueryWithAttachedTabIds() throws {
+        let prompt = AIChatNativePrompt.queryPrompt(
+            "Summarize these pages",
+            autoSubmit: true,
+            attachedTabIds: ["tab-uuid-1", "tab-uuid-2"]
+        )
+        let jsonDict = try encodePrompt(prompt)
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        let tabIds = try #require(queryDict["attachedTabIds"] as? [String])
+        #expect(tabIds == ["tab-uuid-1", "tab-uuid-2"])
+    }
+
+    @Test
+    func decodingQueryWithAttachedTabIds() throws {
+        let json = """
+            {
+                "platform": "\(Platform.name)",
+                "tool": "query",
+                "query": {
+                    "prompt": "Summarize these pages",
+                    "autoSubmit": true,
+                    "attachedTabIds": ["tab-uuid-1", "tab-uuid-2"]
+                }
+            }
+            """
+
+        let prompt = try decodePrompt(from: json)
+        let expected = AIChatNativePrompt.queryPrompt(
+            "Summarize these pages",
+            autoSubmit: true,
+            attachedTabIds: ["tab-uuid-1", "tab-uuid-2"]
+        )
+        #expect(prompt == expected)
+    }
+
+    @Test
+    func encodingQueryWithEmptyAttachedTabIdsEncodesArray() throws {
+        // Callers should pass `nil` (not `[]`) when there are no attached tabs.
+        // If they do pass an empty array, encode it as `[]` rather than dropping the key —
+        // the decoder treats the field as optional, so empty is preserved verbatim.
+        let prompt = AIChatNativePrompt.queryPrompt("hello", autoSubmit: true, attachedTabIds: [])
+        let jsonDict = try encodePrompt(prompt)
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        let tabIds = try #require(queryDict["attachedTabIds"] as? [String])
+        #expect(tabIds.isEmpty)
     }
 
     @Test

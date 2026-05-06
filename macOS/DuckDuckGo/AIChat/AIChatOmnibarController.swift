@@ -136,6 +136,13 @@ final class AIChatOmnibarController {
         featureFlagger.isFeatureOn(.aiChatOmnibarVoiceChatAccess)
     }
 
+    /// Whether the omnibar's tab picker (Attach Page Content) is available.
+    /// Requires both `aiChatPageContext` (the underlying extraction pipeline) and
+    /// `aiChatOmnibarAttachMoreTabs` (the omnibar surface gate).
+    var isOmnibarTabPickerEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatOmnibarAttachMoreTabs)
+    }
+
     func toggleImageGenerationMode() {
         activeToolMode = isImageGenerationMode ? nil : .imageGeneration
     }

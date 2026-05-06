@@ -222,6 +222,9 @@ public struct AIChatNativePrompt: Codable, Equatable {
         public let modelId: String?
         public let mode: String?
         public let reasoningEffort: AIChatReasoningEffort?
+        /// IDs of open tabs the user pre-attached in the omnibar duck.ai panel.
+        /// The duck.ai web app fetches each tab's content via `getAIChatTabContent({ tabId })`.
+        public let attachedTabIds: [String]?
 
         private enum CodingKeys: String, CodingKey {
             case prompt
@@ -232,6 +235,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             case modelId
             case mode
             case reasoningEffort
+            case attachedTabIds
         }
 
         public init(
@@ -242,7 +246,8 @@ public struct AIChatNativePrompt: Codable, Equatable {
             files: [NativePromptFile]?,
             modelId: String?,
             mode: String?,
-            reasoningEffort: AIChatReasoningEffort?
+            reasoningEffort: AIChatReasoningEffort?,
+            attachedTabIds: [String]? = nil
         ) {
             self.prompt = prompt
             self.autoSubmit = autoSubmit
@@ -252,6 +257,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             self.modelId = modelId
             self.mode = mode
             self.reasoningEffort = reasoningEffort
+            self.attachedTabIds = attachedTabIds
         }
 
         public init(from decoder: Decoder) throws {
@@ -265,7 +271,9 @@ public struct AIChatNativePrompt: Codable, Equatable {
             mode = try container.decodeIfPresent(String.self, forKey: .mode)
             let rawReasoningEffort = try container.decodeIfPresent(String.self, forKey: .reasoningEffort)
             reasoningEffort = rawReasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
+            attachedTabIds = try container.decodeIfPresent([String].self, forKey: .attachedTabIds)
         }
+
     }
 
     public struct TextSummary: Codable, Equatable {
@@ -372,8 +380,8 @@ public struct AIChatNativePrompt: Codable, Equatable {
         try container.encodeIfPresent(pageContext, forKey: .pageContext)
     }
 
-    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, modelId: String? = nil, pageContext: AIChatPageContextData? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
-        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, files: files, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext)
+    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, modelId: String? = nil, pageContext: AIChatPageContextData? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil, attachedTabIds: [String]? = nil) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, files: files, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort, attachedTabIds: attachedTabIds)), pageContext: pageContext)
     }
 
     public static func summaryPrompt(_ text: String, url: URL?, title: String?) -> AIChatNativePrompt {

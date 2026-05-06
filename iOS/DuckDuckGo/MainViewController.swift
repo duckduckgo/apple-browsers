@@ -419,7 +419,7 @@ class MainViewController: UIViewController {
         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
         freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
-        freemiumDBPUserStateManager: FreemiumDBPUserStateManaging = DisabledFreemiumDBPUserStateManager(),
+        freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
         launchSourceManager: LaunchSourceManaging,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),

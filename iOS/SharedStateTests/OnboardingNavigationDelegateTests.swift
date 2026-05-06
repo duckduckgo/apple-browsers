@@ -60,6 +60,12 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             tld: TLD()
         )
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: keyValueStore)
+        let freemiumDBPUserDefaults = try XCTUnwrap(UserDefaults(suiteName: "OnboardingNavigationDelegateTests.\(UUID().uuidString)"))
+        let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
+            userDefaults: freemiumDBPUserDefaults,
+            isUserAuthenticated: { false },
+            isFreemiumEnabled: { false }
+        )
         
         let remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: db,
@@ -80,7 +86,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
                 subscriptionAuthenticationStateProvider: SubscriptionManagerMock(),
                 freemiumPIRDebugSettings: freemiumPIRDebugSettings
             ),
-            freemiumDBPUserStateManager: DisabledFreemiumDBPUserStateManager()
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter())
         let tabsModel = TabsModel(desktop: true)

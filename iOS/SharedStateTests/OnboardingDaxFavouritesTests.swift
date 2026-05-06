@@ -81,6 +81,12 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         let featureFlagger = MockFeatureFlagger()
         let aiChatSettings = MockAIChatSettingsProvider()
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: keyValueStore)
+        let freemiumDBPUserDefaults = try XCTUnwrap(UserDefaults(suiteName: "OnboardingDaxFavouritesTests.\(UUID().uuidString)"))
+        let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
+            userDefaults: freemiumDBPUserDefaults,
+            isUserAuthenticated: { false },
+            isFreemiumEnabled: { false }
+        )
         let fireproofing = MockFireproofing()
         let textZoomCoordinatorProvider = MockTextZoomCoordinatorProvider()
         let subscriptionDataReporter = MockSubscriptionDataReporter()
@@ -196,6 +202,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                 freemiumPIRDebugSettings: freemiumPIRDebugSettings
             ),
             freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
             launchSourceManager: LaunchSourceManager(),
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()),

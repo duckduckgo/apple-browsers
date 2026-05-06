@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+@MainActor
 public struct DesignSystemPalette {
     /// The current color palette set globally.
     ///

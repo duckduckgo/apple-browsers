@@ -20,6 +20,7 @@ import SwiftUI
 
 #if canImport(UIKit)
 
+@MainActor
 public extension Color {
     init(designSystemColor: DesignSystemColor, palette: ColorPalette = DesignSystemPalette.current) {
         self = palette.paletteDefinition.dynamicColor(for: designSystemColor).color
@@ -34,6 +35,7 @@ public extension Color {
     }
 }
 
+@MainActor
 public extension UIColor {
     convenience init(designSystemColor: DesignSystemColor, palette: ColorPalette = DesignSystemPalette.current) {
         self.init(dynamicProvider: palette.paletteDefinition.dynamicColor(for: designSystemColor).dynamicProvider)
@@ -52,6 +54,7 @@ public extension UIColor {
 
 #if canImport(AppKit)
 
+@MainActor
 public extension Color {
     init(designSystemColor: DesignSystemColor, palette: ColorPalette = DesignSystemPalette.current) {
         self = palette.paletteDefinition.dynamicColor(for: designSystemColor).color
@@ -62,6 +65,7 @@ public extension Color {
     }
 }
 
+@MainActor
 public extension NSColor {
     convenience init(designSystemColor: DesignSystemColor, palette: ColorPalette = DesignSystemPalette.current) {
         self.init(name: nil, dynamicProvider: palette.paletteDefinition.dynamicColor(for: designSystemColor).dynamicProvider)

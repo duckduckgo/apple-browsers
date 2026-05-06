@@ -22,6 +22,7 @@ import Combine
 import os.log
 import Subscription
 import UIKit
+import UniformTypeIdentifiers
 
 // MARK: - State Types
 
@@ -87,8 +88,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private var attachmentPolicy: UTIAttachmentPolicy {
         UTIAttachmentPolicy(
+            attachmentLimits: modelStore.attachmentLimits,
             attachmentUsage: attachmentUsage,
-            pendingAttachmentCount: viewController.currentAttachments.count
+            pendingAttachments: viewController.currentAttachments,
+            model: modelStore.selectedModel
         )
     }
 
@@ -252,6 +255,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentPresenter.onImagePicked = { [weak self] image, fileName in
             self?.addImageAttachment(image: image, fileName: fileName)
         }
+        attachmentPresenter.onFilePicked = { [weak self] attachment in
+            self?.addFileAttachment(attachment)
+        }
+        attachmentPresenter.onFileValidationFailed = { [weak self] message in
+            self?.presentAttachmentValidationError(message)
+        }
+        attachmentPresenter.fileMetadataValidationMessage = { [weak self] metadata in
+            self?.attachmentPolicy.fileMetadataValidationMessage(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes)
+        }
         modelStore.onModelsUpdated = { [weak self] in
             self?.handleModelsUpdated()
         }
@@ -334,7 +346,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         viewController.removeAllAttachments()
         for attachment in state.attachments {
-            viewController.addAttachment(attachment)
+            viewController.addAttachment(.image(attachment))
         }
 
         // Always sync the live model store from per-tab state — including nil values —
@@ -361,7 +373,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         TabInputState(
             text: currentText,
             toggleMode: inputMode,
-            attachments: viewController.currentAttachments,
+            attachments: currentImageAttachmentsForTabState,
             selectedModelID: modelStore.persistedModelId,
             selectedReasoningMode: modelStore.selectedReasoningMode,
             selectedTool: toolsController.selectedTool
@@ -796,6 +808,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             case .query: hide()
             case .prompt:
                 resetToolsSelection()
+                clearAttachments()
                 showCollapsed()
             }
         case .hidden:
@@ -924,6 +937,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var persistedReasoningMode: AIChatReasoningMode? { modelStore.selectedReasoningMode }
     var selectedModel: AIChatModel? { modelStore.selectedModel }
     var selectedModelSupportsImageUpload: Bool { modelStore.selectedModelSupportsImageUpload }
+    var selectedModelSupportsFileUpload: Bool { modelStore.selectedModelSupportsFileUpload }
+    var selectedModelSupportedFileTypes: [String] { modelStore.selectedModelSupportedFileTypes }
     var selectedTool: AIChatRAGTool? { toolsController.selectedTool }
 
     func fetchModels() {
@@ -1029,37 +1044,24 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// must set this so the picker presents from the correct level.
     weak var attachmentPresentingViewController: UIViewController?
 
-    func presentAttachmentOptions() {
-        let remaining = remainingImagesForPicker
-        guard remaining > 0 else { return }
-        let presenter: UIViewController?
-        if let injected = attachmentPresentingViewController {
-            presenter = injected
-        } else if let scene = viewController.view.window?.windowScene,
-                  let root = scene.keyWindow?.rootViewController {
-            presenter = root
-        } else {
-            presenter = nil
-        }
-        guard let presenter else { return }
-        attachmentPresenter.presentAttachmentOptions(
-            from: viewController.attachButtonView,
-            presenter: presenter,
-            remaining: remaining
-        )
-    }
-
-    private func expandIfOnAITab() {
-        if case .aiTab = displayState {
-            showExpanded()
-        }
+    var allowedFileUTTypes: [UTType] {
+        selectedModelSupportedFileTypes.compactMap(Self.contentType(for:))
     }
 
     func addImageAttachment(image: UIImage, fileName: String) {
-        guard !viewController.isAttachmentsFull, !isConversationImageLimitReached else { return }
-        let attachment = AIChatImageAttachment(image: image, fileName: fileName)
+        guard attachmentPolicy.canAttachImages else { return }
+        let attachment = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: image, fileName: fileName))
         viewController.addAttachment(attachment)
         persistDraftToStore()
+    }
+
+    func addFileAttachment(_ fileAttachment: AIChatFileAttachment) {
+        if let validationMessage = attachmentPolicy.fileValidationMessage(for: fileAttachment) {
+            presentAttachmentValidationError(validationMessage)
+            return
+        }
+
+        viewController.addAttachment(.file(fileAttachment))
     }
 
     func removeAttachment(id: UUID) {
@@ -1074,10 +1076,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func updateImageButtonVisibility() {
-        let supportsImages = selectedModelSupportsImageUpload
-        viewController.isImageButtonHidden = !supportsImages
-        viewController.modelSupportsImageAttachments = supportsImages
-        updateImageButtonEnabledState()
+        updateAttachButtonVisibility()
+    }
+
+    func updateAttachButtonVisibility() {
+        updateAttachButtonPresentation()
     }
 
 }
@@ -1118,9 +1121,27 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
+            if let validationMessage = attachmentPolicy.imageSubmissionValidationMessage() {
+                presentAttachmentValidationError(validationMessage)
+                return
+            }
+
+            if let validationMessage = attachmentPolicy.fileSubmissionValidationMessage() {
+                presentAttachmentValidationError(validationMessage)
+                return
+            }
+
+            if let validationMessage = attachmentPolicy.promptValidationMessage(for: text) {
+                presentAttachmentValidationError(validationMessage)
+                return
+            }
+
             let tools = toolsController.selectedToolsForSubmission()
             let images = selectedModelSupportsImageUpload
                 ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
+                : nil
+            let files = selectedModelSupportsFileUpload
+                ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
                 : nil
             let configuration = promptSubmissionConfiguration
 
@@ -1137,9 +1158,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 showCollapsed()
             }
             if let userScript = boundUserScript {
-                userScript.submitPrompt(text, images: images, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
+                userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
             } else {
-                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images)
+                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)
             }
         }
     }
@@ -1158,10 +1179,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidTapSearchGoTo(_ vc: UnifiedToggleInputViewController) {
         showExpanded(inputMode: .search)
-    }
-
-    func unifiedToggleInputVCDidTapAttach(_ vc: UnifiedToggleInputViewController) {
-        presentAttachmentOptions()
     }
 
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController) {
@@ -1193,6 +1210,70 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 }
 
 private extension UnifiedToggleInputCoordinator {
+
+    // MARK: Attachments
+
+    var currentImageAttachmentsForTabState: [AIChatImageAttachment] {
+        viewController.currentAttachments.compactMap { attachment in
+            guard case .image(let imageAttachment) = attachment else { return nil }
+            return imageAttachment
+        }
+    }
+
+    var canPresentFilePicker: Bool {
+        attachmentPolicy.canAttachFiles && !allowedFileUTTypes.isEmpty
+    }
+
+    func expandIfOnAITab() {
+        if case .aiTab = displayState {
+            showExpanded()
+        }
+    }
+
+    var attachmentPresenterViewController: UIViewController? {
+        if let attachmentPresentingViewController {
+            return attachmentPresentingViewController
+        }
+        guard let scene = viewController.view.window?.windowScene else { return nil }
+        return scene.keyWindow?.rootViewController
+    }
+
+    static func contentType(for mimeType: String) -> UTType? {
+        UTType(mimeType: mimeType)
+    }
+
+    func removeUnsupportedAttachmentsForSelectedModel() {
+        guard selectedModel != nil else { return }
+        let unsupportedAttachments = viewController.currentAttachments.filter { attachment in
+            attachmentPolicy.isAttachmentSupported(attachment) == false
+        }
+        unsupportedAttachments.forEach { attachment in
+            viewController.removeAttachment(id: attachment.id)
+        }
+    }
+
+    func makeAttachmentMenu() -> UIMenu? {
+        attachmentPresenter.makeAttachmentMenu(
+            presenterProvider: { [weak self] in
+                self?.attachmentPresenterViewController
+            },
+            photoSelectionLimit: attachmentPolicy.canAttachImages ? remainingImagesForPicker : 0,
+            canAttachFile: canPresentFilePicker,
+            allowedFileTypes: allowedFileUTTypes
+        )
+    }
+
+    func updateAttachButtonPresentation() {
+        let supportsAttachments = selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty
+        let canAttachMore = (attachmentPolicy.canAttachImages || canPresentFilePicker) && !viewController.isGenerating
+        viewController.isImageButtonHidden = !supportsAttachments
+        viewController.isImageButtonEnabled = canAttachMore
+        viewController.attachmentMenu = supportsAttachments && canAttachMore ? makeAttachmentMenu() : nil
+    }
+
+    func presentAttachmentValidationError(_ message: String) {
+        ActionMessageView.present(message: message, presentationLocation: .top)
+    }
 
     // MARK: Session State
 
@@ -1244,6 +1325,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func handleModelsUpdated() {
         toolsController.clearSelectionIfUnsupported(for: modelStore)
+        removeUnsupportedAttachmentsForSelectedModel()
         updateModelChipLabel()
         updateReasoningPicker()
         updateImageButtonVisibility()
@@ -1273,8 +1355,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func updateImageButtonEnabledState() {
-        let canAttachMore = remainingImagesForPicker > 0 && !viewController.isGenerating
-        viewController.isImageButtonEnabled = canAttachMore
+        updateAttachButtonPresentation()
     }
 
     var resolvedSelectedReasoningMode: AIChatReasoningMode? {

@@ -1880,7 +1880,8 @@ class MainViewController: UIViewController {
                       tools: [AIChatRAGTool]? = nil,
                       modelId: String? = nil,
                       reasoningEffort: AIChatReasoningEffort? = nil,
-                      images: [AIChatNativePrompt.NativePromptImage]? = nil) {
+                      images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                      files: [AIChatNativePrompt.NativePromptFile]? = nil) {
         guard let currentTab else {
             assertionFailure("load called with no current tab")
             return
@@ -1898,7 +1899,8 @@ class MainViewController: UIViewController {
                 tools: tools,
                 modelId: modelId,
                 reasoningEffort: reasoningEffort,
-                images: images
+                images: images,
+                files: files
             )
         }
     }
@@ -3139,6 +3141,7 @@ class MainViewController: UIViewController {
                     modelId: String? = nil,
                     reasoningEffort: AIChatReasoningEffort? = nil,
                     images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                    files: [AIChatNativePrompt.NativePromptFile]? = nil,
                     fromDeepLink: Bool = false) {
 
         if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
@@ -3151,6 +3154,7 @@ class MainViewController: UIViewController {
                 modelId: modelId,
                 reasoningEffort: reasoningEffort,
                 images: images,
+                files: files,
                 fromDeepLink: fromDeepLink
             )
         } else {
@@ -3162,6 +3166,8 @@ class MainViewController: UIViewController {
                 tools: tools,
                 modelId: modelId,
                 reasoningEffort: reasoningEffort,
+                images: images,
+                files: files,
                 on: self
             )
         }
@@ -3227,6 +3233,7 @@ class MainViewController: UIViewController {
                                  modelId: String? = nil,
                                  reasoningEffort: AIChatReasoningEffort? = nil,
                                  images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                                 files: [AIChatNativePrompt.NativePromptFile]? = nil,
                                  fromDeepLink: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
@@ -3239,7 +3246,7 @@ class MainViewController: UIViewController {
             return
         }
 
-        load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images)
+        load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
     }
     
     /// Executes the closure if the current tab is an AI tab

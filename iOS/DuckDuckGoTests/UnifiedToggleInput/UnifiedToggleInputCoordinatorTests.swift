@@ -713,6 +713,15 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
+    func test_handleExternalPromptSubmission_fromAITab_clearsPendingAttachments() {
+        sut.showExpanded()
+        sut.viewController.addAttachment(.image(AIChatImageAttachment(image: UIImage(), fileName: "test.png")))
+
+        sut.handleExternalSubmission(.prompt)
+
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+    }
+
     func test_handleExternalPromptSubmission_noOpWhenHidden() {
         sut.handleExternalSubmission(.prompt)
         XCTAssertEqual(sut.displayState, .hidden)
@@ -1252,6 +1261,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     // MARK: - Attachments Change Publisher
 
     func test_addImageAttachment_publishesAttachmentsChange() {
+        configureImageAttachments()
         let exp = expectation(description: "attachmentsChange fires")
         sut.attachmentsChangePublisher
             .sink { exp.fulfill() }
@@ -1266,6 +1276,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_clearAttachments_publishesAttachmentsChange() {
+        configureImageAttachments()
         let image = UIGraphicsImageRenderer(size: CGSize(width: 10, height: 10)).image { ctx in
             UIColor.red.setFill()
             ctx.fill(CGRect(origin: .zero, size: CGSize(width: 10, height: 10)))
@@ -1429,8 +1440,21 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     // MARK: - Helpers
 
+    private func configureImageAttachments() {
+        mockPreferences.selectedModelId = "image-model"
+        sut.modelStore.models = [makeModel(id: "image-model", access: true, supportsImageUpload: true)]
+        sut.modelStore.attachmentLimits = makeLimits()
+    }
+
     private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false, supportedTools: [AIChatRAGTool] = []) -> AIChatModel {
         AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload, supportedTools: supportedTools, entityHasAccess: access)
+    }
+
+    private func makeLimits() -> AIChatAttachmentTierLimits {
+        AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 5, maxInputCharsWithAttachments: 4500)
+        )
     }
 
     private func toolsMenuActions() -> [UIAction] {
@@ -1525,16 +1549,18 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedTools: [AIChatRAGTool]?
     var submittedReasoningEffort: AIChatReasoningEffort?
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
+    var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
     var submittedQuery: String?
     var committedMode: TextEntryMode?
     var didRequestAIChatCount = 0
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
         submittedPrompt = prompt
         submittedModelId = modelId
         submittedTools = tools
         submittedReasoningEffort = reasoningEffort
         submittedImages = images
+        submittedFiles = files
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() {}
@@ -1758,6 +1784,8 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
     func test_submitPrompt_clearsStoreTextAndAttachmentsEagerly() {
         let store = FakeInputStateStore()
         let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModelWithTools(id: "image-model", supportsImageUpload: true)]
+        sut.modelStore.attachmentLimits = makeLimits()
         sut.activateForTab("tab-A")
         sut.setText("ask claude something")
         sut.addImageAttachment(image: UIImage(), fileName: "x.jpg")
@@ -2075,6 +2103,13 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
             supportsImageUpload: supportsImageUpload,
             supportedTools: [.webSearch],
             entityHasAccess: true
+        )
+    }
+
+    private func makeLimits() -> AIChatAttachmentTierLimits {
+        AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 5, maxInputCharsWithAttachments: 4500)
         )
     }
 

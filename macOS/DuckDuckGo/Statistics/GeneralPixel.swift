@@ -32,6 +32,7 @@ enum GeneralPixel: PixelKitEvent {
     case crashReportingSubmissionFailed
     case crashReportCRCIDMissing
     case crashReportingFailedToReadContents
+    case crashReportSent
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
     case dailyActiveUser
@@ -275,15 +276,10 @@ enum GeneralPixel: PixelKitEvent {
     case defaultRequestedFromHomepage
     case defaultRequestedFromHomepageSetupView
     case defaultRequestedFromSettings
-    case defaultRequestedFromOnboarding
     case defaultRequestedFromMainMenu
     case defaultRequestedFromMoreOptionsMenu
 
     // Adding to the Dock
-    case addToDockOnboardingStepPresented
-    case userAddedToDockDuringOnboarding
-    case userSkippedAddingToDockFromOnboarding
-    case startBrowsingOnboardingStepPresented
     case addToDockNewTabPageCardPresented
     case userAddedToDockFromNewTabPageCard
     case userAddedToDockFromSettings
@@ -596,8 +592,6 @@ enum GeneralPixel: PixelKitEvent {
      */
     case userScriptLoadJSFailed(jsFile: String, error: Error, source: UserScriptError.Source)
 
-    case attributionXattrCanary(variantMatch: String, originMatch: String)
-
     // Website Autoplay
     case autoplaySettingAllowAll
     case autoplaySettingBlockAudio
@@ -626,6 +620,9 @@ enum GeneralPixel: PixelKitEvent {
 
         case .crashReportingSubmissionFailed:
             return "m_mac_crashreporting_submission-failed"
+
+        case .crashReportSent:
+            return "m_mac_crash-report_sent"
 
         case .compileRulesWait(onboardingShown: let onboardingShown, waitTime: let waitTime, result: let result):
             return "m_mac_cbr-wait_\(onboardingShown)_\(waitTime)_\(result)"
@@ -1013,14 +1010,9 @@ enum GeneralPixel: PixelKitEvent {
         case .defaultRequestedFromHomepage: return "m_mac_default_requested_from_homepage"
         case .defaultRequestedFromHomepageSetupView: return "m_mac_default_requested_from_homepage_setup_view"
         case .defaultRequestedFromSettings: return "m_mac_default_requested_from_settings"
-        case .defaultRequestedFromOnboarding: return "m_mac_default_requested_from_onboarding"
         case .defaultRequestedFromMainMenu: return "m_mac_default_requested_from_main_menu"
         case .defaultRequestedFromMoreOptionsMenu: return "m_mac_default_requested_from_more_options_menu"
 
-        case .addToDockOnboardingStepPresented: return "m_mac_add_to_dock_onboarding_step_presented"
-        case .userAddedToDockDuringOnboarding: return "m_mac_user_added_to_dock_during_onboarding"
-        case .userSkippedAddingToDockFromOnboarding: return "m_mac_user_skipped_adding_to_dock_from_onboarding"
-        case .startBrowsingOnboardingStepPresented: return "m_mac_start_browsing_onboarding_step_presented"
         case .addToDockNewTabPageCardPresented: return "m_mac_add_to_dock_new_tab_page_card_presented_u"
         case .userAddedToDockFromNewTabPageCard: return "m_mac_user_added_to_dock_from_new_tab_page_card"
         case .userAddedToDockFromSettings: return "m_mac_user_added_to_dock_from_settings"
@@ -1367,8 +1359,6 @@ enum GeneralPixel: PixelKitEvent {
             // UserScript
         case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
 
-        case .attributionXattrCanary: return "m_mac_attribution-xattr-canary_u"
-
             // Website Autoplay
         case .autoplaySettingAllowAll:
             return "m_mac_autoplay_setting_allow-all"
@@ -1545,9 +1535,6 @@ enum GeneralPixel: PixelKitEvent {
             params[PixelKit.Parameters.userScriptSource] = source.rawValue
             return params
 
-        case .attributionXattrCanary(let variantMatch, let originMatch):
-            return ["variant_match": variantMatch, "origin_match": originMatch]
-
         default: return nil
         }
     }
@@ -1559,6 +1546,7 @@ enum GeneralPixel: PixelKitEvent {
                 .crashReportingSubmissionFailed,
                 .crashReportCRCIDMissing,
                 .crashReportingFailedToReadContents,
+                .crashReportSent,
                 .compileRulesWait,
                 .launch,
                 .dailyActiveUser,
@@ -1744,13 +1732,8 @@ enum GeneralPixel: PixelKitEvent {
                 .defaultRequestedFromHomepage,
                 .defaultRequestedFromHomepageSetupView,
                 .defaultRequestedFromSettings,
-                .defaultRequestedFromOnboarding,
                 .defaultRequestedFromMainMenu,
                 .defaultRequestedFromMoreOptionsMenu,
-                .addToDockOnboardingStepPresented,
-                .userAddedToDockDuringOnboarding,
-                .userSkippedAddingToDockFromOnboarding,
-                .startBrowsingOnboardingStepPresented,
                 .addToDockNewTabPageCardPresented,
                 .userAddedToDockFromNewTabPageCard,
                 .userAddedToDockFromSettings,
@@ -1948,8 +1931,7 @@ enum GeneralPixel: PixelKitEvent {
                 .siteNotWorkingShown,
                 .siteNotWorkingWebsiteIsBroken,
                 .usageSegments,
-                .userScriptLoadJSFailed,
-                .attributionXattrCanary:
+                .userScriptLoadJSFailed:
             return [.pixelSource]
         case .settingsAddToDockShowMeHowClicked:
             return nil

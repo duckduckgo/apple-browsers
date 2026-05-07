@@ -62,15 +62,6 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         XCTAssertEqual(menu.sections[1].items[0].modelId, "gpt-5")
     }
 
-    func test_freeUser_bottomAnchored_reversesSectionOrder() {
-        let menu = buildFreeMenu(models: [freeModel, premiumModel], selectedId: "gpt-4o-mini", isBottomAnchored: true)
-
-        XCTAssertEqual(menu.sections[0].title, "Advanced")
-        XCTAssertEqual(menu.sections[0].items[0].modelId, "gpt-5")
-        XCTAssertEqual(menu.sections[1].title, "")
-        XCTAssertEqual(menu.sections[1].items[0].modelId, "gpt-4o-mini")
-    }
-
     // MARK: - Free User: Item Properties
 
     func test_freeUser_accessibleItems_areNotDisabled() {
@@ -133,7 +124,6 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         let menu = UnifiedToggleInputModelMenu.build(
             models: [freeModel, premiumModel],
             selectedId: "",
-            isBottomAnchored: false,
             hasActiveSubscription: false,
             advancedSectionTitle: "Premium Models",
             basicSectionTitle: "Basic"
@@ -160,14 +150,6 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         let menu = buildSubscribedMenu(models: [subscribedPremium, freeModel], selectedId: "gpt-5")
 
         XCTAssertTrue(menu.sections.flatMap(\.items).allSatisfy { !$0.isDisabled })
-    }
-
-    func test_subscribedUser_bottomAnchored_reversesSections() {
-        let subscribedPremium = AIChatModel(id: "gpt-5", name: "GPT-5", provider: .openAI, supportsImageUpload: true, entityHasAccess: true, accessTier: ["plus", "pro"])
-        let menu = buildSubscribedMenu(models: [subscribedPremium, freeModel], selectedId: "gpt-5", isBottomAnchored: true)
-
-        XCTAssertEqual(menu.sections[0].title, "Basic")
-        XCTAssertEqual(menu.sections[1].title, "Advanced")
     }
 
     func test_subscribedUser_allBasicModels_singleSection() {
@@ -202,27 +184,101 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         XCTAssertTrue(advancedSection.items[0].isDisabled)
     }
 
+    // MARK: - Order Invariant (regression: items order independent from UI position)
+
+    func test_freeUser_premiumSection_preservesInputOrder() {
+        let sphynx = makeFakeModel(id: "acme-sphynx-5", name: "Acme Sphynx 5", accessTier: ["plus", "pro"], hasAccess: false)
+        let persian = makeFakeModel(id: "acme-persian-9", name: "Acme Persian 9", accessTier: ["plus", "pro"], hasAccess: false)
+        let burmese = makeFakeModel(id: "acme-burmese-11", name: "Acme Burmese 11", accessTier: ["plus", "pro"], hasAccess: false)
+
+        let menu = buildFreeMenu(models: [sphynx, persian, burmese], selectedId: "")
+
+        XCTAssertEqual(
+            menu.sections[1].items.map(\.modelId),
+            ["acme-sphynx-5", "acme-persian-9", "acme-burmese-11"]
+        )
+    }
+
+    func test_subscribedUser_advancedSection_preservesInputOrder() {
+        let sphynx = makeFakeModel(id: "acme-sphynx-5", name: "Acme Sphynx 5", accessTier: ["plus"], hasAccess: true)
+        let persian = makeFakeModel(id: "acme-persian-9", name: "Acme Persian 9", accessTier: ["plus"], hasAccess: true)
+        let burmese = makeFakeModel(id: "acme-burmese-11", name: "Acme Burmese 11", accessTier: ["plus"], hasAccess: true)
+
+        let menu = buildSubscribedMenu(models: [sphynx, persian, burmese], selectedId: "")
+
+        XCTAssertEqual(menu.sections[0].title, "Advanced")
+        XCTAssertEqual(
+            menu.sections[0].items.map(\.modelId),
+            ["acme-sphynx-5", "acme-persian-9", "acme-burmese-11"]
+        )
+    }
+
+    func test_subscribedUser_basicSection_preservesInputOrder() {
+        let ragdoll = makeFakeModel(id: "acme-ragdoll-7", name: "Acme Ragdoll 7", accessTier: ["free"], hasAccess: true)
+        let mainecoon = makeFakeModel(id: "acme-mainecoon-12", name: "Acme Maine Coon 12", accessTier: ["free"], hasAccess: true)
+        let bengal = makeFakeModel(id: "acme-bengal-3", name: "Acme Bengal 3", accessTier: ["free"], hasAccess: true)
+
+        let menu = buildSubscribedMenu(models: [ragdoll, mainecoon, bengal], selectedId: "")
+
+        XCTAssertEqual(menu.sections[0].title, "Basic")
+        XCTAssertEqual(
+            menu.sections[0].items.map(\.modelId),
+            ["acme-ragdoll-7", "acme-mainecoon-12", "acme-bengal-3"]
+        )
+    }
+
+    func test_subscribedUser_mixedInput_preservesOrderWithinEachSection() {
+        let sphynx = makeFakeModel(id: "acme-sphynx-5", name: "Acme Sphynx 5", accessTier: ["plus"], hasAccess: true)
+        let ragdoll = makeFakeModel(id: "acme-ragdoll-7", name: "Acme Ragdoll 7", accessTier: ["free"], hasAccess: true)
+        let persian = makeFakeModel(id: "acme-persian-9", name: "Acme Persian 9", accessTier: ["plus"], hasAccess: true)
+        let mainecoon = makeFakeModel(id: "acme-mainecoon-12", name: "Acme Maine Coon 12", accessTier: ["free"], hasAccess: true)
+
+        let menu = buildSubscribedMenu(models: [sphynx, ragdoll, persian, mainecoon], selectedId: "")
+
+        XCTAssertEqual(menu.sections[0].items.map(\.modelId), ["acme-sphynx-5", "acme-persian-9"])
+        XCTAssertEqual(menu.sections[1].items.map(\.modelId), ["acme-ragdoll-7", "acme-mainecoon-12"])
+    }
+
+    func test_build_isDeterministic_returnsIdenticalSectionsAcrossInvocations() {
+        let ragdoll = makeFakeModel(id: "acme-ragdoll-7", name: "Acme Ragdoll 7", accessTier: ["free"], hasAccess: true)
+        let sphynx = makeFakeModel(id: "acme-sphynx-5", name: "Acme Sphynx 5", accessTier: ["plus", "pro"], hasAccess: false)
+
+        let first = buildFreeMenu(models: [ragdoll, sphynx], selectedId: "acme-ragdoll-7")
+        let second = buildFreeMenu(models: [ragdoll, sphynx], selectedId: "acme-ragdoll-7")
+
+        XCTAssertEqual(first, second)
+    }
+
     // MARK: - Helpers
 
-    private func buildFreeMenu(models: [AIChatModel], selectedId: String, isBottomAnchored: Bool = false) -> UnifiedToggleInputModelMenu {
+    private func buildFreeMenu(models: [AIChatModel], selectedId: String) -> UnifiedToggleInputModelMenu {
         UnifiedToggleInputModelMenu.build(
             models: models,
             selectedId: selectedId,
-            isBottomAnchored: isBottomAnchored,
             hasActiveSubscription: false,
             advancedSectionTitle: "Advanced",
             basicSectionTitle: "Basic"
         )
     }
 
-    private func buildSubscribedMenu(models: [AIChatModel], selectedId: String, isBottomAnchored: Bool = false) -> UnifiedToggleInputModelMenu {
+    private func buildSubscribedMenu(models: [AIChatModel], selectedId: String) -> UnifiedToggleInputModelMenu {
         UnifiedToggleInputModelMenu.build(
             models: models,
             selectedId: selectedId,
-            isBottomAnchored: isBottomAnchored,
             hasActiveSubscription: true,
             advancedSectionTitle: "Advanced",
             basicSectionTitle: "Basic"
+        )
+    }
+
+    private func makeFakeModel(id: String, name: String, accessTier: [String], hasAccess: Bool) -> AIChatModel {
+        AIChatModel(
+            id: id,
+            name: name,
+            provider: .openAI,
+            supportsImageUpload: false,
+            entityHasAccess: hasAccess,
+            accessTier: accessTier
         )
     }
 }

@@ -41,6 +41,9 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
             NSMenuItem(title: "Reset Stored Data", action: #selector(AttributedMetricDebugMenu.resetAllData))
                 .targetting(self)
 
+            NSMenuItem(title: "Reset Install Attribution", action: #selector(AttributedMetricDebugMenu.resetInstallAttribution))
+                .targetting(self)
+
             NSMenuItem(title: "Set Current Time...", action: #selector(AttributedMetricDebugMenu.setCurrentTime))
                 .targetting(self)
 
@@ -49,9 +52,9 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
 
             NSMenuItem.separator()
 
-            NSMenuItem(title: "Bundle xattr variant: \(getXattr(named: "com.duckduckgo.variant", from: Bundle.main.bundlePath) ?? "nil")")
+            NSMenuItem(title: "Bundle xattr variant: \(getXattr(named: AttributionXattr.variant, from: Bundle.main.bundlePath) ?? "nil")")
 
-            NSMenuItem(title: "Bundle xattr origin: \(getXattr(named: "com.duckduckgo.origin", from: Bundle.main.bundlePath) ?? "nil")")
+            NSMenuItem(title: "Bundle xattr origin: \(getXattr(named: AttributionXattr.origin, from: Bundle.main.bundlePath) ?? "nil")")
 
             NSMenuItem.separator()
 
@@ -111,6 +114,31 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
             attributedMetricDataStorage.removeAll()
 
             await NSAlert.attributedMetricsResetCompleteAlert().runModal()
+        }
+    }
+
+    @objc private func resetInstallAttribution(_ sender: Any?) {
+        Task { @MainActor in
+            let alert = NSAlert()
+            alert.messageText = "Reset Install Attribution"
+            alert.informativeText = "Clears ATB, variant, install date, retention ATBs, the campaign variant flag, and the m_mac_install \"already fired\" flag. Restart the app to re-run first-launch attribution from the bundle xattrs."
+            alert.addButton(withTitle: "Reset")
+            alert.addButton(withTitle: "Cancel")
+            alert.alertStyle = .warning
+            guard case .alertFirstButtonReturn = await alert.runModal() else { return }
+
+            LocalStatisticsStore().resetInstallAttributionState()
+            CampaignVariant().cleanUp()
+            for key in UserDefaults.netP.dictionaryRepresentation().keys
+            where key.hasPrefix("com.duckduckgo.network-protection.pixel.m_mac_install") {
+                UserDefaults.netP.removeObject(forKey: key)
+            }
+
+            let confirm = NSAlert()
+            confirm.messageText = "Done"
+            confirm.informativeText = "Restart the app to re-run first-launch attribution."
+            confirm.addButton(withTitle: "OK")
+            await confirm.runModal()
         }
     }
 

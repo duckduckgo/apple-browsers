@@ -85,4 +85,5 @@ final class AIChatURLParametersTests: XCTestCase {
         let result = AIChatURLParameters.imageModeURL(from: baseURL)
         XCTAssertEqual(result.absoluteString, "https://duck.ai/chat?mode=image")
     }
+
 }

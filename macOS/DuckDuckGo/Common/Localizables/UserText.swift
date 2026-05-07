@@ -671,6 +671,7 @@ struct UserText {
 
 
     static let aiChatSendButtonTooltip = NSLocalizedString("aichat.send-button.tooltip", value: "Send", comment: "Tooltip for the send button in AI chat omnibar")
+    static let aiChatVoiceChatButtonTooltip = NSLocalizedString("aichat.voice-chat-button.tooltip", value: "Start a voice chat", comment: "Tooltip for the voice chat button shown in the AI chat omnibar when the input is empty")
     static let aiChatSearchToggleButtonTooltip = NSLocalizedString("aichat.search-toggle-button.tooltip", value: "Search the web", comment: "Tooltip for the search toggle button in AI chat omnibar")
     static let aiChatImageUploadButtonTooltip = NSLocalizedString("aichat.image-upload-button.tooltip", value: "Attach image", comment: "Tooltip for the image upload button in AI chat omnibar")
     static let aiChatToolsButtonLabel = NSLocalizedString("aichat.tools-button.label", value: "Tools", comment: "Label for the tools dropdown button in AI chat omnibar")
@@ -683,6 +684,14 @@ struct UserText {
     static let aiChatImageGenWithAttachmentPlaceholder = NSLocalizedString("aichat.omnibar.image-gen-with-attachment-placeholder", value: "Describe changes based on the image", comment: "Placeholder text in AI chat input when image generation mode is active and an image is attached")
     static let aiChatImageGenDeactivateTooltip = NSLocalizedString("aichat.image-gen-button.deactivate-tooltip", value: "Deactivate image generation", comment: "Tooltip for the image generation button when image generation mode is active")
     static let aiChatAttachmentsLimitError = NSLocalizedString("aichat.attachments.limit-error", value: "You can only attach 3 images at a time", comment: "Error message shown when the user tries to attach more than 3 images in AI chat")
+    static let aiChatReasoningEffortFastTitle = NSLocalizedString("aichat.reasoning-effort.fast.title", value: "Fast", comment: "Title of the 'Fast' option in the reasoning effort picker menu in AI chat omnibar")
+    static let aiChatReasoningEffortFastSubtitle = NSLocalizedString("aichat.reasoning-effort.fast.subtitle", value: "Answers right away", comment: "Subtitle of the 'Fast' option in the reasoning effort picker menu in AI chat omnibar")
+    static let aiChatReasoningEffortLowTitle = NSLocalizedString("aichat.reasoning-effort.low.title", value: "Reasoning", comment: "Title of the 'Reasoning' option in the reasoning effort picker menu in AI chat omnibar")
+    static let aiChatReasoningEffortLowSubtitle = NSLocalizedString("aichat.reasoning-effort.low.subtitle", value: "Takes a moment to respond", comment: "Subtitle of the 'Reasoning' option in the reasoning effort picker menu in AI chat omnibar")
+    static let aiChatReasoningEffortMediumTitle = NSLocalizedString("aichat.reasoning-effort.medium.title", value: "Extended Reasoning", comment: "Title of the 'Extended Reasoning' option in the reasoning effort picker menu in AI chat omnibar")
+    static let aiChatReasoningEffortMediumSubtitle = NSLocalizedString("aichat.reasoning-effort.medium.subtitle", value: "Researches before responding", comment: "Subtitle of the 'Extended Reasoning' option in the reasoning effort picker menu in AI chat omnibar")
+    static let aiChatReasoningEffortPickerButtonTooltip = NSLocalizedString("aichat.reasoning-effort-picker-button.tooltip", value: "Choose reasoning effort", comment: "Tooltip and accessibility label for the reasoning effort picker button in AI chat omnibar")
+
     static let aiChatModelPickerButtonTooltip = NSLocalizedString("aichat.model-picker-button.tooltip", value: "Choose model", comment: "Tooltip for the model picker button in AI chat omnibar")
     static let aiChatModelPickerAdvancedSectionHeader = NSLocalizedString("aichat.model-picker.advanced-section-header", value: "Advanced Models - DuckDuckGo subscription", comment: "Section header in the model picker menu for premium models that require a subscription")
     static let aiChatModelPickerAdvancedModelsSectionHeader = NSLocalizedString("aichat.model-picker.advanced-models-section-header", value: "Advanced Models", comment: "Section header in the model picker menu for advanced models when user has an active subscription")
@@ -1793,6 +1802,11 @@ struct UserText {
     static let showNetworkProtectionShortcut = NSLocalizedString("pinning.show-netp-shortcut", value: "Show VPN Shortcut", comment: "Menu item for showing the NetP shortcut")
     static let hideNetworkProtectionShortcut = NSLocalizedString("pinning.hide-netp-shortcut", value: "Hide VPN Shortcut", comment: "Menu item for hiding the NetP shortcut")
 
+    // Internal only — not localized
+    static let showFeedbackShortcut = "Show Feedback Shortcut"
+    static let hideFeedbackShortcut = "Hide Feedback Shortcut"
+
+
     // MARK: - Tooltips
 
     static let passwordsShortcutTooltip = NSLocalizedString("tooltip.passwords.shortcut", value: "Passwords", comment: "Tooltip for the passwords shortcut")
@@ -1801,6 +1815,7 @@ struct UserText {
 
     static let bookmarksShortcutTooltip = NSLocalizedString("tooltip.bookmarks.shortcut", value: "Bookmarks", comment: "Tooltip for the bookmarks shortcut")
     static let downloadsShortcutTooltip = NSLocalizedString("tooltip.downloads.shortcut", value: "Downloads", comment: "Tooltip for the downloads shortcut")
+    static let feedbackShortcutTooltip = "Send Internal Feedback" // Internal only — not localized
 
     static let addItemTooltip = NSLocalizedString("tooltip.autofill.add-item", value: "Add item", comment: "Tooltip for the Add Item button")
     static let moreOptionsTooltip = NSLocalizedString("tooltip.autofill.more-options", value: "More options", comment: "Tooltip for the More Options button")
@@ -1951,6 +1966,12 @@ struct UserText {
     static let burnerHomepageDescription3 = NSLocalizedString("burner.homepage.description.3", value: "Troubleshoot websites", comment: "Descriptions of features Fire page. Provides information about browsing functionalities such as browsing without saving local history, signing in to a site with a different account, and troubleshooting websites.")
     static let burnerHomepageDescription4 = NSLocalizedString("burner.homepage.description.4", value: "Fire windows are isolated from other browser data, and their data is burned when you close them. They have the same tracking protection as other windows.", comment: "This describes the functionality of one of out browser feature Fire Window, highlighting their isolation from other browser data and the automatic deletion of their data upon closure. Additionally, it emphasizes that fire windows offer the same level of tracking protection as other browsing windows.")
 
+    // Subscription Promo on Fire Window (US locale only, no translation needed)
+    static let subscriptionPromoTitle = "Boost protection beyond the Fire Window"
+    static let subscriptionPromoSubtitle = "Protect even more with DuckDuckGo VPN."
+    static let subscriptionPromoTryForFree = "Try for Free"
+    static let subscriptionPromoLearnMore = "Learn More"
+
     // Email Protection Management
     static let disableEmailProtectionTitle = NSLocalizedString("disable.email.protection.title", value: "Disable Email Protection Autofill?", comment: "Title for alert shown when user disables email protection")
     static let disableEmailProtectionMessage = NSLocalizedString("disable.email.protection.mesage", value: "This will only disable Autofill for Duck Addresses in this browser. \n\n You can still manually enter Duck Addresses and continue to receive forwarded email.", comment: "Message for alert shown when user disables email protection")
@@ -1993,7 +2014,7 @@ struct UserText {
     static let fireproofExplanation = NSLocalizedString("fireproof.explanation", value: "When you Fireproof a site, cookies won't be erased and you'll stay signed in, even after using the Fire Button.", comment: "Fireproofing mechanism explanation")
     static let manageFireproofSites = NSLocalizedString("fireproof.manage-sites", value: "Manage Fireproof Sites…", comment: "Fireproof settings button caption")
 
-    static let autoClear = NSLocalizedString("auto.clear", value: "Auto-Clear", comment: "Header of a section in Settings. The setting configures clearing data automatically after quitting the app.")
+    static let autoClear = NSLocalizedString("auto.delete", value: "Automatically Delete Data", comment: "Header of a section in Settings. The setting configures deleting data automatically after quitting the app.")
     static let automaticallyClearData = NSLocalizedString("automatically.clear.data", value: "Automatically delete tabs and browsing data when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.")
     static let autoClearAIChatHistory = NSLocalizedString("automatically.clear.chats", value: "Delete Duck.ai chat history when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing Duck.ai chat history automatically after quitting the app.")
     static func warnBeforeQuit(_ clearChats: Bool) -> String {
@@ -2011,9 +2032,9 @@ struct UserText {
         }
     }
     static let warnBeforeQuitDialogCheckboxMessage = NSLocalizedString("warn.before.quit.dialog.checkbox.message", value: "Warn me every time", comment: "A label after checkbox to configure the warning before clearing data on the application termination.")
-    static let disableAutoClearToEnableSessionRestore = NSLocalizedString("disable.auto.clear.to.enable.session.restore",
-                                                                          value: "Your session won't be restored if Auto-Clear is turned on. Fire Windows also won’t be restored.",
-                                                                          comment: "Information label in Settings. It tells user that to enable session restoration setting they have to disable burn on quit. Auto-Clear should match the string with 'auto.clear' key")
+    static let disableAutoDeleteToEnableSessionRestore = NSLocalizedString("disable.auto.delete.to.enable.session.restore",
+                                                                           value: "Your session won't be restored if Automatically Delete Data is turned on. Fire Windows also won’t be restored.",
+                                                                           comment: "Information label in Settings. It tells user that to enable session restoration setting they have to disable burn on quit. Automatically Delete Data should match the string with 'auto.delete' key")
     static let showDataClearingSettings = NSLocalizedString("show.data.clearing.settings",
                                                             value: "Go to Data Clearing Settings",
                                                             comment: "Button in Settings. It navigates user to Data Clearing Settings. The Data Clearing string should match the string with the preferences.data-clearing key")
@@ -2132,6 +2153,7 @@ struct UserText {
         static let onboardingTryFireButtonTitle = NSLocalizedString("contextual.onboarding.try-fire-button.title", value: "Instantly clear your browsing activity with the *Fire Button*.\n\n%1$@", comment: "Message of a popover on the browser that invites the user to try visiting the browser Fire Button, the parameter is another string (do not remove * and \n\n%1$@")
         static let onboardingTryFireButtonMessage = NSLocalizedString("contextual.onboarding.try-fire-button.message", value: "Give it a try! 🔥", comment: "Message of a popover on the browser that invites the user to try visiting the browser Fire Button.")
         static let onboardingTryFireButtonButton = NSLocalizedString("contextual.onboarding.try-fire-button.button", value: "Try it", comment: "Button on the browser that invites the user to try the Fire Button.")
+        static let onboardingTryFireButtonSkip = NSLocalizedString("contextual.onboarding.try-fire-button.skip", value: "Skip", comment: "Skip button on the Fire Button contextual onboarding dialog that dismisses without firing.")
         static let onboardingGotItButton = NSLocalizedString("contextual.onboarding.got-it.button", value: "Got it", comment: "During onboarding steps this button is shown and takes either to the next steps or closes the onboarding.")
         static let onboardingFirstSearchDoneTitle = NSLocalizedString("contextual.onboarding.first-search-done.title", value: "That’s DuckDuckGo Search!", comment: "After the user performs their first search using the browser, this dialog explains the advantages of using DuckDuckGo")
         static let onboardingFirstSearchDoneMessage = NSLocalizedString("contextual.onboarding.first-search-done.message", value: "Private. Fast. Fewer ads.", comment: "After the user performs their first search using the browser, this dialog explains the advantages of using DuckDuckGo")

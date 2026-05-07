@@ -22,27 +22,38 @@ import UIKit
 extension TabSwitcherViewController {
     
     override var keyCommands: [UIKeyCommand]? {
-        return [
-            
+        let closeCommands: [UIKeyCommand] = [
             UIKeyCommand(title: "", action: #selector(keyboardCloseWindow), input: UIKeyCommand.inputEscape,
                          modifierFlags: [], discoverabilityTitle: UserText.keyCommandClose),
-                        
-            UIKeyCommand(title: "", action: #selector(keyboardCloseWindow), input: "w",
-                         modifierFlags: [.command], discoverabilityTitle: UserText.keyCommandClose),
 
+            UIKeyCommand(title: "", action: #selector(keyboardCloseWindow), input: "w",
+                         modifierFlags: [.command], discoverabilityTitle: UserText.keyCommandClose)
+        ]
+
+        let newTabCommands: [UIKeyCommand] = [
             UIKeyCommand(title: "", action: #selector(keyboardNewTab), input: "t",
                          modifierFlags: [ .command ], discoverabilityTitle: UserText.keyCommandNewTab),
             UIKeyCommand(title: "", action: #selector(keyboardNewTab), input: "n",
-                         modifierFlags: [ .command ], discoverabilityTitle: UserText.keyCommandNewTab),
-            
+                         modifierFlags: [ .command ], discoverabilityTitle: UserText.keyCommandNewTab)
+        ]
+
+        var newFireTabCommands: [UIKeyCommand] = []
+        if fireModeCapability.isFireModeEnabled {
+            newFireTabCommands.append(
+                UIKeyCommand(title: "", action: #selector(keyboardNewFireTab), input: "n",
+                             modifierFlags: [.command, .shift], discoverabilityTitle: UserText.keyCommandNewFireTab)
+            )
+        }
+
+        let selectionCommands: [UIKeyCommand] = [
             UIKeyCommand(title: "", action: #selector(keyboardSelectCurrent), input: UIKeyCommand.inputEnter,
                          modifierFlags: [], discoverabilityTitle: UserText.keyCommandSelect),
-            
+
             UIKeyCommand(title: "", action: #selector(keyboardMoveSelectionUp), input: UIKeyCommand.inputUpArrow,
                          modifierFlags: [], discoverabilityTitle: UserText.keyCommandPreviousTab),
             UIKeyCommand(title: "", action: #selector(keyboardMoveSelectionDown), input: UIKeyCommand.inputDownArrow,
                          modifierFlags: [], discoverabilityTitle: UserText.keyCommandNextTab),
-            
+
             UIKeyCommand(title: "", action: #selector(keyboardMoveSelectionUp), input: UIKeyCommand.inputLeftArrow,
                          modifierFlags: [], discoverabilityTitle: UserText.keyCommandPreviousTab),
             UIKeyCommand(title: "", action: #selector(keyboardMoveSelectionDown), input: UIKeyCommand.inputRightArrow,
@@ -51,6 +62,12 @@ extension TabSwitcherViewController {
             UIKeyCommand(title: "", action: #selector(keyboardRemoveTab), input: UIKeyCommand.inputBackspace,
                          modifierFlags: [], discoverabilityTitle: UserText.keyCommandCloseTab)
         ]
+
+        let commands = [closeCommands, newTabCommands, newFireTabCommands, selectionCommands].flatMap { $0 }
+        commands.forEach {
+            $0.wantsPriorityOverSystemBehavior = true
+        }
+        return commands
     }
     
     @objc func keyboardNewTab() {
@@ -59,6 +76,13 @@ extension TabSwitcherViewController {
         // presents on MainVC rather than being dismissed with the tab switcher.
         dismissIfPossible(forceDismissOnEmpty: true)
         delegate?.tabSwitcherDidRequestNewTab(tabSwitcher: self)
+    }
+
+    @objc func keyboardNewFireTab() {
+        guard !isProcessingUpdates else { return }
+        guard fireModeCapability.isFireModeEnabled else { return }
+
+        addNewFireTab(source: .keyCommand)
     }
     
     @objc func keyboardCloseWindow() {

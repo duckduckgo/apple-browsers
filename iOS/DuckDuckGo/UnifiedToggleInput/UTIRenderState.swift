@@ -22,18 +22,21 @@ import Foundation
 struct UTIRenderState: Equatable {
     var isInputVisible: Bool
     var isContentVisible: Bool
-    var isExpanded: Bool
+    var cardLayout: UnifiedToggleInputCardLayout
     var cardPosition: UnifiedToggleInputCardPosition
     var usesOmnibarMargins: Bool
     var isToolbarSubmitHidden: Bool
     var inactiveAppearance: Bool
     var isFloatingSubmitVisible: Bool
+    var isToggleEnabled: Bool
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
 
+    var isExpanded: Bool { cardLayout.isExpanded }
+
     var viewConfig: UTIViewConfig {
         UTIViewConfig(
-            isExpanded: isExpanded,
+            cardLayout: cardLayout,
             cardPosition: cardPosition,
             usesOmnibarMargins: usesOmnibarMargins,
             isToolbarSubmitHidden: isToolbarSubmitHidden,

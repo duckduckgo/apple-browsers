@@ -26,9 +26,12 @@ import DuckUI
 struct AutofillViews {
 
     static let loginPromptMinHeight: CGFloat = 200.0
-    static let saveLoginMinHeight = 375.0
-    static let savePasswordMinHeight = 340.0
-    static let updateUsernameMinHeight = 310.0
+    static let newUserMinHeight: CGFloat = 375.0
+    static let saveLoginMinHeight: CGFloat = 310.0
+    static let savePasswordMinHeight: CGFloat = 310.0
+    static let updatePasswordMinHeight: CGFloat = 340.0
+    static let updateUsernameMinHeight: CGFloat = 310.0
+    static let saveCreditCardMinHeight: CGFloat = 375.0
     static let passwordGenerationMinHeight: CGFloat = 310.0
     static let emailSignupPromptMinHeight: CGFloat = 260.0
     static let deleteAllPromptMinHeight: CGFloat = 360.0

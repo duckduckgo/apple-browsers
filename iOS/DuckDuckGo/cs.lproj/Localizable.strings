@@ -208,10 +208,27 @@
 "ai-features.settings.title" = "Funkce AI";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Vybrat fotku";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Pořídit fotku";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Pro analytické úlohy";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Rozšířené uvažování";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Rychlé odpovědi";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Rychle";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Pro složité úlohy";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Uvažování";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Přizpůsobit odpovědi";
@@ -876,6 +893,9 @@
 /* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
 "autofill.save-login.no-thanks.CTA" = "Ne, děkuji";
 
+/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
+"autofill.save-login.not-now.CTA" = "Teď ne";
+
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Bezpečně si ulož heslo do zařízení pomocí funkce pro ukládání a automatické vyplňování hesel DuckDuckGo.";
 
@@ -1254,6 +1274,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Import záložek do DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Otevři Chrome, poté přejdi do Správce hesel a postupuj podle následujících kroků:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Nastavení** > **Exportovat data**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Stiskni tlačítko **Pokračovat**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Jako Cíl vyber **DuckDuckGo**";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Import z Chromu";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Export je hotový?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Musíš přejít do aplikace Hesla a poté postupovat podle kroků pro import.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Klepni na **···** > **Exportovat data do jiné aplikace**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Klepni na **Vybrat vše** > **Pokračovat**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Jako Cíl vyber **DuckDuckGo**";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Import z hesel";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Nejprve ze Safari exportuj svá hesla a záložky a poté se vrať sem a nahraj soubor.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Export ze Safari";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Import ze Safari";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Nahrát exportovaný soubor...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "V souboru zip nebyla nalezena žádná podporovaná data. Podívej se na pokyny k exportu ze Safari a zkus to znovu.";
 
@@ -1263,6 +1328,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Soubor %@ nejde přečíst. V souboru může být problém s daty.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Mám to";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Soubor %@ nejde přečíst. Zkus nahrát jiný soubor nebo vyzkoušej jinou metodu importu.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Soubor může být poškozen";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "V souboru zip nebyla nalezena žádná podporovaná data. Podívej se na pokyny k exportu a zkus to znovu.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Žádná data nenalezena";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Vybraný soubor není podporován. Vyber jiný soubor a zkus to znovu.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Nepodporovaný soubor";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1271,6 +1357,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Převod do DuckDuckGo";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Vyber **Export** a na další obrazovce vyber **Záložky** a **Uložit do stažených souborů**.";
@@ -1282,7 +1371,7 @@
 "data.import.passwords.instructions.chrome.step1" = "V Chromu přejdi do **Správce hesel Google** a pak do **Nastavení**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Vyber **Exportovat hesla**, pak **Uložit do Souborů** a ulož soubor do složky, kterou si zapamatuješ.";
+"data.import.passwords.instructions.chrome.step2" = "Vyber **Exportovat data**, pak **···** a nakonec **Stáhnout do CSV** a ulož soubor do složky, kterou si pamatuješ.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Jak exportovat hesla?";
@@ -1310,6 +1399,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Importujte hesla do DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Otevři nastavení pro export";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Nezapomeň klepnout\n „Exportovat do souborů“";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Aplikace Hesla";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Importovat z";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Synchronizace z";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo na jiném zařízení";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Záložky";
@@ -1346,6 +1459,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Hesla";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Chceš si ze Safari přenést i záložky?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Pokračovat";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Teď ne";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Chceš si přenést i hesla?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Minulý měsíc";
@@ -2178,7 +2303,7 @@
 "fire.mode.empty.state.bullet.troubleshoot" = "Řešení problémů s webovými stránkami";
 
 /* Description explaining how Fire Tabs work on the empty state screen */
-"fire.mode.empty.state.description" = "Karty Fire jsou izolované od ostatních dat prohlížeče a jejich data se spálí, jakmile je všechny zavřeš. Mají stejnou ochranu proti sledování jako ostatní karty.";
+"fire.mode.empty.state.description" = "Karty Fire jsou izolované od ostatních dat prohlížeče. Jakmile je všechny zavřeš, jejich data se vymažou. Poskytují stejnou ochranu před sledováním jako ostatní karty.";
 
 /* Button label to create a new Fire Tab on the empty state screen */
 "fire.mode.empty.state.new.fire.tab" = "Nová karta Fire";
@@ -2190,7 +2315,7 @@
 "fire.mode.menu.promotion.badge" = "Nová";
 
 /* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Prohlížej si webové stránky bez ukládání místní historie nebo se přihlas k webovým službám pod jiným účtem.";
+"fire.mode.ntp.promotion.description" = "Novinka! Prohlížej si webové stránky bez ukládání místní historie nebo se přihlas k webovým službám pod jiným účtem.";
 
 /* Dismiss button on the Fire Mode promotion card on the new tab page */
 "fire.mode.ntp.promotion.dismiss" = "Teď ne";
@@ -2200,6 +2325,12 @@
 
 /* Title for promotion element for pushing users to try fire mode. */
 "fire.mode.promotion.title" = "Vyzkoušet karty Fire";
+
+/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.description" = "Vyzkoušej karty Fire pro prohlížení bez ukládání místní historie.";
+
+/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
+"fire.mode.tab.switcher.tip.title" = "Nové: Karty Fire";
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Karta Fire";
@@ -2325,6 +2456,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Vyhledejte nebo zadejte adresu";
+
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Nová karta Fire";
 
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Nová karta";
@@ -2712,6 +2846,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Teď ne";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Funkce AI jsou soukromé a volitelné.\nZměny můžeš provádět v Nastavení > Funkce AI.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Chceš snadný přístup k soukromému chatu s umělou inteligencí v adresním řádku?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Vyhledávání a Duck.ai";
@@ -4174,7 +4314,7 @@
 "sync.delete.all.confirm.action" = "Smazat data ze serveru";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Dojde k odpojení všech zařízení a smazání synchronizovaných dat ze serveru.";
+"sync.delete.all.confirm.message" = "Tvoje záloha bude ze serveru smazána. Všechna zařízení budou odpojena od synchronizace, ale z žádného zařízení nebude nic smazáno.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Smazat data ze serveru?";
@@ -4241,6 +4381,30 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Smazat zařízení?";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kód je zkopírovaný";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Zařízení se úspěšně synchronizovalo.";
+
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup zapnuto";
+
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Kód pro obnovení je zkopírovaný";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Nepodařilo se zapnout Sync & Backup";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Vypnout";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Na tvoje záložky a hesla v tomto zařízení to nebude mít vliv.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Vypnout Sync & Backup?";
 
 /* Caption for a button to remove current device from Sync */
 "sync.turn.off.confirm.action" = "Odstranit";

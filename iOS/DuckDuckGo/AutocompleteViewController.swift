@@ -104,12 +104,10 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
 
-        let isAIChatSearchInputUserSettingsEnabled = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
         let isAddressBarAtBottom = appSettings.currentAddressBarPosition == .bottom
         self.showAskAIChat = aiChatSettings.isAIChatEnabled
         self.model = AutocompleteViewModel(isAddressBarAtBottom: isAddressBarAtBottom,
-                                           showAskAIChat: showAskAIChat,
-                                           isSwipeToDeleteEnabled: !isAIChatSearchInputUserSettingsEnabled)
+                                           showAskAIChat: showAskAIChat)
 
         super.init(rootView: AutocompleteView(model: model))
         self.model.delegate = self
@@ -355,8 +353,8 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
         case .historyEntry(_, let url, _):
             Task {
                 await historyManager.deleteHistoryForURL(url)
-                Pixel.fire(pixel: .autocompleteSwipeToDelete)
-                DailyPixel.fireDaily(.autocompleteSwipeToDeleteDaily)
+                Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
+                DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
                 requestSuggestions(query: self.query)
             }
         default:
@@ -373,27 +371,6 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
 
 private extension SuggestionResult {
     static let empty = SuggestionResult(topHits: [], duckduckgoSuggestions: [], localSuggestions: [])
-
-    /// Returns a copy containing only URL-based suggestions (websites, bookmarks, history).
-    /// Excludes search phrases, open tabs, and AI chat suggestions.
-    func filteringToURLsOnly() -> SuggestionResult {
-        SuggestionResult(
-            topHits: topHits.filter(\.isURLSuggestion),
-            duckduckgoSuggestions: duckduckgoSuggestions.filter(\.isURLSuggestion),
-            localSuggestions: localSuggestions.filter(\.isURLSuggestion)
-        )
-    }
-}
-
-private extension Suggestion {
-    var isURLSuggestion: Bool {
-        switch self {
-        case .website, .bookmark, .historyEntry, .openTab:
-            return true
-        case .phrase, .internalPage, .unknown, .askAIChat:
-            return false
-        }
-    }
 }
 
 extension HistoryEntry: HistorySuggestion {

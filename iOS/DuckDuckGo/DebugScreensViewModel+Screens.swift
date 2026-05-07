@@ -81,8 +81,6 @@ extension DebugScreensViewModel {
 
                 controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
-            .action(title: "Show New AddressBar Modal", showNewAddressBarModal),
-            .action(title: "Reset New Address Bar Picker Data", resetNewAddressBarPickerData),
             .action(title: "Reset Fire Mode Promotion", { _ in
                 FireModePromotionsCoordinator.resetState()
                 ActionMessageView.present(message: "Fire Mode Promotion state reset")
@@ -92,6 +90,9 @@ extension DebugScreensViewModel {
             // MARK: SwiftUI Views
             .view(title: "AI Chat", { dependencies in
                 AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
+            }),
+            .view(title: "Duck.ai Toggle Prompt", { _ in
+                DuckAIToggleDebugView()
             }),
             .view(title: "Data Audit", { _ in
                 DataAuditDebugScreen()
@@ -264,14 +265,16 @@ extension DebugScreensViewModel {
                             onboardingPixelReporter: OnboardingPixelReporter(),
                             systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
                             daxDialogsManager: d.daxDialogManager,
-                            syncAutoRestoreHandler: d.syncAutoRestoreHandler
+                            syncAutoRestoreHandler: d.syncAutoRestoreHandler,
+                            onboardingManager: OnboardingManager()
                         )
                     } else {
                         OnboardingIntroViewController.legacy(
                             onboardingPixelReporter: OnboardingPixelReporter(),
                             systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
                             daxDialogsManager: d.daxDialogManager,
-                            syncAutoRestoreHandler: d.syncAutoRestoreHandler
+                            syncAutoRestoreHandler: d.syncAutoRestoreHandler,
+                            onboardingManager: OnboardingManager()
                         )
                     }
                     controller.delegate = capturedController
@@ -289,24 +292,6 @@ extension DebugScreensViewModel {
         ].compactMap { $0 }
     }
     
-    private func showNewAddressBarModal(_ dependencies: DebugScreen.Dependencies) {
-        guard let controller = UIApplication.shared.firstKeyWindow?.rootViewController?.presentedViewController else { return }
-
-        let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: AIChatSettings())
-        pickerViewController.modalPresentationStyle = .pageSheet
-        pickerViewController.modalTransitionStyle = .coverVertical
-        pickerViewController.isModalInPresentation = true
-
-        controller.present(pickerViewController, animated: true)
-    }
-    
-    private func resetNewAddressBarPickerData(_ dependencies: DebugScreen.Dependencies) {
-        let pickerStorage = NewAddressBarPickerStore()
-        pickerStorage.reset()
-        
-        ActionMessageView.present(message: "New Address Bar Picker data reset successfully")
-    }
-
     private func resetModalPromptsCooldownPeriod(_ dependencies: DebugScreen.Dependencies) {
         let store = PromptCooldownKeyValueFilesStore(
             keyValueStore: dependencies.keyValueStore,

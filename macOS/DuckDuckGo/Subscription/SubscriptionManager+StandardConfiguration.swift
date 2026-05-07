@@ -49,7 +49,7 @@ extension DefaultSubscriptionManager {
 
         let featureFlagProvider: WideEventFeatureFlagProviding = featureFlagger.map {
             WideEventFeatureFlagAdapter(featureFlagger: $0)
-        } ?? StaticWideEventFeatureFlagProvider(isPostEndpointEnabled: true)
+        } ?? StaticWideEventFeatureFlagProvider()
 
         let buildType = StandardApplicationBuildType()
         let wideEvent: WideEventManaging = WideEvent(useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
@@ -124,17 +124,8 @@ extension DefaultSubscriptionManager {
 }
 
 private struct StaticWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
-    let isPostEndpointEnabled: Bool
-
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-            let buildType = StandardApplicationBuildType()
-            if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
-                return false
-            } else {
-                return isPostEndpointEnabled
-            }
-        }
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }

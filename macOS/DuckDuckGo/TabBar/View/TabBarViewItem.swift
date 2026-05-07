@@ -247,7 +247,6 @@ final class TabBarItemCellView: NSView {
         return view
     }()
 
-    /// Deprecated: Always hidden when `tabAnimations` is enabled
     fileprivate let rightSeparatorView = ColorView(frame: .zero)
 
     /// Deprecated: Replaced by `TabBackgroundView`
@@ -603,6 +602,7 @@ extension TabBarItemCellView: ThemeUpdateListening {
         if displaysTabsAnimations {
             backgroundView.backgroundColor = colorsProvider.navigationBackgroundColor
             backgroundView.overlayColor = tabStyleProvider.hoverTabColor
+            rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
         } else {
             leftRampView.rampColor = colorsProvider.navigationBackgroundColor
             rightRampView.rampColor = colorsProvider.navigationBackgroundColor
@@ -1188,15 +1188,10 @@ final class TabBarViewItem: NSCollectionViewItem {
     // MARK: - Active Permission Icons in Favicon
 
     private var isShowingActivePermissionIcon: Bool {
-        featureFlagger.isFeatureOn(.newPermissionView) && !activePermissionTypes.isEmpty
+        !activePermissionTypes.isEmpty
     }
 
     private func updateActivePermissionIcons() {
-        guard featureFlagger.isFeatureOn(.newPermissionView) else {
-            stopActivePermissionIconTimer()
-            return
-        }
-
         // Collect all active permissions (camera, microphone, geolocation)
         var activeTypes: [PermissionType] = []
         if usedPermissions.camera.isActive {

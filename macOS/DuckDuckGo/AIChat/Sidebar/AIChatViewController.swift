@@ -493,7 +493,7 @@ final class AIChatViewController: NSViewController {
 
     private func showPermissionAuthorizationPopover(for query: PermissionAuthorizationQuery) {
         let popover = permissionAuthorizationPopover ?? {
-            let popover = PermissionAuthorizationPopover(featureFlagger: NSApp.delegateTyped.featureFlagger)
+            let popover = PermissionAuthorizationPopover()
             self.permissionAuthorizationPopover = popover
             return popover
         }()

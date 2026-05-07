@@ -71,4 +71,13 @@ final class AppVersionModel {
         }
         return label
     }
+
+    /// Distribution channel label (e.g. "App Store", "DMG", "DMG Alpha").
+    var distributionLabel: String {
+        var label = buildType.isAppStoreBuild ? "App Store" : "DMG"
+        if buildType.isAlphaBuild {
+            label.append(" Alpha")
+        }
+        return label
+    }
 }

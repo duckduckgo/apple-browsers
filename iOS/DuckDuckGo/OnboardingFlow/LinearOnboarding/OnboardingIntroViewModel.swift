@@ -116,8 +116,8 @@ final class OnboardingIntroViewModel: ObservableObject {
                      systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
                      daxDialogsManager: ContextualDaxDialogDisabling,
                      restorePromptHandler: OnboardingRestorePromptHandling,
+                     onboardingManager: OnboardingManaging,
                      duckAIOnboardingResumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil) {
-        let onboardingManager = OnboardingManager()
         let defaultBrowserInfoStore = DefaultBrowserInfoStore()
         let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
         let onboardingSearchExperienceProvider = OnboardingSearchExperience()

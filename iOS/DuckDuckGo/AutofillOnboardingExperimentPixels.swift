@@ -27,11 +27,11 @@ import PrivacyConfig
 // MARK: - Storage Keys
 
 enum AutofillOnboardingExperimentStorageKeys: String, StorageKeyDescribing {
-    case onboardingImpressionCount = "com-duckduckgo-autofill-onboarding-experiment-impression_count"
+    case onboardingDismissExperimentImpressionCount = "com-duckduckgo-autofill-onboarding-dismiss-experiment-impression_count"
 }
 
 struct AutofillOnboardingExperimentKeys: StoringKeys {
-    let onboardingImpressionCount = StorageKey<Int>(AutofillOnboardingExperimentStorageKeys.onboardingImpressionCount)
+    let onboardingDismissExperimentImpressionCount = StorageKey<Int>(AutofillOnboardingExperimentStorageKeys.onboardingDismissExperimentImpressionCount)
 }
 
 // MARK: - Instrumentation Facade
@@ -82,8 +82,8 @@ protocol AutofillOnboardingExperimentPixelFiring {
 
 // MARK: - Impression Tracker
 
-/// Tracks the number of onboarding prompt impressions for the experiment's `impression_count` diagnostic metric.
-final class AutofillOnboardingExperimentImpressionTracker {
+/// Tracks onboarding prompt impressions for the dismiss button experiment.
+final class AutofillOnboardingDismissExperimentImpressionTracker {
 
     private let storage: any KeyedStoring<AutofillOnboardingExperimentKeys>
 
@@ -93,12 +93,12 @@ final class AutofillOnboardingExperimentImpressionTracker {
 
     /// The current impression count.
     var impressionCount: Int {
-        storage.onboardingImpressionCount ?? 0
+        storage.onboardingDismissExperimentImpressionCount ?? 0
     }
 
     /// Call each time the onboarding save-password prompt is displayed.
     func recordImpression() {
-        storage.onboardingImpressionCount = impressionCount + 1
+        storage.onboardingDismissExperimentImpressionCount = impressionCount + 1
     }
 }
 
@@ -106,7 +106,11 @@ final class AutofillOnboardingExperimentImpressionTracker {
 
 final class AutofillOnboardingExperimentPixelReporter: AutofillOnboardingExperimentPixelFiring {
 
-    private let subfeatureID: SubfeatureID = AutofillSubfeature.onboardingExperiment.rawValue
+    private let subfeatureID: SubfeatureID
+
+    init(subfeatureID: SubfeatureID = AutofillSubfeature.onboardingDismissExperiment.rawValue) {
+        self.subfeatureID = subfeatureID
+    }
 
     // MARK: Metric Names
 

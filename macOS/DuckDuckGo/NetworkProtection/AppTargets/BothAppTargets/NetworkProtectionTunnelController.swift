@@ -294,6 +294,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         case .setExcludeLocalNetworks(let excludeLocalNetworks):
             try await handleSetExcludeLocalNetworks(excludeLocalNetworks)
         case .setConnectOnLogin,
+                .setExcludeAPNs,
+                .setExcludeCellularServices,
+                .setExcludeDeviceCommunication,
                 .setNotifyStatusChanges,
                 .setRegistrationKeyValidity,
                 .setSelectedServer,
@@ -387,14 +390,18 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             // always-on
             protocolConfiguration.disconnectOnSleep = false
 
-            // kill switch
-            protocolConfiguration.enforceRoutes = true
-
-            // this setting breaks Connection Tester
+            protocolConfiguration.enforceRoutes = settings.enforceRoutes
             protocolConfiguration.includeAllNetworks = settings.includeAllNetworks
+            protocolConfiguration.excludeLocalNetworks = settings.excludeLocalNetworks
 
-            // This messes up the routing, so please keep it always disabled
-            protocolConfiguration.excludeLocalNetworks = false
+            if #available(macOS 13.3, *) {
+                protocolConfiguration.excludeAPNs = settings.excludeAPNs
+                protocolConfiguration.excludeCellularServices = settings.excludeCellularServices
+            }
+
+            if #available(macOS 14.4, *) {
+                protocolConfiguration.excludeDeviceCommunication = settings.excludeDeviceCommunication
+            }
 
             return protocolConfiguration
         }()
@@ -476,6 +483,63 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
 
         return configuration.providerBundleIdentifier == extensionBundleID
+    }
+
+    @MainActor
+    func refreshSystemState() async {
+        let usesSystemExtension = await extensionResolver.isUsingSystemExtension
+        let extensionBundleID = await extensionResolver.activeExtensionBundleID
+
+        let systemExtensionState: SystemExtensionActivationState = if usesSystemExtension {
+            await networkExtensionController.systemExtensionActivationState()
+        } else {
+            .enabled
+        }
+
+        let vpnConfigurationState = await vpnConfigurationState(extensionBundleID: extensionBundleID)
+        let existingStatus = OnboardingStatus(rawValue: onboardingStatusRawValue) ?? .default
+
+        let resolvedStatus = NetworkProtectionSystemStateResolver.resolvedOnboardingStatus(
+            usesSystemExtension: usesSystemExtension,
+            systemExtensionState: systemExtensionState,
+            vpnConfigurationState: vpnConfigurationState,
+            existingStatus: existingStatus
+        )
+
+        guard resolvedStatus.rawValue != onboardingStatusRawValue else {
+            return
+        }
+
+        onboardingStatusRawValue = resolvedStatus.rawValue
+    }
+
+    @MainActor
+    private func vpnConfigurationState(extensionBundleID: String) async -> NetworkProtectionVPNConfigurationState {
+        guard let manager = await manager else {
+            return .missingOrInvalid
+        }
+
+        do {
+            try await manager.loadFromPreferences()
+        } catch {
+            Logger.networkProtection.error("""
+            VPN system state refresh failed to load active tunnel manager from preferences
+              expectedExtensionBundleID: \(extensionBundleID, privacy: .public)
+              description: \(error.localizedDescription, privacy: .public)
+            """)
+            clearInternalManager()
+            return .missingOrInvalid
+        }
+
+        guard let configuration = manager.protocolConfiguration as? NETunnelProviderProtocol,
+              configuration.providerBundleIdentifier == extensionBundleID,
+              manager.connection.status != .invalid else {
+
+            clearInternalManager()
+            return .missingOrInvalid
+        }
+
+        return manager.isEnabled ? .installedAndEnabled : .installedButDisabled
     }
 
     /// Ensures that the system extension is activated if necessary.
@@ -601,6 +665,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     @MainActor
     func start() async {
         Logger.networkProtection.log("🚀 Start VPN")
+        await refreshSystemState()
         setupAndStartConnectionWideEvent()
         VPNOperationErrorRecorder().beginRecordingControllerStart()
         PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionControllerStartAttempt,
@@ -664,16 +729,21 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
             self.controllerErrorStore.lastErrorMessage = nil
 
-            // We'll only update to completed if we were showing the onboarding step to
-            // allow the system extension.  Otherwise we may override the allow-VPN
-            // onboarding step.
-            //
-            // Additionally if the onboarding step was allowing the system extension, we won't
-            // start the tunnel at once, and instead require that the user enables the toggle.
-            //
+            // If activation leaves us on the system extension onboarding step, verify
+            // the real system state before deciding whether to advance. Activation may
+            // complete even when the user has manually disabled the extension.
             if onboardingStatusRawValue == OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue {
-                onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue
-                return
+                await refreshSystemState()
+
+                let refreshedStatus = OnboardingStatus(rawValue: onboardingStatusRawValue) ?? .default
+                guard NetworkProtectionSystemStateResolver.shouldContinueStartingTunnel(afterSystemExtensionActivation: refreshedStatus) else {
+                    Logger.networkProtection.info("""
+                    Pausing VPN start after system extension activation
+                      refreshedOnboardingStatus: \(refreshedStatus.rawValue, privacy: .public)
+                    """)
+                    networkExtensionController.openSystemExtensionSettings()
+                    return
+                }
             }
         } else {
             self.connectionWideEventData?.extensionType = .app
@@ -765,8 +835,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
         try await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
         self.connectionWideEventData?.oauthDuration?.complete()
-
-        settings.wideEventPostEndpointEnabled = featureFlagger.isFeatureOn(.wideEventPostEndpoint)
 
         // Encode entire VPN settings as one unit
         let settingsSnapshot = VPNSettingsSnapshot(from: settings)

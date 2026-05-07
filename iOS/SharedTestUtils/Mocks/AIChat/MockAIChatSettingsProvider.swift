@@ -31,6 +31,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
     public var isAIChatTabSwitcherUserSettingsEnabled: Bool
     public var sessionTimerInMinutes: Int
     public var isAIChatSearchInputUserSettingsEnabled: Bool
+    public var isAIChatSearchInputUserSettingsDisabledByUser: Bool
     public var isAutomaticContextAttachmentEnabled: Bool
     public var isChatSuggestionsEnabled: Bool
     public var defaultOmnibarMode: DefaultOmnibarMode
@@ -44,6 +45,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
                 isAIChatVoiceSearchUserSettingsEnabled: Bool = false,
                 isAIChatTabSwitcherUserSettingsEnabled: Bool = false,
                 isAIChatSearchInputUserSettingsEnabled: Bool = false,
+                isAIChatSearchInputUserSettingsDisabledByUser: Bool = false,
                 isAutomaticContextAttachmentEnabled: Bool = false,
                 isChatSuggestionsEnabled: Bool = true,
                 defaultOmnibarMode: DefaultOmnibarMode = .search,
@@ -57,6 +59,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
         self.isAIChatVoiceSearchUserSettingsEnabled = isAIChatVoiceSearchUserSettingsEnabled
         self.isAIChatTabSwitcherUserSettingsEnabled = isAIChatTabSwitcherUserSettingsEnabled
         self.isAIChatSearchInputUserSettingsEnabled = isAIChatSearchInputUserSettingsEnabled
+        self.isAIChatSearchInputUserSettingsDisabledByUser = isAIChatSearchInputUserSettingsDisabledByUser
         self.isAutomaticContextAttachmentEnabled = isAutomaticContextAttachmentEnabled
         self.isChatSuggestionsEnabled = isChatSuggestionsEnabled
         self.defaultOmnibarMode = defaultOmnibarMode

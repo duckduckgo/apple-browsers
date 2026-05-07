@@ -47,6 +47,7 @@ class SyncDebugViewController: UITableViewController {
         case toggleFavoritesDisplayMode
         case resetFaviconsFetcherOnboardingDialog
         case getRecoveryCode
+        case resetSyncAnotherDevicePrompt
 
     }
 
@@ -119,6 +120,8 @@ class SyncDebugViewController: UITableViewController {
                 cell.textLabel?.text = "Reset Favicons Fetcher onboarding dialog"
             case .some(.getRecoveryCode):
                 cell.textLabel?.text = "Paste and Copy Recovery Code"
+            case .resetSyncAnotherDevicePrompt:
+                cell.textLabel?.text = "Reset Sync Another Device prompt"
             case .none:
                 break
             }
@@ -212,6 +215,8 @@ class SyncDebugViewController: UITableViewController {
                 udWrapper.wrappedValue = false
             case .getRecoveryCode:
                 showCopyPasteCodeAlert()
+            case .resetSyncAnotherDevicePrompt:
+                UserDefaults.standard.removeObject(forKey: "sync.simplified.sync-another-device-prompt.shown")
             default: break
             }
         case .models:

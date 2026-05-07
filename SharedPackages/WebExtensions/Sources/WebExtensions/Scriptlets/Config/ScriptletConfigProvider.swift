@@ -46,6 +46,12 @@ public final class ScriptletConfigProvider: ScriptletConfigProviding {
                   let signature = scriptletDict["signature"] as? String else {
                 return nil
             }
+            do {
+                try ScriptletPathSafety.validateName(name)
+            } catch {
+                Logger.webExtensions.error("[Scriptlets] Rejecting descriptor with unsafe name '\(name)'")
+                return nil
+            }
             return ScriptletDescriptor(name: name, url: url, signature: signature)
         }
 

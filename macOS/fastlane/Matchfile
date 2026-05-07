@@ -63,6 +63,9 @@ for_lane :sync_signing_dmg_review do
     additional_cert_types []
 end
 
+# sync_signing_sandbox_review is configured in the Fastfile — it needs two match
+# calls (appstore for embedded agents/extensions, developer_id for the main app)
+# which can't be expressed in a single for_lane block.
 
 for_lane :sync_signing_ci do
     type "developer_id"

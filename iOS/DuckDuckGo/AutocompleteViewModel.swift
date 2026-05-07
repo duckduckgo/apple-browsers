@@ -62,13 +62,11 @@ class AutocompleteViewModel: ObservableObject {
 
     let isAddressBarAtBottom: Bool
     let showAskAIChat: Bool
-    let isSwipeToDeleteEnabled: Bool
     var suggestionFilter: AutocompleteSuggestionFilter = .all
 
-    init(isAddressBarAtBottom: Bool, showAskAIChat: Bool, isSwipeToDeleteEnabled: Bool) {
+    init(isAddressBarAtBottom: Bool, showAskAIChat: Bool) {
         self.isAddressBarAtBottom = isAddressBarAtBottom
         self.showAskAIChat = showAskAIChat
-        self.isSwipeToDeleteEnabled = isSwipeToDeleteEnabled
     }
 
     func updateSuggestions(_ suggestions: SuggestionResult) {

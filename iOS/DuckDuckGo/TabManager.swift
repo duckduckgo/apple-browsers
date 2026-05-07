@@ -58,6 +58,8 @@ enum FireModeSwitchSource: String {
     case menuPromotion = "menu_promotion"
     case ntpPromotion = "ntp_promotion"
     case longPressLink = "long_press_link"
+    case tabSwitcherLongPress = "tab_switcher_long_press"
+    case keyCommand = "key_command"
 }
 
 /// Receives lifecycle events for TabViewController instances managed by TabManager.
@@ -109,6 +111,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     var normalTabsModel: TabsModelManaging {
         tabsModelProvider.normalTabsModel
     }
+
+    var fireModeTabsModel: TabsModelManaging {
+        tabsModelProvider.fireModeTabsModel
+    }
     
     var allTabsModel: TabsModelReading {
         tabsModelProvider.aggregateTabsModel
@@ -155,6 +161,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let toggleModeStorage: ToggleModeStoring
     private let fireModePromotionEligibility: FireModePromotionCoordinating?
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -199,10 +206,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          launchSourceManager: LaunchSourceManaging,
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
          fireModePromotionEligibility: FireModePromotionCoordinating? = nil
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.tabsModelProvider = tabsModelProvider
         self.previewsSource = previewsSource
         self.interactionStateSource = interactionStateSource
@@ -242,11 +251,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         registerForNotifications()
     }
 
-    /// Resolves the preferred text entry mode for a newly created tab based on the user's default omnibar mode setting.
     private func resolvedTextEntryMode() -> TextEntryMode {
-        aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode {
-            toggleModeStorage.restore()
-        }
+        aiChatSettings.defaultOmnibarMode
+            .resolvedTextEntryMode { toggleModeStorage.restore() }
+            .displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
     }
 
     func setWebExtensionManager(_ manager: WebExtensionManaging?) {
@@ -334,7 +342,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               darkReaderFeatureSettings: darkReaderFeatureSettings,
                                                               autoplaySettings: autoplaySettings,
-                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -402,9 +411,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let preferredMode = resolvedTextEntryMode()
         let tab: Tab
         if let request {
-            tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!), fireTab: shouldCreateFireTab, preferredTextEntryMode: preferredMode)
+            tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!), fireTab: shouldCreateFireTab, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: preferredMode))
         } else {
-            tab = Tab(fireTab: shouldCreateFireTab, preferredTextEntryMode: preferredMode)
+            tab = Tab(fireTab: shouldCreateFireTab, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: preferredMode))
         }
         model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: true)
 
@@ -446,7 +455,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               darkReaderFeatureSettings: darkReaderFeatureSettings,
                                                               autoplaySettings: autoplaySettings,
-                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,
@@ -463,7 +473,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     func addHomeTab(in tabsModel: TabsModelManaging? = nil) {
         let model = tabsModel ?? currentTabsModel
-        let tab = Tab(fireTab: model.shouldCreateFireTabs, preferredTextEntryMode: resolvedTextEntryMode())
+        let tab = Tab(fireTab: model.shouldCreateFireTabs, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: resolvedTextEntryMode()))
         model.insert(tab: tab, placement: .atEnd, selectNewTab: true)
         _ = save()
     }
@@ -522,7 +532,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
 
         let link = url == nil ? nil : Link(title: nil, url: url!)
-        let tab = Tab(link: link, fireTab: model.shouldCreateFireTabs, preferredTextEntryMode: resolvedTextEntryMode())
+        let tab = Tab(link: link, fireTab: model.shouldCreateFireTabs, unifiedInputState: UnifiedInputTabState(preferredTextEntryMode: resolvedTextEntryMode()))
         let controller = buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: nil)
         tabControllerCache.append(controller)
 

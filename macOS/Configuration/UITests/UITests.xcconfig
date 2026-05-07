@@ -14,6 +14,7 @@
 //
 
 #include "../Common.xcconfig"
+#include "../UITestsTargetBinary.xcconfig"
 
 CODE_SIGN_IDENTITY[config=Review][sdk=macosx*] =
 CODE_SIGN_STYLE[config=Review][sdk=macosx*] = Manual
@@ -37,4 +38,8 @@ PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.UI-Tests
 PRODUCT_NAME = $(TARGET_NAME)
 PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] =
 SWIFT_EMIT_LOC_STRINGS = NO
-TEST_TARGET_NAME = DuckDuckGo Privacy Browser
+
+// UI_TESTS_TARGET_APP is defined in UITestsTargetBinary.xcconfig
+TEST_TARGET_NAME_non_sandbox = DuckDuckGo Privacy Browser
+TEST_TARGET_NAME_sandbox = DuckDuckGo Privacy Browser App Store
+TEST_TARGET_NAME = $(TEST_TARGET_NAME_$(UI_TESTS_TARGET_APP))

@@ -32,6 +32,18 @@
 		<string>match Direct com.duckduckgo.macos.vpn.network-extension.review macos</string>
 		<key>com.duckduckgo.macos.vpn.review</key>
 		<string>match Direct com.duckduckgo.macos.vpn.review macos</string>
+        <key>com.duckduckgo.mobile.ios.review</key>
+        <string>match Direct com.duckduckgo.mobile.ios.review macos</string>
+        <key>com.duckduckgo.mobile.ios.vpn.agent.review</key>
+        <string>match Direct com.duckduckgo.mobile.ios.vpn.agent.review macos</string>
+        <key>com.duckduckgo.mobile.ios.vpn.agent.review.network-protection-extension</key>
+        <string>match Direct com.duckduckgo.mobile.ios.vpn.agent.review.network-protection-extension macos</string>
+        <key>com.duckduckgo.mobile.ios.vpn.agent.network-extension.review</key>
+        <string>match Direct com.duckduckgo.mobile.ios.vpn.agent.network-extension.review macos</string>
+        <key>com.duckduckgo.mobile.ios.vpn.agent.review.proxy</key>
+        <string>match Direct com.duckduckgo.mobile.ios.vpn.agent.review.proxy macos</string>
+        <key>com.duckduckgo.mobile.ios.DBP.backgroundAgent.review</key>
+        <string>match Direct com.duckduckgo.mobile.ios.DBP.backgroundAgent.review macos</string>
 	</dict>
 	<key>signingCertificate</key>
 	<string></string>

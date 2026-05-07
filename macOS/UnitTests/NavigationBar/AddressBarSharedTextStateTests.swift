@@ -528,6 +528,97 @@ final class AddressBarSharedTextStateTests: XCTestCase {
         XCTAssertEqual(received.first?.count, 2)
     }
 
+    // MARK: - AI Chat File Attachments Tests
+
+    func testWhenInitialized_ThenAIChatFileAttachmentsIsEmpty() {
+        XCTAssertTrue(sut.aiChatFileAttachments.isEmpty)
+    }
+
+    func testWhenSetAIChatFileAttachments_ThenStored() {
+        let attachment = makeFileAttachment()
+        sut.setAIChatFileAttachments([attachment])
+
+        XCTAssertEqual(sut.aiChatFileAttachments.count, 1)
+        XCTAssertEqual(sut.aiChatFileAttachments.first?.id, attachment.id)
+    }
+
+    func testWhenSetAIChatFileAttachmentsWithSameIds_ThenPublisherDoesNotReemit() {
+        let attachment = makeFileAttachment()
+        sut.setAIChatFileAttachments([attachment])
+
+        let expectation = expectation(description: "Publisher does not emit when file attachment ids are unchanged")
+        expectation.isInverted = true
+
+        sut.$aiChatFileAttachments
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        sut.setAIChatFileAttachments([attachment])
+
+        wait(for: [expectation], timeout: 0.2)
+    }
+
+    // MARK: - Panel Attachments Cross-Kind Insertion Order
+
+    func testWhenAttachmentsAddedInMixedOrder_ThenPanelListPreservesIt() {
+        // Insertion sequence: tab, image, tab, file → panel list mirrors it exactly.
+        let tab1 = makeTabAttachment(id: "tab-1")
+        let image1 = makeAttachment()
+        let tab2 = makeTabAttachment(id: "tab-2")
+        let file1 = makeFileAttachment()
+
+        sut.setAIChatTabAttachments([tab1])
+        sut.setAIChatAttachments([image1])
+        sut.setAIChatTabAttachments([tab1, tab2])
+        sut.setAIChatFileAttachments([file1])
+
+        let panelIds = sut.aiChatPanelAttachments.map { entry -> String in
+            switch entry {
+            case .image(let a): return "image:\(a.id.uuidString)"
+            case .tab(let a): return "tab:\(a.id)"
+            case .file(let a): return "file:\(a.id.uuidString)"
+            }
+        }
+        XCTAssertEqual(panelIds, [
+            "tab:tab-1",
+            "image:\(image1.id.uuidString)",
+            "tab:tab-2",
+            "file:\(file1.id.uuidString)"
+        ], "Panel list interleaves the three kinds in insertion order")
+    }
+
+    func testWhenOneKindRemoved_ThenOtherKindsKeepTheirSlots() {
+        // Build [tab1, image1, tab2, file1], then remove tab2 — image1 and file1 must stay put.
+        let tab1 = makeTabAttachment(id: "t1")
+        let image1 = makeAttachment()
+        let tab2 = makeTabAttachment(id: "t2")
+        let file1 = makeFileAttachment()
+        sut.setAIChatTabAttachments([tab1])
+        sut.setAIChatAttachments([image1])
+        sut.setAIChatTabAttachments([tab1, tab2])
+        sut.setAIChatFileAttachments([file1])
+
+        sut.setAIChatTabAttachments([tab1])
+
+        XCTAssertEqual(sut.aiChatPanelAttachments.count, 3)
+        if case .tab(let t) = sut.aiChatPanelAttachments[0] {
+            XCTAssertEqual(t.id, "t1")
+        } else {
+            XCTFail("Expected first entry to be tab t1")
+        }
+        if case .image(let i) = sut.aiChatPanelAttachments[1] {
+            XCTAssertEqual(i.id, image1.id)
+        } else {
+            XCTFail("Expected second entry to remain image1")
+        }
+        if case .file(let f) = sut.aiChatPanelAttachments[2] {
+            XCTAssertEqual(f.id, file1.id)
+        } else {
+            XCTFail("Expected third entry to remain file1")
+        }
+    }
+
     // MARK: - Selection Range Tests
 
     func testWhenInitialized_ThenSelectionRangeIsZero() {
@@ -564,6 +655,7 @@ final class AddressBarSharedTextStateTests: XCTestCase {
         sut.setAIChatToolMode(.imageGeneration)
         sut.setAIChatAttachments([makeAttachment()])
         sut.setAIChatTabAttachments([makeTabAttachment()])
+        sut.setAIChatFileAttachments([makeFileAttachment()])
 
         sut.reset(clearingDuckAIState: true)
 
@@ -574,6 +666,8 @@ final class AddressBarSharedTextStateTests: XCTestCase {
         XCTAssertNil(sut.aiChatToolMode)
         XCTAssertTrue(sut.aiChatAttachments.isEmpty)
         XCTAssertTrue(sut.aiChatTabAttachments.isEmpty)
+        XCTAssertTrue(sut.aiChatFileAttachments.isEmpty)
+        XCTAssertTrue(sut.aiChatPanelAttachments.isEmpty)
     }
 
     func testWhenResetWithClearingDuckAIStateFalse_ThenAllDuckAIStatePreserved() {
@@ -627,6 +721,14 @@ final class AddressBarSharedTextStateTests: XCTestCase {
             title: "Example",
             url: URL(string: "https://example.com")!,
             favicon: nil
+        )
+    }
+
+    private func makeFileAttachment() -> AIChatFileAttachment {
+        AIChatFileAttachment(
+            data: Data("%PDF-1.4 mock".utf8),
+            fileName: "spec.pdf",
+            mimeType: "application/pdf"
         )
     }
 

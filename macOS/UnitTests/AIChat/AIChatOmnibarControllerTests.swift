@@ -39,6 +39,11 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        // `AIChatPromptHandler.shared` is a singleton — drain anything a previous test (or a
+        // suite that ran first) might have left in it, so submit-tests that read back the
+        // posted prompt see only what the test under inspection wrote.
+        _ = AIChatPromptHandler.shared.consumeData()
+
         mockDelegate = MockAIChatOmnibarControllerDelegate()
         mockTabOpener = MockAIChatTabOpener()
         featureFlagger = MockFeatureFlagger()
@@ -506,28 +511,33 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(sharedState?.aiChatAttachments.first?.id, attachment.id)
     }
 
-    func testWhenTabSwitchesToTabWithSavedAttachments_ThenOnActiveTabAttachmentsRestoreRequestedFires() {
-        // Given — tab 1 has a saved attachment, tab 2 is fresh. Register the restore callback.
+    func testWhenTabSwitchesToTabWithSavedAttachments_ThenOnActiveTabPanelAttachmentsChangedFires() {
+        // Given — tab 1 has a saved image attachment, tab 2 is fresh. Register the panel-attachments
+        // callback (the unified channel that drives the carousel for image / tab / file kinds).
         let attachment = makeAttachment()
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setAIChatAttachments([attachment])
 
-        var receivedAttachmentLists: [[AIChatImageAttachment]] = []
-        controller.onActiveTabAttachmentsRestoreRequested = { attachments in
-            receivedAttachmentLists.append(attachments)
+        var receivedPanelLists: [[AIChatPanelAttachment]] = []
+        controller.onActiveTabPanelAttachmentsChanged = { panelAttachments in
+            receivedPanelLists.append(panelAttachments)
         }
 
         // When — switch to a fresh tab; callback should fire with empty list
         tabCollectionViewModel.appendNewTab()
 
-        // And switch back to tab 1; callback should fire with [attachment]
+        // And switch back to tab 1; callback should fire with the saved image attachment
         tabCollectionViewModel.select(at: .unpinned(0))
 
         // Then
-        XCTAssertEqual(receivedAttachmentLists.count, 2,
-                       "Callback fires once per tab switch to inform the container VC which attachments to reinstall")
-        XCTAssertEqual(receivedAttachmentLists.first?.count, 0, "Switch to tab 2 — no attachments")
-        XCTAssertEqual(receivedAttachmentLists.last?.first?.id, attachment.id,
-                       "Switch back to tab 1 — its saved attachment is handed back")
+        XCTAssertEqual(receivedPanelLists.count, 2,
+                       "Callback fires once per tab switch (the publisher emits the new tab's current value on subscription)")
+        XCTAssertEqual(receivedPanelLists.first?.count, 0, "Switch to tab 2 — no attachments")
+        XCTAssertEqual(receivedPanelLists.last?.count, 1, "Switch back to tab 1 — one attachment")
+        if case .image(let restored) = receivedPanelLists.last?.first {
+            XCTAssertEqual(restored.id, attachment.id, "The restored panel entry is the saved image")
+        } else {
+            XCTFail("Expected the restored panel entry to be an image attachment")
+        }
     }
 
     // MARK: - Tab Attachments (Attach Page Content)
@@ -608,9 +618,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         controller.toggleTabAttachment(makeTabAttachment(id: "tab-B"))
         controller.updateText("summarize these")
 
-        // Drain anything a previous test might have left in the shared prompt handler.
-        _ = AIChatPromptHandler.shared.consumeData()
-
         // When
         controller.submit()
         await Task.yield()
@@ -665,8 +672,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         controller.addFileAttachmentToActiveTab(attachment)
         controller.updateText("summarise this PDF")
 
-        _ = AIChatPromptHandler.shared.consumeData()
-
         // When
         controller.submit()
         await Task.yield()
@@ -706,7 +711,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     func testWhenSubmitWithoutTabAttachments_ThenPromptOmitsAttachedTabIds() async {
         // Given — only text, no attachments
         controller.updateText("just text")
-        _ = AIChatPromptHandler.shared.consumeData()
 
         // When
         controller.submit()
@@ -772,30 +776,29 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(controller.currentSelectionRange, NSRange(location: 3, length: 2))
     }
 
-    func testWhenOnOmnibarActivatedAfterCleanup_ThenRestoresTextToolModeAndAttachmentsFromSharedState() {
-        // Given — simulate a draft: user typed, selected a tool, attached a file on this tab.
+    func testWhenOnOmnibarActivatedAfterCleanup_ThenRestoresTextAndToolModeFromSharedState() {
+        // Given — simulate a draft: user typed, selected a tool, attached an image on this tab.
         let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
         sharedState?.updateText("my prompt")
         sharedState?.setAIChatToolMode(.webSearch)
         let attachment = makeAttachment()
         sharedState?.setAIChatAttachments([attachment])
 
-        // Cleanup wipes the controller's local state (e.g. user toggled Duck.ai off).
+        // Cleanup wipes the controller's local state (e.g. user toggled Duck.ai off). It does NOT
+        // clear shared state — the carousel re-syncs via the always-on `$aiChatPanelAttachments`
+        // subscription, so no separate "restore on activate" callback is needed any more.
         controller.cleanup()
         XCTAssertEqual(controller.currentText, "")
         XCTAssertNil(controller.activeToolMode)
 
-        var restoredAttachmentLists: [[AIChatImageAttachment]] = []
-        controller.onActiveTabAttachmentsRestoreRequested = { restoredAttachmentLists.append($0) }
-
         // When — user toggles Duck.ai back on; the panel calls onOmnibarActivated.
         controller.onOmnibarActivated(shouldFetchSuggestions: false)
 
-        // Then — the controller pulls text / tool mode / attachments from the tab's shared state so the
-        // user sees their draft again instead of an empty panel.
+        // Then — the controller pulls text / tool mode from shared state so the user sees their draft.
         XCTAssertEqual(controller.currentText, "my prompt")
         XCTAssertEqual(controller.activeToolMode, .webSearch)
-        XCTAssertEqual(restoredAttachmentLists.last?.first?.id, attachment.id)
+        // Attachments are preserved on shared state across the cleanup → activate cycle.
+        XCTAssertEqual(sharedState?.aiChatAttachments.first?.id, attachment.id)
     }
 
     // MARK: - URL Classification with Multi-Word Input

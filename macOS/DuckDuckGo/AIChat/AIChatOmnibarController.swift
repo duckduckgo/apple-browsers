@@ -83,22 +83,12 @@ final class AIChatOmnibarController {
     /// Whether the user has an active paid subscription (plus or pro).
     private(set) var hasActiveSubscription = false
 
-    /// Provides the current image attachments from the container VC.
-    var attachmentsProvider: (() -> [AIChatImageAttachment])?
-
-    /// Called after a successful submit so the container VC can clear its attachment UI.
+    /// Called after a successful submit so the container VC can cancel any in-flight image
+    /// resize tasks (data is cleared via `persistAttachmentsToActiveTab([])`).
     var onAttachmentsClearRequested: (() -> Void)?
-
-    /// Called on tab switch so the container VC can reinstall the attachments persisted for the incoming tab.
-    /// Owned by the container VC (where the attachments view and its resize tasks live); the controller just
-    /// delivers the list pulled from the incoming tab's `AddressBarSharedTextState`.
-    var onActiveTabAttachmentsRestoreRequested: (([AIChatImageAttachment]) -> Void)?
 
     /// Waits for all attachment resizing to complete before proceeding.
     var waitForAttachmentsReady: (() async -> Void)?
-
-    /// Provides the current tab attachments (Attach Page Content) from the container VC.
-    var tabAttachmentsProvider: (() -> [AIChatTabAttachment])?
 
     /// Fires whenever the active tab's unified panel attachment list changes — either because
     /// the user switched tabs (new shared state with its own list) or because they added /
@@ -272,7 +262,9 @@ final class AIChatOmnibarController {
                 activeToolMode = sharedTextState.aiChatToolMode
                 isUpdatingFromSharedState = false
             }
-            onActiveTabAttachmentsRestoreRequested?(sharedTextState.aiChatAttachments)
+            // Image, file, and tab restoration on activation now flows through the
+            // `$aiChatPanelAttachments` publisher subscription set up in
+            // `subscribeToSelectedTabViewModel()` — no separate restore callback needed.
         }
 
         fetchModels()
@@ -423,6 +415,19 @@ final class AIChatOmnibarController {
         guard !models.isEmpty else { return ["png", "jpeg", "webp"] }
         return models.first(where: { $0.id == persistedModelId })?.supportedImageFormats ?? ["png", "jpeg", "webp"]
     }
+
+    /// Maximum image attachments the duck.ai backend accepts per conversation.
+    static let maxImageAttachments: Int = 3
+    /// One above the cap — the picker / `addImageAttachmentToActiveTab` allow exactly one over
+    /// so the user gets a visible "you've gone over" cue and the error label has something to
+    /// anchor against. Submit blocks while in that state.
+    static let imageAttachmentsDisplayCap: Int = maxImageAttachments + 1
+
+    /// Maximum file (PDF etc.) attachments the duck.ai backend accepts per conversation. Same
+    /// cap as images; the carousel and submit path both gate on this so the user can't
+    /// overshoot the server limit.
+    static let maxFileAttachments: Int = 3
+    static let fileAttachmentsDisplayCap: Int = maxFileAttachments + 1
 
     /// Whether the currently selected model supports file (PDF etc.) upload.
     /// Returns `false` conservatively when models are unavailable — file upload is opt-in per model
@@ -600,6 +605,31 @@ final class AIChatOmnibarController {
         persistTabAttachmentsToActiveTab(current)
     }
 
+    /// Image attachments persisted on the current tab. Empty when no tab is active.
+    var activeImageAttachments: [AIChatImageAttachment] {
+        sharedTextState?.aiChatAttachments ?? []
+    }
+
+    /// At or above the per-conversation image cap.
+    var isActiveTabImageAttachmentsFull: Bool {
+        activeImageAttachments.count >= Self.maxImageAttachments
+    }
+
+    /// Strictly over the per-conversation image cap (one over, by `imageAttachmentsDisplayCap` design).
+    var hasExcessActiveTabImageAttachments: Bool {
+        activeImageAttachments.count > Self.maxImageAttachments
+    }
+
+    /// Adds an image attachment to the active tab. No-op if at displayCap or if an attachment
+    /// with the same id is already present.
+    func addImageAttachmentToActiveTab(_ attachment: AIChatImageAttachment) {
+        var current = activeImageAttachments
+        guard current.count < Self.imageAttachmentsDisplayCap else { return }
+        guard !current.contains(where: { $0.id == attachment.id }) else { return }
+        current.append(attachment)
+        sharedTextState?.setAIChatAttachments(current)
+    }
+
     /// Removes an image attachment from the active tab, identified by `id`. No-op if not
     /// currently attached.
     func removeImageAttachmentFromActiveTab(id: UUID) {
@@ -607,6 +637,17 @@ final class AIChatOmnibarController {
         var current = sharedTextState.aiChatAttachments
         guard current.contains(where: { $0.id == id }) else { return }
         current.removeAll { $0.id == id }
+        sharedTextState.setAIChatAttachments(current)
+    }
+
+    /// Replaces an image attachment in place — used when the resize task completes and swaps
+    /// the placeholder for the resized `NSImage`. Just updates the data list; the carousel's
+    /// `setAttachments` does the in-place thumbnail update by id.
+    func replaceImageAttachmentInActiveTab(id: UUID, with newAttachment: AIChatImageAttachment) {
+        guard let sharedTextState else { return }
+        var current = sharedTextState.aiChatAttachments
+        guard let index = current.firstIndex(where: { $0.id == id }) else { return }
+        current[index] = newAttachment
         sharedTextState.setAIChatAttachments(current)
     }
 
@@ -737,11 +778,6 @@ final class AIChatOmnibarController {
                 self.activeToolMode = sharedState?.aiChatToolMode
                 self.isUpdatingFromSharedState = false
 
-                /// Tell the container VC to reinstall this tab's image attachments — the resize-task
-                /// state lives in the container VC and has to be re-seeded on tab switch. (The
-                /// carousel itself re-renders via the unified panel-attachments publisher below.)
-                self.onActiveTabAttachmentsRestoreRequested?(sharedState?.aiChatAttachments ?? [])
-
                 // Re-subscribe to the new tab's unified attachments publisher. `@Published`
                 // emits the current value on subscription, so this also fires the initial
                 // "restore" with the incoming tab's saved list — no separate restore call needed.
@@ -787,7 +823,14 @@ final class AIChatOmnibarController {
 
         // Block submission if too many images are attached and would be sent
         let canSendImages = isImageGenerationMode || selectedModelSupportsImageUpload
-        if canSendImages, let attachments = attachmentsProvider?(), attachments.count > AIChatImageAttachmentsContainerView.maxAttachments {
+        if canSendImages && activeImageAttachments.count > Self.maxImageAttachments {
+            return
+        }
+
+        // Block submission if too many files are attached. The picker caps picks at one over the
+        // limit (`+1`) so the user gets a visible "you've gone over" cue; if they actually try to
+        // submit while in that state, hold the submit until they remove the excess.
+        if selectedModelSupportsFileUpload && activeFileAttachments.count > Self.maxFileAttachments {
             return
         }
 
@@ -819,7 +862,7 @@ final class AIChatOmnibarController {
             await waitForAttachmentsReady?()
 
             // Get attachments after resizes are complete — only include if model supports images or in image gen mode
-            let attachments = canSendImages ? (attachmentsProvider?() ?? []) : []
+            let attachments = canSendImages ? self.activeImageAttachments : []
             let images = Self.nativePromptImages(from: attachments, supportedFormats: self.selectedModelImageFormats)
 
             if !attachments.isEmpty {
@@ -850,6 +893,13 @@ final class AIChatOmnibarController {
                     mimeType: attachment.mimeType
                 )
             }
+            if !fileAttachments.isEmpty {
+                PixelKit.fire(
+                    AIChatPixel.aiChatAddressBarSubmitWithFiles(fileCount: fileAttachments.count),
+                    frequency: .dailyAndCount,
+                    includeAppVersionParameter: true
+                )
+            }
 
             aiChatTabOpener.openAIChatTab(
                 with: .query(trimmedText, shouldAutoSubmit: true),
@@ -871,10 +921,11 @@ final class AIChatOmnibarController {
             promptHandler.setData(prompt)
 
             self.activeToolMode = nil
+            // Cancel any in-flight image-resize tasks; the container VC owns those.
             onAttachmentsClearRequested?()
-            // Image attachments clear via the container VC's `clearAttachments()` chain (which
-            // persists `[]` to shared state). Tabs and files are owned directly by shared state,
-            // so clear them here — the publisher fires, the carousel re-renders empty.
+            // All three attachment kinds live on shared state — clear each so the
+            // `$aiChatPanelAttachments` publisher drives the carousel back to empty.
+            self.persistAttachmentsToActiveTab([])
             self.persistTabAttachmentsToActiveTab([])
             self.persistFileAttachmentsToActiveTab([])
             delegate?.aiChatOmnibarControllerDidSubmit(self)

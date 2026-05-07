@@ -2362,19 +2362,19 @@
       }
     },
     "aichat.attach-menu.image-or-file" : {
-      "comment" : "Top-level item in the AI chat omnibar attach menu that opens the image and file picker",
+      "comment" : "Top-level item in the AI chat omnibar add-attachment menu that opens the image and file picker",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Attach Image or File"
+            "value" : "Add Image or File"
           }
         }
       }
     },
     "aichat.attach-menu.no-open-tabs" : {
-      "comment" : "Placeholder shown inside the AI chat omnibar attach menu when the user has no open browser tabs to choose from",
+      "comment" : "Placeholder shown inside the AI chat omnibar add-attachment menu when the user has no open browser tabs to choose from",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -2386,19 +2386,19 @@
       }
     },
     "aichat.attach-menu.page-content" : {
-      "comment" : "Top-level item in the AI chat omnibar attach menu that opens the open-tabs submenu",
+      "comment" : "Top-level item in the AI chat omnibar add-attachment menu that opens the open-tabs submenu",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Attach Page Content"
+            "value" : "Add Page Content"
           }
         }
       }
     },
     "aichat.attach-menu.recent-tabs-header" : {
-      "comment" : "Section header inside the AI chat omnibar attach menu listing the user's currently open browser tabs",
+      "comment" : "Section header inside the AI chat omnibar add-attachment menu listing the user's currently open browser tabs",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -2410,60 +2410,60 @@
       }
     },
     "aichat.attachments.limit-error" : {
-      "comment" : "Error message shown when the user tries to attach more than 3 images in AI chat",
+      "comment" : "Error message shown when the user tries to add more than 3 images in AI chat",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Du kannst jeweils nur 3 Bilder anhängen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "You can only attach 3 images at a time"
+            "value" : "You can only add 3 images at a time"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Solo puedes adjuntar 3 imágenes a la vez"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Vous ne pouvez joindre que 3 images à la fois"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Puoi allegare solo 3 immagini alla volta"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Je kunt slechts 3 afbeeldingen tegelijk bijvoegen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Jednocześnie możesz załączyć tylko 3 obrazy"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Só podes anexar 3 imagens de cada vez"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Можно прикрепить не более 3 изображений за раз"
           }
         }
@@ -2825,6 +2825,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Настрой ответы"
+          }
+        }
+      }
+    },
+    "aichat.file-attachment.accessibility-format" : {
+      "comment" : "Accessibility label for an attached file in the AI chat omnibar carousel — %@ is replaced with the filename",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "File attachment %@"
+          }
+        }
+      }
+    },
+    "aichat.file-attachments.limit-error" : {
+      "comment" : "Error message shown when the user tries to add more than 3 files (PDFs etc.) in AI chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can only add 3 files per conversation"
           }
         }
       }
@@ -3195,55 +3219,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Bild anhängen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Attach image"
+            "value" : "Add image"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Adjuntar imagen"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Joindre une image"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Allega immagine"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Afbeelding bijvoegen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Załącz obraz"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Anexar imagem"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Прикрепить изображение"
           }
         }

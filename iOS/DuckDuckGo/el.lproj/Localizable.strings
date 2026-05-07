@@ -116,7 +116,8 @@
 "action.title.newFireTabAction" = "Νέα καρτέλα Fire";
 
 /* Open in New Fire Tab action */
-"action.title.newFireTabForUrl" = "Άνοιγμα σε καρτέλα Fire";
+"action.title.newFireTabForUrl" = "Άνοιγμα σε Καρτέλα Fire";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Νέα καρτέλα";
 
@@ -206,11 +207,6 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Λειτουργίες τεχνητής νοημοσύνης";
-
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
-"aichat.attachment.option.take.photo" = "Τραβήξτε μια φωτογραφία";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Για εργασίες ανάλυσης";
@@ -1514,9 +1510,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Επανόρθωση σφαλμάτων";
 
-/* No comment provided by engineer. */
-"Delete" = "Διαγραφή";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "συσκευή";
 
@@ -1628,11 +1621,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Οι λειτουργίες τεχνητής νοημοσύνης του DuckDuckGo είναι ιδιωτικές και προαιρετικές. Τα δεδομένα σας δεν χρησιμοποιούνται για εκπαίδευση της τεχνητής νοημοσύνης.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Επισύναψη περιεχομένου σελίδας";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Ρώτα για τη σελίδα";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Επισύναψη περιεχομένου σελίδας";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Συνοψίστε αυτήν τη σελίδα";
@@ -1984,6 +1977,7 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Τελευταία χρήση καρτέλας Fire";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Επιστροφή σε %@";
 
@@ -2334,6 +2328,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Καρτέλα Fire";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Ρεύμα αέρα";
 
@@ -3013,7 +3008,7 @@
 "onboarding.rebranding.first-search-done.title" = "Αυτό είναι το DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Είστε έτοιμοι για ένα ταχύτερο πρόγραμμα περιήγησης το οποίο σας προστατεύει και σας επιτρέπει να αποφασίζετε πότε και πώς να χρησιμοποιείτε την τεχνητή νοημοσύνη;";
+"onboarding.rebranding.intro.message" = "Είσαι έτοιμος για ένα ταχύτερο πρόγραμμα περιήγησης που σου δίνει τον έλεγχο;\n\nΗ τεχνητή νοημοσύνη είναι πάντα προαιρετική και η προστασία προσωπικών δεδομένων είναι πάντα ενεργοποιημένη.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Γεια σας.";
@@ -3353,6 +3348,7 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Να διαγραφούν οι καρτέλες Fire και τα δεδομένα τους;";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Διαγραφή καρτελών και δεδομένων ιστότοπου;";
 
@@ -4429,6 +4425,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Κλείσιμο καρτέλας";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Κλείσιμο αρχικής καρτέλας";
 
@@ -4440,6 +4437,7 @@
 
 /* New tab title */
 "tab.new.title" = "Νέα καρτέλα";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Άνοιγμα αρχικής καρτέλας";
 
@@ -4448,6 +4446,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Άνοιγμα καρτέλας Fire";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Άνοιγμα \"%1$@\" στο %2$@";
 

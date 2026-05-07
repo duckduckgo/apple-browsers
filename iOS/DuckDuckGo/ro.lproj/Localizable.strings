@@ -116,7 +116,8 @@
 "action.title.newFireTabAction" = "Nouă filă Fire";
 
 /* Open in New Fire Tab action */
-"action.title.newFireTabForUrl" = "Deschide într-o filă Fire";
+"action.title.newFireTabForUrl" = "Deschide în fila Fire";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Filă nouă";
 
@@ -206,11 +207,6 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Caracteristici AI";
-
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
-"aichat.attachment.option.take.photo" = "Fă o fotografie";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Pentru sarcini analitice";
@@ -1514,9 +1510,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Depanează";
 
-/* No comment provided by engineer. */
-"Delete" = "Ștergere";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "dispozitiv";
 
@@ -1628,11 +1621,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funcțiile AI ale DuckDuckGo sunt private și opționale. Datele tale nu sunt folosite pentru a antrena AI.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Atașează conținutul paginii";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Întreabă despre pagină";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Atașează conținutul paginii";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Rezumă această pagină";
@@ -1701,7 +1694,7 @@
 "duckai.welcome.message" = "Toate chaturile sunt %@ private";
 
 /* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "private";
+"duckai.welcome.private.word" = "privată";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo pentru iOS";
@@ -1984,6 +1977,7 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Fila Fire utilizată ultima dată";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Înapoi la %@";
 
@@ -2334,6 +2328,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Filă Fire";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Curent de aer";
 
@@ -3013,7 +3008,7 @@
 "onboarding.rebranding.first-search-done.title" = "Acesta este DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ești gata pentru un browser mai rapid, care te protejează și îți permite să decizi când și cum să folosești inteligența artificială?";
+"onboarding.rebranding.intro.message" = "Ești gata pentru un browser mai rapid, care îți oferă control deplin?\n\nInteligența artificială este întotdeauna opțională, iar protecția confidențialității este întotdeauna activată.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Salut!";
@@ -3353,6 +3348,7 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Ștergi filele Fire și datele aferente?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Dorești să ștergi filele și datele site-ului?";
 
@@ -4429,6 +4425,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Închidere filă";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Închide fila de pornire";
 
@@ -4440,6 +4437,7 @@
 
 /* New tab title */
 "tab.new.title" = "Filă nouă";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Deschide fila de pornire";
 
@@ -4448,6 +4446,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Deschide o filă Fire";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Deschide \"%1$@\" la %2$@";
 

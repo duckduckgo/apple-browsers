@@ -117,6 +117,7 @@
 
 /* Open in New Fire Tab action */
 "action.title.newFireTabForUrl" = "Avaa Fire-välilehdessä";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Uusi välilehti";
 
@@ -206,11 +207,6 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Tekoälyominaisuudet";
-
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
-"aichat.attachment.option.take.photo" = "Ota kuva";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Analyyttisiä tehtäviä varten";
@@ -1514,9 +1510,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Virheenkorjaus";
 
-/* No comment provided by engineer. */
-"Delete" = "Poista";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "laitteelle";
 
@@ -1628,11 +1621,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo-tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Tietojasi ei käytetä tekoälyn kouluttamiseen.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Liitä sivun sisältö";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Kysy sivusta";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Liitä sivun sisältö";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Yhteenveto tästä sivusta";
@@ -1984,6 +1977,7 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Viimeksi käytetty Fire-välilehti";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Palaa välilehdelle %@";
 
@@ -2334,6 +2328,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire-välilehti";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Ilmavirta";
 
@@ -3013,7 +3008,7 @@
 "onboarding.rebranding.first-search-done.title" = "Tämä on DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Oletko valmis nopeampaan selaimeen, joka suojaa sinua ja antaa sinun päättää, milloin ja miten käytät tekoälyä?";
+"onboarding.rebranding.intro.message" = "Oletko valmis nopeampaan selaimeen, joka antaa sinulle hallinnan?\n\nTekoäly on aina valinnainen, ja yksityisyyden suoja on aina päällä.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hei!";
@@ -3353,6 +3348,7 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Poistetaanko Fire-välilehdet ja niiden tiedot?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Poistetaanko välilehdet ja sivuston tiedot?";
 
@@ -4429,6 +4425,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Sulje välilehti";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Sulje koti-välilehti";
 
@@ -4440,6 +4437,7 @@
 
 /* New tab title */
 "tab.new.title" = "Uusi välilehti";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Avaa koti-välilehti";
 
@@ -4448,6 +4446,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Avaa Fire-välilehti";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Avaa \"%1$@\" osoitteessa %2$@";
 

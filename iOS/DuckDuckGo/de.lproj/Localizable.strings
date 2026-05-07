@@ -117,6 +117,7 @@
 
 /* Open in New Fire Tab action */
 "action.title.newFireTabForUrl" = "In einem Fire-Tab öffnen";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Neuer Tab";
 
@@ -206,11 +207,6 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "KI-Funktionen";
-
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
-"aichat.attachment.option.take.photo" = "Foto machen";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Für analytische Aufgaben";
@@ -1514,9 +1510,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Fehlerbehebung";
 
-/* No comment provided by engineer. */
-"Delete" = "Löschen";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "Gerät";
 
@@ -1628,11 +1621,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Die KI-Funktionen von DuckDuckGo sind privat und optional. Ihre Daten werden nicht zum Trainieren von KI verwendet.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Seiteninhalt anhängen";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Frage zur Seite";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Seiteninhalt anhängen";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Diese Seite zusammenfassen";
@@ -1984,6 +1977,7 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Zuletzt verwendeter Fire-Tab";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Zurück zu %@";
 
@@ -2334,6 +2328,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire-Tab";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luftstrom";
 
@@ -3013,7 +3008,7 @@
 "onboarding.rebranding.first-search-done.title" = "Das ist die DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Bereit für einen schnelleren Browser, der dich schützt und dir die Entscheidung überlässt, wann und wie du KI einsetzt?";
+"onboarding.rebranding.intro.message" = "Bereit für einen schnelleren Browser, der dir die Kontrolle gibt?\n\nKI ist immer optional, und der Datenschutz ist immer aktiviert.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hallo.";
@@ -3353,6 +3348,7 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Fire-Tabs und deren Daten löschen?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Tabs und Seitendaten löschen?";
 
@@ -4429,6 +4425,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Tab schließen";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Startseiten-Tab schließen";
 
@@ -4440,6 +4437,7 @@
 
 /* New tab title */
 "tab.new.title" = "Neuer Tab";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Startseiten-Tab öffnen";
 
@@ -4448,6 +4446,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Fire-Tab öffnen";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "„%1$@“ auf %2$@ öffnen";
 

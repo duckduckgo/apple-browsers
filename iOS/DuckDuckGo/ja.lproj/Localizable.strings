@@ -117,6 +117,7 @@
 
 /* Open in New Fire Tab action */
 "action.title.newFireTabForUrl" = "Fireタブで開く";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "新しいタブ";
 
@@ -206,11 +207,6 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI機能";
-
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
-"aichat.attachment.option.take.photo" = "写真を撮影";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "分析タスク用";
@@ -1514,9 +1510,6 @@
 /* No comment provided by engineer. */
 "Debug" = "デバッグ";
 
-/* No comment provided by engineer. */
-"Delete" = "削除";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "デバイス";
 
@@ -1628,11 +1621,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGoのAI機能はプライベートでオプションです。データはAIのトレーニングに使用されません。";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "ページの内容を添付";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "ページについてお尋ねください";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "ページの内容を添付";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "このページを要約";
@@ -1984,6 +1977,7 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "最後に使ったFireタブ";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "%@に戻る";
 
@@ -2334,6 +2328,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fireタブ";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "エアストリーム";
 
@@ -3013,7 +3008,7 @@
 "onboarding.rebranding.first-search-done.title" = "それがDuckDuckGo Searchです！";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "より高速で、ユーザーを保護し、AIの使用タイミングと方法を自分で決定できるブラウザをお探しですか？";
+"onboarding.rebranding.intro.message" = "より速いブラウザでコントロールを掌握する準備はできていますか？\n\nAIは常に任意であり、プライバシー保護は常に有効です。";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "こんにちは。";
@@ -3353,6 +3348,7 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Fireタブとそのデータを削除する？";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "タブとサイトデータを削除しますか？";
 
@@ -4429,6 +4425,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "タブを閉じる";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "ホームタブを閉じる";
 
@@ -4440,6 +4437,7 @@
 
 /* New tab title */
 "tab.new.title" = "新しいタブ";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "ホームタブを開く";
 
@@ -4448,6 +4446,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Fireタブを開く";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "%2$@で「%1$@」を開く";
 

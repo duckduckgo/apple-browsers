@@ -116,7 +116,8 @@
 "action.title.newFireTabAction" = "Новая Fire-вкладка";
 
 /* Open in New Fire Tab action */
-"action.title.newFireTabForUrl" = "Открыть в Fire-вкладке";
+"action.title.newFireTabForUrl" = "Открыть во вкладке Fire Tab";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Новая вкладка";
 
@@ -206,11 +207,6 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Функции ИИ";
-
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
-"aichat.attachment.option.take.photo" = "Сделать фото";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Для аналитических задач";
@@ -1514,9 +1510,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Отладка";
 
-/* No comment provided by engineer. */
-"Delete" = "Удалить";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "устройстве";
 
@@ -1628,11 +1621,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI — дополнительный конфиденциальный сервис. Ваши данные не применяются для обучения ИИ.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Добавить содержимое страницы";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Задайте вопрос о странице";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Добавить содержимое страницы";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Кратко изложи содержимое страницы";
@@ -1984,6 +1977,7 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Последняя использованная Fire-вкладка";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Вернуться к %@";
 
@@ -2334,6 +2328,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire-вкладка";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Воздушный поток";
 
@@ -3013,7 +3008,7 @@
 "onboarding.rebranding.first-search-done.title" = "Это — DuckDuckGo Search.";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Как насчет быстрого браузера, который защищает ваши данные и дает вам право решать, когда использовать ИИ?";
+"onboarding.rebranding.intro.message" = "Нужен быстрый браузер, где все контролируете вы?\n\nЗдесь ИИ — всегда лишь дополнительная опция, а защита конфиденциальности всегда включена.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Привет!";
@@ -3353,6 +3348,7 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Удалить Fire-вкладки и их данные?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Удалить вкладки и данные сайтов?";
 
@@ -4429,6 +4425,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Закрыть вкладку";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Закрыть домашнюю вкладку";
 
@@ -4440,6 +4437,7 @@
 
 /* New tab title */
 "tab.new.title" = "Новая вкладка";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Открыть домашнюю вкладку";
 
@@ -4448,6 +4446,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Открыть Fire-вкладку";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Открыть сайт «%1$@» по адресу %2$@";
 

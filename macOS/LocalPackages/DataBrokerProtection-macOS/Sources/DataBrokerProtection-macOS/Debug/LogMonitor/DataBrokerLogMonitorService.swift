@@ -56,7 +56,7 @@ public class DataBrokerLogMonitorService {
             position = store.position(date: startDate)
         }
 
-        let predicate = NSPredicate(format: "subsystem CONTAINS[cd] %@", currentSubsystem)
+        let predicate = NSPredicate(format: "subsystem == %@", currentSubsystem)
         let entries = try store.getEntries(at: position, matching: predicate)
         let logEntries = entries.compactMap { entry in
             LogEntry(from: entry)

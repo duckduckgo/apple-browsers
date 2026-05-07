@@ -70,7 +70,7 @@ Optional (defaults shown):
                            conflicts)
     CW_ALWAYS_IGNORE=…    (comma-separated globs applied to BOTH hard and
                            soft buckets; see DEFAULT_ALWAYS_IGNORE)
-    CW_MIN_CONFLICT_LINES=10
+    CW_MIN_CONFLICT_LINES=20
                           (skip pairs whose hard-conflict regions sum to
                            fewer lines after the always-ignore filter)
     CW_BOT_AUTHORS=…      (comma-separated GitHub logins to skip)
@@ -134,15 +134,27 @@ CONFIG_ENV = ROOT / "config.env"
 USER_MAP_PATH = os.environ.get("CW_USER_MAP_PATH", "").strip()
 
 DEFAULT_ALWAYS_IGNORE = (
+    # Xcode and SwiftPM bookkeeping
     "*.pbxproj,"
     "*.xcworkspace/**,"
     "*.xcodeproj/project.xcworkspace/**,"
     "Package.resolved,"
     "**/Package.resolved,"
+    "**/Package.swift,"
     "*.lock,"
     "*.lockfile,"
+    # Generated sources
     "**/Generated/**,"
-    "**/*.generated.swift"
+    "**/*.generated.swift,"
+    # Append-only registries that everyone touches
+    "**/PixelDefinitions/**,"
+    "iOS/Core/PixelEvent.swift,"
+    "iOS/Core/FeatureFlag.swift,"
+    # Localized strings and localization bundles
+    "iOS/DuckDuckGo/UserText.swift,"
+    "iOS/DuckDuckGo/en.lproj/Localizable.strings,"
+    # Design system asset catalog
+    "SharedPackages/Infrastructure/DesignResourcesKitIcons/**"
 )
 # Patterns that suppress a path from BOTH the hard and soft buckets.
 # Originally named CW_SOFT_IGNORE because pbxproj-style files showed up
@@ -154,7 +166,7 @@ ALWAYS_IGNORE_PATTERNS = [
     for p in os.environ.get("CW_ALWAYS_IGNORE", DEFAULT_ALWAYS_IGNORE).split(",")
     if p.strip()
 ]
-MIN_CONFLICT_LINES = int(os.environ.get("CW_MIN_CONFLICT_LINES", "10"))
+MIN_CONFLICT_LINES = int(os.environ.get("CW_MIN_CONFLICT_LINES", "20"))
 
 DEFAULT_BOT_AUTHORS = (
     "dependabot[bot],"

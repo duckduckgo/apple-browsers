@@ -23,23 +23,8 @@ import DataBrokerProtectionCore
 
 public class DataBrokerLogMonitorService {
     private var lastLogPosition: OSLogPosition?
-    private var currentSubsystem: String
 
-    public init(subsystem: String = Logger.dbpSubsystem) {
-        self.currentSubsystem = subsystem
-    }
-
-    /// Updates the subsystem to monitor and resets log position
-    public func updateSubsystem(_ newSubsystem: String) {
-        guard newSubsystem != currentSubsystem else { return }
-        currentSubsystem = newSubsystem
-        resetPosition() // Reset position when changing subsystems
-    }
-
-    /// Returns the currently monitored subsystem
-    public var monitoredSubsystem: String {
-        return currentSubsystem
-    }
+    public init() {}
 
     var currentPosition: OSLogPosition? {
         return lastLogPosition
@@ -56,7 +41,7 @@ public class DataBrokerLogMonitorService {
             position = store.position(date: startDate)
         }
 
-        let predicate = NSPredicate(format: "subsystem == %@", currentSubsystem)
+        let predicate = NSPredicate(format: "process CONTAINS[c] %@", "duckduckgo")
         let entries = try store.getEntries(at: position, matching: predicate)
         let logEntries = entries.compactMap { entry in
             LogEntry(from: entry)

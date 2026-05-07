@@ -804,7 +804,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         _ = testProvider.cards
 
-        let expectedCards: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription, .personalizeBrowser, .sync, .emailProtection]
+        let expectedCards: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac, .duckplayer, .youtubeAdBlocking, .bringStuff, .subscription, .personalizeBrowser, .sync, .emailProtection]
 
         XCTAssertEqual(testPersistor.orderedCardIDs, expectedCards, "Order should be persisted after swap")
     }
@@ -999,34 +999,6 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertTrue(testProvider.cards.contains(.duckplayer))
     }
 
-    func testWhenYTAdBlockingPermanentlyDismissedViaLegacySettingThenDuckPlayerCardIsVisible() {
-        let testLegacyPersistor = MockHomePageContinueSetUpModelPersisting()
-        testLegacyPersistor.shouldShowYouTubeAdBlockingSetting = false
-        let testProvider = createProvider(
-            duckPlayerModeBool: nil,
-            youtubeOverlayAnyButtonPressed: false,
-            legacyPersistor: testLegacyPersistor,
-            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
-        )
-
-        XCTAssertFalse(testProvider.cards.contains(.youtubeAdBlocking))
-        XCTAssertTrue(testProvider.cards.contains(.duckplayer))
-    }
-
-    func testWhenYTAdBlockingPermanentlyDismissedViaCounterThenDuckPlayerCardIsVisible() {
-        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
-        testPersistor.setTimesDismissed(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardDismissed, for: .youtubeAdBlocking)
-        let testProvider = createProvider(
-            duckPlayerModeBool: nil,
-            youtubeOverlayAnyButtonPressed: false,
-            persistor: testPersistor,
-            adBlockingAvailability: MockAdBlockingAvailability(isFeatureAvailable: true, isEnabledByUser: true)
-        )
-
-        XCTAssertFalse(testProvider.cards.contains(.youtubeAdBlocking))
-        XCTAssertTrue(testProvider.cards.contains(.duckplayer))
-    }
-
     // MARK: - YouTube Ad Blocking permanent dismissal
 
     func testWhenYouTubeAdBlockingCardLegacySettingIsFalseThenCardIsPermanentlyDismissed() {
@@ -1184,5 +1156,5 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 extension NewTabPageNextStepsSingleCardProvider {
     static let defaultStandardCards: [NewTabPageDataModel.CardID] = [.duckplayer, .emailProtection, .defaultApp, .addAppToDockMac, .bringStuff, .subscription, .personalizeBrowser, .sync]
 
-    static let defaultAdvancedCards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .sync, .emailProtection, .defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription]
+    static let defaultAdvancedCards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .sync, .emailProtection, .defaultApp, .addAppToDockMac, .duckplayer, .youtubeAdBlocking, .bringStuff, .subscription]
 }

@@ -33,7 +33,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(PostIdleSessionWideEventData.metadata.pixelName == "post_idle_session")
         #expect(PostIdleSessionWideEventData.metadata.featureName == "post_idle_session")
         #expect(PostIdleSessionWideEventData.metadata.type == "ios-post-idle-session")
-        #expect(PostIdleSessionWideEventData.metadata.version == "1.0.0")
+        #expect(PostIdleSessionWideEventData.metadata.version == "1.1.0")
     }
 
     // MARK: - jsonParameters

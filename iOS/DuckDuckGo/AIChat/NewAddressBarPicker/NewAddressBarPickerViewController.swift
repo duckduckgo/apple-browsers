@@ -34,25 +34,20 @@ final class NewAddressBarPickerViewController: UIViewController {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    private var contentView: NewAddressBarPickerContentView!
-    private var hostingController: UIHostingController<NewAddressBarPickerContentView>!
-    
+
+    private var hostingController: UIHostingController<NewAddressBarPickerRefreshContentView>!
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
         setupContentView()
-        DailyPixel.fireDailyAndCount(pixel: .aiChatNewAddressBarPickerDisplayed)
+        DailyPixel.fireDailyAndCount(pixel: .aiChatNewAddressBarPickerV2Displayed)
     }
     
     private func setupContentView() {
-        contentView = NewAddressBarPickerContentView(
-            aiChatSettings: aiChatSettings
-        ) { [weak self] in
-            self?.dismiss(animated: true)
-        }
-        
-        hostingController = UIHostingController(rootView: contentView)
+        let rootView = buildContentView()
+
+        hostingController = UIHostingController(rootView: rootView)
         hostingController.view.backgroundColor = .clear
         
         addChild(hostingController)
@@ -68,7 +63,15 @@ final class NewAddressBarPickerViewController: UIViewController {
         
         hostingController.didMove(toParent: self)
     }
-    
+
+    private func buildContentView() -> NewAddressBarPickerRefreshContentView {
+        let viewModel = NewAddressBarPickerViewModel(aiChatSettings: aiChatSettings) { [weak self] in
+            self?.dismiss(animated: true)
+        }
+
+        return NewAddressBarPickerRefreshContentView(viewModel: viewModel)
+    }
+
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         switch UIDevice.current.userInterfaceIdiom {
         case .phone:

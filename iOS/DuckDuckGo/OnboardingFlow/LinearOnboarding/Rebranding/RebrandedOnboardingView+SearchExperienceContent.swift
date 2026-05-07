@@ -65,7 +65,7 @@ extension OnboardingRebranding.OnboardingView {
                     .multilineTextAlignment(.center)
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                    RebrandedOnboardingView.OnboardingSearchExperiencePicker(viewModel: viewModel)
+                    RebrandedOnboardingView.OnboardingSearchExperiencePicker(isDuckAISelected: viewModel.isSearchAndAIChatEnabled)
 
                     Text(AttributedString(UserText.Onboarding.SearchExperience.footerAttributed()))
                         .foregroundColor(onboardingTheme.colorPalette.textSecondary)

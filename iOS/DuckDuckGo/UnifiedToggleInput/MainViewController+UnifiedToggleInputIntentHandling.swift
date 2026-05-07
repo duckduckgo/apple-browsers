@@ -71,7 +71,7 @@ private extension MainViewController {
     func handleShowCollapsedIntent() {
         if unifiedToggleInputCoordinator?.isAITabState == true {
             applyUnifiedInputChromeBackground(.aiTabChatChromeHidden)
-            viewCoordinator.stopContentContainerBehindInput()
+            viewCoordinator.anchorContentContainerToInputTop()
         }
         viewCoordinator.showUnifiedToggleInput()
         viewCoordinator.suggestionTrayContainer.isHidden = true
@@ -91,7 +91,7 @@ private extension MainViewController {
                 }
                 let chromeBackgroundState = aiTabChromeBackgroundState(for: coordinator.computeRenderState())
                 applyUnifiedInputChromeBackground(chromeBackgroundState)
-                viewCoordinator.extendContentContainerBehindInput()
+                viewCoordinator.anchorContentContainerToInputTop()
             }
             updateUnifiedInputContentVisibility(for: coordinator)
         }

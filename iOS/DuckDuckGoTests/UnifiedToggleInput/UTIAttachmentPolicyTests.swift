@@ -107,6 +107,15 @@ final class UTIAttachmentPolicyTests: XCTestCase {
         XCTAssertTrue(policy.canAttachFiles)
     }
 
+    func test_canAttachFiles_ignoresInvalidFileAttachmentsForCapacity() {
+        let policy = makePolicy(
+            attachmentLimits: makeLimits(maxFilesPerConversation: 1, maxTotalFileSizeBytes: 1_000),
+            pendingAttachments: [makeInvalidFileAttachment(size: 2_000)]
+        )
+
+        XCTAssertTrue(policy.canAttachFiles)
+    }
+
     func test_fileValidation_rejectsUnsupportedMimeType() {
         let policy = makePolicy()
         let file = makeFile(mimeType: "text/plain", pageCount: nil)
@@ -498,5 +507,20 @@ final class UTIAttachmentPolicyTests: XCTestCase {
     private func makeImage() -> UnifiedToggleInputAttachment {
         let image = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { _ in }
         return .image(AIChatImageAttachment(image: image, fileName: "image.png"))
+    }
+
+    private func makeInvalidFileAttachment(
+        size: Int = 1_000,
+        mimeType: String = "application/pdf",
+        validationMessage: String = UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: 15)
+    ) -> UnifiedToggleInputAttachment {
+        .invalidFile(
+            UnifiedToggleInputInvalidFileAttachment(
+                fileName: "invalid.pdf",
+                mimeType: mimeType,
+                fileSizeBytes: size,
+                validationMessage: validationMessage
+            )
+        )
     }
 }

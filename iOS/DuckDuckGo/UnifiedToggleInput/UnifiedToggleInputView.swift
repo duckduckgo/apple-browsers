@@ -236,6 +236,10 @@ final class UnifiedToggleInputView: UIView {
         attachmentsStrip.attachments
     }
 
+    var isToolbarSubmitEnabled: Bool {
+        toolsToolbar.isSubmitEnabled
+    }
+
     func addAttachment(_ attachment: UnifiedToggleInputAttachment) {
         attachmentsStrip.addAttachment(attachment)
     }
@@ -749,20 +753,22 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func updateSubmitButtonAvailability() {
+        let isAIChatMode = handler.currentToggleState == .aiChat
         let hasSubmittableText = !handler.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasValidAttachment = attachmentsStrip.attachments.contains { !$0.isInvalid }
-        let hasInvalidAttachment = attachmentsStrip.attachments.contains(where: \.isInvalid)
-        let hasSubmittableAttachment = handler.currentToggleState == .aiChat && hasValidAttachment
+        let hasInvalidAttachment = isAIChatMode && attachmentsStrip.attachments.contains(where: \.isInvalid)
+        let hasSubmittableAttachment = isAIChatMode && hasValidAttachment
         toolsToolbar.isSubmitEnabled = !hasInvalidAttachment && (hasSubmittableText || hasSubmittableAttachment)
     }
 
     private func submitCurrentInput() {
+        let isAIChatMode = handler.currentToggleState == .aiChat
         let trimmedText = handler.currentText.trimmingCharacters(in: .whitespacesAndNewlines)
         let hasValidAttachment = attachmentsStrip.attachments.contains { !$0.isInvalid }
-        let hasInvalidAttachment = attachmentsStrip.attachments.contains(where: \.isInvalid)
+        let hasInvalidAttachment = isAIChatMode && attachmentsStrip.attachments.contains(where: \.isInvalid)
         guard !hasInvalidAttachment else { return }
 
-        if trimmedText.isEmpty, handler.currentToggleState == .aiChat, hasValidAttachment {
+        if trimmedText.isEmpty, isAIChatMode, hasValidAttachment {
             handler.submitAIChatAttachmentOnlyPrompt()
         } else {
             handler.submitText(handler.currentText)

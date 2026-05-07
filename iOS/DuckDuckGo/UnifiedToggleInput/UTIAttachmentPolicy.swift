@@ -213,11 +213,11 @@ private extension UTIAttachmentPolicy {
     }
 
     var pendingFileCount: Int {
-        pendingAttachments.filter(\.isFile).count
+        pendingAttachments.compactMap(\.fileAttachment).count
     }
 
     var pendingFileSizeBytes: Int {
-        pendingAttachments.reduce(0) { $0 + $1.fileSizeBytes }
+        pendingAttachments.compactMap(\.fileAttachment).reduce(0) { $0 + $1.fileSizeBytes }
     }
 
     var maxImagesPerTurn: Int? {

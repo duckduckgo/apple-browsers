@@ -154,7 +154,12 @@ DEFAULT_ALWAYS_IGNORE = (
     "iOS/DuckDuckGo/UserText.swift,"
     "iOS/DuckDuckGo/en.lproj/Localizable.strings,"
     # Design system asset catalog
-    "SharedPackages/Infrastructure/DesignResourcesKitIcons/**"
+    "SharedPackages/Infrastructure/DesignResourcesKitIcons/**,"
+    # Maestro flow scripts and JS lockfile
+    ".maestro/**,"
+    "**/.maestro/**,"
+    "package-lock.json,"
+    "**/package-lock.json"
 )
 # Patterns that suppress a path from BOTH the hard and soft buckets.
 # Originally named CW_SOFT_IGNORE because pbxproj-style files showed up
@@ -1434,6 +1439,17 @@ def main() -> int:
             summary.pairs_with_hard_conflicts += 1
         elif result.soft_files:
             summary.pairs_with_soft_conflicts += 1
+        # Log the kept pair + its conflict files so the artifact log
+        # carries enough detail to inspect a run without cracking open
+        # individual Asana tasks.
+        logger.info(
+            "PAIR %s ↔ %s | hard=%d (%d lines): %s | soft=%d: %s",
+            a.name, b.name,
+            len(result.hard_files), result.hard_conflict_lines,
+            ", ".join(result.hard_files) if result.hard_files else "-",
+            len(result.soft_files),
+            ", ".join(result.soft_files) if result.soft_files else "-",
+        )
         conflicts.append(result)
 
     conflicts.sort(key=lambda p: p.newer_tip_dt, reverse=True)

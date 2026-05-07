@@ -65,6 +65,9 @@ Optional (defaults shown):
     CW_VERBOSE=0
     CW_TIME_BUDGET_S=540  (soft cap, 9 minutes)
     CW_MAX_NEW_TASKS=50   (hard cap on new tasks per run)
+    CW_INCLUDE_SOFT=0     (1 to also emit soft-conflict tasks; off by default
+                           — soft conflicts are noisy and not real merge
+                           conflicts)
     CW_SOFT_IGNORE=…      (comma-separated globs; see DEFAULT_SOFT_IGNORE)
     CW_BOT_AUTHORS=…      (comma-separated GitHub logins to skip)
     CW_USER_MAP_PATH=     (path to a flat YAML of github→asana gid)
@@ -117,6 +120,7 @@ ASANA_WORKSPACE_GID = os.environ.get("CW_ASANA_WORKSPACE_GID", "137249556945")
 ASANA_PROJECT_GID = os.environ.get("CW_ASANA_PROJECT_GID", "1214448335754394")
 TIME_BUDGET_S = int(os.environ.get("CW_TIME_BUDGET_S", "540"))
 MAX_NEW_TASKS = int(os.environ.get("CW_MAX_NEW_TASKS", "50"))
+INCLUDE_SOFT_CONFLICTS = os.environ.get("CW_INCLUDE_SOFT", "0").lower() in ("1", "true", "yes")
 
 ROOT = Path(os.environ.get("CW_ROOT", str(Path.home() / ".conflict-watch")))
 MIRROR = ROOT / f"{REPO.split('/')[-1]}.git"
@@ -493,7 +497,19 @@ def _matches_soft_ignore(path: str) -> bool:
     return False
 
 
-def probe_pair(a: Branch, b: Branch) -> Optional[ConflictPair]:
+def probe_pair(a: Branch, b: Branch, *, compute_soft: bool = True,
+               apply_soft_ignore: bool = True) -> Optional[ConflictPair]:
+    """Run an in-memory three-way merge and return a ``ConflictPair`` if
+    any conflict is found.
+
+    ``compute_soft=False`` skips the soft-conflict computation entirely
+    (the pair is reported only if there are hard conflicts). The
+    production daily run uses this path to avoid soft-conflict noise.
+
+    ``apply_soft_ignore=False`` includes paths that would normally be
+    ignored by ``CW_SOFT_IGNORE`` — used by ``--report`` to inspect what
+    the filter is currently catching.
+    """
     base_proc = git(["merge-base", a.name, b.name], check=False)
     if base_proc.returncode != 0 or not base_proc.stdout.strip():
         logger.warning("No merge base between %s and %s", a.name, b.name)
@@ -556,12 +572,18 @@ def probe_pair(a: Branch, b: Branch) -> Optional[ConflictPair]:
         if section_has_marker and current_path:
             hard_files.add(current_path)
 
-    a_changed = set(_diff_names(base, a.name))
-    b_changed = set(_diff_names(base, b.name))
-    overlap = a_changed & b_changed
-    soft_files = sorted(
-        p for p in (overlap - hard_files) if not _matches_soft_ignore(p)
-    )
+    if compute_soft:
+        a_changed = set(_diff_names(base, a.name))
+        b_changed = set(_diff_names(base, b.name))
+        candidates = (a_changed & b_changed) - hard_files
+        if apply_soft_ignore:
+            soft_files = sorted(
+                p for p in candidates if not _matches_soft_ignore(p)
+            )
+        else:
+            soft_files = sorted(candidates)
+    else:
+        soft_files = []
     if not hard_files and not soft_files:
         return None
     return ConflictPair(
@@ -755,17 +777,18 @@ def render_task_body_html(pair: ConflictPair, today_local: str) -> str:
     else:
         parts.append("<em>Hard-conflict files:</em> none")
     parts.append("")
-    if pair.soft_files:
-        parts.append(
-            f"<strong>Soft-conflict files (same file edited on different "
-            f"lines, {len(pair.soft_files)})</strong>"
-        )
-        parts.append("<ul>")
-        parts.extend(f"<li>{html_escape(p)}</li>" for p in pair.soft_files)
-        parts.append("</ul>")
-    else:
-        parts.append("<em>Soft-conflict files:</em> none")
-    parts.append("")
+    if INCLUDE_SOFT_CONFLICTS:
+        if pair.soft_files:
+            parts.append(
+                f"<strong>Soft-conflict files (same file edited on different "
+                f"lines, {len(pair.soft_files)})</strong>"
+            )
+            parts.append("<ul>")
+            parts.extend(f"<li>{html_escape(p)}</li>" for p in pair.soft_files)
+            parts.append("</ul>")
+        else:
+            parts.append("<em>Soft-conflict files:</em> none")
+        parts.append("")
     parts.append(
         f'Compare on GitHub: <a href="{html_escape(compare_url)}">'
         f"{html_escape(a_name)}...{html_escape(b_name)}</a>"
@@ -784,18 +807,24 @@ def render_comment_html(pair: ConflictPair, today_local: str, *,
             if reappeared else "Today's snapshot:")
     hard = (", ".join(html_escape(p) for p in pair.hard_files)
             if pair.hard_files else "none")
-    soft = (", ".join(html_escape(p) for p in pair.soft_files)
-            if pair.soft_files else "none")
+    items = [
+        f"<li>{html_escape(pair.a.name)}: {html_escape(pair.a.short_sha)}</li>",
+        f"<li>{html_escape(pair.b.name)}: {html_escape(pair.b.short_sha)}</li>",
+        f"<li>Hard-conflict files ({len(pair.hard_files)}): {hard}</li>",
+    ]
+    if INCLUDE_SOFT_CONFLICTS:
+        soft = (", ".join(html_escape(p) for p in pair.soft_files)
+                if pair.soft_files else "none")
+        items.append(
+            f"<li>Soft-conflict files ({len(pair.soft_files)}): {soft}</li>"
+        )
     html = (
         "<body>"
         f"{html_escape(head)} {html_escape(today_local)} "
         f"(cc {asana_mention(pair.a)} {asana_mention(pair.b)})"
         "<ul>"
-        f"<li>{html_escape(pair.a.name)}: {html_escape(pair.a.short_sha)}</li>"
-        f"<li>{html_escape(pair.b.name)}: {html_escape(pair.b.short_sha)}</li>"
-        f"<li>Hard-conflict files ({len(pair.hard_files)}): {hard}</li>"
-        f"<li>Soft-conflict files ({len(pair.soft_files)}): {soft}</li>"
-        "</ul>"
+        + "".join(items)
+        + "</ul>"
         "</body>"
     )
     plain = f"{head} {today_local}"
@@ -1071,8 +1100,100 @@ def parse_args() -> argparse.Namespace:
                         help="Run synthetic-repo tests and exit.")
     parser.add_argument("--once", metavar="A..B",
                         help="Probe one pair (e.g. 'feature/x..feature/y') and exit.")
+    parser.add_argument(
+        "--report", action="store_true",
+        help="Probe all pairs and print top files appearing in hard-/soft-"
+             "conflict buckets. No Asana calls. Includes paths normally "
+             "filtered by CW_SOFT_IGNORE so the filter can be tuned.",
+    )
+    parser.add_argument("--top", type=int, default=30,
+                        help="Top-N entries to print in --report (default 30).")
     parser.add_argument("--verbose", action="store_true", help="Verbose logging.")
     return parser.parse_args()
+
+
+def run_report(top_n: int) -> int:
+    """Probe all pairs and print frequency of files appearing in conflict
+    buckets. No Asana calls.
+    """
+    from collections import Counter
+
+    try:
+        refresh_mirror()
+    except subprocess.CalledProcessError as exc:
+        logger.error("Failed to refresh mirror: %s", exc)
+        return 1
+
+    summary = RunSummary()
+    branches = list_active_branches(RECENCY_HOURS, summary)
+    logger.info("Active branches in last %dh (post-merged-filter): %d",
+                RECENCY_HOURS, len(branches))
+
+    kept: list[Branch] = []
+    for b in branches:
+        b.github_login = lookup_github_login(b.sha)
+        if b.github_login and b.github_login.lower() in BOT_AUTHORS:
+            summary.branches_skipped_bot += 1
+            continue
+        kept.append(b)
+    branches = kept
+
+    pairs = list(itertools.combinations(branches, 2))
+    logger.info("Probing %d pairs", len(pairs))
+
+    hard_counts: Counter = Counter()
+    soft_counts_kept: Counter = Counter()    # not matched by current ignore
+    soft_counts_filtered: Counter = Counter()  # matched by current ignore
+    pairs_with_hard = 0
+    pairs_with_soft_kept = 0
+    pairs_with_soft_filtered_only = 0
+
+    for a, b in pairs:
+        try:
+            result = probe_pair(a, b, compute_soft=True, apply_soft_ignore=False)
+        except subprocess.CalledProcessError as exc:
+            logger.warning("git failed for %s vs %s: %s", a.name, b.name, exc)
+            continue
+        if result is None:
+            continue
+        if result.hard_files:
+            pairs_with_hard += 1
+            for f in result.hard_files:
+                hard_counts[f] += 1
+        kept_soft = [p for p in result.soft_files if not _matches_soft_ignore(p)]
+        filtered_soft = [p for p in result.soft_files if _matches_soft_ignore(p)]
+        if kept_soft:
+            pairs_with_soft_kept += 1
+            for f in kept_soft:
+                soft_counts_kept[f] += 1
+        elif filtered_soft and not result.hard_files:
+            pairs_with_soft_filtered_only += 1
+        for f in filtered_soft:
+            soft_counts_filtered[f] += 1
+
+    print()
+    print("=== conflict-watch report ===")
+    print(f"Branches probed: {len(branches)}")
+    print(f"Pairs probed: {len(pairs)}")
+    print(f"Pairs with any hard conflict: {pairs_with_hard}")
+    print(f"Pairs with soft conflicts that survive ignore-list: "
+          f"{pairs_with_soft_kept}")
+    print(f"Pairs whose only conflicts are already-ignored soft files: "
+          f"{pairs_with_soft_filtered_only}")
+    print()
+    print(f"Top {top_n} hard-conflict files (count = pair-occurrences):")
+    for f, c in hard_counts.most_common(top_n):
+        print(f"  {c:5d}  {f}")
+    print()
+    print(f"Top {top_n} soft-conflict files NOT caught by current ignore-list:")
+    for f, c in soft_counts_kept.most_common(top_n):
+        print(f"  {c:5d}  {f}")
+    print()
+    print(f"Top {top_n} soft-conflict files currently caught by ignore-list "
+          f"(validation):")
+    for f, c in soft_counts_filtered.most_common(top_n):
+        print(f"  {c:5d}  {f}")
+    return 0
 
 
 def main() -> int:
@@ -1082,6 +1203,9 @@ def main() -> int:
 
     if args.self_test:
         return run_self_test()
+
+    if args.report:
+        return run_report(args.top)
 
     dry_run = (
         args.dry_run
@@ -1154,7 +1278,7 @@ def main() -> int:
             summary.skipped_pairs.append(f"{a.name} ↔ {b.name}")
             continue
         try:
-            result = probe_pair(a, b)
+            result = probe_pair(a, b, compute_soft=INCLUDE_SOFT_CONFLICTS)
         except subprocess.CalledProcessError as exc:
             summary.errors.append(f"git failed for {a.name} vs {b.name}: {exc}")
             continue

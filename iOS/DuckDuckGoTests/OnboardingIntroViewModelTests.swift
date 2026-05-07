@@ -115,7 +115,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertEqual(result, .landing)
     }
 
-    func testWhenRestoreActionProvided_PerformRestoreInvokesAction() {
+    func testWhenRestoreActionProvided_PerformRestoreInvokesAction_AndDefersContextualDaxDialogsDismissal() {
         // GIVEN
         let restorePromptHandlerMock = MockRestorePromptHandler()
         let sut = makeSUT(
@@ -130,7 +130,38 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(restorePromptHandlerMock.didCallRestoreSyncAccount)
+        XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
+    }
+
+    func testWhenRestoreActionProvided_AndOnboardingCompletes_ThenDisablesContextualDaxDialogs() {
+        // GIVEN
+        let restorePromptHandlerMock = MockRestorePromptHandler()
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
+        let sut = makeSUT(
+            currentOnboardingStep: .addressBarPositionSelection,
+            restorePromptHandler: restorePromptHandlerMock
+        )
+        sut.restoreSyncAccountAction()
+        XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
+
+        // WHEN
+        sut.selectAddressBarPositionAction()
+
+        // THEN
         XCTAssertTrue(contextualDaxDialogs.didCallDisableDaxDialogs)
+    }
+
+    func testWhenOnboardingCompletes_AndRestoreActionNotInvoked_ThenDoesNotDisableContextualDaxDialogs() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection)
+        XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
+
+        // WHEN
+        sut.selectAddressBarPositionAction()
+
+        // THEN
+        XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
     }
 
     func testWhenReturningUserAndRestorePromptEligibilityIsTrueThenShowsRestorePrompt() {
@@ -212,7 +243,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(type: .skipTutorial), step: .hidden)))
     }
 
-    func testWhenStartOnboardingActionResumingTrueIsCalled_AndIsIphoneFlow_ThenViewStateChangesToBrowsersComparisonDialogAndProgressIs2of4() throws {
+    func testWhenStartOnboardingActionResumingTrueIsCalled_AndIsIphoneFlow_ThenViewStateChangesToBrowsersComparisonDialogAndProgressIs1of5() throws {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
         let currentStep = try XCTUnwrap(onboardingManagerMock.onboardingSteps.first)
@@ -222,7 +253,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.startOnboardingAction(isResumingOnboarding: true)
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog, step: .init(currentStep: 1, totalSteps: 4))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog, step: .init(currentStep: 1, totalSteps: 5))))
     }
 
     func testWhenConfirmSkipOnboarding_andIsIphoneFlow_ThenDismissOnboardingAndDisableDaxDialogs() throws {
@@ -244,7 +275,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(didCallDismissOnboarding)
     }
 
-    func testWhenSetDefaultBrowserActionIsCalledAndIsIphoneFlowThenViewStateChangesToAddToDockPromoDialogAndProgressIs2Of4() {
+    func testWhenSetDefaultBrowserActionIsCalledAndIsIphoneFlowThenViewStateChangesToAddToDockPromoDialogAndProgressIs2Of5() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .browserComparison)
@@ -253,10 +284,10 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.setDefaultBrowserAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog, step: .init(currentStep: 2, totalSteps: 4))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog, step: .init(currentStep: 2, totalSteps: 5))))
     }
 
-    func testWhenCancelSetDefaultBrowserActionIsCalledAndIsIphoneFlowThenViewStateChangesToAddToDockPromoDialogAndProgressIs2Of4() {
+    func testWhenCancelSetDefaultBrowserActionIsCalledAndIsIphoneFlowThenViewStateChangesToAddToDockPromoDialogAndProgressIs2Of5() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .browserComparison)
@@ -265,10 +296,10 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.cancelSetDefaultBrowserAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog, step: .init(currentStep: 2, totalSteps: 4))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog, step: .init(currentStep: 2, totalSteps: 5))))
     }
 
-    func testWhenAddtoDockContinueActionIsCalledAndIsIphoneFlowThenThenViewStateChangesToChooseAppIconAndProgressIs3of4() {
+    func testWhenAddtoDockContinueActionIsCalledAndIsIphoneFlowThenThenViewStateChangesToChooseAppIconAndProgressIs3of5() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .addToDockPromo)
@@ -277,10 +308,10 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.addToDockContinueAction(isShowingAddToDockTutorial: false)
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAppIconDialog, step: .init(currentStep: 3, totalSteps: 4))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAppIconDialog, step: .init(currentStep: 3, totalSteps: 5))))
     }
 
-    func testWhenAppIconPickerContinueActionIsCalledAndIsIphoneFlowThenViewStateChangesToChooseAddressBarPositionDialogAndProgressIs4Of4() {
+    func testWhenAppIconPickerContinueActionIsCalledAndIsIphoneFlowThenViewStateChangesToChooseAddressBarPositionDialogAndProgressIs4Of5() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .appIconSelection)
@@ -289,21 +320,33 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.appIconPickerContinueAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAddressBarPositionDialog, step: .init(currentStep: 4, totalSteps: 4))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseAddressBarPositionDialog, step: .init(currentStep: 4, totalSteps: 5))))
     }
 
-    func testWhenSelectAddressBarPositionActionIsCalledAndIsIphoneFlowThenOnCompletingOnboardingIntroIsCalled() {
+    func testWhenSelectAddressBarPositionActionIsCalledAndIsIphoneFlowThenViewStateChangesToChooseSearchExperienceDialogAndProgressIs5Of5() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection)
+
+        // WHEN
+        sut.selectAddressBarPositionAction()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseSearchExperienceDialog, step: .init(currentStep: 5, totalSteps: 5))))
+    }
+
+    func testWhenSelectSearchExperienceDialogActionIsCalledAndIsIphoneFlowThenOnCompletingOnboardingIntroIsCalled() {
         // GIVEN
         var didCallOnCompletingOnboardingIntro = false
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
-        let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection)
+        let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection)
         sut.onCompletingOnboardingIntro = {
             didCallOnCompletingOnboardingIntro = true
         }
         XCTAssertFalse(didCallOnCompletingOnboardingIntro)
 
         // WHEN
-        sut.selectAddressBarPositionAction()
+        sut.selectSearchExperienceAction()
 
         // THEN
         XCTAssertTrue(didCallOnCompletingOnboardingIntro)
@@ -699,7 +742,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenStateChangesToChooseSearchExperienceThenPixelReporterMeasureSearchExperienceSelectionImpression() {
         // GIVEN
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection)
         XCTAssertFalse(pixelReporterMock.didCallMeasureSearchExperienceSelectionImpression)
 
@@ -714,7 +757,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         // GIVEN
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection, onboardingSearchExperienceProvider: mockSearchExperienceProvider)
         XCTAssertFalse(pixelReporterMock.didCallMeasureChooseAIChat)
 
@@ -729,7 +772,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         // GIVEN
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = false
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection, onboardingSearchExperienceProvider: mockSearchExperienceProvider)
         XCTAssertFalse(pixelReporterMock.didCallMeasureChooseSearchOnly)
 
@@ -742,7 +785,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenSelectAddressBarPositionActionIsCalledAndIsIphoneFlowWithSearchExperienceThenViewStateChangesToChooseSearchExperienceDialogAndProgressIs5Of5() {
         // GIVEN
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection)
 
         // WHEN
@@ -755,7 +798,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
     func testWhenSelectSearchExperienceActionIsCalledAndIsIphoneFlowWithSearchExperienceThenOnCompletingOnboardingIntroIsCalled() {
         // GIVEN
         var didCallOnCompletingOnboardingIntro = false
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
         let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection)
         sut.onCompletingOnboardingIntro = {
             didCallOnCompletingOnboardingIntro = true

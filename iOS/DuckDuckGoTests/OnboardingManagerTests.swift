@@ -22,25 +22,40 @@ import class UIKit.UIDevice
 @testable import Core
 @testable import DuckDuckGo
 
-struct OnboardingManagerTests {
-    struct OnboardingStepsNewUser {
-        let variantManagerMock = MockVariantManager(
-            currentVariant: VariantIOS(
-                name: "test_variant",
-                weight: 0,
-                isIncluded: VariantIOS.When.always,
-                features: []
-            )
+private enum OnboardingManagerVariants {
+    static let newUserVariantManagerMock = MockVariantManager(
+        currentVariant: VariantIOS(
+            name: "test_variant",
+            weight: 0,
+            isIncluded: VariantIOS.When.always,
+            features: []
         )
+    )
+
+    static let returningUserVariantManagerMock = MockVariantManager(
+        currentVariant: VariantIOS(
+            name: "ru",
+            weight: 0,
+            isIncluded: VariantIOS.When.always,
+            features: []
+        )
+    )
+}
+
+
+@Suite("Onboarding - Manager")
+struct OnboardingManagerTests {
+
+    struct OnboardingStepsNewUser {
 
         @Test("Check correct onboarding steps are returned for iPhone")
         func checkOnboardingSteps_iPhone() async throws {
             // GIVEN
-            let sut = OnboardingManager(appDefaults: AppSettingsMock(), variantManager: variantManagerMock, isIphone: true)
-            let expectedSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.newUserVariantManagerMock, isIphone: true)
+            let expectedSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
 
             // WHEN
-            let result = sut.newUserSteps(isIphone: true)
+            let result = sut.onboardingSteps
 
             // THEN
             #expect(result == expectedSteps)
@@ -49,11 +64,11 @@ struct OnboardingManagerTests {
         @Test("Check correct onboarding steps are returned for iPad")
         func checkOnboardingSteps_iPad() {
             // GIVEN
-            let sut = OnboardingManager(appDefaults: AppSettingsMock(), variantManager: variantManagerMock, isIphone: false)
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.newUserVariantManagerMock, isIphone: false)
             let expectedSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false)
 
             // WHEN
-            let result = sut.newUserSteps(isIphone: false)
+            let result = sut.onboardingSteps
 
             // THEN
             #expect(result == expectedSteps)
@@ -62,23 +77,15 @@ struct OnboardingManagerTests {
     }
 
     struct OnboardingStepsReturningUser {
-        let variantManagerMock = MockVariantManager(
-            currentVariant: VariantIOS(
-                name: "ru",
-                weight: 0,
-                isIncluded: VariantIOS.When.always,
-                features: []
-            )
-        )
 
         @Test("Check correct onboarding steps are returned for iPhone")
         func checkOnboardingSteps_iPhone() async throws {
             // GIVEN
-            let sut = OnboardingManager(appDefaults: AppSettingsMock(), variantManager: variantManagerMock, isIphone: true)
-            let expectedSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: true)
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.returningUserVariantManagerMock, isIphone: true)
+            let expectedSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
 
             // WHEN
-            let result = sut.returningUserSteps(isIphone: true)
+            let result = sut.onboardingSteps
 
             // THEN
             #expect(result == expectedSteps)
@@ -87,11 +94,11 @@ struct OnboardingManagerTests {
         @Test("Check correct onboarding steps are returned for iPad")
         func checkOnboardingSteps_iPad() {
             // GIVEN
-            let sut = OnboardingManager(appDefaults: AppSettingsMock(), variantManager: variantManagerMock, isIphone: false)
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.returningUserVariantManagerMock, isIphone: false)
             let expectedSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: true)
 
             // WHEN
-            let result = sut.returningUserSteps(isIphone: false)
+            let result = sut.onboardingSteps
 
             // THEN
             #expect(result == expectedSteps)
@@ -100,29 +107,12 @@ struct OnboardingManagerTests {
     }
 
     struct OnboardingStepsCorrectFlow {
-        let variantManagerMock = MockVariantManager(
-            currentVariant: VariantIOS(
-                name: "test_variant",
-                weight: 0,
-                isIncluded: VariantIOS.When.always,
-                features: []
-            )
-        )
-
-        let variantManagerMockRU = MockVariantManager(
-            currentVariant: VariantIOS(
-                name: "ru",
-                weight: 0,
-                isIncluded: VariantIOS.When.always,
-                features: []
-            )
-        )
 
         @Test("Check correct onboarding steps are returned, new user")
         func checkOnboardingStepsNewUser() {
             // GIVEN
-            let sut = OnboardingManager(appDefaults: AppSettingsMock(), variantManager: variantManagerMock, isIphone: true)
-            let expectedSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.newUserVariantManagerMock, isIphone: true)
+            let expectedSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
 
             // WHEN
             let result = sut.onboardingSteps
@@ -134,8 +124,8 @@ struct OnboardingManagerTests {
         @Test("Check correct onboarding steps are returned, returning user")
         func checkOnboardingStepsReturningUser() {
             // GIVEN
-            let sut = OnboardingManager(appDefaults: AppSettingsMock(), variantManager: variantManagerMockRU, isIphone: true)
-            let expectedSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: true)
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.returningUserVariantManagerMock, isIphone: true)
+            let expectedSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
 
             // WHEN
             let result = sut.onboardingSteps
@@ -168,7 +158,7 @@ struct OnboardingManagerTests {
             settingsMock.onboardingUserType = userType
             let variant = VariantIOS(name: "test_variant", weight: 0, isIncluded: VariantIOS.When.always, features: [])
             let variantManagerMock = MockVariantManager(currentVariant: variant)
-            let sut = OnboardingManager(appDefaults: settingsMock, variantManager: variantManagerMock)
+            let sut = OnboardingManager(appDefaults: settingsMock, featureFlagger: MockFeatureFlagger(), variantManager: variantManagerMock)
 
             // WHEN
             let result = sut.isNewUser
@@ -179,4 +169,237 @@ struct OnboardingManagerTests {
 
     }
 
+}
+
+@Suite("Onboarding - Manager + Flow Configuration")
+struct OnboardingFlowConfiguration {
+
+    @Test("Check default flow is configured when URL is nil")
+    func configuresDefaultFlowForNilURL() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
+            tutorialSettings: tutorialSettings
+        )
+        #expect(tutorialSettings.onboardingFlowType == nil)
+
+        // WHEN
+        sut.configureOnboardingFlow(from: nil)
+
+        // THEN
+        #expect(tutorialSettings.onboardingFlowType == .default)
+    }
+
+    @Test("Check Duck.ai flow is configured when URL is ddgCPP://duckAI")
+    func configuresDuckAIFlowForValidURL() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
+            tutorialSettings: tutorialSettings
+        )
+        #expect(tutorialSettings.onboardingFlowType == nil)
+        let url = URL(string: "ddgCPP://duckAI")
+
+        // WHEN
+        sut.configureOnboardingFlow(from: url)
+
+        // THEN
+        #expect(tutorialSettings.onboardingFlowType == .duckAI)
+    }
+
+    @Test("Check default flow is configured when URL is invalid")
+    func configuresDefaultFlowForInvalidURL() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
+            tutorialSettings: tutorialSettings
+        )
+        #expect(tutorialSettings.onboardingFlowType == nil)
+        let url = URL(string: "ddgCPP://unknown-flow")
+
+        // WHEN
+        sut.configureOnboardingFlow(from: url)
+
+        // THEN
+        #expect(tutorialSettings.onboardingFlowType == .default)
+    }
+
+    @Test("Check flow is not reconfigured when it is already been set")
+    func doesNotReconfigureWhenAlreadySet() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        tutorialSettings.onboardingFlowType = .default
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
+            tutorialSettings: tutorialSettings
+        )
+        let url = URL(string: "ddgCPP://duckAI")
+
+        // WHEN
+        sut.configureOnboardingFlow(from: url)
+
+        // THEN - Should remain .default, not switch to .duckAI
+        #expect(tutorialSettings.onboardingFlowType == .default)
+    }
+
+    @Test("Check flow is not reconfigured when onboarding has been seen")
+    func doesNotConfigureWhenOnboardingHasBeenSeen() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
+            tutorialSettings: tutorialSettings
+        )
+        let url = URL(string: "ddgCPP://duckAI")
+
+        // WHEN
+        sut.configureOnboardingFlow(from: url)
+
+        // THEN - Should remain nil
+        #expect(tutorialSettings.onboardingFlowType == nil)
+    }
+
+    @Test("Check Duck.ai flow falls back to default when feature flag is disabled")
+    func fallsBackToDefaultWhenDuckAIFeatureFlagDisabled() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+            tutorialSettings: tutorialSettings
+        )
+        #expect(tutorialSettings.onboardingFlowType == nil)
+        let url = URL(string: "ddgCPP://duckAI")
+
+        // WHEN
+        sut.configureOnboardingFlow(from: url)
+
+        // THEN - Should fall back to .default, not .duckAI
+        #expect(tutorialSettings.onboardingFlowType == .default)
+    }
+
+    @Test("Check Duck.ai flow is configured when feature flag is enabled")
+    func configuresDuckAIFlowWhenFeatureFlagEnabled() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
+            tutorialSettings: tutorialSettings
+        )
+        #expect(tutorialSettings.onboardingFlowType == nil)
+        let url = URL(string: "ddgCPP://duckAI")
+
+        // WHEN
+        sut.configureOnboardingFlow(from: url)
+
+        // THEN - Should configure .duckAI flow
+        #expect(tutorialSettings.onboardingFlowType == .duckAI)
+    }
+
+    @Test("Check default flow is not affected by Duck.ai feature flag")
+    func defaultFlowNotAffectedByDuckAIFeatureFlag() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
+            tutorialSettings: tutorialSettings
+        )
+        #expect(tutorialSettings.onboardingFlowType == nil)
+
+        // WHEN - Nil URL should still result in .default flow
+        sut.configureOnboardingFlow(from: nil)
+
+        // THEN - Should configure .default flow normally
+        #expect(tutorialSettings.onboardingFlowType == .default)
+    }
+}
+
+@Suite("Onboarding - Onboarding Steps for Flow")
+struct OnboardingStepsForConfiguredFlow {
+
+    @Test(
+        "Check return default new user steps when flow is nil",
+        arguments: [true, false]
+    )
+    func returnsDefaultStepsWhenFlowIsNil(isReturningUser: Bool) {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        tutorialSettings.onboardingFlowType = nil
+        let variantManager = isReturningUser ? OnboardingManagerVariants.returningUserVariantManagerMock : OnboardingManagerVariants.newUserVariantManagerMock
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(),
+            variantManager: variantManager,
+            isIphone: true,
+            tutorialSettings: tutorialSettings
+        )
+        let expectedSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: isReturningUser)
+
+        // WHEN
+        let result = sut.onboardingSteps
+
+        // THEN
+        #expect(result == expectedSteps)
+    }
+
+    @Test(
+        "Check return default new user steps when flow is explicitly set to default",
+        arguments: [true, false]
+    )
+    func returnsDefaultStepsWhenFlowIsDefault(isReturningUser: Bool) {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        tutorialSettings.onboardingFlowType = .default
+        let variantManager = isReturningUser ? OnboardingManagerVariants.returningUserVariantManagerMock : OnboardingManagerVariants.newUserVariantManagerMock
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(),
+            variantManager: variantManager,
+            isIphone: true,
+            tutorialSettings: tutorialSettings
+        )
+        let expectedSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: isReturningUser)
+
+        // WHEN
+        let result = sut.onboardingSteps
+
+        // THEN
+        #expect(result == expectedSteps)
+    }
+
+    @Test(
+        "Check return duckAI steps when flow is set to duckAI",
+        arguments: [true, false]
+    )
+    func returnsDuckAIStepsWhenFlowIsDuckAI(isReturningUser: Bool) {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        tutorialSettings.onboardingFlowType = .duckAI
+        let variantManager = isReturningUser ? OnboardingManagerVariants.returningUserVariantManagerMock : OnboardingManagerVariants.newUserVariantManagerMock
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: MockFeatureFlagger(),
+            variantManager: variantManager,
+            isIphone: true,
+            tutorialSettings: tutorialSettings
+        )
+        let expectedSteps: [OnboardingIntroStep] = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: isReturningUser)
+
+        // WHEN
+        let result = sut.onboardingSteps
+
+        // THEN
+        #expect(result == expectedSteps)
+    }
+    
 }

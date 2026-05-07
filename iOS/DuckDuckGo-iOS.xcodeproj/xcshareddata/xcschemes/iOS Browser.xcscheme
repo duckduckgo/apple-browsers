@@ -270,11 +270,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-isOnboardingCompleted false"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-ff.onboardingRebranding true"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>

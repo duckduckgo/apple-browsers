@@ -120,7 +120,8 @@ private struct ScreenBottomDaxOverlay: View {
 
     private static let screenBottomPadding: CGFloat = 60
     /// Gap between the keyboard's top edge and Dax's bottom edge when the keyboard is visible.
-    private static let keyboardTopPadding: CGFloat = 12
+    /// `0` so Dax's bounding box rests directly on the keyboard's top edge.
+    private static let keyboardTopPadding: CGFloat = 0
     /// Match the standard iOS keyboard show/hide curve so Dax slides in sync with the keyboard.
     private static let keyboardFollowAnimation: Animation = .easeInOut(duration: 0.25)
 

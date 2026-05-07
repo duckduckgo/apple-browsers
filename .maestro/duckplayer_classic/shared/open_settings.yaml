@@ -11,15 +11,15 @@ appId: com.duckduckgo.mobile.ios
 
 - waitForAnimationToEnd
 
-# Duck Player now lives inside the Ad Blocking screen (under Privacy Protections).
+# Duck Player now lives inside the YouTube Ad Blocking screen (under Privacy Protections).
 - scrollUntilVisible:
     element:
-      text: "Ad Blocking"
+      text: "YouTube Ad Blocking"
     direction: DOWN
     centerElement: true
 
 - tapOn:
-    text: "Ad Blocking"
+    text: "YouTube Ad Blocking"
 
 - waitForAnimationToEnd
 

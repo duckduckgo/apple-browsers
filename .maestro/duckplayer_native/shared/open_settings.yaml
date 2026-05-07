@@ -11,7 +11,7 @@ appId: com.duckduckgo.mobile.ios
 
 - tapOn: ${output.settingsLabel}
 
-# Duck Player now lives inside the Ad Blocking screen (under Privacy Protections).
+# Duck Player now lives inside the YouTube Ad Blocking screen (under Privacy Protections).
 - scrollUntilVisible:
     centerElement: true
     element: ${output.adBlockingLabel}

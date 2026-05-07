@@ -3019,7 +3019,7 @@
 "onboarding.rebranding.first-search-done.title" = "それがDuckDuckGo Searchです！";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "より高速で、ユーザーを保護し、AIの使用タイミングと方法を自分で決定できるブラウザをお探しですか？";
+"onboarding.rebranding.intro.message" = "より速いブラウザでコントロールを掌握する準備はできていますか？\n\nAIは常に任意であり、プライバシー保護は常に有効です。";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "こんにちは。";

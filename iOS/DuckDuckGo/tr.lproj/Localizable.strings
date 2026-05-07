@@ -3019,7 +3019,7 @@
 "onboarding.rebranding.first-search-done.title" = "DuckDuckGo Search İşte Bu!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Sizi koruyan ve yapay zekâyı ne zaman ve nasıl kullanacağınıza karar vermenizi sağlayan daha hızlı bir tarayıcıya hazır mısınız?";
+"onboarding.rebranding.intro.message" = "Kontrolü size verecek daha hızlı bir tarayıcıya hazır mısınız?\n\nYapay zeka her zaman isteğe bağlıdır ve gizlilik koruması her zaman etkindir.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Merhaba.";

@@ -3019,7 +3019,7 @@
 "onboarding.rebranding.first-search-done.title" = "¡Eso es DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "¿Listo para un navegador más rápido que te protege y te permite decidir cuándo y cómo usar la IA?";
+"onboarding.rebranding.intro.message" = "¿Listo para un navegador más rápido que te da el control?\n\nLa IA es siempre opcional y la protección de privacidad está siempre activada.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Hola.";

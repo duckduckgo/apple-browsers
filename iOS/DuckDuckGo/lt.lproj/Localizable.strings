@@ -3019,7 +3019,7 @@
 "onboarding.rebranding.first-search-done.title" = "Tai – „DuckDuckGo Search“!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ar nori greitesnės naršyklės, kuri saugo tave ir leidžia nuspręsti, kada ir kaip naudoti dirbtinį intelektą?";
+"onboarding.rebranding.intro.message" = "Ar nori spartesnės naršyklės, kurią valdai tu?\n\nDI neprivalomas, o privatumo apsauga – visada įjungta.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Sveiki.";

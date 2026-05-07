@@ -117,7 +117,6 @@
 
 /* Open in New Fire Tab action */
 "action.title.newFireTabForUrl" = "Apri in una scheda Fire";
-
 /* Create New Tab action */
 "action.title.newTabAction" = "Nuova scheda";
 
@@ -207,6 +206,11 @@
 
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Funzionalità IA";
+
+/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
+
+/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Scatta una foto";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Per attività analitiche";
@@ -1510,6 +1514,9 @@
 /* No comment provided by engineer. */
 "Debug" = "Debug";
 
+/* No comment provided by engineer. */
+"Delete" = "Elimina";
+
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "dispositivo";
 
@@ -1621,11 +1628,11 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Le funzionalità AI di DuckDuckGo sono private e opzionali. I tuoi dati non vengono usati per addestrare l'IA.";
 
-/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
-"duckai.quick.action.ask.about.page" = "Richiedi informazioni sulla pagina";
-
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Allega il contenuto della pagina";
+
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Richiedi informazioni sulla pagina";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Riassumi questa pagina";
@@ -1977,7 +1984,6 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Ultima scheda Fire usata";
-
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Torna a %@";
 
@@ -2328,7 +2334,6 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Scheda Fire";
-
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Aria";
 
@@ -3348,7 +3353,6 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Eliminare le schede di Fire e i relativi dati?";
-
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Eliminare schede e dati del sito?";
 
@@ -4425,7 +4429,6 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Chiudi scheda";
-
 /* Accessibility label on remove button */
 "tab.close.home" = "Chiudi la scheda Home";
 
@@ -4437,7 +4440,6 @@
 
 /* New tab title */
 "tab.new.title" = "Nuova scheda";
-
 /* Accessibility label on tab cell */
 "tab.open.home" = "Apri la scheda Home";
 
@@ -4446,7 +4448,6 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Apri scheda Fire";
-
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Apri \"%1$@\" all'indirizzo %2$@";
 

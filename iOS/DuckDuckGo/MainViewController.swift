@@ -1521,7 +1521,7 @@ class MainViewController: UIViewController {
         // (e.g. tab switcher long-press → newTab) don't go through `refreshControls`, so
         // without this the user lands on NTP with no visible bars.
         viewCoordinator.hideAITabChrome()
-        setToolbarHiddenForAITab(false)
+        reconcileToolbarVisibilityForCurrentTab()
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
@@ -2070,6 +2070,11 @@ class MainViewController: UIViewController {
         refreshMiddleButton()
         aiChatTabChatHeaderView?.setNavAvailable(canGoBack: currentTab?.canGoBack ?? false,
                                                   canGoForward: currentTab?.canGoForward ?? false)
+        // Belt-and-braces reconciliation. Most explicit transitions also call this directly
+        // (NTP attach, AI-tab refresh, etc.); doing it here too means any future state-change
+        // hook that fires `refreshControls` self-corrects the toolbar's hidden state without
+        // the caller having to remember.
+        reconcileToolbarVisibilityForCurrentTab()
     }
 
     private func refreshMiddleButton() {
@@ -2369,7 +2374,7 @@ class MainViewController: UIViewController {
     private func applyLargeWidth() {
         if isInMinimalChromeLayout { tearDownMinimalChrome() }
         viewCoordinator.tabBarContainer.isHidden = false
-        setToolbarHiddenForCurrentUnifiedInputState()
+        reconcileToolbarVisibilityForCurrentTab()
         viewCoordinator.omniBar.enterPadState()
 
         swipeTabsCoordinator?.isEnabled = false
@@ -2378,7 +2383,7 @@ class MainViewController: UIViewController {
     private func applySmallWidth() {
         if isInMinimalChromeLayout { tearDownMinimalChrome() }
         viewCoordinator.tabBarContainer.isHidden = true
-        setToolbarHiddenForCurrentUnifiedInputState()
+        reconcileToolbarVisibilityForCurrentTab()
         viewCoordinator.constraints.toolbarBottom.constant = 0
         viewCoordinator.omniBar.enterPhoneState()
 

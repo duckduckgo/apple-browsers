@@ -102,15 +102,32 @@ extension MainViewController {
         unifiedToggleInputFeature.isAvailable && currentTab?.isAITab == true
     }
 
-    func setToolbarHiddenForCurrentUnifiedInputState() {
-        setToolbarHiddenForAITab(isCurrentTabUsingUnifiedInputAIChrome)
-    }
-
-    /// Called from outside this extension to ensure the bottom toolbar's hidden state matches
-    /// AI-tab vs non-AI-tab. Idempotent.
-    func setToolbarHiddenForAITab(_ shouldHide: Bool) {
+    /// Single source of truth for the bottom toolbar's hidden state in AI-tab/non-AI-tab
+    /// transitions. The hidden state is **derived** from `currentTab?.isAITab` (gated by the
+    /// unified-toggle-input feature flag), never imperatively passed by the caller — the
+    /// previous API took a `Bool` and that asymmetry (one path setting `true`, a sibling path
+    /// forgetting to set `false`) is what produced the "stuck without toolbar after the
+    /// idle-return escape hatch" class of bug.
+    ///
+    /// Call this from any code path that:
+    ///   - Changes the active tab (tab swap, swipe, tab switcher).
+    ///   - Lands the user on a non-AI surface from an AI surface, or vice versa
+    ///     (NTP attach, omnibar dismiss completion, idle-return routing).
+    ///   - Changes size class / orientation that may have hidden the toolbar for other
+    ///     reasons (`applyLargeWidth`/`applySmallWidth`).
+    ///
+    /// The setter is idempotent so over-calling is free; under-calling is what creates these
+    /// bugs. If a new path can flip `currentTab` and the toolbar isn't reconciling, **add a
+    /// call here** rather than re-introducing an imperative `setToolbarHidden(_ bool: Bool)`
+    /// — that surface is what we're deliberately removing.
+    ///
+    /// Direct mutations of `viewCoordinator.toolbar.isHidden` outside of unrelated subsystems
+    /// (minimal chrome, blank snapshot, tab-switcher multi-select) are tripwired by
+    /// `installAITabToolbarObserverIfNeeded` — they will surface as `BUG: toolbar.isHidden
+    /// became false on AI tab` in the logs.
+    func reconcileToolbarVisibilityForCurrentTab() {
         installAITabToolbarObserverIfNeeded()
-        if shouldHide {
+        if isCurrentTabUsingUnifiedInputAIChrome {
             viewCoordinator.toolbar.isHidden = true
         } else {
             viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth
@@ -386,12 +403,10 @@ private extension MainViewController {
         applyUnifiedInputChromeBackground(.standardChrome)
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
-        // Restore toolbar visibility — the tab switch from a Duck.ai tab to a non-AI tab can
-        // route through this path (e.g. tab switcher long-press → newTab → home screen). Without
-        // this, `toolbar.isHidden` stays true from `setToolbarHiddenForAITab(true)` and the user
-        // is left without bottom bars. Skip showBars() here (unlike refreshNonAITab) — at app
-        // launch this runs before SwipeTabsCoordinator's collection is ready and would assert.
-        setToolbarHiddenForAITab(false)
+        // Reconcile toolbar against the now-non-AI current tab. Skip `showBars()` here (unlike
+        // `refreshNonAITab`) — at app launch this runs before `SwipeTabsCoordinator`'s
+        // collection is ready and would assert.
+        reconcileToolbarVisibilityForCurrentTab()
     }
 
     func refreshAITab(
@@ -401,7 +416,7 @@ private extension MainViewController {
     ) -> Bool {
         let hasExistingChat = (tab.url ?? tab.link?.url)?.duckAIChatID != nil
         bindAITabIfPossible(tab: tab, coordinator: coordinator, hasExistingChat: hasExistingChat)
-        setToolbarHiddenForAITab(true)
+        reconcileToolbarVisibilityForCurrentTab()
 
         if case .preserveCurrentPresentation(let allowsEarlyReturn) = behavior, allowsEarlyReturn {
             syncPreservedAITabPresentation(coordinator: coordinator)
@@ -491,7 +506,7 @@ private extension MainViewController {
         applyUnifiedInputChromeBackground(.standardChrome)
         tab.borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
         tab.borderView.isBottomVisible = true
-        setToolbarHiddenForAITab(false)
+        reconcileToolbarVisibilityForCurrentTab()
         showBars()
         if coordinator.isActive {
             coordinator.deactivateToOmnibar()
@@ -664,6 +679,11 @@ private extension MainViewController {
                 coordinator.viewController.setTextHorizontalShift(0)
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
                 coordinator.viewController.finalizeOmnibarEditingDismiss()
+                // The user can land here on a non-AI tab (e.g. NTP via the after-idle escape
+                // hatch) while the toolbar is still hidden from a prior Duck.ai session.
+                // Reconcile against the *current* tab — idempotent and AI-tab paths re-hide
+                // the toolbar on their own.
+                self.reconcileToolbarVisibilityForCurrentTab()
             }
         )
 

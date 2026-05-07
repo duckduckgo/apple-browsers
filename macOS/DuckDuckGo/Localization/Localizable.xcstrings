@@ -83708,6 +83708,30 @@
         }
       }
     },
+    "preferences.ad-blocking.description" : {
+      "comment" : "Description of the Ad Blocking feature in preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking"
+          }
+        }
+      }
+    },
+    "preferences.ad-blocking.youtube-section-header" : {
+      "comment" : "Section header for YouTube-specific ad blocking settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "YouTube"
+          }
+        }
+      }
+    },
     "preferences.add-DuckDuckGo-to-dock" : {
       "comment" : "Action button to add the app to the Dock",
       "extractionState" : "extracted_with_value",
@@ -88329,60 +88353,60 @@
       }
     },
     "preferences.youtube-ad-blocking" : {
-      "comment" : "Title of the option to show the YouTube Ad Blocking preferences",
+      "comment" : "Title of the option to show the Ad Blocking preferences",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "YouTube-Werbung blockieren"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "YouTube Ad Blocking"
+            "value" : "Ad Blocking"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Bloqueo de anuncios en YouTube"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Blocage des publicités sur YouTube"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Blocco degli annunci su YouTube"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Blokkering van YouTube-advertenties"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Blokowanie reklam w serwisie YouTube"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Bloqueio de anúncios do YouTube"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Блокировка рекламы на YouTube"
           }
         }

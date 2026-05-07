@@ -668,7 +668,7 @@
       }
     },
     "onboarding.highlights.browsers.features.duckplayer.title" : {
-      "comment" : "Message to highlight browser capability of watching YouTube videos without targeted ads",
+      "comment" : "Message to highlight browser capability of watching YouTube videos without ads",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "bg" : {
@@ -704,7 +704,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Play YouTube without targeted ads"
+            "value" : "Play YouTube videos without ads"
           }
         },
         "es" : {

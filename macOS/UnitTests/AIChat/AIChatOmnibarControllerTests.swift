@@ -625,6 +625,84 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "Submit threads attachedTabIds into AIChatNativePrompt.Query for the duck.ai web app")
     }
 
+    // MARK: - File attachments (PDFs etc.)
+
+    func testWhenAddFileAttachment_ThenSharedStateContainsIt() {
+        let attachment = makeFileAttachment(fileName: "spec.pdf")
+        controller.addFileAttachmentToActiveTab(attachment)
+
+        XCTAssertEqual(controller.activeFileAttachments.map(\.id), [attachment.id])
+        let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+        XCTAssertEqual(sharedState?.aiChatFileAttachments.map(\.id), [attachment.id],
+                       "File attachment is persisted to the active tab's shared state")
+    }
+
+    func testWhenRemoveFileAttachment_ThenSharedStateDropsIt() {
+        let attachment = makeFileAttachment()
+        controller.addFileAttachmentToActiveTab(attachment)
+        XCTAssertFalse(controller.activeFileAttachments.isEmpty)
+
+        controller.removeFileAttachmentFromActiveTab(id: attachment.id)
+
+        XCTAssertTrue(controller.activeFileAttachments.isEmpty)
+    }
+
+    func testWhenSubmitWithFileAttachments_ThenPromptCarriesFiles() async {
+        // Given — a model that supports file upload, plus an attached PDF
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "pdf-model", entityHasAccess: true)
+        ]
+        mockPreferences.selectedModelId = "pdf-model"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        let pdfData = Data("%PDF-1.4 mock".utf8)
+        let attachment = AIChatFileAttachment(
+            data: pdfData,
+            fileName: "spec.pdf",
+            mimeType: "application/pdf"
+        )
+        controller.addFileAttachmentToActiveTab(attachment)
+        controller.updateText("summarise this PDF")
+
+        _ = AIChatPromptHandler.shared.consumeData()
+
+        // When
+        controller.submit()
+        await Task.yield()
+
+        // Then — prompt's `query.files` carries the encoded PDF.
+        let prompt = AIChatPromptHandler.shared.consumeData()
+        guard case let .query(query) = prompt?.tool else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+            return
+        }
+        XCTAssertEqual(query.files?.count, 1)
+        XCTAssertEqual(query.files?.first?.fileName, "spec.pdf")
+        XCTAssertEqual(query.files?.first?.mimeType, "application/pdf")
+        XCTAssertEqual(query.files?.first?.data, pdfData.base64EncodedString(),
+                       "File data is sent as base64")
+    }
+
+    func testWhenSubmitWithFileAttachments_ThenSharedStateClearsFileAttachments() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "pdf-model", entityHasAccess: true)
+        ]
+        mockPreferences.selectedModelId = "pdf-model"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        controller.addFileAttachmentToActiveTab(makeFileAttachment(fileName: "a.pdf"))
+        controller.updateText("summarise")
+
+        controller.submit()
+        await Task.yield()
+
+        let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+        XCTAssertTrue(sharedState?.aiChatFileAttachments.isEmpty ?? false,
+                      "File attachments are cleared from shared state after a successful submit")
+    }
+
     func testWhenSubmitWithoutTabAttachments_ThenPromptOmitsAttachedTabIds() async {
         // Given — only text, no attachments
         controller.updateText("just text")
@@ -1308,6 +1386,14 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             title: "Example",
             url: URL(string: "https://example.com")!,
             favicon: nil
+        )
+    }
+
+    private func makeFileAttachment(fileName: String = "spec.pdf") -> AIChatFileAttachment {
+        AIChatFileAttachment(
+            data: Data("%PDF-1.4 mock".utf8),
+            fileName: fileName,
+            mimeType: "application/pdf"
         )
     }
 }

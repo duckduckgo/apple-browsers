@@ -482,11 +482,25 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
     }
 
+    /// Image picker has room for at least one more attachment.
+    private var canPickAdditionalImages: Bool {
+        shouldShowImageUpload && !attachmentsContainerView.isFull
+    }
+
     /// The attach button is now multi-purpose: it triggers either the legacy image-and-file
     /// picker (when only image upload is available) or a menu with both options (when the tab
-    /// picker is also enabled). It needs to be visible when *any* attach mode is available.
+    /// picker is also enabled). It needs to be visible when *any* attach mode is available
+    /// — image upload, file upload (PDFs etc.), or the omnibar tab picker.
     private var shouldShowAttachButton: Bool {
-        shouldShowImageUpload || omnibarController.isOmnibarTabPickerEnabled
+        shouldShowImageUpload
+            || omnibarController.isOmnibarTabPickerEnabled
+            || omnibarController.selectedModelSupportsFileUpload
+    }
+
+    /// "Attach Image or File" is shown when *either* path is available — image upload (within
+    /// cap) or file upload — so PDF-only models still get the menu item.
+    private var shouldShowImageOrFileMenuItem: Bool {
+        canPickAdditionalImages || omnibarController.selectedModelSupportsFileUpload
     }
 
     private var shouldShowAttachments: Bool {
@@ -722,6 +736,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         tabAttachmentsCarouselView.onTabAttachmentRemoveRequested = { [weak self] id in
             self?.omnibarController.removeTabAttachmentFromActiveTab(id: id)
+        }
+        tabAttachmentsCarouselView.onFileAttachmentRemoveRequested = { [weak self] id in
+            self?.omnibarController.removeFileAttachmentFromActiveTab(id: id)
         }
         containerView.addSubview(tabAttachmentsCarouselView)
 
@@ -1124,16 +1141,46 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = true
-        panel.allowedContentTypes = allowedContentTypes(for: omnibarController.selectedModelImageFormats)
+        panel.allowedContentTypes = pickerAllowedContentTypes()
 
         guard let window = view.window else { return }
         panel.beginSheetModal(for: window) { [weak self] response in
             guard let self, response == .OK else { return }
-            let remaining = Constants.attachmentsDisplayCap - self.attachmentsContainerView.attachments.count
-            for url in panel.urls.prefix(max(remaining, 0)) {
-                self.addImageAttachment(from: url)
+            // Track image slot consumption so we never overshoot the image cap; files have no
+            // cap (the model's supportedFileTypes is the only gate).
+            var imagesAdded = self.attachmentsContainerView.attachments.count
+            let imageCap = Constants.attachmentsDisplayCap
+            for url in panel.urls {
+                let utType = UTType(filenameExtension: url.pathExtension.lowercased())
+                if let utType, utType.conforms(to: .image) {
+                    guard imagesAdded < imageCap else { continue }
+                    self.addImageAttachment(from: url)
+                    imagesAdded += 1
+                } else {
+                    self.addFileAttachment(from: url)
+                }
             }
         }
+    }
+
+    /// Union of the UTTypes the picker should allow:
+    /// - image formats from the model (extensions like `"png"`)
+    /// - file MIME types from the model (`"application/pdf"` etc.)
+    /// Defaults to image-only when both lists are empty so the picker never opens with no
+    /// allowed types (which would let the user pick anything).
+    private func pickerAllowedContentTypes() -> [UTType] {
+        var types: [UTType] = []
+        if canPickAdditionalImages {
+            let imageTypes = omnibarController.selectedModelImageFormats
+                .compactMap { UTType(filenameExtension: $0.lowercased()) }
+            types.append(contentsOf: imageTypes.isEmpty ? [.jpeg, .png, .webP] : imageTypes)
+        }
+        if omnibarController.selectedModelSupportsFileUpload {
+            let fileTypes = omnibarController.selectedModelSupportedFileTypes
+                .compactMap { UTType(mimeType: $0) }
+            types.append(contentsOf: fileTypes)
+        }
+        return types
     }
 
     /// Top-level attach menu: "Attach Image or File" (when image upload is supported by the
@@ -1145,7 +1192,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        if shouldShowImageUpload && !attachmentsContainerView.isFull {
+        if shouldShowImageOrFileMenuItem {
             let imageItem = NSMenuItem(
                 title: UserText.aiChatAttachMenuImageOrFile,
                 action: #selector(attachMenuImageOrFileClicked),
@@ -1212,17 +1259,27 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         presentImageFilePicker()
     }
 
-    private func allowedContentTypes(for formats: [String]) -> [UTType] {
-        let types = formats.compactMap { UTType(filenameExtension: $0.lowercased()) }
-        return types.isEmpty ? [.jpeg, .png, .webP] : types
-    }
-
     /// Attempts to add an image attachment from a drag-and-drop operation.
     /// - Returns: `true` if the image was accepted, `false` if attachments are full.
     func addImageAttachmentFromDrop(_ url: URL) -> Bool {
         guard attachmentsContainerView.attachments.count < Constants.attachmentsDisplayCap else { return false }
         addImageAttachment(from: url)
         return true
+    }
+
+    /// Reads file bytes off disk and adds them to the active tab as a file attachment (PDFs etc.).
+    /// MIME type comes from the URL's UTType so the duck.ai server-side validation against the
+    /// model's `supportedFileTypes` (which are MIME types) matches.
+    private func addFileAttachment(from url: URL) {
+        guard let data = try? Data(contentsOf: url) else { return }
+        let mimeType = UTType(filenameExtension: url.pathExtension.lowercased())?.preferredMIMEType
+            ?? "application/octet-stream"
+        let attachment = AIChatFileAttachment(
+            data: data,
+            fileName: url.lastPathComponent,
+            mimeType: mimeType
+        )
+        omnibarController.addFileAttachmentToActiveTab(attachment)
     }
 
     private func addImageAttachment(from url: URL) {
@@ -1528,12 +1585,15 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func updateImageUploadVisibility(supportsImageUpload: Bool) {
         guard omnibarController.isOmnibarToolsEnabled else { return }
 
-        let showUpload = supportsImageUpload || omnibarController.isImageGenerationMode
-        imageUploadButton.isHidden = !showUpload
-        attachmentsContainerView.isHidden = !showUpload
-        if !showUpload {
-            // Image side disappearing — recompute the shared row height; if tabs are present the
-            // carousel stays at row height, otherwise it collapses.
+        let showImageSide = supportsImageUpload || omnibarController.isImageGenerationMode
+        // The attach BUTTON should remain visible when *any* attach mode is available — image,
+        // file (PDFs etc.), or tab picker. The image-data view is image-only and stays
+        // hidden / shown based on image side only.
+        imageUploadButton.isHidden = !shouldShowAttachButton
+        attachmentsContainerView.isHidden = !showImageSide
+        if !showImageSide {
+            // Image side disappearing — recompute the shared row height; if tabs/files are
+            // present the carousel stays at row height, otherwise it collapses.
             updateTabAttachmentsLayout()
             attachmentsErrorLabel.isHidden = true
         } else {

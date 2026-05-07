@@ -424,6 +424,21 @@ final class AIChatOmnibarController {
         return models.first(where: { $0.id == persistedModelId })?.supportedImageFormats ?? ["png", "jpeg", "webp"]
     }
 
+    /// Whether the currently selected model supports file (PDF etc.) upload.
+    /// Returns `false` conservatively when models are unavailable — file upload is opt-in per model
+    /// and the file picker should stay hidden until we know the model can accept it.
+    var selectedModelSupportsFileUpload: Bool {
+        guard !models.isEmpty else { return false }
+        return models.first(where: { $0.id == persistedModelId })?.supportsFileUpload ?? false
+    }
+
+    /// File types supported by the currently selected model (e.g. ["pdf"]). Empty when files
+    /// aren't supported.
+    var selectedModelSupportedFileTypes: [String] {
+        guard !models.isEmpty else { return [] }
+        return models.first(where: { $0.id == persistedModelId })?.supportedFileTypes ?? []
+    }
+
     /// Supported reasoning effort levels for the currently selected model. Unknown raw values
     /// returned by the backend are silently filtered out. This is the server-truth list — used to
     /// validate persisted selections and to gate what we attach to submissions, so a value the
@@ -593,6 +608,34 @@ final class AIChatOmnibarController {
         guard current.contains(where: { $0.id == id }) else { return }
         current.removeAll { $0.id == id }
         sharedTextState.setAIChatAttachments(current)
+    }
+
+    /// File attachments persisted on the current tab (PDFs etc.). Empty when no tab is active.
+    var activeFileAttachments: [AIChatFileAttachment] {
+        sharedTextState?.aiChatFileAttachments ?? []
+    }
+
+    /// Persists the supplied file-attachment list onto the active tab's shared state. The
+    /// publisher fires; the carousel re-renders.
+    func persistFileAttachmentsToActiveTab(_ attachments: [AIChatFileAttachment]) {
+        sharedTextState?.setAIChatFileAttachments(attachments)
+    }
+
+    /// Adds a file attachment to the active tab. No-op if a file with the same id is already
+    /// attached.
+    func addFileAttachmentToActiveTab(_ attachment: AIChatFileAttachment) {
+        var current = activeFileAttachments
+        guard !current.contains(where: { $0.id == attachment.id }) else { return }
+        current.append(attachment)
+        persistFileAttachmentsToActiveTab(current)
+    }
+
+    /// Removes a file attachment from the active tab. No-op if not currently attached.
+    func removeFileAttachmentFromActiveTab(id: UUID) {
+        var current = activeFileAttachments
+        guard current.contains(where: { $0.id == id }) else { return }
+        current.removeAll { $0.id == id }
+        persistFileAttachmentsToActiveTab(current)
     }
 
     /// Returns the open browser tabs (pinned + regular) in this controller's window as candidate
@@ -796,17 +839,30 @@ final class AIChatOmnibarController {
                 )
             }
 
+            // Snapshot file attachments (PDFs etc.) from the active tab. Only included when the
+            // current model advertises support — otherwise we'd send a payload the model can't
+            // process. Encode each `AIChatFileAttachment.data` as base64 for the JSON bridge.
+            let fileAttachments = self.selectedModelSupportsFileUpload ? self.activeFileAttachments : []
+            let files: [AIChatNativePrompt.NativePromptFile]? = fileAttachments.isEmpty ? nil : fileAttachments.map { attachment in
+                AIChatNativePrompt.NativePromptFile(
+                    data: attachment.data.base64EncodedString(),
+                    fileName: attachment.fileName,
+                    mimeType: attachment.mimeType
+                )
+            }
+
             aiChatTabOpener.openAIChatTab(
                 with: .query(trimmedText, shouldAutoSubmit: true),
                 behavior: .currentTab
             )
-            // Re-set prompt after tab opener to include images, tab attachments, model selection,
-            // and mode (tab opener overwrites with a plain query).
+            // Re-set prompt after tab opener to include images, files, tab attachments, model
+            // selection, and mode (tab opener overwrites with a plain query).
             let prompt = AIChatNativePrompt.queryPrompt(
                 trimmedText,
                 autoSubmit: true,
                 toolChoice: toolChoice,
                 images: images,
+                files: files,
                 modelId: modelId,
                 mode: mode,
                 reasoningEffort: reasoningEffort,
@@ -817,9 +873,10 @@ final class AIChatOmnibarController {
             self.activeToolMode = nil
             onAttachmentsClearRequested?()
             // Image attachments clear via the container VC's `clearAttachments()` chain (which
-            // persists `[]` to shared state). Tabs are owned directly by shared state, so clear
-            // them here — the publisher fires, the carousel re-renders empty.
+            // persists `[]` to shared state). Tabs and files are owned directly by shared state,
+            // so clear them here — the publisher fires, the carousel re-renders empty.
             self.persistTabAttachmentsToActiveTab([])
+            self.persistFileAttachmentsToActiveTab([])
             delegate?.aiChatOmnibarControllerDidSubmit(self)
         }
 

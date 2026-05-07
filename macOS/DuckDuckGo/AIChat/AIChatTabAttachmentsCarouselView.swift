@@ -35,12 +35,13 @@ final class AIChatTabAttachmentsCarouselView: NSView {
         static let cardSpacing: CGFloat = 6
     }
 
-    /// Visible row-content height (the taller of an image thumbnail vs. a tab card). Items inside
-    /// the carousel render in this much vertical space; the carousel itself is taller — see
+    /// Visible row-content height (the tallest of the attachment view kinds). Items inside the
+    /// carousel render in this much vertical space; the carousel itself is taller — see
     /// `expandedHeight` — so card shadows have room to render past the row content edges.
     static let rowHeight: CGFloat = max(
         AIChatTabAttachmentCardView.totalHeight,
-        AIChatImageAttachmentThumbnailView.totalHeight
+        AIChatImageAttachmentThumbnailView.totalHeight,
+        AIChatFileAttachmentCardView.totalHeight
     )
 
     /// Internal padding on every edge of the row content so card shadows aren't clipped at the
@@ -66,6 +67,9 @@ final class AIChatTabAttachmentsCarouselView: NSView {
 
     /// Called when the user clicks the close button on a *tab* card. Same flow as the image hook.
     var onTabAttachmentRemoveRequested: ((String) -> Void)?
+
+    /// Called when the user clicks the close button on a *file* card. Same flow as the others.
+    var onFileAttachmentRemoveRequested: ((UUID) -> Void)?
 
     private let scrollView: NSScrollView = {
         let scrollView = NSScrollView()
@@ -202,6 +206,12 @@ final class AIChatTabAttachmentsCarouselView: NSView {
             let view = AIChatTabAttachmentCardView(attachment: tabAttachment)
             view.onRemove = { [weak self] id in
                 self?.onTabAttachmentRemoveRequested?(id)
+            }
+            return view
+        case .file(let fileAttachment):
+            let view = AIChatFileAttachmentCardView(attachment: fileAttachment)
+            view.onRemove = { [weak self] id in
+                self?.onFileAttachmentRemoveRequested?(id)
             }
             return view
         }

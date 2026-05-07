@@ -63,6 +63,9 @@ final class AddressBarSharedTextState: ObservableObject {
     /// can keep curating the prompt when bouncing between browser tabs.
     @Published private(set) var aiChatTabAttachments: [AIChatTabAttachment] = []
 
+    /// The duck.ai file attachments (PDFs etc.) for this tab. Persists across tab switches.
+    @Published private(set) var aiChatFileAttachments: [AIChatFileAttachment] = []
+
     /// Unified, insertion-ordered list of duck.ai panel attachments — both image uploads and
     /// page-content tabs. The omnibar carousel renders directly from this list to preserve the
     /// chronological order in which the user attached items (e.g. tab, image, tab, tab); the
@@ -93,6 +96,9 @@ final class AddressBarSharedTextState: ObservableObject {
         }
         if !aiChatTabAttachments.isEmpty {
             aiChatTabAttachments = []
+        }
+        if !aiChatFileAttachments.isEmpty {
+            aiChatFileAttachments = []
         }
         if !aiChatPanelAttachments.isEmpty {
             aiChatPanelAttachments = []
@@ -140,15 +146,26 @@ final class AddressBarSharedTextState: ObservableObject {
         aiChatPanelAttachments = reconcilePanelAttachments(updatedTabs: attachments)
     }
 
-    /// Walks the current panel attachment list and produces a new one based on either:
-    /// - a fresh image list (`updatedImages`): tab entries keep their position, image entries are
-    ///   replaced from the new list (preserving order, dropping removed ones), and any genuinely
-    ///   new image ids are appended.
-    /// - a fresh tab list (`updatedTabs`): mirror semantics for tabs.
+    /// Replaces the duck.ai file attachment list for this tab. Same idempotency + reconcile
+    /// semantics as the image and tab setters — id-equality is the change check (`AIChatFileAttachment`
+    /// is immutable once attached).
+    func setAIChatFileAttachments(_ attachments: [AIChatFileAttachment]) {
+        let unchanged = attachments.count == aiChatFileAttachments.count
+            && zip(attachments, aiChatFileAttachments).allSatisfy { $0.id == $1.id }
+        guard !unchanged else { return }
+        aiChatFileAttachments = attachments
+        aiChatPanelAttachments = reconcilePanelAttachments(updatedFiles: attachments)
+    }
+
+    /// Walks the current panel attachment list and produces a new one based on a fresh list of
+    /// one attachment kind (images, tabs, or files). Entries of the *other* kinds keep their
+    /// positions; entries of *this* kind are replaced from the new list (preserving order,
+    /// dropping removed ones), and any genuinely new ids are appended.
     /// Exactly one parameter should be non-nil per call.
     private func reconcilePanelAttachments(
         updatedImages: [AIChatImageAttachment]? = nil,
-        updatedTabs: [AIChatTabAttachment]? = nil
+        updatedTabs: [AIChatTabAttachment]? = nil,
+        updatedFiles: [AIChatFileAttachment]? = nil
     ) -> [AIChatPanelAttachment] {
         var result: [AIChatPanelAttachment] = []
 
@@ -157,7 +174,7 @@ final class AddressBarSharedTextState: ObservableObject {
             var consumedImageIds = Set<UUID>()
             for entry in aiChatPanelAttachments {
                 switch entry {
-                case .tab:
+                case .tab, .file:
                     result.append(entry)
                 case .image(let existing):
                     if let updated = imagesById[existing.id] {
@@ -175,7 +192,7 @@ final class AddressBarSharedTextState: ObservableObject {
             var consumedTabIds = Set<String>()
             for entry in aiChatPanelAttachments {
                 switch entry {
-                case .image:
+                case .image, .file:
                     result.append(entry)
                 case .tab(let existing):
                     if let updated = tabsById[existing.id] {
@@ -186,6 +203,23 @@ final class AddressBarSharedTextState: ObservableObject {
             }
             for tab in updatedTabs where !consumedTabIds.contains(tab.id) {
                 result.append(.tab(tab))
+            }
+        } else if let updatedFiles {
+            let filesById: [UUID: AIChatFileAttachment] = Dictionary(uniqueKeysWithValues: updatedFiles.map { ($0.id, $0) })
+            var consumedFileIds = Set<UUID>()
+            for entry in aiChatPanelAttachments {
+                switch entry {
+                case .image, .tab:
+                    result.append(entry)
+                case .file(let existing):
+                    if let updated = filesById[existing.id] {
+                        result.append(.file(updated))
+                        consumedFileIds.insert(existing.id)
+                    }
+                }
+            }
+            for file in updatedFiles where !consumedFileIds.contains(file.id) {
+                result.append(.file(file))
             }
         }
 

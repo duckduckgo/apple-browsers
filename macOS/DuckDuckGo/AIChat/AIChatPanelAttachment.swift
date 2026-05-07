@@ -28,16 +28,19 @@ import Foundation
 enum AIChatPanelAttachment: Equatable {
     case image(AIChatImageAttachment)
     case tab(AIChatTabAttachment)
+    case file(AIChatFileAttachment)
 
     /// Stable string id usable as a dictionary key when reconciling views to attachments.
-    /// Image ids and tab ids live in different namespaces (`UUID` vs tab UUID string) and never
-    /// collide; we coerce both into `String` so the carousel can key views uniformly.
+    /// Each attachment kind lives in its own id namespace, prefixed below so the carousel can
+    /// key views across kinds without collisions.
     var attachmentId: String {
         switch self {
         case .image(let attachment):
             return "image:\(attachment.id.uuidString)"
         case .tab(let attachment):
             return "tab:\(attachment.id)"
+        case .file(let attachment):
+            return "file:\(attachment.id.uuidString)"
         }
     }
 
@@ -51,6 +54,10 @@ enum AIChatPanelAttachment: Equatable {
             return a.id == b.id && a.image === b.image
         case let (.tab(a), .tab(b)):
             return a == b
+        case let (.file(a), .file(b)):
+            // `AIChatFileAttachment` doesn't conform to `Equatable`. Files are immutable once
+            // attached, so an id match is sufficient.
+            return a.id == b.id
         default:
             return false
         }

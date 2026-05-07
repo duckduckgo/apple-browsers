@@ -173,6 +173,20 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    func test_resetInteractionState_alreadyFalse_doesNotPublishChange() {
+        let expectation = expectation(description: "hasUserInteractedWithTextPublisher does not fire when already false")
+        expectation.isInverted = true
+        sut.hasUserInteractedWithTextPublisher
+            .dropFirst()
+            .sink { _ in
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.resetInteractionState()
+        waitForExpectations(timeout: 1)
+    }
+
     // MARK: - clearText
 
     func test_clearText_emptiesCurrentText() {

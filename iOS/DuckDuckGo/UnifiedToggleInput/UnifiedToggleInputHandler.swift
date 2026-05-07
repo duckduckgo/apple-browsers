@@ -197,6 +197,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     func resetInteractionState() {
+        guard hasUserInteractedWithText else { return }
         hasUserInteractedWithText = false
     }
 

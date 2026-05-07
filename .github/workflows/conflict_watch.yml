@@ -28,6 +28,15 @@ on:
         description: "Verbose logging"
         type: boolean
         default: false
+  # TEMP-PUSH-TRIGGER: enables testing without first merging to main, since
+  # workflow_dispatch is only registered for workflows on the default branch.
+  # Forced dry-run for any push event (see CW_DRY_RUN below). Remove this
+  # block before merging to main.
+  push:
+    branches: [tom/conflict-watch]
+    paths:
+      - '.github/workflows/conflict_watch.yml'
+      - 'scripts/conflict-watch/**'
   # schedule:
   #   - cron: '0 5 * * *' # 05:00 UTC == 07:00 CET / 06:00 CEST
 
@@ -70,10 +79,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CW_ROOT: ${{ runner.temp }}/conflict-watch
           CW_USER_MAP_PATH: ${{ runner.temp }}/conflict-watch/user_map.yml
-          CW_DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
-          CW_ASANA_PROJECT_GID: ${{ inputs.asana_project_gid }}
-          CW_RECENCY_HOURS: ${{ inputs.recency_hours }}
-          CW_VERBOSE: ${{ inputs.verbose && '1' || '0' }}
+          # Real Asana writes only when the user manually dispatches with
+          # dry_run=false. Any other trigger (push, future cron) is forced
+          # to dry-run.
+          CW_DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run == false) && '0' || '1' }}
+          CW_ASANA_PROJECT_GID: ${{ inputs.asana_project_gid || '1214448335754394' }}
+          CW_RECENCY_HOURS: ${{ inputs.recency_hours || '48' }}
+          CW_VERBOSE: ${{ (inputs.verbose == true || github.event_name == 'push') && '1' || '0' }}
         run: |
           python3 scripts/conflict-watch/conflict-watch.py
 

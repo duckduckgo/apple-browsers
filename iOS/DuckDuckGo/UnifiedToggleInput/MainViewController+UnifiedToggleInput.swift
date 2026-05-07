@@ -831,6 +831,10 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     func aiChatTabChatHeaderDidTapBack() {
         onBackPressed()
     }
+
+    func aiChatTabChatHeaderDidTapForward() {
+        onForwardPressed()
+    }
 }
 
 // MARK: - UnifiedToggleInputFloatingSubmitDelegate

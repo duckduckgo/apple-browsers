@@ -27,6 +27,7 @@ protocol AIChatTabChatHeaderViewDelegate: AnyObject {
     func aiChatTabChatHeaderDidTapUpgrade()
     func aiChatTabChatHeaderDidTapAppMenu()
     func aiChatTabChatHeaderDidTapBack()
+    func aiChatTabChatHeaderDidTapForward()
 }
 
 final class AIChatTabChatHeaderView: UIView {
@@ -56,6 +57,26 @@ final class AIChatTabChatHeaderView: UIView {
         action: #selector(backTapped)
     )
 
+    private lazy var forwardButton: UIButton = makeIconButton(
+        image: DesignSystemImages.Glyphs.Size24.arrowRight,
+        accessibilityLabel: UserText.keyCommandBrowserForward,
+        action: #selector(forwardTapped)
+    )
+
+    private lazy var navBackButton: UIButton = makeIconButton(
+        image: DesignSystemImages.Glyphs.Size24.arrowLeft,
+        accessibilityLabel: UserText.keyCommandBrowserBack,
+        action: #selector(backTapped),
+        includeChrome: false
+    )
+
+    private lazy var navForwardButton: UIButton = makeIconButton(
+        image: DesignSystemImages.Glyphs.Size24.arrowRight,
+        accessibilityLabel: UserText.keyCommandBrowserForward,
+        action: #selector(forwardTapped),
+        includeChrome: false
+    )
+
     private lazy var chatListButton: UIButton = makeIconButton(
         image: DesignSystemImages.Glyphs.Size24.chats,
         accessibilityLabel: "Recent chats",
@@ -78,10 +99,20 @@ final class AIChatTabChatHeaderView: UIView {
     )
 
     private lazy var leftPairPill: UIView = makePillContainer()
+    private lazy var navPairPill: UIView = makePillContainer()
     private lazy var rightPairPill: UIView = makePillContainer()
 
     private lazy var leftPairStack: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [chatListButton, newChatButton])
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = Constants.pillInnerIconSpacing
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
+    private lazy var navPairStack: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [navBackButton, navForwardButton])
         stack.axis = .horizontal
         stack.alignment = .center
         stack.spacing = Constants.pillInnerIconSpacing
@@ -229,9 +260,18 @@ final class AIChatTabChatHeaderView: UIView {
         paidTitleStack.isHidden = !isSubscriptionActive
     }
 
-    func setBackAvailable(_ available: Bool) {
-        backButton.isHidden = !available
-        newChatButton.isHidden = available
+    func setNavAvailable(canGoBack: Bool, canGoForward: Bool) {
+        let showsNavPair = canGoBack && canGoForward
+        let showsStandaloneBack = canGoBack && !canGoForward
+        let showsStandaloneForward = canGoForward && !canGoBack
+        let anyNavVisible = canGoBack || canGoForward
+
+        backButton.isHidden = !showsStandaloneBack
+        forwardButton.isHidden = !showsStandaloneForward
+        navPairPill.isHidden = !showsNavPair
+        newChatButton.isHidden = anyNavVisible
+        // Hide free/paid title when both arrows occupy the left pill — the row gets crowded.
+        titleContainer.isHidden = showsNavPair
     }
 
     private lazy var bottomSeparator: UIView = {
@@ -249,13 +289,18 @@ final class AIChatTabChatHeaderView: UIView {
         addSubview(bottomSeparator)
 
         leftStack.addArrangedSubview(backButton)
+        leftStack.addArrangedSubview(forwardButton)
+        leftStack.addArrangedSubview(navPairPill)
         leftStack.addArrangedSubview(leftPairPill)
+        pillContentSuperview(for: navPairPill).addSubview(navPairStack)
         pillContentSuperview(for: leftPairPill).addSubview(leftPairStack)
         backButton.isHidden = true
+        forwardButton.isHidden = true
+        navPairPill.isHidden = true
         rightStack.addArrangedSubview(rightPairPill)
         pillContentSuperview(for: rightPairPill).addSubview(rightPairStack)
 
-        for control in [chatListButton, newChatButton, tabSwitcherButton, appMenuButton] as [UIControl] {
+        for control in [chatListButton, newChatButton, navBackButton, navForwardButton, tabSwitcherButton, appMenuButton] as [UIControl] {
             control.addGestureRecognizer(StrictBoundsTouchObserver())
         }
 
@@ -280,6 +325,15 @@ final class AIChatTabChatHeaderView: UIView {
             backButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             backButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
+            forwardButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            forwardButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+
+            navBackButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            navBackButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+
+            navForwardButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+            navForwardButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
+
             chatListButton.widthAnchor.constraint(equalToConstant: Constants.pillButtonSize),
             chatListButton.heightAnchor.constraint(equalToConstant: Constants.pillButtonSize),
 
@@ -297,6 +351,12 @@ final class AIChatTabChatHeaderView: UIView {
             leftPairStack.trailingAnchor.constraint(equalTo: leftPairPill.trailingAnchor, constant: -Constants.pillInnerHorizontalPadding),
             leftPairStack.topAnchor.constraint(equalTo: leftPairPill.topAnchor),
             leftPairStack.bottomAnchor.constraint(equalTo: leftPairPill.bottomAnchor),
+
+            navPairPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            navPairStack.leadingAnchor.constraint(equalTo: navPairPill.leadingAnchor, constant: Constants.pillInnerHorizontalPadding),
+            navPairStack.trailingAnchor.constraint(equalTo: navPairPill.trailingAnchor, constant: -Constants.pillInnerHorizontalPadding),
+            navPairStack.topAnchor.constraint(equalTo: navPairPill.topAnchor),
+            navPairStack.bottomAnchor.constraint(equalTo: navPairPill.bottomAnchor),
 
             rightPairPill.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
             rightPairStack.leadingAnchor.constraint(equalTo: rightPairPill.leadingAnchor, constant: Constants.pillInnerHorizontalPadding),
@@ -408,7 +468,7 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     private func updateButtonShadows() {
-        let chromedViews: [UIView] = [backButton, leftPairPill, rightPairPill]
+        let chromedViews: [UIView] = [backButton, forwardButton, navPairPill, leftPairPill, rightPairPill]
         for view in chromedViews {
             applyGlassChromeShadow(to: view)
         }
@@ -425,6 +485,7 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     @objc private func backTapped() { delegate?.aiChatTabChatHeaderDidTapBack() }
+    @objc private func forwardTapped() { delegate?.aiChatTabChatHeaderDidTapForward() }
     @objc private func chatListTapped() { delegate?.aiChatTabChatHeaderDidTapChatList() }
     @objc private func newChatTapped() { delegate?.aiChatTabChatHeaderDidTapNewChat() }
     @objc private func appMenuTapped() { delegate?.aiChatTabChatHeaderDidTapAppMenu() }

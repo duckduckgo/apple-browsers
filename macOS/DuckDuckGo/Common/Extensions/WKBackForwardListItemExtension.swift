@@ -32,4 +32,11 @@ extension WKBackForwardListItem {
         }
     }
 
+    // `url` is imported as non-optional but WebKit's implementation returns nil
+    // for null/invalid underlying URLs, trapping the unconditional NSURL→URL bridge.
+    // Read via KVC to keep the optional and use a conditional bridge.
+    var safeURL: URL? {
+        (self as NSObject).value(forKey: "URL") as? URL
+    }
+
 }

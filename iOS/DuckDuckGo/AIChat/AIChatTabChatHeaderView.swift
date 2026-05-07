@@ -250,6 +250,7 @@ final class AIChatTabChatHeaderView: UIView {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            updateGlassPillEffects()
             updateButtonShadows()
         }
     }
@@ -457,14 +458,27 @@ final class AIChatTabChatHeaderView: UIView {
 
     @available(iOS 26, *)
     private func makeGlassPillEffectView() -> UIVisualEffectView {
-        let effect = UIGlassEffect(style: .regular)
-        effect.isInteractive = true
-
-        let effectView = UIVisualEffectView(effect: effect)
+        let effectView = UIVisualEffectView(effect: makeGlassPillEffect())
         effectView.translatesAutoresizingMaskIntoConstraints = false
         effectView.layer.cornerRadius = Constants.buttonSize / 2
         effectView.clipsToBounds = true
         return effectView
+    }
+
+    @available(iOS 26, *)
+    private func makeGlassPillEffect() -> UIGlassEffect {
+        let effect = UIGlassEffect(style: .clear)
+        effect.isInteractive = true
+        return effect
+    }
+
+    private func updateGlassPillEffects() {
+        guard #available(iOS 26, *) else { return }
+
+        for pill in [navPairPill, leftPairPill, rightPairPill] {
+            guard let effectView = pill.subviews.first(where: { $0 is UIVisualEffectView }) as? UIVisualEffectView else { continue }
+            effectView.effect = makeGlassPillEffect()
+        }
     }
 
     private func updateButtonShadows() {

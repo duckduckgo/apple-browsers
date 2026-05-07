@@ -217,6 +217,10 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User submits a prompt that includes one or more image attachments
     case aiChatAddressBarSubmitWithImage(imageCount: Int)
 
+    /// Event Trigger: User submits a prompt that includes one or more page-content tab
+    /// attachments via the omnibar's Attach Page Content menu.
+    case aiChatAddressBarSubmitWithTabs(tabCount: Int)
+
     // MARK: - Model Picker
 
     /// Event Trigger: User selects a model from the model picker menu
@@ -491,6 +495,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_image_removed"
         case .aiChatAddressBarSubmitWithImage:
             return "aichat_addressbar_submit_with_image"
+        case .aiChatAddressBarSubmitWithTabs:
+            return "aichat_addressbar_submit_with_tabs"
         case .aiChatAddressBarModelSelected:
             return "aichat_addressbar_model_selected"
         case .aiChatAddressBarReasoningEffortSelected:
@@ -657,6 +663,8 @@ enum AIChatPixel: PixelKitEvent {
         case .aiChatAddressBarSubmitWithImage(let imageCount),
              .aiChatNtpSubmitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]
+        case .aiChatAddressBarSubmitWithTabs(let tabCount):
+            return ["tabCount": String(tabCount)]
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
         case .aiChatSidebarOpened(let source, let shouldAutomaticallySendPageContext, let minutesSinceSidebarHidden):
@@ -748,6 +756,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarImageAttached,
                 .aiChatAddressBarImageRemoved,
                 .aiChatAddressBarSubmitWithImage,
+                .aiChatAddressBarSubmitWithTabs,
                 .aiChatAddressBarModelSelected,
                 .aiChatAddressBarReasoningEffortSelected,
                 .aiChatNtpSubmitWithImage,

@@ -583,6 +583,67 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "Order matches the toggle-on order; the duck.ai web app preserves this on submit")
     }
 
+    func testWhenSubmitWithTabAttachments_ThenSharedStateClearsTabAttachments() async {
+        // Given — a tab is attached and there's a prompt to submit
+        let attachment = makeTabAttachment(id: "tab-1")
+        controller.toggleTabAttachment(attachment)
+        XCTAssertFalse(controller.activeTabAttachments.isEmpty)
+        controller.updateText("summarize this")
+
+        // When
+        controller.submit()
+        await Task.yield()
+
+        // Then — submit clears the active tab's saved tab attachments (the publisher then drives
+        // the carousel back to empty). The active tab's image attachments are cleared by the same
+        // submit flow via the existing image-side path.
+        let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+        XCTAssertTrue(sharedState?.aiChatTabAttachments.isEmpty ?? false,
+                      "Tab attachments are cleared from shared state after a successful submit")
+    }
+
+    func testWhenSubmitWithTabAttachments_ThenPromptCarriesAttachedTabIds() async {
+        // Given — two tabs attached in insertion order
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-A"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-B"))
+        controller.updateText("summarize these")
+
+        // Drain anything a previous test might have left in the shared prompt handler.
+        _ = AIChatPromptHandler.shared.consumeData()
+
+        // When
+        controller.submit()
+        await Task.yield()
+
+        // Then — the prompt set on the handler carries the tab ids in insertion order.
+        let prompt = AIChatPromptHandler.shared.consumeData()
+        guard case let .query(query) = prompt?.tool else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+            return
+        }
+        XCTAssertEqual(query.attachedTabIds, ["tab-A", "tab-B"],
+                       "Submit threads attachedTabIds into AIChatNativePrompt.Query for the duck.ai web app")
+    }
+
+    func testWhenSubmitWithoutTabAttachments_ThenPromptOmitsAttachedTabIds() async {
+        // Given — only text, no attachments
+        controller.updateText("just text")
+        _ = AIChatPromptHandler.shared.consumeData()
+
+        // When
+        controller.submit()
+        await Task.yield()
+
+        // Then — the prompt's `attachedTabIds` is nil so the duck.ai web app sees no extra field
+        // (preserves backward compat with builds where the field isn't yet recognised).
+        let prompt = AIChatPromptHandler.shared.consumeData()
+        guard case let .query(query) = prompt?.tool else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+            return
+        }
+        XCTAssertNil(query.attachedTabIds, "No tab attachments → no `attachedTabIds` on the prompt")
+    }
+
     func testWhenTabSwitchesToTabWithSavedTabAttachments_ThenPanelAttachmentsCallbackFires() {
         // Given — tab 1 has a saved tab attachment; register the unified-panel callback.
         let attachment = makeTabAttachment(id: "tab-A")

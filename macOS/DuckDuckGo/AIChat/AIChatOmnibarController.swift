@@ -783,16 +783,43 @@ final class AIChatOmnibarController {
                 PixelKit.fire(AIChatPixel.aiChatAddressBarSubmitWithImage(imageCount: attachments.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
             }
 
+            // Snapshot attached tabs from the active tab's shared state. Only the IDs flow into
+            // the prompt — the duck.ai web app calls back via `getAIChatTabContent` per id to
+            // fetch each tab's page content, mirroring the sidebar tab picker's flow.
+            let tabAttachments = self.activeTabAttachments
+            let attachedTabIds: [String]? = tabAttachments.isEmpty ? nil : tabAttachments.map(\.id)
+            if let attachedTabIds, !attachedTabIds.isEmpty {
+                PixelKit.fire(
+                    AIChatPixel.aiChatAddressBarSubmitWithTabs(tabCount: attachedTabIds.count),
+                    frequency: .dailyAndCount,
+                    includeAppVersionParameter: true
+                )
+            }
+
             aiChatTabOpener.openAIChatTab(
                 with: .query(trimmedText, shouldAutoSubmit: true),
                 behavior: .currentTab
             )
-            // Re-set prompt after tab opener to include images, model selection, and mode (tab opener overwrites with a plain query)
-            let prompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true, toolChoice: toolChoice, images: images, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)
+            // Re-set prompt after tab opener to include images, tab attachments, model selection,
+            // and mode (tab opener overwrites with a plain query).
+            let prompt = AIChatNativePrompt.queryPrompt(
+                trimmedText,
+                autoSubmit: true,
+                toolChoice: toolChoice,
+                images: images,
+                modelId: modelId,
+                mode: mode,
+                reasoningEffort: reasoningEffort,
+                attachedTabIds: attachedTabIds
+            )
             promptHandler.setData(prompt)
 
             self.activeToolMode = nil
             onAttachmentsClearRequested?()
+            // Image attachments clear via the container VC's `clearAttachments()` chain (which
+            // persists `[]` to shared state). Tabs are owned directly by shared state, so clear
+            // them here — the publisher fires, the carousel re-renders empty.
+            self.persistTabAttachmentsToActiveTab([])
             delegate?.aiChatOmnibarControllerDidSubmit(self)
         }
 

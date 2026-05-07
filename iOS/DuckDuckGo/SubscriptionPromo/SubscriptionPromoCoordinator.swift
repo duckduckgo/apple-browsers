@@ -67,17 +67,8 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
     // MARK: - Eligibility
 
     func shouldPresentLaunchPrompt() -> Bool {
-        guard !daxDialogsSettings.subscriptionPromotionDialogShown else {
-            Logger.subscription.debug("[Subscription Promo] Promo already shown, skipping.")
-            return false
-        }
-        let shouldShow = featureFlagger.isFeatureOn(for: FeatureFlag.subscriptionPromoForReinstallers, allowOverride: true)
-            && featureFlagger.isFeatureOn(for: FeatureFlag.privacyProOnboardingPromotion, allowOverride: true)
-            && isReturningUser
-            && tutorialSettings.hasSkippedOnboarding
-            && hasCooldownPassed()
-        Logger.subscription.debug("[Subscription Promo] shouldPresentLaunchPrompt: \(shouldShow)")
-        return shouldShow
+        // HACK: Force-show for reinstaller-promo copy testing. Do not merge.
+        return true
     }
 
     func markLaunchPromptPresented() {

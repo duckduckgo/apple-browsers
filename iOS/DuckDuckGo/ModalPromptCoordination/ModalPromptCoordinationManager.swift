@@ -64,12 +64,13 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     ///
     /// - Parameter presenter: The view controller to present from.
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
-        guard !cooldownManager.isInCooldownPeriod else {
-            let cooldownInfo = cooldownManager.cooldownInfo
-            let lastPresentationDate = cooldownInfo.lastPresentationDate.flatMap(String.init) ?? "-"
-            Logger.modalPrompt.debug("[Modal Prompt Coordination] - Is in cooldown period. Last presentation: \(lastPresentationDate, privacy: .public) Can Present modal again: \(cooldownInfo.nextPresentationDate, privacy: .public)")
-            return
-        }
+        // HACK: Bypassed for reinstaller-promo copy testing. Do not merge.
+        // guard !cooldownManager.isInCooldownPeriod else {
+        //     let cooldownInfo = cooldownManager.cooldownInfo
+        //     let lastPresentationDate = cooldownInfo.lastPresentationDate.flatMap(String.init) ?? "-"
+        //     Logger.modalPrompt.debug("[Modal Prompt Coordination] - Is in cooldown period. Last presentation: \(lastPresentationDate, privacy: .public) Can Present modal again: \(cooldownInfo.nextPresentationDate, privacy: .public)")
+        //     return
+        // }
 
         for provider in providers {
             guard let modalPromptConfiguration = provider.provideModalPrompt() else { continue }

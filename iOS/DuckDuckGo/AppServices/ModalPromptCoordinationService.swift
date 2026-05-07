@@ -96,15 +96,17 @@ final class ModalPromptCoordinationService {
     }
 
     func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) {
-        guard launchSourceManager.source == .standard else {
-            Logger.modalPrompt.info("[Modal Prompt Coordination] - Skipping modal prompt - Launched from non-standard source.")
-            return
-        }
+        // HACK: Bypassed for reinstaller-promo copy testing. Do not merge.
+        // guard launchSourceManager.source == .standard else {
+        //     Logger.modalPrompt.info("[Modal Prompt Coordination] - Skipping modal prompt - Launched from non-standard source.")
+        //     return
+        // }
 
-        guard contextualOnboardingStatusProvider.hasSeenOnboarding else {
-            Logger.modalPrompt.info("[Modal Prompt Coordination] - Skipping modal prompt - Onboarding not completed.")
-            return
-        }
+        // HACK: Bypassed for reinstaller-promo copy testing. Do not merge.
+        // guard contextualOnboardingStatusProvider.hasSeenOnboarding else {
+        //     Logger.modalPrompt.info("[Modal Prompt Coordination] - Skipping modal prompt - Onboarding not completed.")
+        //     return
+        // }
 
         let presented = viewController.presentedViewController
         let isOmniBarEditing = presented is OmniBarEditingStateViewController

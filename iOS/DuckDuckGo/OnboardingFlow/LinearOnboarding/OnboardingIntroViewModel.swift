@@ -328,15 +328,7 @@ private extension OnboardingIntroViewModel {
 
         let viewState = switch introStep {
         case .introDialog(let isReturningUser):
-            OnboardingView.ViewState.onboarding(
-                OnboardingView.ViewState.Intro(
-                    type: .startOnboardingDialog(
-                        content: contentProvider.introStepContent,
-                        type: introDialogType(isReturningUser: isReturningUser)
-                    ),
-                    step: .hidden
-                )
-            )
+            OnboardingView.ViewState.onboarding(.init(type: .startOnboardingDialog(content: contentProvider.introStepContent, type: introDialogType(isReturningUser: isReturningUser)), step: .hidden))
         case .browserComparison:
             OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog(content: contentProvider.browserComparisonContent), step: stepInfo()))
         case .addToDockPromo:

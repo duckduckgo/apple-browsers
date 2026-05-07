@@ -92,7 +92,7 @@ extension OnboardingIntroContentProvider {
     var introStepContent: OnboardingIntroStepContent {
         let skipOnboardingContent = OnboardingIntroStepContent.SkipFlowStepContent(
             title: UserText.Onboarding.Skip.title,
-            message:  UserText.Onboarding.Skip.message,
+            message: UserText.Onboarding.Skip.message,
             primaryCTA: UserText.Onboarding.Skip.confirmSkipOnboardingCTA,
             secondaryCTA: UserText.Onboarding.Skip.resumeOnboardingCTA
         )

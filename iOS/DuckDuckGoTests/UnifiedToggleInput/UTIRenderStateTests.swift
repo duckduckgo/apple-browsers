@@ -27,7 +27,7 @@ final class UTIRenderStateTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: true)
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true)
     }
 
     override func tearDown() {
@@ -207,5 +207,21 @@ final class UTIRenderStateTests: XCTestCase {
         sut.activateFromOmnibar(inputMode: .aiChat)
         let state = sut.computeRenderState()
         XCTAssertEqual(state.contentInputMode, .aiChat)
+    }
+
+    // MARK: - Host-Driven Render Flags
+
+    func test_omnibarHost_renderState_showsToggle() {
+        sut.activateFromOmnibar()
+        let state = sut.computeRenderState()
+        XCTAssertTrue(state.cardLayout.showsToggle)
+    }
+
+    func test_contextualChatHost_renderState_hidesToggle_showsToolbar() {
+        sut = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false)
+        sut.showExpanded()
+        let state = sut.computeRenderState()
+        XCTAssertFalse(state.cardLayout.showsToggle)
+        XCTAssertTrue(state.cardLayout.showsToolbar)
     }
 }

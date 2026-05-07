@@ -412,11 +412,17 @@ class AddressBarUITests: UITestCase {
         addressBarTextField.typeText("file:///path/to/file")
         app.typeKey(.enter, modifierFlags: [])
 
-        let errorResult = webView.staticTexts.containing(\.value, containing: "load this page.").firstMatch
-        XCTAssertTrue(errorResult.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should show error for file protocol")
+        if app.isSandboxed {
+            let cannotOpenFileSheet = app.sheets.containing(.staticText, where: .keyPath(\.value, equalTo: "Cannot Open File")).firstMatch
+            XCTAssertTrue(cannotOpenFileSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Should show Cannot Open File alert in sandboxed builds")
+            cannotOpenFileSheet.buttons["OK"].click()
+        } else {
+            let errorResult = webView.staticTexts.containing(\.value, containing: "load this page.").firstMatch
+            XCTAssertTrue(errorResult.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should show error for file protocol")
 
-        let fileURL = app.addressBarValueActivatingIfNeeded() ?? ""
-        XCTAssertEqual(fileURL, "file:///path/to/file", "URL should remain unchanged")
+            let fileURL = app.addressBarValueActivatingIfNeeded() ?? ""
+            XCTAssertEqual(fileURL, "file:///path/to/file", "URL should remain unchanged")
+        }
 
         // Test calculator expression
         app.openNewTab()

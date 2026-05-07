@@ -46,8 +46,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         mockPopupBlockingConfig = MockPopupBlockingConfiguration()
         testPermissionManager = TestPermissionManager()
-        mockPermissionModel = PermissionModel(permissionManager: testPermissionManager,
-                                              featureFlagger: mockFeatureFlagger)
+        mockPermissionModel = PermissionModel(permissionManager: testPermissionManager)
         webView = WebView(featureFlagger: mockFeatureFlagger)
         configuration = WKWebViewConfiguration()
         windowFeatures = WKWindowFeatures()

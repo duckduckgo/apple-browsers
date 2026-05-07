@@ -26,6 +26,8 @@ public struct RecoverSyncedDataView: View {
     @ObservedObject public var model: SyncSettingsViewModel
     var onCancel: () -> Void
 
+    @State private var bottomSafeArea: CGFloat = 0
+
     public init(model: SyncSettingsViewModel, onCancel: @escaping () -> Void) {
         self.model = model
         self.onCancel = onCancel
@@ -63,11 +65,17 @@ public struct RecoverSyncedDataView: View {
             .buttonStyle(PrimaryButtonStyle())
             .frame(maxWidth: 360)
             .padding(.horizontal, 30)
-            .padding(.bottom, 8)
+            .padding(.bottom, max(24 - bottomSafeArea, 0))
         }
         .onAppear {
             model.autoRestoreManualRecoveryShown()
         }
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear { bottomSafeArea = geometry.safeAreaInsets.bottom }
+            }
+        )
         .background(Color(designSystemColor: .backgroundSheets))
     }
 }

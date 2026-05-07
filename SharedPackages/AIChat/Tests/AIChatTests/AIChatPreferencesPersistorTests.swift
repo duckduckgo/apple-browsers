@@ -85,6 +85,87 @@ final class AIChatPreferencesPersistorTests: XCTestCase {
         XCTAssertEqual(secondPersistor.selectedModelId, "gpt-4o-mini")
     }
 
+    // MARK: - Selected Reasoning Effort
+
+    func testWhenNoReasoningEffortSelected_ThenSelectedReasoningEffortIsNil() {
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testWhenReasoningEffortIsSet_ThenItCanBeReadBack() {
+        // Given & When
+        persistor.selectedReasoningEffort = "low"
+
+        // Then
+        XCTAssertEqual(persistor.selectedReasoningEffort, "low")
+    }
+
+    func testWhenReasoningEffortIsOverwritten_ThenNewValueIsReturned() {
+        // Given
+        persistor.selectedReasoningEffort = "low"
+
+        // When
+        persistor.selectedReasoningEffort = "medium"
+
+        // Then
+        XCTAssertEqual(persistor.selectedReasoningEffort, "medium")
+    }
+
+    func testWhenReasoningEffortIsCleared_ThenItReturnsNil() {
+        // Given
+        persistor.selectedReasoningEffort = "low"
+
+        // When
+        persistor.selectedReasoningEffort = nil
+
+        // Then
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testWhenReasoningEffortIsPersisted_ThenItSurvivesNewPersistorInstance() {
+        // Given
+        persistor.selectedReasoningEffort = "medium"
+
+        // When — create new persistor backed by the same store
+        let secondPersistor = AIChatPreferencesPersistor(keyValueStore: userDefaults)
+
+        // Then
+        XCTAssertEqual(secondPersistor.selectedReasoningEffort, "medium")
+    }
+
+    // MARK: - Selected Reasoning Mode
+
+    func testWhenNoReasoningModeSelected_ThenSelectedReasoningModeIsNil() {
+        XCTAssertNil(persistor.selectedReasoningMode)
+    }
+
+    func testWhenReasoningModeIsSet_ThenItCanBeReadBack() {
+        persistor.selectedReasoningMode = .extendedReasoning
+
+        XCTAssertEqual(persistor.selectedReasoningMode, .extendedReasoning)
+    }
+
+    func testWhenReasoningModeIsCleared_ThenItReturnsNil() {
+        persistor.selectedReasoningMode = .reasoning
+
+        persistor.selectedReasoningMode = nil
+
+        XCTAssertNil(persistor.selectedReasoningMode)
+    }
+
+    func testWhenReasoningModeIsPersisted_ThenItSurvivesNewPersistorInstance() {
+        persistor.selectedReasoningMode = .fast
+
+        let secondPersistor = AIChatPreferencesPersistor(keyValueStore: userDefaults)
+
+        XCTAssertEqual(secondPersistor.selectedReasoningMode, .fast)
+    }
+
+    func testWhenPersistedReasoningModeRawValueIsUnknown_ThenSelectedReasoningModeIsNil() {
+        userDefaults.set("unsupported", forKey: "aichat.omnibar.selected-reasoning-mode")
+
+        XCTAssertNil(persistor.selectedReasoningMode)
+    }
+
     // MARK: - selectedModelIdPublisher
 
     func testSelectedModelIdPublisher_emitsOnEveryDistinctWrite() {

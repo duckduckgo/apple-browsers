@@ -25,7 +25,6 @@ import os
 /// A local HTTP server exposing Duck.ai native storage for inspection and manipulation.
 ///
 /// Serves a web dashboard plus REST API for chats, files, and settings.
-/// Intended for debug builds only — consumers should gate usage with `#if DEBUG`.
 public final class DuckAiStorageDebugServer {
 
     private let server: DebugHTTPServer

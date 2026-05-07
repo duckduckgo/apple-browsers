@@ -87,6 +87,9 @@ extension Pixel {
         case tabSwitcherClickCloseTab
         case tabSwitcherSwipeCloseTab
         case tabSwitchLongPressNewTab
+        case tabLongPressMenuDisplayed
+        case tabLongPressMenuNewFireTab
+        case tabLongPressMenuNewNormalTab
         case tabSwitcherOpenedDaily
         case tabManagerSwitchToAITab
         case tabManagerSwitchToWebTab
@@ -218,6 +221,8 @@ extension Pixel {
         case favoriteLaunchedWebsite
         case favoriteLaunchedWidget
 
+        case widgetMediumLaunch
+
         case autocompleteClickPhrase
         case autocompleteClickWebsite
         case autocompleteClickBookmark
@@ -231,8 +236,8 @@ extension Pixel {
         case autocompleteDisplayedLocalFavorite
         case autocompleteDisplayedLocalHistory
         case autocompleteDisplayedOpenedTab
-        case autocompleteSwipeToDelete
-        case autocompleteSwipeToDeleteDaily
+        case autocompleteDeleteHistoryEntry
+        case autocompleteDeleteHistoryEntryDaily
 
         case feedbackPositive
         case feedbackNegativePrefix(category: String)
@@ -572,6 +577,58 @@ extension Pixel {
         case importResultPasswordsParsing
         case importResultBookmarksParsing
         case importResultUnzipping
+
+        // MARK: Data Import Hub pixels
+
+        case importHubEntryShown
+        case importHubEntryTapped
+        case importHubDisplayed
+        case importHubSourceSelected
+        case importHubCancelled
+        case importHubSourceInstructionsDisplayed
+        case importHubSourceInstructionsCancelled
+        case importHubSourcePrimaryTapped
+        case importHubSourceUploadFileTapped
+        case importHubSafariFileSimulatedCompletion
+        case importHubSafariFileSimulatedFailure
+        case importHubSafariInterstitialDisplayed
+        case importHubSafariInterstitialExportTapped
+        case importHubSafariInterstitialCancelled
+        case importHubBrowserkitRequested
+        case importHubBrowserkitReturnedSuccess
+        case importHubBrowserkitReturnedCancelled
+        case importHubBrowserkitReturnedFailure
+        case importHubFilePickerDisplayed
+        case importHubFilePickedZip
+        case importHubFilePickedCsv
+        case importHubFilePickedHtml
+        case importHubFilePickerCancelled
+        case importHubFilePickerUnsupported
+        case importHubFileErrorDisplayed
+        case importHubResultDisplayed
+        case importHubResultPasswordsSuccess
+        case importHubResultBookmarksSuccess
+        case importHubResultCreditCardsSuccess
+        case importHubResultPasswordsParsing
+        case importHubResultBookmarksParsing
+        case importHubResultUnzipping
+        case importHubResultSyncPromoShown
+        case importHubResultSyncPromoTapped
+        case importHubResultSyncPromoDismissed
+        case importHubResultContinueToSafariPasswordsShown
+        case importHubResultContinueToSafariPasswordsTapped
+        case importHubResultContinueToSafariPasswordsDismissed
+        case importHubResultContinueToSafariBookmarksShown
+        case importHubResultContinueToSafariBookmarksTapped
+        case importHubResultContinueToSafariBookmarksDismissed
+        case importHubResultDoneTapped
+        case importHubSyncOpenSettingsTapped
+        case importHubCredentialExchangeActivityReceived
+        case importHubCredentialExchangeTokenMissing
+        case importHubCredentialExchangeSuccess
+        case importHubCredentialExchangeFailure
+        case importHubCredentialExchangeSimulatedCompletion
+        case importHubCredentialExchangeSimulatedFailure
 
         // MARK: Ad Click Attribution pixels
         
@@ -1454,10 +1511,7 @@ extension Pixel {
         case webViewErrorPageShown
 
         // MARK: External Scheme Navigation
-        case webViewExternalSchemeNavigationXSafariHTTPSStay
-        case webViewExternalSchemeNavigationXSafariHTTPSOpenInSafari
         case webViewExternalSchemeNavigationXSafariHTTPSLoopDetected
-        case webViewExternalSchemeNavigationXSafariHTTPSLoopOpenInSafari
 
         // MARK: Browsing
         case stopPageLoad
@@ -1554,6 +1608,8 @@ extension Pixel {
         case aiChatNewAddressBarPickerDisplayed
         case aiChatNewAddressBarPickerConfirmed
         case aiChatNewAddressBarPickerNotNow
+        case aiChatNewAddressBarPickerV2Displayed
+        case aiChatNewAddressBarPickerV2Confirmed
         
         // MARK: Experimental Omnibar Metrics
         case aiChatExperimentalOmnibarShown
@@ -1857,6 +1913,9 @@ extension Pixel.Event {
         case .tabSwitcherClickCloseTab: return "m_tab_manager_close_tab_click"
         case .tabSwitcherSwipeCloseTab: return "m_tab_manager_close_tab_swipe"
         case .tabSwitchLongPressNewTab: return "m_tab_manager_long_press_new_tab"
+        case .tabLongPressMenuDisplayed: return "m_tab_long_press_menu_displayed"
+        case .tabLongPressMenuNewFireTab: return "m_tab_long_press_menu_new_fire_tab"
+        case .tabLongPressMenuNewNormalTab: return "m_tab_long_press_menu_new_normal_tab"
         case .tabSwitcherOpenedDaily: return "m_tab_manager_opened_daily"
         case .tabManagerSwitchToAITab: return "m_tab_manager_switch_to_ai_tab"
         case .tabManagerSwitchToWebTab: return "m_tab_manager_switch_to_web_tab"
@@ -1979,6 +2038,8 @@ extension Pixel.Event {
         case .favoriteLaunchedWebsite: return "m_favorite_launched_website"
         case .favoriteLaunchedWidget: return "m_favorite_launched_widget"
 
+        case .widgetMediumLaunch: return "m_widget_medium_launch"
+
         case .autocompleteClickPhrase: return "m_autocomplete_click_phrase"
         case .autocompleteClickWebsite: return "m_autocomplete_click_website"
         case .autocompleteClickBookmark: return "m_autocomplete_click_bookmark"
@@ -1994,8 +2055,8 @@ extension Pixel.Event {
         case .autocompleteDisplayedLocalFavorite: return "m_autocomplete_display_local_favorite"
         case .autocompleteDisplayedLocalHistory: return "m_autocomplete_display_local_history"
         case .autocompleteDisplayedOpenedTab: return "m_autocomplete_display_switch_to_tab"
-        case .autocompleteSwipeToDelete: return "m_autocomplete_result_deleted"
-        case .autocompleteSwipeToDeleteDaily: return "m_autocomplete_result_deleted_daily"
+        case .autocompleteDeleteHistoryEntry: return "m_autocomplete_result_deleted"
+        case .autocompleteDeleteHistoryEntryDaily: return "m_autocomplete_result_deleted_daily"
 
         case .feedbackPositive: return "mfbs_positive_submit"
         case .feedbackNegativePrefix(category: let category): return "mfbs_negative_\(category)"
@@ -2308,6 +2369,58 @@ extension Pixel.Event {
         case .importResultPasswordsParsing: return "import_result_passwords_parsing"
         case .importResultBookmarksParsing: return "import_result_bookmarks_parsing"
         case .importResultUnzipping: return "import_result_unzipping"
+
+        // MARK: Data Import Hub pixels
+
+        case .importHubEntryShown: return "import_hub_entry_shown"
+        case .importHubEntryTapped: return "import_hub_entry_tapped"
+        case .importHubDisplayed: return "import_hub_displayed"
+        case .importHubSourceSelected: return "import_hub_source_selected"
+        case .importHubCancelled: return "import_hub_cancelled"
+        case .importHubSourceInstructionsDisplayed: return "import_hub_source_instructions_displayed"
+        case .importHubSourceInstructionsCancelled: return "import_hub_source_instructions_cancelled"
+        case .importHubSourcePrimaryTapped: return "import_hub_source_primary_tapped"
+        case .importHubSourceUploadFileTapped: return "import_hub_source_upload_file_tapped"
+        case .importHubSafariFileSimulatedCompletion: return "import_hub_safari_file_simulated_completion"
+        case .importHubSafariFileSimulatedFailure: return "import_hub_safari_file_simulated_failure"
+        case .importHubSafariInterstitialDisplayed: return "import_hub_safari_interstitial_displayed"
+        case .importHubSafariInterstitialExportTapped: return "import_hub_safari_interstitial_export_tapped"
+        case .importHubSafariInterstitialCancelled: return "import_hub_safari_interstitial_cancelled"
+        case .importHubBrowserkitRequested: return "import_hub_browserkit_requested"
+        case .importHubBrowserkitReturnedSuccess: return "import_hub_browserkit_returned_success"
+        case .importHubBrowserkitReturnedCancelled: return "import_hub_browserkit_returned_cancelled"
+        case .importHubBrowserkitReturnedFailure: return "import_hub_browserkit_returned_failure"
+        case .importHubFilePickerDisplayed: return "import_hub_file_picker_displayed"
+        case .importHubFilePickedZip: return "import_hub_file_picked_zip"
+        case .importHubFilePickedCsv: return "import_hub_file_picked_csv"
+        case .importHubFilePickedHtml: return "import_hub_file_picked_html"
+        case .importHubFilePickerCancelled: return "import_hub_file_picker_cancelled"
+        case .importHubFilePickerUnsupported: return "import_hub_file_picker_unsupported"
+        case .importHubFileErrorDisplayed: return "import_hub_file_error_displayed"
+        case .importHubResultDisplayed: return "import_hub_result_displayed"
+        case .importHubResultPasswordsSuccess: return "import_hub_result_passwords_success"
+        case .importHubResultBookmarksSuccess: return "import_hub_result_bookmarks_success"
+        case .importHubResultCreditCardsSuccess: return "import_hub_result_creditcards_success"
+        case .importHubResultPasswordsParsing: return "import_hub_result_passwords_parsing"
+        case .importHubResultBookmarksParsing: return "import_hub_result_bookmarks_parsing"
+        case .importHubResultUnzipping: return "import_hub_result_unzipping"
+        case .importHubResultSyncPromoShown: return "import_hub_result_sync_promo_shown"
+        case .importHubResultSyncPromoTapped: return "import_hub_result_sync_promo_tapped"
+        case .importHubResultSyncPromoDismissed: return "import_hub_result_sync_promo_dismissed"
+        case .importHubResultContinueToSafariPasswordsShown: return "import_hub_result_continue_to_safari_passwords_shown"
+        case .importHubResultContinueToSafariPasswordsTapped: return "import_hub_result_continue_to_safari_passwords_tapped"
+        case .importHubResultContinueToSafariPasswordsDismissed: return "import_hub_result_continue_to_safari_passwords_dismissed"
+        case .importHubResultContinueToSafariBookmarksShown: return "import_hub_result_continue_to_safari_bookmarks_shown"
+        case .importHubResultContinueToSafariBookmarksTapped: return "import_hub_result_continue_to_safari_bookmarks_tapped"
+        case .importHubResultContinueToSafariBookmarksDismissed: return "import_hub_result_continue_to_safari_bookmarks_dismissed"
+        case .importHubResultDoneTapped: return "import_hub_result_done_tapped"
+        case .importHubSyncOpenSettingsTapped: return "import_hub_sync_open_settings_tapped"
+        case .importHubCredentialExchangeActivityReceived: return "import_hub_credential_exchange_activity_received"
+        case .importHubCredentialExchangeTokenMissing: return "import_hub_credential_exchange_token_missing"
+        case .importHubCredentialExchangeSuccess: return "import_hub_credential_exchange_success"
+        case .importHubCredentialExchangeFailure: return "import_hub_credential_exchange_failure"
+        case .importHubCredentialExchangeSimulatedCompletion: return "import_hub_credential_exchange_simulated_completion"
+        case .importHubCredentialExchangeSimulatedFailure: return "import_hub_credential_exchange_simulated_failure"
 
             // MARK: Ad Click Attribution pixels
             
@@ -3099,10 +3212,7 @@ extension Pixel.Event {
         case .webViewErrorPageShown: return "m_errorpageshown"
 
         // MARK: - External Scheme Navigation
-        case .webViewExternalSchemeNavigationXSafariHTTPSStay: return "m_webview_external-scheme-navigation_x-safari-https_stay_daily"
-        case .webViewExternalSchemeNavigationXSafariHTTPSOpenInSafari: return "m_webview_external-scheme-navigation_x-safari-https_open-in-safari_daily"
         case .webViewExternalSchemeNavigationXSafariHTTPSLoopDetected: return "m_webview_external-scheme-navigation_x-safari-https_loop-detected"
-        case .webViewExternalSchemeNavigationXSafariHTTPSLoopOpenInSafari: return "m_webview_external-scheme-navigation_x-safari-https_loop-open-in-safari_daily"
 
         // MARK: - DuckPlayer FE Application Telemetry
         case .duckPlayerLandscapeLayoutImpressions: return "duckplayer_landscape_layout_impressions"
@@ -3194,6 +3304,8 @@ extension Pixel.Event {
         case .aiChatNewAddressBarPickerDisplayed: return "m_aichat_new_address_bar_picker_displayed"
         case .aiChatNewAddressBarPickerConfirmed: return "m_aichat_new_address_bar_picker_confirmed"
         case .aiChatNewAddressBarPickerNotNow: return "m_aichat_new_address_bar_picker_not_now"
+        case .aiChatNewAddressBarPickerV2Displayed: return "m_aichat_new_address_bar_picker_v2_displayed"
+        case .aiChatNewAddressBarPickerV2Confirmed: return "m_aichat_new_address_bar_picker_v2_confirmed"
         
         // MARK: Experimental Omnibar Metrics
         case .aiChatExperimentalOmnibarShown: return "m_aichat_experimental_omnibar_shown"

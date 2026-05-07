@@ -54,6 +54,106 @@ final class AIChatModelsServiceTests: XCTestCase {
         XCTAssertFalse(response.models[0].supportsImageUpload)
         XCTAssertEqual(response.models[0].supportedTools, ["WebSearch"])
         XCTAssertEqual(response.models[0].accessTier, ["free"])
+        XCTAssertEqual(response.models[0].supportedReasoningEffort, [])
+    }
+
+    func testWhenJSONOmitsSupportedReasoningEffort_ThenDecodesWithEmptyArray() throws {
+        // Covers backwards compatibility: older `duckchat/v1/models` responses don't include
+        // the field, and they must still decode rather than failing with `keyNotFound`.
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "gpt-4o-mini",
+                    "name": "GPT-4o mini",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": false,
+                    "supportedTools": [],
+                    "accessTier": ["free"]
+                }
+            ]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models.count, 1)
+        XCTAssertEqual(response.models[0].supportedReasoningEffort, [])
+    }
+
+    func testWhenJSONIncludesNullSupportedReasoningEffort_ThenDecodesWithEmptyArray() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "gpt-4o-mini",
+                    "name": "GPT-4o mini",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": false,
+                    "supportedTools": [],
+                    "supportedReasoningEffort": null,
+                    "accessTier": ["free"]
+                }
+            ]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models.count, 1)
+        XCTAssertEqual(response.models[0].supportedReasoningEffort, [])
+    }
+
+    func testWhenJSONIncludesSupportedReasoningEffort_ThenValueIsDecoded() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "reasoning-model",
+                    "name": "Reasoning Model",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": false,
+                    "supportedTools": [],
+                    "supportedReasoningEffort": ["none", "low", "medium"],
+                    "accessTier": ["free"]
+                }
+            ]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models[0].supportedReasoningEffort, [.none, .low, .medium])
+    }
+
+    func testWhenJSONIncludesUnknownSupportedReasoningEffort_ThenUnknownValueIsIgnored() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "future-model",
+                    "name": "Future Model",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": false,
+                    "supportedTools": [],
+                    "supportedReasoningEffort": ["none", "future", "high"],
+                    "accessTier": ["free"]
+                }
+            ]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models[0].supportedReasoningEffort, [.none, .high])
     }
 
     func testWhenMultipleModelsAreDecoded_ThenAllAreParsed() throws {
@@ -95,6 +195,128 @@ final class AIChatModelsServiceTests: XCTestCase {
         XCTAssertTrue(response.models[1].supportsImageUpload)
     }
 
+    func testWhenSupportedFileTypesArePresent_ThenTheyDecode() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "gpt-4o",
+                    "name": "GPT-4o",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": true,
+                    "supportedFileTypes": ["application/pdf"],
+                    "supportedTools": [],
+                    "accessTier": ["free"]
+                }
+            ]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models.first?.supportedFileTypes, ["application/pdf"])
+    }
+
+    func testWhenAttachmentLimitsArePresent_ThenTheyDecode() throws {
+        let json = """
+        {
+            "models": [],
+            "attachmentLimits": {
+                "free": {
+                    "files": {
+                        "maxPerConversation": 3,
+                        "maxFileSizeMB": 5,
+                        "maxTotalFileSizeBytes": 5242880,
+                        "maxPagesPerFile": 8
+                    },
+                    "images": {
+                        "maxPerTurn": 3,
+                        "maxPerConversation": 5,
+                        "maxInputCharsWithAttachments": 4500
+                    }
+                },
+                "plus": {
+                    "files": {
+                        "maxPerConversation": 5,
+                        "maxFileSizeMB": 25,
+                        "maxTotalFileSizeBytes": 26214400,
+                        "maxPagesPerFile": 35
+                    },
+                    "images": {
+                        "maxPerTurn": 3,
+                        "maxPerConversation": 10,
+                        "maxInputCharsWithAttachments": 4500
+                    }
+                },
+                "pro": {
+                    "files": {
+                        "maxPerConversation": 5,
+                        "maxFileSizeMB": 25,
+                        "maxTotalFileSizeBytes": 26214400,
+                        "maxPagesPerFile": 50
+                    },
+                    "images": {
+                        "maxPerTurn": 3,
+                        "maxPerConversation": 10,
+                        "maxInputCharsWithAttachments": 4500
+                    }
+                }
+            }
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.attachmentLimits?.free.files.maxPerConversation, 3)
+        XCTAssertEqual(response.attachmentLimits?.plus.images.maxPerConversation, 10)
+        XCTAssertEqual(response.attachmentLimits?.limits(for: .free).images.maxPerTurn, 3)
+        XCTAssertEqual(response.attachmentLimits?.limits(for: .plus).files.maxPagesPerFile, 35)
+        XCTAssertEqual(response.attachmentLimits?.limits(for: .pro).files.maxPagesPerFile, 50)
+        XCTAssertEqual(response.attachmentLimits?.limits(for: .internal).files.maxPagesPerFile, 50)
+    }
+
+    func testWhenAttachmentLimitsAreMalformed_ThenModelsStillDecode() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "gpt-4o",
+                    "name": "GPT-4o",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": true,
+                    "supportedTools": [],
+                    "accessTier": ["free"]
+                }
+            ],
+            "attachmentLimits": {
+                "free": {
+                    "files": {
+                        "maxPerConversation": 3,
+                        "maxFileSizeMB": 5,
+                        "maxTotalFileSizeBytes": 5242880,
+                        "maxPagesPerFile": 8
+                    },
+                    "images": {
+                        "maxPerTurn": 3,
+                        "maxPerConversation": 5,
+                        "maxInputCharsWithAttachments": 4500
+                    }
+                }
+            }
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+
+        XCTAssertEqual(response.models.first?.id, "gpt-4o")
+        XCTAssertNil(response.attachmentLimits)
+    }
+
     // MARK: - AIChatModel Mapping Tests
 
     func testWhenRemoteModelIsMapped_ThenFieldsAreCorrect() {
@@ -118,6 +340,51 @@ final class AIChatModelsServiceTests: XCTestCase {
         XCTAssertEqual(model.name, "GPT-4o mini")
         XCTAssertTrue(model.entityHasAccess)
         XCTAssertFalse(model.supportsImageUpload)
+    }
+
+    func testWhenRemoteModelIncludesFileSupport_ThenMappedModelSupportsFileUpload() {
+        let remoteModel = AIChatRemoteModel(
+            id: "gpt-4o",
+            name: "GPT-4o",
+            modelShortName: "GPT-4o",
+            provider: "openai",
+            entityHasAccess: true,
+            supportsImageUpload: true,
+            supportedFileTypes: ["application/pdf"],
+            supportedTools: [],
+            accessTier: ["free"]
+        )
+
+        let model = AIChatModel(remoteModel: remoteModel, userTier: .free)
+
+        XCTAssertTrue(model.supportsFileUpload)
+        XCTAssertEqual(model.supportedFileTypes, ["application/pdf"])
+    }
+
+    func testWhenReasoningEffortIsProvided_ThenItIsDecodedAndMapped() throws {
+        let json = """
+        {
+            "models": [
+                {
+                    "id": "gpt-5.2",
+                    "name": "GPT-5.2",
+                    "provider": "openai",
+                    "entityHasAccess": true,
+                    "supportsImageUpload": true,
+                    "supportedTools": [],
+                    "accessTier": ["plus", "pro"],
+                    "supportedReasoningEffort": ["none", "low", "medium"]
+                }
+            ]
+        }
+        """
+        let data = try XCTUnwrap(json.data(using: .utf8))
+
+        let response = try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+        let model = AIChatModel(remoteModel: response.models[0], userTier: .plus)
+
+        XCTAssertEqual(response.models[0].supportedReasoningEffort, [.none, .low, .medium])
+        XCTAssertEqual(model.supportedReasoningEffort, [.none, .low, .medium])
     }
 
     func testWhenUserTierMatchesAccessTier_ThenEntityHasAccess() {

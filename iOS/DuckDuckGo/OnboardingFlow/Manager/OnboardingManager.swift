@@ -20,6 +20,7 @@
 import AVKit
 import BrowserServicesKit
 import Core
+import Onboarding
 import PrivacyConfig
 
 enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertible {
@@ -39,29 +40,32 @@ enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertibl
     }
 }
 
-typealias OnboardingManaging = OnboardingStepsProvider
+protocol OnboardingAddToDockVisibilityManager {
+    var userHasSeenAddToDockPromoDuringOnboarding: Bool { get }
+}
+
+protocol OnboardingFlowManaging {
+    func configureOnboardingFlow(from url: URL?)
+}
+
+typealias OnboardingManaging = OnboardingStepsProvider & OnboardingAddToDockVisibilityManager & OnboardingFlowManaging
 
 final class OnboardingManager {
+    private let onboardingFlowEvaluator: OnboardingFlowEvaluating
     private var appDefaults: OnboardingDebugAppSettings
     private let featureFlagger: FeatureFlagger
     private let variantManager: VariantManager
     private let isIphone: Bool
+    private let tutorialSettings: TutorialSettings
 
-    private let iPhoneFlowWithoutSearchExperience: [OnboardingIntroStep] = [
-        .browserComparison,
-        .addToDockPromo,
-        .appIconSelection,
-        .addressBarPositionSelection
-    ]
-    private let iPhoneFlowWithSearchExperience: [OnboardingIntroStep] = [
+    private let iPhoneFlow: [OnboardingIntroStep] = [
         .browserComparison,
         .addToDockPromo,
         .appIconSelection,
         .addressBarPositionSelection,
         .searchExperienceSelection
     ]
-    private let iPadFlowWithoutSearchExperience: [OnboardingIntroStep] = [.browserComparison, .appIconSelection]
-    private let iPadFlowWithSearchExperience: [OnboardingIntroStep] = [.browserComparison, .appIconSelection, .searchExperienceSelection]
+    private let iPadFlow: [OnboardingIntroStep] = [.browserComparison, .appIconSelection]
 
     var isNewUser: Bool {
 #if DEBUG || ALPHA
@@ -84,39 +88,18 @@ final class OnboardingManager {
         appDefaults: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         variantManager: VariantManager = DefaultVariantManager(),
-        isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone
+        isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone,
+        onboardingFlowEvaluator: OnboardingFlowEvaluating = AppStoreCustomProductPageEvaluator(),
+        tutorialSettings: TutorialSettings = DefaultTutorialSettings()
     ) {
         self.appDefaults = appDefaults
         self.featureFlagger = featureFlagger
         self.variantManager = variantManager
         self.isIphone = isIphone
+        self.onboardingFlowEvaluator = onboardingFlowEvaluator
+        self.tutorialSettings = tutorialSettings
     }
 
-    func newUserSteps(isIphone: Bool) -> [OnboardingIntroStep] {
-        let introStep = OnboardingIntroStep.introDialog(isReturningUser: false)
-        return [introStep] + steps(isIphone: isIphone)
-    }
-
-    func returningUserSteps(isIphone: Bool) -> [OnboardingIntroStep] {
-        let introStep = OnboardingIntroStep.introDialog(isReturningUser: true)
-        return [introStep] + steps(isIphone: isIphone)
-    }
-
-    private func steps(isIphone: Bool) -> [OnboardingIntroStep] {
-        isIphone ? iPhoneFlow() : iPadFlow()
-    }
-
-    private func iPhoneFlow() -> [OnboardingIntroStep] {
-        if featureFlagger.isFeatureOn(.onboardingSearchExperience) {
-            return iPhoneFlowWithSearchExperience
-        } else {
-            return iPhoneFlowWithoutSearchExperience
-        }
-    }
-
-    private func iPadFlow() -> [OnboardingIntroStep] {
-        return iPadFlowWithoutSearchExperience
-    }
 }
 
 // MARK: - New User Debugging
@@ -156,15 +139,72 @@ protocol OnboardingStepsProvider: AnyObject {
 extension OnboardingManager: OnboardingStepsProvider {
 
     var onboardingSteps: [OnboardingIntroStep] {
-        if isNewUser {
-            newUserSteps(isIphone: isIphone)
-        } else {
-            returningUserSteps(isIphone: isIphone)
-        }
+        stepsForCurrentFlow()
     }
+
+}
+
+// MARK: - Onboarding Manager + Add To Dock
+
+extension OnboardingManager: OnboardingAddToDockVisibilityManager {
 
     var userHasSeenAddToDockPromoDuringOnboarding: Bool {
         onboardingSteps.contains(.addToDockPromo)
+    }
+    
+}
+
+// MARK: - Onboarding Manager + Onboarding Flows
+
+extension OnboardingManager: OnboardingFlowManaging {
+
+    /// Configure the onboarding flow based on the app action (e.g., deep link)
+    /// This should be called early in the app lifecycle, before onboarding is presented
+    func configureOnboardingFlow(from url: URL?) {
+        Logger.onboarding.debug("Configuring Onboarding Flow")
+        // Continue only if user hasn't seen
+        guard !tutorialSettings.hasSeenOnboarding else {
+            Logger.onboarding.debug("User has completed onboarding. Skipping.")
+            return
+        }
+
+        // Don't reconfigure onboarding flow if already set. This prevents onboarding flow switching mid-onboarding.
+        guard tutorialSettings.onboardingFlowType == nil else {
+            Logger.onboarding.debug("Onboarding flow already configured, skipping reconfiguration")
+            return
+        }
+
+        let flowType = onboardingFlowEvaluator.evaluateOnboardingFlow(from: url)
+        Logger.onboarding.debug("Configured onboarding flow: \(flowType.rawValue, privacy: .public)")
+
+        switch flowType {
+        case .duckAI where !featureFlagger.isFeatureOn(.onboardingDuckAIFlow):
+            Logger.onboarding.debug("Duck.ai onboarding feature disabled. Reverting to default onboarding")
+            tutorialSettings.onboardingFlowType = .default
+        default:
+            tutorialSettings.onboardingFlowType = flowType
+        }
+    }
+
+}
+
+// MARK: - Private
+
+private extension OnboardingManager {
+
+    func stepsForCurrentFlow() -> [OnboardingIntroStep] {
+        let introStep = OnboardingIntroStep.introDialog(isReturningUser: !isNewUser)
+        switch tutorialSettings.onboardingFlowType {
+        case .none, .default:
+            return [introStep] + steps(isIphone: isIphone)
+        case .duckAI:
+            // Temporarily return steps for default flow
+            return [introStep] + steps(isIphone: isIphone)
+        }
+    }
+
+    func steps(isIphone: Bool) -> [OnboardingIntroStep] {
+        isIphone ? iPhoneFlow : iPadFlow
     }
 
 }

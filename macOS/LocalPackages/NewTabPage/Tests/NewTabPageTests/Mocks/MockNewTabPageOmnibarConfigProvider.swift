@@ -52,6 +52,19 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var isAIChatToolsEnabled: Bool = false
 
+    var isImageGenerationEnabled: Bool = false
+
+    var isWebSearchEnabled: Bool = false
+
+    @Published var isVoiceChatAccessEnabled: Bool = false
+
+    /// Mirrors the real `NewTabPageOmnibarConfigProvider.isVoiceChatAccessEnabledPublisher`
+    /// shape — emits the current value on subscribe (so `NewTabPageOmnibarClient.notifyConfigUpdated`
+    /// fires on init) and then de-duplicates subsequent flag flips.
+    var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isVoiceChatAccessEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
+
     @Published var selectedModelId: String?
 
     var selectedModelIdPublisher: AnyPublisher<String?, Never> {
@@ -59,4 +72,12 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     }
 
     var selectedModelShortName: String?
+
+    var isReasoningEffortEnabled: Bool = false
+
+    @Published var selectedReasoningEffort: String?
+
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
+        $selectedReasoningEffort.dropFirst().eraseToAnyPublisher()
+    }
 }

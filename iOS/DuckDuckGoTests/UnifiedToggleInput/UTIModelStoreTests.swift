@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import SubscriptionTestingUtilities
 import XCTest
 @testable import DuckDuckGo
 
@@ -27,20 +28,26 @@ final class UTIModelStoreTests: XCTestCase {
 
     private var sut: UTIModelStore!
     private var preferences: StubPreferences!
+    private var modelsService: StubModelsService!
+    private var subscriptionManager: SubscriptionManagerMock!
 
     override func setUp() {
         super.setUp()
         preferences = StubPreferences()
+        modelsService = StubModelsService()
+        subscriptionManager = SubscriptionManagerMock()
         sut = UTIModelStore(
-            modelsService: StubModelsService(),
+            modelsService: modelsService,
             preferences: preferences,
-            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
+            subscriptionManager: subscriptionManager
         )
     }
 
     override func tearDown() {
         sut = nil
         preferences = nil
+        modelsService = nil
+        subscriptionManager = nil
         super.tearDown()
     }
 
@@ -111,6 +118,19 @@ final class UTIModelStoreTests: XCTestCase {
         preferences.selectedModelId = "gpt-5"
         sut.models = [makeModel(id: "gpt-5", access: true, supportsImageUpload: false)]
         XCTAssertFalse(sut.selectedModelSupportsImageUpload)
+    }
+
+    func test_selectedModelSupportsFileUpload_whenSelectedModelSupportsIt_returnsTrue() {
+        preferences.selectedModelId = "gpt-4o"
+        sut.models = [makeModel(id: "gpt-4o", access: true, supportedFileTypes: ["application/pdf"])]
+
+        XCTAssertTrue(sut.selectedModelSupportsFileUpload)
+        XCTAssertEqual(sut.selectedModelSupportedFileTypes, ["application/pdf"])
+    }
+
+    func test_selectedModelSupportsFileUpload_whenNoModelSelected_returnsFalse() {
+        XCTAssertFalse(sut.selectedModelSupportsFileUpload)
+        XCTAssertEqual(sut.selectedModelSupportedFileTypes, [])
     }
 
     // MARK: - selectedModelSupports(tool:)
@@ -194,19 +214,101 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertEqual(preferences.selectedModelShortName, "G5")
     }
 
+    func test_updateSelectedModel_whenReasoningModeIsUnsupported_clearsSelection() {
+        preferences.selectedReasoningMode = .extendedReasoning
+        sut.models = [
+            makeModel(id: "gpt-5", access: true, supportedReasoningEffort: [.none, .low])
+        ]
+
+        sut.updateSelectedModel("gpt-5")
+
+        XCTAssertNil(preferences.selectedReasoningMode)
+    }
+
+    func test_updateSelectedModel_whenReasoningModeIsSupported_preservesSelection() {
+        preferences.selectedReasoningMode = .extendedReasoning
+        sut.models = [
+            makeModel(id: "gpt-5", access: true, supportedReasoningEffort: [.none, .low, .medium])
+        ]
+
+        sut.updateSelectedModel("gpt-5")
+
+        XCTAssertEqual(preferences.selectedReasoningMode, .extendedReasoning)
+    }
+
+    func test_updateSelectedReasoningMode_whenModeIsUnsupported_doesNotWritePreference() {
+        preferences.selectedReasoningMode = .fast
+        preferences.selectedModelId = "gpt-5"
+        sut.models = [
+            makeModel(id: "gpt-5", access: true, supportedReasoningEffort: [.none, .low])
+        ]
+
+        sut.updateSelectedReasoningMode(.extendedReasoning)
+
+        XCTAssertEqual(preferences.selectedReasoningMode, .fast)
+    }
+
+    func test_fetchModels_whenModelFetchFails_clearsAttachmentLimitsAndNotifies() async {
+        let didUpdate = expectation(description: "models updated")
+        modelsService.result = .failure(StubModelsService.StubError.fetchFailed)
+        sut.attachmentLimits = makeLimits()
+        sut.onModelsUpdated = {
+            didUpdate.fulfill()
+        }
+
+        sut.fetchModels()
+
+        await fulfillment(of: [didUpdate], timeout: 1)
+        XCTAssertNil(sut.attachmentLimits)
+        XCTAssertEqual(sut.subscriptionState.userTier, .free)
+    }
+
     // MARK: - Helpers
 
-    private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false, supportedTools: [AIChatRAGTool] = []) -> AIChatModel {
-        AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload, supportedTools: supportedTools, entityHasAccess: access)
+    private func makeLimits() -> AIChatAttachmentTierLimits {
+        AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 5, maxInputCharsWithAttachments: 4500)
+        )
+    }
+
+    private func makeModel(
+        id: String,
+        access: Bool,
+        supportsImageUpload: Bool = false,
+        supportedFileTypes: [String] = [],
+        supportedTools: [AIChatRAGTool] = [],
+        supportedReasoningEffort: [AIChatReasoningEffort] = []
+    ) -> AIChatModel {
+        AIChatModel(
+            id: id,
+            name: id,
+            provider: .unknown,
+            supportsImageUpload: supportsImageUpload,
+            supportedFileTypes: supportedFileTypes,
+            supportedTools: supportedTools,
+            entityHasAccess: access,
+            supportedReasoningEffort: supportedReasoningEffort
+        )
     }
 }
 
 private final class StubPreferences: AIChatPreferencesPersisting {
+    var selectedReasoningEffort: String?
     var selectedModelId: String?
     var selectedModelShortName: String?
+    var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
 private final class StubModelsService: AIChatModelsProviding {
-    func fetchModels() async throws -> [AIChatRemoteModel] { [] }
+    enum StubError: Error {
+        case fetchFailed
+    }
+
+    var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
+
+    func fetchModels() async throws -> AIChatModelsResponse { try result.get() }
 }

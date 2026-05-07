@@ -30,7 +30,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
     let selectedLocation: VPNSettings.SelectedLocation
     let dnsSettings: NetworkProtectionDNSSettings
     let excludeLocalNetworks: Bool
-    let wideEventPostEndpointEnabled: Bool?
 
     /// Create a snapshot of the current VPN settings
     public init(from settings: VPNSettings) {
@@ -40,7 +39,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         self.selectedLocation = settings.selectedLocation
         self.dnsSettings = settings.dnsSettings
         self.excludeLocalNetworks = settings.excludeLocalNetworks
-        self.wideEventPostEndpointEnabled = settings.wideEventPostEndpointEnabled
     }
 
     /// Create a snapshot with explicit values
@@ -49,15 +47,13 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
                 selectedServer: VPNSettings.SelectedServer,
                 selectedLocation: VPNSettings.SelectedLocation,
                 dnsSettings: NetworkProtectionDNSSettings,
-                excludeLocalNetworks: Bool,
-                wideEventPostEndpointEnabled: Bool = false) {
+                excludeLocalNetworks: Bool) {
         self.registrationKeyValidity = registrationKeyValidity
         self.selectedEnvironment = selectedEnvironment
         self.selectedServer = selectedServer
         self.selectedLocation = selectedLocation
         self.dnsSettings = dnsSettings
         self.excludeLocalNetworks = excludeLocalNetworks
-        self.wideEventPostEndpointEnabled = wideEventPostEndpointEnabled
     }
 
     /// Apply these settings to a VPNSettings instance
@@ -68,7 +64,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         settings.selectedLocation = selectedLocation
         settings.dnsSettings = dnsSettings
         settings.excludeLocalNetworks = excludeLocalNetworks
-        settings.wideEventPostEndpointEnabled = wideEventPostEndpointEnabled ?? false
     }
 }
 

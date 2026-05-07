@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Core
 import DesignResourcesKitIcons
 
 final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
@@ -145,18 +146,31 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
     private func setLongPressMenu() {
         removeGestureRecognizer(longPressRecognizer)
         let menu = UIMenu(children: [
-            UIAction(title: UserText.actionNewFireTab,
-                     image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
-                         guard let self else { return }
-                         delegate?.launchNewFireTab(self)
-                     },
-            UIAction(title: UserText.actionNewTab,
-                     image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
-                         guard let self else { return }
-                         delegate?.launchNewNormalTab(self)
-                     }
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                Pixel.fire(pixel: .tabLongPressMenuDisplayed, withAdditionalParameters: [
+                    PixelParameters.source: "toolbar"
+                ])
+                completion([
+                    UIAction(title: UserText.actionNewFireTab,
+                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
+                                 guard let self else { return }
+                                 Pixel.fire(pixel: .tabLongPressMenuNewFireTab, withAdditionalParameters: [
+                                     PixelParameters.source: "toolbar"
+                                 ])
+                                 delegate?.launchNewFireTab(self)
+                             },
+                    UIAction(title: UserText.actionNewTab,
+                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
+                                 guard let self else { return }
+                                 Pixel.fire(pixel: .tabLongPressMenuNewNormalTab, withAdditionalParameters: [
+                                     PixelParameters.source: "toolbar"
+                                 ])
+                                 delegate?.launchNewNormalTab(self)
+                             }
+                ])
+            }
         ])
-        
+
         self.menu = menu
     }
     

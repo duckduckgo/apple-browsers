@@ -127,7 +127,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var screenLockedCancellable: AnyCancellable?
     private var emailCancellables = Set<AnyCancellable>()
     private(set) var promoService: PromoService?
+    private(set) weak var subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
     var privacyDashboardWindow: NSWindow?
+
+    @MainActor private(set) lazy var quickFeedbackService: QuickFeedbackService = {
+        let diagnosticsCollector = QuickFeedbackDiagnosticsCollector(
+            tabAndWindowCountProvider: windowControllersManager,
+            memoryUsageMonitor: memoryUsageMonitor,
+            launchDate: appLaunchDate
+        )
+        return QuickFeedbackService(
+            diagnosticsCollector: diagnosticsCollector,
+            firePublisher: fireCoordinator.fireViewModel.fire.burningDataPublisher
+        )
+    }()
 
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
@@ -170,6 +183,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let autoconsentManagement = AutoconsentManagement()
     let attributedMetricManager: AttributedMetricManager
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    let burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry?
 
     @MainActor
     private(set) lazy var autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinator = AutoconsentStatsPopoverCoordinator(
@@ -830,16 +844,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if AppVersion.runType.requiresEnvironment {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
             faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
-            permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), featureFlagger: featureFlagger)
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db))
         } else {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(context: nil), tld: tld)
             faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
-            permissionManager = PermissionManager(store: LocalPermissionStore(database: nil), featureFlagger: featureFlagger)
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: nil))
         }
 #else
         fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
         faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
-        permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), featureFlagger: featureFlagger)
+        permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db))
 #endif
         notificationService = UserNotificationAuthorizationService()
 
@@ -847,20 +861,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if featureFlagger.isFeatureOn(.aiChatNativeStorage),
            let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-            let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageProvider.directoryName)
+            let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
             do {
-                let keyStoreProvider = DuckAiKeyStoreProvider()
-                duckAiNativeStorageHandler = try DuckAiNativeStorageProvider(
-                    containerURL: nativeStorageContainerURL,
-                    keyStoreProvider: keyStoreProvider,
-                    pixelFiring: DuckAiNativeStoragePixelAdapter()
-                ).handler
+                duckAiNativeStorageHandler = try DuckAiNativeStorageHandler(
+                    .disk(path: nativeStorageContainerURL,
+                          keyStoreProvider: DuckAiKeyStoreProvider(),
+                          pixelFiring: DuckAiNativeStoragePixelAdapter())
+                )
             } catch {
                 Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
                 duckAiNativeStorageHandler = nil
             }
+            burnerDuckAiStorageRegistry = BurnerDuckAiStorageRegistry(diskHandler: duckAiNativeStorageHandler)
         } else {
             duckAiNativeStorageHandler = nil
+            burnerDuckAiStorageRegistry = nil
         }
 
         aiChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: featureFlagger,
@@ -1180,7 +1195,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.attributedMetricManager = AttributedMetricManager(pixelKit: PixelKit.shared,
                                                                dataStoring: attributedMetricDataStorage,
                                                                featureFlagger: featureFlagger,
-                                                               originProvider: AttributedMetricOriginFileProvider(),
+                                                               originProvider: DefaultAttributedMetricOriginProvider(loadOrigin: {
+                                                                   getXattr(named: AttributionXattr.origin, from: Bundle.main.bundlePath)
+                                                               }),
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
                                                                returningUserProvider: returningUserProvider,
@@ -1200,9 +1217,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            memoryUsageMonitor: memoryUsageMonitor,
             pixelFiring: PixelKit.shared,
-            keyValueStore: keyValueStore
+            keyValueStore: keyValueStore,
+            memoryProvider: MemoryUsageMonitor.residentMemorySize(forPID:)
         )
 
         super.init()
@@ -1349,7 +1366,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DefaultVariantManager().assignVariantIfNeeded { _ in
             // MARK: perform first time launch logic here
         }
-        AttributionXattrCanaryValidator().validateAndReport()
 
         let statisticsLoader = AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil
         statisticsLoader?.load()
@@ -1367,13 +1383,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
         if featureFlagger.isFeatureOn(.promoQueue) {
+            let subscriptionPromoDelegate = FireWindowSubscriptionPromoDelegate()
+            self.subscriptionPromoDelegate = subscriptionPromoDelegate
             let dependencies = PromoDependencies(
                 keyValueStore: keyValueStore,
                 isExternallyActivated: urlEventHandlerResult.willOpenWindows,
                 isOnboardingCompletedProvider: { OnboardingActionsManager.isOnboardingFinished },
                 activeRemoteMessageModel: activeRemoteMessageModel,
                 defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
-                sessionRestoreCoordinator: sessionRestorePromptCoordinator
+                sessionRestoreCoordinator: sessionRestorePromptCoordinator,
+                subscriptionPromoDelegate: subscriptionPromoDelegate
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -1912,8 +1931,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             // Load extensions asynchronously - the controller is already attached to tabs
             Task {
-                await webExtensionManager.loadInstalledExtensions()
-                await syncEmbeddedExtensions()
+                await self.loadAndSyncEmbeddedExtensions(webExtensionManager)
             }
         } else {
             webExtensionManager = nil
@@ -1924,9 +1942,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func initializeWebExtensions() async {
         guard webExtensionManager == nil else {
-            // Already initialized, just load extensions
-            await (webExtensionManager as? WebExtensionManager)?.loadInstalledExtensions()
-            await syncEmbeddedExtensions()
+            if let manager = webExtensionManager as? WebExtensionManager {
+                await loadAndSyncEmbeddedExtensions(manager)
+            }
             return
         }
 
@@ -1938,8 +1956,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.webExtensionManager = webExtensionManager
 
-        await webExtensionManager.loadInstalledExtensions()
-        await syncEmbeddedExtensions()
+        await loadAndSyncEmbeddedExtensions(webExtensionManager)
     }
 
     @available(macOS 15.4, *)
@@ -1951,6 +1968,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         isSyncingEmbeddedExtensions = true
         defer { isSyncingEmbeddedExtensions = false }
 
+        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    private func loadAndSyncEmbeddedExtensions(_ webExtensionManager: WebExtensionManager) async {
+        await webExtensionManager.loadAndSyncExtensions(enabledTypes: enabledEmbeddedExtensionTypes())
+    }
+
+    @available(macOS 15.4, *)
+    private func enabledEmbeddedExtensionTypes() -> Set<DuckDuckGoWebExtensionType> {
         var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
         if featureFlagger.isFeatureOn(.embeddedExtension) {
             enabledTypes.insert(.embedded)
@@ -1961,7 +1989,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if adBlockingAvailability.isEnabled {
             enabledTypes.insert(.adBlockingExtension)
         }
-        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
+        return enabledTypes
     }
 
     @available(macOS 15.4, *)

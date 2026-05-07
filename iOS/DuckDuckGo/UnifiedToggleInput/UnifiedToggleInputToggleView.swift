@@ -28,7 +28,6 @@ final class UnifiedToggleInputToggleView: UIView {
 
     private enum Constants {
         static let height: CGFloat = 40
-        static let innerHeight: CGFloat = 36
         static let cornerRadius: CGFloat = 20
         static let innerCornerRadius: CGFloat = 18
         static let segmentSpacing: CGFloat = 2
@@ -86,6 +85,8 @@ final class UnifiedToggleInputToggleView: UIView {
         stack.axis = .horizontal
         stack.distribution = .fillEqually
         stack.spacing = Constants.segmentSpacing
+        stack.layer.cornerRadius = Constants.cornerRadius - Constants.horizontalPadding
+        stack.clipsToBounds = true
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
@@ -99,6 +100,9 @@ final class UnifiedToggleInputToggleView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+        // Clip subviews to bounds so labels don't protrude past the pill while the height
+        // constraint animates 0→40 during the reveal animation.
+        clipsToBounds = true
         setupUI()
     }
 
@@ -153,8 +157,16 @@ final class UnifiedToggleInputToggleView: UIView {
             }(),
 
             indicatorToDuckAI,
-            indicator.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Constants.horizontalPadding),
-            indicator.heightAnchor.constraint(equalToConstant: Constants.innerHeight),
+            {
+                let topConstraint = indicator.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Constants.horizontalPadding)
+                topConstraint.priority = .defaultHigh
+                return topConstraint
+            }(),
+            {
+                let bottomConstraint = indicator.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -Constants.horizontalPadding)
+                bottomConstraint.priority = .defaultHigh
+                return bottomConstraint
+            }(),
             indicator.widthAnchor.constraint(equalTo: searchButton.widthAnchor),
         ])
 

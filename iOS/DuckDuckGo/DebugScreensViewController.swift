@@ -48,6 +48,14 @@ struct DebugScreensView: View {
         List {
             if !model.isSearching {
                 Section {
+                    Toggle(isOn: $model.isShakeToOpenDebugMenuEnabled) {
+                        Label {
+                            Text(verbatim: "Shake to Open Debug Menu")
+                        } icon: {
+                            Image(systemName: "hand.wave")
+                        }
+                    }
+
                     VStack(alignment: .leading, spacing: 8) {
                         Label("Shake your device or press \u{2303}\u{2318}Z in the Simulator to open this screen quickly.", systemImage: "info.circle")
                         // swiftlint:disable:next force_try

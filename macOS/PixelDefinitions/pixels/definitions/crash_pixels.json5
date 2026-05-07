@@ -80,5 +80,12 @@
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_crash-report_sent": {
+        "description": "Fired when a crash report is successfully submitted (HTTP 200) to the crash reporting service. Counterpart to m_windows_crash-report_sent for cross-platform parity.",
+        "owners": ["ayoy", "mallexxx", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

@@ -27,11 +27,16 @@ extension WebExtensionManager {
 
     /// Syncs embedded extensions from the registry based on the enabled types.
     /// Installs/upgrades enabled extensions and uninstalls disabled ones.
-    /// Call this after `loadInstalledExtensions()`.
+    /// Call this after `loadInstalledExtensions()`, or use `loadAndSyncExtensions(enabledTypes:)`.
     /// - Parameter enabledTypes: The set of extension types that should be installed.
     ///   Extensions not in this set will be uninstalled if previously installed.
     @MainActor
     public func syncEmbeddedExtensions(enabledTypes: Set<DuckDuckGoWebExtensionType>) async {
+        guard !isLoadingInstalledExtensions else {
+            Logger.webExtensions.debug("⏳ Skipping sync — load in progress, sync will run after load completes")
+            return
+        }
+
         Logger.webExtensions.debug("🔄 Syncing embedded extensions...")
 
         for descriptor in EmbeddedWebExtensionRegistry.all {

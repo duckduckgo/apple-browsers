@@ -42,6 +42,10 @@ protocol SnoozeManaging: AnyObject {
     @MainActor func cancelSnooze() async
 }
 
+protocol LeakCheckControlling: AnyObject {
+    @MainActor func triggerLeakCheckFromDebugMenu() async
+}
+
 // MARK: - PacketTunnelMessageHandler
 
 @MainActor
@@ -60,6 +64,7 @@ final class PacketTunnelMessageHandler {
     private weak var tunnelState: (any TunnelStateProviding)?
     private weak var tunnelLifecycle: (any TunnelLifecycleManaging)?
     private weak var snoozeManager: (any SnoozeManaging)?
+    private weak var leakCheckController: (any LeakCheckControlling)?
 
     init(keyStore: NetworkProtectionKeyStore,
          keyExpirationTester: KeyExpirationTesting,
@@ -72,7 +77,8 @@ final class PacketTunnelMessageHandler {
          debugEvents: EventMapping<NetworkProtectionError>,
          tunnelState: any TunnelStateProviding,
          tunnelLifecycle: any TunnelLifecycleManaging,
-         snoozeManager: any SnoozeManaging) {
+         snoozeManager: any SnoozeManaging,
+         leakCheckController: any LeakCheckControlling) {
 
         self.keyStore = keyStore
         self.keyExpirationTester = keyExpirationTester
@@ -86,6 +92,7 @@ final class PacketTunnelMessageHandler {
         self.tunnelState = tunnelState
         self.tunnelLifecycle = tunnelLifecycle
         self.snoozeManager = snoozeManager
+        self.leakCheckController = leakCheckController
     }
 
     // MARK: - Message Routing
@@ -196,6 +203,11 @@ final class PacketTunnelMessageHandler {
         case .createLogSnapshot:
             if #available(macOS 12.0, iOS 15.0, *) {
                 handleCreateLogSnapshot(completionHandler: completionHandler)
+            }
+        case .triggerLeakCheck:
+            Task { [weak self] in
+                await self?.leakCheckController?.triggerLeakCheckFromDebugMenu()
+                completionHandler?(nil)
             }
         }
     }

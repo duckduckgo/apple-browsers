@@ -368,6 +368,11 @@ extension WKWebView {
         return self.value(forKey: NSStringFromSelector(Selector.fullScreenPlaceholderView)) as? NSView
     }
 
+    var webProcessIdentifier: pid_t? {
+        guard self.responds(to: Selector.webProcessIdentifier) else { return nil }
+        return self.value(forKey: NSStringFromSelector(Selector.webProcessIdentifier)) as? pid_t
+    }
+
     func removeFocusFromWebView() {
         guard self.window?.firstResponder === self else { return }
         self.superview?.makeMeFirstResponder()
@@ -467,6 +472,7 @@ extension WKWebView {
         static let setAddsVisitedLinks = NSSelectorFromString("_setAddsVisitedLinks:")
         static let addsVisitedLinks = NSSelectorFromString("_addsVisitedLinks")
         static let isPlayingAudio = "_isPlayingAudio"
+        static let webProcessIdentifier = NSSelectorFromString("_webProcessIdentifier")
 
         @available(macOS, deprecated: 12.0, message: "This needs to be removed when macOS 11 support is dropped.")
         static let mediaCaptureState = NSSelectorFromString("_mediaCaptureState")

@@ -88,10 +88,7 @@ public final class DefaultWideEventSender: WideEventSending {
 
         firePixels(pixelName: pixelName, parameters: parameters, onComplete: onComplete)
         storage.recordSentTimestamp(for: T.metadata.type, date: Date())
-
-        if featureFlagProvider.isEnabled(.postEndpoint) {
-            sendPOSTRequest(data: data, status: status, isFirstDailyOccurrence: isFirstDailyOccurrence)
-        }
+        sendPOSTRequest(data: data, status: status, isFirstDailyOccurrence: isFirstDailyOccurrence)
     }
 
     private func checkFirstDailyOccurrence(for eventType: String) -> Bool {

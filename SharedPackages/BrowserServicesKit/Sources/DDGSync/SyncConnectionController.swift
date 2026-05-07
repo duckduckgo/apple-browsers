@@ -293,6 +293,8 @@ public class SyncConnectionController: SyncConnectionControlling {
                 try await syncService.transmitExchangeRecoveryKey(for: exchangeMessage)
             } catch {
                 await delegate?.controllerDidError(.failedToTransmitExchangeRecoveryKey, underlyingError: error, setupRole: .sharer)
+                (await state.getExchanger())?.stopPolling()
+                return
             }
 
             delegate?.controllerDidFinishTransmittingRecoveryKey()

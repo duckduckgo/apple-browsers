@@ -28,10 +28,14 @@ public final class ScriptletInstaller: ScriptletInstalling {
 
     public func installScriptlets(_ scriptlets: [Scriptlet], cacheRootDirectory: URL, to installationDirectory: URL) async throws {
         try prepareDirectory(installationDirectory)
+        let resolvedInstallationDirectory = installationDirectory.standardizedFileURL.resolvingSymlinksInPath()
 
         for scriptlet in scriptlets {
+            try ScriptletPathSafety.validateName(scriptlet.path)
+
             let sourceFile = cacheRootDirectory.appendingPathComponent(scriptlet.relativeCachedPath)
             let targetFile = installationDirectory.appendingPathComponent(scriptlet.path)
+            try ScriptletPathSafety.ensureContained(targetFile, within: resolvedInstallationDirectory, name: scriptlet.path)
 
             let targetFileDirectory = targetFile.deletingLastPathComponent()
             if !fileManager.fileExists(atPath: targetFileDirectory.path) {

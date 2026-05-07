@@ -33,6 +33,9 @@ public final class VPNSettings {
         case setIncludeAllNetworks(_ includeAllNetworks: Bool)
         case setEnforceRoutes(_ enforceRoutes: Bool)
         case setExcludeLocalNetworks(_ excludeLocalNetworks: Bool)
+        case setExcludeAPNs(_ excludeAPNs: Bool)
+        case setExcludeCellularServices(_ excludeCellularServices: Bool)
+        case setExcludeDeviceCommunication(_ excludeDeviceCommunication: Bool)
         case setNotifyStatusChanges(_ notifyStatusChanges: Bool)
         case setRegistrationKeyValidity(_ validity: RegistrationKeyValidity)
         case setSelectedServer(_ selectedServer: SelectedServer)
@@ -127,6 +130,27 @@ public final class VPNSettings {
                 Change.setExcludeLocalNetworks(excludeLocalNetworks)
             }.eraseToAnyPublisher()
 
+        let excludeAPNsPublisher = excludeAPNsPublisher
+            .dropFirst()
+            .removeDuplicates()
+            .map { excludeAPNs in
+                Change.setExcludeAPNs(excludeAPNs)
+            }.eraseToAnyPublisher()
+
+        let excludeCellularServicesPublisher = excludeCellularServicesPublisher
+            .dropFirst()
+            .removeDuplicates()
+            .map { excludeCellularServices in
+                Change.setExcludeCellularServices(excludeCellularServices)
+            }.eraseToAnyPublisher()
+
+        let excludeDeviceCommunicationPublisher = excludeDeviceCommunicationPublisher
+            .dropFirst()
+            .removeDuplicates()
+            .map { excludeDeviceCommunication in
+                Change.setExcludeDeviceCommunication(excludeDeviceCommunication)
+            }.eraseToAnyPublisher()
+
         let notifyStatusChangesPublisher = notifyStatusChangesPublisher
             .dropFirst()
             .removeDuplicates()
@@ -188,6 +212,9 @@ public final class VPNSettings {
             includeAllNetworksPublisher,
             enforceRoutesPublisher,
             excludeLocalNetworksPublisher,
+            excludeAPNsPublisher,
+            excludeCellularServicesPublisher,
+            excludeDeviceCommunicationPublisher,
             notifyStatusChangesPublisher,
             serverChangePublisher,
             locationChangePublisher,
@@ -207,13 +234,24 @@ public final class VPNSettings {
         defaults.resetNetworkProtectionSettingConnectOnLogin()
         defaults.resetNetworkProtectionSettingEnforceRoutes()
         defaults.resetNetworkProtectionSettingExcludeLocalNetworks()
+        defaults.resetNetworkProtectionSettingExcludeAPNs()
+        defaults.resetNetworkProtectionSettingExcludeCellularServices()
+        defaults.resetNetworkProtectionSettingExcludeDeviceCommunication()
         defaults.resetNetworkProtectionSettingIncludeAllNetworks()
         defaults.resetNetworkProtectionSettingNotifyStatusChanges()
         defaults.resetNetworkProtectionSettingRegistrationKeyValidity()
         defaults.resetNetworkProtectionSettingSelectedServer()
         defaults.resetDNSSettings()
         defaults.resetNetworkProtectionSettingShowInMenuBar()
-        defaults.resetNetworkProtectionSettingWideEventPostEndpointEnabled()
+    }
+
+    public func resetTunnelFlagsToDefaults() {
+        defaults.resetNetworkProtectionSettingEnforceRoutes()
+        defaults.resetNetworkProtectionSettingIncludeAllNetworks()
+        defaults.resetNetworkProtectionSettingExcludeLocalNetworks()
+        defaults.resetNetworkProtectionSettingExcludeAPNs()
+        defaults.resetNetworkProtectionSettingExcludeCellularServices()
+        defaults.resetNetworkProtectionSettingExcludeDeviceCommunication()
     }
 
     // MARK: - Applying Changes
@@ -226,6 +264,12 @@ public final class VPNSettings {
             self.enforceRoutes = enforceRoutes
         case .setExcludeLocalNetworks(let excludeLocalNetworks):
             self.excludeLocalNetworks = excludeLocalNetworks
+        case .setExcludeAPNs(let excludeAPNs):
+            self.excludeAPNs = excludeAPNs
+        case .setExcludeCellularServices(let excludeCellularServices):
+            self.excludeCellularServices = excludeCellularServices
+        case .setExcludeDeviceCommunication(let excludeDeviceCommunication):
+            self.excludeDeviceCommunication = excludeDeviceCommunication
         case .setIncludeAllNetworks(let includeAllNetworks):
             self.includeAllNetworks = includeAllNetworks
         case .setNotifyStatusChanges(let notifyStatusChanges):
@@ -308,6 +352,54 @@ public final class VPNSettings {
 
         set {
             defaults.networkProtectionSettingExcludeLocalNetworks = newValue
+        }
+    }
+
+    // MARK: - Exclude APNs
+
+    public var excludeAPNsPublisher: AnyPublisher<Bool, Never> {
+        defaults.networkProtectionSettingExcludeAPNsPublisher
+    }
+
+    public var excludeAPNs: Bool {
+        get {
+            defaults.networkProtectionSettingExcludeAPNs
+        }
+
+        set {
+            defaults.networkProtectionSettingExcludeAPNs = newValue
+        }
+    }
+
+    // MARK: - Exclude Cellular Services
+
+    public var excludeCellularServicesPublisher: AnyPublisher<Bool, Never> {
+        defaults.networkProtectionSettingExcludeCellularServicesPublisher
+    }
+
+    public var excludeCellularServices: Bool {
+        get {
+            defaults.networkProtectionSettingExcludeCellularServices
+        }
+
+        set {
+            defaults.networkProtectionSettingExcludeCellularServices = newValue
+        }
+    }
+
+    // MARK: - Exclude Device Communication
+
+    public var excludeDeviceCommunicationPublisher: AnyPublisher<Bool, Never> {
+        defaults.networkProtectionSettingExcludeDeviceCommunicationPublisher
+    }
+
+    public var excludeDeviceCommunication: Bool {
+        get {
+            defaults.networkProtectionSettingExcludeDeviceCommunication
+        }
+
+        set {
+            defaults.networkProtectionSettingExcludeDeviceCommunication = newValue
         }
     }
 
@@ -466,16 +558,4 @@ public final class VPNSettings {
         }
     }
 
-    public var wideEventPostEndpointEnabledPublisher: AnyPublisher<Bool, Never> {
-        defaults.networkProtectionSettingWideEventPostEndpointEnabledPublisher
-    }
-
-    public var wideEventPostEndpointEnabled: Bool {
-        get {
-            defaults.networkProtectionSettingWideEventPostEndpointEnabled
-        }
-        set {
-            defaults.networkProtectionSettingWideEventPostEndpointEnabled = newValue
-        }
-    }
 }

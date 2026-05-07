@@ -280,9 +280,9 @@ extension TabSwitcherViewController {
         barsHandler.update(state)
         barsHandler.configureButtonActions(tabsStyle: tabsStyle, canShowSelectionMenu: canShowSelectionMenu)
 
-        titleBarView.topItem?.titleView = isEditing ? nil : segmentedPickerHostingController?.view
-        titleBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
-        titleBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
+        titleBarView.setCenterView(isEditing ? nil : segmentedPickerHostingController?.view)
+        titleBarView.setLeadingButtons(barsHandler.topBarLeftButtons)
+        titleBarView.setTrailingButtons(barsHandler.topBarRightButtons)
         toolbar.items = barsHandler.bottomBarItems
         toolbar.isHidden = barsHandler.isBottomBarHidden
         collectionView.contentInset.bottom = barsHandler.isBottomBarHidden ? 0 : toolbar.frame.height

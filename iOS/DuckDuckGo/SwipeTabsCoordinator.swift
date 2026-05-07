@@ -384,6 +384,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             }
 
             cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
+            cell.omniBar?.refreshFireMode(fireMode: tab?.fireTab ?? false)
 
             controller.didMove(toParent: coordinator.parentController)
             cell.controller = controller

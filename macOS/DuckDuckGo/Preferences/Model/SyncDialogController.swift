@@ -131,7 +131,9 @@ final class SyncDialogController {
             .asVoid()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.refreshDevices()
+                guard let self else { return }
+                self.refreshDevices()
+                self.updateSingleDeviceSyncPromoVisibility()
             }
             .store(in: &cancellables)
 
@@ -153,6 +155,7 @@ final class SyncDialogController {
             .sink { [weak self] in
                 guard let self else { return }
                 self.managementDialogModel.isAIChatSyncEnabled = self.featureFlagger.isFeatureOn(.aiChatSync)
+                self.updateSingleDeviceSyncPromoVisibility()
             }
             .store(in: &cancellables)
     }
@@ -168,6 +171,12 @@ final class SyncDialogController {
     }
 
     // MARK: - Private Helper Methods
+
+    private func updateSingleDeviceSyncPromoVisibility() {
+        let isFlagEnabled = featureFlagger.isFeatureOn(.allowSingleDeviceOnConnectScreen)
+        let isSyncInactive = syncService.account == nil
+        managementDialogModel.shouldShowSingleDeviceSyncPromoOnSyncWithAnotherDeviceScreen = isFlagEnabled && isSyncInactive
+    }
 
     @MainActor
     private func presentDialog(for currentDialog: ManagementDialogKind) {

@@ -108,6 +108,14 @@ class BrowserChromeButton: UIButton {
         configuration?.image = image
     }
 
+    var hasImage: Bool {
+        configuration?.image != nil
+    }
+
+    var hasTitle: Bool {
+        !(configuration?.title?.isEmpty ?? true) || !(currentTitle?.isEmpty ?? true)
+    }
+
     override func setNeedsDisplay() {
         border?.layer.borderColor = UIColor(designSystemColor: .lines).cgColor
         super.setNeedsDisplay()

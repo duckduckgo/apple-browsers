@@ -71,6 +71,10 @@ final class NetworkProtectionDebugUtilities {
         try await ipcClient.command(.restartAdapter)
     }
 
+    func triggerLeakCheck() async throws {
+        try await ipcClient.command(.triggerLeakCheck)
+    }
+
     func resetAllState(keepAuthToken: Bool) async throws {
         try await vpnUninstaller.uninstall(
             removeSystemExtension: true,

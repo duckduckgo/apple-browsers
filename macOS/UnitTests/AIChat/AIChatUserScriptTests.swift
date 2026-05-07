@@ -189,6 +189,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didSendToSetupSync = false
 
     var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
+    var isFireWindowProvider: (() -> Bool)?
 
     init(messageHandling: any AIChatMessageHandling = MockAIChatMessageHandling()) {
         self.messageHandling = messageHandling
@@ -351,6 +352,14 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func setAIChatHistoryEnabled(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        return nil
+    }
+
+    func voiceSessionStarted(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
+
+    func voiceSessionEnded(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         return nil
     }
 

@@ -340,7 +340,7 @@ final class BookmarkListViewController: NSViewController {
         titleTextField.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
 
         NSLayoutConstraint.activate([
-            titleTextField.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
+            titleTextField.topAnchor.constraint(equalTo: view.topAnchor, constant: 13),
             titleTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
 
             newBookmarkButton.heightAnchor.constraint(equalToConstant: 28),
@@ -367,10 +367,10 @@ final class BookmarkListViewController: NSViewController {
             }()),
 
             stackView.centerYAnchor.constraint(equalTo: titleTextField.centerYAnchor),
-            view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 20),
+            view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 16),
 
             {
-                boxDividerTopConstraint = boxDivider.topAnchor.constraint(equalTo: titleTextField.bottomAnchor, constant: 12)
+                boxDividerTopConstraint = boxDivider.topAnchor.constraint(equalTo: titleTextField.bottomAnchor, constant: 13)
                 return boxDividerTopConstraint
             }(),
             boxDivider.leadingAnchor.constraint(equalTo: view.leadingAnchor),

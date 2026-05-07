@@ -125,10 +125,10 @@ final class DBPEndToEndTests: XCTestCase {
         XCTAssert(try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false).isEmpty)
 
         // Fake broker set up
-        await deleteAllProfilesOnFakeBroker()
+        try await deleteAllProfilesOnFakeBroker()
 
         let mockUserProfile = mockFakeBrokerUserProfile()
-        let returnedUserProfile = await createProfileOnFakeBroker(mockUserProfile)
+        let returnedUserProfile = try await createProfileOnFakeBroker(mockUserProfile)
         XCTAssertEqual(mockUserProfile.firstName, returnedUserProfile.firstName)
 
         // When
@@ -417,16 +417,16 @@ extension DBPEndToEndTests {
         "http://localhost:3001/api/"
     }
 
-    func deleteAllProfilesOnFakeBroker() async {
+    func deleteAllProfilesOnFakeBroker() async throws {
         let deleteProfilesURL = URL(string: fakeBrokerAPIAddress + "profiles")!
         var deleteRequest = URLRequest(url: deleteProfilesURL)
         deleteRequest.httpMethod = "DELETE"
 
-        let (responseData, response) = try! await URLSession.shared.data(for: deleteRequest)
+        let (responseData, response) = try await fakeBrokerData(for: deleteRequest)
         validateFakeBrokerResponse(responseData: responseData, response: response)
     }
 
-    func createProfileOnFakeBroker(_ profile: FakeBrokerUserProfile) async -> FakeBrokerReturnedUserProfile {
+    func createProfileOnFakeBroker(_ profile: FakeBrokerUserProfile) async throws -> FakeBrokerReturnedUserProfile {
         let url = URL(string: fakeBrokerAPIAddress + "profiles")!
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -435,11 +435,25 @@ extension DBPEndToEndTests {
         let data = try! encoder.encode(profile)
         request.httpBody = data
 
-        let (responseData, response) = try! await URLSession.shared.data(for: request)
+        let (responseData, response) = try await fakeBrokerData(for: request)
         validateFakeBrokerResponse(responseData: responseData, response: response)
 
         let decoder = JSONDecoder()
         return try! decoder.decode(FakeBrokerReturnedUserProfile.self, from: responseData)
+    }
+
+    /// Wraps `URLSession.data(for:)` so that "broker not reachable" surfaces as `XCTSkip`
+    /// rather than a `try!` crash that aborts the entire xctest process before any test runs.
+    private func fakeBrokerData(for request: URLRequest) async throws -> (Data, URLResponse) {
+        do {
+            return try await URLSession.shared.data(for: request)
+        } catch let error as URLError where error.code == .cannotConnectToHost
+                                          || error.code == .cannotFindHost
+                                          || error.code == .networkConnectionLost
+                                          || error.code == .notConnectedToInternet
+                                          || error.code == .timedOut {
+            throw XCTSkip("PIR fake broker unreachable at \(fakeBrokerAPIAddress) - skipping test. Underlying error: \(error)")
+        }
     }
 }
 

@@ -3905,6 +3905,8 @@
 		CBECDB852CDA813C005B8B87 /* BrokenSitePromptLimiterStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBECDB832CDA8137005B8B87 /* BrokenSitePromptLimiterStore.swift */; };
 		CC00A0902E1D52A700750ED3 /* FirefoxPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00A08F2E1D52A700750ED3 /* FirefoxPreferencesTests.swift */; };
 		CC00A0912E1D52A700750ED3 /* FirefoxPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00A08F2E1D52A700750ED3 /* FirefoxPreferencesTests.swift */; };
+		CC0816472FAC9FE9000F8217 /* PromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0816462FAC9FE5000F8217 /* PromoDelegate.swift */; };
+		CC0816482FAC9FE9000F8217 /* PromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0816462FAC9FE5000F8217 /* PromoDelegate.swift */; };
 		CC0942FD2E16AF9C00E67336 /* FavoritesImportProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0942FC2E16AF6000E67336 /* FavoritesImportProcessor.swift */; };
 		CC0942FE2E16AF9C00E67336 /* FavoritesImportProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0942FC2E16AF6000E67336 /* FavoritesImportProcessor.swift */; };
 		CC0943002E16B6F000E67336 /* FavoritesImportProcessorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0942FF2E16B6F000E67336 /* FavoritesImportProcessorTests.swift */; };
@@ -6632,6 +6634,7 @@
 		CBDD5DE229A67F2700832877 /* MockConfigurationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockConfigurationStore.swift; sourceTree = "<group>"; };
 		CBECDB832CDA8137005B8B87 /* BrokenSitePromptLimiterStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrokenSitePromptLimiterStore.swift; sourceTree = "<group>"; };
 		CC00A08F2E1D52A700750ED3 /* FirefoxPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxPreferencesTests.swift; sourceTree = "<group>"; };
+		CC0816462FAC9FE5000F8217 /* PromoDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoDelegate.swift; sourceTree = "<group>"; };
 		CC0942FC2E16AF6000E67336 /* FavoritesImportProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesImportProcessor.swift; sourceTree = "<group>"; };
 		CC0942FF2E16B6F000E67336 /* FavoritesImportProcessorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesImportProcessorTests.swift; sourceTree = "<group>"; };
 		CC0DD90E2E5DD74600277E46 /* AppStateRestorationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateRestorationManagerTests.swift; sourceTree = "<group>"; };
@@ -12730,6 +12733,7 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D42E5F600300000003 /* Promo.swift */,
+				CC0816462FAC9FE5000F8217 /* PromoDelegate.swift */,
 				CC82ABC12F52100D00AD9807 /* PromoContext.swift */,
 				CC82ABB52F5206BE00AD9807 /* PromoHistoryProviding.swift */,
 				A1B2C3D42E5F600200000002 /* PromoHistoryRecord.swift */,
@@ -14679,6 +14683,7 @@
 			files = (
 				A1B2C3D42E5F601100000001 /* PromoType.swift in Sources */,
 				A1B2C3D42E5F601200000002 /* PromoHistoryRecord.swift in Sources */,
+				CC0816472FAC9FE9000F8217 /* PromoDelegate.swift in Sources */,
 				A1B2C3D42E5F601300000003 /* Promo.swift in Sources */,
 				A1B2C3D42E5F601500000005 /* PromoHistoryStoring.swift in Sources */,
 				A1B2C3D42E5F601600000007 /* PromoService.swift in Sources */,
@@ -16931,6 +16936,7 @@
 			files = (
 				CC3967ED2F461D6700AE83F2 /* PromoType.swift in Sources */,
 				CC3967EE2F461D6B00AE83F2 /* PromoHistoryRecord.swift in Sources */,
+				CC0816482FAC9FE9000F8217 /* PromoDelegate.swift in Sources */,
 				CC3967EF2F461D7000AE83F2 /* Promo.swift in Sources */,
 				CC3967F12F461D7B00AE83F2 /* PromoHistoryStoring.swift in Sources */,
 				CC3967F22F461D8000AE83F2 /* PromoService.swift in Sources */,

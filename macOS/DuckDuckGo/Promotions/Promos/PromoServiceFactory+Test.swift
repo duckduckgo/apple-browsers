@@ -42,7 +42,7 @@ extension PromoServiceFactory {
 
 /// Test promo delegate that shows an NSAlert with metadata, history, and result buttons.
 /// Used to exercise promo persistence across app restarts.
-final class TestPromoDelegate: PromoDelegate {
+final class TestPromoDelegate: InternalPromoDelegate {
     private let promo: Promo
     private var alert: NSAlert?
     private let isEligibleSubject = CurrentValueSubject<Bool, Never>(true)

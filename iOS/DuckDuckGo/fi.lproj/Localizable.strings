@@ -2847,6 +2847,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Ei nyt";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Tekoälyominaisuudet ovat yksityisiä ja valinnaisia.\nVoit tehdä muutoksia kohdassa Asetukset > Tekoälyominaisuudet.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Haluatko helpon pääsyn yksityiseen tekoälykeskusteluun osoiterivillä?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Haku ja Duck.ai";
 

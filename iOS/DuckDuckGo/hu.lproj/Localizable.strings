@@ -2847,6 +2847,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Most nem";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Az AI-funkciók privátak és opcionálisak.\nA módosításokat az erre szolgáló Beállítások > AI-funkciók alatt végezheted el.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Szeretnél a címsorból könnyen hozzáférni a privát AI-csevegéshez?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Keresés és Duck.ai";
 

@@ -221,6 +221,8 @@ extension Pixel {
         case favoriteLaunchedWebsite
         case favoriteLaunchedWidget
 
+        case widgetMediumLaunch
+
         case autocompleteClickPhrase
         case autocompleteClickWebsite
         case autocompleteClickBookmark
@@ -1606,6 +1608,8 @@ extension Pixel {
         case aiChatNewAddressBarPickerDisplayed
         case aiChatNewAddressBarPickerConfirmed
         case aiChatNewAddressBarPickerNotNow
+        case aiChatNewAddressBarPickerV2Displayed
+        case aiChatNewAddressBarPickerV2Confirmed
         
         // MARK: Experimental Omnibar Metrics
         case aiChatExperimentalOmnibarShown
@@ -2033,6 +2037,8 @@ extension Pixel.Event {
         case .favoriteLaunchedNTP: return "m_favorite_launched_ntp"
         case .favoriteLaunchedWebsite: return "m_favorite_launched_website"
         case .favoriteLaunchedWidget: return "m_favorite_launched_widget"
+
+        case .widgetMediumLaunch: return "m_widget_medium_launch"
 
         case .autocompleteClickPhrase: return "m_autocomplete_click_phrase"
         case .autocompleteClickWebsite: return "m_autocomplete_click_website"
@@ -3298,6 +3304,8 @@ extension Pixel.Event {
         case .aiChatNewAddressBarPickerDisplayed: return "m_aichat_new_address_bar_picker_displayed"
         case .aiChatNewAddressBarPickerConfirmed: return "m_aichat_new_address_bar_picker_confirmed"
         case .aiChatNewAddressBarPickerNotNow: return "m_aichat_new_address_bar_picker_not_now"
+        case .aiChatNewAddressBarPickerV2Displayed: return "m_aichat_new_address_bar_picker_v2_displayed"
+        case .aiChatNewAddressBarPickerV2Confirmed: return "m_aichat_new_address_bar_picker_v2_confirmed"
         
         // MARK: Experimental Omnibar Metrics
         case .aiChatExperimentalOmnibarShown: return "m_aichat_experimental_omnibar_shown"

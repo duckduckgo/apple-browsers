@@ -1,6 +1,5 @@
 //
 //  Logger+Onboarding.swift
-//  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -20,6 +19,6 @@
 import Foundation
 @_documentation(visibility: internal) @_exported import os.log
 
-extension Logger {
-    static var onboarding = { Logger(subsystem: "Onboarding", category: "") }()
+public extension Logger {
+    static let onboarding = Logger(subsystem: "Onboarding", category: "")
 }

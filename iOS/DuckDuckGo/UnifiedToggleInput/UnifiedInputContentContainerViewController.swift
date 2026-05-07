@@ -61,30 +61,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var contentContainerView = UIView()
-    private lazy var floatingDismissButton: UIButton = {
-        let button: UIButton
-        if #available(iOS 26, *) {
-            var config = UIButton.Configuration.glass()
-            config.image = UIImage(systemName: "xmark")
-            config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 12, weight: .medium)
-            button = UIButton(configuration: config)
-        } else {
-            button = UIButton(type: .system)
-            let image = UIImage(systemName: "xmark")?
-                .withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium))
-            button.setImage(image, for: .normal)
-            button.tintColor = UIColor(designSystemColor: .textPrimary)
-            button.backgroundColor = UIColor(designSystemColor: .surface)
-            button.layer.cornerRadius = 22
-            button.layer.shadowColor = UIColor.black.cgColor
-            button.layer.shadowOpacity = 0.1
-            button.layer.shadowRadius = 4
-            button.layer.shadowOffset = CGSize(width: 0, height: 2)
-        }
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(handleFloatingDismissTap), for: .primaryActionTriggered)
-        return button
-    }()
 
     private var isLandscapeOrientation: Bool = false {
         didSet {
@@ -236,10 +212,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         swipeContainerManager?.animateProgrammaticModeChanges = true
     }
 
-    func setDismissButtonVisible(_ visible: Bool) {
-        floatingDismissButton.isHidden = !visible
-    }
-
     func setActive(_ active: Bool) {
         guard active != isContentActive else { return }
         isContentActive = active
@@ -354,7 +326,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func setupView() {
         view.backgroundColor = Metrics.backgroundColor
         setUpContentContainer()
-        setUpFloatingDismissButton()
         setUpSwipeDownGesture()
     }
 
@@ -373,16 +344,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         ])
     }
 
-    private func setUpFloatingDismissButton() {
-        view.addSubview(floatingDismissButton)
-        NSLayoutConstraint.activate([
-            floatingDismissButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            floatingDismissButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
-            floatingDismissButton.widthAnchor.constraint(equalToConstant: 44),
-            floatingDismissButton.heightAnchor.constraint(equalToConstant: 44),
-        ])
-    }
-
     private func setUpSwipeDownGesture() {
         let swipeDownGesture = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeDown))
         swipeDownGesture.direction = .down
@@ -395,6 +356,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         installSuggestionsTray()
         installDaxLogoView()
     }
+
+    /// Suppresses suggestion-tray section headers per the unified-input redesign.
+    /// Flip to `true` to restore headers; selection logic below is preserved.
+    /// Consider removing this and the code it guards after release.
+    private static let areSectionHeadersEnabled = false
 
     private func updateSectionTitle() {
         let text = computedSectionTitleText()
@@ -419,7 +385,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
     }
 
+    /// Returns the header label for the currently visible tray, or `""` when none applies
+    /// (and unconditionally while `areSectionHeadersEnabled` is `false`).
     private func computedSectionTitleText() -> String {
+        guard Self.areSectionHeadersEnabled else { return "" }
+
         let mode = switchBarHandler.currentToggleState
         let hasFavorites = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
         let hasAutocomplete = suggestionTrayManager?.shouldDisplaySuggestionTray == true && !hasFavorites
@@ -660,10 +630,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         swipeContainerManager?.containerViewController.additionalSafeAreaInsets = insets
         // layoutIfNeeded inside the active CATransaction so the inset change animates with the parent.
         swipeContainerManager?.containerViewController.view.layoutIfNeeded()
-    }
-
-    @objc private func handleFloatingDismissTap() {
-        onDismissRequested?()
     }
 
     private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {

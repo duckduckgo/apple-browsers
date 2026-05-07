@@ -2847,6 +2847,12 @@
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Şimdi Değil";
 
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Yapay zekâ özellikleri gizli ve isteğe bağlıdır.\nAyarlar > AI Özellikleri'nden değişiklik yapabilirsiniz.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Adres çubuğundaki özel AI sohbetine kolay erişim ister misiniz?";
+
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Arama ve Duck.ai";
 

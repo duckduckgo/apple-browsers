@@ -46,15 +46,4 @@ struct UTIRenderState: Equatable {
         )
     }
 
-    /// The inline dismiss (X inside the card) takes over whenever the expanded card is
-    /// anchored at the top. With the toggle enabled it sits in the toggle row; with the
-    /// toggle disabled it sits in the field row alongside the inline buttons.
-    var isInlineDismissActive: Bool {
-        cardPosition == .top && isExpanded
-    }
-
-    var isFloatingDismissVisible: Bool {
-        isContentVisible && !isInlineDismissActive
-    }
-
 }

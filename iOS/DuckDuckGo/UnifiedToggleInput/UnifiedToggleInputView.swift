@@ -747,6 +747,27 @@ final class UnifiedToggleInputView: UIView {
         attachmentsStripHeightConstraint.constant = showStrip ? UnifiedToggleInputAttachmentsStripView.Constants.stripHeight : 0
         attachmentsStrip.alpha = showStrip ? 1 : 0
     }
+
+    private func updateSubmitButtonAvailability() {
+        let hasSubmittableText = !handler.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasValidAttachment = attachmentsStrip.attachments.contains { !$0.isInvalid }
+        let hasInvalidAttachment = attachmentsStrip.attachments.contains(where: \.isInvalid)
+        let hasSubmittableAttachment = handler.currentToggleState == .aiChat && hasValidAttachment
+        toolsToolbar.isSubmitEnabled = !hasInvalidAttachment && (hasSubmittableText || hasSubmittableAttachment)
+    }
+
+    private func submitCurrentInput() {
+        let trimmedText = handler.currentText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasValidAttachment = attachmentsStrip.attachments.contains { !$0.isInvalid }
+        let hasInvalidAttachment = attachmentsStrip.attachments.contains(where: \.isInvalid)
+        guard !hasInvalidAttachment else { return }
+
+        if trimmedText.isEmpty, handler.currentToggleState == .aiChat, hasValidAttachment {
+            handler.submitAIChatAttachmentOnlyPrompt()
+        } else {
+            handler.submitText(handler.currentText)
+        }
+    }
 }
 
 // MARK: - Inline Dismiss
@@ -872,6 +893,7 @@ private extension UnifiedToggleInputView {
         attachmentsStrip.onAttachmentsChanged = { [weak self] in
             guard let self else { return }
             updateAttachmentsStripLayout()
+            updateSubmitButtonAvailability()
             layoutIfNeeded()
             onNeedsHierarchyLayout?()
             onAttachmentsLayoutDidChange?()
@@ -886,7 +908,7 @@ private extension UnifiedToggleInputView {
         toolsToolbar.alpha = 0
         toolsToolbar.onSubmitTapped = { [weak self] in
             guard let self else { return }
-            handler.submitText(handler.currentText)
+            submitCurrentInput()
         }
         toolsToolbar.onStopGeneratingTapped = { [weak self] in
             self?.handler.stopGeneratingButtonTapped()
@@ -983,8 +1005,7 @@ private extension UnifiedToggleInputView {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
                 guard let self else { return }
-                let hasSubmittableText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                toolsToolbar.isSubmitEnabled = hasSubmittableText
+                updateSubmitButtonAvailability()
                 delegate?.unifiedToggleInputViewDidChangeText(self, text: text)
             }
             .store(in: &cancellables)
@@ -995,6 +1016,7 @@ private extension UnifiedToggleInputView {
                 guard let self else { return }
                 toggleView.setMode(mode, animated: true)
                 updateToolbarVisibility(for: mode, animated: true)
+                updateSubmitButtonAvailability()
             }
             .store(in: &cancellables)
 

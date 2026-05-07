@@ -121,10 +121,11 @@ struct UTIAttachmentPolicy {
     }
 
     func fileSubmissionValidationMessage() -> String? {
-        let pendingFiles = pendingAttachments.compactMap { attachment -> AIChatFileAttachment? in
-            guard case .file(let fileAttachment) = attachment else { return nil }
-            return fileAttachment
+        if let invalidAttachment = pendingAttachments.first(where: \.isInvalid) {
+            return invalidAttachment.validationMessage
         }
+
+        let pendingFiles = pendingAttachments.compactMap(\.fileAttachment)
         guard !pendingFiles.isEmpty else { return nil }
         guard model?.supportsFileUpload == true else {
             return UserText.aiChatAttachmentUnsupportedFileType
@@ -187,6 +188,8 @@ struct UTIAttachmentPolicy {
         case .image:
             return model?.supportsImageUpload == true
         case .file(let fileAttachment):
+            return model?.supportedFileTypes.contains(fileAttachment.mimeType) == true
+        case .invalidFile(let fileAttachment):
             return model?.supportedFileTypes.contains(fileAttachment.mimeType) == true
         }
     }

@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -259,6 +260,166 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(delegate.submittedFiles?.count, 3)
     }
 
+    func testWhenSubmittingFileAttachmentWithoutTextThenFileIsSubmitted() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "", mode: .aiChat)
+
+        XCTAssertEqual(delegate.submittedPrompt, "")
+        XCTAssertEqual(delegate.submittedFiles?.count, 1)
+    }
+
+    func testWhenFileValidationFailsThenInvalidAttachmentIsAdded() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+
+        sut.addFileAttachment(makeFileAttachment(fileName: "too-many-pages.pdf", pageCount: 9))
+
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+        XCTAssertTrue(sut.viewController.currentAttachments.first?.isInvalid ?? false)
+        XCTAssertEqual(
+            sut.viewController.currentAttachments.first?.validationMessage,
+            UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: 8)
+        )
+    }
+
+    func testWhenInvalidFileAttachmentIsPresentThenPromptDoesNotSubmit() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.addFileAttachment(makeFileAttachment(fileName: "too-many-pages.pdf", pageCount: 9))
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertNil(delegate.submittedPrompt)
+        XCTAssertNil(delegate.submittedFiles)
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+    }
+
+    func testWhenSwitchingToSearchThenBackToDuckAIAttachmentsArePreserved() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
+
+        sut.updateInputMode(.search, animated: false)
+
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+
+        sut.updateInputMode(.aiChat, animated: false)
+
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+        XCTAssertEqual(sut.viewController.currentAttachments.first?.fileName, "a.pdf")
+    }
+
+    func testWhenSwitchingInvalidAttachmentToSearchThenBackToDuckAIErrorReturns() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.addFileAttachment(makeFileAttachment(fileName: "too-many-pages.pdf", pageCount: 9))
+        let expectedMessage = UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: 8)
+        XCTAssertEqual(sut.viewController.attachmentValidationMessage, expectedMessage)
+
+        sut.updateInputMode(.search, animated: false)
+
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+        XCTAssertNil(sut.viewController.attachmentValidationMessage)
+
+        sut.updateInputMode(.aiChat, animated: false)
+
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+        XCTAssertEqual(sut.viewController.attachmentValidationMessage, expectedMessage)
+    }
+
+    func testAttachmentErrorBannerDisplaysAllAttachmentErrorCopy() {
+        let sut = makeCoordinator()
+        let messages = [
+            UserText.aiChatAttachmentFileCountLimit(maxFilesPerConversation: 3),
+            UserText.aiChatAttachmentFileEncrypted,
+            UserText.aiChatAttachmentFilesExceedTotalSizeLimit(maxTotalFileSizeMB: 5),
+            UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: 5),
+            UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: 15),
+            UserText.aiChatAttachmentFileUnreadable,
+            UserText.aiChatAttachmentImageCountLimit(maxImagesPerConversation: 5),
+            UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: 3),
+            UserText.aiChatAttachmentPromptTooLong,
+            UserText.aiChatAttachmentUnavailable,
+            UserText.aiChatAttachmentUnsupportedFileType,
+            UserText.aiChatAttachmentUnsupportedFileType(acceptedFileType: "PDF"),
+            UserText.aiChatAttachmentUnsupportedFileType(acceptedFileTypes: ["PNG", "JPG", "PDF"]),
+        ]
+
+        for message in messages {
+            sut.viewController.showAttachmentValidationError(message)
+
+            XCTAssertEqual(sut.viewController.attachmentValidationMessage, message)
+            XCTAssertTrue(viewContainsLabelText(message, in: sut.viewController.view), message)
+        }
+    }
+
+    func testWhenSubmittingSearchAfterAddingAttachmentThenAttachmentsAreCleared() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
+        sut.updateInputMode(.search, animated: false)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "example", mode: .search)
+
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 0)
+        XCTAssertNil(sut.viewController.attachmentValidationMessage)
+    }
+
+    func testWhenSubmittingSearchFromDuckAITabAfterAddingAttachmentThenLiveInputIsCleared() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        sut.showExpanded(inputMode: .aiChat)
+        sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
+        sut.setText("example")
+        sut.updateInputMode(.search, animated: false)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "example", mode: .search)
+
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 0)
+        XCTAssertNil(sut.viewController.attachmentValidationMessage)
+        XCTAssertEqual(sut.viewController.text, "")
+    }
+
+    func testWhenExternalQuerySubmissionFromDuckAITabAfterAddingAttachmentThenLiveInputIsCleared() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        sut.showExpanded(inputMode: .aiChat)
+        sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
+        sut.setText("example")
+
+        sut.handleExternalSubmission(.query)
+
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 0)
+        XCTAssertNil(sut.viewController.attachmentValidationMessage)
+        XCTAssertEqual(sut.viewController.text, "")
+    }
+
     func testWhenGeneratingThenImageButtonIsDisabled() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "image-model"
@@ -348,15 +509,23 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         )
     }
 
-    private func makeFileAttachment(fileName: String = "test.pdf") -> AIChatFileAttachment {
+    private func makeFileAttachment(fileName: String = "test.pdf", pageCount: Int? = 1) -> AIChatFileAttachment {
         let data = Data(repeating: 0, count: 1_000)
         return AIChatFileAttachment(
             data: data,
             fileName: fileName,
             mimeType: "application/pdf",
             fileSizeBytes: data.count,
-            pageCount: 1
+            pageCount: pageCount
         )
+    }
+
+    private func viewContainsLabelText(_ text: String, in view: UIView) -> Bool {
+        if let label = view as? UILabel, label.text == text {
+            return true
+        }
+
+        return view.subviews.contains { viewContainsLabelText(text, in: $0) }
     }
 
     private func attachmentMenuTitles(for coordinator: UnifiedToggleInputCoordinator) -> [String] {
@@ -366,10 +535,12 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
 @MainActor
 private final class SpyUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
+    var submittedPrompt: String?
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
     var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
+        submittedPrompt = prompt
         submittedImages = images
         submittedFiles = files
     }

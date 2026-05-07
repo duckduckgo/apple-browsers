@@ -26,18 +26,27 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         static let spacing: CGFloat = 4
         static let horizontalPadding: CGFloat = 12
         static let topPadding: CGFloat = 8
-        static let stripHeight: CGFloat = topPadding + UnifiedToggleInputAttachmentThumbnailView.Constants.totalSize
+        static let stripHeight: CGFloat = topPadding + UnifiedToggleInputAttachmentThumbnailView.Constants.chipHeight
     }
 
     private(set) var attachments: [UnifiedToggleInputAttachment] = []
     var onAttachmentRemoved: ((UUID) -> Void)?
     var onAttachmentsChanged: (() -> Void)?
 
+    private let scrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.alwaysBounceHorizontal = true
+        scrollView.clipsToBounds = true
+        return scrollView
+    }()
+
     private let stackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
         stack.spacing = Constants.spacing
-        stack.alignment = .bottom
+        stack.alignment = .center
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
@@ -59,6 +68,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
             self?.removeAttachment(id: id)
         }
         stackView.addArrangedSubview(thumbnail)
+        scrollToTrailingEdge()
         onAttachmentsChanged?()
     }
 
@@ -86,14 +96,28 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     private func setupUI() {
         translatesAutoresizingMaskIntoConstraints = false
         clipsToBounds = false
-        addSubview(stackView)
-        let bottomConstraint = stackView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        addSubview(scrollView)
+        scrollView.addSubview(stackView)
+        let bottomConstraint = scrollView.bottomAnchor.constraint(equalTo: bottomAnchor)
         bottomConstraint.priority = .defaultHigh
         NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.topPadding),
-            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
-            stackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -Constants.horizontalPadding),
+            scrollView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.topPadding),
+            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scrollView.heightAnchor.constraint(equalToConstant: UnifiedToggleInputAttachmentThumbnailView.Constants.chipHeight),
             bottomConstraint,
+
+            stackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            stackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            stackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: Constants.horizontalPadding),
+            stackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -Constants.horizontalPadding),
+            stackView.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor),
         ])
+    }
+
+    private func scrollToTrailingEdge() {
+        layoutIfNeeded()
+        let maximumOffset = max(scrollView.contentSize.width - scrollView.bounds.width, 0)
+        scrollView.setContentOffset(CGPoint(x: maximumOffset, y: 0), animated: false)
     }
 }

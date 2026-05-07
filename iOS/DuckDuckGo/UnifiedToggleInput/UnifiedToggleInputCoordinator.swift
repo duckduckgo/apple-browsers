@@ -258,8 +258,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentPresenter.onFilePicked = { [weak self] attachment in
             self?.addFileAttachment(attachment)
         }
-        attachmentPresenter.onFileValidationFailed = { [weak self] message in
-            self?.presentAttachmentValidationError(message)
+        attachmentPresenter.onFileValidationFailed = { [weak self] message, metadata in
+            self?.addInvalidFileAttachment(metadata: metadata, validationMessage: message)
         }
         attachmentPresenter.fileMetadataValidationMessage = { [weak self] metadata in
             self?.attachmentPolicy.fileMetadataValidationMessage(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes)
@@ -347,8 +347,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         viewController.removeAllAttachments()
         for attachment in state.attachments {
-            viewController.addAttachment(.image(attachment))
+            viewController.addAttachment(attachment)
         }
+        syncAttachmentValidationErrorForCurrentMode()
 
         // Always sync the live model store from per-tab state — including nil values —
         // so the previous tab's selections don't leak through preferences. With the
@@ -374,7 +375,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         TabInputState(
             text: currentText,
             toggleMode: inputMode,
-            attachments: currentImageAttachmentsForTabState,
+            attachments: viewController.currentAttachments,
             selectedModelID: modelStore.persistedModelId,
             selectedReasoningMode: modelStore.selectedReasoningMode,
             selectedTool: toolsController.selectedTool
@@ -470,11 +471,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isAwaitingTopOmnibarKeyboardPresentation = false
         displayState = .hidden
         isInputVisibleForKeyboard = true
-        resetToolsSelection()
         // The live state is no longer authoritative for the previous tab; clearing
         // currentTabUID prevents the next activateForTab from snapshotting the
         // (now tool-cleared) live state back over the previous tab's stored entry.
         currentTabUID = nil
+        resetToolsSelection()
+        clearAttachments()
+        setText("")
 
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
@@ -623,8 +626,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
 
         applyToolbarPresentation()
-        if didModeChange, effectiveMode == .search {
-            clearAttachments()
+        if didModeChange {
+            syncAttachmentValidationErrorForCurrentMode()
         }
         recordUserChoiceToStore()
     }
@@ -1062,26 +1065,49 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let attachment = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: image, fileName: fileName))
         viewController.addAttachment(attachment)
         persistDraftToStore()
+        clearAttachmentValidationErrorIfPossible()
+        updateAttachButtonPresentation()
     }
 
     func addFileAttachment(_ fileAttachment: AIChatFileAttachment) {
         if let validationMessage = attachmentPolicy.fileValidationMessage(for: fileAttachment) {
+            viewController.addAttachment(.invalidFile(
+                UnifiedToggleInputInvalidFileAttachment(
+                    fileName: fileAttachment.fileName,
+                    mimeType: fileAttachment.mimeType,
+                    fileSizeBytes: fileAttachment.fileSizeBytes,
+                    validationMessage: validationMessage
+                )
+            ))
             presentAttachmentValidationError(validationMessage)
+            persistDraftToStore()
+            updateAttachButtonPresentation()
             return
         }
 
         viewController.addAttachment(.file(fileAttachment))
+        persistDraftToStore()
+        clearAttachmentValidationErrorIfPossible()
+        updateAttachButtonPresentation()
     }
 
     func removeAttachment(id: UUID) {
         viewController.removeAttachment(id: id)
         persistDraftToStore()
+        syncAttachmentValidationErrorForCurrentMode()
+        updateAttachButtonPresentation()
     }
 
     func clearAttachments() {
-        guard !viewController.currentAttachments.isEmpty else { return }
+        guard !viewController.currentAttachments.isEmpty else {
+            viewController.clearAttachmentValidationError()
+            updateAttachButtonPresentation()
+            return
+        }
         viewController.removeAllAttachments()
+        viewController.clearAttachmentValidationError()
         persistDraftToStore()
+        updateAttachButtonPresentation()
     }
 
     func updateImageButtonVisibility() {
@@ -1120,10 +1146,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
         commitCurrentToggleState()
-        clearStoreEntryAfterSubmission()
 
         switch mode {
         case .search:
+            clearStoreEntryAfterSubmission()
             if case .aiTab = displayState {
                 hide()
             } else if isOmnibarSession {
@@ -1157,6 +1183,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             let configuration = promptSubmissionConfiguration
 
             resetToolsSelection()
+            clearStoreEntryAfterSubmission()
             clearAttachments()
             hasSubmittedPrompt = true
             updateModelChipVisibility()
@@ -1182,6 +1209,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         textState = text.isEmpty ? .empty : .userTyped
         textChangeSubject.send(text)
         persistDraftToStore()
+        clearAttachmentValidationErrorIfPossible()
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
@@ -1224,13 +1252,6 @@ private extension UnifiedToggleInputCoordinator {
 
     // MARK: Attachments
 
-    var currentImageAttachmentsForTabState: [AIChatImageAttachment] {
-        viewController.currentAttachments.compactMap { attachment in
-            guard case .image(let imageAttachment) = attachment else { return nil }
-            return imageAttachment
-        }
-    }
-
     var canPresentFilePicker: Bool {
         attachmentPolicy.canAttachFiles && !allowedFileUTTypes.isEmpty
     }
@@ -1253,6 +1274,25 @@ private extension UnifiedToggleInputCoordinator {
         UTType(mimeType: mimeType)
     }
 
+    func addInvalidFileAttachment(
+        metadata: UnifiedToggleInputAttachmentPresenter.FileMetadata?,
+        validationMessage: String
+    ) {
+        if let metadata {
+            viewController.addAttachment(.invalidFile(
+                UnifiedToggleInputInvalidFileAttachment(
+                    fileName: metadata.fileName,
+                    mimeType: metadata.mimeType,
+                    fileSizeBytes: metadata.fileSizeBytes ?? 0,
+                    validationMessage: validationMessage
+                )
+            ))
+            persistDraftToStore()
+            updateAttachButtonPresentation()
+        }
+        presentAttachmentValidationError(validationMessage)
+    }
+
     func removeUnsupportedAttachmentsForSelectedModel() {
         guard selectedModel != nil else { return }
         let unsupportedAttachments = viewController.currentAttachments.filter { attachment in
@@ -1261,6 +1301,7 @@ private extension UnifiedToggleInputCoordinator {
         unsupportedAttachments.forEach { attachment in
             viewController.removeAttachment(id: attachment.id)
         }
+        syncAttachmentValidationErrorForCurrentMode()
     }
 
     func makeAttachmentMenu() -> UIMenu? {
@@ -1283,7 +1324,29 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func presentAttachmentValidationError(_ message: String) {
-        ActionMessageView.present(message: message, presentationLocation: .top)
+        viewController.showAttachmentValidationError(message)
+    }
+
+    func syncAttachmentValidationError() {
+        if let validationMessage = viewController.currentAttachments.compactMap(\.validationMessage).first {
+            viewController.showAttachmentValidationError(validationMessage)
+        } else {
+            viewController.clearAttachmentValidationError()
+        }
+    }
+
+    func syncAttachmentValidationErrorForCurrentMode() {
+        guard inputMode == .aiChat else {
+            viewController.clearAttachmentValidationError()
+            return
+        }
+
+        syncAttachmentValidationError()
+    }
+
+    func clearAttachmentValidationErrorIfPossible() {
+        guard viewController.currentAttachments.contains(where: \.isInvalid) == false else { return }
+        viewController.clearAttachmentValidationError()
     }
 
     // MARK: Session State

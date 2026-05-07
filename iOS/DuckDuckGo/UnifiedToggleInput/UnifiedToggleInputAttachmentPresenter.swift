@@ -36,7 +36,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     var onExpandIfNeeded: (() -> Void)?
     var onImagePicked: ((UIImage, String) -> Void)?
     var onFilePicked: ((AIChatFileAttachment) -> Void)?
-    var onFileValidationFailed: ((String) -> Void)?
+    var onFileValidationFailed: ((String, FileMetadata?) -> Void)?
     var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
 
     func makeAttachmentMenu(
@@ -241,12 +241,12 @@ extension UnifiedToggleInputAttachmentPresenter: UIDocumentPickerDelegate {
                 Self.fileMetadata(from: url)
             }.value
             guard let metadata else {
-                onFileValidationFailed?(UserText.aiChatAttachmentFileUnreadable)
+                onFileValidationFailed?(UserText.aiChatAttachmentFileUnreadable, nil)
                 return
             }
 
             if let validationMessage = fileMetadataValidationMessage?(metadata) {
-                onFileValidationFailed?(validationMessage)
+                onFileValidationFailed?(validationMessage, metadata)
                 return
             }
 
@@ -254,7 +254,7 @@ extension UnifiedToggleInputAttachmentPresenter: UIDocumentPickerDelegate {
                 Self.fileAttachment(from: metadata)
             }.value
             guard let fileAttachment else {
-                onFileValidationFailed?(UserText.aiChatAttachmentFileUnreadable)
+                onFileValidationFailed?(UserText.aiChatAttachmentFileUnreadable, metadata)
                 return
             }
 

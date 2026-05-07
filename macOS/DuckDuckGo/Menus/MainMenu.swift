@@ -1204,8 +1204,8 @@ final class MainMenu: NSMenu {
         menu.addItem(.separator())
         let exportLogsMenuItem = NSMenuItem(title: "Export Logs…", action: #selector(MainViewController.exportLogs))
         menu.addItem(exportLogsMenuItem)
-        let viewLogsMenuItem = NSMenuItem(title: "View Logs…", action: #selector(MainViewController.viewLogs))
-        menu.addItem(viewLogsMenuItem)
+        let logMonitorMenuItem = NSMenuItem(title: "Log Monitor…", action: #selector(MainViewController.openLogMonitor))
+        menu.addItem(logMonitorMenuItem)
 
         self.loggingMenu = menu
         return menu

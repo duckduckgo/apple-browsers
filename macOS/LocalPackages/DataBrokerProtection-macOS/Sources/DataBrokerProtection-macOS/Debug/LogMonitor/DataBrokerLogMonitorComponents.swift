@@ -71,7 +71,7 @@ struct LogMonitorToolbarView: View {
                     .disabled(isMonitoring)
 
                 if shouldUseCustomSubsystem {
-                    TextField("Enter subsystem (e.g. \"PixelKit\" for pixels", text: $customSubsystem)
+                    TextField("Enter subsystem (e.g. \"Pixel\" for pixels)", text: $customSubsystem)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .frame(width: 120)
                         .disabled(isMonitoring)

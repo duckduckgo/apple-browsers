@@ -1,0 +1,87 @@
+name: Conflict Watch
+
+# Runs the daily pairwise conflict detector. For every two branches
+# touched in the last 48h that aren't already merged into main, runs an
+# in-memory three-way merge and posts deduplicated tasks to the Asana
+# project for any conflicts found.
+#
+# Cron is intentionally commented out — v1 is workflow_dispatch only so
+# manual runs can validate behaviour against the live project. Uncomment
+# the schedule once we're happy with a few green dispatch runs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Skip Asana writes (recommended for first runs)"
+        type: boolean
+        default: true
+      asana_project_gid:
+        description: "Override target Asana project gid"
+        type: string
+        default: "1214448335754394"
+      recency_hours:
+        description: "Branch recency window in hours"
+        type: string
+        default: "48"
+      verbose:
+        description: "Verbose logging"
+        type: boolean
+        default: false
+  # schedule:
+  #   - cron: '0 5 * * *' # 05:00 UTC == 07:00 CET / 06:00 CEST
+
+permissions:
+  contents: read
+
+jobs:
+  conflict-watch:
+    name: Detect cross-branch conflicts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch GitHub → Asana user map
+        env:
+          GH_TOKEN: ${{ secrets.APPLE_GH_RO_PAT }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/conflict-watch"
+          if gh api repos/duckduckgo/internal-github-asana-utils/contents/user_map.yml \
+              --jq .content 2>/dev/null \
+              | base64 -d > "$RUNNER_TEMP/conflict-watch/user_map.yml"; then
+            echo "Fetched user_map.yml ($(wc -l < "$RUNNER_TEMP/conflict-watch/user_map.yml") lines)"
+          else
+            echo "::warning::Failed to fetch user_map.yml; mentions will fall back to plain text"
+            : > "$RUNNER_TEMP/conflict-watch/user_map.yml"
+          fi
+
+      - name: Run conflict-watch
+        env:
+          ASANA_PAT: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CW_ROOT: ${{ runner.temp }}/conflict-watch
+          CW_USER_MAP_PATH: ${{ runner.temp }}/conflict-watch/user_map.yml
+          CW_DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+          CW_ASANA_PROJECT_GID: ${{ inputs.asana_project_gid }}
+          CW_RECENCY_HOURS: ${{ inputs.recency_hours }}
+          CW_VERBOSE: ${{ inputs.verbose && '1' || '0' }}
+        run: |
+          python3 scripts/conflict-watch/conflict-watch.py
+
+      - name: Upload run logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conflict-watch-logs
+          path: ${{ runner.temp }}/conflict-watch/logs/
+          if-no-files-found: ignore
+          retention-days: 14

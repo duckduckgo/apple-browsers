@@ -1,0 +1,1172 @@
+#!/usr/bin/env python3
+"""Daily pairwise conflict detector for duckduckgo/apple-browsers.
+
+For every pair of branches with commits in the last ``CW_RECENCY_HOURS``
+(default 48), runs an in-memory three-way merge (``git merge-tree``) and
+reports any pair that conflicts as a deduplicated Asana task in the
+configured project.
+
+Two kinds of conflict are detected:
+
+* **Hard merge conflicts** — the same lines edited on both sides, or
+  modify-vs-delete situations. Git would refuse to auto-merge these.
+* **Soft conflicts** — both branches changed the same file but on
+  different lines, so git would merge cleanly. These often produce
+  semantic bugs and are still worth flagging. Files matching
+  ``CW_SOFT_IGNORE`` patterns (defaults cover Xcode project files and
+  lockfiles) are excluded from the soft-conflict bucket.
+
+Filters
+-------
+* Branch tip committed within the recency window.
+* Branch is not already merged into ``main`` (squash-merged refs are
+  detected via ``git diff --quiet main...branch``).
+* Branch author is not a known bot (dependabot, renovate, …).
+* Pairs are ordered by recency-of-newer-tip so the time budget hits
+  the freshest pairs first.
+
+Idempotency
+-----------
+Tasks are deduplicated by an order-independent title of the form
+``[conflict-watch] <branchA> ↔ <branchB>`` (branch names sorted
+alphabetically). Re-running finds the existing task and adds a comment
+instead of creating a duplicate.
+
+Behaviour by task state:
+
+* No matching task → create a new one (capped at ``CW_MAX_NEW_TASKS``
+  per run).
+* Matching open task → add a comment with today's snapshot.
+* Matching completed task → re-open it and add a "conflict reappeared"
+  comment.
+
+Tagging branch owners
+---------------------
+If a user-map file is provided via ``CW_USER_MAP_PATH`` (a flat YAML of
+``github_login: asana_user_gid``), authors of the two branch tips are
+added as task followers and `@`-mentioned via Asana's rich-text format
+(``<a data-asana-gid="…"/>``) so they receive notifications.
+
+Configuration
+-------------
+All knobs are environment variables (see ``CW_*`` constants below).
+
+Required:
+    ASANA_PAT          Asana personal access token
+
+Optional (defaults shown):
+    CW_REPO=duckduckgo/apple-browsers
+    CW_DEFAULT_BRANCH=main
+    CW_RECENCY_HOURS=48
+    CW_ASANA_WORKSPACE_GID=137249556945
+    CW_ASANA_PROJECT_GID=1214448335754394
+    CW_ROOT=~/.conflict-watch
+    CW_DRY_RUN=0          (1 to skip Asana writes)
+    CW_VERBOSE=0
+    CW_TIME_BUDGET_S=540  (soft cap, 9 minutes)
+    CW_MAX_NEW_TASKS=50   (hard cap on new tasks per run)
+    CW_SOFT_IGNORE=…      (comma-separated globs; see DEFAULT_SOFT_IGNORE)
+    CW_BOT_AUTHORS=…      (comma-separated GitHub logins to skip)
+    CW_USER_MAP_PATH=     (path to a flat YAML of github→asana gid)
+
+CLI flags
+---------
+    --dry-run    Same as CW_DRY_RUN=1 — don't create / update Asana tasks.
+    --self-test  Build a synthetic git repo and verify conflict detection.
+    --once PAIR  Probe a single pair "branchA..branchB" and exit (debug).
+    --verbose    Verbose logging.
+
+Exit codes
+----------
+    0  OK (whether or not conflicts were found)
+    1  Run-time error
+    2  Configuration / auth error
+"""
+
+from __future__ import annotations
+
+import argparse
+import fnmatch
+import itertools
+import json
+import logging
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from dataclasses import dataclass, field, asdict
+from datetime import datetime, timezone, timedelta
+from html import escape as html_escape
+from pathlib import Path
+from typing import Optional
+
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
+
+REPO = os.environ.get("CW_REPO", "duckduckgo/apple-browsers")
+DEFAULT_BRANCH = os.environ.get("CW_DEFAULT_BRANCH", "main")
+RECENCY_HOURS = int(os.environ.get("CW_RECENCY_HOURS", "48"))
+ASANA_WORKSPACE_GID = os.environ.get("CW_ASANA_WORKSPACE_GID", "137249556945")
+ASANA_PROJECT_GID = os.environ.get("CW_ASANA_PROJECT_GID", "1214448335754394")
+TIME_BUDGET_S = int(os.environ.get("CW_TIME_BUDGET_S", "540"))
+MAX_NEW_TASKS = int(os.environ.get("CW_MAX_NEW_TASKS", "50"))
+
+ROOT = Path(os.environ.get("CW_ROOT", str(Path.home() / ".conflict-watch")))
+MIRROR = ROOT / f"{REPO.split('/')[-1]}.git"
+STATE_PATH = ROOT / "state.json"
+LOG_DIR = ROOT / "logs"
+CONFIG_ENV = ROOT / "config.env"
+USER_MAP_PATH = os.environ.get("CW_USER_MAP_PATH", "").strip()
+
+DEFAULT_SOFT_IGNORE = (
+    "*.pbxproj,"
+    "*.xcworkspace/**,"
+    "*.xcodeproj/project.xcworkspace/**,"
+    "Package.resolved,"
+    "**/Package.resolved,"
+    "*.lock,"
+    "*.lockfile,"
+    "**/Generated/**,"
+    "**/*.generated.swift"
+)
+SOFT_IGNORE_PATTERNS = [
+    p.strip() for p in os.environ.get("CW_SOFT_IGNORE", DEFAULT_SOFT_IGNORE).split(",")
+    if p.strip()
+]
+
+DEFAULT_BOT_AUTHORS = (
+    "dependabot[bot],"
+    "renovate[bot],"
+    "github-actions[bot]"
+)
+BOT_AUTHORS = {
+    a.strip().lower()
+    for a in os.environ.get("CW_BOT_AUTHORS", DEFAULT_BOT_AUTHORS).split(",")
+    if a.strip()
+}
+
+TITLE_PREFIX = "[conflict-watch]"
+TITLE_SEP = " ↔ "
+COMPARE_URL_TEMPLATE = f"https://github.com/{REPO}/compare/{{a}}...{{b}}"
+
+ASANA_BASE = "https://app.asana.com/api/1.0"
+
+logger = logging.getLogger("conflict-watch")
+
+
+# ---------------------------------------------------------------------------
+# Data classes
+# ---------------------------------------------------------------------------
+
+@dataclass
+class Branch:
+    name: str
+    sha: str
+    committer_iso: str
+    author_name: str
+    author_email: str
+    github_login: Optional[str] = None
+    asana_gid: Optional[str] = None
+    pr_url: Optional[str] = None
+
+    @property
+    def short_sha(self) -> str:
+        return self.sha[:7]
+
+    @property
+    def committer_dt(self) -> datetime:
+        try:
+            ts = datetime.fromisoformat(self.committer_iso)
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            return ts
+        except ValueError:
+            return datetime.fromtimestamp(0, tz=timezone.utc)
+
+
+@dataclass
+class ConflictPair:
+    a: Branch
+    b: Branch
+    merge_base: str
+    hard_files: list[str] = field(default_factory=list)
+    soft_files: list[str] = field(default_factory=list)
+
+    @property
+    def has_conflicts(self) -> bool:
+        return bool(self.hard_files or self.soft_files)
+
+    @property
+    def title_key(self) -> str:
+        names = sorted([self.a.name, self.b.name])
+        return f"{TITLE_PREFIX} {names[0]}{TITLE_SEP}{names[1]}"
+
+    @property
+    def newer_tip_dt(self) -> datetime:
+        return max(self.a.committer_dt, self.b.committer_dt)
+
+
+@dataclass
+class RunSummary:
+    branches_checked: int = 0
+    branches_skipped_merged: int = 0
+    branches_skipped_bot: int = 0
+    pairs_probed: int = 0
+    pairs_with_hard_conflicts: int = 0
+    pairs_with_soft_conflicts: int = 0
+    pairs_with_both: int = 0
+    tasks_created: int = 0
+    tasks_updated: int = 0
+    tasks_reopened: int = 0
+    tasks_skipped_cap: int = 0
+    errors: list[str] = field(default_factory=list)
+    skipped_pairs: list[str] = field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Config / setup
+# ---------------------------------------------------------------------------
+
+def load_config_env() -> None:
+    """Merge KEY=VALUE lines from CW_ROOT/config.env into os.environ."""
+    if not CONFIG_ENV.exists():
+        return
+    for raw in CONFIG_ENV.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+def setup_logging(verbose: bool) -> None:
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    log_file = LOG_DIR / f"{datetime.now().strftime('%Y-%m-%d')}.log"
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)-7s %(message)s",
+        handlers=[
+            logging.FileHandler(log_file, encoding="utf-8"),
+            logging.StreamHandler(sys.stdout),
+        ],
+    )
+
+
+# ---------------------------------------------------------------------------
+# Subprocess helpers
+# ---------------------------------------------------------------------------
+
+def run(cmd: list[str], *, check: bool = True, cwd: Optional[Path] = None,
+        capture: bool = True) -> subprocess.CompletedProcess:
+    logger.debug("$ %s", " ".join(cmd))
+    return subprocess.run(
+        cmd,
+        check=check,
+        cwd=str(cwd) if cwd else None,
+        text=True,
+        capture_output=capture,
+    )
+
+
+def git(args: list[str], *, check: bool = True,
+        cwd: Optional[Path] = None) -> subprocess.CompletedProcess:
+    return run(["git", *args], check=check, cwd=cwd or MIRROR)
+
+
+def have_command(cmd: str) -> bool:
+    return shutil.which(cmd) is not None
+
+
+# ---------------------------------------------------------------------------
+# Git: refresh + branch enumeration
+# ---------------------------------------------------------------------------
+
+def refresh_mirror() -> None:
+    ROOT.mkdir(parents=True, exist_ok=True)
+    if not MIRROR.exists():
+        url = f"https://github.com/{REPO}.git"
+        logger.info("Cloning bare mirror from %s into %s", url, MIRROR)
+        run(["git", "clone", "--mirror", url, str(MIRROR)], cwd=ROOT)
+        return
+    logger.info("Fetching updates into %s", MIRROR)
+    git(["fetch", "--prune", "origin", "+refs/heads/*:refs/heads/*"])
+
+
+def _is_merged_into_default(branch: str) -> bool:
+    """True if ``branch`` has no diff against ``DEFAULT_BRANCH`` — i.e.
+    every change is already in main (covers squash-merged branches)."""
+    proc = git(["diff", "--quiet", f"{DEFAULT_BRANCH}...{branch}"], check=False)
+    return proc.returncode == 0
+
+
+def list_active_branches(within_hours: int, summary: RunSummary) -> list[Branch]:
+    sep = "\x1f"
+    fmt = sep.join([
+        "%(refname:short)",
+        "%(committerdate:iso-strict)",
+        "%(authorname)",
+        "%(authoremail)",
+        "%(objectname)",
+    ])
+    proc = git(["for-each-ref", f"--format={fmt}", "refs/heads/"])
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=within_hours)
+    branches: list[Branch] = []
+    for line in proc.stdout.splitlines():
+        if not line.strip():
+            continue
+        parts = line.split(sep)
+        if len(parts) != 5:
+            logger.warning("Skipping unparseable ref line: %r", line)
+            continue
+        name, iso, author_name, author_email, sha = parts
+        if name == DEFAULT_BRANCH:
+            continue
+        try:
+            ts = datetime.fromisoformat(iso)
+        except ValueError:
+            logger.warning("Skipping ref %s: bad date %r", name, iso)
+            continue
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        if ts < cutoff:
+            continue
+        if _is_merged_into_default(name):
+            logger.debug("Skipping merged branch: %s", name)
+            summary.branches_skipped_merged += 1
+            continue
+        branches.append(Branch(
+            name=name,
+            sha=sha,
+            committer_iso=iso,
+            author_name=author_name,
+            author_email=author_email.strip("<>"),
+        ))
+    branches.sort(key=lambda b: b.committer_iso, reverse=True)
+    return branches
+
+
+# ---------------------------------------------------------------------------
+# GitHub: author -> login + PR lookup
+# ---------------------------------------------------------------------------
+
+_login_cache: dict[str, Optional[str]] = {}
+_pr_cache: dict[str, Optional[str]] = {}
+
+
+def lookup_github_login(sha: str) -> Optional[str]:
+    if sha in _login_cache:
+        return _login_cache[sha]
+    if not have_command("gh"):
+        _login_cache[sha] = None
+        return None
+    try:
+        proc = run(
+            ["gh", "api", f"repos/{REPO}/commits/{sha}",
+             "--jq", ".author.login // \"\""],
+            check=False,
+        )
+        login = (proc.stdout or "").strip()
+        _login_cache[sha] = login or None
+    except Exception as exc:
+        logger.warning("gh lookup failed for %s: %s", sha, exc)
+        _login_cache[sha] = None
+    return _login_cache[sha]
+
+
+def lookup_pr_url(branch_name: str) -> Optional[str]:
+    if branch_name in _pr_cache:
+        return _pr_cache[branch_name]
+    if not have_command("gh"):
+        _pr_cache[branch_name] = None
+        return None
+    try:
+        proc = run(
+            ["gh", "pr", "list",
+             "--repo", REPO,
+             "--head", branch_name,
+             "--state", "open",
+             "--json", "url",
+             "--jq", ".[0].url // \"\""],
+            check=False,
+        )
+        url = (proc.stdout or "").strip()
+        _pr_cache[branch_name] = url or None
+    except Exception as exc:
+        logger.warning("gh pr lookup failed for %s: %s", branch_name, exc)
+        _pr_cache[branch_name] = None
+    return _pr_cache[branch_name]
+
+
+# ---------------------------------------------------------------------------
+# User map (github login -> asana user gid)
+# ---------------------------------------------------------------------------
+
+def parse_user_map(text: str) -> dict[str, str]:
+    """Parse a flat YAML mapping of ``github_login: asana_user_gid``.
+
+    Handles only flat scalar mappings. Lines that aren't ``key: value``
+    pairs (anchors, lists, nested maps) are skipped.
+    """
+    result: dict[str, str] = {}
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].rstrip()
+        if not line.strip() or line.startswith(" ") or line.startswith("\t"):
+            continue
+        if ":" not in line:
+            continue
+        key, _, value = line.partition(":")
+        key = key.strip().strip('"').strip("'")
+        value = value.strip().strip('"').strip("'")
+        if not key or not value:
+            continue
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+", key):
+            continue
+        result[key] = value
+    return result
+
+
+def load_user_map() -> dict[str, str]:
+    if not USER_MAP_PATH:
+        return {}
+    path = Path(USER_MAP_PATH)
+    if not path.exists():
+        logger.warning("CW_USER_MAP_PATH=%s does not exist; skipping mentions",
+                       USER_MAP_PATH)
+        return {}
+    try:
+        return parse_user_map(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        logger.warning("Failed to read user map %s: %s", USER_MAP_PATH, exc)
+        return {}
+
+
+# ---------------------------------------------------------------------------
+# Git: pairwise conflict probe
+# ---------------------------------------------------------------------------
+
+_CONFLICT_LINE = re.compile(r"^CONFLICT \([^)]+\): .* in (.+?)\s*$")
+_LEGACY_TRIPLE = re.compile(r"^(?:base|our|their)\s+\d+\s+\S+\s+(.+)$")
+_GIT_VERSION: Optional[tuple[int, int]] = None
+
+
+def _git_version() -> tuple[int, int]:
+    global _GIT_VERSION
+    if _GIT_VERSION is None:
+        out = run(["git", "--version"]).stdout.strip()
+        m = re.search(r"(\d+)\.(\d+)", out)
+        _GIT_VERSION = (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+    return _GIT_VERSION
+
+
+def _supports_modern_merge_tree() -> bool:
+    return _git_version() >= (2, 38)
+
+
+def _matches_soft_ignore(path: str) -> bool:
+    """Match ``path`` against the soft-ignore globs.
+
+    fnmatch doesn't treat ``**/`` specially — it's just ``*`` (any chars
+    including ``/``), which means a pattern like ``**/Generated/**``
+    requires at least one slash before ``Generated``. To make the common
+    "anywhere in tree" intent work, for any pattern starting with
+    ``**/`` we also try matching the suffix (no path prefix).
+    """
+    base = os.path.basename(path)
+    for pat in SOFT_IGNORE_PATTERNS:
+        if fnmatch.fnmatch(path, pat):
+            return True
+        if pat.startswith("**/") and fnmatch.fnmatch(path, pat[3:]):
+            return True
+        if fnmatch.fnmatch(base, pat):
+            return True
+    return False
+
+
+def probe_pair(a: Branch, b: Branch) -> Optional[ConflictPair]:
+    base_proc = git(["merge-base", a.name, b.name], check=False)
+    if base_proc.returncode != 0 or not base_proc.stdout.strip():
+        logger.warning("No merge base between %s and %s", a.name, b.name)
+        return None
+    base = base_proc.stdout.strip()
+
+    hard_files: set[str] = set()
+
+    if _supports_modern_merge_tree():
+        proc = git(
+            ["merge-tree", "--write-tree", f"--merge-base={base}",
+             a.name, b.name],
+            check=False,
+        )
+        if proc.returncode == 0:
+            pass
+        elif proc.returncode == 1:
+            for line in (proc.stdout + "\n" + proc.stderr).splitlines():
+                m = _CONFLICT_LINE.match(line.strip())
+                if m:
+                    hard_files.add(m.group(1))
+            for line in proc.stdout.splitlines():
+                if "\t" in line:
+                    left, _, path = line.partition("\t")
+                    bits = left.split()
+                    if len(bits) == 3 and bits[2] in ("1", "2", "3"):
+                        hard_files.add(path)
+        else:
+            logger.warning("merge-tree --write-tree rc=%d for %s vs %s; stderr=%s",
+                           proc.returncode, a.name, b.name,
+                           proc.stderr.strip()[:200])
+            return None
+    else:
+        legacy = git(["merge-tree", base, a.name, b.name], check=False)
+        if legacy.returncode != 0:
+            logger.warning("legacy merge-tree failed for %s vs %s (rc=%d)",
+                           a.name, b.name, legacy.returncode)
+            return None
+        in_section = False
+        current_path: Optional[str] = None
+        section_has_marker = False
+        for line in legacy.stdout.splitlines():
+            if line == "changed in both":
+                if section_has_marker and current_path:
+                    hard_files.add(current_path)
+                in_section = True
+                current_path = None
+                section_has_marker = False
+                continue
+            if not in_section:
+                continue
+            stripped = line.strip()
+            m = _LEGACY_TRIPLE.match(stripped)
+            if m:
+                if current_path is None:
+                    current_path = m.group(1)
+                continue
+            if "<<<<<<<" in line or ">>>>>>>" in line:
+                section_has_marker = True
+        if section_has_marker and current_path:
+            hard_files.add(current_path)
+
+    a_changed = set(_diff_names(base, a.name))
+    b_changed = set(_diff_names(base, b.name))
+    overlap = a_changed & b_changed
+    soft_files = sorted(
+        p for p in (overlap - hard_files) if not _matches_soft_ignore(p)
+    )
+    if not hard_files and not soft_files:
+        return None
+    return ConflictPair(
+        a=a,
+        b=b,
+        merge_base=base,
+        hard_files=sorted(hard_files),
+        soft_files=soft_files,
+    )
+
+
+def _diff_names(base: str, ref: str) -> list[str]:
+    proc = git(["diff", "--name-only", base, ref], check=False)
+    if proc.returncode != 0:
+        return []
+    return [ln for ln in proc.stdout.splitlines() if ln.strip()]
+
+
+# ---------------------------------------------------------------------------
+# Asana client
+# ---------------------------------------------------------------------------
+
+class AsanaError(RuntimeError):
+    pass
+
+
+class AsanaClient:
+    def __init__(self, pat: str, workspace_gid: str, project_gid: str,
+                 dry_run: bool = False):
+        self.pat = pat
+        self.workspace_gid = workspace_gid
+        self.project_gid = project_gid
+        self.dry_run = dry_run
+
+    def _request(self, method: str, path: str, *, params: Optional[dict] = None,
+                 body: Optional[dict] = None) -> dict:
+        url = f"{ASANA_BASE}{path}"
+        if params:
+            url = f"{url}?{urllib.parse.urlencode(params, doseq=True)}"
+        data = None
+        headers = {
+            "Authorization": f"Bearer {self.pat}",
+            "Accept": "application/json",
+        }
+        if body is not None:
+            data = json.dumps(body).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+        req = urllib.request.Request(url, data=data, method=method, headers=headers)
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                payload = resp.read().decode("utf-8")
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            raise AsanaError(f"{method} {path} -> {exc.code}: {detail}") from exc
+        except urllib.error.URLError as exc:
+            raise AsanaError(f"{method} {path} -> network error: {exc}") from exc
+        if not payload:
+            return {}
+        try:
+            return json.loads(payload)
+        except json.JSONDecodeError as exc:
+            raise AsanaError(f"{method} {path} -> non-JSON: {payload[:200]}") from exc
+
+    def search_task_by_exact_name(self, name: str) -> Optional[dict]:
+        params = {
+            "text": name,
+            "projects.any": self.project_gid,
+            "opt_fields": "name,completed,permalink_url",
+            "limit": 50,
+        }
+        data = self._request(
+            "GET",
+            f"/workspaces/{self.workspace_gid}/tasks/search",
+            params=params,
+        )
+        for item in data.get("data", []):
+            if item.get("name") == name:
+                return item
+        return None
+
+    def get_task(self, gid: str) -> dict:
+        data = self._request(
+            "GET",
+            f"/tasks/{gid}",
+            params={"opt_fields": "name,completed,permalink_url"},
+        )
+        return data.get("data", {})
+
+    def create_task(self, name: str, html_notes: str) -> dict:
+        if self.dry_run:
+            logger.info("[dry-run] would create task: %s", name)
+            return {"gid": "dry-run", "name": name, "permalink_url": ""}
+        body = {
+            "data": {
+                "name": name,
+                "html_notes": html_notes,
+                "workspace": self.workspace_gid,
+                "projects": [self.project_gid],
+            }
+        }
+        data = self._request("POST", "/tasks", body=body)
+        return data.get("data", {})
+
+    def add_comment(self, task_gid: str, html_text: str,
+                    plain_preview: str = "") -> None:
+        if self.dry_run:
+            logger.info("[dry-run] would comment on %s: %s",
+                        task_gid, plain_preview[:80] or html_text[:80])
+            return
+        body = {"data": {"html_text": html_text}}
+        self._request("POST", f"/tasks/{task_gid}/stories", body=body)
+
+    def reopen_task(self, task_gid: str) -> None:
+        if self.dry_run:
+            logger.info("[dry-run] would reopen %s", task_gid)
+            return
+        body = {"data": {"completed": False}}
+        self._request("PUT", f"/tasks/{task_gid}", body=body)
+
+    def add_followers(self, task_gid: str, user_gids: list[str]) -> None:
+        if not user_gids:
+            return
+        if self.dry_run:
+            logger.info("[dry-run] would add followers to %s: %s",
+                        task_gid, user_gids)
+            return
+        body = {"data": {"followers": user_gids}}
+        try:
+            self._request("POST", f"/tasks/{task_gid}/addFollowers", body=body)
+        except AsanaError as exc:
+            logger.warning("addFollowers failed for %s: %s", task_gid, exc)
+
+
+# ---------------------------------------------------------------------------
+# Rendering
+# ---------------------------------------------------------------------------
+
+def asana_mention(b: Branch) -> str:
+    """Asana rich-text mention if we have the user's gid; otherwise a
+    plain-text label that won't notify."""
+    if b.asana_gid:
+        return f'<a data-asana-gid="{html_escape(b.asana_gid)}"/>'
+    if b.github_login:
+        return f"@{html_escape(b.github_login)}"
+    return html_escape(b.author_name or b.author_email or "unknown")
+
+
+def render_branch_line_html(b: Branch) -> str:
+    parts = [
+        f"<strong>{html_escape(b.name)}</strong>",
+        f"last commit {html_escape(b.short_sha)} by {asana_mention(b)}",
+        f"at {html_escape(b.committer_iso)}",
+    ]
+    if b.pr_url:
+        parts.append(f'(<a href="{html_escape(b.pr_url)}">PR</a>)')
+    return "<li>" + " — ".join(parts) + "</li>"
+
+
+def render_task_body_html(pair: ConflictPair, today_local: str) -> str:
+    a_name, b_name = sorted([pair.a.name, pair.b.name])
+    compare_url = COMPARE_URL_TEMPLATE.format(a=a_name, b=b_name)
+    parts: list[str] = ["<body>"]
+    parts.append("<strong>Branches</strong>")
+    parts.append("<ul>")
+    parts.append(render_branch_line_html(pair.a))
+    parts.append(render_branch_line_html(pair.b))
+    parts.append("</ul>")
+    parts.append(f"<em>Merge base:</em> {html_escape(pair.merge_base[:7])}\n")
+    parts.append("")
+    if pair.hard_files:
+        parts.append(f"<strong>Hard-conflict files ({len(pair.hard_files)})</strong>")
+        parts.append("<ul>")
+        parts.extend(f"<li>{html_escape(p)}</li>" for p in pair.hard_files)
+        parts.append("</ul>")
+    else:
+        parts.append("<em>Hard-conflict files:</em> none")
+    parts.append("")
+    if pair.soft_files:
+        parts.append(
+            f"<strong>Soft-conflict files (same file edited on different "
+            f"lines, {len(pair.soft_files)})</strong>"
+        )
+        parts.append("<ul>")
+        parts.extend(f"<li>{html_escape(p)}</li>" for p in pair.soft_files)
+        parts.append("</ul>")
+    else:
+        parts.append("<em>Soft-conflict files:</em> none")
+    parts.append("")
+    parts.append(
+        f'Compare on GitHub: <a href="{html_escape(compare_url)}">'
+        f"{html_escape(a_name)}...{html_escape(b_name)}</a>"
+    )
+    parts.append("")
+    parts.append(
+        f"Detected: {html_escape(today_local)} by daily conflict-watch routine."
+    )
+    parts.append("</body>")
+    return "\n".join(parts)
+
+
+def render_comment_html(pair: ConflictPair, today_local: str, *,
+                        reappeared: bool = False) -> tuple[str, str]:
+    head = ("Conflict reappeared after task was closed."
+            if reappeared else "Today's snapshot:")
+    hard = (", ".join(html_escape(p) for p in pair.hard_files)
+            if pair.hard_files else "none")
+    soft = (", ".join(html_escape(p) for p in pair.soft_files)
+            if pair.soft_files else "none")
+    html = (
+        "<body>"
+        f"{html_escape(head)} {html_escape(today_local)} "
+        f"(cc {asana_mention(pair.a)} {asana_mention(pair.b)})"
+        "<ul>"
+        f"<li>{html_escape(pair.a.name)}: {html_escape(pair.a.short_sha)}</li>"
+        f"<li>{html_escape(pair.b.name)}: {html_escape(pair.b.short_sha)}</li>"
+        f"<li>Hard-conflict files ({len(pair.hard_files)}): {hard}</li>"
+        f"<li>Soft-conflict files ({len(pair.soft_files)}): {soft}</li>"
+        "</ul>"
+        "</body>"
+    )
+    plain = f"{head} {today_local}"
+    return html, plain
+
+
+# ---------------------------------------------------------------------------
+# Reconciliation
+# ---------------------------------------------------------------------------
+
+def reconcile(asana: AsanaClient, conflicts: list[ConflictPair],
+              state: dict, summary: RunSummary) -> None:
+    today_local = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M %Z")
+    today_utc = datetime.now(timezone.utc).isoformat()
+    for pair in conflicts:
+        title = pair.title_key
+        body_html = render_task_body_html(pair, today_local)
+
+        cached = state.get("pairs", {}).get(title)
+        existing: Optional[dict] = None
+        if cached and cached.get("asanaTaskGid"):
+            try:
+                existing = asana.get_task(cached["asanaTaskGid"])
+                if existing and existing.get("name") != title:
+                    existing = None
+            except AsanaError as exc:
+                logger.warning("Stale cache for %s: %s", title, exc)
+                existing = None
+        if existing is None:
+            try:
+                existing = asana.search_task_by_exact_name(title)
+            except AsanaError as exc:
+                summary.errors.append(f"search failed for {title}: {exc}")
+                continue
+
+        try:
+            if existing is None:
+                if summary.tasks_created >= MAX_NEW_TASKS:
+                    summary.tasks_skipped_cap += 1
+                    logger.warning(
+                        "Hard cap of %d new tasks reached; skipping create for %s",
+                        MAX_NEW_TASKS, title,
+                    )
+                    continue
+                created = asana.create_task(title, body_html)
+                gid = created.get("gid", "")
+                logger.info("Created Asana task %s for %s", gid, title)
+                summary.tasks_created += 1
+                followers = [u for u in (pair.a.asana_gid, pair.b.asana_gid) if u]
+                if gid and gid != "dry-run" and followers:
+                    asana.add_followers(gid, followers)
+                _record_state(state, title, pair, gid, "new", today_utc)
+            else:
+                gid = existing.get("gid", "")
+                completed = bool(existing.get("completed"))
+                if completed:
+                    asana.reopen_task(gid)
+                    html, plain = render_comment_html(pair, today_local,
+                                                     reappeared=True)
+                    asana.add_comment(gid, html, plain)
+                    logger.info("Reopened Asana task %s for %s", gid, title)
+                    summary.tasks_reopened += 1
+                    _record_state(state, title, pair, gid, "reopened", today_utc)
+                else:
+                    html, plain = render_comment_html(pair, today_local)
+                    asana.add_comment(gid, html, plain)
+                    logger.info("Commented on Asana task %s for %s", gid, title)
+                    summary.tasks_updated += 1
+                    _record_state(state, title, pair, gid, "open", today_utc)
+        except AsanaError as exc:
+            summary.errors.append(f"asana write failed for {title}: {exc}")
+
+
+def _record_state(state: dict, title: str, pair: ConflictPair,
+                  gid: str, status: str, now_iso: str) -> None:
+    pairs = state.setdefault("pairs", {})
+    entry = pairs.get(title) or {}
+    entry["asanaTaskGid"] = gid
+    entry["branches"] = sorted([pair.a.name, pair.b.name])
+    entry.setdefault("firstSeen", now_iso)
+    entry["lastSeen"] = now_iso
+    entry["lastStatus"] = status
+    pairs[title] = entry
+
+
+# ---------------------------------------------------------------------------
+# State
+# ---------------------------------------------------------------------------
+
+def load_state() -> dict:
+    if not STATE_PATH.exists():
+        return {"version": 1, "pairs": {}}
+    try:
+        return json.loads(STATE_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        logger.warning("State file %s was corrupt; starting fresh.", STATE_PATH)
+        return {"version": 1, "pairs": {}}
+
+
+def save_state(state: dict) -> None:
+    state["lastRun"] = datetime.now(timezone.utc).isoformat()
+    STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp = STATE_PATH.with_suffix(".tmp")
+    tmp.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
+    tmp.replace(STATE_PATH)
+
+
+# ---------------------------------------------------------------------------
+# Self-test
+# ---------------------------------------------------------------------------
+
+def run_self_test() -> int:
+    """Build a temporary git repo with branches that hard-conflict on
+    file X, soft-conflict on file Y, and soft-conflict on an ignored
+    pbxproj file. Verify probe_pair classifies each correctly. Also
+    exercise the user-map parser and merged-branch filter.
+    """
+    global MIRROR
+    saved_mirror = MIRROR
+    tmpdir = Path(tempfile.mkdtemp(prefix="conflict-watch-test-"))
+    try:
+        repo = tmpdir / "repo.git"
+        wc = tmpdir / "wc"
+        run(["git", "init", "--bare", str(repo)])
+        run(["git", "init", str(wc)])
+        run(["git", "-C", str(wc), "config", "user.email", "test@example.com"])
+        run(["git", "-C", str(wc), "config", "user.name", "Tester"])
+        run(["git", "-C", str(wc), "config", "commit.gpgsign", "false"])
+        (wc / "X").write_text("line1\nline2\nline3\n")
+        (wc / "Y").write_text("a\nb\nc\nd\ne\nf\ng\nh\ni\nj\n")
+        (wc / "App.pbxproj").write_text("a\nb\nc\nd\ne\nf\ng\nh\ni\nj\n")
+        run(["git", "-C", str(wc), "add", "X", "Y", "App.pbxproj"])
+        run(["git", "-C", str(wc), "commit", "-m", "init"])
+        run(["git", "-C", str(wc), "branch", "-M", "main"])
+        run(["git", "-C", str(wc), "remote", "add", "origin", str(repo)])
+        run(["git", "-C", str(wc), "push", "origin", "main"])
+
+        # feature/hard1 / hard2: line2 of X — hard conflict
+        run(["git", "-C", str(wc), "checkout", "-b", "feature/hard1"])
+        (wc / "X").write_text("line1\nLINE-2-A\nline3\n")
+        run(["git", "-C", str(wc), "commit", "-am", "hard1"])
+        run(["git", "-C", str(wc), "push", "origin", "feature/hard1"])
+
+        run(["git", "-C", str(wc), "checkout", "main"])
+        run(["git", "-C", str(wc), "checkout", "-b", "feature/hard2"])
+        (wc / "X").write_text("line1\nLINE-2-B\nline3\n")
+        run(["git", "-C", str(wc), "commit", "-am", "hard2"])
+        run(["git", "-C", str(wc), "push", "origin", "feature/hard2"])
+
+        # feature/soft1 / soft2: top vs bottom of Y — soft conflict
+        run(["git", "-C", str(wc), "checkout", "main"])
+        run(["git", "-C", str(wc), "checkout", "-b", "feature/soft1"])
+        (wc / "Y").write_text("a-NEW\nb\nc\nd\ne\nf\ng\nh\ni\nj\n")
+        run(["git", "-C", str(wc), "commit", "-am", "soft1"])
+        run(["git", "-C", str(wc), "push", "origin", "feature/soft1"])
+
+        run(["git", "-C", str(wc), "checkout", "main"])
+        run(["git", "-C", str(wc), "checkout", "-b", "feature/soft2"])
+        (wc / "Y").write_text("a\nb\nc\nd\ne\nf\ng\nh\ni\nj-NEW\n")
+        run(["git", "-C", str(wc), "commit", "-am", "soft2"])
+        run(["git", "-C", str(wc), "push", "origin", "feature/soft2"])
+
+        # feature/pbx1 / pbx2: pbxproj soft conflict — should be IGNORED
+        run(["git", "-C", str(wc), "checkout", "main"])
+        run(["git", "-C", str(wc), "checkout", "-b", "feature/pbx1"])
+        (wc / "App.pbxproj").write_text("a-NEW\nb\nc\nd\ne\nf\ng\nh\ni\nj\n")
+        run(["git", "-C", str(wc), "commit", "-am", "pbx1"])
+        run(["git", "-C", str(wc), "push", "origin", "feature/pbx1"])
+
+        run(["git", "-C", str(wc), "checkout", "main"])
+        run(["git", "-C", str(wc), "checkout", "-b", "feature/pbx2"])
+        (wc / "App.pbxproj").write_text("a\nb\nc\nd\ne\nf\ng\nh\ni\nj-NEW\n")
+        run(["git", "-C", str(wc), "commit", "-am", "pbx2"])
+        run(["git", "-C", str(wc), "push", "origin", "feature/pbx2"])
+
+        MIRROR = repo  # type: ignore[assignment]
+        branches = []
+        for ref in ["feature/hard1", "feature/hard2", "feature/soft1",
+                    "feature/soft2", "feature/pbx1", "feature/pbx2"]:
+            sha = git(["rev-parse", ref]).stdout.strip()
+            branches.append(Branch(ref, sha, "1970-01-01T00:00:00+00:00",
+                                   "Tester", "test@example.com"))
+        bymap = {b.name: b for b in branches}
+
+        ok = True
+
+        # hard1 vs hard2 → hard conflict on X
+        result = probe_pair(bymap["feature/hard1"], bymap["feature/hard2"])
+        if not result or "X" not in result.hard_files or result.soft_files:
+            print(f"FAIL: hard1 vs hard2 → {result}")
+            ok = False
+        else:
+            print("PASS: hard1 vs hard2 → hard conflict on X")
+
+        # soft1 vs soft2 → soft conflict on Y
+        result = probe_pair(bymap["feature/soft1"], bymap["feature/soft2"])
+        if not result or result.hard_files or "Y" not in result.soft_files:
+            print(f"FAIL: soft1 vs soft2 → {result}")
+            ok = False
+        else:
+            print("PASS: soft1 vs soft2 → soft conflict on Y")
+
+        # pbx1 vs pbx2 → soft conflict on App.pbxproj, but IGNORED → None
+        result = probe_pair(bymap["feature/pbx1"], bymap["feature/pbx2"])
+        if result is not None:
+            print(f"FAIL: pbx1 vs pbx2 expected None (ignored), got {result}")
+            ok = False
+        else:
+            print("PASS: pbx1 vs pbx2 → ignored by soft-ignore filter")
+
+        # User-map parser
+        sample = (
+            "# comment\n"
+            'octocat: "12345"\n'
+            "monalisa: 67890\n"
+            "  nested-key: 11111\n"  # indented => skip
+            "broken_no_value:\n"
+            "ok-name: 22222 # trailing comment\n"
+        )
+        parsed = parse_user_map(sample)
+        if parsed != {"octocat": "12345", "monalisa": "67890", "ok-name": "22222"}:
+            print(f"FAIL: parse_user_map → {parsed}")
+            ok = False
+        else:
+            print("PASS: parse_user_map → flat mapping with comments + skips")
+
+        # _matches_soft_ignore against defaults
+        cases = [
+            ("App.pbxproj", True),
+            ("Sub/Pkg.xcodeproj/project.xcworkspace/foo.xcworkspacedata", True),
+            ("Package.resolved", True),
+            ("ios/SubProj/Package.resolved", True),
+            ("Sources/foo.swift", False),
+            ("Generated/Strings.swift", True),
+            ("Foo.generated.swift", True),
+        ]
+        for path, expected in cases:
+            actual = _matches_soft_ignore(path)
+            if actual != expected:
+                print(f"FAIL: soft-ignore {path}: expected {expected}, got {actual}")
+                ok = False
+            else:
+                print(f"PASS: soft-ignore {path} → {actual}")
+
+        return 0 if ok else 1
+    finally:
+        MIRROR = saved_mirror
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Skip all Asana writes; log what would happen.")
+    parser.add_argument("--self-test", action="store_true",
+                        help="Run synthetic-repo tests and exit.")
+    parser.add_argument("--once", metavar="A..B",
+                        help="Probe one pair (e.g. 'feature/x..feature/y') and exit.")
+    parser.add_argument("--verbose", action="store_true", help="Verbose logging.")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    load_config_env()
+    setup_logging(args.verbose or os.environ.get("CW_VERBOSE", "") in ("1", "true"))
+
+    if args.self_test:
+        return run_self_test()
+
+    dry_run = (
+        args.dry_run
+        or os.environ.get("CW_DRY_RUN", "").lower() in ("1", "true", "yes")
+    )
+
+    pat = os.environ.get("ASANA_PAT", "").strip()
+    if not pat and not dry_run:
+        logger.error("ASANA_PAT is not set (env or %s).", CONFIG_ENV)
+        return 2
+    asana = AsanaClient(pat or "missing", ASANA_WORKSPACE_GID,
+                        ASANA_PROJECT_GID, dry_run=dry_run)
+
+    summary = RunSummary()
+    started = time.monotonic()
+
+    try:
+        refresh_mirror()
+    except subprocess.CalledProcessError as exc:
+        logger.error("Failed to refresh mirror: %s", exc)
+        return 1
+
+    if args.once:
+        if ".." not in args.once:
+            logger.error("--once expects 'A..B'")
+            return 2
+        a_name, b_name = args.once.split("..", 1)
+        a_sha = git(["rev-parse", a_name]).stdout.strip()
+        b_sha = git(["rev-parse", b_name]).stdout.strip()
+        a = Branch(a_name, a_sha, "n/a", "n/a", "n/a")
+        b = Branch(b_name, b_sha, "n/a", "n/a", "n/a")
+        result = probe_pair(a, b)
+        print(json.dumps({
+            "pair": [a_name, b_name],
+            "has_conflicts": bool(result and result.has_conflicts),
+            "hard_files": result.hard_files if result else [],
+            "soft_files": result.soft_files if result else [],
+        }, indent=2))
+        return 0
+
+    branches = list_active_branches(RECENCY_HOURS, summary)
+    summary.branches_checked = len(branches)
+    logger.info("Active branches in last %dh (post-merged-filter): %d",
+                RECENCY_HOURS, len(branches))
+
+    user_map = load_user_map()
+    if user_map:
+        logger.info("Loaded user map with %d entries", len(user_map))
+
+    kept: list[Branch] = []
+    for b in branches:
+        b.github_login = lookup_github_login(b.sha)
+        if b.github_login and b.github_login.lower() in BOT_AUTHORS:
+            summary.branches_skipped_bot += 1
+            logger.debug("Skipping bot branch: %s (%s)", b.name, b.github_login)
+            continue
+        if b.github_login and b.github_login in user_map:
+            b.asana_gid = user_map[b.github_login]
+        b.pr_url = lookup_pr_url(b.name)
+        kept.append(b)
+    branches = kept
+    summary.branches_checked = len(branches)
+
+    state = load_state()
+    conflicts: list[ConflictPair] = []
+    pairs = list(itertools.combinations(branches, 2))
+    summary.pairs_probed = len(pairs)
+    for a, b in pairs:
+        if time.monotonic() - started > TIME_BUDGET_S:
+            summary.skipped_pairs.append(f"{a.name} ↔ {b.name}")
+            continue
+        try:
+            result = probe_pair(a, b)
+        except subprocess.CalledProcessError as exc:
+            summary.errors.append(f"git failed for {a.name} vs {b.name}: {exc}")
+            continue
+        if result is None:
+            continue
+        if result.hard_files and result.soft_files:
+            summary.pairs_with_both += 1
+        elif result.hard_files:
+            summary.pairs_with_hard_conflicts += 1
+        elif result.soft_files:
+            summary.pairs_with_soft_conflicts += 1
+        conflicts.append(result)
+
+    conflicts.sort(key=lambda p: p.newer_tip_dt, reverse=True)
+
+    logger.info("Conflict pairs found: %d", len(conflicts))
+    if conflicts and not pat and dry_run:
+        logger.info("Dry-run with no Asana PAT — listing only:")
+        for pair in conflicts:
+            logger.info("  %s  (hard=%d, soft=%d)", pair.title_key,
+                        len(pair.hard_files), len(pair.soft_files))
+    elif conflicts:
+        reconcile(asana, conflicts, state, summary)
+
+    save_state(state)
+
+    print()
+    print("=== conflict-watch summary ===")
+    for k, v in asdict(summary).items():
+        print(f"{k}: {v}")
+    print(
+        f"Conflict watch: {len(conflicts)} pairs reported "
+        f"({summary.tasks_created} new / {summary.tasks_updated} updated / "
+        f"{summary.tasks_reopened} reopened / "
+        f"{summary.tasks_skipped_cap} skipped-by-cap)"
+    )
+    return 0 if not summary.errors else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -13,7 +13,7 @@ Two kinds of conflict are detected:
 * **Soft conflicts** — both branches changed the same file but on
   different lines, so git would merge cleanly. These often produce
   semantic bugs and are still worth flagging. Files matching
-  ``CW_SOFT_IGNORE`` patterns (defaults cover Xcode project files and
+  ``CW_ALWAYS_IGNORE`` patterns (defaults cover Xcode project files and
   lockfiles) are excluded from the soft-conflict bucket.
 
 Filters
@@ -68,7 +68,11 @@ Optional (defaults shown):
     CW_INCLUDE_SOFT=0     (1 to also emit soft-conflict tasks; off by default
                            — soft conflicts are noisy and not real merge
                            conflicts)
-    CW_SOFT_IGNORE=…      (comma-separated globs; see DEFAULT_SOFT_IGNORE)
+    CW_ALWAYS_IGNORE=…    (comma-separated globs applied to BOTH hard and
+                           soft buckets; see DEFAULT_ALWAYS_IGNORE)
+    CW_MIN_CONFLICT_LINES=10
+                          (skip pairs whose hard-conflict regions sum to
+                           fewer lines after the always-ignore filter)
     CW_BOT_AUTHORS=…      (comma-separated GitHub logins to skip)
     CW_USER_MAP_PATH=     (path to a flat YAML of github→asana gid)
 
@@ -129,7 +133,7 @@ LOG_DIR = ROOT / "logs"
 CONFIG_ENV = ROOT / "config.env"
 USER_MAP_PATH = os.environ.get("CW_USER_MAP_PATH", "").strip()
 
-DEFAULT_SOFT_IGNORE = (
+DEFAULT_ALWAYS_IGNORE = (
     "*.pbxproj,"
     "*.xcworkspace/**,"
     "*.xcodeproj/project.xcworkspace/**,"
@@ -140,10 +144,17 @@ DEFAULT_SOFT_IGNORE = (
     "**/Generated/**,"
     "**/*.generated.swift"
 )
-SOFT_IGNORE_PATTERNS = [
-    p.strip() for p in os.environ.get("CW_SOFT_IGNORE", DEFAULT_SOFT_IGNORE).split(",")
+# Patterns that suppress a path from BOTH the hard and soft buckets.
+# Originally named CW_SOFT_IGNORE because pbxproj-style files showed up
+# only as soft conflicts in the cowork prototype, but on real apple-
+# browsers data they appear as hard conflicts too (UUID-region edits in
+# fixed line slots). Apply-everywhere is the right semantics.
+ALWAYS_IGNORE_PATTERNS = [
+    p.strip()
+    for p in os.environ.get("CW_ALWAYS_IGNORE", DEFAULT_ALWAYS_IGNORE).split(",")
     if p.strip()
 ]
+MIN_CONFLICT_LINES = int(os.environ.get("CW_MIN_CONFLICT_LINES", "10"))
 
 DEFAULT_BOT_AUTHORS = (
     "dependabot[bot],"
@@ -202,6 +213,17 @@ class ConflictPair:
     merge_base: str
     hard_files: list[str] = field(default_factory=list)
     soft_files: list[str] = field(default_factory=list)
+    # Total lines inside <<<<<<< / >>>>>>> markers across all non-ignored
+    # hard-conflict files. Used by the line-count threshold filter.
+    # Available only on the modern git path (>=2.38) where merge-tree
+    # writes a tree we can inspect; legacy path leaves this at 0 and
+    # bypasses the filter.
+    hard_conflict_lines: int = 0
+    # OID of the merged tree produced by `git merge-tree --write-tree`
+    # (modern git only). Empty on the legacy path. Lets --report
+    # recount lines under different filter assumptions without rerunning
+    # merge-tree.
+    merged_tree_oid: str = ""
 
     @property
     def has_conflicts(self) -> bool:
@@ -226,6 +248,7 @@ class RunSummary:
     pairs_with_hard_conflicts: int = 0
     pairs_with_soft_conflicts: int = 0
     pairs_with_both: int = 0
+    pairs_below_line_threshold: int = 0
     tasks_created: int = 0
     tasks_updated: int = 0
     tasks_reopened: int = 0
@@ -477,8 +500,9 @@ def _supports_modern_merge_tree() -> bool:
     return _git_version() >= (2, 38)
 
 
-def _matches_soft_ignore(path: str) -> bool:
-    """Match ``path`` against the soft-ignore globs.
+def _matches_always_ignore(path: str) -> bool:
+    """Match ``path`` against the always-ignore globs (applied to both
+    hard and soft buckets).
 
     fnmatch doesn't treat ``**/`` specially — it's just ``*`` (any chars
     including ``/``), which means a pattern like ``**/Generated/**``
@@ -487,7 +511,7 @@ def _matches_soft_ignore(path: str) -> bool:
     ``**/`` we also try matching the suffix (no path prefix).
     """
     base = os.path.basename(path)
-    for pat in SOFT_IGNORE_PATTERNS:
+    for pat in ALWAYS_IGNORE_PATTERNS:
         if fnmatch.fnmatch(path, pat):
             return True
         if pat.startswith("**/") and fnmatch.fnmatch(path, pat[3:]):
@@ -497,8 +521,47 @@ def _matches_soft_ignore(path: str) -> bool:
     return False
 
 
+def _count_marker_lines(text: str) -> int:
+    """Count content lines inside ``<<<<<<<`` / ``>>>>>>>`` regions.
+
+    Lines that are themselves the conflict markers (``<<<<<<<``,
+    ``=======``, ``>>>>>>>``) are excluded; everything else between an
+    opening and closing marker is counted, summing both the "ours" and
+    "theirs" sides of each hunk.
+    """
+    total = 0
+    in_conflict = False
+    for line in text.split("\n"):
+        if line.startswith("<<<<<<< "):
+            in_conflict = True
+            continue
+        if line.startswith(">>>>>>> "):
+            in_conflict = False
+            continue
+        if in_conflict and not line.startswith("======="):
+            total += 1
+    return total
+
+
+def _count_conflict_lines_for_files(tree_oid: str, paths: list[str]) -> int:
+    """For each path in ``paths``, fetch the file from the merged tree
+    and count lines inside conflict markers. Returns the total."""
+    if not tree_oid or not paths:
+        return 0
+    total = 0
+    for path in paths:
+        proc = git(["show", f"{tree_oid}:{path}"], check=False)
+        if proc.returncode != 0:
+            # File may not exist on the merged tree (e.g. modify/delete
+            # conflicts) or path encoding got mangled; skip silently —
+            # the line filter is best-effort.
+            continue
+        total += _count_marker_lines(proc.stdout)
+    return total
+
+
 def probe_pair(a: Branch, b: Branch, *, compute_soft: bool = True,
-               apply_soft_ignore: bool = True) -> Optional[ConflictPair]:
+               apply_ignore_filter: bool = True) -> Optional[ConflictPair]:
     """Run an in-memory three-way merge and return a ``ConflictPair`` if
     any conflict is found.
 
@@ -506,9 +569,9 @@ def probe_pair(a: Branch, b: Branch, *, compute_soft: bool = True,
     (the pair is reported only if there are hard conflicts). The
     production daily run uses this path to avoid soft-conflict noise.
 
-    ``apply_soft_ignore=False`` includes paths that would normally be
-    ignored by ``CW_SOFT_IGNORE`` — used by ``--report`` to inspect what
-    the filter is currently catching.
+    ``apply_ignore_filter=False`` includes paths that would normally be
+    suppressed by ``CW_ALWAYS_IGNORE`` — used by ``--report`` to inspect
+    what the filter is currently catching.
     """
     base_proc = git(["merge-base", a.name, b.name], check=False)
     if base_proc.returncode != 0 or not base_proc.stdout.strip():
@@ -517,6 +580,7 @@ def probe_pair(a: Branch, b: Branch, *, compute_soft: bool = True,
     base = base_proc.stdout.strip()
 
     hard_files: set[str] = set()
+    merged_tree_oid: Optional[str] = None
 
     if _supports_modern_merge_tree():
         proc = git(
@@ -527,6 +591,13 @@ def probe_pair(a: Branch, b: Branch, *, compute_soft: bool = True,
         if proc.returncode == 0:
             pass
         elif proc.returncode == 1:
+            # First non-empty line of stdout is the merged tree's OID
+            # when there are conflicts (per git-merge-tree(1)).
+            for line in proc.stdout.splitlines():
+                stripped = line.strip()
+                if stripped and re.fullmatch(r"[0-9a-f]{40,}", stripped):
+                    merged_tree_oid = stripped
+                    break
             for line in (proc.stdout + "\n" + proc.stderr).splitlines():
                 m = _CONFLICT_LINE.match(line.strip())
                 if m:
@@ -572,26 +643,43 @@ def probe_pair(a: Branch, b: Branch, *, compute_soft: bool = True,
         if section_has_marker and current_path:
             hard_files.add(current_path)
 
+    # Apply the always-ignore filter to the hard bucket so that single-
+    # bookkeeping-file conflicts (pbxproj, Package.resolved, …) drop out
+    # before line counting. The unfiltered set is preserved for --report
+    # callers that pass apply_ignore_filter=False.
+    if apply_ignore_filter:
+        hard_files_kept = {p for p in hard_files if not _matches_always_ignore(p)}
+    else:
+        hard_files_kept = set(hard_files)
+
     if compute_soft:
         a_changed = set(_diff_names(base, a.name))
         b_changed = set(_diff_names(base, b.name))
         candidates = (a_changed & b_changed) - hard_files
-        if apply_soft_ignore:
+        if apply_ignore_filter:
             soft_files = sorted(
-                p for p in candidates if not _matches_soft_ignore(p)
+                p for p in candidates if not _matches_always_ignore(p)
             )
         else:
             soft_files = sorted(candidates)
     else:
         soft_files = []
-    if not hard_files and not soft_files:
+
+    if not hard_files_kept and not soft_files:
         return None
+
+    hard_lines = _count_conflict_lines_for_files(
+        merged_tree_oid or "", sorted(hard_files_kept)
+    ) if hard_files_kept else 0
+
     return ConflictPair(
         a=a,
         b=b,
         merge_base=base,
-        hard_files=sorted(hard_files),
+        hard_files=sorted(hard_files_kept),
         soft_files=soft_files,
+        hard_conflict_lines=hard_lines,
+        merged_tree_oid=merged_tree_oid or "",
     )
 
 
@@ -1043,7 +1131,7 @@ def run_self_test() -> int:
             print(f"FAIL: pbx1 vs pbx2 expected None (ignored), got {result}")
             ok = False
         else:
-            print("PASS: pbx1 vs pbx2 → ignored by soft-ignore filter")
+            print("PASS: pbx1 vs pbx2 → ignored by always-ignore filter")
 
         # User-map parser
         sample = (
@@ -1061,7 +1149,7 @@ def run_self_test() -> int:
         else:
             print("PASS: parse_user_map → flat mapping with comments + skips")
 
-        # _matches_soft_ignore against defaults
+        # _matches_always_ignore against defaults
         cases = [
             ("App.pbxproj", True),
             ("Sub/Pkg.xcodeproj/project.xcworkspace/foo.xcworkspacedata", True),
@@ -1072,12 +1160,12 @@ def run_self_test() -> int:
             ("Foo.generated.swift", True),
         ]
         for path, expected in cases:
-            actual = _matches_soft_ignore(path)
+            actual = _matches_always_ignore(path)
             if actual != expected:
-                print(f"FAIL: soft-ignore {path}: expected {expected}, got {actual}")
+                print(f"FAIL: always-ignore {path}: expected {expected}, got {actual}")
                 ok = False
             else:
-                print(f"PASS: soft-ignore {path} → {actual}")
+                print(f"PASS: always-ignore {path} → {actual}")
 
         return 0 if ok else 1
     finally:
@@ -1104,7 +1192,7 @@ def parse_args() -> argparse.Namespace:
         "--report", action="store_true",
         help="Probe all pairs and print top files appearing in hard-/soft-"
              "conflict buckets. No Asana calls. Includes paths normally "
-             "filtered by CW_SOFT_IGNORE so the filter can be tuned.",
+             "filtered by CW_ALWAYS_IGNORE so the filter can be tuned.",
     )
     parser.add_argument("--top", type=int, default=30,
                         help="Top-N entries to print in --report (default 30).")
@@ -1141,33 +1229,52 @@ def run_report(top_n: int) -> int:
     pairs = list(itertools.combinations(branches, 2))
     logger.info("Probing %d pairs", len(pairs))
 
-    hard_counts: Counter = Counter()
-    soft_counts_kept: Counter = Counter()    # not matched by current ignore
-    soft_counts_filtered: Counter = Counter()  # matched by current ignore
-    pairs_with_hard = 0
+    hard_counts_kept: Counter = Counter()      # post-filter
+    hard_counts_filtered: Counter = Counter()  # caught by ignore-list
+    soft_counts_kept: Counter = Counter()
+    soft_counts_filtered: Counter = Counter()
+    pairs_with_hard_kept = 0
     pairs_with_soft_kept = 0
-    pairs_with_soft_filtered_only = 0
+    line_buckets = [(0, 0), (1, 5), (6, 10), (11, 20), (21, 50), (51, 100),
+                    (101, 10**9)]
+    line_histogram: dict[tuple[int, int], int] = {b: 0 for b in line_buckets}
 
     for a, b in pairs:
         try:
-            result = probe_pair(a, b, compute_soft=True, apply_soft_ignore=False)
+            # Probe without the ignore-filter so we see what's getting
+            # caught; we re-apply the filter client-side to bucket the
+            # files into kept vs filtered.
+            result = probe_pair(a, b, compute_soft=True,
+                                apply_ignore_filter=False)
         except subprocess.CalledProcessError as exc:
             logger.warning("git failed for %s vs %s: %s", a.name, b.name, exc)
             continue
         if result is None:
             continue
-        if result.hard_files:
-            pairs_with_hard += 1
-            for f in result.hard_files:
-                hard_counts[f] += 1
-        kept_soft = [p for p in result.soft_files if not _matches_soft_ignore(p)]
-        filtered_soft = [p for p in result.soft_files if _matches_soft_ignore(p)]
+        kept_hard = [p for p in result.hard_files if not _matches_always_ignore(p)]
+        filtered_hard = [p for p in result.hard_files if _matches_always_ignore(p)]
+        kept_soft = [p for p in result.soft_files if not _matches_always_ignore(p)]
+        filtered_soft = [p for p in result.soft_files if _matches_always_ignore(p)]
+
+        if kept_hard:
+            pairs_with_hard_kept += 1
+            for f in kept_hard:
+                hard_counts_kept[f] += 1
+            # Re-count lines on the post-filter set so the histogram
+            # reflects what the production filter would see.
+            kept_lines = _count_conflict_lines_for_files(
+                result.merged_tree_oid, kept_hard
+            )
+            for lo, hi in line_buckets:
+                if lo <= kept_lines <= hi:
+                    line_histogram[(lo, hi)] += 1
+                    break
+        for f in filtered_hard:
+            hard_counts_filtered[f] += 1
         if kept_soft:
             pairs_with_soft_kept += 1
             for f in kept_soft:
                 soft_counts_kept[f] += 1
-        elif filtered_soft and not result.hard_files:
-            pairs_with_soft_filtered_only += 1
         for f in filtered_soft:
             soft_counts_filtered[f] += 1
 
@@ -1175,17 +1282,30 @@ def run_report(top_n: int) -> int:
     print("=== conflict-watch report ===")
     print(f"Branches probed: {len(branches)}")
     print(f"Pairs probed: {len(pairs)}")
-    print(f"Pairs with any hard conflict: {pairs_with_hard}")
-    print(f"Pairs with soft conflicts that survive ignore-list: "
+    print(f"Pairs with hard conflicts after always-ignore filter: "
+          f"{pairs_with_hard_kept}")
+    print(f"Pairs with soft conflicts after always-ignore filter: "
           f"{pairs_with_soft_kept}")
-    print(f"Pairs whose only conflicts are already-ignored soft files: "
-          f"{pairs_with_soft_filtered_only}")
     print()
-    print(f"Top {top_n} hard-conflict files (count = pair-occurrences):")
-    for f, c in hard_counts.most_common(top_n):
+    print("Distribution of total conflict-region lines per kept-hard pair:")
+    for (lo, hi), n in line_histogram.items():
+        label = f"{lo}" if lo == hi else (
+            f"{lo}-{hi}" if hi < 10**8 else f"{lo}+"
+        )
+        bar = "#" * min(n, 60)
+        print(f"  {label:>8}  {n:5d}  {bar}")
+    print()
+    print(f"Top {top_n} hard-conflict files AFTER always-ignore filter "
+          f"(real signal):")
+    for f, c in hard_counts_kept.most_common(top_n):
         print(f"  {c:5d}  {f}")
     print()
-    print(f"Top {top_n} soft-conflict files NOT caught by current ignore-list:")
+    print(f"Top {top_n} hard-conflict files currently caught by ignore-list "
+          f"(validation):")
+    for f, c in hard_counts_filtered.most_common(top_n):
+        print(f"  {c:5d}  {f}")
+    print()
+    print(f"Top {top_n} soft-conflict files AFTER always-ignore filter:")
     for f, c in soft_counts_kept.most_common(top_n):
         print(f"  {c:5d}  {f}")
     print()
@@ -1194,6 +1314,8 @@ def run_report(top_n: int) -> int:
     for f, c in soft_counts_filtered.most_common(top_n):
         print(f"  {c:5d}  {f}")
     return 0
+
+
 
 
 def main() -> int:
@@ -1283,6 +1405,16 @@ def main() -> int:
             summary.errors.append(f"git failed for {a.name} vs {b.name}: {exc}")
             continue
         if result is None:
+            continue
+        # Line-count threshold: a pair whose only hard conflicts are tiny
+        # (e.g. a 1-line Package.swift bump that survived the path
+        # filter) is below the noise floor. Soft-only pairs aren't
+        # subject to the threshold — they're either off entirely or
+        # already a coordination signal regardless of size.
+        if (result.hard_files
+                and result.hard_conflict_lines < MIN_CONFLICT_LINES
+                and not result.soft_files):
+            summary.pairs_below_line_threshold += 1
             continue
         if result.hard_files and result.soft_files:
             summary.pairs_with_both += 1

@@ -28,6 +28,8 @@ struct SettingsYouTubeAdBlockingView: View {
     /// This property ensures that the associated action is only triggered once per viewing session, preventing redundant executions.
     @State private var hasFiredSettingsDisplayedPixel = false
 
+    @State private var showDuckPlayer = false
+
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var description: SettingsDescription {
@@ -66,7 +68,10 @@ struct SettingsYouTubeAdBlockingView: View {
             }
 
             Section(footer: Text(UserText.duckPlayerEnableFooter)) {
-                NavigationLink(destination: SettingsDuckPlayerView().environmentObject(viewModel)) {
+                NavigationLink(
+                    destination: SettingsDuckPlayerView().environmentObject(viewModel),
+                    isActive: $showDuckPlayer
+                ) {
                     SettingsCellView(label: UserText.duckPlayerFeatureName)
                 }
                 .listRowBackground(Color(designSystemColor: .surface))
@@ -79,6 +84,14 @@ struct SettingsYouTubeAdBlockingView: View {
         .onAppear {
             DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingSettingsOpen,
                                          pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+        }
+        .onFirstAppear {
+            if viewModel.deepLinkTarget == .duckPlayer,
+               !viewModel.shouldDisplayDuckPlayerContingencyMessage {
+                DispatchQueue.main.async {
+                    showDuckPlayer = true
+                }
+            }
         }
     }
 }

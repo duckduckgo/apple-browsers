@@ -271,6 +271,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToStopGeneratingTap()
         subscribeToCustomizeResponsesTap()
         subscribeToVoiceSearchTap()
+        subscribeToAIVoiceChatTap()
         subscribeToAttachmentUsageChanges()
         viewController.isToolsButtonHidden = true
 
@@ -1401,7 +1402,24 @@ private extension UnifiedToggleInputCoordinator {
     func subscribeToVoiceSearchTap() {
         viewController.handler.microphoneButtonTappedPublisher
             .sink { [weak self] in
-                self?.delegate?.unifiedToggleInputDidRequestVoiceSearch()
+                guard let self else { return }
+                let isCollapsedAIVoiceChatButton = viewController.handler.isAIVoiceChatEnabled
+                    && viewController.inputMode == .aiChat
+                    && !viewController.isInputExpanded
+                if isCollapsedAIVoiceChatButton {
+                    delegate?.unifiedToggleInputDidRequestAIVoiceChat()
+                } else {
+                    guard viewController.handler.isVoiceSearchEnabled else { return }
+                    delegate?.unifiedToggleInputDidRequestVoiceSearch()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    func subscribeToAIVoiceChatTap() {
+        viewController.handler.aiVoiceChatButtonTappedPublisher
+            .sink { [weak self] in
+                self?.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
             }
             .store(in: &cancellables)
     }

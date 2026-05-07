@@ -107,6 +107,12 @@ enum SwitchBarButtonState {
 }
 
 class SwitchBarButtonsView: UIView {
+    enum VoiceButtonStyle {
+        case microphone
+        case aiVoiceAccent
+        case aiVoicePlain
+    }
+
     private enum Constants {
         static let buttonSize: CGFloat = 44
         static let separatorWidth: CGFloat = 1
@@ -123,9 +129,9 @@ class SwitchBarButtonsView: UIView {
         }
     }
 
-    var isAIVoiceChatEnabled: Bool = false {
+    var voiceButtonStyle: VoiceButtonStyle = .microphone {
         didSet {
-            updateAIVoiceChatButtonAppearance()
+            updateVoiceButtonAppearance()
         }
     }
 
@@ -273,18 +279,26 @@ class SwitchBarButtonsView: UIView {
         searchGoToButton.isHidden = !buttonState.showsSearchGoToButton
     }
 
-    private func updateAIVoiceChatButtonAppearance() {
-        if isAIVoiceChatEnabled {
+    private func updateVoiceButtonAppearance() {
+        switch voiceButtonStyle {
+        case .microphone:
+            voiceButton.setImage(DesignSystemImages.Glyphs.Size24.microphone)
+            voiceButton.backgroundColor = .clear
+            voiceButton.tintColor = nil
+            voiceButton.layer.cornerRadius = 0
+            voiceButton.clipsToBounds = false
+        case .aiVoiceAccent:
             voiceButton.setImage(DesignSystemImages.Glyphs.Size24.voice)
             voiceButton.backgroundColor = UIColor(designSystemColor: .accent)
             voiceButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             voiceButton.layer.cornerRadius = Constants.buttonSize / 2
             voiceButton.clipsToBounds = true
-        } else {
-            voiceButton.setImage(DesignSystemImages.Glyphs.Size24.microphone)
+        case .aiVoicePlain:
+            voiceButton.setImage(DesignSystemImages.Glyphs.Size24.voice)
             voiceButton.backgroundColor = .clear
-            voiceButton.tintColor = nil
+            voiceButton.tintColor = UIColor(designSystemColor: .textPrimary)
             voiceButton.layer.cornerRadius = 0
+            voiceButton.clipsToBounds = false
         }
     }
 }

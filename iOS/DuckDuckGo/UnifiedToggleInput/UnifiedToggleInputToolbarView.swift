@@ -418,7 +418,11 @@ private extension UnifiedToggleInputToolbarView {
         submitButton.setImage(icon, for: .normal)
         let isActive = isSubmitEnabled || showVoice
         submitButton.isEnabled = isActive
-        submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
+        if showVoice {
+            submitButton.applyAIVoiceChatStyle()
+        } else {
+            submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
+        }
     }
 
     func updateGeneratingVisibility() {

@@ -128,6 +128,11 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         microphoneButtonTappedSubject.eraseToAnyPublisher()
     }
 
+    private let aiVoiceChatButtonTappedSubject = PassthroughSubject<Void, Never>()
+    var aiVoiceChatButtonTappedPublisher: AnyPublisher<Void, Never> {
+        aiVoiceChatButtonTappedSubject.eraseToAnyPublisher()
+    }
+
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> {
         clearButtonTappedSubject.eraseToAnyPublisher()
@@ -189,6 +194,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         microphoneButtonTappedSubject.send()
     }
 
+    func aiVoiceChatButtonTapped() {
+        aiVoiceChatButtonTappedSubject.send()
+    }
+
     func markUserInteraction() {
         guard !hasUserInteractedWithText else { return }
         hasUserInteractedWithText = true
@@ -215,7 +224,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     // MARK: - Private
 
     private func updateButtonState() {
-        let voiceAvailable = !hidesVoiceButton && isVoiceSearchEnabled && !(isAIVoiceChatEnabled && currentToggleState == .aiChat)
+        let aiVoiceChatAvailable = !isExpanded && isAIVoiceChatEnabled && currentToggleState == .aiChat
+        let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
         let nextButtonState: SwitchBarButtonState
 
         if isGenerating && !isExpanded && currentToggleState == .aiChat && !isToggleEnabled {

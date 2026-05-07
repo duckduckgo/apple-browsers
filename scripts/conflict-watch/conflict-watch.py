@@ -625,22 +625,38 @@ class AsanaClient:
         except json.JSONDecodeError as exc:
             raise AsanaError(f"{method} {path} -> non-JSON: {payload[:200]}") from exc
 
-    def search_task_by_exact_name(self, name: str) -> Optional[dict]:
-        params = {
-            "text": name,
-            "projects.any": self.project_gid,
-            "opt_fields": "name,completed,permalink_url",
-            "limit": 50,
-        }
-        data = self._request(
-            "GET",
-            f"/workspaces/{self.workspace_gid}/tasks/search",
-            params=params,
-        )
-        for item in data.get("data", []):
-            if item.get("name") == name:
-                return item
-        return None
+    def list_project_tasks_by_name(self, prefix: str = "") -> dict[str, dict]:
+        """Return ``{name: task_dict}`` for tasks in the configured project.
+
+        One paginated call covers the whole project (100 tasks per page),
+        so dedup-lookup for a whole conflict-watch run is at most a handful
+        of API calls regardless of how many conflict pairs we found. Filters
+        by name prefix client-side to avoid pulling unrelated tasks into
+        memory.
+        """
+        out: dict[str, dict] = {}
+        offset: Optional[str] = None
+        while True:
+            params: dict = {
+                "opt_fields": "name,completed,permalink_url",
+                "limit": 100,
+            }
+            if offset:
+                params["offset"] = offset
+            data = self._request(
+                "GET",
+                f"/projects/{self.project_gid}/tasks",
+                params=params,
+            )
+            for item in data.get("data", []):
+                name = item.get("name", "")
+                if name and (not prefix or name.startswith(prefix)):
+                    out[name] = item
+            next_page = data.get("next_page") or {}
+            offset = next_page.get("offset")
+            if not offset:
+                break
+        return out
 
     def get_task(self, gid: str) -> dict:
         data = self._request(
@@ -794,26 +810,36 @@ def reconcile(asana: AsanaClient, conflicts: list[ConflictPair],
               state: dict, summary: RunSummary) -> None:
     today_local = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M %Z")
     today_utc = datetime.now(timezone.utc).isoformat()
+
+    # Prefetch all existing conflict-watch tasks in the project once,
+    # rather than searching per conflict (which spams the Asana API and
+    # trips its rate limit on the first hundred-pair run).
+    try:
+        existing_index = asana.list_project_tasks_by_name(prefix=TITLE_PREFIX)
+        logger.info("Prefetched %d existing %s tasks from Asana",
+                    len(existing_index), TITLE_PREFIX)
+    except AsanaError as exc:
+        logger.warning("Failed to prefetch project tasks (%s); "
+                       "falling back to per-conflict lookups", exc)
+        existing_index = None
+
     for pair in conflicts:
         title = pair.title_key
         body_html = render_task_body_html(pair, today_local)
 
-        cached = state.get("pairs", {}).get(title)
         existing: Optional[dict] = None
-        if cached and cached.get("asanaTaskGid"):
-            try:
-                existing = asana.get_task(cached["asanaTaskGid"])
-                if existing and existing.get("name") != title:
+        if existing_index is not None:
+            existing = existing_index.get(title)
+        else:
+            cached = state.get("pairs", {}).get(title)
+            if cached and cached.get("asanaTaskGid"):
+                try:
+                    existing = asana.get_task(cached["asanaTaskGid"])
+                    if existing and existing.get("name") != title:
+                        existing = None
+                except AsanaError as exc:
+                    logger.warning("Stale cache for %s: %s", title, exc)
                     existing = None
-            except AsanaError as exc:
-                logger.warning("Stale cache for %s: %s", title, exc)
-                existing = None
-        if existing is None:
-            try:
-                existing = asana.search_task_by_exact_name(title)
-            except AsanaError as exc:
-                summary.errors.append(f"search failed for {title}: {exc}")
-                continue
 
         try:
             if existing is None:

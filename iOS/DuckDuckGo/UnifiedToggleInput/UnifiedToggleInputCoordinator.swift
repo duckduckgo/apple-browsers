@@ -505,9 +505,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         applyToolbarPresentation()
         fetchModels()
 
+        let shouldSelectAllText: Bool
         if let text = prefilledText, !text.isEmpty {
             setText(text)
             textState = .prefilledSelected
+            shouldSelectAllText = true
+        } else {
+            shouldSelectAllText = false
         }
 
         let expandedHeight = editingHeight()
@@ -524,8 +528,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         DispatchQueue.main.async { [weak self] in
             guard let self, case .omnibar(.active) = displayState else { return }
             viewController.activateInput()
-            if textState == .prefilledSelected {
-                viewController.selectAllText()
+            if shouldSelectAllText {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, case .omnibar(.active) = displayState else { return }
+                    viewController.selectAllText()
+                }
             }
         }
     }

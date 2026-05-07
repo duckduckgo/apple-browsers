@@ -1012,6 +1012,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func updateReasoningPicker() {
+        if toolsController.selectedTool == .imageGeneration {
+            // Reasoning effort doesn't apply to image generation; hide the picker without touching the persisted
+            // mode so the previous selection returns when the user deselects the image-gen tool.
+            viewController.isReasoningButtonHidden = true
+            viewController.reasoningPickerMenu = nil
+            return
+        }
         let selectedMode = resolvedSelectedReasoningMode
         let shouldHide = !(selectedModel?.supportsReasoningPicker ?? false)
         viewController.selectedReasoningMode = selectedMode
@@ -1287,7 +1294,9 @@ private extension UnifiedToggleInputCoordinator {
 
     func updateModelChipVisibility() {
         // Contextual chat picks the model upstream (in the half-sheet); the model chip is permanently hidden here.
-        viewController.isModelChipHidden = host == .contextualChat || hasSubmittedPrompt
+        // Image generation has no model picker either — when active, the chip is hidden until the tool is deselected.
+        let isImageGenActive = toolsController.selectedTool == .imageGeneration
+        viewController.isModelChipHidden = host == .contextualChat || hasSubmittedPrompt || isImageGenActive
         updateReasoningPicker()
     }
 
@@ -1343,6 +1352,9 @@ private extension UnifiedToggleInputCoordinator {
             selectedTool: presentation.selectedTool,
             toolsMenu: toolsMenu
         )
+        // Tool selection toggles the model-chip + reasoning-picker visibility. Route through the
+        // canonical updaters so we don't clobber the other signals (`hasSubmittedPrompt`, `host`).
+        updateModelChipVisibility()
     }
 
     func resetToolsSelection() {

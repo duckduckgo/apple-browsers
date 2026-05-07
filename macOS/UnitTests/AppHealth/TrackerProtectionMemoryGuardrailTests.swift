@@ -156,4 +156,5 @@ final class TrackerProtectionMemoryGuardrailTests: XCTestCase {
 
         XCTAssertGreaterThan(classifiedCount, 0)
         XCTAssertLessThan(elapsed, 0.2, "Classifying 1000 observations should complete in < 200ms, took \(elapsed * 1000)ms")
+    }
 }

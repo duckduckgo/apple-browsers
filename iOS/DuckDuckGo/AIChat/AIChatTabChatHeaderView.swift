@@ -399,7 +399,7 @@ final class AIChatTabChatHeaderView: UIView {
     private func makeIconButton(image: DesignSystemImage, accessibilityLabel: String, action: Selector, includeChrome: Bool = true) -> UIButton {
         let button: UIButton
         if includeChrome, #available(iOS 26, *) {
-            var config = UIButton.Configuration.glass()
+            var config = UIButton.Configuration.prominentClearGlass()
             config.image = image
             config.cornerStyle = .capsule
             button = UIButton(configuration: config)
@@ -457,7 +457,7 @@ final class AIChatTabChatHeaderView: UIView {
 
     @available(iOS 26, *)
     private func makeGlassPillEffectView() -> UIVisualEffectView {
-        let effect = UIGlassEffect(style: .clear)
+        let effect = UIGlassEffect(style: .regular)
         effect.isInteractive = true
 
         let effectView = UIVisualEffectView(effect: effect)

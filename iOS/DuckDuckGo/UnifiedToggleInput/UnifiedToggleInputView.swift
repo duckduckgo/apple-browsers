@@ -934,7 +934,7 @@ private extension UnifiedToggleInputView {
 
     @available(iOS 26, *)
     private static func makeGlassAITabAccessoryButton(image: UIImage?) -> UIButton {
-        var config = UIButton.Configuration.glass()
+        var config = UIButton.Configuration.prominentClearGlass()
         config.image = image
         config.cornerStyle = .capsule
 

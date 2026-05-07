@@ -95,6 +95,7 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
     func test_keystrokeAndPaintAndTerminate_firesCharPixelWithCorrectBucket() {
         clock.now = 0
         coordinator.markKeystroke()
+        coordinator.armCharRenderIfPending()
         clock.now = 0.030 // 30ms — lands in 16..50 band (index 1)
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
@@ -114,7 +115,7 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
     func test_terminateWithNoMeasurements_doesNotFirePixel() {
         coordinator.terminateInteraction()
         waitForPixelEmission()
-        XCTAssertEqual(capture.snapshot(), [])
+        XCTAssertTrue(capture.snapshot().isEmpty)
     }
 
     func test_paintWithoutKeystroke_recordsNothing() {
@@ -122,7 +123,7 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
         waitForPixelEmission()
-        XCTAssertEqual(capture.snapshot(), [])
+        XCTAssertTrue(capture.snapshot().isEmpty)
     }
 
     // MARK: - Suggest path
@@ -130,6 +131,7 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
     func test_keystrokeAndSuggestionsUpdateAndPaint_firesSuggestPixel() {
         clock.now = 0
         coordinator.markKeystroke()
+        coordinator.armCharRenderIfPending()
         clock.now = 0.080
         coordinator.markSuggestionsUpdated()
         coordinator.handlePaint(at: 0.080)
@@ -149,7 +151,77 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
         waitForPixelEmission()
-        XCTAssertEqual(capture.snapshot(), [])
+        XCTAssertTrue(capture.snapshot().isEmpty)
+    }
+
+    /// Regression guard: a `SearchSuggestions` `$result` emission can land between the keystroke
+    /// arrival and `controlTextDidChange`. The suggest anchor must be set at keystroke time
+    /// (not at commit time) so the resulting suggest sample doesn't get lost.
+    func test_suggestUpdateBeforeCommit_stillRecordsSuggestSample() {
+        clock.now = 0
+        coordinator.markKeystroke()
+        clock.now = 0.080
+        coordinator.markSuggestionsUpdated()
+        // No armCharRenderIfPending — simulating the suggest update arriving before commit.
+        coordinator.handlePaint(at: 0.080)
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+
+        let pixels = capture.snapshot()
+        XCTAssertEqual(pixels.count, 1)
+        guard let only = pixels.first, case .suggestSettle = only else {
+            return XCTFail("Expected exactly one suggestSettle pixel and no charRender pixel")
+        }
+        let bp = basisPoints(only)
+        // 80ms latency — band 2 (50..100).
+        XCTAssertEqual(bp[2], 10_000)
+    }
+
+    // MARK: - Commit-gating
+
+    func test_keystrokeWithoutTextDidChange_doesNotProduceCharSample() {
+        clock.now = 0
+        coordinator.markKeystroke()
+        // Simulate a suppressed keystroke: no armCharRenderIfPending follows.
+        clock.now = 0.030
+        coordinator.handlePaint(at: 0.030)
+        coordinator.terminateInteraction()
+        waitForPixelEmission()
+        XCTAssertTrue(capture.snapshot().isEmpty)
+    }
+
+    func test_textDidChangeWithoutPriorKeystroke_isNoOp() {
+        // Programmatic text change with no preceding markKeystroke.
+        coordinator.armCharRenderIfPending()
+        clock.now = 0.030
+        coordinator.handlePaint(at: 0.030)
+        coordinator.terminateInteraction()
+        waitForPixelEmission()
+        XCTAssertTrue(capture.snapshot().isEmpty)
+    }
+
+    func test_suppressedKeystrokeFollowedByLegitimate_recordsOnlyTheLegitimate() {
+        clock.now = 0
+        coordinator.markKeystroke() // k1, will be suppressed
+        // No armCharRenderIfPending for k1 — buffer didn't change.
+        clock.now = 0.020
+        coordinator.markKeystroke() // k2, legitimate
+        coordinator.armCharRenderIfPending()
+        clock.now = 0.030 // 10ms after k2
+        coordinator.handlePaint(at: 0.030)
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+
+        let pixels = capture.snapshot()
+        XCTAssertEqual(pixels.count, 1)
+        guard let first = pixels.first, case .charRender = first else {
+            return XCTFail("Expected a charRender pixel")
+        }
+        let bp = basisPoints(first)
+        // Single sample at 10ms — band 0 (0..16). All weight on band 0, nothing elsewhere.
+        XCTAssertEqual(bp[0], 10_000)
     }
 
     // MARK: - Reset and cancellation
@@ -157,18 +229,48 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
     func test_resetForNewInteraction_clearsPendingState() {
         clock.now = 0
         coordinator.markKeystroke()
+        coordinator.armCharRenderIfPending()
         coordinator.resetForNewInteraction()
         clock.now = 0.030
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
 
         waitForPixelEmission()
-        XCTAssertEqual(capture.snapshot(), [])
+        XCTAssertTrue(capture.snapshot().isEmpty)
+    }
+
+    func test_resetForNewInteraction_clearsPendingCharIntent() {
+        clock.now = 0
+        coordinator.markKeystroke()
+        coordinator.resetForNewInteraction()
+        // Confirming after reset must not retroactively arm — the stashed t₀ is gone.
+        coordinator.armCharRenderIfPending()
+        clock.now = 0.030
+        coordinator.handlePaint(at: 0.030)
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+        XCTAssertTrue(capture.snapshot().isEmpty)
+    }
+
+    func test_terminateInteraction_clearsPendingCharIntent() {
+        clock.now = 0
+        coordinator.markKeystroke()
+        coordinator.terminateInteraction()
+        // Confirming after terminate must not retroactively arm a sample that didn't exist.
+        coordinator.armCharRenderIfPending()
+        clock.now = 0.030
+        coordinator.handlePaint(at: 0.030)
+        coordinator.terminateInteraction()
+
+        waitForPixelEmission()
+        XCTAssertTrue(capture.snapshot().isEmpty)
     }
 
     func test_resetForNewInteraction_cancelsPendingEmit() {
         clock.now = 0
         coordinator.markKeystroke()
+        coordinator.armCharRenderIfPending()
         clock.now = 0.030
         coordinator.handlePaint(at: 0.030)
         coordinator.terminateInteraction()
@@ -177,7 +279,7 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
         coordinator.resetForNewInteraction()
 
         waitForPixelEmission()
-        XCTAssertEqual(capture.snapshot(), [])
+        XCTAssertTrue(capture.snapshot().isEmpty)
     }
 
     // MARK: - Burst behaviour
@@ -185,10 +287,13 @@ final class AddressBarPerfCoordinatorTests: XCTestCase {
     func test_burstOfKeystrokesInOneFrame_recordsNSamplesForCharStage() {
         clock.now = 0
         coordinator.markKeystroke()
+        coordinator.armCharRenderIfPending()
         clock.now = 0.005
         coordinator.markKeystroke()
+        coordinator.armCharRenderIfPending()
         clock.now = 0.010
         coordinator.markKeystroke()
+        coordinator.armCharRenderIfPending()
         clock.now = 0.016
         coordinator.handlePaint(at: 0.016)
         coordinator.terminateInteraction()

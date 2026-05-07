@@ -66,7 +66,7 @@ final class AddressBarPerfRecorderTests: XCTestCase {
 
     func test_charPath_singleKeystrokeProducesOneSample() {
         clock.now = 0
-        recorder.markKeystroke()
+        recorder.appendCharStartTime()
         clock.now = 0.030 // 30ms later
         recorder.onCharRendered()
 
@@ -76,11 +76,11 @@ final class AddressBarPerfRecorderTests: XCTestCase {
     func test_charPath_burstOfNKeystrokesInOneFrameProducesNSamples() {
         // Three keystrokes at 0, 5, 10 ms; one paint at 16 ms.
         clock.now = 0
-        recorder.markKeystroke()
+        recorder.appendCharStartTime()
         clock.now = 0.005
-        recorder.markKeystroke()
+        recorder.appendCharStartTime()
         clock.now = 0.010
-        recorder.markKeystroke()
+        recorder.appendCharStartTime()
         clock.now = 0.016
         recorder.onCharRendered()
 
@@ -89,12 +89,12 @@ final class AddressBarPerfRecorderTests: XCTestCase {
 
     func test_charPath_drainsAndClearsBetweenBursts() {
         clock.now = 0
-        recorder.markKeystroke()
+        recorder.appendCharStartTime()
         clock.now = 0.020
         recorder.onCharRendered()
         // Buffer cleared; next burst starts fresh.
         clock.now = 0.100
-        recorder.markKeystroke()
+        recorder.appendCharStartTime()
         clock.now = 0.115
         recorder.onCharRendered()
 
@@ -105,7 +105,7 @@ final class AddressBarPerfRecorderTests: XCTestCase {
 
     func test_suggestPath_singleKeystrokeProducesOneSample() {
         clock.now = 0
-        recorder.markKeystroke()
+        recorder.markKeystrokeForSuggest()
         clock.now = 0.080
         recorder.onSuggestionsRendered()
 
@@ -114,11 +114,11 @@ final class AddressBarPerfRecorderTests: XCTestCase {
 
     func test_suggestPath_burstCollapsesToOneSampleTiedToLastKeystroke() {
         clock.now = 0
-        recorder.markKeystroke()
+        recorder.markKeystrokeForSuggest()
         clock.now = 0.005
-        recorder.markKeystroke()
+        recorder.markKeystrokeForSuggest()
         clock.now = 0.010
-        recorder.markKeystroke()
+        recorder.markKeystrokeForSuggest()
         clock.now = 0.080
         recorder.onSuggestionsRendered()
 
@@ -128,7 +128,7 @@ final class AddressBarPerfRecorderTests: XCTestCase {
 
     func test_suggestPath_clearsSlotAfterRender() {
         clock.now = 0
-        recorder.markKeystroke()
+        recorder.markKeystrokeForSuggest()
         clock.now = 0.050
         recorder.onSuggestionsRendered()
         // Second render with nothing pending → no second sample.
@@ -143,7 +143,8 @@ final class AddressBarPerfRecorderTests: XCTestCase {
     func test_charAndSuggest_areIndependent() {
         // One keystroke, one char paint, one suggest paint → both record.
         clock.now = 0
-        recorder.markKeystroke()
+        recorder.markKeystrokeForSuggest()
+        recorder.appendCharStartTime()
         clock.now = 0.020
         recorder.onCharRendered()
         clock.now = 0.080
@@ -158,10 +159,12 @@ final class AddressBarPerfRecorderTests: XCTestCase {
 
     func test_reset_clearsAllState() {
         clock.now = 0
-        recorder.markKeystroke()
+        recorder.markKeystrokeForSuggest()
+        recorder.appendCharStartTime()
         clock.now = 0.020
         recorder.onCharRendered()
-        recorder.markKeystroke()
+        recorder.markKeystrokeForSuggest()
+        recorder.appendCharStartTime()
 
         recorder.reset()
 
@@ -177,7 +180,7 @@ final class AddressBarPerfRecorderTests: XCTestCase {
 
     func test_takeAndClear_clearsAllState() {
         clock.now = 0
-        recorder.markKeystroke()
+        recorder.appendCharStartTime()
         clock.now = 0.020
         recorder.onCharRendered()
 
@@ -192,7 +195,7 @@ final class AddressBarPerfRecorderTests: XCTestCase {
 
     func test_takeAndClear_discardsPendingEntriesNotPairedWithPaint() {
         clock.now = 0
-        recorder.markKeystroke() // pending, never paired
+        recorder.appendCharStartTime() // pending, never paired
         let snapshot = recorder.takeAndClear()
         XCTAssertEqual(snapshot.char, [])
         XCTAssertEqual(snapshot.suggest, [])
@@ -202,7 +205,7 @@ final class AddressBarPerfRecorderTests: XCTestCase {
 
     func test_sampleCap_dropsCharSamplesOverFiveSeconds() {
         clock.now = 0
-        recorder.markKeystroke()
+        recorder.appendCharStartTime()
         clock.now = 5.001 // 5001 ms
         recorder.onCharRendered()
 
@@ -211,7 +214,7 @@ final class AddressBarPerfRecorderTests: XCTestCase {
 
     func test_sampleCap_dropsSuggestSamplesOverFiveSeconds() {
         clock.now = 0
-        recorder.markKeystroke()
+        recorder.markKeystrokeForSuggest()
         clock.now = 6.0
         recorder.onSuggestionsRendered()
 
@@ -220,7 +223,7 @@ final class AddressBarPerfRecorderTests: XCTestCase {
 
     func test_sampleCap_keepsExactlyFiveSecondSample() {
         clock.now = 0
-        recorder.markKeystroke()
+        recorder.appendCharStartTime()
         clock.now = 5.0
         recorder.onCharRendered()
 
@@ -230,10 +233,10 @@ final class AddressBarPerfRecorderTests: XCTestCase {
     func test_sampleCap_appliesPerSampleInBurst() {
         // Two pending keystrokes, only one within cap by the time paint lands.
         clock.now = 0
-        recorder.markKeystroke()    // start at 0
+        recorder.appendCharStartTime()    // start at 0
         clock.now = 4.999
-        recorder.markKeystroke()    // start at 4999
-        clock.now = 6.0             // paint at 6000
+        recorder.appendCharStartTime()    // start at 4999
+        clock.now = 6.0                   // paint at 6000
         recorder.onCharRendered()
 
         // First: 6000-0 = 6000 → dropped.
@@ -244,7 +247,7 @@ final class AddressBarPerfRecorderTests: XCTestCase {
     func test_sampleCap_dropsNegativeDeltas() {
         // Defensive: a paintTime before the keystroke (clock skew) shouldn't record.
         clock.now = 1.0
-        recorder.markKeystroke()
+        recorder.appendCharStartTime()
         clock.now = 0.5
         recorder.onCharRendered()
 

@@ -2161,6 +2161,8 @@
 		7B46584D2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B46584B2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift */; };
 		7B46584E2FABD3FB00CCB375 /* AddressBarPerfBucketingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B46584A2FABD3FB00CCB375 /* AddressBarPerfBucketingTests.swift */; };
 		7B46584F2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B46584B2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift */; };
+		7B4658512FABD3FB00CCB375 /* AddressBarPerfCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658502FABD3FB00CCB375 /* AddressBarPerfCoordinatorTests.swift */; };
+		7B4658522FABD3FB00CCB375 /* AddressBarPerfCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658502FABD3FB00CCB375 /* AddressBarPerfCoordinatorTests.swift */; };
 		7B4658522FABD52200CCB375 /* AddressBarPerfPaintHook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658502FABD52200CCB375 /* AddressBarPerfPaintHook.swift */; };
 		7B4658532FABD52200CCB375 /* AddressBarPerfPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658512FABD52200CCB375 /* AddressBarPerfPixel.swift */; };
 		7B4658542FABD52200CCB375 /* AddressBarPerfPaintHook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4658502FABD52200CCB375 /* AddressBarPerfPaintHook.swift */; };
@@ -5626,6 +5628,7 @@
 		7B4658452FABD3D900CCB375 /* AddressBarPerfRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPerfRecorder.swift; sourceTree = "<group>"; };
 		7B46584A2FABD3FB00CCB375 /* AddressBarPerfBucketingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPerfBucketingTests.swift; sourceTree = "<group>"; };
 		7B46584B2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPerfRecorderTests.swift; sourceTree = "<group>"; };
+		7B4658502FABD3FB00CCB375 /* AddressBarPerfCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPerfCoordinatorTests.swift; sourceTree = "<group>"; };
 		7B4658502FABD52200CCB375 /* AddressBarPerfPaintHook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPerfPaintHook.swift; sourceTree = "<group>"; };
 		7B4658512FABD52200CCB375 /* AddressBarPerfPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPerfPixel.swift; sourceTree = "<group>"; };
 		7B4658562FABD72100CCB375 /* AddressBarPerfCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPerfCoordinator.swift; sourceTree = "<group>"; };
@@ -12181,6 +12184,7 @@
 			children = (
 				B69B50402726C3F400758A2B /* ATB */,
 				7B46584A2FABD3FB00CCB375 /* AddressBarPerfBucketingTests.swift */,
+				7B4658502FABD3FB00CCB375 /* AddressBarPerfCoordinatorTests.swift */,
 				7B46584B2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift */,
 				B6DA441D2616C84600DD1EC2 /* PixelStoreMock.swift */,
 				4B117F7C276C0CB5002F3D8C /* LocalStatisticsStoreTests.swift */,
@@ -16188,6 +16192,7 @@
 				9F39106A2B68D87B00CB5112 /* ProgressExtensionTests.swift in Sources */,
 				B5F31F4C2F50E2B90060E5C1 /* PerformanceMetricsReporterTests.swift in Sources */,
 				7B46584C2FABD3FB00CCB375 /* AddressBarPerfBucketingTests.swift in Sources */,
+				7B4658512FABD3FB00CCB375 /* AddressBarPerfCoordinatorTests.swift in Sources */,
 				7B46584D2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift in Sources */,
 				C149975B2DE762B600FF8F0F /* SubscriptionPagesUseSubscriptionFeatureTests.swift in Sources */,
 				9FAD623B2BCFDB32007F3A65 /* WebsiteInfoHelpers.swift in Sources */,
@@ -18468,6 +18473,7 @@
 				E274EFF42E1BD8B000373C41 /* NewTabPageSectionsAvailabilityProviderTests.swift in Sources */,
 				9F9C49F62BC786790099738D /* MoreOptionsMenu+BookmarksTests.swift in Sources */,
 				7B46584E2FABD3FB00CCB375 /* AddressBarPerfBucketingTests.swift in Sources */,
+				7B4658522FABD3FB00CCB375 /* AddressBarPerfCoordinatorTests.swift in Sources */,
 				7B46584F2FABD3FB00CCB375 /* AddressBarPerfRecorderTests.swift in Sources */,
 				B62EB47C25BAD3BB005745C6 /* WKWebViewPrivateMethodsAvailabilityTests.swift in Sources */,
 				EDF339172E8BFD110062E7C3 /* WatchdogEventMapperTests.swift in Sources */,

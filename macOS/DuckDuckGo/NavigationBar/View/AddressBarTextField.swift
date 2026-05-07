@@ -1161,6 +1161,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
     }
 
     func controlTextDidChange(_ obj: Notification) {
+        perfCoordinator.armCharRenderIfPending()
         handleTextDidChange()
         onboardingDelegate?.measureAddressBarTypedIn()
     }

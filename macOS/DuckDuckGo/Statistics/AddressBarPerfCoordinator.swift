@@ -40,6 +40,7 @@ final class AddressBarPerfCoordinator {
     private let pixelFirer: PixelFirer
 
     private var paintHook: AddressBarPerfPaintHook?
+    private var pendingCharStartTime: TimeInterval?
     private var charNeedsRender = false
     private var suggestNeedsRender = false
     private var pendingEmit: DispatchWorkItem?
@@ -84,13 +85,26 @@ final class AddressBarPerfCoordinator {
     func resetForNewInteraction() {
         cancelPendingEmit()
         recorder.reset()
+        pendingCharStartTime = nil
         charNeedsRender = false
         suggestNeedsRender = false
     }
 
-    /// Records a user-driven keystroke and arms the char-render path.
+    /// Records a user-driven keystroke. Stamps the suggest stage's anchor immediately so a
+    /// suggestions update that arrives before the buffer commit still finds it, and stashes
+    /// the same t₀ for the char stage to consume at commit time.
     func markKeystroke() {
-        recorder.markKeystroke()
+        pendingCharStartTime = recorder.markKeystrokeForSuggest()
+    }
+
+    /// Confirms that the buffer actually changed for a previously-marked keystroke. Pushes its
+    /// t₀ into the char pending list and arms the next-paint flag. No-op when the buffer
+    /// changed without a preceding `markKeystroke()` (programmatic edits) or after a previous
+    /// suppressed keystroke whose slot was overwritten — those produce no char sample.
+    func armCharRenderIfPending() {
+        guard let t = pendingCharStartTime else { return }
+        pendingCharStartTime = nil
+        recorder.appendCharStartTime(at: t)
         charNeedsRender = true
     }
 
@@ -104,6 +118,7 @@ final class AddressBarPerfCoordinator {
     /// tab switch, window deactivate, app deactivate).
     func terminateInteraction() {
         let snapshot = recorder.takeAndClear()
+        pendingCharStartTime = nil
         charNeedsRender = false
         suggestNeedsRender = false
         scheduleEmit(snapshot)

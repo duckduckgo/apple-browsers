@@ -52,12 +52,22 @@ final class AddressBarPerfRecorder {
         self.sampleCapMs = sampleCapMs
     }
 
-    /// Records a keystroke. Appends to the char pending list and overwrites the suggest slot.
-    /// `time` defaults to the current clock value.
-    func markKeystroke(at time: TimeInterval? = nil) {
+    /// Sets the suggest stage's anchor to `time`. Called at keystroke arrival so a
+    /// `SearchSuggestions` update that lands before the buffer-commit notification still finds an
+    /// anchor. Returns the timestamp that was stamped, so the coordinator can reuse it when
+    /// pushing the same keystroke into the char pending list at commit time.
+    @discardableResult
+    func markKeystrokeForSuggest(at time: TimeInterval? = nil) -> TimeInterval {
+        let t = time ?? clock()
+        latestKeystrokeForSuggest = t
+        return t
+    }
+
+    /// Appends `time` to the char pending list. Called at `controlTextDidChange` once the buffer
+    /// has actually committed, with the original keystroke's arrival time.
+    func appendCharStartTime(at time: TimeInterval? = nil) {
         let t = time ?? clock()
         pendingCharStartTimes.append(t)
-        latestKeystrokeForSuggest = t
     }
 
     /// Drains the char pending list, recording one char sample per pending keystroke against

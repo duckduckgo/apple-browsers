@@ -410,7 +410,10 @@ private extension MainViewController {
 
         ensureStandardChromeVisibleForAITabRefresh()
         tab.webView.scrollView.contentInset = .zero
-        coordinator.deactivateToOmnibar()
+        // We're swapping into AI-tab layout, not dismissing the omnibar in place.
+        // Skip the dismiss animation — otherwise it runs concurrently with the AI-tab show
+        // and the user perceives a top-to-bottom slide.
+        coordinator.deactivateToOmnibar(animateDismiss: false)
         viewCoordinator.showAITabChrome()
         applyUnifiedInputChromeBackground(.aiTabChatChromeHidden)
 

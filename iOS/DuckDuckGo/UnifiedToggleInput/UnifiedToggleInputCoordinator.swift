@@ -51,13 +51,77 @@ enum UnifiedToggleInputDisplayState: Equatable {
 }
 
 enum UnifiedToggleInputIntent: Equatable {
-    case showCollapsed
-    case showExpanded
+    case showCollapsed(from: UnifiedToggleInputDisplayState)
+    case showExpanded(from: UnifiedToggleInputDisplayState)
     case showOmnibarEditing(expandedHeight: CGFloat, pendingExpandedHeight: CGFloat? = nil)
     case showOmnibarInactive
     case showOmnibarActive
     case hideOmnibarEditing(animated: Bool)
     case hide
+}
+
+/// First-class wrapper around "should this UI mutation animate, or snap?" Both branches
+/// take a closure of work to run — the wrapper handles the animation-context plumbing
+/// (`UIView.animate` vs `UIView.performWithoutAnimation`) so call sites stay flat.
+enum UTIAnimationStyle {
+    case snap
+    case animated(duration: TimeInterval, options: UIView.AnimationOptions, layoutTarget: UIView)
+
+    func perform(_ body: @escaping () -> Void) {
+        switch self {
+        case .snap:
+            UIView.performWithoutAnimation(body)
+        case let .animated(duration, options, layoutTarget):
+            UIView.animate(withDuration: duration, delay: 0, options: options) {
+                body()
+                layoutTarget.layoutIfNeeded()
+            }
+        }
+    }
+
+    /// Duration of this style — `0` for snap, the configured duration for animated. Useful
+    /// for matching parallel animations (e.g. `adjustUI(withKeyboardFrame:in:)`) to the same
+    /// timing.
+    var duration: TimeInterval {
+        switch self {
+        case .snap: return 0
+        case let .animated(duration, _, _): return duration
+        }
+    }
+}
+
+extension UnifiedToggleInputIntent {
+    /// Animation style derived from the intent's transition. The (from, to) pair is the only
+    /// signal needed — adding new transitions means adding new cases in the matrix below, not
+    /// scattering `if/else` across handlers.
+    func animationStyle(layoutTarget: UIView) -> UTIAnimationStyle {
+        switch self {
+        case let .showCollapsed(from):
+            return Self.transitionStyle(from: from, to: .aiTab(.collapsed), layoutTarget: layoutTarget)
+        case let .showExpanded(from):
+            return Self.transitionStyle(from: from, to: .aiTab(.expanded), layoutTarget: layoutTarget)
+        case .hide, .showOmnibarEditing, .showOmnibarInactive, .showOmnibarActive, .hideOmnibarEditing:
+            // `.hide` is always a snap (no animatable transition pair); the omnibar intents
+            // own bespoke animation flows and pick their own style.
+            return .snap
+        }
+    }
+
+    private static func transitionStyle(from: UnifiedToggleInputDisplayState,
+                                        to: UnifiedToggleInputDisplayState,
+                                        layoutTarget: UIView) -> UTIAnimationStyle {
+        switch (from, to) {
+        case (.aiTab(.expanded), .aiTab(.collapsed)),
+             (.aiTab(.collapsed), .aiTab(.expanded)):
+            // In-place pose morph on Duck.ai — animate the card shrinking / growing.
+            return .animated(duration: 0.35, options: .curveEaseInOut, layoutTarget: layoutTarget)
+        default:
+            // Fresh entry into a state from a different layout (tab swipe, app launch,
+            // omnibar dismiss, hide). The outer constraint changes shouldn't be animated;
+            // the destination should just BE there.
+            return .snap
+        }
+    }
 }
 
 enum ExternalSubmissionType {
@@ -420,6 +484,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         utiLifecycleLogger.debug("showCollapsed() prevState=\(String(describing: self.displayState), privacy: .public) host=\(String(describing: self.host), privacy: .public)")
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
+        let previousDisplayState = displayState
         displayState = .aiTab(.collapsed)
         setInitialInputMode(.aiChat)
         isInputVisibleForKeyboard = true
@@ -427,13 +492,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // Pose deferred to the intent handler so the morph animates in sync with the keyboard.
         applyToolbarPresentation()
         viewController.deactivateInput()
-        intentSubject.send(.showCollapsed)
+        intentSubject.send(.showCollapsed(from: previousDisplayState))
     }
 
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat) {
         utiLifecycleLogger.debug("showExpanded(inputMode=\(String(describing: inputMode), privacy: .public)) prevState=\(String(describing: self.displayState), privacy: .public) host=\(String(describing: self.host), privacy: .public)")
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
+        let previousDisplayState = displayState
         displayState = .aiTab(.expanded)
         setInitialInputMode(inputMode)
         isInputVisibleForKeyboard = true
@@ -447,7 +513,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             textState = .prefilledSelected
         }
 
-        intentSubject.send(.showExpanded)
+        intentSubject.send(.showExpanded(from: previousDisplayState))
         DispatchQueue.main.async { [weak self] in
             guard let self, case .aiTab(.expanded) = self.displayState else { return }
             self.viewController.activateInput()
@@ -499,7 +565,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
 
-        viewController.applyCardLayout(.omnibar, animated: false)
+        viewController.applyCardLayout(.collapsed, animated: false)
         let renderState = computeRenderState()
         viewController.apply(renderState.viewConfig, animated: false)
         applyToolbarPresentation()
@@ -909,9 +975,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// toggle setting + input mode. Centralised here so the view layer just renders.
     private func cardLayout(forIsExpanded isExpanded: Bool) -> UnifiedToggleInputCardLayout {
         guard isExpanded else {
-            // `.collapsed` is the AI-tab footer pose (48pt capsule with fire/voice flank);
-            // `.omnibar` is the slim 44pt pill that mimics the regular omnibar's text field.
-            return isAITabState ? .collapsed : .omnibar
+            return isAITabState ? .flanked : .collapsed
         }
         switch host {
         case .contextualChat:

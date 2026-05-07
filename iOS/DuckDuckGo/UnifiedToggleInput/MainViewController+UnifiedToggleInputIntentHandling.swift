@@ -24,9 +24,9 @@ extension MainViewController {
     func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {
         switch intent {
         case .showCollapsed:
-            handleShowCollapsedIntent()
+            handleShowCollapsedIntent(animationStyle: intent.animationStyle(layoutTarget: viewCoordinator.superview))
         case .showExpanded:
-            handleShowExpandedIntent()
+            handleShowExpandedIntent(animationStyle: intent.animationStyle(layoutTarget: viewCoordinator.superview))
         case .showOmnibarEditing(let height, let pendingHeight):
             handleShowOmnibarEditingIntent(height: height, pendingHeight: pendingHeight)
         case .showOmnibarInactive:
@@ -68,75 +68,60 @@ extension MainViewController {
 
 private extension MainViewController {
 
-    func handleShowCollapsedIntent() {
+    func handleShowCollapsedIntent(animationStyle: UTIAnimationStyle) {
+        animationStyle.perform { [self] in
+            applyAITabCollapsedPose()
+        }
+    }
+
+    /// The visual end-state for `.aiTab(.collapsed)`: chrome background, content anchored to UTI
+    /// top, container shown at the bottom anchored to the keyboard guide, and the card in the
+    /// collapsed pose with footer accessories. Whether this snaps or animates is decided by the
+    /// caller (which wraps this in `UTIAnimationStyle.perform`).
+    private func applyAITabCollapsedPose() {
         if unifiedToggleInputCoordinator?.isAITabState == true {
             applyUnifiedInputChromeBackground(.aiTabChatChromeHidden)
             viewCoordinator.anchorContentContainerToInputTop()
         }
         viewCoordinator.showUnifiedToggleInput()
-        // Hidden toolbar still claims layout below `toolbar.topAnchor`, leaving the UTI floating
-        // ~83pt above the home indicator. Anchor to the keyboard layout guide (with a safe-area
-        // floor) so the collapsed pill sits just above the home indicator, matching Figma and
-        // mirroring the expanded path below.
         if let coordinator = unifiedToggleInputCoordinator,
            coordinator.isAITabState,
            coordinator.cardPosition == .bottom {
             viewCoordinator.setNavBarContainerBottomToKeyboard()
         }
         viewCoordinator.suggestionTrayContainer.isHidden = true
-        guard let coordinator = unifiedToggleInputCoordinator else {
+        if let coordinator = unifiedToggleInputCoordinator {
+            coordinator.viewController.apply(coordinator.computeRenderState().viewConfig, animated: false)
+            updateUnifiedInputContentVisibility(for: coordinator)
+        } else {
             viewCoordinator.hideUnifiedInputContent()
-            return
         }
-
-        let renderState = coordinator.computeRenderState()
-        let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
-        UIView.animate(
-            withDuration: duration,
-            delay: 0,
-            options: .curveEaseInOut,
-            animations: { [weak self] in
-                guard let self else { return }
-                coordinator.viewController.apply(renderState.viewConfig, animated: false)
-                self.updateUnifiedInputContentVisibility(for: coordinator, renderState: renderState)
-                self.viewCoordinator.superview.layoutIfNeeded()
-            }
-        )
     }
 
-    func handleShowExpandedIntent() {
-        viewCoordinator.showUnifiedToggleInput()
-        guard let coordinator = unifiedToggleInputCoordinator else {
-            adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
-            return
+    func handleShowExpandedIntent(animationStyle: UTIAnimationStyle) {
+        animationStyle.perform { [self] in
+            applyAITabExpandedPose()
         }
+        adjustUI(withKeyboardFrame: latestKeyboardFrame, in: animationStyle.duration, animationCurve: .curveEaseInOut)
+    }
 
+    /// Visual end-state for `.aiTab(.expanded)`: container shown, chrome and content anchor
+    /// configured for the AI-tab pose, card applied to expanded layout, content visibility
+    /// updated. Whether this snaps or animates is decided by the caller (which wraps this in
+    /// `UTIAnimationStyle.perform`).
+    private func applyAITabExpandedPose() {
+        viewCoordinator.showUnifiedToggleInput()
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
         let renderState = coordinator.computeRenderState()
         if coordinator.isAITabState {
-            applyAITabExpandedChrome(for: coordinator, renderState: renderState)
-        }
-
-        let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
-        UIView.animate(
-            withDuration: duration,
-            delay: 0,
-            options: .curveEaseInOut,
-            animations: { [weak self] in
-                guard let self else { return }
-                coordinator.viewController.apply(renderState.viewConfig, animated: false)
-                self.updateUnifiedInputContentVisibility(for: coordinator, renderState: renderState)
-                self.viewCoordinator.superview.layoutIfNeeded()
+            if coordinator.cardPosition == .bottom {
+                viewCoordinator.setNavBarContainerBottomToKeyboard()
             }
-        )
-        adjustUI(withKeyboardFrame: latestKeyboardFrame, in: duration, animationCurve: .curveEaseInOut)
-    }
-
-    private func applyAITabExpandedChrome(for coordinator: UnifiedToggleInputCoordinator, renderState: UTIRenderState) {
-        if coordinator.cardPosition == .bottom {
-            viewCoordinator.setNavBarContainerBottomToKeyboard()
+            applyUnifiedInputChromeBackground(aiTabChromeBackgroundState(for: renderState))
+            viewCoordinator.anchorContentContainerToInputTop()
         }
-        applyUnifiedInputChromeBackground(aiTabChromeBackgroundState(for: renderState))
-        viewCoordinator.anchorContentContainerToInputTop()
+        coordinator.viewController.apply(renderState.viewConfig, animated: false)
+        updateUnifiedInputContentVisibility(for: coordinator, renderState: renderState)
     }
 
     func handleShowOmnibarEditingIntent(height: CGFloat, pendingHeight: CGFloat?) {

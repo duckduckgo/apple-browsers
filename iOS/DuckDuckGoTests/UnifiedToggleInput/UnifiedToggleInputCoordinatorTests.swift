@@ -973,10 +973,20 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(actionTitles.contains(UserText.aiChatToolbarImageGenerationToolTitle))
     }
 
-    func test_toolsMenu_imageGenerationActionIsAlwaysEnabled_regardlessOfModelSupportedTools() {
-        // Image generation is model-independent on mobile; the FE handles per-model permission gating.
+    func test_toolsMenu_disablesImageGenerationActionWhenModelDoesNotSupportIt() {
         mockPreferences.selectedModelId = "gpt-5"
         sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [])]
+
+        sut.showExpanded()
+
+        let imageGenAction = toolsMenuActions().first { $0.title == UserText.aiChatToolbarImageGenerationToolTitle }
+
+        XCTAssertEqual(imageGenAction?.attributes, .disabled)
+    }
+
+    func test_toolsMenu_enablesImageGenerationActionWhenModelSupportsIt() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
 
         sut.showExpanded()
 
@@ -985,9 +995,9 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(imageGenAction?.attributes, [])
     }
 
-    func test_selectTool_imageGeneration_setsSelectedTool_regardlessOfModelSupport() {
+    func test_selectTool_imageGeneration_setsSelectedTool() {
         mockPreferences.selectedModelId = "gpt-5"
-        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [])]
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
         sut.activateFromOmnibar(inputMode: .aiChat)
 
         sut.selectTool(.imageGeneration)
@@ -996,8 +1006,20 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.viewController.selectedTool, .imageGeneration)
     }
 
+    func test_selectTool_imageGeneration_isIgnoredWhenModelDoesNotSupportIt() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.selectTool(.imageGeneration)
+
+        XCTAssertNil(sut.selectedTool)
+    }
+
     func test_toolsController_toggleSelection_togglesOffSelectedImageGenerationTool() {
         let toolsController = UTIToolsController()
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
         toolsController.select(.imageGeneration, for: sut.modelStore)
 
         toolsController.toggleSelection(for: .imageGeneration, modelStore: sut.modelStore)
@@ -1008,7 +1030,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_toolsController_selectingImageGeneration_replacesPreviousWebSearchSelection() {
         let toolsController = UTIToolsController()
         mockPreferences.selectedModelId = "gpt-5"
-        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch, .imageGeneration])]
         toolsController.select(.webSearch, for: sut.modelStore)
         XCTAssertEqual(toolsController.selectedTool, .webSearch)
 
@@ -1017,11 +1039,10 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(toolsController.selectedTool, .imageGeneration)
     }
 
-    func test_updateSelectedModel_doesNotClearImageGenerationSelection() {
-        // Image generation isn't gated on the selected text model; switching shouldn't clear it.
+    func test_updateSelectedModel_clearsImageGenerationSelectionWhenNewModelDoesNotSupportIt() {
         mockPreferences.selectedModelId = "gpt-5"
         sut.modelStore.models = [
-            makeModel(id: "gpt-5", access: true, supportedTools: []),
+            makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration]),
             makeModel(id: "claude", access: true, supportedTools: [])
         ]
         sut.activateFromOmnibar(inputMode: .aiChat)
@@ -1029,17 +1050,19 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         sut.updateSelectedModel("claude")
 
-        XCTAssertEqual(sut.selectedTool, .imageGeneration)
+        XCTAssertNil(sut.selectedTool)
+        XCTAssertNil(sut.viewController.selectedTool)
     }
 
-    func test_submitAIChat_imageGenerationSelected_doesNotForwardToolChoice() {
-        // Image generation is sent via the payload `mode` field (Phase 2), not via toolChoice.
+    func test_submitAIChat_imageGenerationSelected_forwardsToolChoice() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
         sut.activateFromOmnibar(inputMode: .aiChat)
         sut.selectTool(.imageGeneration)
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "draw a cat", mode: .aiChat)
 
-        XCTAssertNil(mockDelegate.submittedTools)
+        XCTAssertEqual(mockDelegate.submittedTools, [.imageGeneration])
     }
 
     // MARK: - Model Selection: persistedModelId

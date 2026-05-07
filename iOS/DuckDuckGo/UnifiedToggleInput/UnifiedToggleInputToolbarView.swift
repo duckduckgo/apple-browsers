@@ -83,7 +83,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateModelChipConfiguration() }
     }
 
-    var selectedTool: AIChatToolMode? {
+    var selectedTool: AIChatRAGTool? {
         didSet { updateChipVisibility() }
     }
 
@@ -431,14 +431,17 @@ private extension UnifiedToggleInputToolbarView {
     @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
 }
 
-private extension AIChatToolMode {
+private extension AIChatRAGTool {
 
-    var toolbarChipIcon: DesignSystemImage {
+    var toolbarChipIcon: DesignSystemImage? {
         switch self {
         case .webSearch:
             return DesignSystemImages.Glyphs.Size24.globe
         case .imageGeneration:
             return DesignSystemImages.Glyphs.Size24.images
+        default:
+            // Not surfaced in the unified-input tools menu — defensive fallback only.
+            return nil
         }
     }
 
@@ -448,6 +451,9 @@ private extension AIChatToolMode {
             return UserText.aiChatToolbarWebSearchToolTitle
         case .imageGeneration:
             return UserText.aiChatToolbarImageGenerationToolTitle
+        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
+            // Not surfaced in the unified-input tools menu — defensive fallback only.
+            return rawValue
         }
     }
 }

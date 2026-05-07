@@ -776,7 +776,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var persistedReasoningMode: AIChatReasoningMode? { modelStore.selectedReasoningMode }
     var selectedModel: AIChatModel? { modelStore.selectedModel }
     var selectedModelSupportsImageUpload: Bool { modelStore.selectedModelSupportsImageUpload }
-    var selectedTool: AIChatToolMode? { toolsController.selectedTool }
+    var selectedTool: AIChatRAGTool? { toolsController.selectedTool }
 
     func fetchModels() {
         modelStore.fetchModels()
@@ -803,7 +803,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateReasoningPicker()
     }
 
-    func selectTool(_ tool: AIChatToolMode) {
+    func selectTool(_ tool: AIChatRAGTool) {
         toolsController.select(tool, for: modelStore)
         refreshToolsPresentation()
     }

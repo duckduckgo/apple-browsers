@@ -21,22 +21,12 @@ import AIChat
 import DesignResourcesKitIcons
 import UIKit
 
-/// Mutually-exclusive selection in the unified-input tools menu.
-///
-/// `webSearch` maps to a `toolChoice` value in the prompt payload; `imageGeneration` is
-/// surfaced as a peer in the menu but maps to the payload `mode` field instead — the actual
-/// wire-up lives in `UnifiedToggleInputCoordinator`.
-enum AIChatToolMode: Equatable {
-    case webSearch
-    case imageGeneration
-}
-
 @MainActor
 final class UTIToolsController {
 
     struct Presentation {
         let isToolsButtonHidden: Bool
-        let selectedTool: AIChatToolMode?
+        let selectedTool: AIChatRAGTool?
         let toolsMenu: UTIToolsMenu?
 
         static let hidden = Presentation(
@@ -46,20 +36,14 @@ final class UTIToolsController {
         )
     }
 
-    private(set) var selectedTool: AIChatToolMode?
+    private(set) var selectedTool: AIChatRAGTool?
 
-    func select(_ tool: AIChatToolMode, for modelStore: UTIModelStore) {
-        switch tool {
-        case .webSearch:
-            guard modelStore.selectedModelSupports(tool: .webSearch) else { return }
-        case .imageGeneration:
-            // Image generation is model-independent on mobile; always selectable.
-            break
-        }
+    func select(_ tool: AIChatRAGTool, for modelStore: UTIModelStore) {
+        guard modelStore.selectedModelSupports(tool: tool) else { return }
         selectedTool = tool
     }
 
-    func toggleSelection(for tool: AIChatToolMode, modelStore: UTIModelStore) {
+    func toggleSelection(for tool: AIChatRAGTool, modelStore: UTIModelStore) {
         if selectedTool == tool {
             clearSelection()
             return
@@ -72,27 +56,12 @@ final class UTIToolsController {
     }
 
     func clearSelectionIfUnsupported(for modelStore: UTIModelStore) {
-        guard let selectedTool else { return }
-        switch selectedTool {
-        case .webSearch:
-            if !modelStore.selectedModelSupports(tool: .webSearch) {
-                self.selectedTool = nil
-            }
-        case .imageGeneration:
-            // Image generation is not gated on the selected text model — never auto-cleared.
-            break
-        }
+        guard let selectedTool, !modelStore.selectedModelSupports(tool: selectedTool) else { return }
+        self.selectedTool = nil
     }
 
     func selectedToolsForSubmission() -> [AIChatRAGTool]? {
-        guard let selectedTool else { return nil }
-        switch selectedTool {
-        case .webSearch:
-            return [.webSearch]
-        case .imageGeneration:
-            // Image generation is sent via the payload `mode` field, not `toolChoice`.
-            return nil
-        }
+        selectedTool.map { [$0] }
     }
 
     func presentation(
@@ -120,7 +89,10 @@ private extension UTIToolsController {
 
     func buildToolsMenu(modelStore: UTIModelStore) -> UTIToolsMenu {
         return UTIToolsMenu(items: [
-            .imageGeneration(isSelected: selectedTool == .imageGeneration),
+            .imageGeneration(
+                isSelected: selectedTool == .imageGeneration,
+                isEnabled: modelStore.selectedModelSupports(tool: .imageGeneration)
+            ),
             .webSearch(
                 isSelected: selectedTool == .webSearch,
                 isEnabled: modelStore.selectedModelSupports(tool: .webSearch)
@@ -133,7 +105,7 @@ struct UTIToolsMenu {
 
     enum Item: Equatable {
         case webSearch(isSelected: Bool, isEnabled: Bool)
-        case imageGeneration(isSelected: Bool)
+        case imageGeneration(isSelected: Bool, isEnabled: Bool)
 
         enum Identifier {
             case webSearch
@@ -170,9 +142,10 @@ struct UTIToolsMenuFactory {
                 isEnabled: isEnabled,
                 onSelect: onSelect
             )
-        case let .imageGeneration(isSelected):
+        case let .imageGeneration(isSelected, isEnabled):
             return makeImageGenerationAction(
                 isSelected: isSelected,
+                isEnabled: isEnabled,
                 onSelect: onSelect
             )
         }
@@ -199,14 +172,17 @@ struct UTIToolsMenuFactory {
 
     private func makeImageGenerationAction(
         isSelected: Bool,
+        isEnabled: Bool,
         onSelect: @escaping (UTIToolsMenu.Item.Identifier) -> Void
     ) -> UIAction {
         let state: UIMenuElement.State = isSelected ? .on : .off
+        let attributes: UIMenuElement.Attributes = isEnabled ? [] : .disabled
 
         return UIAction(
             title: UserText.aiChatToolbarImageGenerationToolTitle,
             subtitle: UserText.aiChatToolbarImageGenerationToolSubtitle,
             image: DesignSystemImages.Glyphs.Size24.images,
+            attributes: attributes,
             state: state
         ) { _ in
             onSelect(.imageGeneration)

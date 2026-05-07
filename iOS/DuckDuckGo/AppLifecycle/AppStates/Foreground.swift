@@ -100,7 +100,8 @@ struct Foreground: ForegroundHandling {
         interactionManager = UIInteractionManager(
             authenticationService: sceneDependencies.authenticationService,
             autoClearService: sceneDependencies.autoClearService,
-            launchActionHandler: launchActionHandler
+            launchActionHandler: launchActionHandler,
+            onboardingPresenter: appDependencies.mainCoordinator
         )
     }
 

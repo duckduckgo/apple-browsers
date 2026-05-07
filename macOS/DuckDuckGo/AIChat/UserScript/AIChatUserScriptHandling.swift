@@ -80,6 +80,13 @@ protocol AIChatUserScriptHandling: AnyObject {
     func sendToSyncSettings(params: Any, message: UserScriptMessage) -> Encodable?
     func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable?
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable?
+
+    /// Voice-session lifecycle messages from Duck.ai. Native rebroadcasts them as
+    /// `aiChatVoiceSessionStarted` / `aiChatVoiceSessionEnded` notifications carrying the
+    /// source `WKWebView` as `object`, so observers (`VoiceSessionTracker`) can map back
+    /// to the owning `Tab` and decide whether to focus it instead of opening a new one.
+    @MainActor func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -616,6 +623,20 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         syncServiceProvider()?.setAIChatHistoryEnabled(enabled)
+        return nil
+    }
+
+    // MARK: - Voice Session
+
+    @MainActor
+    func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
+        notificationCenter.post(name: .aiChatVoiceSessionStarted, object: message.messageWebView)
+        return nil
+    }
+
+    @MainActor
+    func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? {
+        notificationCenter.post(name: .aiChatVoiceSessionEnded, object: message.messageWebView)
         return nil
     }
 

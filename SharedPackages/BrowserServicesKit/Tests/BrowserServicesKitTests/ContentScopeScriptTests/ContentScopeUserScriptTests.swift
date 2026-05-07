@@ -19,6 +19,7 @@
 import BrowserServicesKitTestsUtils
 import PrivacyConfig
 import PrivacyConfigTestsUtils
+import TrackerRadarKit
 import WebKit
 import XCTest
 @testable import BrowserServicesKit
@@ -77,7 +78,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
         let source = try ContentScopeUserScript.generateSource(
             mockPrivacyConfigurationManager,
             properties: properties,
-            scriptContext: .contentScope,
+            scriptContext: .contentScope(),
             config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
             privacyConfigurationJSONGenerator: configGenerator
         )
@@ -94,7 +95,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
         let source = try ContentScopeUserScript.generateSource(
             mockPrivacyConfigurationManager,
             properties: properties,
-            scriptContext: .contentScope,
+            scriptContext: .contentScope(),
             config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
             privacyConfigurationJSONGenerator: configGenerator
         )
@@ -130,12 +131,12 @@ final class ContentScopeUserScriptTests: XCTestCase {
         let contentScopeScript = try ContentScopeUserScript(
             mockPrivacyConfigurationManager,
             properties: properties,
-            scriptContext: .contentScope,
+            scriptContext: .contentScope(),
             privacyConfigurationJSONGenerator: configGenerator
         )
         let capturingContentScopeUserScriptDelegate = CapturingContentScopeUserScriptDelegate()
         contentScopeScript.delegate = capturingContentScopeUserScriptDelegate
-        let message = await WKScriptMessage.mock(name: ContentScopeScriptContext.contentScope.messagingContextName, body: mockMessageBody)
+        let message = await WKScriptMessage.mock(name: ContentScopeScriptContext.contentScope().messagingContextName, body: mockMessageBody)
 
         // WHEN
         let result = await contentScopeScript.userContentController(WKUserContentController(),
@@ -153,7 +154,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
 
         let contentScopeScript = try ContentScopeUserScript(mockPrivacyConfigurationManager,
                                                             properties: properties,
-                                                            scriptContext: .contentScope,
+                                                            scriptContext: .contentScope(),
                                                             allowedNonisolatedFeatures: [featureName],
                                                             privacyConfigurationJSONGenerator: configGenerator)
         let capturingContentScopeUserScriptDelegate = CapturingContentScopeUserScriptDelegate()
@@ -172,7 +173,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
         let source = try ContentScopeUserScript.generateSource(
             mockPrivacyConfigurationManager,
             properties: properties,
-            scriptContext: .contentScope,
+            scriptContext: .contentScope(),
             config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
             privacyConfigurationJSONGenerator: configGenerator
         )
@@ -211,7 +212,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
 
     func testWhenContentScopeContextThenFileNameIsContentScope() {
         // GIVEN
-        let context = ContentScopeScriptContext.contentScope
+        let context = ContentScopeScriptContext.contentScope()
 
         // THEN
         XCTAssertEqual(context.fileName, "contentScope")
@@ -219,7 +220,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
 
     func testWhenContentScopeContextThenMessagingContextNameIsContentScopeScripts() {
         // GIVEN
-        let context = ContentScopeScriptContext.contentScope
+        let context = ContentScopeScriptContext.contentScope()
 
         // THEN
         XCTAssertEqual(context.messagingContextName, "contentScopeScripts")
@@ -227,7 +228,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
 
     func testWhenContentScopeContextThenIsIsolatedReturnsFalse() {
         // GIVEN
-        let context = ContentScopeScriptContext.contentScope
+        let context = ContentScopeScriptContext.contentScope()
 
         // THEN
         XCTAssertFalse(context.isIsolated)
@@ -255,6 +256,60 @@ final class ContentScopeUserScriptTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(context.isIsolated)
+    }
+
+    // MARK: - Surrogate tracker data encoding
+
+    func testWhenContentScopeContextHasSurrogateTrackerDataThenItIsEncodedAsTrackerData() throws {
+        let trackerData = TrackerData(
+            trackers: ["tracker.example": KnownTracker(
+                domain: "tracker.example",
+                defaultAction: .block,
+                owner: KnownTracker.Owner(name: "Tracker Inc", displayName: "Tracker Inc", ownedBy: nil),
+                prevalence: 0.1,
+                subdomains: nil,
+                categories: nil,
+                rules: nil
+            )],
+            entities: ["Tracker Inc": Entity(displayName: "Tracker Inc", domains: ["tracker.example"], prevalence: 0.1)],
+            domains: ["tracker.example": "Tracker Inc"],
+            cnames: nil
+        )
+
+        let source = try ContentScopeUserScript.generateSource(
+            mockPrivacyConfigurationManager,
+            properties: properties,
+            scriptContext: .contentScope(surrogateTrackerData: trackerData),
+            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
+            privacyConfigurationJSONGenerator: nil
+        )
+
+        XCTAssertTrue(source.contains("\"trackerData\""), "trackerData key should appear in the generated source")
+        XCTAssertTrue(source.contains("tracker.example"), "tracker domain should appear in the generated source")
+    }
+
+    func testWhenContentScopeContextHasNoSurrogateTrackerDataThenTrackerDataKeyIsAbsent() throws {
+        let source = try ContentScopeUserScript.generateSource(
+            mockPrivacyConfigurationManager,
+            properties: properties,
+            scriptContext: .contentScope(),
+            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
+            privacyConfigurationJSONGenerator: nil
+        )
+
+        XCTAssertFalse(source.contains("\"trackerData\""), "trackerData key should not appear when no surrogate data is supplied")
+    }
+
+    func testWhenNonContentScopeContextThenTrackerDataKeyIsAbsent() throws {
+        let source = try ContentScopeUserScript.generateSource(
+            mockPrivacyConfigurationManager,
+            properties: properties,
+            scriptContext: .contentScopeIsolated,
+            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
+            privacyConfigurationJSONGenerator: nil
+        )
+
+        XCTAssertFalse(source.contains("\"trackerData\""), "trackerData key should never leak into non-contentScope contexts")
     }
 
     // MARK: - ContentScopeUserScript Integration Tests with aiChatDataClearing Context

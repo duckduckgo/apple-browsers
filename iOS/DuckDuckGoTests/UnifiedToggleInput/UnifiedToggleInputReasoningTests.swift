@@ -32,7 +32,7 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockPreferences = MockAIChatReasoningPreferences()
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: true, preferences: mockPreferences)
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true, preferences: mockPreferences)
         mockDelegate = MockUnifiedToggleInputReasoningDelegate()
         sut.delegate = mockDelegate
     }
@@ -255,16 +255,19 @@ private final class MockUnifiedToggleInputReasoningDelegate: UnifiedToggleInputD
     var submittedModelId: String?
     var submittedReasoningEffort: AIChatReasoningEffort?
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
+    var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
         submittedPrompt = prompt
         submittedModelId = modelId
         submittedReasoningEffort = reasoningEffort
         submittedImages = images
+        submittedFiles = files
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}
     func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidRequestAIChat() {}
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
 }
@@ -274,6 +277,7 @@ private final class MockAIChatReasoningPreferences: AIChatPreferencesPersisting 
     var selectedModelShortName: String?
     var selectedReasoningEffort: String?
     var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }

@@ -60,6 +60,7 @@ struct Launching: LaunchingHandling {
     private let launchTaskManager = LaunchTaskManager()
     private let launchSourceManager = LaunchSourceManager()
     private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
+    private let onboardingManager: OnboardingManager
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
@@ -105,6 +106,7 @@ struct Launching: LaunchingHandling {
 
         let contentBlocking = ContentBlocking.shared
 
+        onboardingManager = OnboardingManager(appDefaults: appSettings, featureFlagger: featureFlagger, variantManager: configuration.atbAndVariantConfiguration.variantManager, tutorialSettings: DefaultTutorialSettings())
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
@@ -208,6 +210,7 @@ struct Launching: LaunchingHandling {
         let subscriptionPromoPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoCoordinator)
 
         // Initialise modal prompts coordination
+        let omniBarFocuser = OmniBarFocuserProvider()
         let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
             dependency: .init(
                 launchSourceManager: launchSourceManager,
@@ -227,7 +230,8 @@ struct Launching: LaunchingHandling {
                 winBackOfferCoordinator: winBackOfferService.coordinator,
                 subscriptionPromoPresenter: subscriptionPromoPresenter,
                 subscriptionPromoCoordinator: subscriptionPromoCoordinator,
-                userScriptsDependencies: contentBlockingService.userScriptsDependencies
+                userScriptsDependencies: contentBlockingService.userScriptsDependencies,
+                omniBarFocuser: omniBarFocuser
             )
         )
 
@@ -266,7 +270,9 @@ struct Launching: LaunchingHandling {
                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                               whatsNewRepository: whatsNewRepository,
                                               sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault,
-                                              wideEvent: AppDependencyProvider.shared.wideEvent)
+                                              wideEvent: AppDependencyProvider.shared.wideEvent,
+                                              onboardingManager: onboardingManager
+        )
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
@@ -275,6 +281,7 @@ struct Launching: LaunchingHandling {
         systemSettingsPiPTutorialService.setPresenter(mainCoordinator)
         syncService.presenter = mainCoordinator.controller
         remoteMessagingService.messageNavigator = DefaultMessageNavigator(delegate: mainCoordinator.controller)
+        omniBarFocuser.focuser = mainCoordinator.controller
 
         let notificationServiceManager = NotificationServiceManager(mainCoordinator: mainCoordinator)
 

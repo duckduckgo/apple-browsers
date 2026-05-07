@@ -322,11 +322,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "Sync Another Device";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Not Now";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Sync your data with another device?";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Loads icons from websites you've bookmarked. Icon downloads are exposed to your network.";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Bookmarks";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Use the same favorite bookmarks on mobile and desktop.";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Connecting...";
@@ -351,6 +360,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Save your bookmarks and autofill data, and sync them between your devices with end-to-end encryption.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Use this code to restore your data if you lose access to this device. Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn More](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo App";

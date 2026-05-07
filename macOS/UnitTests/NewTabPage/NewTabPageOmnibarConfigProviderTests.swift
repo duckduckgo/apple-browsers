@@ -515,6 +515,7 @@ private final class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting
     }
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { reasoningEffortSubject.eraseToAnyPublisher() }
     var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
 }
 
 private final class MockAIChatExcessProvider: NewTabPageOmnibarAiChatsProviding {

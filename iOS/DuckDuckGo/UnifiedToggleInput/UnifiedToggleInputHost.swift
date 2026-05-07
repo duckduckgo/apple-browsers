@@ -1,8 +1,8 @@
 //
-//  Logger+Onboarding.swift
+//  UnifiedToggleInputHost.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,8 +18,13 @@
 //
 
 import Foundation
-@_documentation(visibility: internal) @_exported import os.log
 
-extension Logger {
-    static var onboarding = { Logger(subsystem: "Onboarding", category: "") }()
+/// Identifies the surface that hosts a `UnifiedToggleInputCoordinator`.
+/// Parameterizes which UTI elements are visible (toggle, fire, suggestions overlay,
+/// floating submit, page-context chip).
+enum UnifiedToggleInputHost: Equatable {
+    /// Hosted by `MainViewController` — the omnibar / full-tab AI chat surface.
+    case omnibar
+    /// Hosted by `AIChatContextualWebViewController` — the post-submit contextual chat surface.
+    case contextualChat
 }

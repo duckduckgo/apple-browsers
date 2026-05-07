@@ -141,6 +141,7 @@
 				<string>ddgOpenAIChat</string>
 				<string>ddgOpenAIVoiceChat</string>
 				<string>ddgNewEmail</string>
+				<string>ddgCPP</string>
 			</array>
 		</dict>
 	</array>
@@ -182,6 +183,7 @@
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>ConfigurationIntent</string>
+		<string>ASCredentialExchangeActivityType</string>
 	</array>
 	<key>OSLogPreferences</key>
 	<dict>

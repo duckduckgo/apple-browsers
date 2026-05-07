@@ -51,4 +51,8 @@ public class OnboardingFireButtonDialogViewModel: ObservableObject {
         fireCoordinator?.fireButtonAction()
         onDismiss()
     }
+
+    func skipFireButton() {
+        onGotItPressed()
+    }
 }

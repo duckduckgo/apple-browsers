@@ -28,16 +28,18 @@ import DesignResourcesKitIcons
 struct QuickActionsMediumWidgetView: View {
     var entry: QuickActionsMediumEntry
 
-    private let shortcuts: [ShortcutOption] = [.voiceSearch,
-                                               .passwords,
-                                               .favorites,
-                                               .emailProtection]
+    private var shortcuts: [ShortcutOption] {
+        [entry.configuration.shortcut1,
+         entry.configuration.shortcut2,
+         entry.configuration.shortcut3,
+         entry.configuration.shortcut4]
+    }
 
     var body: some View {
         DesignSystemWidgetContainerView {
             VStack(spacing: 0) {
                 Link(destination: DeepLinks.newSearch) {
-                    ResponsiveSearchFieldView(isAIChatEnabled: entry.isAIChatEnabled, showLogo: true, isRightIconEnabled: true)
+                    ResponsiveSearchFieldView(isAIChatEnabled: false, showLogo: true, isRightIconEnabled: false)
                 }
                 .padding(.bottom, 16)
 
@@ -45,7 +47,7 @@ struct QuickActionsMediumWidgetView: View {
                     ForEach(shortcuts.indices, id: \.self) { index in
                         let shortcut = shortcuts[index]
 
-                        Link(destination: shortcut.destination) {
+                        Link(destination: shortcut.destination(for: .quickActionsMedium)) {
                             ResponsiveIconView(image: shortcut.icon)
                         }
 

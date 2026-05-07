@@ -45,7 +45,8 @@ final class NewAddressBarPickerModalPromptProviderTests {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: false
+            isIPad: false,
+            omniBarFocuser: OmniBarFocuserProvider()
         )
 
         // WHEN
@@ -66,7 +67,8 @@ final class NewAddressBarPickerModalPromptProviderTests {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: false
+            isIPad: false,
+            omniBarFocuser: OmniBarFocuserProvider()
         )
 
         // WHEN
@@ -87,7 +89,8 @@ final class NewAddressBarPickerModalPromptProviderTests {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: false
+            isIPad: false,
+            omniBarFocuser: OmniBarFocuserProvider()
         )
 
         // WHEN
@@ -108,7 +111,8 @@ final class NewAddressBarPickerModalPromptProviderTests {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: false
+            isIPad: false,
+            omniBarFocuser: OmniBarFocuserProvider()
         )
 
         // WHEN
@@ -128,7 +132,8 @@ final class NewAddressBarPickerModalPromptProviderTests {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: false
+            isIPad: false,
+            omniBarFocuser: OmniBarFocuserProvider()
         )
 
         // WHEN
@@ -148,7 +153,8 @@ final class NewAddressBarPickerModalPromptProviderTests {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: false
+            isIPad: false,
+            omniBarFocuser: OmniBarFocuserProvider()
         )
 
         // WHEN
@@ -168,7 +174,8 @@ final class NewAddressBarPickerModalPromptProviderTests {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: false
+            isIPad: false,
+            omniBarFocuser: OmniBarFocuserProvider()
         )
 
         // WHEN
@@ -188,7 +195,8 @@ final class NewAddressBarPickerModalPromptProviderTests {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: true
+            isIPad: true,
+            omniBarFocuser: OmniBarFocuserProvider()
         )
 
         // WHEN
@@ -209,7 +217,8 @@ final class NewAddressBarPickerModalPromptProviderTests {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: true
+            isIPad: true,
+            omniBarFocuser: OmniBarFocuserProvider()
         )
 
         // WHEN
@@ -229,7 +238,8 @@ final class NewAddressBarPickerModalPromptProviderTests {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: false
+            isIPad: false,
+            omniBarFocuser: OmniBarFocuserProvider()
         )
         #expect(!store.didCallMarkAsShown)
 
@@ -250,7 +260,8 @@ final class NewAddressBarPickerModalPromptProviderTests {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: false
+            isIPad: false,
+            omniBarFocuser: OmniBarFocuserProvider()
         )
         _ = sut.provideModalPrompt()
         #expect(!store.didCallMarkAsShown)
@@ -283,7 +294,7 @@ final class NewAddressBarPickerModalPromptProviderIntegrationTests {
         let mockKeyValueStore = MockKeyValueStore()
 
         testUserDefaults.set(false, forKey: "experimentalAIChatSettingsEnabled")
-        mockKeyValueStore.set(false, forKey: "aichat.storage.newAddressBarPickerShown")
+        mockKeyValueStore.set(false, forKey: NewAddressBarPickerStore.Key.hasBeenShown)
 
         let experimentalAIChatManager = ExperimentalAIChatManager(
             featureFlagger: mockFeatureFlagger,
@@ -291,13 +302,17 @@ final class NewAddressBarPickerModalPromptProviderIntegrationTests {
         )
         pickerStorage = NewAddressBarPickerStore(keyValueStore: mockKeyValueStore)
 
+        let mockStatisticsStore = MockStatisticsStore()
+        mockStatisticsStore.installDate = Calendar.current.date(byAdding: .day, value: -7, to: Date())
+
         validator = NewAddressBarPickerDisplayValidator(
             aiChatSettings: mockAIChatSettings,
             featureFlagger: mockFeatureFlagger,
             experimentalAIChatManager: experimentalAIChatManager,
             appSettings: mockAppSettings,
             pickerStorage: pickerStorage,
-            searchExperienceOnboardingProvider: MockOnboardingSearchExperienceProvider()
+            searchExperienceOnboardingProvider: MockOnboardingSearchExperienceProvider(),
+            statisticsStore: mockStatisticsStore
         )
     }
 
@@ -308,7 +323,7 @@ final class NewAddressBarPickerModalPromptProviderIntegrationTests {
     @Test("Check Configuration Is Nil After Calling Mark As Shown", arguments: [true, false])
     func whenProvideModalPromptCalledThenDoesNotMarkAsShownUntilDidPresentModal(isIPad: Bool) {
         // GIVEN
-        let sut = NewAddressBarPickerModalPromptProvider(validator: validator, store: pickerStorage, aiChatSettings: mockAIChatSettings, isIPad: isIPad)
+        let sut = NewAddressBarPickerModalPromptProvider(validator: validator, store: pickerStorage, aiChatSettings: mockAIChatSettings, isIPad: isIPad, omniBarFocuser: OmniBarFocuserProvider())
         #expect(!pickerStorage.hasBeenShown)
 
         // WHEN we call provide modal prompt for the first time

@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "Funkce AI";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Vybrat fotku";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Pořídit fotku";
@@ -1275,6 +1274,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Import záložek do DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Otevři Chrome, poté přejdi do Správce hesel a postupuj podle následujících kroků:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Nastavení** > **Exportovat data**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Stiskni tlačítko **Pokračovat**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Jako Cíl vyber **DuckDuckGo**";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Import z Chromu";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Export je hotový?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Musíš přejít do aplikace Hesla a poté postupovat podle kroků pro import.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Klepni na **···** > **Exportovat data do jiné aplikace**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Klepni na **Vybrat vše** > **Pokračovat**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Jako Cíl vyber **DuckDuckGo**";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Import z hesel";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Nejprve ze Safari exportuj svá hesla a záložky a poté se vrať sem a nahraj soubor.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Export ze Safari";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Import ze Safari";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Nahrát exportovaný soubor...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "V souboru zip nebyla nalezena žádná podporovaná data. Podívej se na pokyny k exportu ze Safari a zkus to znovu.";
 
@@ -1284,6 +1328,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Soubor %@ nejde přečíst. V souboru může být problém s daty.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Mám to";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Soubor %@ nejde přečíst. Zkus nahrát jiný soubor nebo vyzkoušej jinou metodu importu.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Soubor může být poškozen";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "V souboru zip nebyla nalezena žádná podporovaná data. Podívej se na pokyny k exportu a zkus to znovu.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Žádná data nenalezena";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Vybraný soubor není podporován. Vyber jiný soubor a zkus to znovu.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Nepodporovaný soubor";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1357,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Převod do DuckDuckGo";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Vyber **Export** a na další obrazovce vyber **Záložky** a **Uložit do stažených souborů**.";
@@ -1303,7 +1371,7 @@
 "data.import.passwords.instructions.chrome.step1" = "V Chromu přejdi do **Správce hesel Google** a pak do **Nastavení**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Vyber **Exportovat hesla**, pak **Uložit do Souborů** a ulož soubor do složky, kterou si zapamatuješ.";
+"data.import.passwords.instructions.chrome.step2" = "Vyber **Exportovat data**, pak **···** a nakonec **Stáhnout do CSV** a ulož soubor do složky, kterou si pamatuješ.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Jak exportovat hesla?";
@@ -1331,6 +1399,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Importujte hesla do DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Otevři nastavení pro export";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Nezapomeň klepnout\n „Exportovat do souborů“";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Aplikace Hesla";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Importovat z";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Synchronizace z";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo na jiném zařízení";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Záložky";
@@ -1367,6 +1459,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Hesla";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Chceš si ze Safari přenést i záložky?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Pokračovat";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Teď ne";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Chceš si přenést i hesla?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Minulý měsíc";
@@ -2742,6 +2846,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Teď ne";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Funkce AI jsou soukromé a volitelné.\nZměny můžeš provádět v Nastavení > Funkce AI.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Chceš snadný přístup k soukromému chatu s umělou inteligencí v adresním řádku?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Vyhledávání a Duck.ai";
@@ -4274,6 +4384,9 @@
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Kód je zkopírovaný";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Zařízení se úspěšně synchronizovalo.";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup zapnuto";

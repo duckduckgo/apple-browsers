@@ -37,7 +37,7 @@ class DuckPlayerTests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp()
+        app = XCUIApplication.setUp(featureFlags: ["adBlockingExtension": false])
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
     }

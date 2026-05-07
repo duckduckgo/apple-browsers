@@ -334,11 +334,20 @@
 /* Primary button to sync another device when sync is enabled */
 "sync.simplified.another.device.button" = "Synchronizuj inne urządzenie";
 
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Nie teraz";
+
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Zsynchronizować dane z drugim urządzeniem?";
 
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Ładuje ikony ze stron dodanych do zakładek. Pobieranie ikon jest widoczne w Twojej sieci.";
+
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Zakładki";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Korzystaj z tych samych ulubionych zakładek na urządzeniach mobilnych i komputerach stacjonarnych.";
 
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Łączenie...";
@@ -363,6 +372,9 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Zapisuj zakładki i dane autouzupełniania, a następnie synchronizuj je między urządzeniami z użyciem szyfrowania end-to-end.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Użyj tego kodu, aby przywrócić dane w przypadku utraty dostępu do tego urządzenia. Danych Sync & Backup nie można odzyskać po 18 miesiącach braku aktywności. [Dowiedz się więcej](%@)";
 
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "aplikacji DuckDuckGo";

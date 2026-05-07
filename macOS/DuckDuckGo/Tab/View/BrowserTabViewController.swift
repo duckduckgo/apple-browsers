@@ -123,6 +123,7 @@ final class BrowserTabViewController: NSViewController {
     private var lastURL: URL?
     private weak var lastTab: Tab?
     private var wasContextualOnboardingDialogDismissed = false
+    private var presentedContextualOnboardingDialogType: ContextualDialogType?
     private let onboardingPixelReporter: OnboardingPixelReporting
 
     private(set) var transientTabContentViewController: NSViewController?
@@ -654,33 +655,43 @@ final class BrowserTabViewController: NSViewController {
             containerStackView.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
+        presentedContextualOnboardingDialogType = nil
     }
 
     private func presentContextualOnboarding(showLastDialog: Bool = false) {
-        // Before presenting a new dialog, remove any existing ones.
-        removeExistingDialog()
         // Remove any existing highlights animation
         delegate?.dismissViewHighlight()
 
         // Checks if the feature is on
         guard featureFlagger.isFeatureOn(.contextualOnboarding) else {
             onboardingDialogTypeProvider.turnOffFeature()
+            removeExistingDialog()
             return
         }
 
-        guard !isInPopUpWindow else { return }
+        guard !isInPopUpWindow else {
+            removeExistingDialog()
+            return
+        }
 
-        guard let tab = tabViewModel?.tab else { return }
+        guard let tab = tabViewModel?.tab else {
+            removeExistingDialog()
+            return
+        }
 
         // if showLastDialog is true it asks the onboardingDialogTypeProvider for the lastDialog if the last dialog was shown on this tab
         // If there is it will show it
         // This allow seeing the dialog when leaving and coming back to the Window but will avoid reloading the same when opening a new Window
         guard let dialogType = showLastDialog ? onboardingDialogTypeProvider.lastDialogForTab(tab) : onboardingDialogTypeProvider.dialogTypeForTab(tab, privacyInfo: tab.privacyInfo) else {
             delegate?.dismissViewHighlight()
+            removeExistingDialog()
             return
         }
         // once a dialog is presented we reset the is dismissed flag
         self.wasContextualOnboardingDialogDismissed = false
+
+        removeExistingDialog()
+        presentedContextualOnboardingDialogType = dialogType
 
         let daxView = onboardingDialogFactory.makeView(
             for: dialogType,
@@ -1489,7 +1500,17 @@ extension BrowserTabViewController: TabDelegate {
         //  - If the dialog was dismissed it will not reload when leaving and coming back to the Window
         //  - It tells presentContextualOnboarding that should show the lastDialog if possible
         //  - Skip for pop-up windows; contextual onboarding is excluded there
-        if !isInPopUpWindow && !wasContextualOnboardingDialogDismissed && onboardingDialogTypeProvider.state != .onboardingCompleted {
+        //  - Skip if the displayed dialog already matches the expected one; re-creating the
+        //    hosting controller would restart the typewriter animation. If they differ, fall
+        //    through so the stale dialog gets replaced (or cleared if expected is nil).
+        let tab = tabViewModel?.tab
+        let expectedDialogType = tab.flatMap { onboardingDialogTypeProvider.lastDialogForTab($0) }
+        let displayedMatchesExpected = presentedContextualOnboardingDialogType != nil
+            && presentedContextualOnboardingDialogType == expectedDialogType
+        if !isInPopUpWindow
+            && !wasContextualOnboardingDialogDismissed
+            && onboardingDialogTypeProvider.state != .onboardingCompleted
+            && !displayedMatchesExpected {
             presentContextualOnboarding(showLastDialog: true)
         }
     }

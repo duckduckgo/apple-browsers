@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "DI funkcijos";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Pasirinkti nuotrauką";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fotografuoti";
@@ -1275,6 +1274,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Importuok žymes į „DuckDuckGo“";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Atidaryk naršyklę „Chrome“, tada eik į „Slaptažodžių tvarkyklę“ ir atlik toliau nurodytus veiksmus.";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Nustatymai** > **Eksportuoti duomenis**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Paspauskite **Tęsti**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Pasirinkite **DuckDuckGo** kaip paskirties vietą";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Importuoti iš „Chrome“";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Ar eksportavimas baigtas?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Eikite į programėlę Slaptažodžiai, tada atlikite importavimo veiksmus.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Palieskite **···** > **Eksportuoti duomenis į kitą programėlę**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Palieskite **Pasirinkti viską** > **Tęsti**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Pasirinkite **DuckDuckGo** kaip paskirties vietą";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Importuoti iš Slaptažodžių";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Pirmiausia eksportuokite slaptažodžius ir žymes iš naršyklės „Safari“, tada grįžkite čia ir įkelkite failą.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Eksportuoti iš „Safari“";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Importuoti iš „Safari“";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Įkelti eksportuotą failą…";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Zip faile nerasta palaikomų duomenų. Prašome peržiūrėti „Safari“ eksportavimo instrukcijas ir pabandyti dar kartą.";
 
@@ -1284,6 +1328,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Nepavyko perskaityti %@ failo. Gali kilti problemų dėl faile esančių duomenų.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Supratau";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Nepavyko perskaityti %@ failo. Pabandyk įkelti kitą failą arba išbandyk kitą importavimo būdą.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Failas gali būti pažeistas";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Zip faile nerasta palaikomų duomenų. Peržiūrėkite eksportavimo instrukcijas ir bandykite dar kartą.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Duomenų nerasta";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Pasirinktas failas nepalaikomas. Prašome pasirinkti kitą failą ir bandyti dar kartą.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Nepalaikomas failas";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1357,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Perkelkite į „DuckDuckGo“";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Pasirink **Eksportuoti**, o kitame ekrane pasirink **Žymės** ir **Išsaugoti atsisiuntimuose**.";
@@ -1303,7 +1371,7 @@
 "data.import.passwords.instructions.chrome.step1" = "Chrome naršyklėje eik į **„Google“ slaptažodžių tvarkyklę** ir tada į **Nustatymai**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Pasirink **Eksportuoti slaptažodžius**, tada **Įrašyti į failus** ir išsaugok failą aplanke, kurį gali prisiminti.";
+"data.import.passwords.instructions.chrome.step2" = "Pasirinkite **Eksportuoti duomenis**, tada **···** ir tada **Atsisiųsti į CSV** ir išsaugok failą aplanke, kurį galite atsiminti.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Kaip eksportuoti slaptažodžius";
@@ -1331,6 +1399,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Importuoti slaptažodžius į „DuckDuckGo“";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Atidaryti eksportuojamus nustatymus";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Būtinai palieskite \n „Eksportuoti į failus“";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Programėlė „Slaptažodžiai“";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "„Safari“";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Importuoti iš";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Sinchronizuoti iš";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "„DuckDuckGo“ kitame įrenginyje";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Žymės";
@@ -1367,6 +1459,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Slaptažodžiai";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Ar norite perkelti ir žymes iš naršyklės „Safari“?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Tęsti";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Ne dabar";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Ar norite perkelti ir savo slaptažodžius?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Praėjęs mėnuo";
@@ -2742,6 +2846,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Ne dabar";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "DI funkcijos yra privačios ir neprivalomos.\nGalite atlikti pakeitimus Nustatymai > DI funkcijos.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Ar nori lengvai pasiekti privatų DI pokalbį adreso juostoje?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Paieška ir „Duck.ai“";
@@ -4274,6 +4384,9 @@
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Kodas nukopijuotas";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Įrenginys sėkmingai sinchronizuotas!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sinchronizavimas ir atsarginis kopijavimas įjungtas";

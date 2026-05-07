@@ -27,4 +27,5 @@ public extension Logger {
     static let duckPlayer = Logger(subsystem: "DuckPlayer", category: "")
     static let launchSource = Logger(subsystem: "LaunchSource", category: "")
     static let addressBarPicker = Logger(subsystem: "AddressBar Picker", category: "")
+    static let customProductPage = Logger(subsystem: "Custom Product Page", category: "")
 }

@@ -43,6 +43,12 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     var isWebSearchEnabled: Bool { get }
 
+    /// Whether the 1-click voice-chat affordance is currently enabled. Published so the client
+    /// can push an `omnibar_onConfigUpdate` when the underlying feature flag flips at runtime,
+    /// keeping an open NTP in sync without a reload.
+    var isVoiceChatAccessEnabled: Bool { get }
+    var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
     var selectedModelId: String? { get set }
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { get }
 

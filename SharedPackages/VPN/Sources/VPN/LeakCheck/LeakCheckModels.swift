@@ -22,6 +22,7 @@ public enum LeakCheckTrigger: String, Codable {
     case tunnelStart = "tunnel_start"
     case reassert
     case periodic
+    case rekey
 }
 
 public struct LeakCheckEgressInfo: Equatable, Sendable {
@@ -58,23 +59,50 @@ public struct LeakCheckPerTestResult: Codable, Equatable {
     public let errorCode: Int?
     public let underlyingDomain: String?
     public let underlyingCode: Int?
+    public let octet1Matched: Bool?
+    public let octet2Matched: Bool?
+    public let octet3Matched: Bool?
+    public let octet4Matched: Bool?
 
     public init(
         status: Status,
         errorDomain: String? = nil,
         errorCode: Int? = nil,
         underlyingDomain: String? = nil,
-        underlyingCode: Int? = nil
+        underlyingCode: Int? = nil,
+        octet1Matched: Bool? = nil,
+        octet2Matched: Bool? = nil,
+        octet3Matched: Bool? = nil,
+        octet4Matched: Bool? = nil
     ) {
         self.status = status
         self.errorDomain = errorDomain
         self.errorCode = errorCode
         self.underlyingDomain = underlyingDomain
         self.underlyingCode = underlyingCode
+        self.octet1Matched = octet1Matched
+        self.octet2Matched = octet2Matched
+        self.octet3Matched = octet3Matched
+        self.octet4Matched = octet4Matched
     }
 
     public static let success = LeakCheckPerTestResult(status: .success)
     public static let leak = LeakCheckPerTestResult(status: .leak)
+
+    public static func leak(
+        octet1Matched: Bool,
+        octet2Matched: Bool,
+        octet3Matched: Bool,
+        octet4Matched: Bool
+    ) -> LeakCheckPerTestResult {
+        LeakCheckPerTestResult(
+            status: .leak,
+            octet1Matched: octet1Matched,
+            octet2Matched: octet2Matched,
+            octet3Matched: octet3Matched,
+            octet4Matched: octet4Matched
+        )
+    }
 
     public static func error(_ error: Error) -> LeakCheckPerTestResult {
         let ns = error as NSError
@@ -98,7 +126,7 @@ public struct LeakCheckConfiguration {
     public let stunTimeout: TimeInterval
     public let periodicInterval: TimeInterval
     public let cooldown: TimeInterval
-    public let tunnelStartDelay: TimeInterval
+    public let debounceDelay: TimeInterval
 
     public static let `default` = LeakCheckConfiguration(
         host: "leakcheck.netp.duckduckgo.com",
@@ -109,7 +137,7 @@ public struct LeakCheckConfiguration {
         stunTimeout: 5,
         periodicInterval: 4 * 60 * 60,
         cooldown: 30,
-        tunnelStartDelay: 5
+        debounceDelay: 5
     )
 
     public init(
@@ -121,7 +149,7 @@ public struct LeakCheckConfiguration {
         stunTimeout: TimeInterval,
         periodicInterval: TimeInterval,
         cooldown: TimeInterval,
-        tunnelStartDelay: TimeInterval
+        debounceDelay: TimeInterval
     ) {
         self.host = host
         self.httpPort = httpPort
@@ -131,6 +159,6 @@ public struct LeakCheckConfiguration {
         self.stunTimeout = stunTimeout
         self.periodicInterval = periodicInterval
         self.cooldown = cooldown
-        self.tunnelStartDelay = tunnelStartDelay
+        self.debounceDelay = debounceDelay
     }
 }

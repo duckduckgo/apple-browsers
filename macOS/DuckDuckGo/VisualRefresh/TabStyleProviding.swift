@@ -102,7 +102,7 @@ final class TabAnimationsStyleProvider: TabStyleProviding {
     let pinnedTabWidth: CGFloat = 38
     let pinnedTabHeight: CGFloat = 38
     let shouldShowSShapedTab = true
-    let shouldShowTabSeparators = false
+    let shouldShowTabSeparators = true
     let isRoundedBackgroundPresentOnHover = true
     let tabSpacing: CGFloat = 0
     let applyTabShadow: Bool = false

@@ -130,6 +130,12 @@ final class AIChatOmnibarController {
         featureFlagger.isFeatureOn(.aiChatOmnibarReasoningEffort)
     }
 
+    /// Whether 1-click voice-chat access in the omnibar is available. When disabled, the submit
+    /// button keeps its legacy "arrow / disabled when empty" behavior.
+    var isVoiceChatAccessEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarVoiceChatAccess)
+    }
+
     func toggleImageGenerationMode() {
         activeToolMode = isImageGenerationMode ? nil : .imageGeneration
     }
@@ -185,6 +191,17 @@ final class AIChatOmnibarController {
         subscribeToSelectedTabViewModel()
         subscribeToTextChangesForSuggestions()
         subscribeToToolModeChangesForSharedState()
+    }
+
+    /// Opens a new voice-chat tab from the AI chat omnibar. Focuses an existing voice session
+    /// in the same window if one is active; otherwise opens a new selected Duck.ai tab and hands
+    /// off `mode: voice-mode` via the prompt handler.
+    func openNewVoiceChat() {
+        aiChatTabOpener.openVoiceSession(
+            inSourceCollection: tabCollectionViewModel,
+            behavior: .newTab(selected: true)
+        )
+        PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNative, frequency: .dailyAndStandard, includeAppVersionParameter: true)
     }
 
     private func subscribeToTextChangesForSuggestions() {
@@ -255,12 +272,12 @@ final class AIChatOmnibarController {
         modelsFetchTask = Task { [weak self] in
             guard let self else { return }
             do {
-                let remoteModels = try await modelsService.fetchModels()
+                let response = try await modelsService.fetchModels()
                 guard !Task.isCancelled else { return }
                 let userTier = try await self.resolveUserTier()
                 guard !Task.isCancelled else { return }
                 self.hasActiveSubscription = userTier != .free
-                self.models = remoteModels.map { AIChatModel(remoteModel: $0, userTier: userTier) }
+                self.models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningEffortIfNeeded()
                 self.deactivateWebSearchIfUnsupported()

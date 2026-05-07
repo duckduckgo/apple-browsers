@@ -359,6 +359,34 @@
         ]
     },
 
+    "m_subscribe": {
+        "description": "Fired when a subscription purchase is completed successfully. Used for attribution tracking.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "type": "string",
+                "description": "Purchase funnel entry point",
+                "enum": [
+                    "funnel_onboarding_ios",
+                    "funnel_skippedonboarding_ios",
+                    "funnel_appsettings_ios",
+                    "funnel_appmenu_ios",
+                    "funnel_applaunch_ios_winback",
+                    "funnel_appsettings_ios_winback",
+                    "funnel_canceldowngrade_ios",
+                    "funnel_purchaseoffer_ios",
+                    "funnel_prepurchasecheck_ios"
+                ]
+            },
+            "locale",
+            "freeTrial"
+        ]
+    },
+
     // Defined in https://app.asana.com/1/137249556945/task/1210959493759232
     "m_ios_wide_subscription_purchase": {
         "description": "Wide pixel sent at the end of a subscription purchase flow",

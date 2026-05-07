@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "Функции ИИ";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Выбрать фото";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Сделать фото";
@@ -1275,6 +1274,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Импортировать закладки в DuckDuckGo";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Откройте Chrome, затем перейдите в Менеджер паролей и выполните следующие шаги:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Настройки** > **Экспорт данных**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Нажмите **«Продолжить»**";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Выберите **DuckDuckGo** в качестве назначения";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Импорт из Chrome";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Экспорт завершен?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Вам необходимо открыть приложение Passwords и выполнить шаги для импорта.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Нажмите **···** > **«Экспорт данных в другое приложение»**";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Нажмите **«Выбрать все»** > **«Продолжить»**";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Выберите **DuckDuckGo** в качестве назначения";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Импорт из приложения Passwords";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Сначала экспортируйте пароли и закладки из Safari, затем вернитесь сюда, чтобы загрузить файл.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Экспорт из Safari";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Импорт из Safari";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Загрузить экспортированный файл…";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "В zip-архиве не найдено поддерживаемых данных. Ознакомьтесь с инструкцией по экспорту сведений из Safari и повторите попытку.";
 
@@ -1284,6 +1328,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Файл %@ не считывается. Возможно, имеется проблема с содержащимися в нем данными.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Понятно";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "Файл %@ не удалось прочитать. Попробуйте загрузить другой файл или воспользоваться другим способом импорта.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Возможно, файл поврежден";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "В zip-архиве не найдено поддерживаемых данных. Ознакомьтесь с инструкцией по экспорту и повторите попытку.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Данные не найдены";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Выбранный тип файла не поддерживается. Выберите другой файл и повторите попытку.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Неподдерживаемый файл";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1357,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Перенос данных в DuckDuckGo";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Выберите вариант **Экспорт**, а на следующем экране — **Закладки** и **Сохранить в «Загрузки»**.";
@@ -1303,7 +1371,7 @@
 "data.import.passwords.instructions.chrome.step1" = "В браузере Chrome откройте **Менеджер паролей Google** и выберите вариант **Настройки**.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Выберите **Экспортировать пароли**, а затем — **Сохранить в файлы** и сохраните файл в папке, которую затем легко найдете.";
+"data.import.passwords.instructions.chrome.step2" = "Выберите **«Экспортировать данные»**, затем **«···»**, и после этого **«Скачать в CSV»**. Далее сохраните файл в папке, которую вы можете запомнить.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Как экспортировать пароли";
@@ -1331,6 +1399,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Импортируйте пароли в DuckDuckGo";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Открыть настройки для экспорта";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Не забудьте нажать\n«Экспортировать в файлы»";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Приложение Passwords";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Импорт из";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Синхронизация из";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo на другом устройстве";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Закладки";
@@ -1367,6 +1459,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Пароли";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Хотите также перенести закладки из Safari?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Продолжить";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Не сейчас";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Хотите также перенести пароли?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "За последний месяц";
@@ -2742,6 +2846,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Не сейчас";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Функции на базе ИИ работают конфиденциально и предлагаются дополнительно.\nИх можно изменить в разделе «Настройки > Функции ИИ».";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Нужен доступ к приватным чатам с ИИ прямо из адресной строки?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Поиск и Duck.ai";
@@ -4274,6 +4384,9 @@
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Код скопирован";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Устройство успешно синхронизировано!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup включено";

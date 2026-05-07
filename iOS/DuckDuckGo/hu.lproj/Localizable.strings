@@ -208,7 +208,6 @@
 "ai-features.settings.title" = "AI funkciók";
 
 /* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Fénykép kiválasztása";
 
 /* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fénykép készítése";
@@ -1275,6 +1274,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Könyvjelzők importálása a DuckDuckGóba";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Nyisd meg a Chrome-ot, majd lépj a Jelszókezelőbe, és kövesd az alábbi lépéseket:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Beállítások** > **Adatok exportálása**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "Nyomd meg a **Folytatás** gombot";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Válaszd célként a **DuckDuckGo** lehetőséget";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Importálás a Chrome-ból";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Kész az exportálás?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Nyisd meg a Jelszavak-alkalmazást, majd kövesd az importálási lépéseket.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "Koppints a **···** > **Adatok exportálása egy másik alkalmazásba** lehetőségre";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "Koppints az **Összes kijelölése** > **Folytatás** lehetőségre";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Válaszd ki célként a **DuckDuckGo** lehetőséget";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Importálás a Jelszavak-alkalmazásból";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Először exportáld a jelszavaidat és a könyvjelzőidet a Safariból, majd gyere vissza ide a fájl feltöltéséhez.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Exportálás a Safariból";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Importálás a Safariból";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Exportált fájl feltöltése...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "A ZIP-fájlban nem találhatók támogatott adatok. Nézd át a Safari exportálási útmutatóját, és próbálkozz újra.";
 
@@ -1284,6 +1328,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "Nem sikerült beolvasni a %@-fájlt. Lehet, hogy probléma van a fájlban található adatokkal.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Megvan";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "A(z) %@ fájl nem olvasható. Próbálkozz egy másik fájl feltöltésével, vagy válassz másik importálási módot.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "A fájl sérült lehet";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Nem található támogatott adat a ZIP-fájlban. Nézd át az exportálási útmutatót, majd próbáld újra.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Nem található adat";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "A kiválasztott fájl nem támogatott. Válassz másik fájlt, és próbálkozz újra.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Nem támogatott fájl";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1292,6 +1357,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "Áthozatal a DuckDuckGóba";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "Válaszd az **Exportálás** lehetőséget, majd a következő képernyőn válaszd a **Könyvjelzők** és a **Mentés a letöltések közé** opciót.";
@@ -1303,7 +1371,7 @@
 "data.import.passwords.instructions.chrome.step1" = "A Chrome-ban válaszd a **Google Jelszókezelő**, majd a **Beállítások** lehetőséget.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Válaszd a **Jelszavak exportálása**, majd a **Mentés fájlokba** lehetőséget, és mentsd a fájlt egy olyan mappába, amelyet meg tudsz jegyezni.";
+"data.import.passwords.instructions.chrome.step2" = "Válaszd az **Adatok exportálása** lehetőséget, majd a **···** > **Letöltés CSV-fájlként** opciót, és mentsd a fájlt egy könnyen megtalálható mappába.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Jelszavak exportálásának módja";
@@ -1331,6 +1399,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Jelszavak importálása a DuckDuckGóba";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Beállítások megnyitása az exportáláshoz";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "Ne felejts el az\n„Exportálás a Fájlokba” lehetőségre koppintani";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Jelszavak-alkalmazás";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Importálás innen";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Szinkronizálás innen";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "DuckDuckGo egy másik eszközön";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Könyvjelzők";
@@ -1367,6 +1459,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Jelszavak";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Szeretnéd áthozni a könyvjelzőidet is a Safariból?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Folytatás";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Most nem";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "A jelszavaidat is szeretnéd áthozni?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Elmúlt hónapban";
@@ -2742,6 +2846,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Most nem";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Az AI-funkciók privátak és opcionálisak.\nA módosításokat az erre szolgáló Beállítások > AI-funkciók alatt végezheted el.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Szeretnél a címsorból könnyen hozzáférni a privát AI-csevegéshez?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Keresés és Duck.ai";
@@ -4274,6 +4384,9 @@
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Kód másolva";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Az eszköz szinkronizálása sikeresen megtörtént!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup engedélyezve";

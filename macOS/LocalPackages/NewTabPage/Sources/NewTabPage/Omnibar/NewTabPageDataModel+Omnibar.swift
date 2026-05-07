@@ -69,6 +69,10 @@ public extension NewTabPageDataModel {
         let enableAiChatTools: Bool?
         let enableImageGeneration: Bool?
         let enableWebSearch: Bool?
+        /// When true, the omnibar shows a 1-click voice-chat button. Driven by the native
+        /// `aiChatOmnibarVoiceChatAccess` feature flag and reactive over `omnibar_onConfigUpdate`
+        /// so the affordance appears/disappears without a page reload when the flag flips.
+        let enableVoiceChatAccess: Bool?
         let selectedModelId: String?
         let aiModelSections: [AIModelSection]?
         /// The user's persisted reasoning effort (e.g. `"none"`, `"low"`, `"medium"`). `nil` when

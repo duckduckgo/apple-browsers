@@ -154,9 +154,8 @@ class MainViewController: UIViewController {
     var autoClearShouldRefreshUIAfterClear = true
     private var hasLoadedInitialView = false
     private weak var burningOverlayView: UIView?
-    private var isStartupOnboardingPending = false
-    private var hasPresentedStartupOnboarding = false
-    private lazy var startupOnboardingCover = StartupOnboardingCover(
+    private(set) var isStartupOnboardingPending = false
+    private(set) lazy var startupOnboardingCover = StartupOnboardingCover(
         parentViewController: self,
         fallbackBackgroundColor: themeManager.currentTheme.onboardingBackgroundColor
     )
@@ -368,6 +367,8 @@ class MainViewController: UIViewController {
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings
     private(set) var fireModePromotionEligibility: FireModePromotionCoordinating?
 
+    let onboardingManager: OnboardingManaging
+
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         bookmarksDatabase: CoreDataDatabase,
@@ -431,7 +432,8 @@ class MainViewController: UIViewController {
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
         fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
-        duckAIOnboardingResumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil
+        duckAIOnboardingResumeStepStore: (any KeyedStoring<DuckAIOnboardingStoringKeys>)? = nil,
+        onboardingManager: OnboardingManaging
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -501,6 +503,7 @@ class MainViewController: UIViewController {
         self.toggleModeStorage = toggleModeStorage
         self.fireModeCapability = FireModeCapability.create()
         self.fireModePromotionEligibility = fireModePromotionEligibility
+        self.onboardingManager = onboardingManager
 
         super.init(nibName: nil, bundle: nil)
         
@@ -701,7 +704,6 @@ class MainViewController: UIViewController {
         // Needs to be called here because sometimes the frames are not the expected size during didLoad
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
-        startOnboardingFlowIfNotSeenBefore()
         restorePendingDuckAIAnswerStepIfNeeded()
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
@@ -884,9 +886,7 @@ class MainViewController: UIViewController {
     }
     
     func startOnboardingFlowIfNotSeenBefore() {
-        guard isStartupOnboardingPending, !hasPresentedStartupOnboarding else { return }
-        hasPresentedStartupOnboarding = true
-        startupOnboardingCover.bringToFront()
+        guard isStartupOnboardingPending else { return }
         segueToDaxOnboarding { [weak self] in
             self?.startupOnboardingCover.detach()
         }
@@ -2570,7 +2570,7 @@ class MainViewController: UIViewController {
         // Show the reminder only if users have not seen the Add to Dock promo.
         // iPhone users would have seen Add to Dock promo during the onboarding.
         // iPad users don't see the Add to Dock promo during the onboarding.
-        guard !OnboardingManager().userHasSeenAddToDockPromoDuringOnboarding else { return }
+        guard !onboardingManager.userHasSeenAddToDockPromoDuringOnboarding else { return }
         let feature = HomeRowReminder()
         if feature.showNow() {
             showNotification(title: UserText.homeRowReminderTitle, message: UserText.homeRowReminderMessage) { tapped in

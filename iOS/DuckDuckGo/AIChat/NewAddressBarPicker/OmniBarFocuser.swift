@@ -32,5 +32,4 @@ final class OmniBarFocuserProvider {
     func focusOmniBar() {
         focuser?.beginSearch()
     }
-
 }

@@ -283,7 +283,7 @@ extension NSMenuItem {
         let menuItem = NSMenuItem(action: action)
         menuItem.target = target
 
-        weak var weakTarget = target
+        weak let weakTarget = target
         let menuAction = action
 
         let badgeView = MenuItemWithBadge(leftImage: image, title: title, badgeText: badgeText) {

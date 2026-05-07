@@ -67,15 +67,16 @@ enum UTIAnimationStyle {
     case snap
     case animated(duration: TimeInterval, options: UIView.AnimationOptions, layoutTarget: UIView)
 
-    func perform(_ body: @escaping () -> Void) {
+    func perform(_ body: @escaping () -> Void, completion: ((Bool) -> Void)? = nil) {
         switch self {
         case .snap:
             UIView.performWithoutAnimation(body)
+            completion?(true)
         case let .animated(duration, options, layoutTarget):
-            UIView.animate(withDuration: duration, delay: 0, options: options) {
+            UIView.animate(withDuration: duration, delay: 0, options: options, animations: {
                 body()
                 layoutTarget.layoutIfNeeded()
-            }
+            }, completion: completion)
         }
     }
 

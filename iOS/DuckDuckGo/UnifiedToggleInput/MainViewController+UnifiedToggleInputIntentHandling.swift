@@ -99,10 +99,62 @@ private extension MainViewController {
     }
 
     func handleShowExpandedIntent(animationStyle: UTIAnimationStyle) {
-        animationStyle.perform { [self] in
+        // The `.aiTab(.collapsed) → .aiTab(.expanded)` transition shrinks `contentContainer`
+        // (its bottom is anchored to the input bar's top, which moves up as the input grows).
+        // `WKWebView` lays out its rendered content using the model layer's bounds, so the
+        // chat snaps to its smaller size in one frame while the outer layer's bounds animate
+        // — visible as a gray strip between the rendered chat (white) and the navbar (panel
+        // gray). Mask the snap by overlaying a snapshot of the chat at its old visual state
+        // and clipping the snapshot from the bottom in lockstep with `contentContainer`.
+        let snapshotMask = installContentContainerSnapshotMaskForAITabExpandIfNeeded()
+        animationStyle.perform({ [self] in
             applyAITabExpandedPose()
-        }
+        }, completion: { [weak snapshotMask] _ in
+            snapshotMask?.removeFromSuperview()
+        })
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: animationStyle.duration, animationCurve: .curveEaseInOut)
+    }
+
+    /// Captures a snapshot of `contentContainer` and pins a clipping wrapper to track
+    /// `contentContainer`'s frame for the duration of an AI-tab expand animation. Returns the
+    /// wrapper so the caller can schedule its removal once the animation has settled. `nil` if
+    /// the snapshot can't be taken (no AI tab, or the snapshot view fails).
+    private func installContentContainerSnapshotMaskForAITabExpandIfNeeded() -> UIView? {
+        // `coordinator.displayState` is flipped to `.aiTab(.expanded)` synchronously *before*
+        // the intent fires, so we don't gate on `!isAITabExpanded` — the `contentContainer`'s
+        // frame is still its old (collapsed-pose) size at this point because the layout pass
+        // hasn't run yet, which is exactly what we want to capture.
+        guard let coordinator = unifiedToggleInputCoordinator,
+              coordinator.isAITabState,
+              let target = viewCoordinator.contentContainer,
+              let parent = target.superview,
+              let snapshot = target.snapshotView(afterScreenUpdates: false) else { return nil }
+
+        let oldSize = target.bounds.size
+
+        let wrapper = UIView()
+        wrapper.translatesAutoresizingMaskIntoConstraints = false
+        wrapper.clipsToBounds = true
+        wrapper.isUserInteractionEnabled = false
+
+        snapshot.translatesAutoresizingMaskIntoConstraints = false
+        wrapper.addSubview(snapshot)
+        parent.addSubview(wrapper)
+        parent.bringSubviewToFront(wrapper)
+
+        NSLayoutConstraint.activate([
+            wrapper.topAnchor.constraint(equalTo: target.topAnchor),
+            wrapper.leadingAnchor.constraint(equalTo: target.leadingAnchor),
+            wrapper.trailingAnchor.constraint(equalTo: target.trailingAnchor),
+            wrapper.bottomAnchor.constraint(equalTo: target.bottomAnchor),
+
+            snapshot.topAnchor.constraint(equalTo: wrapper.topAnchor),
+            snapshot.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
+            snapshot.widthAnchor.constraint(equalToConstant: oldSize.width),
+            snapshot.heightAnchor.constraint(equalToConstant: oldSize.height)
+        ])
+        parent.layoutIfNeeded()
+        return wrapper
     }
 
     /// Visual end-state for `.aiTab(.expanded)`: container shown, chrome and content anchor

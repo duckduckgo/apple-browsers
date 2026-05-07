@@ -295,16 +295,10 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
     func measureAutoRestoreOnboardingRestoreCTAAction() {
         fire(event: .syncAutoRestoreOnboardingRestoreTappedUnique, unique: true)
-        sharedPixelHandler.fire(.welcome(.clicked(.engage)),
-                                source: sharedPixelsStorage.onboardingSource,
-                                flow: sharedPixelsStorage.onboardingFlow)
     }
 
     func measureAutoRestoreOnboardingSkipCTAAction() {
         fire(event: .syncAutoRestoreOnboardingSkipTappedUnique, unique: true)
-        sharedPixelHandler.fire(.welcome(.clicked(.dismiss)),
-                                source: sharedPixelsStorage.onboardingSource,
-                                flow: sharedPixelsStorage.onboardingFlow)
     }
 
     func measureOnboardingIntroImpression() {

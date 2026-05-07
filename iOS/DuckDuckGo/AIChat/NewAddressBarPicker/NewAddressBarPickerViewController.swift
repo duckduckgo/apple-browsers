@@ -25,7 +25,7 @@ import Core
 final class NewAddressBarPickerViewController: UIViewController {
     
     private let aiChatSettings: AIChatSettingsProvider
-    let omniBarFocuser: OmniBarFocuserProvider?
+    private let omniBarFocuser: OmniBarFocuserProvider?
 
     init(aiChatSettings: AIChatSettingsProvider,
          omniBarFocuser: OmniBarFocuserProvider? = nil) {

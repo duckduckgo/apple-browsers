@@ -910,6 +910,7 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     func fireOptOutSubmit() {}
     func fireOptOutEmailReceive() {}
     func fireOptOutEmailConfirm() {}
+    func fireOptOutEmailGetData() {}
     func fireOptOutFillForm() {}
     func fireOptOutValidate() {}
     func fireOptOutSubmitSuccess(tries: Int) {}

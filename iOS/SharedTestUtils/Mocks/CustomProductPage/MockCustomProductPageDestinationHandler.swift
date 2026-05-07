@@ -1,8 +1,8 @@
 //
-//  MockTutorialSettings.swift
+//  MockCustomProductPageDestinationHandler.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,18 +17,19 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Onboarding
+import UIKit
 @testable import DuckDuckGo
 
-class MockTutorialSettings: TutorialSettings {
-    var lastVersionSeen: Int { 0 }
-    var hasSeenOnboarding: Bool
-    var hasSkippedOnboarding: Bool
-    var onboardingFlowType: OnboardingFlowType?
+final class MockCustomProductPageDestinationHandler: CustomProductPageDestinationHandling {
+    private(set) var handleCalled = false
+    private(set) var handleCallCount = 0
+    private(set) var capturedURL: URL?
+    private(set) var capturedPresenter: AppStoreCustomProductPagePresenter?
 
-    init(hasSeenOnboarding: Bool, hasSkippedOnboarding: Bool = false) {
-        self.hasSeenOnboarding = hasSeenOnboarding
-        self.hasSkippedOnboarding = hasSkippedOnboarding
+    func handle(url: URL, on presenter: AppStoreCustomProductPagePresenter) {
+        handleCalled = true
+        handleCallCount += 1
+        capturedURL = url
+        capturedPresenter = presenter
     }
 }

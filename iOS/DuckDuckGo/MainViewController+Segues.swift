@@ -58,14 +58,16 @@ extension MainViewController {
                 onboardingPixelReporter: contextualOnboardingPixelReporter,
                 systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                 daxDialogsManager: daxDialogsManager,
-                syncAutoRestoreHandler: syncAutoRestoreHandler
+                syncAutoRestoreHandler: syncAutoRestoreHandler,
+                onboardingManager: onboardingManager
             )
         } else {
             OnboardingIntroViewController.legacy(
                 onboardingPixelReporter: contextualOnboardingPixelReporter,
                 systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                 daxDialogsManager: daxDialogsManager,
-                syncAutoRestoreHandler: syncAutoRestoreHandler
+                syncAutoRestoreHandler: syncAutoRestoreHandler,
+                onboardingManager: onboardingManager
             )
         }
         controller.delegate = self

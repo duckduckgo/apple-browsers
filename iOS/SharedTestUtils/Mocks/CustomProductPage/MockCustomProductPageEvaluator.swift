@@ -1,8 +1,8 @@
 //
-//  MockTutorialSettings.swift
+//  MockCustomProductPageEvaluator.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,17 +18,19 @@
 //
 
 import Foundation
-import Onboarding
 @testable import DuckDuckGo
 
-class MockTutorialSettings: TutorialSettings {
-    var lastVersionSeen: Int { 0 }
-    var hasSeenOnboarding: Bool
-    var hasSkippedOnboarding: Bool
-    var onboardingFlowType: OnboardingFlowType?
+final class MockCustomProductPageEvaluator: AppStoreCustomProductPageEvaluating {
+    private(set) var evaluateCustomProductPageCalled = false
+    private(set) var evaluateCustomProductPageCallCount = 0
+    private(set) var capturedURL: URL?
 
-    init(hasSeenOnboarding: Bool, hasSkippedOnboarding: Bool = false) {
-        self.hasSeenOnboarding = hasSeenOnboarding
-        self.hasSkippedOnboarding = hasSkippedOnboarding
+    var stubbedResult: AppStoreCustomProductPage?
+
+    func evaluateCustomProductPage(from url: URL) -> AppStoreCustomProductPage? {
+        evaluateCustomProductPageCalled = true
+        evaluateCustomProductPageCallCount += 1
+        capturedURL = url
+        return stubbedResult
     }
 }

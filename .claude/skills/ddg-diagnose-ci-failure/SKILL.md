@@ -1,0 +1,179 @@
+---
+name: ddg-diagnose-ci-failure
+description: Use when the user shares a GitHub Actions URL (github.com/*/actions/runs/*), asks "why did CI fail", reports a flaky CI test, or pastes a link to a failed PR check. Even a bare URL with no other text triggers this skill.
+---
+
+# Diagnose CI Failure
+
+Investigate a GitHub Actions workflow failure, classify it, trace test failures back to the local code, and propose a fix.
+
+## Output Guidelines
+
+Lead with the diagnosis: what failed, why, what to do. Don't echo metadata the user already gave you (URL, owner, repo, run ID). Scale depth to complexity - a missing translation or lint violation needs 2-3 sentences and a fix; a flaky test needs the deeper analysis below.
+
+## Prerequisites
+
+Requires `gh` authenticated. If `gh auth status` fails, ask the user to run `gh auth login`.
+
+## Step 1: Fetch Run Data
+
+Extract `owner`, `repo`, `run_id` (and optional `job_id`) from the URL. Then gather data in two passes.
+
+### 1a: Structured overview
+
+```bash
+gh run view {run_id} --json status,conclusion,name,headBranch,event,jobs,startedAt,updatedAt
+```
+
+Identify which jobs failed, the branch/trigger event, and the workflow name (you'll need it for regression timeline lookups in Step 3).
+
+### 1b: Failed step logs
+
+```bash
+gh run view {run_id} --log-failed 2>&1 | tail -n 1000
+```
+
+CI logs are organized as `{job-name}\t{step-name}\t{line}`. Errors almost always cluster at the end - 1000 lines is usually enough; bump to 3000 if the failure context is cut off. If a `job_id` was in the URL, focus there.
+
+### 1c: Artifacts (optional, for test failures)
+
+JUnit XML artifacts are uploaded for most test runs (e.g. `unittests.xml`, `package-tests.xml`, `dbp-ios-unittests.xml`). List and download:
+
+```bash
+gh api repos/{owner}/{repo}/actions/runs/{run_id}/artifacts --jq '.artifacts[].name'
+gh run download {run_id} -n {artifact-name} -D /tmp/ci-artifacts/
+```
+
+## Step 2: Classify the Failure
+
+| Category | Signals | Action |
+|----------|---------|--------|
+| **Build** | `error:` from xcodebuild/clang/swiftc, `Undefined symbol`, SPM resolution errors, `No such module` | Quote error lines, point to file:line, name the cause (SPM cache, Xcode mismatch, etc.). Stop. |
+| **Test** | `Test Case '...' failed`, `** TEST FAILED **`, `✘ Test ... failed`, non-zero JUnit failure counts | Continue to Step 3. |
+| **Infrastructure** | Runner timeouts, simulator boot failures, checkout failures, Xcode selection errors, signing/provisioning, GitHub Actions service errors | Explain the issue, suggest `gh run rerun {run_id} --failed` or flag for CI/infra team. Stop. |
+| **Lint / static** | ShellCheck, SwiftLint, `find_private_symbols.sh`, uncommitted `.strings` from translation checks | Explain violation, point to local file, suggest fix. Stop. |
+| **Unknown** | None of the above match | Present the most relevant log lines, your best interpretation, ask for context. |
+
+For non-test failures, present diagnosis and stop. For test failures, continue.
+
+## Step 3: Analyze Test Failures
+
+### 3a: Extract failing tests
+
+XCTest: `Test Case '-[ClassName testMethod]' failed (0.452 seconds).`
+Swift Testing: `✘ Test testMethod() failed after 0.452 seconds with 1 issue.`
+
+For each failure, capture: test class, method, failure message, and duration (unusually fast = crash; unusually slow = timeout).
+
+### 3b: Map to local files
+
+Test directories use `*Tests` and `*UITests` suffixes under `iOS/`, `macOS/`, and `SharedPackages/*/Tests/`. Search:
+
+```bash
+grep -rn --include='*.swift' "func {testMethodName}" iOS/ macOS/ SharedPackages/
+```
+
+If grep misses (parameterized or generated tests), search for the class name. Read both the test and the production code under test - both sides matter.
+
+### 3c: Determine when the test started failing
+
+Whether this is a fresh regression or a long-standing flake changes the diagnosis. Try local git first - it's faster and answers "what changed" directly.
+
+**Local git (deterministic failures):**
+
+```bash
+git log --oneline -20 -- {test_file_path}
+git log --oneline -20 -- {production_file_under_test}
+git blame -L {failing_line_start},{failing_line_end} {test_file_path}
+```
+
+If the test or its production target changed in the last few commits, that's almost certainly the regression source.
+
+**Workflow history (flaky / environmental failures):**
+
+When local git shows no relevant changes, or the failure looks intermittent:
+
+```bash
+# Last green runs of the same workflow on main
+gh run list --workflow={workflow_name} --branch=main --status=success --limit=5 --json headSha,createdAt,displayTitle
+
+# Recent runs to see the fail/pass pattern
+gh run list --workflow={workflow_name} --branch=main --limit=20 --json conclusion,headSha,createdAt
+
+# Runs on this PR branch - did the test fail across all pushes (deterministic) or only some (flaky)?
+gh run list --branch={pr_branch} --workflow={workflow_name} --limit=10
+```
+
+The diff between the last green SHA and the failing SHA brackets the regression - useful when git log on individual files doesn't surface the cause (env shifts, indirect dependencies, build-config tweaks).
+
+### 3d: Assess flakiness
+
+Likely flaky if any apply:
+
+| Signal | Why |
+|--------|-----|
+| Timing-dependent (`waitForExpectations`, `XCTWaiter`, `sleep`, `Task.sleep`, timeouts) | CI runners are slower/less predictable than dev machines |
+| Test passed on retry (`-retry-tests-on-failure` is used in `dbp_pr_checks.yml`, `macos_pr_checks.yml`, `macos_sync_end_to_end.yml`) | By definition, intermittent = flaky |
+| Only fails on one matrix variant (Sandbox vs Non-Sandbox, sim version, etc.) | Environmental dependency |
+| Shared mutable state - singletons, globals, class-level properties | Order/parallelism changes outcome |
+| Real network/filesystem/UserDefaults access without isolation | External state varies |
+| Failure message shows a race - off-by-one counts, nil optionals, "expected X but got Y" | Classic concurrent-access symptom |
+| Workflow history (Step 3c) shows the same test passing then failing without code changes | Environmental, not logic |
+
+If none apply and the failure looks deterministic, say so - not every CI failure is flaky.
+
+### 3e: Consult the Apple CI Failing Tests project (only if needed)
+
+Use this step only when 3a-3d haven't produced a clear diagnosis, or when you specifically want longer-term failure history for the test (months of pattern, prior investigations, owner). For an obvious failure (timing-dependent test that just changed in 3c, or a clear assertion regression), skip this step.
+
+The team tracks known-flaky and known-broken tests in the [Apple CI Failing Tests project](https://app.asana.com/1/137249556945/project/1205237866452338):
+
+```
+asana_search_tasks(workspace="137249556945", projects.any="1205237866452338", text="<test method or class name>")
+```
+
+- **Open task exists**: known issue with prior root-cause notes - reference it in your diagnosis instead of restarting the investigation.
+- **Completed task exists**: previously closed but failing again - flag as a regression of a supposed fix.
+- **No task**: continue with what you have.
+
+Note: querying Asana via MCP locks other MCPs for the rest of the session (lethal-trifecta policy). Only invoke when the longer history is worth that tradeoff.
+
+## Step 4: Verify Before Presenting
+
+Cross-check your root cause against evidence. A confident-but-wrong diagnosis wastes more time than "I'm not sure."
+
+- Can you point to specific lines that exhibit the problem you're claiming?
+- Does the failure message match your theory? (Timeout → async wait; assertion → wrong state.)
+- Are there other failing tests you missed? Multiple `failed` / `TEST FAILED` markers in the log mean multiple independent failures - report all.
+
+If evidence is thin, say so explicitly.
+
+## Step 5: Present Diagnosis
+
+State:
+1. **What the test does** - one sentence
+2. **What failed** - the specific assertion or expectation
+3. **Why** - root cause mechanism (timing, shared state, environment, genuine bug)
+4. **Test or production?** - prefer attributing to the test unless evidence clearly points to a production bug. Flaky tests are almost always a test-level problem.
+
+Then ask: *"Would you like me to propose a fix?"*
+
+**Wait for the user to respond.** Do not proceed to Step 6 until they confirm.
+
+## Step 6: Propose a Fix
+
+When the user approves:
+
+- **Prefer fixing the test** unless the failure reveals a real production bug.
+- **Explain why** each change addresses the root cause, not just what it does.
+- **Present tradeoffs** if multiple valid approaches exist.
+
+## Common Mistakes
+
+- **Reporting only the first failure** - scan the full log; multiple independent failures are common.
+- **Jumping to "flaky" without checking signals** - some CI failures are real bugs.
+- **Skipping Step 4 (verify)** - false-confident diagnoses waste developer time.
+- **Proposing a fix without user approval** - Step 5 ends with a question, not a fix.
+- **Hallucinating test paths** - always grep; test directories aren't exhaustively listed.
+- **Defaulting to workflow history when git log would answer faster** - check local changes first.
+- **Reaching for the Apple CI Failing Tests Asana project too early** - it's an escalation for ambiguous cases (Step 3e), not a default. Querying Asana also locks other MCPs for the rest of the session.

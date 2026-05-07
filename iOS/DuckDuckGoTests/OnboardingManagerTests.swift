@@ -172,47 +172,6 @@ struct OnboardingManagerTests {
 
     }
 
-    struct OnboardingSharedPixelContext {
-
-        @available(iOS 16.0, *)
-        @Test("Check default onboarding source and flow parameters are persisted if needed", .timeLimit(.minutes(1)))
-        func checkSharedOnboardingPixelParametersPersistedIfNeeded() throws {
-            // GIVEN
-            let mockStore = InMemoryKeyValueStore()
-            let sharedPixelStorage: any KeyedStoring<OnboardingSharedPixelsKeys> = mockStore.keyedStoring()
-            try #require(sharedPixelStorage.onboardingSource == nil)
-            try #require(sharedPixelStorage.onboardingFlow == nil)
-
-            // WHEN
-            _ = OnboardingManager(sharedPixelsStorage: sharedPixelStorage)
-
-            // THEN
-            #expect(sharedPixelStorage.onboardingSource == .default)
-            #expect(sharedPixelStorage.onboardingFlow == .default)
-        }
-
-        @available(iOS 16.0, *)
-        @Test("Check default onboarding source and flow parameters are not persisted if already set", .timeLimit(.minutes(1)))
-        func checkSharedOnboardingPixelParametersNotPersistedIfAlreadySet() throws {
-            // GIVEN
-            let expectedSource = OnboardingPixelParameter.Source.duckAICustomProductPage
-            let expectedFlow = OnboardingPixelParameter.Flow.duckAI
-            let mockStore = InMemoryKeyValueStore()
-            let sharedPixelStorage: any KeyedStoring<OnboardingSharedPixelsKeys> = mockStore.keyedStoring()
-            sharedPixelStorage.onboardingSource = expectedSource
-            sharedPixelStorage.onboardingFlow = expectedFlow
-            try #require(sharedPixelStorage.onboardingSource == expectedSource)
-            try #require(sharedPixelStorage.onboardingFlow == expectedFlow)
-
-            // WHEN
-            _ = OnboardingManager(sharedPixelsStorage: sharedPixelStorage)
-
-            // THEN
-            #expect(sharedPixelStorage.onboardingSource == expectedSource)
-            #expect(sharedPixelStorage.onboardingFlow == expectedFlow)
-        }
-    }
-
 }
 
 @Suite("Onboarding - Manager + Flow Configuration")
@@ -221,11 +180,13 @@ struct OnboardingFlowConfiguration {
     @Test("Check default flow is configured when URL is nil")
     func configuresDefaultFlowForNilURL() {
         // GIVEN
+        let sharedPixelStorage = makePixelStore()
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
         let sut = OnboardingManager(
             appDefaults: AppSettingsMock(),
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
-            tutorialSettings: tutorialSettings
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
         )
         #expect(tutorialSettings.onboardingFlowType == nil)
 
@@ -234,16 +195,20 @@ struct OnboardingFlowConfiguration {
 
         // THEN
         #expect(tutorialSettings.onboardingFlowType == .default)
+        #expect(sharedPixelStorage.onboardingSource == .default)
+        #expect(sharedPixelStorage.onboardingFlow == .default)
     }
 
     @Test("Check Duck.ai flow is configured when URL is ddgCPP://duckAI")
     func configuresDuckAIFlowForValidURL() {
         // GIVEN
+        let sharedPixelStorage = makePixelStore()
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
         let sut = OnboardingManager(
             appDefaults: AppSettingsMock(),
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
-            tutorialSettings: tutorialSettings
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
         )
         #expect(tutorialSettings.onboardingFlowType == nil)
         let url = URL(string: "ddgCPP://duckAI")
@@ -253,16 +218,20 @@ struct OnboardingFlowConfiguration {
 
         // THEN
         #expect(tutorialSettings.onboardingFlowType == .duckAI)
+        #expect(sharedPixelStorage.onboardingSource == .duckAICustomProductPage)
+        #expect(sharedPixelStorage.onboardingFlow == .duckAI)
     }
 
     @Test("Check default flow is configured when URL is invalid")
     func configuresDefaultFlowForInvalidURL() {
         // GIVEN
+        let sharedPixelStorage = makePixelStore()
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
         let sut = OnboardingManager(
             appDefaults: AppSettingsMock(),
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
-            tutorialSettings: tutorialSettings
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
         )
         #expect(tutorialSettings.onboardingFlowType == nil)
         let url = URL(string: "ddgCPP://unknown-flow")
@@ -272,17 +241,21 @@ struct OnboardingFlowConfiguration {
 
         // THEN
         #expect(tutorialSettings.onboardingFlowType == .default)
+        #expect(sharedPixelStorage.onboardingSource == .default)
+        #expect(sharedPixelStorage.onboardingFlow == .default)
     }
 
     @Test("Check flow is not reconfigured when it is already been set")
     func doesNotReconfigureWhenAlreadySet() {
         // GIVEN
+        let sharedPixelStorage = makePixelStore(source: .duckAICustomProductPage, flow: .duckAI)
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
         tutorialSettings.onboardingFlowType = .default
         let sut = OnboardingManager(
             appDefaults: AppSettingsMock(),
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
-            tutorialSettings: tutorialSettings
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
         )
         let url = URL(string: "ddgCPP://duckAI")
 
@@ -291,16 +264,20 @@ struct OnboardingFlowConfiguration {
 
         // THEN - Should remain .default, not switch to .duckAI
         #expect(tutorialSettings.onboardingFlowType == .default)
+        #expect(sharedPixelStorage.onboardingSource == .duckAICustomProductPage)
+        #expect(sharedPixelStorage.onboardingFlow == .duckAI)
     }
 
     @Test("Check flow is not reconfigured when onboarding has been seen")
     func doesNotConfigureWhenOnboardingHasBeenSeen() {
         // GIVEN
+        let sharedPixelStorage = makePixelStore(source: .default, flow: .default)
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
         let sut = OnboardingManager(
             appDefaults: AppSettingsMock(),
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
-            tutorialSettings: tutorialSettings
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
         )
         let url = URL(string: "ddgCPP://duckAI")
 
@@ -309,16 +286,20 @@ struct OnboardingFlowConfiguration {
 
         // THEN - Should remain nil
         #expect(tutorialSettings.onboardingFlowType == nil)
+        #expect(sharedPixelStorage.onboardingSource == .default)
+        #expect(sharedPixelStorage.onboardingFlow == .default)
     }
 
     @Test("Check Duck.ai flow falls back to default when feature flag is disabled")
     func fallsBackToDefaultWhenDuckAIFeatureFlagDisabled() {
         // GIVEN
+        let sharedPixelStorage = makePixelStore()
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
         let sut = OnboardingManager(
             appDefaults: AppSettingsMock(),
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-            tutorialSettings: tutorialSettings
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
         )
         #expect(tutorialSettings.onboardingFlowType == nil)
         let url = URL(string: "ddgCPP://duckAI")
@@ -328,16 +309,20 @@ struct OnboardingFlowConfiguration {
 
         // THEN - Should fall back to .default, not .duckAI
         #expect(tutorialSettings.onboardingFlowType == .default)
+        #expect(sharedPixelStorage.onboardingSource == .duckAICustomProductPage)
+        #expect(sharedPixelStorage.onboardingFlow == .default)
     }
 
     @Test("Check Duck.ai flow is configured when feature flag is enabled")
     func configuresDuckAIFlowWhenFeatureFlagEnabled() {
         // GIVEN
+        let sharedPixelStorage = makePixelStore()
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
         let sut = OnboardingManager(
             appDefaults: AppSettingsMock(),
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
-            tutorialSettings: tutorialSettings
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
         )
         #expect(tutorialSettings.onboardingFlowType == nil)
         let url = URL(string: "ddgCPP://duckAI")
@@ -347,16 +332,20 @@ struct OnboardingFlowConfiguration {
 
         // THEN - Should configure .duckAI flow
         #expect(tutorialSettings.onboardingFlowType == .duckAI)
+        #expect(sharedPixelStorage.onboardingSource == .duckAICustomProductPage)
+        #expect(sharedPixelStorage.onboardingFlow == .duckAI)
     }
 
     @Test("Check default flow is not affected by Duck.ai feature flag")
     func defaultFlowNotAffectedByDuckAIFeatureFlag() {
         // GIVEN
+        let sharedPixelStorage = makePixelStore()
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
         let sut = OnboardingManager(
             appDefaults: AppSettingsMock(),
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.onboardingDuckAIFlow]),
-            tutorialSettings: tutorialSettings
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
         )
         #expect(tutorialSettings.onboardingFlowType == nil)
 
@@ -365,6 +354,21 @@ struct OnboardingFlowConfiguration {
 
         // THEN - Should configure .default flow normally
         #expect(tutorialSettings.onboardingFlowType == .default)
+        #expect(sharedPixelStorage.onboardingSource == .default)
+        #expect(sharedPixelStorage.onboardingFlow == .default)
+    }
+
+    private func makePixelStore(source: OnboardingPixelParameter.Source? = nil,
+                                flow: OnboardingPixelParameter.Flow? = nil) -> any KeyedStoring<OnboardingSharedPixelsKeys> {
+        let mockStore = InMemoryKeyValueStore()
+        let storage: any KeyedStoring<OnboardingSharedPixelsKeys> = mockStore.keyedStoring()
+        if let source {
+            storage.onboardingSource = source
+        }
+        if let flow {
+            storage.onboardingFlow = flow
+        }
+        return storage
     }
 }
 

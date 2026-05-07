@@ -102,19 +102,6 @@ final class OnboardingManager {
         self.onboardingFlowEvaluator = onboardingFlowEvaluator
         self.tutorialSettings = tutorialSettings
         self.sharedPixelsStorage = if let sharedPixelsStorage { sharedPixelsStorage } else { UserDefaults.app.keyedStoring() }
-
-        persistOnboardingSourceAndFlowIfNeeded()
-    }
-
-    // This will be set when the onboarding flow type is configured, after that support is merged
-    // See: https://github.com/duckduckgo/apple-browsers/pull/4604
-    private func persistOnboardingSourceAndFlowIfNeeded() {
-        if sharedPixelsStorage.onboardingSource.isNil {
-            sharedPixelsStorage.onboardingSource = .default
-        }
-        if sharedPixelsStorage.onboardingFlow.isNil {
-            sharedPixelsStorage.onboardingFlow = .default
-        }
     }
 }
 
@@ -193,13 +180,19 @@ extension OnboardingManager: OnboardingFlowManaging {
         let flowType = onboardingFlowEvaluator.evaluateOnboardingFlow(from: url)
         Logger.onboarding.debug("Configured onboarding flow: \(flowType.rawValue, privacy: .public)")
 
+        persistOnboardingPixelSource(for: flowType)
+
+        let resolvedFlow: OnboardingFlowType
         switch flowType {
         case .duckAI where !featureFlagger.isFeatureOn(.onboardingDuckAIFlow):
             Logger.onboarding.debug("Duck.ai onboarding feature disabled. Reverting to default onboarding")
-            tutorialSettings.onboardingFlowType = .default
+            resolvedFlow = .default
         default:
-            tutorialSettings.onboardingFlowType = flowType
+            resolvedFlow = flowType
         }
+
+        tutorialSettings.onboardingFlowType = resolvedFlow
+        persistOnboardingPixelFlow(for: resolvedFlow)
     }
 
 }
@@ -207,6 +200,28 @@ extension OnboardingManager: OnboardingFlowManaging {
 // MARK: - Private
 
 private extension OnboardingManager {
+
+    /// Persist the source for onboarding pixels based on the evaluated flow type.
+    /// This should be called immediately after the flow type is evaluated, before any changes to the onboarding flow or onboarding is presented.
+    func persistOnboardingPixelSource(for flowType: OnboardingFlowType) {
+        switch flowType {
+        case .default:
+            sharedPixelsStorage.onboardingSource = .default
+        case .duckAI:
+            sharedPixelsStorage.onboardingSource = .duckAICustomProductPage
+        }
+    }
+
+    /// Persist the flow type for onboarding pixels.
+    /// This must be called before onboarding is presented.
+    func persistOnboardingPixelFlow(for flowType: OnboardingFlowType) {
+        switch flowType {
+        case .default:
+            sharedPixelsStorage.onboardingFlow = .default
+        case .duckAI:
+            sharedPixelsStorage.onboardingFlow = .duckAI
+        }
+    }
 
     func stepsForCurrentFlow() -> [OnboardingIntroStep] {
         let introStep = OnboardingIntroStep.introDialog(isReturningUser: !isNewUser)

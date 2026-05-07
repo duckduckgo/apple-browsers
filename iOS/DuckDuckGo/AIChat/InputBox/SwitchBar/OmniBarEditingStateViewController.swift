@@ -579,6 +579,17 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)? = nil) {
 
+        // If the view hasn't entered the window yet (e.g. initial Combine
+        // emissions during viewDidLoad's setupSubscriptions), running this
+        // through a spring animator captures unsettled bounds and visibly
+        // animates to the final layout when the view finally appears. Run the
+        // work synchronously in that case so layout settles before first paint.
+        guard view.window != nil else {
+            UIView.performWithoutAnimation { animation() }
+            completion?(.end)
+            return
+        }
+
         if contentAnimator?.state == .stopped {
             contentAnimator = nil
         }

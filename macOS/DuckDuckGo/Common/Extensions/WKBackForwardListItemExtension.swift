@@ -32,9 +32,15 @@ extension WKBackForwardListItem {
         }
     }
 
-    // `url` is imported as non-optional but WebKit's implementation returns nil
-    // for null/invalid underlying URLs, trapping the unconditional NSURL→URL bridge.
-    // Read via KVC to keep the optional and use a conditional bridge.
+    /// Crash-safe alternative to `url`.
+    ///
+    /// `WKBackForwardListItem.url` is imported as non-optional, but WebKit's
+    /// implementation returns nil for null or invalid underlying URLs, which
+    /// traps Swift's unconditional `NSURL` → `URL` bridge. Reading via KVC
+    /// keeps the value optional so the conditional `as? URL` cast safely
+    /// returns nil instead of crashing.
+    ///
+    /// See: https://app.asana.com/1/137249556945/project/1201037661562251/task/1214602405943382
     var safeURL: URL? {
         (self as NSObject).value(forKey: "URL") as? URL
     }

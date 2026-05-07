@@ -86,6 +86,10 @@ jobs:
         ./install-prerequisites.sh
         ./setup-ci.sh
         cd ..
+        # install-prerequisites.sh runs `npm install -g pnpm` unpinned, which now
+        # resolves to pnpm 10 and turns ignored-builds into a hard error. Override
+        # to v9 (matches the broker lockfile) until the broker repo pins it itself.
+        npm install -g pnpm@9.7.1
         pnpm start:all > "$GITHUB_WORKSPACE/macOS/pir-fake-broker.log" 2>&1 &
         echo $! > "$GITHUB_WORKSPACE/macOS/pir-fake-broker.pid"
 
@@ -229,7 +233,7 @@ jobs:
         pixel-name: m_ci_apple_status_mac_e2e_pir_${{ steps.run-tests.outcome }}
 
     - name: Prepare test report
-      if: always()
+      if: always() && steps.run-tests.outcome != 'skipped'
       run: |
         xcbeautify --report junit --report-path . --junit-report-filename pir-e2e-tests.xml < pir-e2e-tests.log
 
